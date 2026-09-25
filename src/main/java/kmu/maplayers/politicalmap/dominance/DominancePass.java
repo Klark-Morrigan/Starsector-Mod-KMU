@@ -1,0 +1,334 @@
+package kmu.maplayers.politicalmap.dominance;
+
+import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
+import kmlib.starsector.markets.colonies.Colonies;
+
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
+import kmu.maplayers.ownermap.holding.ColonyReadRules;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.holding.SystemHabitation;
+import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
+import kmu.maplayers.politicalmap.dominance.weighting.UnweighedColony;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+/**
+ * One dominance pass over the sector: a rebuild's reading of it, plus the weighting rule that
+ * scores each market.
+ *
+ * <p>The rule is the whole of what dominance adds to {@link HolderPass}. What the two halves have
+ * in common - the sector, the grouping, the colony rule, and the one walk of each system - is
+ * what any owner-painted layer needs, and it is carried apart so the holder seam can take it
+ * without naming this mechanic. What is here is what only a layer painted by market weights needs.
+ *
+ * <p>Bundled rather than threaded loose because the knobs always travel together: read once by
+ * whoever opens the pass and handed down, so no system in the walk can drift onto a different rule
+ * or a different reading of the sector mid-pass. The per-system reads below take a system rather
+ * than a sector for the same reason the pass holds an index rather than one: a read that could
+ * reach the sector is a read that could walk it again.
+ *
+ * <p>The generic reads a weighing caller needs are re-published here rather than reached through
+ * {@link #holding()}, because a caller holding a dominance pass is holding <em>a</em> pass and has
+ * no business knowing it is made of two halves. Only a caller passing the generic half onward -
+ * the holder seam takes exactly that - names {@code holding()}. What is deliberately not
+ * re-published is what no weighing caller has ever asked for: the walk itself, the colony rule,
+ * and a claim reader opened over it. A reader wanting one of those wants nothing weighed, and it
+ * takes a {@link HolderPass} instead.
+ *
+ * @param rules   the weighting rule scoring each market's dominance worth
+ * @param holding the rebuild's reading of the sector every layer shares - which sector, the
+ *                grouping, the colony rule, and the one walk of each system
+ */
+public record DominancePass(
+    DominanceRules rules,
+    HolderPass holding) {
+
+    public DominancePass {
+        Objects.requireNonNull(rules, "rules");
+        Objects.requireNonNull(holding, "holding");
+    }
+
+    /**
+     * The dominance pass a layer-generic one becomes once the weighting rule is named - what a
+     * caller handed a {@link HolderPass} builds when it has to weigh markets with it, keeping the
+     * one walk of each system the handed pass already holds.
+     *
+     * @param holding the rebuild's reading of the sector
+     * @param rules   the weighting rule scoring each market's worth
+     * @return that reading under that rule
+     */
+    public static DominancePass over(HolderPass holding, DominanceRules rules) {
+        return new DominancePass(rules, holding);
+    }
+
+    /**
+     * A pass over one sector under explicit knobs, opening the colony index the reads below
+     * share - the entry a caller that resolves the knobs itself builds a pass through.
+     *
+     * @param sector          the sector this pass reads; null yields a pass answering an empty
+     *                        colony set for every system, matching how the reads treat an
+     *                        unreachable sector
+     * @param rules           the weighting rule scoring each market's worth
+     * @param colonyReadRules the rules this pass reads colonies under
+     * @param grouping        the grouping this pass folds factions into blocs under
+     * @return a pass over that sector carrying those knobs
+     */
+    public static DominancePass over(
+            SectorAPI sector,
+            DominanceRules rules,
+            ColonyReadRules colonyReadRules,
+            HolderGrouping grouping) {
+
+        return over(
+            HolderPass.over(sector, colonyReadRules, grouping),
+            rules);
+    }
+
+    /**
+     * The weighting rule read from the player's live settings, applied to a reading of the sector
+     * a caller already holds - what a dominance-painted resolve does with the pass the holder seam
+     * handed it, the rule being the one knob that seam does not carry.
+     *
+     * @param holding the rebuild's reading of the sector
+     * @return that reading under the live weighting rule
+     */
+    public static DominancePass readRulesFromLunaSettings(HolderPass holding) {
+        return over(holding, DominanceRules.readFromLunaSettings());
+    }
+
+    /**
+     * A pass reading the player's live LunaLib settings under an explicit grouping: the weighting
+     * rule and the colony rule are sampled once here, so the whole pass resolves under the
+     * settings in force when it began even if the player moves a toggle mid-walk.
+     *
+     * @param sector   the sector this pass reads
+     * @param grouping the grouping this pass folds factions into blocs under
+     * @return a pass carrying the live weighting and colony rules paired with the grouping
+     */
+    public static DominancePass readFromLunaSettings(SectorAPI sector, HolderGrouping grouping) {
+        return readRulesFromLunaSettings(HolderPass.readFromLunaSettings(sector, grouping));
+    }
+
+    /**
+     * A pass reading the player's live settings under the faction (identity) grouping - every
+     * faction its own bloc - for the plain faction view.
+     *
+     * @param sector the sector this pass reads
+     * @return a pass carrying the live weighting and colony rules under the identity grouping
+     */
+    public static DominancePass readFromLunaSettings(SectorAPI sector) {
+        return readFromLunaSettings(sector, HolderGrouping.identity());
+    }
+
+    /**
+     * The sector this pass reads.
+     *
+     * @return the sector; null when the pass was opened over none
+     */
+    public SectorAPI sector() {
+        return holding.sector();
+    }
+
+    /**
+     * The grouping this pass folds factions into blocs under.
+     *
+     * @return the grouping
+     */
+    public HolderGrouping grouping() {
+        return holding.grouping();
+    }
+
+    /**
+     * What the player may be told about the colonies this pass walks - the rule above read against
+     * the sector's own record of what has been seen, which is what every projection through this
+     * pass is taken under.
+     *
+     * @return the holder pass's own knowledge, so a read taken beside a pass read applies the very
+     *         projection the painting did
+     */
+    public ColonyKnowledge colonyKnowledge() {
+        return holding.colonyKnowledge();
+    }
+
+    /**
+     * The systems this pass walks, in the sector's own order; empty for a pass over no sector.
+     *
+     * @return the sector's star systems
+     */
+    public List<StarSystemAPI> readSystems() {
+        return holding.readSystems();
+    }
+
+    /**
+     * Whether this pass can read an economy at all - a sector to walk, with its economy up.
+     *
+     * @return true when both the sector and its economy are there to read
+     */
+    public boolean canReadEconomy() {
+        return holding.canReadEconomy();
+    }
+
+    /**
+     * The colonies in one system, off this pass's single walk of it - what a reader needing the
+     * colonies themselves rather than their weights takes, so it shares the walk with the reads
+     * below instead of adding one.
+     *
+     * @param system the system to read; null yields an empty set
+     * @return the system's colony set
+     */
+    public Colonies readColoniesIn(StarSystemAPI system) {
+        return holding.readColoniesIn(system);
+    }
+
+    /**
+     * This system's per-faction footprints under the pass's weighting and colony rules,
+     * before any grouping: each faction's known markets folded into its own footprint. The
+     * unowned read the per-bloc
+     * read below builds on, and the one a two-tier standings breakdown needs whole so it can rank a
+     * bloc's members individually - both taking the read from the pass rather than re-deriving it
+     * from the loose knobs.
+     *
+     * @param system the system whose markets are folded
+     * @return each present faction's footprint in the system; empty when the system holds no known
+     *         owned market
+     */
+    public Map<String, MarketFootprint> readFootprintsByFaction(StarSystemAPI system) {
+        return KnownMarketFootprints.readByFaction(
+            readColoniesIn(system),
+            rules,
+            colonyKnowledge());
+    }
+
+    /**
+     * This system's per-faction weight breakdowns under the pass's weighting and colony rules:
+     * the same fold {@link #readFootprintsByFaction} sums away, kept whole so a caller can state
+     * the parts a score was made of.
+     *
+     * <p>Beside the footprints rather than derived from them, because a footprint is the total
+     * and a total cannot be taken apart again. Both come off the one walk under the one rule, so
+     * the parts a box lists always add up to the number the map painted with.
+     *
+     * @param system the system whose markets are folded
+     * @return each faction's weighed colonies with the breakdown of each colony's weight, keyed by
+     *         faction ID and in the economy's own market order; empty when the system holds no
+     *         weighed colony
+     */
+    public Map<String, List<MarketWeightBreakdown>> readWeightBreakdownsByFaction(
+            StarSystemAPI system) {
+
+        return KnownMarketFootprints.readBreakdownByFaction(
+            readColoniesIn(system),
+            rules,
+            colonyKnowledge());
+    }
+
+    /**
+     * The colonies in this system the economy does not list, per faction - the ones no weight was
+     * ever worked out for, so they arrive named and identified and nothing more.
+     *
+     * <p>The complement of the weighed read above, taken under the same rule off the same walk,
+     * which is what makes the two exact complements: no colony can be admitted by one and refused
+     * by the other. Offered here so a box accounting for a system reads both through the pass that
+     * painted it rather than assembling the weighting rule and the colony rule by hand.
+     *
+     * @param system the system whose colonies are read
+     * @return each faction's unlisted colonies there, identified and nothing more; empty when
+     *         every colony present is one the economy lists
+     */
+    public Map<String, List<UnweighedColony>> readUnweighedColoniesByFaction(
+            StarSystemAPI system) {
+
+        return KnownMarketFootprints.readUnweighedColoniesByFaction(
+            readColoniesIn(system),
+            colonyKnowledge());
+    }
+
+    /**
+     * The factions present in this system under the pass's colony rule - everyone holding a
+     * colony the player may be shown, whether or not this mechanic could weigh it.
+     *
+     * <p>Beside the footprints rather than derived from them, and that is the whole of the
+     * separation: every term of a dominance weight is economy-fed, so a faction holding nothing the
+     * economy lists raises no footprint at all, and reading presence off the weights would leave it
+     * out of every listing while the band beneath the cell went on counting it. The wider set is
+     * the one to read: it can only ever be a superset of what was weighed, so a caller ranking a
+     * system cannot lose a faction to a filter applied on the weighed side.
+     *
+     * @param system the system whose colonies are read
+     * @return the IDs of the factions present there; empty when the player knows of no colony
+     */
+    public Set<String> readKnownColonyFactionIds(StarSystemAPI system) {
+        return holding.readKnownColonyFactionIds(system);
+    }
+
+    /**
+     * What this system's habitation amounts to under the pass's colony rule and grouping - the
+     * colonies somebody lives on, and the blocs folded from those very colonies, whether or not
+     * this mechanic could weigh any of them.
+     *
+     * <p>Beside {@link #readBlocFootprints} rather than derived from it, for the same reason the
+     * listing above is: a bloc raising no footprint may still be living here, and reading presence
+     * off the weights would drop it from the fill while the band went on counting it.
+     *
+     * @param system the system whose colonies are read
+     * @return the system's habitation; empty when nobody the player knows of lives there
+     */
+    public SystemHabitation readHabitationIn(StarSystemAPI system) {
+        return holding.readHabitationIn(system);
+    }
+
+    /**
+     * This system's per-bloc footprints under the pass's weighting rule, colony rule and
+     * grouping: the per-faction footprints regrouped into per-bloc footprints (a no-op fold under
+     * identity, a member-summing merge under an alliance grouping).
+     *
+     * <p>The one read every reader ranking by weight makes - the holder resolve, the filter's
+     * fallback to the real holder, and the picker's stats - so none of them can rank a system by
+     * footprints another was never shown.
+     *
+     * @param system the system whose markets are folded
+     * @return each present bloc's footprint in the system; empty when no bloc holds a folded market
+     */
+    public Map<String, MarketFootprint> readBlocFootprints(StarSystemAPI system) {
+        return grouping().regroupByBloc(
+            readFootprintsByFaction(system),
+            MarketFootprint.EMPTY,
+            MarketFootprint::merge);
+    }
+
+    /**
+     * How this system's holder is settled once its weights are in: who may win it under this
+     * pass's grouping - everyone but the bloc painting in the neutral placeholder faction - and
+     * who takes a dead heat.
+     *
+     * <p>The two travel as one because a reader taking the bar from the pass that painted the map
+     * and the tie-break from anywhere else would rank a system under a rule no fill was resolved
+     * with. Offered here rather than on the reading of the sector this pass is built over, because
+     * both are settled among the colonies <em>this</em> mechanic weighs, which no other layer's
+     * pass has any use for.
+     *
+     * <p>The tie-break inside is lazy: it reads no geometry unless a tie forces it, so a system
+     * with a clear winner - nearly every system - pays nothing for carrying one.
+     *
+     * @param system the system whose ranking these rules settle
+     * @return the rules a ranking of this system's footprints is taken under
+     */
+    public HolderRankingRules resolveRankingRulesFor(StarSystemAPI system) {
+        return new HolderRankingRules(
+            MarketProximityTieBreak.forSystem(
+                system,
+                readColoniesIn(system),
+                colonyKnowledge(),
+                grouping()),
+            BlocCandidacy.createForGrouping(grouping()));
+    }
+}

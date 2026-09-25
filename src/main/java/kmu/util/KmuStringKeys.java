@@ -102,29 +102,29 @@ public final class KmuStringKeys {
     public static final String OBSERVATION_SPAN_A_DAY_AGO = "observation_span_a_day_ago";
     public static final String OBSERVATION_SPAN_DAYS_AGO = "observation_span_days_ago";
     public static final String POLITICAL_MAP_TAB_POLITICAL_MAP = "political_map_tab_political_map";
-    public static final String POLITICAL_MAP_CTL_UNINHABITED = "political_map_ctl_uninhabited";
-    public static final String POLITICAL_MAP_CTL_NAME_FULL = "political_map_ctl_name_full";
-    public static final String POLITICAL_MAP_CTL_NAME_SHORT = "political_map_ctl_name_short";
-    public static final String POLITICAL_MAP_CTL_NAME_NONE = "political_map_ctl_name_none";
-    public static final String POLITICAL_MAP_CTL_FACTION_NAMES = "political_map_ctl_faction_names";
+    public static final String OWNER_MAP_CTL_UNINHABITED = "owner_map_ctl_uninhabited";
+    public static final String OWNER_MAP_CTL_NAME_FULL = "owner_map_ctl_name_full";
+    public static final String OWNER_MAP_CTL_NAME_SHORT = "owner_map_ctl_name_short";
+    public static final String OWNER_MAP_CTL_NAME_NONE = "owner_map_ctl_name_none";
+    public static final String OWNER_MAP_CTL_FACTION_NAMES = "owner_map_ctl_faction_names";
     public static final String POLITICAL_MAP_CTL_FACTIONS = "political_map_ctl_factions";
     public static final String POLITICAL_MAP_CTL_ALLIANCES = "political_map_ctl_alliances";
     public static final String POLITICAL_MAP_CTL_CLAIMS = "political_map_ctl_claims";
     public static final String POLITICAL_MAP_CTL_NON_ALLIED_CAPTION = "political_map_ctl_non_allied_caption";
-    public static final String POLITICAL_MAP_CTL_MUTED = "political_map_ctl_muted";
-    public static final String POLITICAL_MAP_CTL_DESATURATED = "political_map_ctl_desaturated";
+    public static final String OWNER_MAP_CTL_MUTED = "owner_map_ctl_muted";
+    public static final String OWNER_MAP_CTL_DESATURATED = "owner_map_ctl_desaturated";
     public static final String POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION = "political_map_ctl_filter_recede_caption";
     public static final String POLITICAL_MAP_CTL_SORT_NAME = "political_map_ctl_sort_name";
     public static final String POLITICAL_MAP_CTL_SORT_DOMINATION = "political_map_ctl_sort_domination";
     public static final String POLITICAL_MAP_CTL_SORT_PRESENCE = "political_map_ctl_sort_presence";
     public static final String POLITICAL_MAP_CTL_SORT_SCORE = "political_map_ctl_sort_score";
-    public static final String POLITICAL_MAP_CTL_SORT_MARKET_SIZE = "political_map_ctl_sort_market_size";
+    public static final String OWNER_MAP_CTL_SORT_MARKET_SIZE = "owner_map_ctl_sort_market_size";
     public static final String POLITICAL_MAP_CTL_SORT_CLAIMS = "political_map_ctl_sort_claims";
-    public static final String POLITICAL_MAP_CTL_SORT_ATTITUDE = "political_map_ctl_sort_attitude";
-    public static final String POLITICAL_MAP_CTL_SORT_ATTITUDE_RANGE_SEPARATOR =
-        "political_map_ctl_sort_attitude_range_separator";
-    public static final String POLITICAL_MAP_TOOLTIP_DECIVILISED = "political_map_tooltip_decivilised";
-    public static final String POLITICAL_MAP_TOOLTIP_UNPOPULATED = "political_map_tooltip_unpopulated";
+    public static final String OWNER_MAP_CTL_SORT_ATTITUDE = "owner_map_ctl_sort_attitude";
+    public static final String OWNER_MAP_CTL_SORT_ATTITUDE_RANGE_SEPARATOR =
+        "owner_map_ctl_sort_attitude_range_separator";
+    public static final String OWNER_MAP_TOOLTIP_DECIVILISED = "owner_map_tooltip_decivilised";
+    public static final String OWNER_MAP_TOOLTIP_UNPOPULATED = "owner_map_tooltip_unpopulated";
     public static final String POLITICAL_MAP_TOOLTIP_CORE_TERRITORY = "political_map_tooltip_core_territory";
     public static final String POLITICAL_MAP_TOOLTIP_CORE_MARKER = "political_map_tooltip_core_marker";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_NONE = "political_map_tooltip_claim_none";
@@ -137,23 +137,23 @@ public final class KmuStringKeys {
         "political_map_tooltip_claim_sibling_working";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY = "political_map_tooltip_claim_military";
     public static final String POLITICAL_MAP_TOOLTIP_CLAIM_BONUS = "political_map_tooltip_claim_bonus";
-    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_SEPARATOR =
-        "political_map_tooltip_qualifier_separator";
-    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_ABANDONED =
-        "political_map_tooltip_qualifier_abandoned";
-    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_DECIVILISED =
-        "political_map_tooltip_qualifier_decivilised";
-    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_UNDISCOVERED =
-        "political_map_tooltip_qualifier_undiscovered";
-    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_HIDDEN =
-        "political_map_tooltip_qualifier_hidden";
-    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_UNLISTED =
-        "political_map_tooltip_qualifier_unlisted";
+    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_SEPARATOR =
+        "owner_map_tooltip_qualifier_separator";
+    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_ABANDONED =
+        "owner_map_tooltip_qualifier_abandoned";
+    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_DECIVILISED =
+        "owner_map_tooltip_qualifier_decivilised";
+    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_UNDISCOVERED =
+        "owner_map_tooltip_qualifier_undiscovered";
+    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_HIDDEN =
+        "owner_map_tooltip_qualifier_hidden";
+    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_UNLISTED =
+        "owner_map_tooltip_qualifier_unlisted";
     public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL =
         "political_map_tooltip_qualifier_non_territorial";
     public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION =
         "political_map_tooltip_qualifier_fraction";
-    public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN = "political_map_tooltip_last_seen";
+    public static final String OWNER_MAP_TOOLTIP_LAST_SEEN = "owner_map_tooltip_last_seen";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CLAIM = "political_map_tooltip_section_claim";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER =
         "political_map_tooltip_section_allied_with_holder";

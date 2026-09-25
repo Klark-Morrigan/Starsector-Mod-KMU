@@ -4,23 +4,19 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.mods.nexerelin.NexerelinPresence;
 
-import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTransferListener;
-
 /**
- * Registers KMU's political-map market-transfer listener only when Nexerelin is
- * present. The listener implements a Nexerelin interface, so a Nex-free install
- * must never load it: the sole reference to that Nex-coupled type lives in the
- * nested {@link Installer} holder, which the classloader does not resolve until
- * the mod-enabled gate has passed. That keeps an install without Nex from
- * seeking {@code exerelin.utilities.InvasionListener} and failing with a
- * missing-class error - the same isolation KMLib's Abyssal Fracture matcher uses
- * for Random Assortment of Things. An optional mod read through settings rather
- * than through its own types needs none of this: there is no class to defer, only
- * a mod-enabled gate in front of the read.
+ * Registers KMU's relay for Nexerelin's colony transfers only when Nexerelin is present. The relay
+ * implements a Nexerelin interface, so a Nex-free install must never load it: the sole reference
+ * to that Nex-coupled type lives in the nested {@link Installer} holder, which the classloader does
+ * not resolve until the mod-enabled gate has passed. That keeps an install without Nex from seeking
+ * {@code exerelin.utilities.InvasionListener} and failing with a missing-class error - the same
+ * isolation KMLib's Abyssal Fracture matcher uses for Random Assortment of Things. An optional mod
+ * read through settings rather than through its own types needs none of this: there is no class to
+ * defer, only a mod-enabled gate in front of the read.
  *
- * <p>Nexerelin is the only source of colony ownership transfers, which vanilla
- * fires no listener for, so this is the one place the political map learns that a
- * colony changed hands mid play.
+ * <p>Nexerelin is the only source of colony ownership transfers, which vanilla fires no listener
+ * for. One relay per sector carries them to whatever listens for them, so what listens is
+ * registered by its owner and names no Nexerelin type.
  */
 public final class NexerelinInvasionListenerInstaller {
 
@@ -28,10 +24,10 @@ public final class NexerelinInvasionListenerInstaller {
     }
 
     /**
-     * Adds the market-transfer listener when Nexerelin is enabled, and does
-     * nothing otherwise; a null sector is ignored.
+     * Adds the transfer relay when Nexerelin is enabled, and does nothing otherwise; a null sector
+     * is ignored.
      *
-     * @param sector the sector whose listener manager receives the listener
+     * @param sector the sector whose listener manager receives the relay
      */
     public static void installIfPresent(SectorAPI sector) {
         // Short-circuit before touching Installer so a Nex-free install never
@@ -46,8 +42,8 @@ public final class NexerelinInvasionListenerInstaller {
     }
 
     /**
-     * Clears the market-transfer listener when Nexerelin is enabled, and does
-     * nothing otherwise; a null sector is ignored.
+     * Clears the transfer relay when Nexerelin is enabled, and does nothing otherwise; a null
+     * sector is ignored.
      *
      * @param sector the sector whose listener manager is cleared
      */
@@ -60,7 +56,7 @@ public final class NexerelinInvasionListenerInstaller {
         Installer.uninstall(sector);
     }
 
-    // Isolates the only reference to the Nex-coupled listener. The classloader
+    // Isolates the only reference to the Nex-coupled relay. The classloader
     // resolves this holder on first call, which the gate in installIfPresent
     // defers until Nex is known to be present, so InvasionListener is never
     // sought otherwise.
@@ -72,22 +68,22 @@ public final class NexerelinInvasionListenerInstaller {
             if (listenerManager == null) {
                 return;
             }
-            // Transient (true), not persisted (false): the listener is a KMU class
-            // implementing a Nex interface, so serialising it into the save would fail to
-            // load if Nex were later removed. It is re-added on each load instead, exactly
-            // when the gate in installIfPresent still passes.
+            // Transient (true), not persisted (false): the relay is a KMU class implementing a
+            // Nex interface, so serialising it into the save would fail to load if Nex were later
+            // removed. It is re-added on each load instead, exactly when the gate in
+            // installIfPresent still passes.
             //
-            // Remove-then-add rather than a presence check, so a save that does carry a copy
-            // is repaired by the load rather than left holding it beside the fresh one. A save
-            // can only carry one if some build registered it persistently, which is exactly the
+            // Remove-then-add rather than a presence check, so a save that does carry a copy is
+            // repaired by the load rather than left holding it beside the fresh one. A save can
+            // only carry one if some build registered it persistently, which is exactly the
             // mistake the flag above exists to prevent - and the one shape that survives having
             // made it is this one.
             //
-            // Built with the sector it is installed on, as its vanilla-driven siblings are: a
-            // transfer marks that sector's own refresh board, and one reading the running game
-            // instead would mark whichever sector the player has loaded for a conquest in another.
-            listenerManager.removeListenerOfClass(PoliticalMapMarketTransferListener.class);
-            listenerManager.addListener(new PoliticalMapMarketTransferListener(sector), true);
+            // Built with the sector it is installed on: a transfer is relayed to that sector's own
+            // listeners, and a relay reading the running game instead would tell whichever sector
+            // the player has loaded about a conquest in another.
+            listenerManager.removeListenerOfClass(NexerelinMarketTransferRelay.class);
+            listenerManager.addListener(new NexerelinMarketTransferRelay(sector), true);
         }
 
         private static void uninstall(SectorAPI sector) {
@@ -96,7 +92,7 @@ public final class NexerelinInvasionListenerInstaller {
             if (listenerManager == null) {
                 return;
             }
-            listenerManager.removeListenerOfClass(PoliticalMapMarketTransferListener.class);
+            listenerManager.removeListenerOfClass(NexerelinMarketTransferRelay.class);
         }
     }
 }

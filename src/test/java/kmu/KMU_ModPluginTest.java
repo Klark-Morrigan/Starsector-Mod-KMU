@@ -13,7 +13,7 @@ import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
-import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
+import kmu.mods.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.mods.rat.RandomAssortmentOfThingsSettings;
 import kmu.settings.KmuLunaSettings;
 
@@ -76,7 +76,6 @@ class KMU_ModPluginTest {
             // than in play.
             try (var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
                     var mapLayersMock = mockStatic(MapLayers.class);
-                    var filterHealMock = mockStatic(FilterSelectionHeal.class);
                     var profilingMock = mockStatic(ProfilingCaptureInstaller.class);
                     var reflectionTracingMock = mockStatic(ReflectionTracingInstaller.class);
                     var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
@@ -94,7 +93,6 @@ class KMU_ModPluginTest {
                 reflectionTracingMock.verify(ReflectionTracingInstaller::installAll);
                 lunaSettingsMock.verify(KmuLunaSettings::installBindings);
                 mapLayersMock.verify(MapLayers::registerAll);
-                filterHealMock.verify(FilterSelectionHeal::installHealOnSettingsChange);
 
                 // The two settings listeners are pinned on the announcement each answers rather
                 // than on the reaction it carries: which mod's settings a listener is bound to is
@@ -212,6 +210,8 @@ class KMU_ModPluginTest {
             mockStatic(SectorMapMachineryIndex.class);
         private final MockedStatic<MapSubstrateRefreshInstaller> substrateRefreshMock =
             mockStatic(MapSubstrateRefreshInstaller.class);
+        private final MockedStatic<NexerelinInvasionListenerInstaller> transferRelayMock =
+            mockStatic(NexerelinInvasionListenerInstaller.class);
         private final MockedStatic<MapLayerStandings> standingsMock =
             mockStatic(MapLayerStandings.class);
         private final MockedStatic<MapSurfaceInstaller> surfaceMock =
@@ -233,6 +233,8 @@ class KMU_ModPluginTest {
                 () -> SectorMapMachineryIndex.installMachineryOn(sector), howOften);
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.installAll(sector), howOften);
+            transferRelayMock.verify(
+                () -> NexerelinInvasionListenerInstaller.installIfPresent(sector), howOften);
             standingsMock.verify(() -> MapLayerStandings.applyArrangementTo(sector), howOften);
             surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector), howOften);
             sidebarMock.verify(() -> SidebarInstaller.installAll(sector), howOften);
@@ -246,6 +248,8 @@ class KMU_ModPluginTest {
                 () -> SectorMapMachineryIndex.uninstallMachineryFrom(sector), howOften);
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.uninstallAll(sector), howOften);
+            transferRelayMock.verify(
+                () -> NexerelinInvasionListenerInstaller.uninstallIfPresent(sector), howOften);
             standingsMock.verify(
                 () -> MapLayerStandings.standEveryLayerDownFrom(sector), howOften);
             surfaceMock.verify(() -> MapSurfaceInstaller.uninstallAll(sector), howOften);
@@ -262,6 +266,7 @@ class KMU_ModPluginTest {
             sidebarMock.close();
             surfaceMock.close();
             standingsMock.close();
+            transferRelayMock.close();
             substrateRefreshMock.close();
             machineryIndexMock.close();
         }

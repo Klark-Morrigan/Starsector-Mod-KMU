@@ -8,11 +8,11 @@ import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
-import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
+import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 
 import java.util.List;
 
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.listSystemMarkets;
 
 /**
  * The sector a poll-walk suite counts over, and how the count is taken.
@@ -61,19 +61,19 @@ public final class PollWalkFixtures {
      */
     public static SectorAPI buildSettledSectorWithADerelict() {
 
-        var hegemony = SectorPoliticsFixtures.buildFaction("hegemony");
-        var colony = SectorPoliticsFixtures.buildVisibleMarket(hegemony, COLONY_SIZE);
+        var hegemony = SectorOwnershipFixtures.buildFaction("hegemony");
+        var colony = SectorOwnershipFixtures.buildVisibleMarket(hegemony, COLONY_SIZE);
 
-        var sector = SectorPoliticsFixtures.buildSectorWithSystems(
+        var sector = SectorOwnershipFixtures.buildSectorWithSystems(
             List.of(hegemony),
             listSystemMarkets(ALPHA_ID, colony),
             listSystemMarkets(BETA_ID));
 
-        SectorPoliticsFixtures.placeMarketsOnSystemEntities(
-            SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID),
-            SectorPoliticsFixtures.buildAbandonedStationMarket(DERELICT_SIZE));
+        SectorOwnershipFixtures.placeMarketsOnSystemEntities(
+            SectorOwnershipFixtures.findSystemIn(sector, ALPHA_ID),
+            SectorOwnershipFixtures.buildAbandonedStationMarket(DERELICT_SIZE));
 
-        SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
+        SectorOwnershipFixtures.placeEverySystemInHyperspace(sector);
         return sector;
     }
 
@@ -87,7 +87,7 @@ public final class PollWalkFixtures {
      */
     public static MarketAPI findOnlyDerelictIn(SectorAPI sector) {
 
-        return SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID)
+        return SectorOwnershipFixtures.findSystemIn(sector, ALPHA_ID)
             .getAllEntities()
             .get(0)
             .getMarket();

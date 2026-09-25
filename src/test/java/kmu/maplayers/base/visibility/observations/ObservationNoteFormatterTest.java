@@ -140,7 +140,7 @@ final class ObservationNoteFormatterTest {
 
         return Stream.of(
             Arguments.of(
-                KmuStringKeys.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
+                KmuStringKeys.OWNER_MAP_TOOLTIP_LAST_SEEN,
                 "last seen 34 days ago (c206.05.12)"),
             Arguments.of(
                 KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
@@ -159,7 +159,7 @@ final class ObservationNoteFormatterTest {
 
         return ObservationNoteFormatter.formatObservationNote(
             clockMock,
-            KmuStringKeys.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
+            KmuStringKeys.OWNER_MAP_TOOLTIP_LAST_SEEN,
             OBSERVED_AT);
     }
 }

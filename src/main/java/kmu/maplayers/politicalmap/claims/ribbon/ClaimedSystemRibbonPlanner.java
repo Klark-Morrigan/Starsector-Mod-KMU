@@ -6,9 +6,9 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
-import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
+import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
 import java.util.Optional;
 
@@ -23,7 +23,7 @@ import java.util.Optional;
  *
  * <p>A system the contest settled on nobody is planned all the same, without a painter. Vanilla
  * leaves a settled system unclaimed for several reasons - see
- * {@link kmu.maplayers.politicalmap.base.politics.holders} for which - and this layer's fill
+ * {@link kmu.maplayers.ownermap.owners.holders} for which - and this layer's fill
  * <em>is</em> the claim, so it says nothing about such a system at all. The band is what does.
  *
  * <p>The counting itself is the shared rule's, off the pass's own walk of the system, which is why

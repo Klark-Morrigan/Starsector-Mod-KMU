@@ -7,29 +7,29 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
+import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.SHORTENED_UNCONTESTED_RULES;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.STANDARD_RULES;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
+import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.SHORTENED_UNCONTESTED_RULES;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.STANDARD_RULES;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildInputsFor;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildSectorHolding;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

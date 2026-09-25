@@ -31,7 +31,7 @@ public record SectorGeometryParameters(
     // turn of arc.
     private static final int HALF_TURNS_PER_CIRCLE = 2;
 
-    // KmuPoliticalMapGeometrySettings' DEFAULT_CELL_RADIUS. Duplicated rather than read, because reading
+    // KmuOwnerMapGeometrySettings' DEFAULT_CELL_RADIUS. Duplicated rather than read, because reading
     // it would drag LunaLib into a pipeline that is otherwise pure geometry.
     public static final double DEFAULT_CELL_RADIUS = 4000.0;
     // KmuMapLabelSettings' DEFAULT_BORDER_WELD_TOLERANCE. Real cells need this: two neighbours

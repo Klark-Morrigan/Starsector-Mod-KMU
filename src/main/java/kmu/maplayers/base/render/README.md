@@ -141,8 +141,7 @@ Which sub-layers ride above is a question about how the picture reads,
 and moving one is a change of which band a pass is emitted for -
 not a rename here.
 A layer is free to hand that question to the player
-and emit each sub-layer for the band its own setting picked,
-which is what the political map does.
+and emit each sub-layer for the band its own setting picked.
 
 ## One preparation per frame, one cursor read per pass
 
@@ -605,5 +604,5 @@ It surfaces as a player reporting that their campaign will not load.
   drawn in a later UI pass than this one and dispatched through the same active-layer read.
 - What any layer actually paints,
   and what its owners mean,
-  belongs to that layer;
-  for the one layer that paints today that is [`politicalmap`](../../politicalmap/README.md).
+  belongs to the tiers above;
+  for a layer painted by owner the assembly it draws through is [the owner-map tier](../../ownermap/README.md).

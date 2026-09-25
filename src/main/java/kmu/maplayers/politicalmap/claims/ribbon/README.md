@@ -4,8 +4,8 @@ Where a band's painter and its order come from on the **claims** layer -
 on a cell the mechanic painted,
 and on one it left bare.
 How many colonies each bloc draws is one shared rule's answer for every layer,
-in [`base.ribbon`](../../base/ribbon/README.md);
-the geometry is [`base.render.ribbon`](../../base/render/ribbon/README.md)'s.
+in [`ownermap.ribbon`](../../../ownermap/ribbon/README.md);
+the geometry is [`ownermap.render.ribbon`](../../../ownermap/render/ribbon/README.md)'s.
 
 Part of [the political map](../../README.md),
 in Klark Morrigan's Utilities;
@@ -43,7 +43,7 @@ a pirate haven,
 a player colony and a decivilised world all resolve no claimant.
 Which reasons,
 and the mistake that is easy to make about them,
-are [`politics.holders`](../../base/politics/holders/README.md)'s to state.
+are [`ownermap.owners.holders`](../../../ownermap/owners/holders/README.md)'s to state.
 
 What follows here is that this layer's fill *is* the claim,
 so over those systems it says nothing at all,
@@ -54,21 +54,26 @@ That absence is a case of its own,
 not an ID no bloc happens to carry,
 and what the shared rule makes of it -
 there being nobody to be a rival of -
-is [`base.ribbon`](../../base/ribbon/README.md)'s to state.
-Which cells reach the planner at all is [`base.render.ribbon`](../../base/render/ribbon/README.md)'s gate,
+is [`ownermap.ribbon`](../../../ownermap/ribbon/README.md)'s to state.
+Which cells reach the planner at all is [`ownermap.render.ribbon`](../../../ownermap/render/ribbon/README.md)'s gate,
 and it reads the pass's inhabitation scan for the same reason.
 
 A system nobody claims *and* nobody lives in counts nought for every bloc,
 so it draws nothing under either arm -
-the widening reaches settled space and stops there.
+the band reaches settled space and stops there.
 
 ## Blocs and their order
 
 Blocs come out in the contest's own ranking,
 each at the place of its **best-placed member**,
 so the band agrees with the fill about who leads wherever a score settled the claim.
-Two allies therefore take one place rather than two,
-ahead of a rival the junior of them trails.
+Two factions take one place only where the pass's grouping already folds them into one bloc -
+the alliances view,
+over a claimed cell it extends an alliance's territory with.
+On the claims layer the grouping is identity,
+so nothing folds:
+allies stand at their own places in their own colours,
+and all their standing together reaches is the length the runs are laid at.
 
 Under a decree no score settled the claim,
 and nothing is hoisted to say otherwise:

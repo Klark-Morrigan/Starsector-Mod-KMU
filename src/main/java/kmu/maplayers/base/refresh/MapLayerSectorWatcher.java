@@ -9,20 +9,21 @@ package kmu.maplayers.base.refresh;
  * changes matter and which refresh each one earns are the layer's answers, so nothing here has to
  * name a layer or a signal.
  *
- * <p>A class of its own rather than a shape the substrate's poll shares, because the engine
- * registers and clears transient scripts by exact class: installed or removed under one class,
- * {@link MapSubstrateSectorWatcher} would be taken down with a layer that was merely switching
- * off. That is the whole of what parts the two, which is why the rest of both is one base.
+ * <p>Abstract, and subclassed once per layer, because the engine registers and clears transient
+ * scripts by exact class. Two layers installing one class would each clear the other's poll on
+ * install, and a layer switching off would take every other layer's poll down with its own - the
+ * same reason {@link MapSubstrateSectorWatcher} is a class apart. A layer's own subclass is its
+ * poll's identity, which is all it has to add.
  *
  * <p>Installed per layer that has a source to poll, and always as a transient script: pure runtime
  * logic, re-added on load, never serialized.
  */
-public class MapLayerSectorWatcher extends BaseStalenessSectorWatcher {
+public abstract class MapLayerSectorWatcher extends BaseStalenessSectorWatcher {
 
     /**
      * @param stalenessSource the layer whose staleness this poll drives
      */
-    public MapLayerSectorWatcher(MapLayerStalenessSource stalenessSource) {
+    protected MapLayerSectorWatcher(MapLayerStalenessSource stalenessSource) {
         super(stalenessSource);
     }
 }

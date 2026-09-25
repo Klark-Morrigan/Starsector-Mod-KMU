@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 final class ObservationAxisTest {
 
-    private static final String LEAD_IN_KEY = "political_map_tooltip_last_seen";
+    private static final String LEAD_IN_KEY = "owner_map_tooltip_last_seen";
 
     @Nested
     class Constructor {

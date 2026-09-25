@@ -1,0 +1,125 @@
+package kmu.maplayers.ownermap.render;
+
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.ownermap.OwnerPaintedView;
+import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
+import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveFake;
+import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
+import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuOwnerMapDiagnosticsSettings;
+import kmu.settings.KmuOwnerMapGeometrySettings;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+
+/**
+ * Pins the cache's two guarantees that hold outside a running game: a rebuild that throws leaves
+ * something safe to draw, and releasing the cache drops everything it built for its sector. The
+ * incremental rebuild paths need a live sector and are covered by the integration tests.
+ */
+final class OwnerMapCacheTest {
+
+    // The screen a refresh is driven for. A stand-in rather than one of the two live screens: neither
+    // guarantee here turns on which panel the frame was prepared for.
+    private static final ScreenMemoryScope SCREEN = ScreenMemoryScopes.createStandInScreen();
+
+    // The machinery the cache under test belongs to, installed on no sector - which is what makes
+    // the rebuild throw part way through, the case below being about what a cache leaves drawable
+    // when it does.
+    private final SectorMapMachinery machinery = new SectorMapMachinery(null);
+
+    private final OwnerPaintedView viewMock = mock(OwnerPaintedView.class);
+
+    @Nested
+    class Refresh {
+
+        @Test
+        void refreshInstallsAnEmptyPlaceholderWhenTheRebuildThrows() {
+            // No sector, so the rebuild throws part way through. The renderer must still find a draw
+            // list rather than dereference a null one, and the next frame retries.
+            var cache = new OwnerMapCache(
+                machinery,
+                OwnerMapBodyPreferencesFixtures.createUnderTestKeys(),
+                HolderProviderFake.createHoldingNothing(),
+
+            SystemHolderResolveFake.createSourceHoldingNothing());
+
+            // Every settings class the refresh reads is stubbed inert: the revision counter is the
+            // framework's, the cell seed inputs and the debug gate this layer's.
+            try (var settingsMock = mockStatic(KmuLunaSettings.class);
+                    var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
+
+                cache.refresh(viewMock, SCREEN);
+            }
+
+            assertThat(cache.getClusters())
+                .isNotNull();
+            assertThat(cache.getClusters().getStyledCellByCellKey())
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class DisposeCachedState {
+
+        @Test
+        void disposeCachedStateDropsTheDrawListsBuiltForItsSector() {
+            // What a sector removed mid-session leaves behind if this does nothing: the cached names
+            // each own a GL buffer, so the drop is what frees them rather than leaving them to
+            // LazyLib's finalizer sweep.
+            var cache = new OwnerMapCache(
+                machinery,
+                OwnerMapBodyPreferencesFixtures.createUnderTestKeys(),
+                HolderProviderFake.createHoldingNothing(),
+
+            SystemHolderResolveFake.createSourceHoldingNothing());
+
+            try (var settingsMock = mockStatic(KmuLunaSettings.class);
+                    var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
+
+                cache.refresh(viewMock, SCREEN);
+            }
+
+            assertThat(cache.getClusters())
+                .isNotNull();
+
+            cache.disposeCachedState();
+
+            assertThat(cache.getClusters())
+                .isNull();
+            assertThat(cache.getBorderStageOverlay())
+                .isNull();
+            assertThat(cache.getClusterAnchors())
+                .isEmpty();
+            assertThat(cache.getFactionLabels())
+                .isEmpty();
+        }
+
+        @Test
+        void disposeCachedStateIsSafeBeforeAnythingHasBeenBuilt() {
+            // Reached for a sector installed on with the map never opened, when there are no draw
+            // lists and no GL resources to release yet.
+            var cache = new OwnerMapCache(
+                machinery,
+                OwnerMapBodyPreferencesFixtures.createUnderTestKeys(),
+                HolderProviderFake.createHoldingNothing(),
+
+            SystemHolderResolveFake.createSourceHoldingNothing());
+
+            cache.disposeCachedState();
+
+            assertThat(cache.getClusters())
+                .isNull();
+            assertThat(cache.getFactionLabels())
+                .isEmpty();
+        }
+    }
+}

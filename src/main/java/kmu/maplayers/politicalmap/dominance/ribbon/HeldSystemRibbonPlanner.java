@@ -2,11 +2,11 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
-import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
+import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.politicalmap.dominance.DominancePass;
+import kmu.maplayers.politicalmap.dominance.SystemDominance;
 
 import java.util.Optional;
 

@@ -90,8 +90,7 @@ a layer composes one tree and the blocks lay out as much of it as the level admi
 so four depths cost no layer a second account of a system that could come to disagree with the first.
 What is *drawn* is the cut's alone,
 and that is what lets a layer stop composing a tier the level would drop -
-which the political map does,
-its deeper tiers being the expensive ones,
+worth doing where the deeper tiers are the expensive ones,
 so the shallowest level walks no colony of the hovered system at all.
 
 The level answers two questions for that:

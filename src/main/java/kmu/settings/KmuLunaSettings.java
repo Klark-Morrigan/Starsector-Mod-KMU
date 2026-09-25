@@ -22,26 +22,27 @@ import java.util.concurrent.atomic.AtomicInteger;
  * the {@code KmuMap*Settings} readers and {@link KmuMapKeybindSettings} for what the map-layer
  * framework's own chrome, geometry and keys need, {@link KmuMarketConditionSettings} for the
  * condition picker, {@link KmuProfilingSettings} for how much of what the mod does is measured and
- * what a capture flags, {@link KmuLoggingSettings} for how much of it the mod says, and the
- * political map layer's own set. Splitting on the reader rather than on the settings tab
- * is what keeps a layer's knobs out of reach of the framework: a class no framework code imports
+ * what a capture flags, {@link KmuLoggingSettings} for how much of it the mod says, the
+ * {@code KmuOwnerMap*Settings} set the owner-painted tier reads, and the political map's own
+ * {@code KmuPoliticalMap*Settings}. Splitting on the reader rather than on the settings tab
+ * is what keeps a tier's knobs out of reach of the tiers below it: a class no framework code imports
  * cannot leak a feature's vocabulary into it, which a tab-shaped split could not promise.
  * {@code Map - Dev} is where the two part company - it carries the tuning of geometry every layer
- * shares, but most of that tuning is read by the political layer that resolves it, so a class named
- * for that tab would be imported by both halves and be the shared surface again under a new name.
- * {@link KmuMapRefreshSettings} is the framework's own row on that tab: the cadence every staleness
- * poll runs on, read by the loop the polls share and by nothing a layer holds.
+ * shares, but most of that tuning is read by the owner-painted tier that resolves it, so a class
+ * named for that tab would be imported by both halves and be the shared surface again under a new
+ * name. {@link KmuMapRefreshSettings} is the framework's own row on that tab: the cadence every
+ * staleness poll runs on, read by the loop the polls share and by nothing a layer holds.
  *
- * <p>The political map's own set is split again by what its knobs act on, one class per section
- * of the settings screen: {@link KmuPoliticalMapTerritorySettings} for how each kind of
- * territory paints, {@link KmuPoliticalMapRibbonSettings} for the presence bands,
- * {@link KmuPoliticalMapHighlightSettings} for what lights up under a hover,
- * {@link KmuPoliticalMapDrawOrderSettings} for which side of the nebulae each sub-layer paints
- * on, {@link KmuPoliticalMapDominanceSettings} for the verdicts rather than the paint,
- * {@link KmuPoliticalMapGeometrySettings} for the shapes the map is built from, and
- * {@link KmuPoliticalMapDiagnosticsSettings} for the dev overlays. That second split is by
- * section rather than by reader because within one feature every knob has the same reader:
- * what a class named for a section buys is that nothing imports more of the layer's settings
+ * <p>The owner-painted tier's set is one set shared by every layer that paints by owner, split
+ * again by what its knobs act on, one class per section of the settings screen:
+ * {@link KmuOwnerMapStyleSettings} for how each kind of cluster paints,
+ * {@link KmuOwnerMapRibbonSettings} for the presence bands, {@link KmuOwnerMapHighlightSettings}
+ * for what lights up under a hover, {@link KmuOwnerMapGeometrySettings} for the shapes the map is
+ * built from, and {@link KmuOwnerMapDiagnosticsSettings} for the dev overlays. The political map's
+ * own set is {@link KmuPoliticalMapDominanceSettings} for the verdicts rather than the paint and
+ * {@link KmuPoliticalMapDrawOrderSettings} for which side of the nebulae each sub-layer paints on.
+ * That second split is by section rather than by reader because within one tier every knob has the
+ * same reader: what a class named for a section buys is that nothing imports more of the settings
  * surface than the part it actually reads.
  *
  * <p>{@link KmuMapKeybindSettings} is the framework's one such section, and is named for its tab
@@ -95,7 +96,7 @@ public final class KmuLunaSettings {
     private static final String MOD_ID = KmuMod.MOD_ID;
 
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
-    // derived state (e.g. the political-map overlay) read this revision and
+    // derived state (e.g. the owner-map overlay cache) read this revision and
     // rebuild only when it moves, so they react to settings changes live off a
     // single event rather than polling each setting every frame.
     private static final AtomicInteger settingsRevision = new AtomicInteger();

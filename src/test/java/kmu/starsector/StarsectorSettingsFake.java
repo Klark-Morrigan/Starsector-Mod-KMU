@@ -176,9 +176,9 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStringKeys.OBSERVATION_SPAN_TODAY, "today");
         stringsByKey.put(KmuStringKeys.OBSERVATION_SPAN_A_DAY_AGO, "a day ago");
         stringsByKey.put(KmuStringKeys.OBSERVATION_SPAN_DAYS_AGO, "%d days ago");
-        stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_LAST_SEEN, "last seen %s (%s)");
-        stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_DECIVILISED, "Decivilised");
-        stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_UNPOPULATED, "Unpopulated");
+        stringsByKey.put(KmuStringKeys.OWNER_MAP_TOOLTIP_LAST_SEEN, "last seen %s (%s)");
+        stringsByKey.put(KmuStringKeys.OWNER_MAP_TOOLTIP_DECIVILISED, "Decivilised");
+        stringsByKey.put(KmuStringKeys.OWNER_MAP_TOOLTIP_UNPOPULATED, "Unpopulated");
         stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY, "core territory");
         stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CORE_MARKER, "(core)");
         stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_NONE, "None");
@@ -190,12 +190,12 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(
             KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_WORKING,
             "(%s markets) - 1 =");
-        stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_SEPARATOR, ", ");
-        stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_ABANDONED, "abandoned");
-        stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_DECIVILISED, "decivilised");
-        stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNDISCOVERED, "undiscovered");
-        stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_HIDDEN, "hidden");
-        stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNLISTED, "unlisted");
+        stringsByKey.put(KmuStringKeys.OWNER_MAP_TOOLTIP_QUALIFIER_SEPARATOR, ", ");
+        stringsByKey.put(KmuStringKeys.OWNER_MAP_TOOLTIP_QUALIFIER_ABANDONED, "abandoned");
+        stringsByKey.put(KmuStringKeys.OWNER_MAP_TOOLTIP_QUALIFIER_DECIVILISED, "decivilised");
+        stringsByKey.put(KmuStringKeys.OWNER_MAP_TOOLTIP_QUALIFIER_UNDISCOVERED, "undiscovered");
+        stringsByKey.put(KmuStringKeys.OWNER_MAP_TOOLTIP_QUALIFIER_HIDDEN, "hidden");
+        stringsByKey.put(KmuStringKeys.OWNER_MAP_TOOLTIP_QUALIFIER_UNLISTED, "unlisted");
         stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL, "non-territorial");
         stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION, "(%d/%d)");
         stringsByKey.put(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY, "Military");

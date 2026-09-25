@@ -52,7 +52,7 @@ What to re-read,
 what counts as a change and which signal each change earns are the source's answers,
 so the loop names no layer and no signal.
 
-`MovingSystems` rides the political map's poll as a passenger:
+`MovingSystems` rides a layer's poll as a passenger:
 it stages which drawn systems rewrite their own hyperspace position,
 so the geometry leaves a mover out of the partition rather than chase it.
 A mover is named by `SystemKey`,
@@ -108,18 +108,21 @@ and goes away with the script.
 ## Two scripts, two classes
 
 The loop is held by a script rather than being one,
-and two scripts hold it:
-`MapLayerSectorWatcher`,
-installed per layer that has something to poll,
+and two kinds of script hold it:
+a subclass of `MapLayerSectorWatcher`,
+one per layer that has something to poll,
 and `MapSubstrateSectorWatcher`,
 installed once per sector.
-They are two classes on purpose.
+They are separate classes on purpose,
+and `MapLayerSectorWatcher` is abstract for the same reason.
 Vanilla's `removeTransientScriptsOfClass` compares `getClass() != clazz` -
 exact identity,
 no subtype -
 and KMLib's `SectorScripts.installTransientScript` clears by the built script's own class before adding,
 so a second instance of one class silently replaces the first,
-and a layer taking its own poll back on a switch-off would take the substrate's with it.
+and a layer taking its own poll back on a switch-off would take the substrate's -
+or another layer's -
+with it.
 A poll that must be installed and cleared on its own timetable needs an identity of its own,
 and that identity is the whole of what each script class owns:
 everything else -
@@ -152,8 +155,7 @@ on a map the player has since put back.
 `MapSubstrateRefreshInstaller` stands it up beside the machinery from the composition root,
 so it runs for as long as the layers are standing at all.
 
-The cost is a second reading of the sector's colonies,
-where one served both while the sweep rode the political map's pass.
+The cost is a second reading of the sector's colonies beside the one a layer's own pass makes.
 Taken knowingly,
 and smaller than a whole pass:
 the sweep asks each system only who lives there,

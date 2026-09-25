@@ -2,7 +2,7 @@ package kmu.mods.nexerelin.alliances;
 
 import kmlib.starsector.factions.alliances.AllianceRecord;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,8 +12,8 @@ import java.util.Map;
  * Folds a flat list of {@link AllianceRecord}s into the {@link HolderGrouping} the
  * dominance pipeline reads: every member faction maps to its alliance's bloc ID, each
  * bloc colours off its dominant member, and each bloc carries the alliance name. Pure
- * over plain data - no Nexerelin or Starsector type - so it is exercised directly on
- * hand-built records, whatever mod the live ones were read out of.
+ * over plain data - no Nexerelin or Starsector type - so the fold holds whatever mod the
+ * records were read out of.
  */
 public final class AllianceGroupingFactory {
 

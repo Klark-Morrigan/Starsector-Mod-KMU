@@ -102,14 +102,14 @@ import javax.swing.SwingUtilities;
  *       cell-to-edge translation, so every fixture row is drawn and nothing exercises the
  *       cache, its diffing, or the incremental refresh.</li>
  *   <li><i>Deciding who owns it</i> - {@code SectorPolitics.resolveDominantHolderBySystemKey},
- *       {@code SystemDominance}, {@code DominantHolder.mapFactionIdBySystemKey},
+ *       {@code SystemDominance}, {@code SystemOwner.mapFactionIdBySystemKey},
  *       {@code DecivilisedMarkets.isRevealedDecivilised},
  *       {@code FilteredPolitics}, {@code FilterSelection}. Ownership is the fixture's
  *       dominant-owner column, whose score is summed market size rather than the real
  *       {@code DominanceRules} weight - so who owns what is approximately, not exactly, what
  *       the game resolves. There is no view switching, filter, or spotlight.</li>
- *   <li><i>Turning rings into a picture</i> - {@code TerritoryBuilder.buildTerritories},
- *       {@code buildPaintedCellForSystem}, {@code buildFactionTerritory},
+ *   <li><i>Turning rings into a picture</i> - {@code OwnerMapBuilder.buildClusters},
+ *       {@code buildPaintedCellForSystem}, {@code buildClusterGroup},
  *       {@code PolygonTessellator.tessellateToBoundaryLoops}, {@code tessellateToTriangles},
  *       {@code Hatching.computeHatchRun}, {@code GlVertexRuns.flattenVertices}. The
  *       smoothing itself does run, above; what does not is the tessellator's resolve either

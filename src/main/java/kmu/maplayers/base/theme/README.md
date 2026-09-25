@@ -37,10 +37,10 @@ and they are not declared here.
 memberless,
 since a category is only ever looked up -
 and each layer declares its own constants of it beside the code that paints them;
-the political map's four are `PoliticalMapCategory` in [`politicalmap.base.render.style`](../../politicalmap/base/render/style/README.md).
+the owner-painted tier's four are `OwnerMapCategory` in [`ownermap.render.style`](../../ownermap/render/style/README.md).
 `RenderStyle` keys on the interface,
 so a layer whose cells divide some other way brings its own set
-rather than inheriting a vocabulary of who holds them.
+rather than inheriting one tier's vocabulary of owners.
 
 Part of [the map-layer framework](../../README.md);
 see the [mod README](../../../../../../../README.md) for project context.
@@ -169,15 +169,18 @@ this tier owns only the shape and the combination rule.
 Nothing here reads a setting,
 resolves a colour,
 or names a category.
-*The categories themselves* are `PoliticalMapCategory`,
+*The categories themselves* are `OwnerMapCategory`,
 *populating* these records from LunaLib is `RenderStyleReader`,
 and *turning a selection into a concrete shade* is `MapPalettes`,
-all three in the political map's own [`render.style`](../../politicalmap/base/render/style/README.md).
-All three stay there because all three name factions:
-the four categories are a division of the cells by who holds them,
-the reader's knobs and its per-save uninhabited-outline preference are the political map's,
+all three in [`ownermap.render.style`](../../ownermap/render/style/README.md).
+All three stay out of this package because all three belong to one way of painting,
+which is by owner:
+the four categories are a division of the cells by their owner,
+the reader's knobs and its per-save uninhabited-outline preference are the owner-painted tier's,
 and the palettes resolve a bloc's recede.
-A second layer populating these records would bring its own categories
+They sit in `ownermap` rather than in any one layer for the same reason,
+since every owner-painted layer divides and shades its cells that way.
+A layer that paints by something other than an owner would bring its own categories
 and its own reader rather than share those.
 
 This package has no dependency back on any of the three,

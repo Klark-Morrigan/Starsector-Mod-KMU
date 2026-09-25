@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
+import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Whole situations a map surface is asked to read, as against the parts one is staged from.
  *
- * <p>Beside {@link SectorPoliticsFixtures} rather than inside it, because the two answer different
+ * <p>Beside {@link SectorOwnershipFixtures} rather than inside it, because the two answer different
  * questions. That class builds a <em>thing</em> - a faction, a market of some shape, a sector whose
  * economy lists what it was handed - and leaves what the arrangement means to the suite. Everything
  * here stages an arrangement that already means something: a situation with a name, staged the way
@@ -71,9 +71,9 @@ public final class SectorScenarioFixtures {
      */
     public static MarketAPI placeDerelictIn(StarSystemAPI system) {
 
-        var derelict = SectorPoliticsFixtures.buildAbandonedStationMarket(DERELICT_SIZE);
+        var derelict = SectorOwnershipFixtures.buildAbandonedStationMarket(DERELICT_SIZE);
 
-        SectorPoliticsFixtures.placeMarketsOnSystemEntities(system, derelict);
+        SectorOwnershipFixtures.placeMarketsOnSystemEntities(system, derelict);
 
         return derelict;
     }
@@ -105,15 +105,15 @@ public final class SectorScenarioFixtures {
 
         var economyMarkets = new ArrayList<>(List.of(openColonies));
 
-        economyMarkets.add(SectorPoliticsFixtures.buildHiddenMarket(
-            SectorPoliticsFixtures.buildFaction(CONCEALED_HOLDER_ID),
+        economyMarkets.add(SectorOwnershipFixtures.buildHiddenMarket(
+            SectorOwnershipFixtures.buildFaction(CONCEALED_HOLDER_ID),
             CONCEALED_BASE_SIZE));
 
-        var sector = SectorPoliticsFixtures.buildSectorWith(
+        var sector = SectorOwnershipFixtures.buildSectorWith(
             systemId,
             economyMarkets.toArray(new MarketAPI[0]));
 
-        var system = SectorPoliticsFixtures.buildOnlySystem(sector);
+        var system = SectorOwnershipFixtures.buildOnlySystem(sector);
         var standingMarkets = new ArrayList<>(economyMarkets);
 
         standingMarkets.add(placeDerelictIn(system));
@@ -121,7 +121,7 @@ public final class SectorScenarioFixtures {
         // Where each market stands, which is a separate question from which listing found it - and
         // one every market here answers alike. The system is left unentered, which an unstubbed
         // system mock already is, so nothing has to say so.
-        SectorPoliticsFixtures.placeMarketsInSystem(
+        SectorOwnershipFixtures.placeMarketsInSystem(
             system,
             standingMarkets.toArray(new MarketAPI[0]));
 

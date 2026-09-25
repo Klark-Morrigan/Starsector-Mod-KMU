@@ -6,9 +6,9 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 import kmu.settings.KmuMapVisibilitySettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -22,11 +22,11 @@ import java.util.List;
 
 import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
 import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
-import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.buildRulesUnder;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.markSystemAsVisitedByPlayer;
+import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.buildRulesUnder;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.markSystemAsVisitedByPlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -206,7 +206,7 @@ final class SpoilerGateIntegrationTest {
     // the market from the economy as the colony falls.
     private static SectorAPI buildSectorHoldingAnUnsurveyedDecivilisedWorld() {
 
-        var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
+        var sector = SectorOwnershipFixtures.buildSectorWith(SYSTEM_ID);
 
         DecivilisedPlanetFixtures.placeUnsurveyedDecivilisedPlanetIn(buildOnlySystem(sector));
 
@@ -220,11 +220,11 @@ final class SpoilerGateIntegrationTest {
     private static SectorAPI buildSectorHoldingAnUnsurveyedDecivilisedWorldBesideAColony() {
 
         var openColony = buildOpenColony();
-        var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID, openColony);
+        var sector = SectorOwnershipFixtures.buildSectorWith(SYSTEM_ID, openColony);
         var system = buildOnlySystem(sector);
 
         DecivilisedPlanetFixtures.placeUnsurveyedDecivilisedPlanetIn(system);
-        SectorPoliticsFixtures.placeMarketsInSystem(system, openColony);
+        SectorOwnershipFixtures.placeMarketsInSystem(system, openColony);
 
         return sector;
     }

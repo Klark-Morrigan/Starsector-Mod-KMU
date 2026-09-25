@@ -2,11 +2,11 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
+import kmu.maplayers.ownermap.ribbon.RibbonSegment;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,22 +15,22 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.placeMarketsOnSystemEntities;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAlliedInputsOver;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.PERSEAN;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.PERSEAN_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.PERSEAN_DARK;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildAlliedInputsOver;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildInputsOver;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildSectorHolding;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

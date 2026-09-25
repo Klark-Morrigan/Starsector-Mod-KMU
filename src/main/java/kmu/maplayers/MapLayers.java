@@ -11,12 +11,12 @@ import kmu.maplayers.base.layer.PersistedMapLayerArrangement;
 import kmu.maplayers.base.layer.SessionHeldMapLayerArrangement;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry;
-import kmu.maplayers.politicalmap.base.PoliticalMapLayer;
-import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.maplayers.politicalmap.claims.ClaimsView;
-import kmu.maplayers.politicalmap.dominance.alliances.AlliancesView;
-import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
+import kmu.maplayers.ownermap.FilterSelectionHeal;
+import kmu.maplayers.ownermap.OwnerPaintedView;
+import kmu.maplayers.politicalmap.PoliticalMapLayer;
+import kmu.maplayers.politicalmap.views.AlliancesView;
+import kmu.maplayers.politicalmap.views.ClaimsView;
+import kmu.maplayers.politicalmap.views.FactionsView;
 import kmu.mods.nexerelin.NexerelinAlliances;
 
 import java.util.ArrayList;
@@ -26,10 +26,11 @@ import java.util.List;
  * The composition root that wires KMU's concrete map layers and political-map views into the
  * feature-agnostic registries, and names the sector content and world facts those layers have to
  * treat specially.
- * It is the one place that names every layer, view, entity and mod, sitting above both the framework
- * ({@code base}) and the layers/views ({@code politicalmap}) so neither depends on the other: the
- * registries stay ignorant of which layers, views and places exist, and each layer stays ignorant of
- * the order it is registered in.
+ * It is the one place that names every layer, view, entity and mod, sitting above all three tiers -
+ * the framework ({@code base}), the owner-painted tier built on it ({@code ownermap}) and the layers
+ * built on that ({@code politicalmap}) - so no tier depends on the wiring: the registries stay
+ * ignorant of which layers, views and places exist, and each layer stays ignorant of the order it is
+ * registered in.
  */
 public final class MapLayers {
 
@@ -51,13 +52,13 @@ public final class MapLayers {
 
     /**
      * Registers the layers the on-map bar shows, where the player's own arrangement of that bar is
-     * read from, the political-map views its tab offers, the concealed colonies the sector openly
-     * points at, and where the live alliance set is read from.
+     * read from, the concealed colonies the sector openly points at, and where the live alliance set
+     * is read from.
      * Called once at application load, before any
      * sector map can open. No Layer leads so the "show nothing" pick is the first tab; the
      * political-map tab hosts the view-selector radio over the roster {@link #selectPoliticalMapViews}
-     * chooses, with the faction view registered as the default so the overlay is up the first time
-     * the sector map opens rather than blank.
+     * chooses, with the faction view its default so the overlay is up the first time the sector map
+     * opens rather than blank.
      */
     public static void registerAll() {
 
@@ -66,8 +67,10 @@ public final class MapLayers {
 
         // KMU's own two, in the order they stand on the strip. The empty view leads it without
         // offering itself as the pick, which is what leaves a fresh save opening on the political map.
+        var politicalMap = new PoliticalMapLayer(selectPoliticalMapViews(), FactionsView.INSTANCE);
+
         MapLayerRegistry.registerLayer(NoLayer.INSTANCE);
-        MapLayerRegistry.registerLayer(PoliticalMapLayer.INSTANCE);
+        MapLayerRegistry.registerLayer(politicalMap);
 
         registerBarArrangement();
 
@@ -76,10 +79,10 @@ public final class MapLayers {
         // naming it here keeps the registry ignorant of any concrete screen.
         MapLayerScreens.registerIntelScreen(new VanillaIntelScreenView());
 
-        PoliticalMapViewRegistry.registerViews(
-                selectPoliticalMapViews(),
-                FactionsView.INSTANCE,
-                PoliticalMapLayer.INSTANCE);
+        // The spotlight is the other thing a settings change can invalidate, and it is the layer's:
+        // healed under that layer's own views, so it is installed where the layer is made rather than
+        // beside the switch listener, which answers which feature the settings switched.
+        FilterSelectionHeal.installHealOnSettingsChange(politicalMap.resolveViewRegistry());
     }
 
     /**
@@ -102,8 +105,7 @@ public final class MapLayers {
     /**
      * Hands the visibility registry the entities whose concealment is public knowledge, so a hover
      * box withholds the word that would put a landmark and a hiding base in the same class. Kept as
-     * its own step because naming content is a different decision from wiring layers, and it is the
-     * step a test holds the seeded set to.
+     * its own step because naming content is a different decision from wiring layers.
      */
     static void registerOpenlyKnownColonies() {
         OpenlyKnownColonyRegistry.registerEntityIds(OPENLY_KNOWN_COLONY_ENTITY_IDS);
@@ -137,9 +139,9 @@ public final class MapLayers {
      *
      * @return the ordered views to register, one segment each on the view-selector radio
      */
-    static List<PoliticalMapView> selectPoliticalMapViews() {
+    static List<OwnerPaintedView> selectPoliticalMapViews() {
 
-        var views = new ArrayList<PoliticalMapView>();
+        var views = new ArrayList<OwnerPaintedView>();
         views.add(FactionsView.INSTANCE);
 
         if (NexerelinAlliances.isAvailable()) {

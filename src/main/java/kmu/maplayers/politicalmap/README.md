@@ -20,15 +20,17 @@ see the [mod README](../../../../../../README.md) for project context.
 - [The views](#the-views)
 - [Claim extensions](#claim-extensions)
 - [How a view drives the pipeline](#how-a-view-drives-the-pipeline)
+- [The ownership sources](#the-ownership-sources)
+- [The claim mechanic](#the-claim-mechanic)
 - [Where each part lives](#where-each-part-lives)
-  - [Refresh](#refresh-baserefresh)
-  - [Render orchestration](#render-orchestration-baserender-baserenderhover)
-  - [Hover tooltips](#hover-tooltips-basetooltip)
+  - [Refresh](#refresh)
+  - [Render orchestration](#render-orchestration)
+  - [Hover tooltips](#hover-tooltips)
   - [The domination box](#the-domination-box)
   - [The status line and the colony vocabulary](#the-status-line-and-the-colony-vocabulary)
   - [The claims box](#the-claims-box)
-  - [The presence ribbon](#the-presence-ribbon-baseribbon-and-its-counting-rules)
-  - [Sidebar controls](#sidebar-controls-basesidebar)
+  - [The presence ribbon](#the-presence-ribbon)
+  - [Sidebar controls](#sidebar-controls)
 - [When the map is rebuilt](#when-the-map-is-rebuilt)
 
 ## What the player sees
@@ -140,8 +142,8 @@ A system a faction *claims* but does not *hold* joins that faction's territory d
 inside the border and under the faction's name,
 but with no fill.
 The Claims view instead paints those same claims solid.
-Why a claim resolves this way is [ownership resolution](base/politics/holders/README.md);
-how the empty fill is drawn is [territory fills and borders](base/render/territories/README.md).
+Why a claim resolves this way is [the ownership sources](#the-ownership-sources);
+how the empty fill is drawn is [cluster fills and borders](../ownermap/render/clusters/README.md).
 
 ## How a view drives the pipeline
 
@@ -181,7 +183,8 @@ every view shapes,
 fills,
 bands,
 and labels identically.
-The sources themselves and the three fill states are [ownership resolution](base/politics/holders/README.md).
+The sources themselves are [below](#the-ownership-sources);
+the seam they answer and the three fill states are [ownership resolution](../ownermap/owners/holders/README.md).
 
 The third input is the second one layer along:
 a view's cells are painted by some mechanic,
@@ -194,7 +197,7 @@ The contest-painted views answer it once between them on `DominancePaintedView`,
 and the claims view answers with its own.
 
 The spotlight list runs on the same principle one level down.
-`PoliticalMapView` asks a view for its picker -
+`OwnerPaintedView` asks a view for its picker -
 the blocs on offer *and* its mechanic's vocabulary for ranking them -
 so the metrics a view's rows carry can never drift from the modes offered to sort them by,
 and the sidebar above passes the pair on without naming either.
@@ -252,7 +255,7 @@ so a player faction inside an alliance is recognised as that alliance -
 and otherwise folds the membership that grouping names,
 passing over any member the sector cannot answer for.
 Its sector reads sit behind one seam,
-so the fold is arithmetic over hand-built standings.
+so the fold itself is plain arithmetic.
 
 `BlocStandingSortMode` ranks by that,
 and being outside both vocabularies is what shapes it.
@@ -315,39 +318,213 @@ The bloc's metrics carry the answer,
 through `PaintingBlocMetrics`,
 which a picker of painters opts into and any other picker leaves alone.
 
+## The ownership sources
+
+Three providers answer the [ownership seam](../ownermap/owners/holders/README.md),
+all of them this layer's own and all in `holders`:
+
+- **`DefaultHolderProvider`** -
+  held systems from the live economy.
+  No view resolves through it bare:
+  the source below wraps it for the Factions and Alliances views,
+  and the layer hands it to the tier as the holding the diagnostic overlays read.
+  Off filter,
+  each system goes to its single strongest owner,
+  with no exceptions.
+  Who may *be* that owner is settled with the tie-break,
+  as `HolderRankingRules` off the pass:
+  `neutral` -
+  the placeholder vanilla hands every abandoned station,
+  derelict and collapsed colony to -
+  is barred from the contest,
+  so it can neither take a system from a bloc that scores nor win a tie against one.
+  Barred from winning is not barred from holding:
+  where nothing else is present the ranking reopens,
+  and a system only `neutral` lives in keeps its fill,
+  border and label.
+  The bar is on the candidate and never on the weight,
+  so every score the map and the picker show is the one the weighting produced.
+  Under a spotlight it switches to the presence-aware resolver:
+  the chosen bloc stays drawn wherever it holds a colony -
+  solid where it wins,
+  hatched where it does not.
+  Presence there is read off the colonies rather than off the weights,
+  because every term of a weight is economy-fed:
+  a bloc whose only foothold in a system is a station the economy does not list wins nothing and still lives there,
+  so it draws hatched instead of dimming with the background the player picked it out of.
+  The weights are left alone -
+  widening *them* would put such a bloc into the ranking that hands out systems,
+  and a spotlight must never move a fill.
+- **`ClaimAugmentedHolderProvider`** -
+  the Factions and Alliances views' source,
+  through `DominancePaintedView`.
+  It takes held systems from the source above,
+  then folds in each claimed-but-unheld system as an *unfilled* extension of its claimant.
+  The claim carries the same bloc key as that faction's held systems,
+  so the geometry fuses held and claimed cells into one bordered cluster.
+  A system already held keeps its solid fill:
+  the held signal wins.
+  Under a spotlight,
+  a claim shares the fate of its bloc -
+  the spotlit bloc's claims stay at full strength,
+  every other bloc's claims fade with its held cells.
+- **`ClaimsHolderProvider`** -
+  the Claims view's source.
+  Every claimed system is painted *solid* in its claimant's colours,
+  with nothing held-derived.
+  Under a spotlight the chosen bloc's claims stay at full strength and every other claimant's fade,
+  the same trade the source above makes.
+  A system has one claimant,
+  so nothing is ever contested or unfilled here:
+  the resolution has no exceptions and takes the solid fast path on or off filter.
+
+Both claim-reading sources get their claims from `FilteredClaims`,
+so which claims a spotlight moves is answered once rather than once per source.
+
+An incremental refresh re-derives one system at a time through the tier's per-system seam,
+which this layer answers with `DominanceSystemHolderResolve`,
+also in `holders`:
+the market contest asked of one system,
+under one weighting rule sampled per batch,
+so a single-system refresh lands the bloc the bulk pass would have.
+
+## The claim mechanic
+
+Claims are resolved by `SectorClaims`,
+in `claims`.
+It is the claim twin of `dominance`'s `SectorPolitics`.
+Where `SectorPolitics` reads who *holds* a system,
+`SectorClaims` reads who *claims* it,
+then routes that claimant through the same grouping and palette.
+So a claimed system and a held one of the same bloc end up equal,
+and fuse downstream.
+
+The claimant comes from KMLib's `ClaimReader` port -
+the usual way KM code inverts a third-party read that only answers inside a running game.
+What the two claim-reading sources hold is not a reader but a `ClaimReaderSource`:
+a reader answers off the colonies behind it,
+so one is opened over the pass being resolved and discarded with it.
+A reader kept for the life of the game would go on answering off a sector that has since moved on,
+and would walk every system again for colonies the pass has already read.
+`PassClaimReaders.openClaimReaderOver`,
+in `claims`,
+is what opens one,
+so the walk and the pass's own `ColonyKnowledge` travel together
+and the claim half is always shown the sector the held half was.
+The reader is handed that knowledge through KMLib's `KnownColonyReader` port
+rather than naming the rule itself:
+what may be told of a colony is the map's judgement,
+and a library reader given one to invent would be answering a question nobody asked it.
+Its vanilla binding mirrors `Misc.getClaimingFaction` step for step rather than calling it,
+because one computation has to answer *who* claims a system for the fills here
+and *why* for the claims layer's hover box.
+Sharing it is what stops the fill and the box over it naming different claimants -
+on the memory-flag override,
+and on the iteration-order tie the mechanic settles equal scores by.
+
+Step for step describes the *claimant*,
+which is all the fill takes.
+The standings the same read carries for the hover box go wider than vanilla scores,
+in two directions,
+and neither can be seen from here.
+The player's colonies are scored,
+forced non-territorial so they can never move the winner,
+because a box that dropped them would report a system the player holds a colony in as one they have no presence in -
+and a faction barred from claiming never becomes a claimant.
+A colony the economy does not list at all is carried too,
+as vanilla builds Galatia Academy,
+because a box that dropped it would leave a station the player can see on the map out of the account of who holds the system -
+and it is carried the way a concealed market is,
+scored for nothing and counted toward nothing,
+so it can neither become a claimant nor move the score of one.
+
+Vanilla resolves a claimant two ways:
+an explicit `$claimingFaction` memory flag,
+or the top territorial market in the system.
+The map shows exactly what the mechanic resolves and invents nothing.
+A marketless system (unpopulated or decivilised) only resolves through the flag,
+which is rare in practice.
+So claims mostly attach to inhabited systems.
+
+**Inhabited does not imply claimed**,
+and the reasons are worth naming exactly,
+because they are easy to get wrong.
+`Misc.getClaimingFaction` walks `getEconomy().getMarkets(location)` and skips a market on three separate tests:
+
+| Test | What it excludes |
+| --- | --- |
+| `curr.isHidden()` | pirate and Path bases, which `PirateBaseIntel` and `LuddicPathBaseIntel` both create with `setHidden(true)` |
+| `curr.getFaction().isPlayerFaction()` | every player colony, before territoriality is even read |
+| no `punitiveExpeditionData.territorial` | the Remnant, derelicts, scavengers, mercenaries, the Dweller, `neutral`, and the rest of the thirteen vanilla factions carrying no such block |
+
+And the walk reads the *economy's listing*,
+so a colony never registered with it -
+as vanilla builds Galatia Academy -
+is not seen at all,
+whatever its owner.
+
+A system that resolves nothing is left unheld.
+That is the mechanic answering correctly,
+not a gap to paper over here.
+What must not follow from it is the *render* reading the missing holder as an empty system:
+the factionless classification is made against the pass's inhabited-system set instead,
+see [`render.style`](../ownermap/render/style/README.md).
+
 ## Where each part lives
 
-The top level is divided by *mechanic*,
+This layer's rules are divided by *mechanic*,
 not by view:
-`dominance` holds the two views painted by the market contest -
-`dominance/factions` and `dominance/alliances`,
-which differ only in how they group -
-and `claims` is its peer,
-painted by the vanilla claim mechanic.
-A view is not a unit of anything except its own rules,
-so grouping Factions beside Claims put two mechanics on one shelf and split one mechanic across two;
-anything a mechanic owns beyond its views (its ribbon counting, so far) folds in beside them rather than pooling in `base`.
-What stays in `base` is what every mechanic shares:
+`dominance` is the market contest and `claims` is its peer,
+the vanilla claim mechanic.
+Each holds its rule,
+its whole-sector stats and the sort modes over them,
+its band ranking and its hover box.
+The views and the holder sources sit beside the mechanics rather than inside one,
+in `views` and `holders`:
+they are this layer's answers to the tier's seams,
+and they compose the mechanics -
+the Factions and Alliances holding folds claims onto held dominance -
+so shelving them under either mechanic would make that mechanic name the other.
+
+| Package | What is in it |
+| --- | --- |
+| *(top level)* | the tab (`PoliticalMapLayer`), what it stands up on a sector (`PoliticalMapStanding`, `PoliticalMapInstaller`) |
+| `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), the contest-painted views' shared answers (`DominancePaintedView`), and the alliance-only body controls (`AllianceBodyControls`) |
+| `holders` | the layer's answers to the tier's holder seams: the three [ownership sources](#the-ownership-sources) and `DominanceSystemHolderResolve` |
+| `dominance` | the market contest: the pass, `SectorPolitics`, `FilteredPolitics`, `SystemDominance`, the tie-break and the ranking rules, `BlocCandidacy`, the stats and sort modes |
+| `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`) |
+| `dominance/standings` | one hovered system's ranked standings, per group and per faction |
+| [`dominance/ribbon`](dominance/ribbon/README.md) | the band ranking on a cell the contest painted |
+| `dominance/tooltip` | the [domination box](#the-domination-box) |
+| `claims` | the claim mechanic: `SectorClaims`, `FilteredClaims`, `PassClaimReaders`, the stats and sort modes |
+| [`claims/ribbon`](claims/ribbon/README.md) | the band ranking on a claims-layer cell |
+| `claims/tooltip` | the [claims box](#the-claims-box) |
+| `tooltip` | what both box families share: `PoliticalMapCellTooltip`, `CoreTerritoryHeading`, the contest wording, and the live-visibility claim read |
+| `refresh` | what repaints the overlay while the campaign runs ([refresh](#refresh)) |
+| `render` | the player's draw-order choices, read as the tier's band layout |
+
+What sits in [`ownermap`](../ownermap/README.md) is what every mechanic shares:
 the view seam itself,
 the pipeline the seam feeds,
 and the vocabulary both sides state their answers in.
+That tier is not this layer's,
+which is why it is a package of its own,
+and the build keeps it from naming this one.
 
-- **[Ownership resolution](base/politics/holders/README.md)** -
-  the per-view ownership seam,
-  the three sources,
-  the three fill states,
-  and the claim mechanic.
-- **[Territory fills and borders](base/render/territories/README.md)** -
+- **[Ownership resolution](../ownermap/owners/holders/README.md)** -
+  the per-view ownership seam
+  and the three fill states.
+- **[Cluster fills and borders](../ownermap/render/clusters/README.md)** -
   how cells become each bloc's coloured cluster,
   border,
   seams,
   and split fill.
-- **[Render style layer](base/render/style/README.md)** -
+- **[Render style layer](../ownermap/render/style/README.md)** -
   the four categories this map divides the cells into,
   and how player settings become each territory's colours,
   widths,
   and opacities.
-- **`base/render/labels/anchor`** -
+- **`ownermap/render/labels/anchor`** -
   what a cluster's name reads and what shade it draws in:
   the active view's name for the bloc,
   and the outer border its group inherits.
@@ -363,27 +540,30 @@ all of which belong to the framework rather than to this layer:
 they work on an opaque owner,
 and the views decide that the key names a bloc.
 
-The rest of `base` carries the supporting parts,
-a subsection each below:
-`politics`
-(grouping and the held/claim resolvers, under the ownership link above),
-`refresh`,
-`render` and `render/hover`,
-`tooltip`,
-`ribbon`,
-and `sidebar`.
+The supporting parts take a subsection each below:
+this layer's `refresh`,
+the render seams it answers,
+the hover boxes,
+the presence ribbon,
+and the sidebar.
 
-### Refresh (`base/refresh`)
+### Refresh
 
-The economy-event listeners,
-and `PoliticalMapStalenessSource` -
-what this layer counts as a change the engine fired no event for,
-answered into the framework's poll.
-Its four baselines are the staleness of this layer's own picture and nothing else:
-the sector-wide sweep that records what each system's own inhabitants can see used to ride the same poll and is now [the substrate's](../README.md),
+In `refresh`:
+`PoliticalMapStalenessSource` -
+what this layer counts as a change nobody fired an event for,
+answered into the framework's poll -
+and `PoliticalMapSectorWatcher`,
+the script that runs that poll.
+The watcher is this layer's own subclass of the substrate's abstract `MapLayerSectorWatcher`
+because the engine removes transient scripts by exact class:
+a script class shared between layers would let one layer's install or removal evict another's poll.
+
+The staleness source's four baselines are the staleness of this layer's own picture and nothing else:
+the sector-wide sweep that records what each system's own inhabitants can see is [the substrate's](../README.md),
 the register it writes being shared by every map family rather than this one's.
-The economy-event listeners still record that observation for the one system they name (`MarketPoliticsRefresh`),
-the event being the moment the observation is worth dating rather than a poll cycle later -
+The event listeners record that observation for the one system they name (`MarketPoliticsRefresh`),
+the event being the moment the observation is worth dating rather than a poll cycle after it -
 and a decivilisation is recorded on the `aboutToBe` phase,
 since once the colony has died there is nobody left to date what it vouched for.
 Where an event fires too late to read the system as it was -
@@ -392,56 +572,54 @@ a Nex transfer -
 the comment at that listener says so,
 and the colony keeps the sighting it already had.
 
+The listeners sit in `refresh/listeners`,
+and `PoliticalMapInstaller` registers and removes all five together.
+Four are driven by vanilla events.
+The fifth,
+`PoliticalMapMarketTransferListener`,
+answers a colony changing hands,
+which vanilla fires nothing for.
+It implements KMU's own `kmu.starsector.listeners.MarketTransferListener` and names no Nexerelin type:
+`kmu.mods.nexerelin.NexerelinMarketTransferRelay` -
+one per sector,
+installed by `KMU_ModPlugin.installMapLayers` through `NexerelinInvasionListenerInstaller` -
+forwards Nexerelin's transfers to every `MarketTransferListener` on the sector's listener manager.
+That keeps `kmu.maplayers` closed to optional-mod imports;
+on an install without Nexerelin the listener is registered and never called.
+
 Beside those sits `PoliticalMapRefreshSignal`,
 the coarse changes only this layer can raise on the shared board,
 alliance membership being the one.
 
-### Render orchestration (`base/render`, `base/render/hover`)
+### Render orchestration
 
-`PoliticalMapOverlayRenderer` is the order the sub-layers are stacked in,
-bottom to top,
-and the only place it is written down;
-`PoliticalMapBandLayout` is which side of the map's own nebulae each of them paints on,
-read per pass from the player's four **Nebula draw order** settings.
-The order among the sub-layers is the layer's and the side of the nebulae is the player's,
-which is the whole division:
-what makes a sub-layer legible against the ones under it is fixed,
-and what a haze over it costs is taste.
-Four sub-layers ride with a chosen one rather than being chosen themselves -
-the contested hatch inside the fill it is half of,
-and the two highlights and the debug overlays with the base view they brighten,
-annotate,
-or replace.
+The frame,
+the order the sub-layers stack in and the incremental refresh are the tier's -
+see [the owner-map tier](../ownermap/README.md#where-each-part-lives).
+What this layer hands over are its answers to the tier's render seams
+([what a layer supplies](../ownermap/README.md#what-a-layer-supplies)),
+all of them where `PoliticalMapLayer` builds its renderer:
 
-In `render/hover`,
-`PoliticalMapHoverHighlightSource` is this layer's answers about the cell under the cursor:
-the owner's border loops it might sit inside and the shade its fill draws in,
-over the frame's painted shapes it hands the framework unchanged.
-`PoliticalMapHoverGates` is whether this layer answers the cursor at all,
-its own two switches ANDed with the framework's,
-plus whether either kind of feedback still needs the cursor read.
+- **`PoliticalMapBandLayoutReader`**,
+  in `render` -
+  which side of the map's own nebulae each choosable sub-layer paints on,
+  read per pass from the player's four **Nebula draw order** settings.
+- **`SharedOwnerMapHoverGates`**,
+  the tier's -
+  whether the layer answers the cursor at all.
+  This layer has no hover switches of its own,
+  so it reads the one shared set of owner-map switches.
+- **`SpotlightPreviewHighlightRenderer`**,
+  the tier's -
+  what hovering a row of the spotlight picker lights,
+  built over this layer's ID and `KmuMod.MAP_STORE_NAMESPACE`,
+  the namespace its picker stores its picks and reports its hover under.
+- **`DefaultHolderProvider`** and **`DominanceSystemHolderResolve`**,
+  in `holders` -
+  the holding the diagnostic overlays read,
+  and the per-system resolve an incremental refresh uses.
 
-`PoliticalMapPreviewHighlightRenderer` is the other highlight,
-and it answers a pointer on the sidebar rather than one on the map:
-hovering a row of the spotlight picker lights every system that bloc is present in.
-It reads a set the picker's own walk already resolved
-(`SelectableBlocCache.readPresentSystemKeys`) and traces it over the frame's own draw lists through the framework's `PreviewHighlightGeometry`,
-so no paint state moves for it;
-`PreviewHighlightPaint` is the decision the frame acts on,
-the shapes lit paired with the one shade they burn in.
-
-Two things about it are not the cursor highlight's,
-and both follow from its subject being a bloc rather than a cell.
-Its shade comes from [`SectorBlocPalettes`](base/render/style/README.md),
-the shared reader the bands colour by,
-since the cells it lights need not be cells the bloc holds.
-And `PoliticalMapHoverGates` does not gate it -
-those switch the map's answer to the *cursor* -
-so its style tier is where it is turned down.
-The two highlights cannot collide:
-the sidebar parks the map hover while the pointer is over it.
-
-### Hover tooltips (`base/tooltip`)
+### Hover tooltips
 
 What this layer says about the hovered system,
 each view injecting the explanation of the mechanic its own fills were painted by into the framework's hover box:
@@ -452,6 +630,10 @@ the scored claim contest behind a claims fill,
 its claimant over the factions standing in its own alliance,
 those on good terms with it outside that alliance,
 the rivals who could have taken the system and the factions present that never could.
+The Factions and Alliances views each hold a domination box of their own,
+bound to that view's grouping,
+so the standings are ranked under the view that painted the fills beneath them
+rather than under whichever view a shared read reports.
 Both are written from `FactionTooltipLine` (a faction as something a block lists),
 `TermTooltipLine`
 (one term of a number, named and uncrested, whichever account is being broken down) and `FactionTooltipBanner`
@@ -545,8 +727,10 @@ and saying nothing about who holds a system nobody political holds is the truer 
 
 Below the holder the split is `ContestSides` -
 the one placement every surface reporting a contest routes its blocks through,
-over the `BlocAffiliation` the bands judge their contest by
-(`HolderGroupingSource`, injected into the box and sampled per hover) -
+over the `BlocAffiliation` the bands judge their contest by -
+the live alliance set,
+which every view of this layer answers `resolveContestGrouping()` with
+and the box takes through an injected `HolderGroupingSource` sampled per hover -
 so no two surfaces over one system can put a bloc on different sides of it,
 and a box cannot disagree with the band beneath it about who is a rival.
 The headline stays on the group the map painted the cell for rather than on its alliance,
@@ -794,7 +978,8 @@ Both boxes then say what they have found out about the place on the line naming 
 (`ColonyQualifier`, gold, one read for the two families so neither can call a world decivilised the other lists as living).
 Five words,
 in a fixed order:
-`claim holder`,
+`claim holder` -
+the finding the claims box leads with -
 then the kind -
 `abandoned` for a derelict,
 `decivilised` for a collapse -
@@ -804,7 +989,7 @@ A collapse and a derelict reach a listing identically,
 unowned and off-economy and at nought,
 and nothing else on either line would tell them apart;
 the last three are the three separate ways a colony can be out of plain view,
-and they were each stated in one box and not the other before the read was shared.
+and one shared read is what keeps both boxes stating all three.
 
 Two of the five never join what stands above them.
 `undiscovered` displaces `hidden` -
@@ -852,6 +1037,8 @@ and admitted still only by Ancyra settling the system.
 
 Each box fills in a small `ColonyQualifierFacts` from what it holds -
 the claims box off `MarketClaimBreakdown`'s admission,
+handing its own `claim holder` wording (`POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER`) in as the finding that leads,
+since the shared resolver is the tier's and names no mechanic;
 the domination box off `MarketWeightBreakdown.isHiddenMarket` or the `UnweighedColony` -
 and the kind,
 the discovery answer and the landmark answer come off the box's own walk of the system
@@ -1218,44 +1405,46 @@ and the block vocabulary with the domination pair but not their number grammar -
 a claim score is a small whole number of points with no grid behind it,
 so no rating-to-weight change is stated.
 
-### The presence ribbon (`base/ribbon` and its counting rules)
+### The presence ribbon
 
-The vocabulary a cell's presence band is planned in -
-the runs,
-the dividers between them,
-and the two-armed gate deciding which cells band at all -
-held apart from where a band's colony counts come from,
-since that is each painting mechanic's own business
-and keeping it there is what makes one band mean one thing on every view.
-The band spans four packages,
-each with its own register:
-the [plan and its gate](base/ribbon/README.md),
-the [ring geometry and the draw](base/render/ribbon/README.md),
-and the two counting rules -
+The band's plan,
+its gate and its draw are the tier's:
+the [plan and its gate](../ownermap/ribbon/README.md)
+and the [ring geometry and the draw](../ownermap/render/ribbon/README.md).
+What this layer supplies is where a band's order comes from,
+which is each painting mechanic's own business
+and keeping it there is what makes one band mean one thing on every view:
 [held cells](dominance/ribbon/README.md),
-counted off the very footprints the fill was ranked from,
+ranked off the very footprints the fill was ranked from,
 and [claims-layer cells](claims/ribbon/README.md),
-counted off the contest over the system -
+ranked off the contest over the system -
 the cells no claim covers among them,
 since the claim walk never sees a hidden or player-owned market
 and a band is the only thing that reports those systems.
 Which of the two answers for a cell is the view's own call,
 made through the same seam it picks its holder source and its hover box by.
 
-### Sidebar controls (`base/sidebar`)
+### Sidebar controls
 
-This layer's own body controls,
-neither the box they sit in nor the spotlight picker among them,
-both of which are reached through [the sidebar](../base/sidebar/README.md) one level up
-(the picker is KMLib's, bound to this mod's save slots there).
-What stays here is what that picker refuses to know:
-which blocs are on offer,
-what makes that list stale,
-and where each of those blocs was found (`SelectableBlocCache`),
-and the recede toggles the layer pairs with the picker's sort (`RecedeControl`).
-The presence rides the same memo as the rows because it is the same sector walk's answer,
-so a surface lighting a bloc's systems costs no economy read of its own.
-That memo belongs to the sector's [installed machinery](../base/machinery/README.md).
+The body controls are the tier's `ownermap/sidebar`
+([the owner-map tier](../ownermap/README.md#where-each-part-lives)):
+the shared sub-options,
+the view selector,
+the recede toggles (`RecedeControl`)
+and the memo behind the spotlight picker (`SelectableBlocCache`).
+The box they sit in and the picker itself are reached through [the sidebar](../base/sidebar/README.md)
+(the picker is KMLib's,
+bound to this mod's save slots there).
+What stays here is this layer's answers:
+`PoliticalMapLayer` lays its body out -
+the shared sub-options,
+the view selector,
+the spotlight picker paired with the filter recede,
+then the selected view's own controls -
+and `AllianceBodyControls`,
+in `views`,
+holds the Alliances view's Mute and Desaturate toggles,
+shown only while that view is selected.
 
 The class that names and orders the views is `kmu.maplayers.MapLayers`,
 also one level up;

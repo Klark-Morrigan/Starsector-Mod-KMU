@@ -44,6 +44,10 @@ import static org.mockito.Mockito.when;
  */
 class SectorMapMachineryTest {
 
+    // Two layers holding the same kind of machinery on one sector.
+    private static final String LAYER_ID = "test_layer";
+    private static final String OTHER_LAYER_ID = "other_layer";
+
     // The ID both staged sectors give their system. Nothing forbids two sectors generating a
     // system under one ID, and it is the case a shared holder gets wrong rather than merely
     // draws twice.
@@ -153,6 +157,49 @@ class SectorMapMachineryTest {
                 .hasValue(1);
             assertThat(resolved)
                 .hasSize(1);
+        }
+    }
+
+    @Nested
+    class ResolveLayerMachinery {
+
+        @Test
+        void yieldsTheOneOfThatKindTheLayerKeepsOnThisSector() {
+            // The same promise as the sector-wide holder, one level finer: a layer resolving its
+            // renderer every frame gets back the renderer it drew the last frame through.
+            assertThat(resolveLayersCountingMachineryIn(machinery, LAYER_ID))
+                .isSameAs(resolveLayersCountingMachineryIn(machinery, LAYER_ID));
+        }
+
+        @Test
+        void yieldsEachLayerOneOfItsOwnOnOneSector() {
+            // What the per-layer key is for: two owner-painted layers draw through a renderer of the
+            // same class, and keyed by the class alone the second would be handed the first's cells.
+            assertThat(resolveLayersCountingMachineryIn(machinery, LAYER_ID))
+                .isNotSameAs(resolveLayersCountingMachineryIn(machinery, OTHER_LAYER_ID));
+        }
+
+        @Test
+        void keepsALayersApartFromTheSectorWideOneOfTheSameKind() {
+            // A framework piece and a layer's piece of one class are two holders, so neither can be
+            // handed the other's state.
+            assertThat(resolveLayersCountingMachineryIn(machinery, LAYER_ID))
+                .isNotSameAs(resolveCountingMachineryIn(machinery));
+        }
+
+        @Test
+        void releasesEachLayersWithTheMachinery() {
+            // Held per layer is still held by the sector: a sector going away takes every layer's
+            // renderer with it, or the GL buffers behind the one not released would leak.
+            var layersMachinery = resolveLayersCountingMachineryIn(machinery, LAYER_ID);
+            var otherLayersMachinery = resolveLayersCountingMachineryIn(machinery, OTHER_LAYER_ID);
+
+            machinery.disposeMachinery();
+
+            assertThat(layersMachinery.getDisposeCount())
+                .isEqualTo(1);
+            assertThat(otherLayersMachinery.getDisposeCount())
+                .isEqualTo(1);
         }
     }
 
@@ -380,6 +427,18 @@ class SectorMapMachineryTest {
             SectorMapMachinery machinery) {
 
         return machinery.resolveMachinery(
+            CountingMachineryFake.class,
+            CountingMachineryFake::new);
+    }
+
+    // The same kind asked for as one layer's, which is how a layer holds a piece another layer holds
+    // a copy of.
+    private static CountingMachineryFake resolveLayersCountingMachineryIn(
+            SectorMapMachinery machinery,
+            String layerId) {
+
+        return machinery.resolveLayerMachinery(
+            layerId,
             CountingMachineryFake.class,
             CountingMachineryFake::new);
     }

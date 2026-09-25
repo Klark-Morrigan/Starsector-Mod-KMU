@@ -3,8 +3,8 @@
 What KMU keeps between frames,
 what makes each piece of it stale,
 and how narrowly each rebuild is scoped.
-Almost all of it belongs to the political map,
-which is the one feature that derives an expensive drawing from live campaign state
+Almost all of it belongs to the map layers painted by owner,
+the one feature that derives an expensive drawing from live campaign state
 and then repaints it every frame.
 
 The shared library's caches are a separate and much simpler problem
@@ -20,7 +20,7 @@ including the `Fingerprints` primitive this document's revision counters fold th
 - [Layer 3: the caches](#layer-3-the-caches)
   - [The overlay cache](#the-overlay-cache)
   - [Cell geometry](#cell-geometry)
-  - [Territories and draw lists](#territories-and-draw-lists)
+  - [Clusters and draw lists](#clusters-and-draw-lists)
   - [Cluster-label placements](#cluster-label-placements)
   - [Hover lookups](#hover-lookups)
   - [Sidebar pickers](#sidebar-pickers)
@@ -32,9 +32,9 @@ including the `Fingerprints` primitive this document's revision counters fold th
 
 ## The shape of the problem
 
-Drawing the political map from scratch means partitioning every drawn system into Voronoi cells,
-resolving who dominates each system out of the economy,
-classifying every cell edge as an interior seam or a national border,
+Drawing an owner-painted map from scratch means partitioning every drawn system into Voronoi cells,
+resolving who holds each system out of the economy,
+classifying every cell edge as an interior seam or a cluster border,
 shaping each cell into its cluster polygon,
 tracing the cluster border rings,
 and fitting a name into each cluster.
@@ -55,7 +55,7 @@ Three properties make that safe:
   Systems that move are the exception,
   and are excluded from the partition rather than chased
   (see `MovingSystems`, one tracker per sector held by that sector's machinery, since an observation is keyed by `SystemKey`, which one sector mints without regard to another's).
-- **Ownership changes are local.** Dominance is decided per system from the colonies seated in it,
+- **Ownership changes are local.** A holder is decided per system from the colonies seated in it,
   so a colony event can only shift its own system -
   which makes a targeted re-shape of that system
   and its neighbours possible instead of a whole-map rebuild.
@@ -69,7 +69,7 @@ Two mechanisms,
 deliberately overlapping.
 
 **Event listeners**
-([`refresh/listeners/`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/listeners/)) react to the economy events the engine does fire:
+([`refresh/listeners/`](../../src/main/java/kmu/maplayers/politicalmap/refresh/listeners/)) react to the economy events the engine does fire:
 colonisation,
 colony resize,
 decivilisation,
@@ -92,14 +92,14 @@ what has changed since it last asked,
 so what counts as a change never has to be named by the framework.
 Two scripts drive that loop,
 and they are two classes because the engine registers and clears transient scripts by exact class:
-[`MapLayerSectorWatcher`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerSectorWatcher.java)
+a subclass of [`MapLayerSectorWatcher`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerSectorWatcher.java)
 per layer that has something to poll,
 and [`MapSubstrateSectorWatcher`](../../src/main/java/kmu/maplayers/base/refresh/MapSubstrateSectorWatcher.java)
 once per sector for the substrate's own.
 
-The political map answers through [`PoliticalMapStalenessSource`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapStalenessSource.java),
+The political map answers through [`PoliticalMapStalenessSource`](../../src/main/java/kmu/maplayers/politicalmap/refresh/PoliticalMapStalenessSource.java),
 which takes one cheap snapshot per poll
-([`PoliticalMapSectorSnapshot`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapSectorSnapshot.java)) holding a scalar fingerprint of *which* systems are drawn
+([`PoliticalMapSectorSnapshot`](../../src/main/java/kmu/maplayers/politicalmap/refresh/PoliticalMapSectorSnapshot.java)) holding a scalar fingerprint of *which* systems are drawn
 and a map of *who* holds each,
 then reacts to each half on its own axis:
 the fingerprint moving means the geometry is stale
@@ -178,8 +178,7 @@ sequenceDiagram
     end
 ```
 
-That is a second reading of the sector's colonies
-where one served both while the sweep rode the political poll,
+That is a second reading of the sector's colonies beside the layer's own,
 and it is taken knowingly:
 a reading handed from the framework down to a layer belongs to the frame sequence rather than to either poll.
 What the split buys is that the register goes on accruing under whichever layer the player is looking at,
@@ -194,15 +193,11 @@ which is where the cadence was decided anyway.
 And the membership rule takes an inhabitation *answer* rather than a sector to read one from,
 which is what keeps a second walk from hiding inside the drawn-set test the moving-set walk applies per system.
 
-The decivilised-world read used to sit outside that index,
-walking a system's *planets* rather than its entities,
-with a survey-based reveal of its own -
-so the pass carried a second memo beside the index to keep that walk to one per system.
-It no longer does.
 A collapsed colony is a colony kind (`ColonyKind.UNGOVERNED_COLONY`),
 admitted to the set on the decivilised condition and fogged by the survey read,
-so it comes off the one walk everything else does and the second memo is gone.
-The fingerprint scan still needs the flag on its own,
+so it comes off the one walk everything else does
+rather than a walk of a system's *planets* needing a memo of its own.
+The fingerprint scan needs the flag on its own too,
 to salt a drawn system's contribution when a governed-to-collapsed flip leaves the drawn set unchanged;
 it asks the pass,
 which answers off the same set membership was composed from.
@@ -228,7 +223,7 @@ keyed on the open signal type rather than on a fixed set of accessors.
 The framework declares the signals any painting layer could raise
 ([`MapLayerCommonRefreshSignal`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerCommonRefreshSignal.java));
 a layer declares its own beside itself
-([`PoliticalMapRefreshSignal`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapRefreshSignal.java)) and reaches the same board for them.
+([`PoliticalMapRefreshSignal`](../../src/main/java/kmu/maplayers/politicalmap/refresh/PoliticalMapRefreshSignal.java)) and reaches the same board for them.
 
 One board per sector,
 held by that sector's [`SectorMapMachinery`](../../src/main/java/kmu/maplayers/base/machinery/SectorMapMachinery.java):
@@ -245,20 +240,20 @@ A sidebar control looks like the exception,
 a settings change naming no sector,
 but the tab's body build resolves an machinery once and hands its board to each control it places,
 so a flip repaints the map that control was placed over.
-Nothing resolves a board off the running sector any more:
+Nothing resolves a board off the running sector:
 a producer reaching one it was not handed is a producer that can raise on a map nobody is looking at.
 
 | Signal | Home | Raised by | Read by |
 | --- | --- | --- | --- |
 | `MapLayerCommonRefreshSignal.GEOMETRY` | `MapLayerCommonRefreshSignal` | the drawn-system set or moving-system set changing | the geometry cache |
-| `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental politics refresh |
+| `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental owner refresh |
 | `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance-set fingerprint moving | the alliances view only |
 | `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.MAP_STYLE` | `MapLayerCommonRefreshSignal` | the uninhabited-outline and name-format toggles | **nothing** - see below |
-| `ContentInputs` | [`ContentInputs`](../../src/main/java/kmu/maplayers/politicalmap/base/render/ContentInputs.java) | not raised - sampled per rebuild off the sidebar preferences | the territories rebuild, which folds its values into the content revision |
-| `settingsRevision` | [`KmuLunaSettings`](../../src/main/java/kmu/settings/KmuLunaSettings.java) | any LunaLib settings change | the territories rebuild |
-| content revision | each `PoliticalMapView` | the view's own live inputs, folded via `Fingerprints` off the board it is handed | the territories rebuild, and the sidebar picker memo |
+| `ContentInputs` | [`ContentInputs`](../../src/main/java/kmu/maplayers/ownermap/ContentInputs.java) | not raised - sampled per rebuild off the sidebar preferences | the clusters rebuild, which folds its values into the content revision |
+| `settingsRevision` | [`KmuLunaSettings`](../../src/main/java/kmu/settings/KmuLunaSettings.java) | any LunaLib settings change | the clusters rebuild |
+| content revision | each `OwnerPaintedView` | the view's own live inputs, folded via `Fingerprints` off the board it is handed | the clusters rebuild, and the sidebar picker memo |
 
 Three of those deserve their reason stated.
 
@@ -272,15 +267,15 @@ The **sidebar toggles**
 (recede, filter, spotlight, outline, name format) live in sector memory rather than as LunaLib fields,
 so flipping one does *not* bump `settingsRevision`.
 Each setter raises its own signal,
-and those three signals are the map's rebuild trigger no longer:
-the territories are rebuilt on the *values* the toggles hold,
+and none of those three signals triggers a rebuild:
+the clusters are rebuilt on the *values* the toggles hold,
 sampled once per rebuild into `ContentInputs` and folded into the content revision.
 A counter reports that somebody clicked something;
 the values answer the only question a rebuild turns on -
 would this build come out the same.
 Two readings holding the same picks are one bake however many counters have moved between them,
 and a click that puts a pick back where it was costs nothing.
-It is also what survives the picks becoming per screen:
+It is also what holds with the picks per screen:
 a screen switch changes every one of them while every counter stands still,
 which a counter-driven test reads as no change at all.
 
@@ -320,17 +315,18 @@ rather than leaving the view to resolve whichever sector is running.
 
 ### The overlay cache
 
-[`PoliticalMapCache`](../../src/main/java/kmu/maplayers/politicalmap/base/render/PoliticalMapCache.java)
+[`OwnerMapCache`](../../src/main/java/kmu/maplayers/ownermap/render/OwnerMapCache.java)
 is the owner:
-the political map's painter holds one -
-one per sector,
-the painter itself belonging to that sector's installed machinery -
+each owner-painted layer's renderer holds one -
+one per layer per sector,
+the renderer itself held by that sector's installed machinery under the layer's ID
+(`SectorMapMachinery.resolveLayerMachinery`) -
 and asks it to `refresh` each frame the map is open.
 It holds both halves
 (geometry and built draw lists)
 and rebuilds only the stale half.
 What a frame owes is
-[`PoliticalMapRebuildDecider`](../../src/main/java/kmu/maplayers/politicalmap/base/render/PoliticalMapRebuildDecider.java)'s
+[`OwnerMapRebuildDecider`](../../src/main/java/kmu/maplayers/ownermap/render/OwnerMapRebuildDecider.java)'s
 answer,
 asked first and acted on:
 the decider holds what each half was built against and compares this frame's revisions and settings to it,
@@ -419,7 +415,7 @@ which change *which* systems seed a cell at all.
 Those four -
 the reachable-set revision plus those three settings -
 are one value,
-[`CellCutInputs`](../../src/main/java/kmu/maplayers/politicalmap/base/render/CellCutInputs.java),
+[`CellCutInputs`](../../src/main/java/kmu/maplayers/ownermap/render/CellCutInputs.java),
 because the question asked of them is the single one they answer together:
 would the cells be cut differently now.
 Only the first raises a framework signal;
@@ -438,11 +434,11 @@ The cells are the live cache rather than a copy,
 so a consumer reads whatever they hold now;
 the revision fixes which reading anything derived and cached downstream is answerable to.
 
-### Territories and draw lists
+### Clusters and draw lists
 
-[`PoliticalMapTerritories`](../../src/main/java/kmu/maplayers/politicalmap/base/render/territories/PoliticalMapTerritories.java)
+[`OwnerMapClusters`](../../src/main/java/kmu/maplayers/ownermap/render/clusters/OwnerMapClusters.java)
 holds what a full rebuild produced:
-the styled cells and faction territories the renderer paints,
+the styled cells and owner cluster groups the renderer paints,
 plus the derivation inputs an incremental re-shape needs -
 the styling,
 the view grouping,
@@ -461,7 +457,7 @@ because a band keeps clear of the cluster names by default
 and the names are placed only once every cell has been shaped -
 each is fitted inside the border its cluster's cells trace.
 So the cells' shapes go in first and the bands follow,
-over the shapes the territories already hold.
+over the shapes the clusters already hold.
 A player who would rather keep the whole band can switch that clearance off,
 which leaves the ordering doing nothing rather than making it wrong:
 the stage still runs last,
@@ -471,8 +467,8 @@ which is what keeps a band from outliving the ring it was laid in;
 the band stage then fills it back in.
 
 The ring a band is laid along is kept beside the shape it was walked inside,
-in a [`CellRingPathCache`](../../src/main/java/kmu/maplayers/politicalmap/base/render/ribbon/CellRingPathCache.java)
-the territories hold and the bake asks before it walks anything.
+in a [`CellRingPathCache`](../../src/main/java/kmu/maplayers/ownermap/render/ribbon/CellRingPathCache.java)
+the clusters hold and the bake asks before it walks anything.
 A bake runs whenever a cluster name may have moved,
 while a cell's ring changes only when the cell is cut again,
 so without it a cell re-baked because a re-fitted name landed on it would re-walk the outline it just discarded.
@@ -484,7 +480,7 @@ so what the cache saves is every other cell in the bake.
   a cache living inside the object whose lifetime it must match is correct by construction,
   where a keyed one is a rule someone has to keep true.
   A slider bumps the settings revision,
-  which rebuilds the territories,
+  which rebuilds the clusters,
   which takes the paths with them.
 
 That pass also traces each cell's band *path* when the band-path diagnostic is on -
@@ -506,13 +502,13 @@ so how large it lands on screen is the map's own scaling of the triangle list
 and no question the pass has to answer.
 
 Retaining those inputs is what makes the incremental path *correct* rather than merely cheap:
-[`IncrementalPoliticsRefresh`](../../src/main/java/kmu/maplayers/politicalmap/base/render/IncrementalPoliticsRefresh.java)
+[`IncrementalOwnerRefresh`](../../src/main/java/kmu/maplayers/ownermap/render/IncrementalOwnerRefresh.java)
 re-classifies a handful of cells against exactly the ownership and styles the full build used,
 through the same builder primitives,
 so an incrementally-updated map is indistinguishable from a rebuilt one.
 Which is also why the holder map,
 the inhabited set and the spotlit-presence set are retained *live*,
-as one [`SystemOccupancy`](../../src/main/java/kmu/maplayers/politicalmap/base/render/territories/SystemOccupancy.java):
+as one [`SystemOccupancy`](../../src/main/java/kmu/maplayers/ownermap/render/clusters/SystemOccupancy.java):
 a cell is classified from all three at once,
 so one of them fixed where the rebuild began would have the refresh styling a cell from two different readings of the sector.
 The type owns its collections and reports what each fold moved,
@@ -536,8 +532,7 @@ The second is the one to keep in mind when adding an input:
 the keep-out sites every box is trimmed clear of are the *whole sector's*,
 so a change no membership reflects still moves every fit,
 and only the fingerprint can catch it.
-A mismatch discards the carry-over whole and the rebuild is total,
-which is what it was before any of this existed.
+A mismatch discards the carry-over whole and the rebuild searches every cluster.
 
 What this cache holds is therefore one [`StandingClusterAnchors`](../../src/main/java/kmu/maplayers/base/labels/anchor/StandingClusterAnchors.java)
 and not a list beside a fingerprint -
@@ -552,7 +547,7 @@ are [the overlay's own README](../../src/main/java/kmu/maplayers/base/labels/REA
 
 [`SystemClusterIndex`](../../src/main/java/kmu/maplayers/base/geometry/SystemClusterIndex.java)
 indexes each cluster by its members once per rebuild,
-so the hover highlight resolves a hit system to its whole contiguous territory with a lookup instead of re-running the cluster search per frame.
+so the hover highlight resolves a hit system to its whole cluster with a lookup instead of re-running the cluster search per frame.
 Deriving it from the same clustering the map drew is what keeps the highlighted region identical to the region that carries the name.
 
 ### Sidebar pickers
@@ -569,15 +564,15 @@ when it goes stale,
 and how long it lives are entirely the consumer's declaration -
 including the discard a consumer calls when whatever the value belonged to is released.
 
-[`SelectableBlocCache`](../../src/main/java/kmu/maplayers/politicalmap/base/sidebar/SelectableBlocCache.java)
-is the political map's use of it:
+[`SelectableBlocCache`](../../src/main/java/kmu/maplayers/ownermap/sidebar/SelectableBlocCache.java)
+is the owner-map tier's use of it:
 what it adds is the revision,
 the one thing the memo cannot know.
 What it holds is the selected view's whole `ListPicker` -
 the blocs on offer and the vocabulary that ranks them -
 since a view answers both together and neither means anything without the other.
 Each of its resolves is a full grouped dominance pass over the sector,
-so it is the layer that most needs the memo to hold.
+so it is the picker that most needs the memo to hold.
 That revision is the economy-weighting settings plus the view's own grouping inputs,
 and it deliberately **excludes** the filter selection.
 The picker is which blocs are selectable,
@@ -637,8 +632,8 @@ in increasing cost:
    which is why both staleness questions are settled before any reading is opened.
 2. **Systems marked stale** -
    the stale set is drained and only those systems and their neighbours are re-derived and re-shaped,
-   with the two affected factions' territories rebuilt.
-   Reading the sector back is [`MarkedSystemRederive`](../../src/main/java/kmu/maplayers/politicalmap/base/render/MarkedSystemRederive.java)'s
+   with the two affected owners' cluster groups rebuilt.
+   Reading the sector back is [`MarkedSystemRederive`](../../src/main/java/kmu/maplayers/ownermap/render/MarkedSystemRederive.java)'s
    and redrawing what that disturbed is the refresh's,
    so what a change costs is decided apart from what changed.
    Three facts are re-derived per marked system,
@@ -653,7 +648,7 @@ in increasing cost:
    so its own cell is the only surface the change reaches.
    Such a cell is redrawn alone:
    neither fact moves a seam,
-   so no neighbour re-shapes and no territory is retraced.
+   so no neighbour re-shapes and no cluster is retraced.
    The marked systems' presence bands are re-baked whether or not anything flipped:
    the colonisation and transfer events that mark a system are exactly the events that change how many colonies are in it,
    and a band counts colonies where the fills only weigh them.
@@ -674,7 +669,7 @@ in increasing cost:
    and every other cell's band is laid along the ring it was already laid along.
 3. **Content changed**
    (a setting, a sidebar toggle, a view's own live input) -
-   the territories are rebuilt in full over the standing geometry.
+   the clusters are rebuilt in full over the standing geometry.
    The cells are untouched,
    since ownership and styling do not move a border.
    The label placements are the exception to the "in full":
@@ -683,7 +678,7 @@ in increasing cost:
 4. **Geometry changed**
    (the drawn set, a seed input, a reveal override) -
    the partition is reconciled,
-   which forces a full territories rebuild after it.
+   which forces a full clusters rebuild after it.
 
 Paths 2 to 4 each open exactly one reading of the sector and hand it to every stage of that path -
 see [the overlay cache](#the-overlay-cache) for what the rebuild's covers
@@ -694,7 +689,7 @@ and why the band bake takes its caller's rather than opening one.
 Everything described here is derived from the sector
 and holds record types XStream cannot serialise.
 None of it can reach a save:
-the cache hangs off the political map's layer renderer,
+the cache hangs off a layer's renderer,
 which the sector's installed map machinery holds and no terrain entity carries -
 no transient marking required.
 
@@ -712,7 +707,7 @@ so the first frame after an install rebuilds both halves from scratch,
 and there is nothing of a previous sector's for it to be told about.
 
 Release is not merely dropping.
-The cached faction names each own a GL buffer,
+The cached cluster names each own a GL buffer,
 so they are freed at the moment the machinery goes rather than left to LazyLib's finalizer sweep -
 which is what a sector removed mid-session would otherwise leak.
 
@@ -729,7 +724,7 @@ A stored value the current build cannot resolve -
 a layer ID no longer registered,
 a spotlight on a bloc that has lapsed -
 falls back to the default rather than stranding the reader,
-and [`FilterSelectionHeal`](../../src/main/java/kmu/maplayers/politicalmap/base/FilterSelectionHeal.java)
+and [`FilterSelectionHeal`](../../src/main/java/kmu/maplayers/ownermap/FilterSelectionHeal.java)
 clears the spotlight case outright,
 on load and on every settings change.
 
@@ -762,11 +757,14 @@ on load and on every settings change.
 - [KMLib caching notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md) -
   the font and glyph caches KMU draws through,
   and the `Fingerprints` primitive.
+- [Owner-painted map assembly](../../src/main/java/kmu/maplayers/ownermap/README.md) -
+  the tier the overlay cache,
+  the clusters and the sidebar picker memo live in.
 - [Political map](../../src/main/java/kmu/maplayers/politicalmap/README.md) -
   what the overlay shows and how it is drawn.
 - [Cell geometry](../../src/main/java/kmu/maplayers/base/geometry/README.md) -
   the cells,
   edges,
   and clusters the geometry cache holds.
-- [Territory fills and borders](../../src/main/java/kmu/maplayers/politicalmap/base/render/territories/README.md) -
-  what a territories rebuild actually produces.
+- [Cluster fills and borders](../../src/main/java/kmu/maplayers/ownermap/render/clusters/README.md) -
+  what a clusters rebuild actually produces.

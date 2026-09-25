@@ -3,7 +3,7 @@
 One sector's map machinery as a thing a caller can hold.
 Everything the map layers draw is derived from one sector -
 which systems exist,
-who holds each,
+who owns each,
 where they sit,
 what the cursor is over -
 so every holder behind that drawing is a fact about one sector rather than about the process.
@@ -77,7 +77,7 @@ A stage under either would otherwise ask the running game which sector it is loo
 correct only while the sector it holds cells for and the sector that is loaded are the same one.
 Taking it off the machinery rather than passing it alongside is what stops a rebuild cutting cells from one sector
 while reading holders out of another -
-which the draw cache and staleness poll of [the political map](../../politicalmap/README.md) both rely on.
+which a layer's draw cache and staleness poll both rely on.
 
 The fifth is the **profiling origin**,
 answered by `resolveProfilingOrigin()`:
@@ -103,17 +103,29 @@ So they go in through `InstalledMachinery`,
 which is a release contract and nothing else:
 
 ```java
-machinery.resolveMachinery(
-    PoliticalMapLayerRenderer.class,
-    () -> PoliticalMapLayerRenderer.createForLiveScreen(machinery));
+machinery.resolveLayerMachinery(
+    LAYER_ID,
+    OwnerMapLayerRenderer.class,
+    () -> OwnerMapLayerRenderer.createForLiveScreen(machinery, LAYER_ID /* , the layer's answers */));
 ```
 
-Keyed by the class asked for,
+Keyed by the class asked for and by whose it is,
 made on the first ask,
 and handed back by that same type -
-so one sector cannot come to hold two of a kind,
+so one sector holds one of a kind per holder,
 and the caller needs no cast.
 The machinery never learns what it is holding.
+
+There are two holders a piece can have.
+`resolveMachinery` keys by the class alone,
+for the framework's own pieces,
+of which a sector has exactly one whichever layers stand on it.
+`resolveLayerMachinery` keys by the class and a layer's ID,
+for a piece more than one layer holds a copy of:
+two owner-painted layers each draw through a renderer of the same class,
+and keyed by the class alone the second would be handed the first's cells, picks and answers.
+Both kinds go with the sector,
+so a layer's pieces need no release of their own.
 
 Release has to be certain rather than incidental:
 a cached faction name owns a GL buffer,
@@ -254,7 +266,7 @@ and the global read stays inside this package where `enforceRestrictedCalls` con
 Nothing else reaches a holder that way.
 Every producer and consumer there is holds the machinery it means:
 the render surfaces resolve theirs from the terrain entity they ride,
-and the political map's cache,
+and a layer's cache,
 its staleness poll,
 its renderers,
 its views and its sidebar controls are each handed one.
@@ -280,10 +292,11 @@ so a reader does not go looking:
 
 - **The rosters.** `MapLayerRegistry`'s ordered layers,
   `MapLayerScreens`' intel screen,
-  and `PoliticalMapViewRegistry`'s ordered views,
-  default and host tab,
+  and each owner-painted layer's own `MapLayerViewRegistry` -
+  its ordered views,
+  default and host tab -
   are mod-load facts.
-  KMU's own are written by `MapLayers.registerAll` before any sector exists,
+  KMU's own are made in `MapLayers.registerAll` before any sector exists,
   and a layer another mod ships joins the roster when that mod loads -
   later still,
   and no nearer any sector.

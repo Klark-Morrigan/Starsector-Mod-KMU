@@ -44,6 +44,10 @@ import java.util.function.Supplier;
  */
 public final class SectorMapMachinery {
 
+    // The holder a framework piece is keyed under: one per sector, whichever layers are standing.
+    // Empty because no layer ID is, so it can never be mistaken for a layer's own.
+    private static final String SECTOR_WIDE = "";
+
     // Whether this machinery has been released. Kept rather than inferred from an emptied
     // holder, because a caller can still be holding a reference the index has already let go of: a
     // resolution taken at the top of a frame outlives a removal that happens during it.
@@ -76,13 +80,13 @@ public final class SectorMapMachinery {
     private final MapLayerRefreshBoard refreshBoard = new MapLayerRefreshBoard();
 
     // What the layers derive from this sector, made on first ask and released with this
-    // machinery. Keyed by the class of the thing held, so one sector has exactly one of each and
-    // a resolution hands back what it asks for without a cast of its own.
+    // machinery. Keyed by the class of the thing held and by whose it is - the sector's, or one
+    // layer's - so one sector has exactly one of each per holder and a resolution hands back what
+    // it asks for without a cast of its own.
     //
     // Concurrent for the reason the index above it is: the campaign thread installs and removes
     // while a frame on the render thread resolves what it is about to draw through.
-    private final Map<Class<? extends InstalledMachinery>, InstalledMachinery> machineryByType =
-        new ConcurrentHashMap<>();
+    private final Map<MachineryKey, InstalledMachinery> machineryByKey = new ConcurrentHashMap<>();
 
     /**
      * @param sector the sector this machinery is being installed on; null makes a detached
@@ -103,8 +107,8 @@ public final class SectorMapMachinery {
      */
     public void disposeMachinery() {
 
-        machineryByType.values().forEach(InstalledMachinery::disposeMachinery);
-        machineryByType.clear();
+        machineryByKey.values().forEach(InstalledMachinery::disposeMachinery);
+        machineryByKey.clear();
         isDisposed = true;
     }
 
@@ -148,8 +152,32 @@ public final class SectorMapMachinery {
             Class<T> machineryType,
             Supplier<T> createMachinery) {
 
-        return machineryType.cast(
-            machineryByType.computeIfAbsent(machineryType, key -> createMachinery.get()));
+        return resolveHeldMachinery(machineryType, SECTOR_WIDE, createMachinery);
+    }
+
+    /**
+     * One layer's machinery of one kind on this sector, made on the first ask and held until this
+     * machinery is disposed.
+     *
+     * <p>For a kind more than one layer holds a copy of. Two owner-painted layers each draw through a
+     * renderer of the same class, and keyed by the class alone the second would be handed the first
+     * one's - its cells, its picks, its answers - and paint the first layer's map under its own tab.
+     * Keyed by the layer as well, each keeps its own on each sector, and both still go with the
+     * sector.
+     *
+     * @param layerId         the ID of the layer the machinery belongs to, which is what parts two
+     *                        layers holding the same kind
+     * @param machineryType   the kind being asked for
+     * @param createMachinery makes this layer's on this sector, called only where it has none yet
+     * @param <T>             the kind being asked for, so the caller needs no cast
+     * @return that layer's machinery of that kind on this sector
+     */
+    public <T extends InstalledMachinery> T resolveLayerMachinery(
+            String layerId,
+            Class<T> machineryType,
+            Supplier<T> createMachinery) {
+
+        return resolveHeldMachinery(machineryType, layerId, createMachinery);
     }
 
     /**
@@ -188,6 +216,18 @@ public final class SectorMapMachinery {
         return sector;
     }
 
+    // Both resolutions end here, so what is made on first ask and how it is typed back is stated
+    // once whichever holder the key names.
+    private <T extends InstalledMachinery> T resolveHeldMachinery(
+            Class<T> machineryType,
+            String holderId,
+            Supplier<T> createMachinery) {
+
+        return machineryType.cast(machineryByKey.computeIfAbsent(
+            new MachineryKey(machineryType, holderId),
+            absent -> createMachinery.get()));
+    }
+
     // The detached machinery is nobody's sector, so there is nothing to describe and nothing a
     // reader could match a row back to: what it opens belongs where every unattributed span
     // belongs, which is the reserved origin.
@@ -196,5 +236,9 @@ public final class SectorMapMachinery {
         return sector == null
             ? ProfileOrigin.UNSCOPED
             : ProfileOrigin.registerOrigin(SectorLabels.describeSector(sector));
+    }
+
+    // What one piece of machinery is held under: its kind, and whose it is.
+    private record MachineryKey(Class<? extends InstalledMachinery> type, String holderId) {
     }
 }
