@@ -132,9 +132,10 @@ public final class PoliticalMapLayer implements MapLayer {
         // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
         // view-selector radio that picks which view paints - one segment per registered view. The
         // radio only switches between views; turning the map off is the tab bar's No Layer pick. The
-        // selector takes the screen alone, since a view switch raises nothing on the board.
+        // selector takes the screen and this body's sector rather than the target, since a view switch
+        // raises nothing on the board - the sector is what its spotlight heal judges against.
         var controls = new ArrayList<>(OwnerMapBodyControls.buildSharedControls(BODY_PREFERENCES, target));
-        controls.add(OwnerMapBodyControls.buildViewSelector(viewRegistry, memoryScope));
+        controls.add(OwnerMapBodyControls.buildViewSelector(viewRegistry, machinery.resolveSector(), memoryScope));
 
         // Then the spotlight picker and the selected view's own controls, so the body shows the
         // filter list plus any widgets specific to the active view (the alliances view's

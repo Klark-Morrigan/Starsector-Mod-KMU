@@ -63,6 +63,7 @@ None of these reach a player: every LunaLib field ID and every value saved in se
   - Per-sector pieces a layer holds go through `SectorMapMachinery.resolveLayerMachinery(layerId, type, make)`.
   - `SelectableBlocCache.resolveBlocCacheIn` takes the layer ID.
   - `FilterSelectionHeal.healStaleSelectionAgainstActiveView` takes the sector and the registry it heals against; `healStaleSelectionAgainstLiveSector(registry)` is the entry for a caller holding no sector.
+  - `OwnerMapBodyControls.buildViewSelector` takes the sector its body was built for, which a view switch heals the spotlights against.
   - `PoliticalMapLayer` is constructed with its views rather than being a singleton.
 - **Body preferences are the layer's:**
   - `NameFormatPreference`, `UninhabitedOutlinePreference` and `RecedePreferences` are instances over keys a layer names, handed to the tier together as `OwnerMapBodyPreferences`.

@@ -27,9 +27,9 @@ import kmu.settings.KmuLunaSettings;
  * framework's {@link FilterSelection} deliberately does not carry - and it is handed the registry of
  * the layer it heals, so one layer's heal judges only that layer's spotlights.
  *
- * <p>The sector is taken from the caller wherever one holds it. The entries driven by a settings
- * change or a sidebar click are handed none, so those resolve the running game's sector once, at the
- * entry, and pass it down like any other caller's.
+ * <p>The sector is taken from the caller wherever one holds it. A settings change is handed none, so
+ * that entry resolves the running game's sector once, at the entry, and passes it down like any other
+ * caller's.
  */
 public final class FilterSelectionHeal {
 
@@ -93,7 +93,7 @@ public final class FilterSelectionHeal {
 
     /**
      * {@link #healStaleSelectionAgainstActiveView} for a caller the game hands no sector - a settings
-     * change, a sidebar click - judged against the sector running at the moment of the call.
+     * change - judged against the sector running at the moment of the call.
      *
      * @param viewRegistry the layer whose spotlights are healed, judged under that layer's own views
      */

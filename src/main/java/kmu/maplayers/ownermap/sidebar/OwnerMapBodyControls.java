@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.sidebar;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.controls.specs.CheckboxSpec;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
@@ -93,12 +95,16 @@ public final class OwnerMapBodyControls {
      * clicking twice.
      *
      * @param viewRegistry the host layer's own views, which the segments list and a click picks among
+     * @param sector       the sector this body was built for, which a click heals the switched-in
+     *                     view's spotlights against - resolved with the body rather than at the click,
+     *                     so a click cannot judge against a sector loaded since
      * @param memoryScope  the scope of the screen this body was opened on, for the selector to read
      *                     and write the view under so each panel holds its own
      * @return the horizontal, always-on view-selector radio
      */
     public static ControlSpec buildViewSelector(
             MapLayerViewRegistry viewRegistry,
+            SectorAPI sector,
             ScreenMemoryScope memoryScope) {
 
         var labels = new ArrayList<String>();
@@ -110,7 +116,7 @@ public final class OwnerMapBodyControls {
         return HorizontalRadioSpec.of(
             labels,
             viewRegistry.getSelectedViewIndex(memoryScope),
-            segmentIndex -> selectViewSegment(viewRegistry, segmentIndex, memoryScope));
+            segmentIndex -> selectViewSegment(viewRegistry, sector, segmentIndex, memoryScope));
     }
 
     // The resolved label of one name-radio segment.
@@ -148,10 +154,10 @@ public final class OwnerMapBodyControls {
     // selectable blocs, so a bloc that lapsed since it was last shown (a faction removed, a group
     // dissolved) does not spotlight an empty footprint; the switch itself repaints, so the cleared
     // spotlight shows without its own refresh request. The heal covers every screen, this one included,
-    // since what lapsed lapsed for both panels. A click is handed no sector, so the heal judges against
-    // the running one.
+    // since what lapsed lapsed for both panels, and judges against the sector the body was built for.
     private static void selectViewSegment(
             MapLayerViewRegistry viewRegistry,
+            SectorAPI sector,
             int segmentIndex,
             ScreenMemoryScope memoryScope) {
 
@@ -160,6 +166,6 @@ public final class OwnerMapBodyControls {
             return;
         }
         viewRegistry.selectView(memoryScope, views.get(segmentIndex));
-        FilterSelectionHeal.healStaleSelectionAgainstLiveSector(viewRegistry);
+        FilterSelectionHeal.healStaleSelectionAgainstActiveView(sector, viewRegistry);
     }
 }

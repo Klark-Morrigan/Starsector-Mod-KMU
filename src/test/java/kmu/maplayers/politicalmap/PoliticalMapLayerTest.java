@@ -551,6 +551,7 @@ final class PoliticalMapLayerTest {
                 controlsMock.verify(
                     () -> OwnerMapBodyControls.buildViewSelector(
                         same(layer.resolveViewRegistry()),
+                        any(),
                         eq(BODY_SCREEN)));
                 recedeMock.verify(
                     () -> RecedeControl.buildControls(
@@ -818,7 +819,7 @@ final class PoliticalMapLayerTest {
             .thenReturn(List.of(SHARED_MARKER));
 
         controlsMock
-            .when(() -> OwnerMapBodyControls.buildViewSelector(any(), any()))
+            .when(() -> OwnerMapBodyControls.buildViewSelector(any(), any(), any()))
             .thenReturn(SELECTOR_MARKER);
     }
 

@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.sidebar;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.controls.specs.CheckboxSpec;
@@ -81,6 +82,10 @@ final class OwnerMapBodyControlsTest {
         new BodyControlTarget(BUILT_BOARD, BUILT_SCREEN);
 
     // The host layer's views, which the selector lists and a click picks among.
+    // The sector the body under test was built for - what a click must heal against, rather than
+    // whichever sector is running when the click lands.
+    private final SectorAPI builtSectorMock = mock(SectorAPI.class);
+
     private final MapLayerViewRegistry viewRegistryMock = mock(MapLayerViewRegistry.class);
 
     // The host layer's body preferences, their two stored choices stood in so a case pins the wiring
@@ -136,7 +141,8 @@ final class OwnerMapBodyControlsTest {
         void switchingToAViewSelectsItThenHealsTheSwitchedInViewsSlot() {
             // The click selects the clicked view on the panel the radio sits on, then heals that view's
             // own slot so a bloc it stored but that has since lapsed does not spotlight an empty
-            // footprint. It does not clear - each view keeps its own selection across the switch. The
+            // footprint, judged against the sector the body was built for. It does not clear - each view
+            // keeps its own selection across the switch. The
             // screen is asserted here rather than in a case of its own: the intel screen is posed open
             // throughout, so a selector resolving the showing screen files the switch under the visor
             // and fails this.
@@ -150,7 +156,9 @@ final class OwnerMapBodyControlsTest {
                     .selectView(BUILT_SCREEN, groupedViewMock);
 
                 healMock.verify(
-                    () -> FilterSelectionHeal.healStaleSelectionAgainstLiveSector(viewRegistryMock));
+                    () -> FilterSelectionHeal.healStaleSelectionAgainstActiveView(
+                        builtSectorMock,
+                        viewRegistryMock));
             }
         }
 
@@ -200,7 +208,7 @@ final class OwnerMapBodyControlsTest {
 
                 stubSelectorViews(stringsMock);
 
-                var selector = OwnerMapBodyControls.buildViewSelector(viewRegistryMock, BUILT_SCREEN);
+                var selector = OwnerMapBodyControls.buildViewSelector(viewRegistryMock, builtSectorMock, BUILT_SCREEN);
 
                 assertThat(selector)
                     .isInstanceOf(HorizontalRadioSpec.class);
@@ -219,6 +227,7 @@ final class OwnerMapBodyControlsTest {
 
                 var selector = (HorizontalRadioSpec) OwnerMapBodyControls.buildViewSelector(
                     viewRegistryMock,
+                    builtSectorMock,
                     BUILT_SCREEN);
 
                 assertThat(selector.reselect())
@@ -418,6 +427,7 @@ final class OwnerMapBodyControlsTest {
         // private selectViewSegment the selector wires.
         var selector = (InteractiveSpec) OwnerMapBodyControls.buildViewSelector(
             viewRegistryMock,
+            builtSectorMock,
             BUILT_SCREEN);
 
         selector
