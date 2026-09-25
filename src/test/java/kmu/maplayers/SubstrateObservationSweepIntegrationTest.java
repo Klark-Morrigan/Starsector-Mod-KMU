@@ -9,7 +9,7 @@ import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
-import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
+import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -64,7 +64,7 @@ final class SubstrateObservationSweepIntegrationTest {
             // neighbours' account alone, and the record is what keeps it there once they are gone.
             var sector = buildSettledSectorWithADerelict();
 
-            SectorPoliticsFixtures.openSectorMemory(sector);
+            SectorOwnershipFixtures.openSectorMemory(sector);
             runSweepsOver(sector, ONE_SWEEP);
 
             assertThat(SectorColonySightings.readSightings(sector)

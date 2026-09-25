@@ -27,7 +27,7 @@ see the [mod README](../../../../../../../../README.md) for project context.
 *Owner*,
 *cluster*,
 and the rest are defined once in [the framework vocabulary](../../../README.md#the-vocabulary),
-along with what each political-map term maps to.
+along with what each maps to above `base`.
 Only the term this package owns outright is settled here:
 `FillSplit.FillState` is the single definition of the three **fill states** (solid, hatched, unfilled),
 and everything that hatches,
@@ -286,8 +286,8 @@ over its own overlay record rather than these lists.
 what a cluster stands for,
 why a system hatches or draws empty,
 what colour any of it takes -
-belongs to whichever layer owns the clusters;
-for the one layer that paints today that is [`politicalmap`](../../../politicalmap/README.md).
+belongs to the tiers above;
+for a layer painted by owner that is [the owner-map tier](../../../ownermap/README.md).
 *Who gets the frame at all* is the [render surface](../README.md) one level up.
 The *cells and clusters* the shaping runs over,
 and the channel it insets by,

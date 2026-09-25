@@ -1,5 +1,6 @@
 package kmu.maplayers.base.sidebar;
 
+import kmlib.persistence.PersistedChoices;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
 
 /**
@@ -10,8 +11,7 @@ import kmlib.starsector.ui.widgets.lists.ListColumns;
  */
 public final class ColumnSelectionBinder {
 
-    private ColumnSelectionBinder() {
-    }
+    private ColumnSelectionBinder() { }
 
     /**
      * The player's stored column choice in one slot, read live: the stored key off
@@ -22,7 +22,11 @@ public final class ColumnSelectionBinder {
      * @return the stored column choice
      */
     public static ListColumns resolveStoredColumns(ScreenSelectionSlot slot) {
-        return ListColumns.fromKeyOrDefault(ColumnSelection.getColumnCountKey(slot));
+
+        return PersistedChoices.fromKey(
+            ListColumns.values(),
+            ColumnSelection.getColumnCountKey(slot),
+            ListColumns.DEFAULT);
     }
 
     /**

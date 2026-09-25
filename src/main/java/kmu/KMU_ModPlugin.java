@@ -15,7 +15,7 @@ import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.base.visibility.colonies.ColonySightingInstaller;
-import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
+import kmu.mods.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.mods.rat.RandomAssortmentOfThingsCompatibilityInstaller;
 import kmu.mods.rat.RandomAssortmentOfThingsCompatibilityMode;
 import kmu.mods.rat.RandomAssortmentOfThingsSettings;
@@ -132,13 +132,6 @@ public class KMU_ModPlugin extends BaseModPlugin {
             () -> KmuLunaSettings.runOnSettingsChange(KMU_ModPlugin::applySwitchedFeatures),
             "Failed to install KMU feature switch listener");
 
-        // The spotlight is the other thing a settings change can invalidate. Its own registration
-        // rather than a passenger on the switch listener above, since it answers a different question:
-        // what the settings made unpickable, not which feature they switched.
-        KmuWiringSteps.runGuardedStep(
-            FilterSelectionHeal::installHealOnSettingsChange,
-            "Failed to install KMU map filter heal listener");
-
         // The same reaction to Random Assortment of Things' own saves, so the compatibility follows
         // that mod flipping its minimap switch live instead of at the next load. A second settings
         // source rather than a second kind of step, which is why it reads like the one above.
@@ -202,6 +195,12 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // than for as long as one particular layer is on the bar.
         MapSubstrateRefreshInstaller.installAll(sector);
 
+        // Also above every layer: the one relay that carries Nexerelin's colony transfers to
+        // whichever layers' listeners are registered on this sector, so no layer names that mod.
+        // Before the layers, so a layer stood up below is reached from its first transfer; a no-op
+        // without Nexerelin, which is the only source of such transfers.
+        NexerelinInvasionListenerInstaller.installIfPresent(sector);
+
         // Every layer the player has on their bar, stood up on this sector; every tab they took off
         // it left unwired, so a layer nobody can reach costs nothing. Named as the framework's walk
         // rather than as one installer per layer: which layers exist is the registry's, and a layer
@@ -225,7 +224,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         MapChromeInstaller.installAll(sector);
     }
 
-    // Everything those six stand up, taken back. All of them and not only the surfaces: across a
+    // Everything those seven stand up, taken back. All of them and not only the surfaces: across a
     // load their listeners and scripts would be gone by themselves, being transient, but a player
     // switching the overlay off mid-campaign is still running every one of them.
     static void uninstallMapLayers(SectorAPI sector) {
@@ -235,9 +234,10 @@ public class KMU_ModPlugin extends BaseModPlugin {
         SidebarInstaller.uninstallAll(sector);
         MapSurfaceInstaller.uninstallAll(sector);
         MapLayerStandings.standEveryLayerDownFrom(sector);
+        NexerelinInvasionListenerInstaller.uninstallIfPresent(sector);
         MapSubstrateRefreshInstaller.uninstallAll(sector);
 
-        // Last, mirroring the install: the six above are taken back through the state this holds,
+        // Last, mirroring the install: the seven above are taken back through the state this holds,
         // so releasing it first would leave them undoing their work against nothing. Reached with a
         // sector nothing was ever installed on too, since a load with the overlay switched off
         // takes it back rather than declining to stand it up.

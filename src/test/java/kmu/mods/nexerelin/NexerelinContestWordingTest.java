@@ -4,7 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 
-import kmu.maplayers.politicalmap.base.tooltip.ContestWording;
+import kmu.maplayers.politicalmap.tooltip.ContestWording;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

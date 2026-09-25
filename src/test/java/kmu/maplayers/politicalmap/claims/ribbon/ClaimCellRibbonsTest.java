@@ -6,10 +6,10 @@ import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
+import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,21 +18,21 @@ import java.util.List;
 import java.util.Optional;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.ALLIANCE_BLOC_ID;
-import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.DIKTAT_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.PERSEAN;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildAlliedInputsOver;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsOver;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildSectorHolding;
+import static kmu.maplayers.ownermap.holding.HolderGroupingFixture.GROUP_BLOC_ID;
+import static kmu.maplayers.ownermap.holding.HolderGroupingFixture.buildGroupOf;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.DIKTAT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.DIKTAT_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.PERSEAN;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildAlliedInputsOver;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildInputsOver;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildSectorHolding;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -155,10 +155,10 @@ final class ClaimCellRibbonsTest {
                 buildStanding(HEGEMONY, TRAILING_SCORE));
 
             var plan = planThrough(
-                ALLIANCE_BLOC_ID,
+                GROUP_BLOC_ID,
                 contest,
                 sector,
-                buildInputsOver(sector, buildAllianceOf(HEGEMONY, PERSEAN), BASE_FOG));
+                buildInputsOver(sector, buildGroupOf(HEGEMONY, PERSEAN), BASE_FOG));
 
             assertThat(plan.segments())
                 .containsExactly(

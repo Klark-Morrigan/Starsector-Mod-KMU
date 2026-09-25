@@ -3,27 +3,21 @@ package kmu.mods.nexerelin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
-import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
-
-import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
-import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTransferListener;
+import kmu.starsector.listeners.MarketTransferListener;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 import java.util.List;
 
 import static kmlib.testfixtures.starsector.settings.StubbedModIds.NEXERELIN;
 
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
-
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -34,17 +28,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins {@link NexerelinInvasionListenerInstaller}: when Nexerelin is enabled the
- * market-transfer listener is (re)installed fresh and transient (not persisted), and
- * when it is disabled nothing is touched. Transience matters because the listener
- * implements a Nex interface - persisting it would fail to load if Nex were removed.
- * The mod-enabled gate is what makes the Nex dependency optional, so the disabled case
- * is pinned alongside the install.
+ * Pins {@link NexerelinInvasionListenerInstaller}: when Nexerelin is enabled the transfer relay is
+ * (re)installed fresh and transient (not persisted), and when it is disabled nothing is touched.
+ * Transience matters because the relay implements a Nex interface - persisting it would fail to
+ * load if Nex were removed. The mod-enabled gate is what makes the Nex dependency optional, so the
+ * disabled case is pinned alongside the install.
  *
- * <p>And that the listener is built against the sector it is being installed on, as its
- * vanilla-driven siblings are: it reports a conquest onto that sector's own refresh board, so an
- * installer handing over anything else would leave it marking whichever sector the player happens
- * to have loaded.
+ * <p>And that the relay is built against the sector it is being installed on: it tells that
+ * sector's own listeners about a conquest, so an installer handing over anything else would leave
+ * it telling whichever sector the player happens to have loaded.
  */
 final class NexerelinInvasionListenerInstallerTest {
 
@@ -52,7 +44,7 @@ final class NexerelinInvasionListenerInstallerTest {
     class InstallIfPresent {
 
         @Test
-        void reinstallsFreshTransientListenerWhenNexEnabled() {
+        void installIfPresentReinstallsFreshTransientRelayWhenNexEnabled() {
 
             var listenerManagerMock = mock(ListenerManagerAPI.class);
             var sectorMock = buildSectorWith(listenerManagerMock);
@@ -63,52 +55,47 @@ final class NexerelinInvasionListenerInstallerTest {
                 NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
 
                 // Remove-then-add: clears any copy an older build persisted into the save,
-                // then adds the listener transiently (true) so it never enters the save - it
+                // then adds the relay transiently (true) so it never enters the save - it
                 // implements a Nex interface and would fail to load if Nex were removed.
                 verify(listenerManagerMock)
-                    .removeListenerOfClass(PoliticalMapMarketTransferListener.class);
+                    .removeListenerOfClass(NexerelinMarketTransferRelay.class);
                 verify(listenerManagerMock)
-                    .addListener(any(PoliticalMapMarketTransferListener.class), eq(true));
+                    .addListener(any(NexerelinMarketTransferRelay.class), eq(true));
             }
         }
 
         @Test
-        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
-            // Read by driving the registered listener and looking for the mark on the installed
-            // sector's board: what the wiring is for is where a conquest lands, and a listener
-            // holding the right sector while marking elsewhere would pass a check on the field.
-            //
-            // The machinery is installed and the listener driven outside the Global block, since
-            // both touch classes whose static logger would come back null if it were resolved
-            // while Global is mocked.
-            var listenerManager = new RecordingListenerManager();
-            var sectorMock = buildSectorWith(listenerManager);
-            var refreshBoard = SectorMapMachineryIndex
-                .installMachineryOn(sectorMock)
-                .resolveRefreshBoard();
+        void installIfPresentBuildsTheRelayAgainstTheSectorItIsInstalledOn() {
+            // Read by driving the registered relay and looking for the call on a listener of the
+            // installed sector: what the wiring is for is where a conquest lands, and a relay
+            // holding the right sector while telling elsewhere would pass a check on the field.
+            var listenerManagerMock = mock(ListenerManagerAPI.class);
+            var sectorMock = buildSectorWith(listenerManagerMock);
+            var transferListenerMock = mock(MarketTransferListener.class);
+            var marketMock = mock(MarketAPI.class);
+
+            when(listenerManagerMock.getListeners(MarketTransferListener.class))
+                .thenReturn(List.of(transferListenerMock));
 
             try (var globalMock = mockStatic(Global.class)) {
 
                 stubModEnabled(globalMock, true);
                 NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
             }
+            var installedRelay = ArgumentCaptor.forClass(NexerelinMarketTransferRelay.class);
 
-            ((PoliticalMapMarketTransferListener) listenerManager.getAddedListeners().get(0))
-                .reportMarketTransfered(
-                    mockMarketInSystem("sys"),
-                    mock(FactionAPI.class),
-                    mock(FactionAPI.class),
-                    true,
-                    true,
-                    List.of(),
-                    1.0f);
+            verify(listenerManagerMock)
+                .addListener(installedRelay.capture(), eq(true));
 
-            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
-                .containsExactly(buildCellKey("sys"));
+            installedRelay.getValue().reportMarketTransfered(
+                marketMock, null, null, true, true, List.of(), 1.0f);
+
+            verify(transferListenerMock)
+                .reportMarketTransferred(marketMock, null, null, true);
         }
 
         @Test
-        void addsNothingWhenNexDisabled() {
+        void installIfPresentAddsNothingWhenNexDisabled() {
 
             var listenerManagerMock = mock(ListenerManagerAPI.class);
             var sectorMock = buildSectorWith(listenerManagerMock);
@@ -121,12 +108,12 @@ final class NexerelinInvasionListenerInstallerTest {
                 verify(listenerManagerMock, never())
                     .addListener(any(), anyBoolean());
                 verify(listenerManagerMock, never())
-                    .removeListenerOfClass(PoliticalMapMarketTransferListener.class);
+                    .removeListenerOfClass(NexerelinMarketTransferRelay.class);
             }
         }
 
         @Test
-        void ignoresNullSectorWithoutConsultingModState() {
+        void installIfPresentIgnoresNullSectorWithoutConsultingModState() {
 
             try (var globalMock = mockStatic(Global.class)) {
 

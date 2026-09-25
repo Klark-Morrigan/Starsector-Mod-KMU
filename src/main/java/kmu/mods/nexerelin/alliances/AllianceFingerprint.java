@@ -27,9 +27,8 @@ import java.util.List;
  * a handful of alliances is trivial, so a plain sorted hash is preferred here over the
  * avalanche-then-sum fingerprint {@code MapVisibilityFingerprint} needs for its hundreds of
  * systems. Pure over plain {@link AllianceRecord}s - no Nexerelin or Starsector type - so
- * it is exercised directly on hand-built records, whatever mod the live ones were read out
- * of. No alliances fold to a fixed token of their own, which is what an install without
- * that mod polls steadily.
+ * the token holds whatever mod the records were read out of. No alliances fold to a fixed token
+ * of their own, which is what an install without that mod polls steadily.
  */
 public final class AllianceFingerprint {
 

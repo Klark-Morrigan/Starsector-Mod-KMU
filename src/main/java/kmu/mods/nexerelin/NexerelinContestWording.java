@@ -2,7 +2,7 @@ package kmu.mods.nexerelin;
 
 import kmlib.mods.nexerelin.NexerelinPresence;
 
-import kmu.maplayers.politicalmap.base.tooltip.ContestWording;
+import kmu.maplayers.politicalmap.tooltip.ContestWording;
 
 /**
  * The soft-dependency gate behind how a political box words presence beside a system's holder.
@@ -13,14 +13,13 @@ import kmu.maplayers.politicalmap.base.tooltip.ContestWording;
  * rivals.
  *
  * <p>Read live rather than settled once, for the reason
- * {@link kmu.maplayers.politicalmap.base.tooltip.ContestWordingSource} sets out - the boxes that ask
+ * {@link kmu.maplayers.politicalmap.tooltip.ContestWordingSource} sets out - the boxes that ask
  * are built before the game has necessarily stood its mod set up.
  *
- * <p>Kept apart from {@link NexerelinAlliances} despite sharing its gate: that class folds the live
- * alliance set, which is state of a running game and reached through a deferred holder so a Nex-free
- * install never seeks {@code exerelin.*}. This one reads the mod set alone and names no Nex class at
- * all, so it needs no such isolation - and binding a wording through an alliance reader would tie the
- * heading to a set it has nothing to do with.
+ * <p>Kept apart from {@link NexerelinAlliances} although both turn on the mod being present: that
+ * class folds the live alliance set, which is state of a running game, while this one reads the mod
+ * set alone - and binding a wording through an alliance reader would tie the heading to a set it has
+ * nothing to do with.
  */
 public final class NexerelinContestWording {
 

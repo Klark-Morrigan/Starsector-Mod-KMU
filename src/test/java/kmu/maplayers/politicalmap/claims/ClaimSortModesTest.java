@@ -4,17 +4,16 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
-import kmu.maplayers.politicalmap.base.RankedBloc;
-import kmu.maplayers.politicalmap.base.politics.ClaimStats;
+import kmu.maplayers.ownermap.picker.RankedBloc;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
-import static kmu.maplayers.politicalmap.base.BlocSortFixtures.buildBloc;
-import static kmu.maplayers.politicalmap.base.BlocSortFixtures.listIdsInModeOrder;
+import static kmu.maplayers.ownermap.picker.BlocSortFixtures.ROW_COLOUR;
+import static kmu.maplayers.ownermap.picker.BlocSortFixtures.buildBloc;
+import static kmu.maplayers.ownermap.picker.BlocSortFixtures.listIdsInModeOrder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -2,7 +2,7 @@ package kmu.mods.nexerelin.alliances;
 
 import kmlib.starsector.factions.alliances.AllianceRecord;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,9 +48,9 @@ class AllianceGroupingFactoryTest {
 
             var grouping = AllianceGroupingFactory.buildFrom(List.of(buildAlliedPowers()));
 
-            assertThat(grouping.resolveAllianceName("alliance-1"))
+            assertThat(grouping.resolveGroupName("alliance-1"))
                 .isEqualTo("Allied Powers");
-            assertThat(grouping.isAlliance("alliance-1"))
+            assertThat(grouping.isGroupedBloc("alliance-1"))
                 .isTrue();
         }
 
@@ -61,7 +61,7 @@ class AllianceGroupingFactoryTest {
 
             assertThat(grouping.resolveBlocId("tritachyon"))
                 .isEqualTo("tritachyon");
-            assertThat(grouping.isAlliance("tritachyon"))
+            assertThat(grouping.isGroupedBloc("tritachyon"))
                 .isFalse();
         }
 
@@ -72,7 +72,7 @@ class AllianceGroupingFactoryTest {
 
             assertThat(grouping.resolveBlocId("hegemony"))
                 .isEqualTo("hegemony");
-            assertThat(grouping.isAlliance("hegemony"))
+            assertThat(grouping.isGroupedBloc("hegemony"))
                 .isFalse();
         }
 
@@ -84,7 +84,7 @@ class AllianceGroupingFactoryTest {
 
             // No member folds into it and no colour faction is picked, so the bloc ID is
             // not an alliance and colours as itself - the record left no trace.
-            assertThat(grouping.isAlliance("empty-alliance"))
+            assertThat(grouping.isGroupedBloc("empty-alliance"))
                 .isFalse();
             assertThat(grouping.resolveColourFactionId("empty-alliance"))
                 .isEqualTo("empty-alliance");

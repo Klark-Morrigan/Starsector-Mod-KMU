@@ -6,7 +6,7 @@ An *independent overlay*:
 it is layered over whichever base view is live and is not part of the production fills and borders,
 so it owns none of the cluster draw packets.
 
-Nothing here knows who holds anything.
+Nothing here knows who owns anything.
 A cluster arrives as a set of systems sharing an opaque *owner*,
 and the two things a name needs beyond geometry -
 what it reads and what shade it draws in -
@@ -160,9 +160,9 @@ never one cluster's:
 a name sits wherever its own cluster is roomiest,
 and that can be over a neighbour's cells entirely,
 so whoever a box belongs to says nothing about whose way it is in.
-The political map's presence bands are what read them today -
-under a player setting picking which reading they take -
-which is also why those bands are baked after the placements are fitted
+What reads them is the tier above,
+laying its own shapes clear of the names under a player setting picking which reading it takes -
+which is also why those shapes are baked after the placements are fitted
 rather than as their cells are shaped.
 
 ## Which names a re-fit moved
@@ -213,9 +213,9 @@ When a rebuild happens at all is [the caching notes](../../../../../../../docs/d
 ## What is not here
 
 The *names and colours* a label reads and draws in.
-Those belong to the layer,
-which resolves them against its own vocabulary before the search runs;
-the political map's half is `politicalmap.base.render.labels.anchor`.
+Those belong to the tiers above,
+which resolve them against their own vocabulary before the search runs;
+the owner-painted tier's half sits in `ownermap.render.labels`.
 The *fills and borders* this overlay sits over are built and drawn by whichever layer painted them;
 the anchor search clips against the same border trace those fills use,
 so a name stays inside the outline the player sees.

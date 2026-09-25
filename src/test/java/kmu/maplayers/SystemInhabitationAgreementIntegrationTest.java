@@ -14,12 +14,12 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
-import kmu.maplayers.politicalmap.base.dominance.ColonyReadRules;
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
-import kmu.maplayers.politicalmap.base.tooltip.SystemStatusRow;
+import kmu.maplayers.ownermap.holding.ColonyReadRules;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.holding.OwnerMapInhabitation;
+import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.tooltip.SystemStatusRow;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,9 +32,9 @@ import java.util.Optional;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
-import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.buildRulesUnder;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_UNPOPULATED;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
+import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.buildRulesUnder;
+import static kmu.maplayers.ownermap.holding.DecivilisedColonyHabitation.COUNTS_AS_UNPOPULATED;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildAbandonedStationMarket;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
  * Pins the one claim neither suite either side of it can make: that the cell a system is drawn as
  * and the status line drawn over it answer "does anybody live here" off one rule.
  *
- * <p>The cell classifies through {@link PoliticalMapInhabitation}, the box through
+ * <p>The cell classifies through {@link OwnerMapInhabitation}, the box through
  * {@link SystemStatusRow}, and each has its own suite pinning its own answer. Nothing in that pair
  * stops the two drifting onto different colony projections, which is the state that lets a hover
  * print "Unpopulated" across a system the map beneath the cursor has painted as settled.
@@ -248,7 +248,7 @@ final class SystemInhabitationAgreementIntegrationTest {
             StarSystemAPI system,
             ColonyReadRules colonyReadRules) {
 
-        return PoliticalMapInhabitation.isSystemInhabited(
+        return OwnerMapInhabitation.isSystemInhabited(
             HolderPass.over(sector, colonyReadRules, HolderGrouping.identity()),
             system);
     }
@@ -311,7 +311,7 @@ final class SystemInhabitationAgreementIntegrationTest {
 
         // Hanging a market on an entity takes two stubs and dropping either loses it in silence,
         // so the wiring is the shared fixture's rather than restated here.
-        SectorPoliticsFixtures.placeMarketsOnSystemEntities(system, colony);
+        SectorOwnershipFixtures.placeMarketsOnSystemEntities(system, colony);
 
         return sector;
     }

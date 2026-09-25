@@ -3,13 +3,12 @@ package kmu.maplayers.politicalmap.claims;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
-import kmu.maplayers.politicalmap.base.BlocMetricSortMode;
-import kmu.maplayers.politicalmap.base.BlocSortModeComposer;
-import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.RankedBloc;
-import kmu.maplayers.politicalmap.base.SharedBlocSortModes;
-import kmu.maplayers.politicalmap.base.SizedBlocMetrics;
-import kmu.maplayers.politicalmap.base.politics.ClaimStats;
+import kmu.maplayers.ownermap.OwnerPaintedView;
+import kmu.maplayers.ownermap.picker.BlocMetricSortMode;
+import kmu.maplayers.ownermap.picker.BlocSortModeComposer;
+import kmu.maplayers.ownermap.picker.RankedBloc;
+import kmu.maplayers.ownermap.picker.SharedBlocSortModes;
+import kmu.maplayers.ownermap.picker.SizedBlocMetrics;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
@@ -81,7 +80,7 @@ public final class ClaimSortModes {
     /**
      * This mechanic's half of the claims view's sort vocabulary - every mode declared here in selector
      * display order, with {@link #DEFAULT} as the fallback. The view hands it to
-     * {@link PoliticalMapView#buildBlocPickerRead}, which offers it with the standing ranking behind
+     * {@link OwnerPaintedView#buildBlocPickerRead}, which offers it with the standing ranking behind
      * it, so the selector draws these numbers plus the one criterion no vocabulary declares.
      *
      * <p>It travels with the bloc list from there on, which is what keeps the rows and the modes that

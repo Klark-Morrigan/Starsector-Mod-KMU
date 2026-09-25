@@ -43,7 +43,7 @@ final class ObservationNotesTest {
     // shipped strings purely for its shape - two slots, in the order a lead-in takes them - there
     // being one axis in the mod today. What matters is that the two compose visibly differently,
     // so the remark a case asserts names the fact it came off.
-    private static final String LAST_SEEN_LEAD_IN = KmuStringKeys.POLITICAL_MAP_TOOLTIP_LAST_SEEN;
+    private static final String LAST_SEEN_LEAD_IN = KmuStringKeys.OWNER_MAP_TOOLTIP_LAST_SEEN;
     private static final String JOINED_LEAD_IN = KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED;
 
     // What a row with no world to read is dated against: nothing, so nothing can be said.

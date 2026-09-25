@@ -53,6 +53,22 @@ enforcePackageVocabulary {
                 words: ['territory', 'territories', 'national border',
                         'contested fill', 'bloc', 'blocs']
 
+    // The owner-painted tier says what the substrate says about a painted map,
+    // one level up: it knows there is an owner and nothing about why. So it takes
+    // the substrate's political nouns, plus the words that name one layer and the
+    // mechanics a layer decides its owners by, since a tier named after one of its
+    // layers is that layer with extra callers.
+    //
+    // *Bloc* stays open here where it is closed below. The substrate paints an
+    // opaque owner and has no notion of a group; this tier is where owners are
+    // grouped, ranked and picked, and *bloc* is its word for the group whatever
+    // decides membership.
+    forbidWords under: 'kmu.maplayers.ownermap',
+                words: ['territory', 'territories', 'national border',
+                        'contested fill', 'political', 'politics',
+                        'dominance', 'dominant', 'claim', 'claims',
+                        'alliance', 'alliances', 'nexerelin']
+
     // *Cell* means a system's polygon everywhere else under this root - the
     // geometry that shapes one, the edges it is classified by, the hit test
     // that finds one under the pointer. The arranging modal borrowed it for the
@@ -81,7 +97,7 @@ enforcePackageVocabulary {
 
     // The one file that may say it: the map-layer README is where this rule is
     // written down, and a rule that cannot name the word it forbids cannot be
-    // read. The same shape as the political-word exemptions below - naming an
+    // read. The same shape as the other exemptions in this block - naming an
     // identifier or a rule is not the tree speaking the word for itself.
     allowWord word: 'ground',
             inFile: 'src/main/java/kmu/maplayers/README.md'
@@ -111,18 +127,11 @@ enforcePackageVocabulary {
     allowWord word: 'bloc',
             inFile: 'src/test/java/kmu/maplayers/base/sidebar/FilterSelectionTest.java'
 
-    // The fourth is the legitimate shape the faction row above describes: the
-    // theme's README explains why `MapPalettes` stays political, and it cannot
-    // make that argument without naming what the political map resolves.
+    // The fourth names a rule rather than a key: the theme's README explains why
+    // `MapPalettes` stays with the owner-painted tier, and it cannot make that
+    // argument without naming what that tier resolves.
     allowWord word: 'bloc',
             inFile: 'src/main/java/kmu/maplayers/base/theme/README.md'
-
-    // The geometry viewer's header lists the pipeline stages it does *not*
-    // exercise, by their real class names on the political side. Naming another
-    // package's types is not this package speaking the word for itself, and the
-    // names are not ours to reword.
-    allowWords words: ['territory', 'territories'],
-            inFile: 'src/utils/java/kmu/maplayers/base/geometry/ui/SectorGeometryViewer.java'
 }
 
 // Two ambient reads the map layers contain, each at the seams named below.
@@ -134,17 +143,16 @@ enforcePackageVocabulary {
 // compiles exactly like the first.
 //
 // So the reads are contained at the seams vanilla drives with no sector named,
-// and those seams are named here. Three of the four resolve a *sector* for a
-// screen that hands them none - the pause cover, the filter self-heal and the
-// live claim reader; the fourth is the installation index, which is where a
-// sector-less caller resolves the machinery it should draw through, and is the
-// one read the whole arrangement rests on.
+// and those seams are named here. Two of the three resolve a *sector* for a
+// screen that hands them none - the pause cover and the filter self-heal; the
+// third is the installation index, which is where a sector-less caller resolves
+// the machinery it should draw through, and is the one read the whole
+// arrangement rests on.
 enforceRestrictedCalls {
     restrictCall call: 'Global.getSector()',
         under: 'kmu.maplayers',
         toTypes: [
             'FilterSelectionHeal',
-            'LiveVisibilityClaimBreakdownReader',
             'SectorMapMachineryIndex',
             'PauseMenuMapCover']
 
@@ -198,7 +206,7 @@ def consoleCommandsJars = findModJars('lw_Console.jar')
 def kmlibDependency = 'kmlib:KMLib'
 
 // LazyLib is a hard dependency in mod_info.json (its LazyFont/DrawableString draw
-// the political-map faction names - there is no vanilla font API). The mod
+// the map's cluster names - there is no vanilla font API). The mod
 // classloader supplies the jar at runtime, so compiling against it is enough.
 // Resolved via the install root because LazyLib always lives at
 // <starsector>/mods/lw_lazylib, the launcher's expected layout.
@@ -213,10 +221,10 @@ def lazyLibJarFile = resolveModJarFile('lw_lazylib', 'LazyLib.jar')
 def lunaLibJarFile = resolveModJarFile('lunalib', 'LunaLib.jar')
 
 // Nexerelin is an optional runtime dependency. KMU compiles against its
-// InvasionListener so the political map can repaint a colony that changes hands
-// in a Nex war; the mod classloader supplies the jar at runtime when Nex is
-// installed, and NexerelinInvasionListenerInstaller gates the listener behind a
-// mod-enabled check so a Nex-free install never resolves the type.
+// InvasionListener so the map layers learn of a colony that changes hands in a
+// Nex war; the mod classloader supplies the jar at runtime when Nex is installed,
+// and NexerelinInvasionListenerInstaller gates the relay behind a mod-enabled
+// check so a Nex-free install never resolves the type.
 def nexJars = findModJars('ExerelinCore.jar')
 
 // XStream backs Starsector's save serialisation. KMU compiles against it to
@@ -371,16 +379,16 @@ tasks.withType(JavaCompile).configureEach {
         // a missing KMLib can never reach this point to be reported.
         //
         // LazyLib is a hard dependency at runtime, but its LazyFont is needed to
-        // compile the political-map faction-name renderer, so the jar must be
-        // present to build.
+        // compile the map's cluster-name labels, so the jar must be present to
+        // build.
         if (!lazyLibJarFile.exists()) {
             throw new GradleException(
                 "Could not find LazyLib jar at ${lazyLibJarFile}. " +
                 "Install LazyLib under mods/lw_lazylib/jars/LazyLib.jar " +
-                "for compiling KMU's political-map faction labels.")
+                "for compiling KMU's map labels.")
         }
         // Nex is optional at runtime but its InvasionListener is needed to
-        // compile PoliticalMapMarketTransferListener, so the jar must be present
+        // compile NexerelinMarketTransferRelay, so the jar must be present
         // to build even though a player can run KMU without Nex installed.
         if (nexJars.files.isEmpty()) {
             throw new GradleException(

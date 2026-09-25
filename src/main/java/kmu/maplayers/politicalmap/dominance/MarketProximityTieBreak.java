@@ -1,0 +1,144 @@
+package kmu.maplayers.politicalmap.dominance;
+
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
+import kmlib.starsector.entities.EntityOrbits;
+import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.systems.StarSystems;
+
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
+
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * Breaks an exact dominance tie by which bloc holds the market nearest the system's centre,
+ * so a tie resolves the same on every view instead of by the arbitrary ordering of bloc ids.
+ *
+ * <p>A bloc ID is a faction ID on the faction view but an alliance's own ID on the alliances
+ * view, so a tie falling to the lowest ID could flip holder between views purely because an
+ * alliance ID sorts differently than the member faction's. A physical measure - proximity to
+ * the system centre - is the same on both views, so a system a tie decides paints the same
+ * holder however factions are grouped.
+ *
+ * <p>Distance is measured from the star nearest the system centre (the star itself in a
+ * single-star system) along each market's orbit, summing the circular-orbit radii up the
+ * body's orbit-focus chain to that star. Reading the orbit rather than the body's live
+ * position makes the result identical every frame: a planet is as far out as its orbit,
+ * wherever it currently sits on it. A bloc's distance is its nearest market's; the closer
+ * bloc wins the tie, and two blocs whose nearest markets orbit at the same depth fall back to
+ * the lowest colour-faction ID - which is grouping-invariant, so even that rare case stays
+ * consistent across views.
+ *
+ * <p>The colonies are the pass's own set rather than a walk of the sector made here, and which of
+ * them count is {@link KnownMarketFootprints#readWeighedColonies}'s answer rather than a rule
+ * restated here - so the tie is settled among the very colonies the tied weights were folded
+ * from. A colony that took no weight cannot move a fill, and settling a dead heat is moving one.
+ *
+ * <p>The comparator is lazy: it reads no geometry until first asked to compare, which
+ * {@link SystemDominance} does only when two blocs tie on all three weight levels. A system
+ * with a clear winner - nearly every system - pays nothing. Starsector market and orbit
+ * types stay in this adapter, so {@link SystemDominance} remains a pure rule over footprints.
+ */
+public final class MarketProximityTieBreak {
+
+    // The distance a bloc with no counted market takes - it never wins a proximity tie, leaving
+    // the colour-faction backstop to settle the pair. Matches the infinity StarSystems hands
+    // back for a market whose primary entity cannot be placed.
+    private static final double UNPLACEABLE_DISTANCE = Double.POSITIVE_INFINITY;
+
+    private MarketProximityTieBreak() {
+    }
+
+    /**
+     * A lazy tie-break comparator over bloc IDs for one system, ordering the bloc whose
+     * nearest market orbits closest to the system's central star first, and falling back to
+     * the lowest colour-faction ID when two nearest markets orbit at the same depth. Reads no
+     * geometry until first compared, so a system that never ties costs nothing.
+     *
+     * @param system           the system the tie is decided within
+     * @param colonies         the system's colony set, as the pass's one walk of it reported -
+     *                         the same colonies every other surface reads, so a dead heat cannot
+     *                         be settled among a set of markets nothing else in the pass saw
+     * @param colonyKnowledge what the player may be shown of a colony, matching the pass's own
+     *                         projection so the tie weighs the markets the ranking above it did
+     * @param grouping         the active grouping, so a market's bloc and the colour-faction
+     *                         backstop resolve as the pass grouped them
+     * @return a comparator ordering the closer-to-centre bloc first
+     */
+    public static Comparator<String> createForSystem(
+            StarSystemAPI system,
+            Colonies colonies,
+            ColonyKnowledge colonyKnowledge,
+            HolderGrouping grouping) {
+
+        return new Comparator<>() {
+            // Built on the first compare - i.e. the first tie in this system - then reused for
+            // any further ties, so the geometry is read once and only when a tie needs it.
+            private Map<String, Double> minDistanceByBlocId;
+
+            @Override
+            public int compare(String leftBlocId, String rightBlocId) {
+                if (minDistanceByBlocId == null) {
+                    minDistanceByBlocId = computeMinDistanceByBlocId(
+                        system,
+                        colonies,
+                        colonyKnowledge,
+                        grouping);
+                }
+                // Primitive doubles so the comparison below is by value; a boxed Double would
+                // compare by reference and never reach the colour-faction backstop on a tie.
+                double leftDistance =
+                    minDistanceByBlocId.getOrDefault(leftBlocId, UNPLACEABLE_DISTANCE);
+                double rightDistance =
+                    minDistanceByBlocId.getOrDefault(rightBlocId, UNPLACEABLE_DISTANCE);
+
+                if (leftDistance != rightDistance) {
+                    return Double.compare(leftDistance, rightDistance);
+                }
+                return grouping
+                    .resolveColourFactionId(leftBlocId)
+                    .compareTo(grouping.resolveColourFactionId(rightBlocId));
+            }
+        };
+    }
+
+    // Each present bloc's nearest-colony distance from the system's central star, built once
+    // when the tie-break is first consulted. Reads the very colonies the ranking that tied was
+    // folded from, folds each into its bloc, and keeps the smallest orbit-chain distance to the
+    // centremost star, so the comparator reads a ready lookup. The selection is asked for here
+    // rather than by the caller so a system that never ties pays for neither it nor the geometry.
+    // The star search and the orbit-chain distance are StarSystems' job; this only maps the result
+    // onto blocs.
+    private static Map<String, Double> computeMinDistanceByBlocId(
+            StarSystemAPI system,
+            Colonies colonies,
+            ColonyKnowledge colonyKnowledge,
+            HolderGrouping grouping) {
+
+        var centremostStar = StarSystems.getCentremostStar(system);
+        var minDistanceByBlocId = new LinkedHashMap<String, Double>();
+
+        for (var market : KnownMarketFootprints.readWeighedColonies(
+                colonies,
+                colonyKnowledge)) {
+
+            var blocId = grouping.resolveBlocId(market.getFaction().getId());
+
+            // Left out on the rule every per-bloc fold on the map applies. Nothing looks a
+            // nameless bloc up - the ranking that reaches this tie-break dropped it already - so
+            // what this prevents is one fold quietly keeping what the others discard.
+            if (blocId == null) {
+                continue;
+            }
+            var distance =
+                EntityOrbits.computeOrbitalDistanceTo(market.getPrimaryEntity(), centremostStar);
+
+            minDistanceByBlocId.merge(blocId, distance, Math::min);
+        }
+        return minDistanceByBlocId;
+    }
+}

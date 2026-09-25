@@ -3,12 +3,12 @@ package kmu.mods.nexerelin;
 import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.mods.nexerelin.alliances.AllianceFingerprint;
 import kmu.mods.nexerelin.alliances.AllianceGroupingFactory;
 
 /**
- * KMU's readings of the live alliance set: an {@link HolderGrouping} for the political map, a
+ * KMU's readings of the live alliance set: a {@link HolderGrouping} for the political map, a
  * {@link FactionAlliances} for the rule that decides who would keep a partner's secret, and a
  * fingerprint for the watcher that notices either changing.
  *

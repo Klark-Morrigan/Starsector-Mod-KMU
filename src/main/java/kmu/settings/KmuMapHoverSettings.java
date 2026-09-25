@@ -14,8 +14,9 @@ package kmu.settings;
  */
 public final class KmuMapHoverSettings {
 
-    // The upper two hover tiers, over every layer's own pair. The lower two IDs read as the
-    // political map's because they predate the framework.
+    // The upper two hover tiers, over the pair KmuOwnerMapHighlightSettings holds for every
+    // owner-painted layer. That lower pair's IDs spell the political map's section because a
+    // LunaLib field ID is frozen once shipped.
     private static final String HOVERING_ENABLED_FIELD =
         "kmu_map_visuals_hovering_isEnabled";
 

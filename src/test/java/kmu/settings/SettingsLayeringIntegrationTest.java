@@ -81,13 +81,13 @@ final class SettingsLayeringIntegrationTest {
 
             return Stream
                 .of(
-                    KmuPoliticalMapTerritorySettings.class,
-                    KmuPoliticalMapRibbonSettings.class,
-                    KmuPoliticalMapHighlightSettings.class,
+                    KmuOwnerMapStyleSettings.class,
+                    KmuOwnerMapRibbonSettings.class,
+                    KmuOwnerMapHighlightSettings.class,
                     KmuPoliticalMapDrawOrderSettings.class,
                     KmuPoliticalMapDominanceSettings.class,
-                    KmuPoliticalMapGeometrySettings.class,
-                    KmuPoliticalMapDiagnosticsSettings.class,
+                    KmuOwnerMapGeometrySettings.class,
+                    KmuOwnerMapDiagnosticsSettings.class,
                     KmuMarketConditionSettings.class,
                     KmuProfilingSettings.class)
                 .map(Class::getSimpleName)

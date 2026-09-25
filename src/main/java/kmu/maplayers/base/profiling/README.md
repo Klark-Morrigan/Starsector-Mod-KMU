@@ -74,8 +74,7 @@ and a file under the framework naming the class that holds one would have the ot
 code able to see whether it is being watched can act on it,
 which is worth more than the convenience of a direct read.
 Bound this way,
-nothing under `kmu.maplayers.base` names a settings class,
-which is the rule `SettingsLayeringIntegrationTest` holds the tree to.
+nothing under `kmu.maplayers.base` names a settings class.
 
 Unbound answers no bound at all rather than a default restated here.
 What the shipped number is belongs to the settings row and the accessor that answers with it;

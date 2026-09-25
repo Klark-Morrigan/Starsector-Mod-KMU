@@ -14,12 +14,13 @@ import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceFixture;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry;
-import kmu.maplayers.politicalmap.base.PoliticalMapLayer;
-import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.tooltip.PoliticalMapCellTooltip;
-import kmu.maplayers.politicalmap.claims.ClaimsView;
-import kmu.maplayers.politicalmap.dominance.alliances.AlliancesView;
-import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
+import kmu.maplayers.ownermap.FilterSelectionHeal;
+import kmu.maplayers.ownermap.OwnerPaintedView;
+import kmu.maplayers.politicalmap.PoliticalMapLayer;
+import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
+import kmu.maplayers.politicalmap.views.AlliancesView;
+import kmu.maplayers.politicalmap.views.ClaimsView;
+import kmu.maplayers.politicalmap.views.FactionsView;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
@@ -85,13 +86,18 @@ final class MapLayersTest {
 
         @Test
         void selectPoliticalMapViewsPutsTheAlliancesViewBetweenFactionsAndClaimsWhenNexIsPresent() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+            try (var globalMock = mockStatic(Global.class)) {
+
                 stubNexEnabled(globalMock, true);
 
                 // The claims view always closes the roster, so with Nex present it follows the
                 // alliances segment rather than displacing it.
-                assertThat(MapLayers.selectPoliticalMapViews()).containsExactly(
-                        FactionsView.INSTANCE, AlliancesView.INSTANCE, ClaimsView.INSTANCE);
+                assertThat(MapLayers.selectPoliticalMapViews())
+                    .containsExactly(
+                        FactionsView.INSTANCE,
+                        AlliancesView.INSTANCE,
+                        ClaimsView.INSTANCE);
             }
         }
 
@@ -103,12 +109,14 @@ final class MapLayersTest {
             // the system by decree - one hover answered two ways, a keystroke apart. Read off the
             // roster rather than off a list of views written here, so a view added tomorrow is held
             // to this without anyone remembering to name it.
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+            try (var globalMock = mockStatic(Global.class)) {
+
                 stubNexEnabled(globalMock, true);
 
-                var hoverBoxes = MapLayers.selectPoliticalMapViews()
+                var hoverBoxes = MapLayers
+                    .selectPoliticalMapViews()
                     .stream()
-                    .map(PoliticalMapView::resolveHoverTooltip)
+                    .map(OwnerPaintedView::resolveHoverTooltip)
                     .flatMap(Optional::stream)
                     .toList();
 
@@ -122,19 +130,42 @@ final class MapLayersTest {
 
         @Test
         void selectPoliticalMapViewsIsFactionThenClaimsWhenNexIsAbsent() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+            try (var globalMock = mockStatic(Global.class)) {
+
                 stubNexEnabled(globalMock, false);
 
                 // The claims view is vanilla, so it stays on the roster with no Nex; only the
                 // alliances segment drops, and claims falls in directly after factions.
                 assertThat(MapLayers.selectPoliticalMapViews())
-                        .containsExactly(FactionsView.INSTANCE, ClaimsView.INSTANCE);
+                    .containsExactly(
+                        FactionsView.INSTANCE,
+                        ClaimsView.INSTANCE);
             }
         }
     }
 
     @Nested
     class RegisterAll {
+
+        @Test
+        void registerAllHealsThePoliticalMapsSpotlightsUnderItsOwnViewsWhenTheSettingsMove() {
+            // The heal is the layer's, so it is installed where the layer is made and over that layer's
+            // registry: a settings change then clears a spotlight the political map's own picker no
+            // longer offers, judged under the views that layer holds rather than anybody else's.
+            try (var globalMock = mockStatic(Global.class);
+                    var healMock = mockStatic(FilterSelectionHeal.class)) {
+
+                stubNexEnabled(globalMock, false);
+
+                MapLayers.registerAll();
+
+                var politicalMap = (PoliticalMapLayer) MapLayerRegistry.getLayers().get(1);
+
+                healMock.verify(() -> FilterSelectionHeal.installHealOnSettingsChange(
+                    politicalMap.resolveViewRegistry()));
+            }
+        }
 
         @Test
         void registerAllNamesTheAcademyTheTutorialSendsThePlayerTo() {
@@ -145,7 +176,8 @@ final class MapLayersTest {
             //
             // Asserted through the registry rather than off a list here, since a set named twice is
             // a set that can be corrected in one of the two.
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+            try (var globalMock = mockStatic(Global.class)) {
+
                 stubNexEnabled(globalMock, false);
 
                 MapLayers.registerAll();
@@ -162,15 +194,22 @@ final class MapLayersTest {
             // files - two registrations here, and each layer's own answer to whether it offers itself.
             // So nothing but this fails if the calls are reordered or either answer is flipped, and
             // both are facts a player meets on the first sector map they open.
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+            try (var globalMock = mockStatic(Global.class)) {
+
                 stubNexEnabled(globalMock, false);
 
                 MapLayers.registerAll();
 
-                assertThat(MapLayerRegistry.getLayers())
-                    .containsExactly(NoLayer.INSTANCE, PoliticalMapLayer.INSTANCE);
+                var layers = MapLayerRegistry.getLayers();
+
+                assertThat(layers)
+                    .hasSize(2);
+                assertThat(layers.get(0))
+                    .isSameAs(NoLayer.INSTANCE);
+                assertThat(layers.get(1))
+                    .isInstanceOf(PoliticalMapLayer.class);
                 assertThat(MapLayerRegistry.getDefaultLayer())
-                    .isSameAs(PoliticalMapLayer.INSTANCE);
+                    .isSameAs(layers.get(1));
             }
         }
 
@@ -185,7 +224,8 @@ final class MapLayersTest {
             // observe that a source was registered is to read it, and reading it resolves the
             // holder that names a Nexerelin class the test classpath does not carry. A case
             // pinning that would be pinning the absence of a dependency.
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+            try (var globalMock = mockStatic(Global.class)) {
+
                 stubNexEnabled(globalMock, false);
 
                 MapLayers.registerAll();
@@ -197,11 +237,18 @@ final class MapLayersTest {
     }
 
     private static void stubNexEnabled(MockedStatic<Global> globalMock, boolean isEnabled) {
+
         var settingsMock = mock(SettingsAPI.class);
         var modManagerMock = mock(ModManagerAPI.class);
-        globalMock.when(Global::getSettings).thenReturn(settingsMock);
-        when(settingsMock.getModManager()).thenReturn(modManagerMock);
-        when(modManagerMock.isModEnabled(NEXERELIN_MOD_ID)).thenReturn(isEnabled);
+
+        globalMock
+            .when(Global::getSettings)
+            .thenReturn(settingsMock);
+
+        when(settingsMock.getModManager())
+            .thenReturn(modManagerMock);
+        when(modManagerMock.isModEnabled(NEXERELIN_MOD_ID))
+            .thenReturn(isEnabled);
 
         // The wiring this drives builds the arrangement store, whose logger is a static field taken
         // from Global as its class loads: StubbedGlobalLogger says what an unanswered one costs.

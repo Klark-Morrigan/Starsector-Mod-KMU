@@ -13,9 +13,10 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
+import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
+import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ import static kmu.maplayers.PollWalkFixtures.BETA_ID;
 import static kmu.maplayers.PollWalkFixtures.COLONY_SIZE;
 import static kmu.maplayers.PollWalkFixtures.buildSettledSectorWithADerelict;
 import static kmu.maplayers.PollWalkFixtures.captureUnscopedCountsWhile;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.listSystemMarkets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
@@ -72,7 +73,7 @@ final class PoliticalMapPollWalkIntegrationTest {
     // dominance fold applies reaches nothing this suite asserts; it is named only because the
     // scan resolves one.
     private static final DominanceRules STABILITY_WEIGHTED =
-        SectorPoliticsFixtures.buildStabilityWeightedRules();
+        DominancePassFixtures.buildStabilityWeightedRules();
 
     // Two polls, the first of which only seeds the baselines - so a change between them is the
     // only thing the second can report.
@@ -261,20 +262,20 @@ final class PoliticalMapPollWalkIntegrationTest {
     // does not follow how many systems there are.
     private static SectorAPI buildSettledSectorWithEmptyNeighbours(int neighbourCount) {
 
-        var hegemony = SectorPoliticsFixtures.buildFaction("hegemony");
-        var colony = SectorPoliticsFixtures.buildVisibleMarket(hegemony, COLONY_SIZE);
+        var hegemony = SectorOwnershipFixtures.buildFaction("hegemony");
+        var colony = SectorOwnershipFixtures.buildVisibleMarket(hegemony, COLONY_SIZE);
 
-        var systems = new ArrayList<SectorPoliticsFixtures.SystemMarkets>();
+        var systems = new ArrayList<SectorOwnershipFixtures.SystemMarkets>();
         systems.add(listSystemMarkets(ALPHA_ID, colony));
 
         for (var neighbour = 0; neighbour < neighbourCount; neighbour++) {
             systems.add(listSystemMarkets(BETA_ID + neighbour));
         }
-        var sector = SectorPoliticsFixtures.buildSectorWithSystems(
+        var sector = SectorOwnershipFixtures.buildSectorWithSystems(
             List.of(hegemony),
-            systems.toArray(new SectorPoliticsFixtures.SystemMarkets[0]));
+            systems.toArray(new SectorOwnershipFixtures.SystemMarkets[0]));
 
-        SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
+        SectorOwnershipFixtures.placeEverySystemInHyperspace(sector);
         return sector;
     }
 
@@ -282,9 +283,9 @@ final class PoliticalMapPollWalkIntegrationTest {
     // fingerprint - the change a stale reading of the sector could not report.
     private static void settleTheEmptyNeighbour(SectorAPI sector) {
 
-        var beta = SectorPoliticsFixtures.findSystemIn(sector, BETA_ID);
-        var colony = SectorPoliticsFixtures.buildVisibleMarket(
-            SectorPoliticsFixtures.buildFaction("tritachyon"),
+        var beta = SectorOwnershipFixtures.findSystemIn(sector, BETA_ID);
+        var colony = SectorOwnershipFixtures.buildVisibleMarket(
+            SectorOwnershipFixtures.buildFaction("tritachyon"),
             COLONY_SIZE);
 
         when(sector.getEconomy().getMarkets(beta))

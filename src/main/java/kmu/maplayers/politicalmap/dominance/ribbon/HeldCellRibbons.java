@@ -2,10 +2,10 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
-import kmu.maplayers.politicalmap.base.ribbon.ColonyCellRibbons;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
+import kmu.maplayers.ownermap.ribbon.ColonyCellRibbons;
+import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.ArrayList;
 import java.util.Comparator;

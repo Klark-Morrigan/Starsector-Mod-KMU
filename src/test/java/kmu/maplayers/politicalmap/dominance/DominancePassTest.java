@@ -1,0 +1,185 @@
+package kmu.maplayers.politicalmap.dominance;
+
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
+
+import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderPass;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
+
+import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.NEUTRAL_BASE;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWith;
+import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildPassOver;
+import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildStabilityWeightedRules;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+/**
+ * Unit coverage for {@link DominancePass}'s construction guard, for the cost claim its whole
+ * arrangement rests on - that its several reads of one system share the walk that system was first
+ * read by - and for the one place a system's winner is settled, which every surface naming a holder
+ * takes its answer from and so must apply the pass's own candidacy bar.
+ *
+ * <p>The guard is here because a pass carries its rule and its reading of the sector through a
+ * whole sector walk and dereferences each per system, so it rejects a null of either at
+ * construction to fail fast rather than deep in the walk under a less legible error.
+ *
+ * <p>What each per-system read <em>answers</em> - {@link DominancePass#readBlocFootprints},
+ * {@link DominancePass#readKnownColonyFactionIds}, {@link DominancePass#readHabitationIn},
+ * {@link DominancePass#resolveRankingRulesFor} - is covered
+ * end to end by the
+ * {@link SectorPolitics},
+ * {@link FilteredPolitics}, the standings suites, and the
+ * stats aggregations, which exercise the pass over a stubbed economy.
+ */
+class DominancePassTest {
+
+    @Nested
+    class Constructor {
+
+        @Test
+        void rejectsNullRules() {
+
+            assertThatThrownBy(() ->
+                    new DominancePass(
+                        null,
+                        HolderPass.over(null, UNDER_THE_FOG, HolderGrouping.identity())))
+                .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        void rejectsNullHolding() {
+            // A pass with no reading of the sector behind it would fault on the first system it
+            // read rather than here, and a pass over a sector that cannot be reached is a
+            // different thing entirely - a reading that answers an empty set, perfectly legal.
+            assertThatThrownBy(() ->
+                    new DominancePass(buildStabilityWeightedRules(), null))
+                .isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
+    class ReadColoniesIn {
+
+        @Test
+        void walksASystemOnceHoweverManyOfThePassesReadsAskAboutIt() {
+            // The claim the whole arrangement rests on: a rebuild reads each system for several
+            // things at once - who holds it, what its blocs contribute, what a hover accounts for -
+            // and each of those walking the system itself is what made a rebuild cost two or three
+            // traversals per system.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony),
+                buildVisibleMarket(hegemony, 5));
+
+            var system = buildOnlySystem(sector);
+            var pass = buildPassOver(sector);
+
+            pass.readColoniesIn(system);
+            pass.readFootprintsByFaction(system);
+            pass.readWeightBreakdownsByFaction(system);
+            pass.readUnweighedColoniesByFaction(system);
+            pass.readKnownColonyFactionIds(system);
+            pass.readHabitationIn(system);
+            pass.readBlocFootprints(system);
+            pass.resolveRankingRulesFor(system);
+
+            // Counted on the entity scan, which one walk of a system makes exactly once - the
+            // economy read beside it is made twice by the walk itself, so counting that would pin
+            // how the walk is written rather than how often it is made.
+            verify(system, times(1))
+                .getAllEntities();
+        }
+    }
+
+    @Nested
+    class ReadBlocFootprints {
+
+        @Test
+        void leavesOutAColonyWhoseOwnerCarriesNoId() {
+            // A colony a mod hung on a faction with no id. The fold cannot name a bloc for it, so it
+            // is left out - where before it was folded under a nameless key and the grouping faulted
+            // on that key, taking the whole resolve down with it.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony),
+                buildVisibleMarket(hegemony, 5),
+                buildVisibleMarket(buildFaction(null, HEGEMONY_BRIGHT), 5));
+
+            var footprintByBlocId = buildPassOver(sector)
+                .readBlocFootprints(buildOnlySystem(sector));
+
+            assertThat(footprintByBlocId)
+                .containsOnlyKeys("hegemony");
+        }
+    }
+
+    @Nested
+    class ResolveDominantBlocId {
+
+        @Test
+        void resolveDominantBlocIdNamesTheHeavierBloc() {
+
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 3),
+                buildVisibleMarket(tritachyon, 5));
+
+            var system = buildOnlySystem(sector);
+            var pass = buildPassOver(sector);
+
+            assertThat(pass.resolveDominantBlocId(system, pass.readBlocFootprints(system)))
+                .isEqualTo("tritachyon");
+        }
+
+        @Test
+        void resolveDominantBlocIdPassesOverAHeavierNeutralBloc() {
+            // The pass's own candidacy bar rides in with the ranking, so the neutral placeholder's
+            // heavier footprint buys it nothing - the one rule every surface naming a winner shares.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var neutral = buildFaction(Factions.NEUTRAL, NEUTRAL_BASE);
+            var sector = buildSectorWith(
+                "salvage-system",
+                List.of(neutral, hegemony),
+                buildVisibleMarket(neutral, 6),
+                buildVisibleMarket(hegemony, 3));
+
+            var system = buildOnlySystem(sector);
+            var pass = buildPassOver(sector);
+
+            assertThat(pass.resolveDominantBlocId(system, pass.readBlocFootprints(system)))
+                .isEqualTo("hegemony");
+        }
+
+        @Test
+        void resolveDominantBlocIdIsNullWhereNothingWasWeighed() {
+
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony),
+                buildVisibleMarket(hegemony, 5));
+
+            assertThat(buildPassOver(sector).resolveDominantBlocId(buildOnlySystem(sector), Map.of()))
+                .isNull();
+        }
+    }
+}

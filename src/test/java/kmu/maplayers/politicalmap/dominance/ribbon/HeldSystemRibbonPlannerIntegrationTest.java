@@ -4,12 +4,13 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
+import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.ownermap.ribbon.RibbonSegment;
+import kmu.maplayers.politicalmap.dominance.DominancePass;
+import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,14 +18,14 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.NEUTRAL;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
+import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.NEUTRAL;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildInputsFor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -80,7 +81,7 @@ final class HeldSystemRibbonPlannerIntegrationTest {
             // Mid-load: the systems are walkable but the economy behind their markets is absent,
             // so there is nothing to count and the read stops at its guard rather than faulting
             // on the way into one.
-            var sector = SectorPoliticsFixtures.buildEconomylessSectorWithSystem(SYSTEM_ID);
+            var sector = SectorOwnershipFixtures.buildEconomylessSectorWithSystem(SYSTEM_ID);
 
             assertThat(planFor(sector, systemOf(sector)))
                 .isEmpty();
@@ -91,7 +92,7 @@ final class HeldSystemRibbonPlannerIntegrationTest {
             // The economy is up and the system is in it, holding nothing. This is the decline the
             // composition actually rides on: an uninhabited or purely claim-held system, which the
             // claim mechanic then counts.
-            var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
+            var sector = SectorOwnershipFixtures.buildSectorWith(SYSTEM_ID);
 
             assertThat(planFor(sector, systemOf(sector)))
                 .isEmpty();
@@ -120,7 +121,7 @@ final class HeldSystemRibbonPlannerIntegrationTest {
             // holder's own footprint rather than a contest. Present rather than empty is the whole
             // distinction: an empty answer here would hand a system dominance owns outright to the
             // claim contest.
-            var sector = SectorPoliticsFixtures.buildSectorWith(
+            var sector = SectorOwnershipFixtures.buildSectorWith(
                 SYSTEM_ID,
                 buildColony(HEGEMONY, LARGER_COLONY));
 
@@ -138,7 +139,7 @@ final class HeldSystemRibbonPlannerIntegrationTest {
             // The planner face answers every system, so a decline it cannot express becomes the
             // bandless plan - which is what a view resolving this planner alone draws for a
             // system the held mechanic does not paint.
-            var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
+            var sector = SectorOwnershipFixtures.buildSectorWith(SYSTEM_ID);
 
             assertThat(buildPlanner(sector).planSystemRibbon(systemOf(sector)))
                 .isEqualTo(RibbonPlan.NONE);
@@ -158,7 +159,7 @@ final class HeldSystemRibbonPlannerIntegrationTest {
             // cell is painted for rather than on the placeholder outweighing it. The band and the
             // fill settle their winner under one set of rules, and this is the case that parts them
             // if they ever stop doing so.
-            var sector = SectorPoliticsFixtures.buildSectorWith(
+            var sector = SectorOwnershipFixtures.buildSectorWith(
                 SYSTEM_ID,
                 buildColony(NEUTRAL, LARGER_COLONY),
                 buildColony(HEGEMONY, SMALLER_COLONY));
@@ -178,7 +179,7 @@ final class HeldSystemRibbonPlannerIntegrationTest {
         var holding = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
 
         return new HeldSystemRibbonPlanner(
-            DominancePass.over(holding, SectorPoliticsFixtures.buildStabilityWeightedRules()),
+            DominancePass.createOver(holding, DominancePassFixtures.buildStabilityWeightedRules()),
             buildInputsFor(holding));
     }
 
@@ -190,13 +191,13 @@ final class HeldSystemRibbonPlannerIntegrationTest {
     }
 
     private static StarSystemAPI systemOf(SectorAPI sector) {
-        return SectorPoliticsFixtures.buildOnlySystem(sector);
+        return SectorOwnershipFixtures.buildOnlySystem(sector);
     }
 
     // A system two blocs hold, the first with two colonies and the second with one, so the first
     // leads on weight and the band has both a within-bloc parting and a handover to report.
     private static SectorAPI buildSectorContestedBy(String leadingBlocId, String trailingBlocId) {
-        return SectorPoliticsFixtures.buildSectorWith(
+        return SectorOwnershipFixtures.buildSectorWith(
             SYSTEM_ID,
             buildColony(leadingBlocId, LARGER_COLONY),
             buildColony(leadingBlocId, LARGER_COLONY),
@@ -204,15 +205,15 @@ final class HeldSystemRibbonPlannerIntegrationTest {
     }
 
     private static MarketAPI buildColony(String factionId, int size) {
-        return SectorPoliticsFixtures.buildVisibleMarket(
-            SectorPoliticsFixtures.buildFaction(factionId),
+        return SectorOwnershipFixtures.buildVisibleMarket(
+            SectorOwnershipFixtures.buildFaction(factionId),
             size);
     }
 
     // A sector holding one system with a single colony of the named bloc, for the cases whose
     // sector or system is the thing being withheld and whose contents therefore never matter.
     private static SectorAPI buildSectorHeldBy(String blocId) {
-        return SectorPoliticsFixtures.buildSectorWith(
+        return SectorOwnershipFixtures.buildSectorWith(
             SYSTEM_ID,
             buildColony(blocId, LARGER_COLONY));
     }

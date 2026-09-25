@@ -94,16 +94,25 @@ and asks it of every registered layer whoever ships it.
 
 ## The one-way arrow
 
-Nothing under `kmu.maplayers.base` may import `kmu.maplayers.politicalmap`.
-`base` is the substrate every layer sits on,
-so an import in that direction would make the framework depend on one of its own layers -
-and a second layer could then only be written by reaching into the first one's drawer,
-which is the state this tree was carved out of.
+The tree is three tiers deep and every import runs down it:
+
+| Tier | What it is | What it may import |
+| --- | --- | --- |
+| `kmu.maplayers.base` | the substrate under every layer: geometry, clusters, labels, theme, hover, the hover box, the sidebar host, the render seam | neither tier below |
+| `kmu.maplayers.ownermap` | one assembly of those primitives - cells keyed by an owner, fused, bordered, labelled and banded | `base` |
+| `kmu.maplayers.politicalmap` | a layer: what its owner key means, and the views that pick one | both above it |
+
+`base` is closed to the other two because a substrate importing one of its own layers
+is one a second layer could only be written against by reaching into the first one's drawer.
+Why the assembly is a tier between them,
+and what the edge closing it to every layer proves,
+are [the tier's own](ownermap/README.md#the-arrow).
 
 The compiler is happy either way round,
 so the rule is a build gate rather than a review question:
 `enforcePackageLayering`,
-declared in [build.gradle](../../../../../build.gradle) and implemented in Common-Java.
+its edges declared in [gradle/package-layering.gradle](../../../../../gradle/package-layering.gradle)
+and its mechanism implemented in Common-Java.
 It reads every source set,
 not just `src/main` -
 a suite reaching across for a real political type is the shortest way to make it compile,
@@ -132,33 +141,33 @@ a shared rule that named one family would be that family's rule with extra calle
 
 ## The vocabulary
 
-`base` and a layer deliberately use different words for the same thing,
+`base` and the tiers above it deliberately use different words for the same thing,
 and the translation happens at the boundary between them.
 That is what keeps the framework honest:
 if `base` said "faction",
 a second layer could not use it without lying about what it paints.
 
-Read this table left to right as "what the framework calls it" -> "what the political map calls the thing it hands over".
+Read this table left to right as "what the substrate calls it" -> "what the owner-painted tier calls it" -> "what the political map calls it".
 
-| `base` says | political map says | Means |
-| --- | --- | --- |
-| **owner** | **holder** (`DominantHolder`, `HolderProvider`) | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` - a faction ID under the factions view, an alliance ID under alliances, a claimant under claims |
-| **unowned** | factionless, uninhabited, decivilised | a cell no owner is attributed to. It never fuses, and draws its own lone outline. Unowned is not the same as empty: a view whose holding rule admits only some markets (claims, for the reasons its own package sets out) leaves settled systems unowned, so the factionless split is read from the pass's inhabited-system set, not from the absent owner |
-| **cluster** (`StyledCluster`) | one body of a **territory** | the merged shape connected same-owner cells form, inside one traced border. A lone cell is a cluster of one |
-| **cluster group** (`StyledClusterGroup`) | **territory** | everything one owner paints: its clusters, plus the paints they all share. "Territory" is the political word for *all* of a bloc's cells, which may be several disjoint clusters - so a territory is a cluster group, never a cluster |
-| **cluster border** | national border, frontier | the inset ring around a cluster. `base` never calls it national - nothing about a border is political |
-| **interior seam** | province line | the fused edge between two same-owner cells, drawn faint or not at all |
-| **fill state** | held / contested / drawn-empty | how a cell inside one cluster paints: `SOLID`, `HATCHED`, `UNFILLED`. The layer decides which system is which; `base` only paints it |
-| **`ElementPaintSelection`** | `FactionPaletteSlot` | the player's colour pick, held opaquely by the theme and *unresolved*: it names where to look, not a colour, since one theme serves every bloc. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `FactionPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaintSelection` - its "No color" would otherwise read as drawable |
-| **shade** | **shade** | the concrete `Color` a selection resolves to once a bloc's palette is in hand. Never a synonym for the selection: `MapPalettes` is where the one becomes the other |
+| `base` says | `ownermap` says | `politicalmap` says | Means |
+| --- | --- | --- | --- |
+| **owner** | **owner** (`SystemOwner`), grouped into a **bloc** | **holder** | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` and to the tier - whatever key a layer paints a system by. The political map's owner is a holder: a faction ID under the factions view, an alliance ID under alliances, a claimant under claims |
+| **unowned** | factionless, uninhabited, decivilised | the same | a cell no owner is attributed to. It never fuses, and draws its own lone outline. Unowned is not the same as empty: a view whose owner rule admits only some markets (claims, for the reasons its own package sets out) leaves settled systems unowned, so the factionless split is read from the pass's inhabited-system set, not from the absent owner |
+| **cluster** (`StyledCluster`) | cluster | one body of a **territory** | the merged shape connected same-owner cells form, inside one traced border. A lone cell is a cluster of one |
+| **cluster group** (`StyledClusterGroup`) | cluster group | **territory** | everything one owner paints: its clusters, plus the paints they all share. "Territory" is the political word for *all* of a bloc's cells, which may be several disjoint clusters - so a territory is a cluster group, never a cluster |
+| **cluster border** | border | national border, frontier | the inset ring around a cluster. Neither `base` nor the tier calls it national - nothing about a border is political |
+| **interior seam** | seam | province line | the fused edge between two same-owner cells, drawn faint or not at all |
+| **fill state** | fill state | held / contested / drawn-empty | how a cell inside one cluster paints: `SOLID`, `HATCHED`, `UNFILLED`. The layer decides which system is which; `base` only paints it |
+| **`ElementPaintSelection`** | `FactionPaletteSlot` | the same | the player's colour pick, held opaquely by the theme and *unresolved*: it names where to look, not a colour, since one theme serves every bloc. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `FactionPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaintSelection` - its "No color" would otherwise read as drawable |
+| **shade** | **shade** | **shade** | the concrete `Color` a selection resolves to once a bloc's palette is in hand. Never a synonym for the selection: `MapPalettes` is where the one becomes the other |
 
-The right-hand column is a build gate too,
+Keeping the other columns' words out of `base` is a build gate too,
 for the reason the arrow above is one.
 A leaked import stops compiling the day a package moves;
 a leaked noun in a Javadoc survives every move in silence,
 and it is what a reader of `base` actually reads -
 so `enforcePackageVocabulary`,
-declared beside the layering rule in [build.gradle](../../../../../build.gradle),
+declared in [build.gradle](../../../../../build.gradle),
 fails the build when anything under `base` says *territory*,
 *national border*,
 *contested fill* or *bloc*,
@@ -167,6 +176,25 @@ Faction,
 alliance and claim are left off that list on purpose:
 this file and the `geometry` and `labels` READMEs name them as examples of what an opaque owner could be,
 which is the argument for the opacity rather than a leak of it.
+
+`ownermap` is held to the same list one tier up,
+less *bloc*,
+plus the words that name one layer -
+*political*,
+*politics*,
+*dominance* and *dominant* -
+and the mechanics a layer decides its owners by,
+with the mod one of them comes from:
+*claim*,
+*claims*,
+*alliance*,
+*alliances* and *nexerelin*.
+A tier named after one of its layers is that layer with extra callers,
+which is exactly what a second painting layer could not build on.
+Why *bloc* stays open there,
+and how the tier's save keys,
+knobs and labels keep clear of a layer's spelling,
+are [the tier's own register](ownermap/README.md#the-words-it-keeps).
 
 One word is forbidden mod-wide rather than only under `base`,
 and for a different reason:
@@ -178,13 +206,13 @@ a whole territory and the receded backdrop in neighbouring sentences of the same
 while every one of those words was available.
 Say what is meant instead.
 
-The handful of files that may still say one of the political words are named in `build.gradle` rather than marked in place,
+The handful of files that may say one of the forbidden words are named in `build.gradle` rather than marked in place,
 so an exemption is something a reviewer reads in the diff.
-All of them name an identifier rather than make a claim about the framework -
+Each names an identifier or a rule rather than the framework speaking the word for itself -
 the `filter_bloc_` store key,
-which composes into the `$kmu_map_filter_bloc*` sector-memory keys and
-whose spelling is fixed by every save already holding one,
-and the political class names the geometry viewer lists as pipeline stages it does not exercise.
+which composes into the `$kmu_map_filter_bloc*` sector-memory keys
+and whose spelling is fixed by every save already holding one,
+is the typical case.
 
 Two words that are **not** synonyms,
 despite looking alike:
@@ -198,10 +226,18 @@ despite looking alike:
   one per body,
   and paint off the `StyledClusterGroup` around them,
   so a record covering several bodies cannot be mistaken for one body's.
-- An **owner** is a render input;
-  a **holder** is a computed political fact
+- An **owner** is whatever key a layer paints a system by -
+  a faction,
+  a group of factions,
+  or a value with nothing to do with factions,
+  such as whether a system carries some structure.
+  A **holder** is the political map's kind of owner,
+  a computed political fact
   (dominant faction by market weight, or claimant, or alliance).
-  They coincide only because the political map feeds one into the other.
+  The tier's `holding` package and its `Holder*` types read owners that way -
+  off colonies,
+  as factions folded into blocs -
+  which is one kind of owner rather than the tier's definition of one.
 
 ## Two screens, two picks
 
@@ -432,10 +468,18 @@ and a player who ordered their bar once does not order it again per save.
   the tick box appended to the vanilla filter row,
   the dialog the layer bar is arranged in,
   and the standing heal that keeps each screen's pick on a tab its bar still offers.
+- **[The owner-painted assembly](ownermap/README.md)** -
+  the pipeline behind a layer that paints cells by an owner:
+  the owner seam and the resolvers under it,
+  the cache and the renderer over it,
+  the fills and borders,
+  the presence bands,
+  the style resolvers,
+  and the cell hover box they compose.
+  What an owner means is the layer's to say.
 - **[Political map](politicalmap/README.md)** -
   the one layer that paints,
-  its three views,
-  and the draw pipeline behind them.
+  and its three views.
 - **`MapLayers`** -
   the composition root,
   the single place every concrete layer,

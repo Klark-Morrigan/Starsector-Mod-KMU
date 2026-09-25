@@ -450,11 +450,13 @@ which only arrives inside the bundle.
 An offers-nothing picker is answered before that resolution,
 since it carries no fallback mode to land on.
 
-`SelectableBlocCache` (the political map's) is where a layer holds its resolved picker between frames,
+`SelectableBlocCache` is where an owner-painted layer holds its resolved picker between frames,
 over KMLib's `RevisionMemo`;
 what invalidates it is the layer's own judgement.
 It is held the way the hover slot above is,
-by the sector's `SectorMapMachinery` through `SelectableBlocCache.resolveBlocCacheIn`.
+by the sector's `SectorMapMachinery` through `SelectableBlocCache.resolveBlocCacheIn` -
+under the layer's own ID,
+since the memo holds one entry and two layers sharing it would evict each other every frame.
 [The caching notes](../../../../../../../docs/dev/caching.md) own that model in full.
 
 Each store's own key,
@@ -512,10 +514,10 @@ including the stale-id fallback behind them,
 are [`base/layer`](../layer/README.md)'s
 (`MapLayerRegistry` and `MapLayerScreens`).
 The *body composition* the panel lays out belongs to whichever layer is active -
-for the political map,
-[`politicalmap`](../../politicalmap/README.md) and its `base/sidebar` controls -
+for a layer painted by owner,
+to the body controls of [the owner-map tier](../../ownermap/README.md) -
 though it is here that KMLib's picker is bound to the save (see [Picker state](#picker-state)).
-What the political map keeps of its own there is what the picker refuses to know:
+What the tier above keeps of its own there is what the picker refuses to know:
 which items are on offer,
 what invalidates that list,
 and the recede toggles it pairs with the sort.

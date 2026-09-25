@@ -16,14 +16,8 @@
 // a single 'under: kmu' edge would shut kmu.mods off from the very mods its
 // adapters exist to adapt. A new top-level tree has to be added here to be
 // covered - the list is the rule.
-//
-// kmu.maplayers is missing on purpose, and is the one tree still open: its
-// PoliticalMapMarketTransferListener implements a Nexerelin interface from
-// inside the political map's own listeners package. Closing it is a matter of
-// moving that class to kmu.mods.nexerelin, where the installer that defers it
-// already lives; until then this list would fail rather than hold.
 def treesClosedToOptionalMods = ['kmu.conditions', 'kmu.diagnostics',
-    'kmu.settings', 'kmu.starsector', 'kmu.svg', 'kmu.ui', 'kmu.util']
+    'kmu.maplayers', 'kmu.settings', 'kmu.starsector', 'kmu.svg', 'kmu.ui', 'kmu.util']
 
 // The mods KMU may run without: named only by the adapter that stands behind a
 // presence gate for each. LazyLib and LunaLib are deliberately absent - the mod
@@ -48,7 +42,12 @@ enforcePackageLayering {
     // Group bans:
 
     forbidImport under: 'kmu.maplayers.base',
-                 of: 'kmu.maplayers.politicalmap'
+                 of: ['kmu.maplayers.ownermap',
+                      'kmu.maplayers.politicalmap']
+
+    forbidImport under: 'kmu.maplayers.ownermap',
+                 of: ['kmu.maplayers.politicalmap',
+                      'kmu.mods']
 
     forbidImport under: 'kmu.maplayers.base.geometry.output',
                  of: 'kmu.maplayers.base.geometry.ui'

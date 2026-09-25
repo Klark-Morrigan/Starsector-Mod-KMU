@@ -22,6 +22,84 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Show decivilised worlds surveyed at least to** now ships at *Full* rather than *Seen*. Unless you have set the field yourself, in which case your value is kept, a decivilised world is named only once you have surveyed it or somebody is already living in its system. Flying past no longer puts one on the map. With a neighbour's word travelling at every level the common case is still covered, and surveying a world standing alone is now worth doing.
 - **Fast Rendering** version mismatches are now reported in-game instead of ending the game. KMU reads where your cursor is on the sector map out of Fast Rendering's internals, and those internals move between its releases. There are three ways that can break: the part KMU looks for is gone, it is called from the game and refuses, or it is called on Fast Rendering's own thread and refuses there. The second is the one that matters from Fast Rendering 0.8.9, which declares every entry point and refuses the ones it does not implement - so the mismatch is invisible until the moment the map is drawn, and then it took the game down from inside KMU's own code. All three are now caught. Where the cursor reading can no longer be taken, a notice names Fast Rendering and both versions once per session, and the sector map keeps drawing without responding directly to the cursor - no star system highlight and tooltip, though the Map Layers sidebar still reacts to it. Nothing else is affected and your save is untouched. Previously the mismatch ended the map's render pass and named KM code in the error, so a Fast Rendering mismatch looked like a KMU bug.
 
+### Public contracts changed (**breaking**)
+
+None of these reach a player: every LunaLib field ID and every value saved in sector memory keeps its spelling, so settings and saves carry over untouched. They reach a mod building a map layer on KMU's framework.
+
+- **The map layers framework has three tiers:**
+  - `kmu.maplayers.base` - the substrate.
+  - `kmu.maplayers.ownermap` - new: the pipeline any layer painting systems by an owner key builds on - a faction, a group of factions, or any other value the layer keys a system by. It may import neither the political map nor `kmu.mods`.
+  - `kmu.maplayers.politicalmap` - KMU's political map, one layer on the tier.
+- **Packages moved:**
+  - Everything under `kmu.maplayers.politicalmap.base` is under `kmu.maplayers.ownermap`:
+    - `holding`, `owners` and `owners.holders` - reading a sector, and the owners read off it.
+    - `picker` and `preferences` - the bloc picker's model, and a layer's per-save body choices.
+    - `render`, with `clusters`, `hover`, `labels`, `ribbon` and `style`.
+    - `ribbon`, `sidebar` and `tooltip`.
+  - Except the political map's own parts, which are in `kmu.maplayers.politicalmap`:
+    - `PoliticalMapLayer`, `PoliticalMapInstaller` and `PoliticalMapStanding`, in the package itself.
+    - Its rules, in `dominance` (with `standings` and `weighting`), `claims`, `views`, `holders`, `tooltip`, `refresh` and `render`.
+- **Tier types renamed with the move:**
+  - `PoliticalMapView` is `OwnerPaintedView`, and `PoliticalMapViewRegistry` is `MapLayerViewRegistry`.
+  - These take `OwnerMap` for `PoliticalMap`:
+    - `PoliticalMapLayerRenderer`, `PoliticalMapOverlayRenderer`, `PoliticalMapCache`, `PoliticalMapDrawables` and `PoliticalMapRebuildDecider`.
+    - `PoliticalMapBandLayout`, `PoliticalMapCategory`, `PoliticalMapBodyControls`, `PoliticalMapInhabitation` and `PoliticalMapHoverHighlightSource`.
+  - The cluster build:
+    - `PoliticalMapTerritories` is `OwnerMapClusters`.
+    - `TerritoryBuilder` is `OwnerMapBuilder`, and `TerritoryBuildInputs` is `OwnerMapBuildInputs`.
+    - `FactionTerritoryBuilder` is `ClusterGroupBuilder`.
+  - The refresh:
+    - `StandingPoliticalMap` is `StandingOwnerMap`, and `StalePoliticsDisturbance` is `StaleOwnerMapDisturbance`.
+    - `IncrementalPoliticsRefresh` is `IncrementalOwnerRefresh`.
+  - `BlocStyleDecision`, `BlocStyleResolver` and `BlocStyling` take `Owner` for `Bloc`.
+  - `DominantHolder` is `SystemOwner`, and `PoliticalMapPreviewHighlightRenderer` is `SpotlightPreviewHighlightRenderer`.
+- **`OwnerPaintedView` asks more of a view:**
+  - `resolveContestGrouping()` is new and required: which blocs stand together in a contest, the identity grouping where nobody does.
+  - `resolveHolderProvider()` has no default.
+  - `resolveViewRecedeAdjustment(ScreenMemoryScope)` is new, defaulting to receding nothing.
+  - `computeAllianceContentRevision` left the seam for the political map's own refresh signal.
+- **A layer's state is its own:**
+  - `MapLayerViewRegistry` is an instance a layer builds over its own save key, views, default view and host tab, in place of static members.
+  - Per-sector pieces a layer holds go through `SectorMapMachinery.resolveLayerMachinery(layerId, type, make)`.
+  - `SelectableBlocCache.resolveBlocCacheIn` takes the layer ID.
+  - `FilterSelectionHeal.healStaleSelectionAgainstActiveView` takes the sector and the registry it heals against; `healStaleSelectionAgainstLiveSector(registry)` is the entry for a caller holding no sector.
+  - `OwnerMapBodyControls.buildViewSelector` takes the sector its body was built for, which a view switch heals the spotlights against.
+  - `PoliticalMapLayer` is constructed with its views rather than being a singleton.
+- **Body preferences are the layer's:**
+  - `NameFormatPreference`, `UninhabitedOutlinePreference` and `RecedePreferences` are instances over keys a layer names, handed to the tier together as `OwnerMapBodyPreferences`.
+    - Their static members are gone, and so are the `RecedePreferences.FILTER` and `ALLIANCE_NON_ALLIED` sets.
+    - `OwnerMapLayerRenderer.createForLiveScreen`, `OwnerMapCache`, `OwnerMapRebuildDecider` and `ContentInputs.sampleForView` take them.
+  - `ContentInputs.allianceRecedeAdjustment` is `viewRecedeAdjustment`.
+  - `FactionNameFormatChoice.fromKeyOrDefault` is gone: the choice is a KMLib `PersistedChoice`, read back through `PersistedChoices.fromKey`.
+- **Groups and mechanics in the tier's own words:**
+  - `HolderGrouping`:
+    - `allianceNameByBlocId` is `groupNameByBlocId`, and `resolveAllianceName` is `resolveGroupName`.
+    - `isAlliance` is `isGroupedBloc`, and `hasAnyAlliance` is `hasAnyGroupedBloc`.
+  - `HolderPass.openClaimReaderThrough` is the political map's `PassClaimReaders.openClaimReaderOver`.
+  - `ColonyQualifierFacts.isHoldingTheClaim` is `leadingFinding`: a finding the painting layer states ahead of every other, already worded, or null. `SystemColonyReading.readQualifierFacts` assembles one.
+  - `FactionTooltipLine.buildCountedFactionLine` takes whether the faction was weighed, drawing an unweighed one quietly.
+- **Polls, hover gates and colony transfers:**
+  - `MapLayerSectorWatcher` is abstract. A layer installs its own subclass, because the engine removes transient scripts by exact class and a shared class let one layer's poll evict another's.
+  - Hover gates:
+    - `PoliticalMapHoverGates` is gone: `SharedOwnerMapHoverGates` reads the one shared set of owner-map hover switches.
+    - `OwnerMapHoverGates.isCursorReadNeeded()` is a default method.
+  - Colony transfers:
+    - `PoliticalMapMarketTransferListener` implements KMU's own `kmu.starsector.listeners.MarketTransferListener` rather than Nexerelin's `InvasionListener`.
+    - A listener of that type registered on a sector is told of every colony Nexerelin transfers there.
+- **The political map's hover boxes and dominance pass:**
+  - `SystemStandingsTooltip` and `SystemClaimContestTooltip` are gone, each merged into its one subclass, `SystemDominationTooltip` and `SystemClaimTooltip`. `LiveVisibilityClaimBreakdownReader` is gone too: the claim box opens its reader over the hover's own sector.
+  - `DominancePass.over` is `createOver`, and `MarketProximityTieBreak.forSystem` is `createForSystem`. `DominancePass.readFromLunaSettings` is gone.
+  - `FilteredPolitics.resolveFilteredHolder` returns a `HolderResolution`.
+- **Settings readers and string keys:**
+  - Readers:
+    - `KmuPoliticalMapDiagnosticsSettings`, `KmuPoliticalMapGeometrySettings`, `KmuPoliticalMapHighlightSettings` and `KmuPoliticalMapRibbonSettings` take `OwnerMap` for `PoliticalMap`.
+    - `KmuPoliticalMapTerritorySettings` is `KmuOwnerMapStyleSettings`.
+  - Getters:
+    - `getPoliticalMap*` are `getOwnerMap*`.
+    - Except `getPoliticalMapAllianceMutedOpacityModifier`, which is `getOwnerMapMutedOpacityModifier`.
+    - And `shouldDecivilisedSystemsDrawTerritory`, which is `shouldCountDecivilisedSystemsAsPopulated`.
+  - The nineteen `KmuStringKeys.POLITICAL_MAP_*` constants the tier labels its controls with are `OWNER_MAP_*`, with their `strings.json` keys.
+
 ## [0.1.2] - 2026-09-16
 
 ### Added

@@ -14,9 +14,9 @@ import static org.mockito.Mockito.verify;
  * game is paused, and every frame it is advanced reaches the poll. The throttle, the fault guard
  * and what a fault costs are {@link StalenessPollLoop}'s to pin.
  *
- * <p>Asked of this class rather than of the base that answers for it, since a watcher exists to be
- * a class the engine can install and clear on its own: the three answers are only worth anything
- * reached through the identity that carries them.
+ * <p>Asked of a layer's subclass rather than of the base that answers for it, since a watcher exists
+ * to be a class the engine can install and clear on its own: the three answers are only worth
+ * anything reached through the identity that carries them.
  */
 final class MapLayerSectorWatcherTest {
 
@@ -33,9 +33,9 @@ final class MapLayerSectorWatcherTest {
             // rest of the save, with no crash to point at it.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
-                var watcher = new MapLayerSectorWatcher(mock(MapLayerStalenessSource.class));
+                var watcherFake = new LayerSectorWatcherFake(mock(MapLayerStalenessSource.class));
 
-                assertThat(watcher.isDone())
+                assertThat(watcherFake.isDone())
                     .isFalse();
             }
         }
@@ -50,9 +50,9 @@ final class MapLayerSectorWatcherTest {
             // then would only spend a sector walk on the campaign thread to find no change.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
-                var watcher = new MapLayerSectorWatcher(mock(MapLayerStalenessSource.class));
+                var watcherFake = new LayerSectorWatcherFake(mock(MapLayerStalenessSource.class));
 
-                assertThat(watcher.runWhilePaused())
+                assertThat(watcherFake.runWhilePaused())
                     .isFalse();
             }
         }
@@ -70,12 +70,21 @@ final class MapLayerSectorWatcherTest {
 
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
 
-                new MapLayerSectorWatcher(stalenessSourceMock)
+                new LayerSectorWatcherFake(stalenessSourceMock)
                     .advance(ADVANCE_PAST_POLL_INTERVAL);
 
                 verify(stalenessSourceMock)
                     .markChangesSinceLastPoll();
             }
+        }
+    }
+
+    // A layer's own watcher, as every layer declares one: the class is abstract so that no two
+    // layers can share a script identity, which leaves a subclass the only thing there is to ask.
+    private static final class LayerSectorWatcherFake extends MapLayerSectorWatcher {
+
+        private LayerSectorWatcherFake(MapLayerStalenessSource stalenessSource) {
+            super(stalenessSource);
         }
     }
 }

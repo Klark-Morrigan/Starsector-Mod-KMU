@@ -2,9 +2,9 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
-import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
-import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.ownermap.ribbon.RibbonSegment;
+import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

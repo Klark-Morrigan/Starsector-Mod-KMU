@@ -37,8 +37,8 @@ import java.util.Set;
  *
  * <p>Pure geometry over opaque owner IDs: what a key means, what its name reads and what
  * shade it draws in all arrive injected as {@link ClusterLabelResolvers}, so the search reads
- * no settings, ownership, or filter state, names nothing on the map, and is exercised on
- * hand-built clusters.
+ * no settings, ownership, or filter state, names nothing on the map, and needs nothing beyond the
+ * clusters it is handed.
  */
 public final class ClusterAnchorPlacement {
 
