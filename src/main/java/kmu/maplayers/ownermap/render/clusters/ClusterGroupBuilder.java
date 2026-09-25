@@ -195,19 +195,9 @@ public final class ClusterGroupBuilder {
                     ? GlVertexRuns.flattenVertices(clusterRegion.outerRing())
                     : GlVertexRuns.NO_VERTICES,
                 isBorderDrawn
-                    ? flattenLoops(clusterRegion.holeRings())
+                    ? GlVertexRuns.flattenLoops(clusterRegion.holeRings())
                     : List.of()));
         }
         return clusters;
     }
-
-    // One stroked run per closed loop, in the order the loops arrived.
-    private static List<float[]> flattenLoops(List<List<double[]>> loops) {
-        var runs = new ArrayList<float[]>(loops.size());
-        for (var loop : loops) {
-            runs.add(GlVertexRuns.flattenVertices(loop));
-        }
-        return runs;
-    }
-
 }
