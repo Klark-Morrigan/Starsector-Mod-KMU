@@ -10,7 +10,6 @@ import kmlib.starsector.systems.SystemKeyedMemo;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -24,46 +23,27 @@ import java.util.Set;
  * factions fold into blocs, the {@link ColonyReadRules} its colony reads are taken under, and the
  * one walk of each system all of them are answered from.
  *
- * <p>What every layer that paints places by who owns them has in common, and no more than that.
- * The mechanic deciding <em>who</em> paints - weighing markets, say, or a relation between
- * factions - is the layer's own, and each carries its rule beside this rather than inside it
- * (a mechanic's own pass is this plus its rule). That is what lets the holder seam take
- * a pass at all: a seam naming a whole mechanic's pass could only be implemented by layers that
- * paint by that mechanic. Anything answered by weighing markets - which colonies count toward a
- * weight, how a dead heat between them is settled - therefore belongs on that pass and not here,
- * however generic the inputs it is computed from look.
+ * <p>Only what every such layer shares. The mechanic deciding <em>who</em> paints - weighing
+ * markets, a relation between factions - is the layer's own and travels beside this, which is what
+ * lets the holder seam take a pass at all: a seam naming one mechanic's pass could only be
+ * implemented by layers painting by that mechanic. Anything answered by weighing markets therefore
+ * belongs on that mechanic's pass, however generic its inputs look.
  *
- * <p>Opened where a rebuild begins and handed down, so the sector is read at one moment and
- * every system is walked once for the whole rebuild rather than once per surface that asks about
- * it. A pass is built for one rebuild and discarded with it; one kept past that would go on
- * answering off a sector that has since moved on.
+ * <p>Opened where a rebuild begins and discarded with it, so the sector is read at one moment and
+ * each system is walked once for the whole rebuild. The sector is the index's rather than a field
+ * of its own, so a pass cannot name one sector while answering out of another.
  *
- * <p>The sector is the index's rather than a field of its own, so a pass cannot be built naming
- * one sector while answering out of another.
- *
- * <p>A class rather than a record because it remembers as well as carries: the colony walk is
- * memoised inside the index it holds, each colony's kind inside the knowledge it opened, and
- * habitation here beside them. All three are a snapshot of one moment, which is why a pass is
- * discarded with the rebuild that opened it - and why value equality would be wrong for it, two
- * passes over one sector being two separate readings however alike the knobs they were built
- * from. Not safe for concurrent use, a rebuild being one thread's work.
+ * <p>A class rather than a record because it remembers as well as carries - the colony walk, each
+ * colony's kind and each system's habitation are memoised snapshots - so two passes over one sector
+ * are two readings and value equality would be wrong. Not safe for concurrent use.
  */
 public final class HolderPass {
 
-    // Each system's habitation, resolved on first ask and remembered for the rest of the pass.
+    // Each system's habitation, resolved on first ask. Memoised because the filter's holder resolve,
+    // the inhabitation scan and each picker's stats fold all ask per system in separate walks.
     //
-    // Memoised because several readers ask for it per system and they run in separate walks of the
-    // sector: the filter's holder resolve asks every system for its blocs, the inhabitation scan
-    // asks every system for its emptiness, and each picker's stats fold asks every system for the
-    // blocs living in it and what they live on. The colony walk beneath is already shared, so what
-    // would repeat is the projection and the folds over it - cheap each, but paid for the whole
-    // sector over again per reader.
-    //
-    // Remembered on the same terms as the colony memo beneath it, whose answers the fold here
-    // reads: the two have to agree about what one system is, and keyed differently they would
-    // disagree exactly over a pair sharing an ID - one holding two entries where the other holds
-    // one, so the second system draws the first's inhabitants over its cell, on the one layer
-    // whose whole output is who lives where.
+    // Keyed as the colony memo beneath it is: keyed differently, the two would disagree over a pair
+    // of systems sharing an ID, and the second would draw the first's inhabitants over its cell.
     private final SystemKeyedMemo<SystemHabitation> habitationBySystem = new SystemKeyedMemo<>();
 
     private final ColonyKnowledge colonyKnowledge;
@@ -74,13 +54,9 @@ public final class HolderPass {
     /**
      * Opens a pass over an already-built reading of the sector.
      *
-     * <p>Its arguments are in the order {@link #over} states them, the walk standing where the
-     * sector it is built from does, so the two entries cannot be read as saying different things.
-     *
-     * <p>The rules are required on the same terms the grouping and the walk are: a pass is opened
-     * where a rebuild begins, from values the opener already holds, so a null is a fault at that
-     * one place rather than a caller with no rule to state. Standing the fog in for it would turn
-     * that fault into a map that quietly draws less, which nothing on screen would report.
+     * <p>Every argument is required: they are values the rebuild's opener already holds, so a null
+     * is a fault at that one place. Standing the fog in for missing rules would turn that fault into
+     * a map that quietly draws less.
      *
      * @param sectorIndex     the pass's one reading of the sector, shared by every read made
      *                        through it
@@ -99,25 +75,22 @@ public final class HolderPass {
         this.grouping = Objects.requireNonNull(grouping, "grouping");
         this.sectorIndex = Objects.requireNonNull(sectorIndex, "sectorIndex");
 
-        // The visibility rule is paired with the sector's sighting register here, which is the one
-        // point at which both are in hand: the index names the sector, and a projection asked of a
-        // colony set later would have nowhere to read what has been observed from.
+        // The visibility rule is paired with the sector's sighting register here, the one point at
+        // which both are in hand.
         this.colonyKnowledge = ColonyKnowledge.over(
             sectorIndex.getSector(),
             colonyReadRules.colonyVisibility());
     }
 
     /**
-     * A pass over one sector under explicit colony rules, opening the colony index its
-     * reads share.
+     * A pass over one sector under explicit colony rules, opening the colony index its reads share.
      *
      * @param sector          the sector this pass reads; null yields a pass answering an empty
-     *                        colony set for every system, matching how the reads treat an
-     *                        unreachable sector
+     *                        colony set for every system
      * @param colonyReadRules what the player may be shown of a colony, and what a decivilised
      *                        world counts as
      * @param grouping        the grouping this pass folds factions into blocs under
-     * @return a pass over that sector carrying those knobs
+     * @return a pass over that sector carrying those rules
      */
     public static HolderPass over(
             SectorAPI sector,
@@ -131,29 +104,18 @@ public final class HolderPass {
     }
 
     /**
-     * A pass reading the player's live visibility settings under an explicit grouping: the rule
-     * is sampled once here so the whole rebuild resolves under the settings in force when it
-     * began, even if the player flips a toggle mid-walk.
-     *
-     * <p>The whole rule is taken rather than the reveal alone, so a surface reading through this
-     * pass cannot be handed one gate and not the other.
+     * A pass under the player's live colony rules ({@link ColonyReadRules#readFromLunaSettings})
+     * and an explicit grouping.
      *
      * @param sector   the sector this pass reads
      * @param grouping the grouping this pass folds factions into blocs under
-     * @return a pass carrying the live rule paired with the grouping
+     * @return a pass carrying the live rules paired with the grouping
      */
     public static HolderPass readFromLunaSettings(SectorAPI sector, HolderGrouping grouping) {
-        return over(
-            sector,
-            new ColonyReadRules(
-                MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
-                DecivilisedColonyHabitation.readFromLunaSettings()),
-            grouping);
+        return over(sector, ColonyReadRules.readFromLunaSettings(), grouping);
     }
 
     /**
-     * The grouping this pass folds factions into blocs under.
-     *
      * @return the grouping every per-bloc read through this pass is made under
      */
     public HolderGrouping grouping() {
@@ -162,13 +124,11 @@ public final class HolderPass {
 
     /**
      * What the player may be told about the colonies this pass walks: its rule, read against the
-     * sector's own record of what has been seen and where.
+     * sector's own record of what has been seen.
      *
-     * <p>Published so a reader needing a projection of its own - one this pass does not name -
-     * takes the pass's own knowledge rather than pairing a rule with a register for itself. The
-     * pair assembled at a call site is a pair that can be assembled wrongly, and a surface reading
-     * one pass's rule against another's observations would withhold colonies nothing else on the
-     * map is withholding.
+     * <p>Published so a reader needing a projection this pass does not name takes the pass's own
+     * knowledge rather than pairing a rule with a register itself - a surface reading one pass's
+     * rule against another's observations would withhold colonies nothing else on the map does.
      *
      * @return the knowledge every colony projection through this pass is taken under
      */
@@ -177,30 +137,23 @@ public final class HolderPass {
     }
 
     /**
-     * The reading of the sector this pass answers out of - its systems, and the colonies in each.
-     *
-     * @return the index, so a reader needing to open something of its own over the same walk can
+     * @return the reading of the sector this pass answers out of, so a reader can open something
+     *         of its own over the same walk
      */
     public SectorPassIndex sectorIndex() {
         return sectorIndex;
     }
 
     /**
-     * The sector this pass reads, as the index it walks names it.
-     *
-     * @return the sector; null when the pass was opened over none
+     * @return the sector this pass reads, as its index names it; null when opened over none
      */
     public SectorAPI sector() {
         return sectorIndex.getSector();
     }
 
     /**
-     * The systems this pass walks, in the sector's own order.
-     *
-     * <p>Empty for a pass over no sector, which is what lets a resolve state its walk without
-     * guarding the unreachable case first: there is nothing to iterate, so the loop body decides
-     * nothing and the guard it would have needed cannot be forgotten at one call site and kept at
-     * another.
+     * The systems this pass walks, in the sector's own order. Empty for a pass over no sector, so a
+     * resolve states its walk without guarding the unreachable case first.
      *
      * @return the sector's star systems; empty when the pass was opened over no sector
      */
@@ -211,12 +164,9 @@ public final class HolderPass {
     }
 
     /**
-     * Whether this pass can read an economy at all - a sector to walk, with its economy up.
-     *
-     * <p>The one named answer to a state every resolve below meets: the sector is unreachable, or
-     * it is mid-load and its economy has not been built yet. A resolve that reads market weights
-     * reports nothing at all in that case rather than reporting a sector as empty, and stating the
-     * condition once is what stops one of them testing half of it.
+     * Whether this pass can read an economy at all - a sector to walk, with its economy up. Named
+     * once because every weighing resolve meets the unreachable and the mid-load sector, and reports
+     * nothing rather than an empty sector in both; stating it once stops one resolve testing half.
      *
      * @return true when both the sector and its economy are there to read
      */
@@ -227,9 +177,8 @@ public final class HolderPass {
     }
 
     /**
-     * The colonies in one system, off this pass's single walk of it - what a reader needing the
-     * colonies themselves rather than a mechanic's verdict on them takes, so it shares the walk
-     * with every other read instead of adding one.
+     * The colonies in one system, off this pass's single walk of it, for a reader needing the
+     * colonies themselves rather than a mechanic's verdict on them.
      *
      * @param system the system to read; null yields an empty set
      * @return the system's colony set
@@ -239,13 +188,10 @@ public final class HolderPass {
     }
 
     /**
-     * The colonies in one system the player may be shown - the known projection over this pass's
-     * one walk of it, taken under the rule the pass was opened with.
+     * The colonies in one system the player may be shown, under the rule the pass was opened with.
      *
-     * <p>Named here rather than composed at each display reader, because the fill painting a cell,
-     * the band counting inside it and the box over it all have to withhold the same colonies. Two
-     * of them applying the rule separately is two chances for a band to count out a colony the
-     * fill declines to draw.
+     * <p>Named here rather than composed at each display reader, because the fill, the band inside
+     * it and the box over it all have to withhold the same colonies.
      *
      * @param system the system to read; null yields an empty list
      * @return the system's colonies the rule admits, in the set's own order
@@ -255,24 +201,16 @@ public final class HolderPass {
     }
 
     /**
-     * The colonies in one system that amount to people living there - the habitation projection
-     * over this pass's one walk of it, under the visibility rule the known listing takes and this
-     * pass's habitation rule besides.
+     * The colonies in one system that amount to people living there, under the visibility rule and
+     * this pass's habitation rule.
      *
-     * <p>Beside the listing rather than in place of it, because a reader answering "who may be
-     * named here" and a reader answering "is anybody living here" are asking different questions
-     * of the one system: a derelict somebody has seen belongs in the first answer and settles
-     * nothing in the second. Offering both off the pass means neither reader has to know which
-     * shapes of colony the difference turns on.
+     * <p>Beside the known listing rather than in place of it: "who may be named here" and "is
+     * anybody living here" are different questions, and a derelict somebody has seen answers the
+     * first and settles nothing in the second.
      *
-     * <p>Where the habitation rule lands, rather than at the fold below it. This list is read
-     * directly as well as folded, so a rule applied at the fold alone would leave a reader of the
-     * list counting worlds the fill beneath it had stopped drawing.
-     *
-     * <p>Named against the one kind rather than asked of the kind itself, as the projections in
-     * {@link ColonyKnowledge} are. The rule is about that kind and no other: every other kind,
-     * including one not yet written, inhabits its place until it says otherwise, and sweeping it in
-     * here would decide that on its behalf from a player toggle that never mentioned it.
+     * <p>The habitation rule lands here rather than at the fold below, because this list is also
+     * read directly. It names the one decivilised kind rather than asking the kind itself, so a kind
+     * not yet written inhabits its place until it says otherwise.
      *
      * @param system the system to read; null yields an empty list
      * @return the system's known colonies somebody lives on under this pass's habitation rule, in
@@ -291,17 +229,12 @@ public final class HolderPass {
     }
 
     /**
-     * The factions the player may be told about in one system - the owners of the known listing
-     * above, each named once however many colonies it holds there.
+     * The factions the player may be told about in one system - the owners of the known listing,
+     * each named once.
      *
-     * <p>Who a box may name is a question about the system rather than about the mechanic reading
-     * it, so it is answered here, off the one projection, rather than derived by each mechanic from
-     * whatever it happened to score. That is what lets every box over one cell name the same
-     * factions: all of them are projections of this, so none can hold an owner another lacks.
-     *
-     * <p>The listing rather than habitation, which is what {@link #readHabitationIn} answers. A
-     * derelict somebody has seen has an owner to name and nobody living on it, so it belongs in
-     * this set and in no answer about who lives in the system.
+     * <p>Answered here, off the one projection, rather than derived by each mechanic from what it
+     * scored, so every box over one cell names the same factions. The listing rather than
+     * habitation: a seen derelict has an owner to name and nobody living on it.
      *
      * @param system the system to read; null yields an empty set
      * @return the IDs of the factions holding a colony the rule admits, in the projection's own
@@ -312,17 +245,9 @@ public final class HolderPass {
     }
 
     /**
-     * What one system's habitation amounts to, off this pass's one walk of it - the value every
-     * surface answering about habitation shares, and {@link SystemHabitation} says why it is one
-     * value rather than a read apiece.
-     *
-     * <p>Habitation rather than the wider listing {@link #readKnownColonyFactionIds} answers, and
-     * the difference is the derelict: one somebody has seen is named in a box and settles
-     * nothing, so no bloc is living in a system holding one alone and none is spared the recede
-     * there.
-     *
-     * <p>Worked out on the first ask and remembered for the rest of the pass, since its readers
-     * ask it in separate walks of the sector.
+     * What one system's habitation amounts to, off this pass's one walk of it; {@link
+     * SystemHabitation} says why it is one value rather than a read apiece. Worked out on the first
+     * ask and remembered for the rest of the pass.
      *
      * @param system the system to read; null yields an empty habitation
      * @return the system's habitation under this pass's rule and grouping

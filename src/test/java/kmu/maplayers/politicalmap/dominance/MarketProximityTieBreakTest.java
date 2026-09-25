@@ -62,7 +62,7 @@ class MarketProximityTieBreakTest {
         Map.of("greater_hegemony", "Greater Hegemony"));
 
     @Nested
-    class ForSystem {
+    class CreateForSystem {
 
         @Test
         void ordersTheBlocWhoseNearestMarketOrbitsCloserToTheCentreFirst() {
@@ -76,7 +76,7 @@ class MarketProximityTieBreakTest {
                     buildListedColonyOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
                     buildListedColonyOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
 
-                var comparator = MarketProximityTieBreak.forSystem(
+                var comparator = MarketProximityTieBreak.createForSystem(
                     systemMock,
                     colonies,
                     buildKnowledgeUnderTheFog(),
@@ -102,7 +102,7 @@ class MarketProximityTieBreakTest {
                     buildListedColonyOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
                     buildListedColonyOwnedBy("blackrock", buildOrbitingEntity(ORBIT_CLOSE, starMock)));
 
-                var comparator = MarketProximityTieBreak.forSystem(
+                var comparator = MarketProximityTieBreak.createForSystem(
                     systemMock,
                     colonies,
                     buildKnowledgeUnderTheFog(),
@@ -134,13 +134,13 @@ class MarketProximityTieBreakTest {
                     buildListedColonyOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
                     buildListedColonyOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
 
-                var factionComparator = MarketProximityTieBreak.forSystem(
+                var factionComparator = MarketProximityTieBreak.createForSystem(
                     systemMock,
                     colonies,
                     buildKnowledgeUnderTheFog(),
                     HolderGrouping.identity());
 
-                var allianceComparator = MarketProximityTieBreak.forSystem(
+                var allianceComparator = MarketProximityTieBreak.createForSystem(
                     systemMock,
                     colonies,
                     buildKnowledgeUnderTheFog(),
@@ -165,7 +165,7 @@ class MarketProximityTieBreakTest {
                     buildListedColonyOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
                     buildListedColonyOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
 
-                var comparator = MarketProximityTieBreak.forSystem(
+                var comparator = MarketProximityTieBreak.createForSystem(
                     systemMock,
                     colonies,
                     buildKnowledgeUnderTheFog(),
@@ -201,7 +201,7 @@ class MarketProximityTieBreakTest {
                     buildListedColonyOwnedBy("hegemony", buildOrbitingEntity(ORBIT_FAR, starMock)),
                     buildUnlistedColonyOwnedBy("blackrock", buildOrbitingEntity(ORBIT_CLOSE, starMock)));
 
-                var comparator = MarketProximityTieBreak.forSystem(
+                var comparator = MarketProximityTieBreak.createForSystem(
                     systemMock,
                     colonies,
                     buildKnowledgeUnderTheFog(),
@@ -235,14 +235,18 @@ class MarketProximityTieBreakTest {
                 // Without the reveal blackrock's nearer colony is not counted, so it is placeless
                 // and hegemony's farther one decides.
                 assertThat(MarketProximityTieBreak
-                        .forSystem(systemMock, colonies, buildKnowledgeUnderTheFog(), HolderGrouping.identity())
+                        .createForSystem(
+                            systemMock,
+                            colonies,
+                            buildKnowledgeUnderTheFog(),
+                            HolderGrouping.identity())
                         .compare("hegemony", "blackrock"))
                     .isNegative();
 
                 // Under the reveal the same colony counts, and being the nearer one it takes the
                 // tie.
                 assertThat(MarketProximityTieBreak
-                        .forSystem(
+                        .createForSystem(
                             systemMock,
                             colonies,
                             buildKnowledgeUnderTheReveal(),
@@ -267,7 +271,7 @@ class MarketProximityTieBreakTest {
                     buildListedColonyOwnedBy("hegemony", null),
                     buildListedColonyOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));
 
-                var comparator = MarketProximityTieBreak.forSystem(
+                var comparator = MarketProximityTieBreak.createForSystem(
                     systemMock,
                     colonies,
                     buildKnowledgeUnderTheFog(),

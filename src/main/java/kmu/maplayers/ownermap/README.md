@@ -161,7 +161,7 @@ since that is what a player's stored setting is keyed by.
 
 | Package | What is in it |
 | --- | --- |
-| *(top level)* | the view seam (`OwnerPaintedView`, `MapLayerViewRegistry`, `ViewGrouping`), the stale-spotlight heal (`FilterSelectionHeal`) and the preferences a rebuild samples (`ContentInputs`) |
+| *(top level)* | the view seam (`OwnerPaintedView`, `MapLayerViewRegistry`, `ViewGrouping`), the picker assembly behind its defaults (`BlocPickerAssembly`), the stale-spotlight heal (`FilterSelectionHeal`) and the preferences a rebuild samples (`ContentInputs`) |
 | `holding` | one rebuild's reading of a sector: `HolderPass`, the grouping it folds factions by, the colony rules it reads under, and the contest sides a `BlocAffiliation` places blocs on |
 | `owners` | what is read off a holding: the owner of a system (`SystemOwner`) and the spotlight's own key (`SpotlitBlocs`) |
 | [`owners/holders`](owners/holders/README.md) | the ownership seam every view resolves through, the per-system resolve a refresh uses, and the three fill states |

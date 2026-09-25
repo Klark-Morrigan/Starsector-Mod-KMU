@@ -7,6 +7,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.holders.HolderResolution;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
 
@@ -28,9 +29,9 @@ import static org.mockito.Mockito.mockStatic;
  * Pins the default holding provider's one job: delegating to the same two resolvers the
  * render pass used to call inline, branching on whether a bloc is spotlighted. Off filter it
  * reproduces {@link SectorPolitics#resolveDominantHolderBySystemKey} with nothing contested;
- * under a filter it reproduces {@link FilteredPolitics#resolveFilteredHolder}, passing its
- * holders and contested set straight through. The resolvers themselves read the live economy,
- * so they are stubbed here and covered end to end in their own integration suites.
+ * under a filter it hands on {@link FilteredPolitics#resolveFilteredHolder}'s resolution whole.
+ * The resolvers themselves read the live economy, so they are stubbed here and covered end to end
+ * in their own integration suites.
  */
 final class DefaultHolderProviderTest {
 
@@ -78,7 +79,7 @@ final class DefaultHolderProviderTest {
                 new SystemOwner("$spotlit", PRIMARY, SECONDARY));
 
             var contested = Set.of(OWNED_SYSTEM);
-            var filtered = new FilteredPolitics.FilteredHolder(holders, contested);
+            var filtered = new HolderResolution(holders, contested, Set.of());
 
             try (var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
@@ -86,17 +87,10 @@ final class DefaultHolderProviderTest {
                     .when(() -> FilteredPolitics.resolveFilteredHolder(pass, "hegemony"))
                     .thenReturn(filtered);
 
-                var resolution = DefaultHolderProvider.INSTANCE.resolveHolder(pass, "hegemony");
-
-                assertThat(resolution.ownerBySystemKey())
-                    .isEqualTo(holders);
-                assertThat(resolution.contestedSystemKeys())
-                    .isEqualTo(contested);
-
-                // The presence-aware resolver reports no unfilled systems; the filter path leaves
-                // that fill state empty.
-                assertThat(resolution.unfilledSystemKeys())
-                    .isEmpty();
+                // Handed on whole: the presence-aware resolver already answers the full resolution,
+                // so nothing about its holders or its contested and unfilled sets is restated here.
+                assertThat(DefaultHolderProvider.INSTANCE.resolveHolder(pass, "hegemony"))
+                    .isSameAs(filtered);
             }
         }
     }

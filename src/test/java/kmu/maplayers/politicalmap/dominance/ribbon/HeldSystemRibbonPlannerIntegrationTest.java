@@ -179,7 +179,7 @@ final class HeldSystemRibbonPlannerIntegrationTest {
         var holding = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
 
         return new HeldSystemRibbonPlanner(
-            DominancePass.over(holding, DominancePassFixtures.buildStabilityWeightedRules()),
+            DominancePass.createOver(holding, DominancePassFixtures.buildStabilityWeightedRules()),
             buildInputsFor(holding));
     }
 

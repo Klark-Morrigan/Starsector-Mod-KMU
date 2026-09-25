@@ -26,6 +26,7 @@ import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsRead;
+import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
@@ -64,6 +65,10 @@ import static org.mockito.Mockito.when;
  *
  * <p>Its two seams that take a refresh board are pinned on the board they are handed rather than on
  * one resolved for them: the revision it folds, and the body controls it contributes.
+ *
+ * <p>Beside them, what the view offers the player around the fills: only an alliance as a
+ * spotlight target, matching its role of grouping holders by alliance, and a domination box of its
+ * own on hover, so the box ranks under the grouping this view painted with.
  */
 final class AlliancesViewTest {
 
@@ -389,6 +394,54 @@ final class AlliancesViewTest {
                     sectorMock,
                     FactionNameFormatChoice.FULL))
                 .isEqualTo("The Hegemony");
+        }
+    }
+
+    @Nested
+    class ResolveHoverTooltip {
+
+        @Test
+        void resolveHoverTooltipOffersTheDominationBox() {
+            // The box explaining the fills this view paints, which are painted by domination.
+            assertThat(AlliancesView.INSTANCE.resolveHoverTooltip())
+                .containsInstanceOf(SystemDominationTooltip.class);
+        }
+
+        @Test
+        void resolveHoverTooltipOffersABoxOfItsOwnRatherThanTheFactionViews() {
+            // Each view's box ranks under that view's own grouping, so the one hovered here nests
+            // members under their alliance; sharing the faction view's would list them flat.
+            assertThat(AlliancesView.INSTANCE.resolveHoverTooltip().orElseThrow())
+                .isNotSameAs(FactionsView.INSTANCE.resolveHoverTooltip().orElseThrow());
+        }
+    }
+
+    @Nested
+    class ResolveSelectableBlocGate {
+
+        @Test
+        void resolveSelectableBlocGateAdmitsAnAllianceBloc() {
+
+            assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(ALLIANCE_GROUPING)
+                    .test("rebel_pact"))
+                .isTrue();
+        }
+
+        @Test
+        void resolveSelectableBlocGateTurnsAwayALoneFaction() {
+            // Only an alliance is a spotlight target here; a faction outside every alliance is
+            // present on the map but not offered in this view's picker.
+            assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(ALLIANCE_GROUPING)
+                    .test("hegemony"))
+                .isFalse();
+        }
+
+        @Test
+        void resolveSelectableBlocGateTurnsAwayEveryBlocWhenNoAllianceExists() {
+            // With no alliance formed every bloc is a lone faction, so the picker offers nothing.
+            assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(HolderGrouping.identity())
+                    .test("hegemony"))
+                .isFalse();
         }
     }
 

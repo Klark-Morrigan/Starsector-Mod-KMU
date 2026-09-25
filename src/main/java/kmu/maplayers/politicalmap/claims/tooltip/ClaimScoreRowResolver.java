@@ -11,9 +11,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.ownermap.tooltip.ColonyQualifier;
-import kmu.maplayers.ownermap.tooltip.ColonyQualifierFacts;
 import kmu.maplayers.ownermap.tooltip.TermTooltipLine;
-import kmu.maplayers.politicalmap.dominance.tooltip.MarketFactorText;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -32,53 +30,12 @@ import java.util.Optional;
  * Left as that number, a reader has no way to tell which market it was, nor to resist reading it as the
  * total of what the faction holds, which is exactly what it is not.
  *
- * <p>What a market line says beyond its number is what the box has found out about the place
- * ({@link ColonyQualifier}) - what sort of place it is, and how it is out of plain view. Those are
- * facts about the world rather than about the contest, which is why they are stated on the same
- * terms whatever the mechanic made of the market: a collapsed colony and a derelict both reach
- * the list unowned, off-economy and at nought, and without the words the account could not tell a
- * place people still live from a wreck nobody ever did.
- *
- * <p>A market line also says how old the box's news of it is, where nobody is looking at the colony
- * as the box is drawn. Why that reaches further on this list than on the dominance side is
- * {@link SystemClaimTooltip}'s to say.
- *
- * <p>Every market line leads with the glyph the sector map marks that market's entity with, scored or
- * not. The term lines beneath a market carry no mark at all: a size or a garrison bonus has nothing on
- * the map to point at. What a mark off the map is for and how it is coloured are
- * {@link kmu.maplayers.base.tooltip.content.CellTooltipMark#resolveMarkForMapIcon}'s.
- *
- * <p>A market the box may not name is listed all the same, with its name blocked out - what such a
- * line looks like and which markets take it are {@link RedactedMarketLines}'s.
- *
- * <p>Every market states where the economy lists it, and that place counts across factions: a tie
- * between two <em>factions'</em> best markets is settled by it exactly as a tie within one faction's
- * markets is. Which ties the mechanic actually consulted is {@link ClaimTieOutcomes}'s answer, judged
- * over the whole contest rather than over this faction's list, exactly as the walk it explains
- * compares.
- *
- * <p>The presence term is the faction's rather than any one market's, so it is stated once beneath the
- * list instead of on each market in it. That count is of what the faction holds rather than of the
- * lines above it, so over a list a market was withheld from it stands all the same and reads as
- * exceeding what is shown. It gives away nothing the list does not: a market's own line carries the
- * whole score the contest weighed it at while the terms beneath it state only its own, so on every
- * line the presence is already the difference between the two. The term names that difference.
- * Withheld, it leaves each market's arithmetic short by an amount the reader can see and hands them
- * nothing to account for it with - which is the one failure a box that exists to say what built a
- * number cannot afford.
- *
- * <p>A term that earned a market nothing has no line. The box exists to say what built a number, and a
- * market that is no garrison is not one whose garrison came to nothing - it is one where the term never
- * arose.
- *
- * <p>No rating-to-weight grammar reaches these lines, unlike the dominance side's
- * ({@link MarketFactorText}): a claim score is a small whole number of points with no grid behind it, so
- * a term states the points it added and nothing about a unit change that never happens.
- *
  * <p>Pure over a standing with no Starsector types, so a whole faction's worth of lines is resolved
- * without a live economy.
+ * without a live economy. How a market the box may not name is drawn is {@link RedactedMarketLines}'s,
+ * which listing ties decided anything is {@link ClaimTieOutcomes}'s, and what a market's line calls out
+ * beyond its number is {@link ColonyQualifier}'s.
  */
-public final class ClaimScoreRowResolver {
+final class ClaimScoreRowResolver {
 
     // The faction's markets rank descending by what they brought to the contest, a tie falling to the
     // earlier place in the economy's listing - which is the mechanic's own tie rule, so the list reads
@@ -233,6 +190,12 @@ public final class ClaimScoreRowResolver {
     // several separate findings, while one line at the foot of the very markets it counts lets the
     // reader check the count against the list it follows.
     //
+    // The count is of what the faction holds rather than of the lines above it, so over a list a
+    // market was withheld from it stands all the same and reads as exceeding what is shown. It gives
+    // away nothing the list does not: each market's own line carries the whole score while its terms
+    // state only its own, so the presence is already the difference between the two. Withheld, it
+    // would leave each market's arithmetic short by an amount the reader can see.
+    //
     // Absent for a faction holding the system with one market, where the term never arose.
     private static Optional<CellTooltipEntry> resolveSiblingEntry(WeighedClaimStanding standing) {
 
@@ -265,17 +228,21 @@ public final class ClaimScoreRowResolver {
 
         var colonyReading = reading.colonyReading();
 
+        // What sort of place a colony is, and how it is out of plain view, are facts about the world
+        // rather than about the contest: a collapsed colony and a derelict both reach the list
+        // unowned, off-economy and at nought, and only these words tell the two apart.
+        //
         // Nothing chooses between the claim and what sort of place the colony is: the two are
         // findings about different things, and which of them leads is the shared resolver's to say
         // for every box at once. Stated here, the precedence would be a second copy of a rule the
         // sharing exists to have one of.
-        var facts = new ColonyQualifierFacts(
-            colonyReading.readKindOf(market.marketId()),
+        var facts = colonyReading.readQualifierFacts(
+            market.marketId(),
+            market.isHiddenMarket(),
+            !market.isOffEconomyMarket(),
             isHoldingTheClaim
                 ? KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER)
-                : NO_LEADING_FINDING,
-            colonyReading.readConcealmentOf(market.marketId(), market.isHiddenMarket()),
-            !market.isOffEconomyMarket());
+                : NO_LEADING_FINDING);
 
         // Described whatever the contest made of the market, because neither what sort of place a
         // colony is nor how current the box's news of it is has anything to do with whether the
@@ -297,9 +264,11 @@ public final class ClaimScoreRowResolver {
     //
     // The name runs on into that listing place, because the place is the whole of the answer to the
     // one question the scores cannot settle: two markets on the same score are parted by nothing but
-    // which the economy reached first. Stated on every market rather than only on a tied one, so a
-    // reader meets the ordering before they need it and a tie reads as a rule they already understand
-    // rather than as an outcome the box declines to explain.
+    // which the economy reached first - across factions as much as within one, a tie between two
+    // factions' best markets being settled by it exactly as a tie between one faction's own is.
+    // Stated on every market rather than only on a tied one, so a reader meets the ordering before
+    // they need it and a tie reads as a rule they already understand rather than as an outcome the
+    // box declines to explain.
     private static CellTooltipEntryLine createMarketLine(
             MarketClaimBreakdown market,
             CellTooltipIndexOutcome indexOutcome,
@@ -397,6 +366,10 @@ public final class ClaimScoreRowResolver {
     // breaks into nothing - a market the box may not name withholds terms that were computed, which is
     // a separate reading and is taken where that line is composed.
     //
+    // A term that earned a market nothing has no line: a market that is no garrison is not one whose
+    // garrison came to nothing, but one where the term never arose. The term lines carry no mark
+    // either, a size or a garrison bonus having nothing on the map to point at.
+    //
     // A third reading joins them at the shallower levels, and it is about the box rather than about
     // the market: the player asked for the colonies and not the arithmetic under them, so the terms
     // are never worked out. Told apart from the two above by the cut alone - nothing here says which
@@ -426,7 +399,9 @@ public final class ClaimScoreRowResolver {
     }
 
     // What a term added, signed so it reads as a term of a sum rather than as a quantity of its own -
-    // the size above it is what the colony is, while these are what was added to it.
+    // the size above it is what the colony is, while these are what was added to it. No rating grammar
+    // reaches it, unlike the dominance side's (MarketFactorText): a claim score is a small whole number
+    // of points with no grid behind it.
     private static String formatBonus(int amount) {
         return KmuStringKeys.format(
             KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_BONUS,

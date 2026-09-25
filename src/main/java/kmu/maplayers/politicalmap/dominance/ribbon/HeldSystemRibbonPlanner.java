@@ -6,7 +6,6 @@ import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
-import kmu.maplayers.politicalmap.dominance.SystemDominance;
 
 import java.util.Optional;
 
@@ -83,9 +82,7 @@ public final class HeldSystemRibbonPlanner implements SystemRibbonPlanner, HeldS
         // The winner resolved exactly as the fill's was, tie-break and candidacy included, so the
         // bloc the band opens on is the bloc the cell is painted for even where the weights alone
         // do not say so.
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(
-            footprintByBlocId,
-            pass.resolveRankingRulesFor(system));
+        var dominantBlocId = pass.resolveDominantBlocId(system, footprintByBlocId);
 
         return Optional.of(HeldCellRibbons.planHeldCellRibbon(
             dominantBlocId,

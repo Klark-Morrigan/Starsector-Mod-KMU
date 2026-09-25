@@ -89,7 +89,7 @@ public final class StandingsTooltipSeamsFake {
      * <p>A suite turning on the rule or the dev reveal builds its own and installs it instead.
      */
     public static final DominancePass ANY_PASS =
-        DominancePass.over(null, ANY_RULES, UNDER_THE_FOG, VIEW_GROUPING);
+        DominancePass.createOver(null, ANY_RULES, UNDER_THE_FOG, VIEW_GROUPING);
 
     // What a standing carries when a case is about how groups are laid out rather than about what any
     // of them is made of. Never asserted on - a case that cares states its own standing. The bloc is

@@ -95,6 +95,7 @@ public final class OwnerMapClusters implements
     // drawn when the build failed) rather than naming a concrete view, keeping this model
     // view-agnostic.
     public static OwnerMapClusters createEmpty(OwnerPaintedView view) {
+
         return new OwnerMapClusters(
             SystemOccupancy.createEmpty(),
             OwnerMapBuildInputs.createEmpty(view));
@@ -146,6 +147,7 @@ public final class OwnerMapClusters implements
      * @return the cells grouped by the bloc holding the system each draws as
      */
     public CellGrouping resolveCellGroupingOver(Map<SystemKey, SystemKey> systemKeyByCellKey) {
+
         return SystemOwner.mapCellGrouping(
             systemKeyByCellKey,
             occupancy.getHolderBySystemKey());
@@ -165,6 +167,7 @@ public final class OwnerMapClusters implements
     public void reindexClusters(
             Map<SystemKey, List<CellEdge>> cellEdgesByCellKey,
             Map<SystemKey, SystemKey> systemKeyByCellKey) {
+
         clusterIndex = SystemClusterIndex.indexClusters(SystemClusters.findClusters(
             cellEdgesByCellKey,
             resolveCellGroupingOver(systemKeyByCellKey)));
@@ -177,6 +180,27 @@ public final class OwnerMapClusters implements
     @Override
     public Map<String, StyledClusterGroup> getStyledClusterGroupByOwnerId() {
         return styledClusterGroupByOwnerId;
+    }
+
+    /**
+     * Records one bloc's cluster group, or drops the bloc where it bakes none.
+     *
+     * <p>The write path for the map, rather than each caller choosing between a put and a remove: a
+     * bloc whose group came back empty-handed draws nothing, and an entry left standing for it
+     * would go on painting the fill and border it lost.
+     *
+     * @param ownerId      the bloc's holder - a faction or group ID from the view's grouping, or
+     *                     one of the filter's synthetic spotlight keys
+     * @param clusterGroup the bloc's baked bodies, or null where it paints nothing or its cells
+     *                     yield no borderable geometry
+     */
+    public void putStyledClusterGroup(String ownerId, StyledClusterGroup clusterGroup) {
+
+        if (clusterGroup == null) {
+            styledClusterGroupByOwnerId.remove(ownerId);
+        } else {
+            styledClusterGroupByOwnerId.put(ownerId, clusterGroup);
+        }
     }
 
     /**
@@ -198,12 +222,15 @@ public final class OwnerMapClusters implements
      *         drew none or is not on the map
      */
     public List<float[]> listCandidateBorderLoopsOf(String blocId) {
+
         var clusterGroup = styledClusterGroupByOwnerId.get(blocId);
         if (clusterGroup == null) {
             return List.of();
         }
         if (!blocId.equals(candidateLoopsBlocId) || clusterGroup != candidateLoopsClusterGroup) {
+
             var loops = new ArrayList<float[]>();
+
             for (var cluster : clusterGroup.clusters()) {
                 loops.addAll(cluster.listLoops());
             }

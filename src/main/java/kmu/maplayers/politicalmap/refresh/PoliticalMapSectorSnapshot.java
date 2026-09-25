@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.refresh;
 
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.visibility.systems.MapVisibilityFingerprint;
@@ -125,49 +127,67 @@ public record PoliticalMapSectorSnapshot(
                 continue;
             }
 
-            // Taken off the pass rather than read again: membership folds the decivilised world in
-            // and cannot report it, but the fingerprint needs it on its own to salt a drawn
-            // system's contribution, so a live-to-decivilised flip moves the hash without the
-            // drawn set changing.
-            var hasRevealedDecivilised = pass.isRevealedDecivilised(system);
-
             // The system's key, which this walk holds the system to read, and which both outputs
             // are addressed by: two systems answering to one ID contribute two values to the
             // fingerprint rather than one - keyed by ID, one of them entering the drawn set as the
             // other left would not move it - and hold two entries in the holder map.
             var systemKey = SystemKey.readKeyOf(system);
 
-            visibility += MapVisibilityFingerprint.computeSystemContribution(
-                systemKey,
-                hasRevealedDecivilised);
-
-            // The pass's one colony read per system, which the drawn-set answer above is composed
-            // from too: membership asks it whether anybody lives here, the dominance rule ranks
-            // the footprints it weighs out of it. A null economy (early load) reads as no colonies
-            // rather than faulting.
-            var systemColonies = pass.sectorIndex().readColoniesIn(system);
-
-            var footprintByFactionId = KnownMarketFootprints.readByFaction(
-                systemColonies,
-                rules,
-                pass.colonyKnowledge());
+            visibility += computeVisibilityContribution(pass, system, systemKey);
 
             // A decivilised-only system is drawn yet unowned, so it counts toward
             // visibility but is left out of the holder map - a system gaining or
             // losing a holder then reads as a diff against that absence.
-            //
-            // Barred under the same candidacy the fills are resolved under, though this walk only
-            // fingerprints them: a colony founded under a heavier neutral station moves the fill to
-            // that faction, and a holder read here without the bar would still say neutral both
-            // before and after, leaving the map showing whatever it last built there.
-            var dominantFactionId = SystemDominance.resolveDominantFactionId(
-                footprintByFactionId,
-                HolderRankingRules.createByLowestId(BlocCandidacy::isCandidateFaction));
+            var dominantFactionId = resolveDominantFactionId(pass, system, rules);
 
             if (dominantFactionId != null) {
                 ownerBySystemKey.put(systemKey, dominantFactionId);
             }
         }
         return new PoliticalMapSectorSnapshot(visibility, ownerBySystemKey);
+    }
+
+    // The visibility half of one drawn system: what it adds to the fingerprint. Split from the
+    // holder half because the two answer different refreshes - a whole-map geometry rebuild and a
+    // per-system re-colour - and share nothing but the system and its key.
+    //
+    // The decivilised flag is taken off the pass rather than read again: membership folds the
+    // decivilised world in and cannot report it, but the fingerprint needs it on its own to salt a
+    // drawn system's contribution, so a live-to-decivilised flip moves the hash without the drawn
+    // set changing.
+    private static int computeVisibilityContribution(
+            MapVisibilityPass pass,
+            StarSystemAPI system,
+            SystemKey systemKey) {
+
+        return MapVisibilityFingerprint.computeSystemContribution(
+            systemKey,
+            pass.isRevealedDecivilised(system));
+    }
+
+    // The holder half of one drawn system: the faction that holds it, or null where nobody weighed
+    // does.
+    //
+    // The colonies are the pass's one read per system, which the drawn-set answer is composed from
+    // too: membership asks it whether anybody lives here, the dominance rule ranks the footprints it
+    // weighs out of it. A null economy (early load) reads as no colonies rather than faulting.
+    //
+    // Barred under the same candidacy the fills are resolved under, though this walk only
+    // fingerprints them: a colony founded under a heavier neutral station moves the fill to that
+    // faction, and a holder read here without the bar would still say neutral both before and
+    // after, leaving the map showing whatever it last built there.
+    private static String resolveDominantFactionId(
+            MapVisibilityPass pass,
+            StarSystemAPI system,
+            DominanceRules rules) {
+
+        var footprintByFactionId = KnownMarketFootprints.readByFaction(
+            pass.sectorIndex().readColoniesIn(system),
+            rules,
+            pass.colonyKnowledge());
+
+        return SystemDominance.resolveDominantFactionId(
+            footprintByFactionId,
+            HolderRankingRules.createByLowestId(BlocCandidacy::isCandidateFaction));
     }
 }

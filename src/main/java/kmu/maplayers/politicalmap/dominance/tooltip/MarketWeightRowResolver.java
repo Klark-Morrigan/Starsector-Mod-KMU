@@ -7,7 +7,6 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.ownermap.tooltip.ColonyQualifier;
-import kmu.maplayers.ownermap.tooltip.ColonyQualifierFacts;
 import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
 import kmu.maplayers.ownermap.tooltip.TermTooltipLine;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
@@ -25,56 +24,18 @@ import java.util.List;
 
 /**
  * Resolves the arithmetic behind a faction's dominance score into the entries a block lists it as:
- * each of its colonies, and beneath each the factors its weight was summed from.
+ * each of its colonies, beneath each the factors its weight was summed from, and at the foot the
+ * colonies the pass never weighed.
  *
  * <p>What turns the numbers the map painted by into an account a player can follow. The score a
  * faction holds a system with is a sum of sums, and the only useful way to read a sum is to see it
  * broken apart - so a colony is listed under the faction holding it, a factor under the colony it
- * moved, and a patrol tier under the patrol factor it is part of, each level being one step of the
- * same arithmetic.
- *
- * <p>Depth is the subject matter's here rather than the entry model's, which is the point of the
- * model nesting at all: the walk that lays these out reads the tier off how deep it went, so this
- * resolver states only what breaks down into what.
- *
- * <p>How far down it goes is the player's, though, and it stops there rather than composing tiers the
- * cut would drop: a colony runs to four factor lines and a patrol factor to three more beneath them,
- * every one of them a number worded for a reader who has not asked to see it. The colonies themselves
- * are never in question - a caller reaches this resolver at all only where they are listed.
- *
- * <p>Every colony line leads with the glyph the sector map marks that colony's entity with, weighed or
- * not. The station line takes one on the same terms, being the one line beneath a colony named for a
- * thing on the map rather than for a term of arithmetic - and the mark settles more there than it does
- * a level up, a system's stations being told apart on the map by their glyph as much as by their name.
- * Every other line beneath a colony carries no mark at all: a stability or a size has nothing on the
- * map to point at, so a glyph there would stand in for a number. What a mark off the map is for and
- * how it is coloured are {@link kmu.maplayers.base.tooltip.content.CellTooltipMark#resolveMarkForMapIcon}'s.
- *
- * <p>Where that station shares its colony's name - which only a colony on a station can - the line
- * says which of the two it is about. The economy holds a station colony as two entities vanilla
- * names alike, so the account would otherwise print one name at two levels and leave the reader to
- * work out that the second is not the first repeated.
- *
- * <p>A colony the pass never weighed is listed all the same, at the foot of the list and at nought.
- * The player can see the station on the map in a faction's colours, so an account of the system that
- * omitted it would be withholding something they are looking straight at - and the nought is the
- * whole of what the account has to say about it: it is there, and it moved nothing.
- *
- * <p>Every colony's line says whatever the box has found out about the place that its weight does
- * not ({@link ColonyQualifier}) - what sort of place it is, and how it is out of plain view. A
- * collapsed colony and a derelict reach the foot of this list identically, both unowned and
- * both at nought, and nothing else on either line would tell them apart; a concealed colony is
- * called out on the line naming it rather than on the size term its concealment moved, that being
- * a fact about the place and not about one factor of the sum.
- *
- * <p>A factor that did not run has no line. Which of them ran is already settled by the breakdown
- * read - the station and patrol parts are absent when the player has the factor off - and only the
- * stability line, which is a cause rather than a factor, is gated here on the rule that makes it
- * one. So the box shows exactly the factors that moved the number, and a player who has switched a
- * factor off is not shown a line insisting it counted for nothing.
+ * moved, and a patrol tier under the patrol factor it is part of. Depth is the subject matter's here
+ * rather than the entry model's: the walk that lays these out reads the tier off how deep it went.
  *
  * <p>Pure over a breakdown and a rule with no Starsector types, so a whole box's worth of lines is
- * resolved without a live economy. How one line's numbers read is {@link MarketFactorText}'s.
+ * resolved without a live economy. How one line's numbers read is {@link MarketFactorText}'s; what a
+ * colony's line calls out beyond its weight is {@link ColonyQualifier}'s.
  */
 public final class MarketWeightRowResolver {
 
@@ -157,6 +118,10 @@ public final class MarketWeightRowResolver {
     // One colony as the entry it is listed as: its name and the weight it folded in at, over the
     // factors that weight is the sum of.
     //
+    // Its line says whatever the box has found out about the place that its weight does not. A
+    // concealed colony is called out here rather than on the size term its concealment moved, that
+    // being a fact about the place and not about one factor of the sum.
+    //
     // The kind comes off the box's walk of the system rather than off the breakdown, the weight
     // read having no reason to carry one: everything it weighs is a place somebody keeps. It is
     // asked all the same, so what a line may call out is decided in one place for both lists.
@@ -174,19 +139,20 @@ public final class MarketWeightRowResolver {
             .createEntry(colonyReading.describeColony(
                 line,
                 breakdown.marketId(),
-                new ColonyQualifierFacts(
-                    colonyReading.readKindOf(breakdown.marketId()),
-                    NO_LEADING_FINDING,
-                    colonyReading.readConcealmentOf(
-                        breakdown.marketId(),
-                        breakdown.isHiddenMarket()),
-                    IS_LISTED_BY_ECONOMY)))
+                colonyReading.readQualifierFacts(
+                    breakdown.marketId(),
+                    breakdown.isHiddenMarket(),
+                    IS_LISTED_BY_ECONOMY,
+                    NO_LEADING_FINDING)))
             .nesting(resolveFactorEntries(breakdown, reading));
     }
 
     // A colony the pass never weighed, as the entry it is listed as: named as loudly as the colonies
     // above it, at nought, and breaking down into no factors - none of them ran, so there is nothing
-    // beneath it to state.
+    // beneath it to state. Listed at all because the player can see the station on the map in a
+    // faction's colours, and an account omitting it would withhold what they are looking straight
+    // at. A collapsed colony and a derelict both reach this list unowned and at nought, so the words
+    // after the name are all that tells them apart.
     //
     // The nought says the whole of it, exactly as the claims box's does. It is the account's
     // statement about the colony rather than anything the colony scored, so it reads in the quiet
@@ -208,11 +174,12 @@ public final class MarketWeightRowResolver {
         return CellTooltipEntry.createEntry(colonyReading.describeColony(
             line,
             colony.marketId(),
-            new ColonyQualifierFacts(
+            colonyReading.readQualifierFacts(
+                colony.marketId(),
                 colony.kind(),
-                NO_LEADING_FINDING,
-                colonyReading.readConcealmentOf(colony.marketId(), colony.isHiddenMarket()),
-                IS_NOT_LISTED_BY_ECONOMY)));
+                colony.isHiddenMarket(),
+                IS_NOT_LISTED_BY_ECONOMY,
+                NO_LEADING_FINDING)));
     }
 
     // A line naming something the sector map draws - a colony or the station defending it - led by
@@ -255,7 +222,8 @@ public final class MarketWeightRowResolver {
 
     // The glyph the map marks an entity with, read off the entity the line is about. Shared by both
     // shapes of line so a colony and a station are marked alike whether or not the number beside them
-    // is one the account sums.
+    // is one the account sums. Only those two levels take one: a stability or a size has nothing on
+    // the map to point at, so a glyph there would stand in for a number.
     private static CellTooltipMark resolveMapEntityMark(EntityNameplate entity) {
         return CellTooltipMark.resolveMarkForMapIcon(entity.mapIcon());
     }
@@ -268,6 +236,11 @@ public final class MarketWeightRowResolver {
     // the reader, and a colony's factors run to four of them, so a system's worth of them composed
     // and then cut is the whole of what the composition level would have paid the deepest level's
     // price for.
+    //
+    // A factor that did not run has no line. The breakdown read already leaves out the station and
+    // patrol parts the player has switched off, so only the stability line - a cause rather than a
+    // factor - is gated here, and a player is never shown a line insisting a factor counted for
+    // nothing.
     private static List<CellTooltipEntry> resolveFactorEntries(
             MarketWeightBreakdown breakdown,
             WeightAccountReading reading) {

@@ -47,7 +47,7 @@ public final class DominancePassFixtures {
      * @return a dominance pass over that sector
      */
     public static DominancePass buildPassOver(SectorAPI sector) {
-        return DominancePass.over(
+        return DominancePass.createOver(
             SectorOwnershipFixtures.buildHolderPassOver(sector),
             buildStabilityWeightedRules());
     }

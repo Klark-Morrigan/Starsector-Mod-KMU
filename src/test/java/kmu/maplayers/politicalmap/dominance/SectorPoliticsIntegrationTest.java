@@ -342,7 +342,7 @@ class SectorPoliticsIntegrationTest {
                     new SystemOwner("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping)))
+                    DominancePass.createOver(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping)))
                 .containsEntry(
                     buildCellKey("rama"),
                     new SystemOwner(
@@ -405,7 +405,7 @@ class SectorPoliticsIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping)))
+                    DominancePass.createOver(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping)))
                 .containsEntry(
                     buildCellKey("contested-system"),
                     new SystemOwner("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));

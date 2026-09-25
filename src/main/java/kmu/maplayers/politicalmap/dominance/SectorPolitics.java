@@ -7,6 +7,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -95,10 +96,18 @@ public final class SectorPolitics {
         if (system == null || !pass.canReadEconomy()) {
             return null;
         }
-        var footprintByBlocId = pass.readBlocFootprints(system);
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(
-            footprintByBlocId,
-            pass.resolveRankingRulesFor(system));
+        return resolveDominantHolder(system, pass, pass.readBlocFootprints(system));
+    }
+
+    // The holder half of the resolve above, over footprints the caller already read off the same
+    // pass - so the filter, which needs those footprints for its presence classification too,
+    // recedes a system to exactly the holder this resolve paints rather than restating the rule.
+    static SystemOwner resolveDominantHolder(
+            StarSystemAPI system,
+            DominancePass pass,
+            Map<String, MarketFootprint> footprintByBlocId) {
+
+        var dominantBlocId = pass.resolveDominantBlocId(system, footprintByBlocId);
 
         if (dominantBlocId == null) {
             return null;
@@ -108,5 +117,4 @@ public final class SectorPolitics {
             pass.grouping(),
             dominantBlocId);
     }
-
 }

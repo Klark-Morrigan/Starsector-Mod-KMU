@@ -36,10 +36,10 @@ import static org.mockito.Mockito.mock;
 /**
  * Pins the built map state the renderer paints and the incremental refresh edits:
  * that the empty fallback is a harmless no-op the render path can lean on after a failed
- * first build, that {@link OwnerMapClusters#isEmpty} tracks either draw list, and
- * that the two snapshots handed in - the live occupancy and the inputs the build was baked
- * under - are the two handed back, with the global tier the emission reads coming off the
- * retained theme.
+ * first build, that {@link OwnerMapClusters#isEmpty} tracks either draw list, that a bloc
+ * baking no group is dropped rather than left painting what it lost, and that the two snapshots
+ * handed in - the live occupancy and the inputs the build was baked under - are the two handed
+ * back, with the global tier the emission reads coming off the retained theme.
  *
  * <p>Also pins the invariant the cursor read leans on that this model owns: that the cluster index
  * tracks holding through the splits and merges a single flip can cause, a break in which is
@@ -163,6 +163,34 @@ final class OwnerMapClustersTest {
                 .containsExactlyEntriesOf(Map.of("faction", styledClusterGroup));
             assertThat(drawLists.getGlobalStyle())
                 .isSameAs(renderStyle.global());
+        }
+    }
+
+    @Nested
+    class PutStyledClusterGroup {
+
+        @Test
+        void putStyledClusterGroupRecordsTheBlocsGroupUnderItsHolder() {
+
+            var clusterGroup = buildAnyStyledClusterGroup();
+            var clusters = buildDrawablesWith(Map.of(), Map.of());
+
+            clusters.putStyledClusterGroup("hegemony", clusterGroup);
+
+            assertThat(clusters.getStyledClusterGroupByOwnerId())
+                .containsExactlyEntriesOf(Map.of("hegemony", clusterGroup));
+        }
+
+        @Test
+        void putStyledClusterGroupDropsABlocWhoseGroupBakesNothing() {
+            // A bloc that lost its last cell hands over no group; an entry left standing for it
+            // would go on painting the fill and border it no longer has.
+            var clusters = buildDrawablesWith(Map.of(), Map.of("hegemony", buildAnyStyledClusterGroup()));
+
+            clusters.putStyledClusterGroup("hegemony", null);
+
+            assertThat(clusters.getStyledClusterGroupByOwnerId())
+                .isEmpty();
         }
     }
 

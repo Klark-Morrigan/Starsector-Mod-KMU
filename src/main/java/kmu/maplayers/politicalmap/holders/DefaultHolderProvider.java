@@ -34,13 +34,7 @@ public final class DefaultHolderProvider implements HolderProvider {
         // does - instead of collapsing every system to its lone winner. Off filter each system
         // resolves to its single dominant holder and nothing is contested.
         if (selectedBlocId != null) {
-
-            var filtered = FilteredPolitics.resolveFilteredHolder(pass, selectedBlocId);
-
-            return new HolderResolution(
-                filtered.ownerBySystemKey(),
-                filtered.contestedSystemKeys(),
-                Set.of());
+            return FilteredPolitics.resolveFilteredHolder(pass, selectedBlocId);
         }
         return new HolderResolution(
             SectorPolitics.resolveDominantHolderBySystemKey(pass),

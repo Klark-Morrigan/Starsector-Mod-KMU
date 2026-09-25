@@ -221,14 +221,10 @@ final class OwnerMapOverlayRenderer {
         }
         hasLoggedFirstRender = true;
 
-        // Report whichever view is live: the normal draw lists, or the debug overlay when it has
-        // replaced them (clusters is null in debug mode).
-        var builtCounts = cache.isDebug()
-            ? "debugBaseLoops=" + cache.getBorderStageOverlay().baseLoops().size()
-            : "styledCells=" + cache.getClusters().getStyledCellByCellKey().size();
-
+        // Reported in the terms of whichever view is live, the same words the rebuild's own line
+        // uses, so the two lines read against each other.
         LOG.debug("Owner map render renderOnMap fired: "
-            + builtCounts
+            + cache.describeBuiltCounts()
             + " factor=" + mapFrame.factor()
             + " alphaMult=" + mapFrame.alphaMult());
     }

@@ -54,31 +54,16 @@ public final class RecedeControl {
             CheckboxSpec.lit(
                 new TextSpan(KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_MUTED), textColour),
                 preferences.isMuted(target.memoryScope()),
-                cellIndex -> toggleMuted(preferences, target)),
+                cellIndex -> PanelToggles.flipToggle(
+                    target,
+                    preferences::isMuted,
+                    preferences::setMuted)),
             CheckboxSpec.lit(
                 new TextSpan(KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_DESATURATED), textColour),
                 preferences.isDesaturated(target.memoryScope()),
-                cellIndex -> toggleDesaturated(preferences, target)));
-    }
-
-    // Flips the set's Mute toggle to the opposite of its current state on the panel this control was
-    // placed on, so the checkbox is a plain on/off. This is where the panel's screen stops being carried
-    // and becomes the address of the slot written.
-    private static void toggleMuted(RecedePreferences preferences, BodyControlTarget target) {
-
-        preferences.setMuted(
-            target.memoryScope(),
-            !preferences.isMuted(target.memoryScope()),
-            target.board());
-    }
-
-    // Flips the set's Desaturate toggle to the opposite of its current state, matching the Mute
-    // checkbox.
-    private static void toggleDesaturated(RecedePreferences preferences, BodyControlTarget target) {
-
-        preferences.setDesaturated(
-            target.memoryScope(),
-            !preferences.isDesaturated(target.memoryScope()),
-            target.board());
+                cellIndex -> PanelToggles.flipToggle(
+                    target,
+                    preferences::isDesaturated,
+                    preferences::setDesaturated)));
     }
 }

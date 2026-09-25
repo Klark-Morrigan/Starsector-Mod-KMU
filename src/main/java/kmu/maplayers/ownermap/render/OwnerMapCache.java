@@ -8,6 +8,7 @@ import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SectorPassIndex;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
@@ -38,6 +39,7 @@ import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 import org.apache.log4j.Logger;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Keeps an owner map's derived draw lists fresh with the least work per frame, and hands
@@ -203,6 +205,14 @@ public final class OwnerMapCache {
     }
 
     /**
+     * @return what the last rebuild left for the render to paint, in the terms of whichever view
+     *         it built
+     */
+    public String describeBuiltCounts() {
+        return drawables.describeBuiltCounts();
+    }
+
+    /**
      * Releases everything built for this cache's sector, when the machinery holding it goes.
      *
      * <p>Nothing is rewound for a rebuild, because nothing rebuilds through a released cache - the
@@ -332,50 +342,9 @@ public final class OwnerMapCache {
         // unused view is nulled. The toggle is a KMU setting, so flipping it bumps the content
         // revision and forces this rebuild - which is what swaps the two.
         if (KmuOwnerMapDiagnosticsSettings.shouldTraceBordersForDebug()) {
-
-            drawables.rebuildBorderTracingOverlay(
-                cellGeometry,
-                sector,
-                view,
-                staleHalves.contentInputs(),
-                diagnosticsHolderProvider);
-
-            // The overlay reads holding from the sector for itself and drops what was marked, so
-            // nothing standing can be trusted to say who holds what once it has run.
-            standingHolding = null;
-
+            rebuildDebugView(staleHalves, view, sector);
         } else {
-
-            // The two halves of the rule come from different places on purpose. The visibility half
-            // is the cut's, because it is what decided which systems got cells - reading it live
-            // here would resolve holding for a sector the standing geometry was not cut for. The
-            // habitation half reseeds nothing, so it is read where the pass opens, once for the
-            // rebuild.
-            var pass = new HolderPass(
-                sectorIndex,
-                new ColonyReadRules(
-                    staleHalves.cellCut().visibilityRules().colonyVisibility(),
-                    DecivilisedColonyHabitation.readFromLunaSettings()),
-                view.resolveGrouping());
-
-            wasHoldingReused = decider.canReuseStandingHolding(
-                staleHalves,
-                standingHolding != null,
-                staleSystemKeys);
-
-            if (!wasHoldingReused) {
-                standingHolding = OwnerMapBuilder.resolveHolding(
-                    pass,
-                    view,
-                    staleHalves.contentInputs());
-                decider.recordHoldingResolved(staleHalves);
-            }
-            drawables.rebuildClustersAndBands(
-                cellGeometry,
-                pass,
-                view,
-                staleHalves.contentInputs(),
-                standingHolding);
+            wasHoldingReused = rebuildProductionView(staleHalves, view, sectorIndex, staleSystemKeys);
         }
 
         // The name choice comes off this rebuild's own sampling rather than the preference, so
@@ -383,6 +352,66 @@ public final class OwnerMapCache {
         drawables.rebuildLabels(staleHalves.contentInputs().nameFormat().areNamesDrawn());
 
         decider.recordContentRebuilt(staleHalves);
+
+        return wasHoldingReused;
+    }
+
+    // The debug border-tracing view, which reads holding from the sector for itself and drops
+    // what was marked - so nothing standing can be trusted to say who holds what once it has run.
+    private void rebuildDebugView(
+            StaleHalves staleHalves,
+            OwnerPaintedView view,
+            SectorAPI sector) {
+
+        drawables.rebuildBorderTracingOverlay(
+            cellGeometry,
+            sector,
+            view,
+            staleHalves.contentInputs(),
+            diagnosticsHolderProvider);
+
+        standingHolding = null;
+    }
+
+    // The production view, off one holder pass over this rebuild's reading of the sector. Apart
+    // from the dispatch because it alone decides whether the standing holding is kept or read
+    // afresh, and reports which for the line the rebuild writes.
+    private boolean rebuildProductionView(
+            StaleHalves staleHalves,
+            OwnerPaintedView view,
+            SectorPassIndex sectorIndex,
+            Set<SystemKey> staleSystemKeys) {
+
+        // The two halves of the rule come from different places on purpose. The visibility half
+        // is the cut's, because it is what decided which systems got cells - reading it live
+        // here would resolve holding for a sector the standing geometry was not cut for. The
+        // habitation half reseeds nothing, so it is read where the pass opens, once for the
+        // rebuild.
+        var pass = new HolderPass(
+            sectorIndex,
+            new ColonyReadRules(
+                staleHalves.cellCut().visibilityRules().colonyVisibility(),
+                DecivilisedColonyHabitation.readFromLunaSettings()),
+            view.resolveGrouping());
+
+        var wasHoldingReused = decider.canReuseStandingHolding(
+            staleHalves,
+            standingHolding != null,
+            staleSystemKeys);
+
+        if (!wasHoldingReused) {
+            standingHolding = OwnerMapBuilder.resolveHolding(
+                pass,
+                view,
+                staleHalves.contentInputs());
+            decider.recordHoldingResolved(staleHalves);
+        }
+        drawables.rebuildClustersAndBands(
+            cellGeometry,
+            pass,
+            view,
+            staleHalves.contentInputs(),
+            standingHolding);
 
         return wasHoldingReused;
     }

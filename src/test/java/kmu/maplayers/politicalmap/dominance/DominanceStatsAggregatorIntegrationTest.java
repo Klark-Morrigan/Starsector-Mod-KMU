@@ -151,7 +151,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping))
+                    DominancePass.createOver(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping))
                 .statsByBlocId())
                 .containsExactly(entry("alliance-1", new DominanceStats(2, 2, 5000, 5)));
         }
@@ -428,7 +428,7 @@ class DominanceStatsAggregatorIntegrationTest {
     // than the fog the cases above pose - which is what makes a gate observable here at all.
     private static List<String> readOfferedHolderIds(SectorAPI sector) {
 
-        var pass = DominancePass.over(
+        var pass = DominancePass.createOver(
             HolderPass.over(
                 sector,
                 buildRulesUnder(MapVisibilityRules.readFromLunaSettings().colonyVisibility()),

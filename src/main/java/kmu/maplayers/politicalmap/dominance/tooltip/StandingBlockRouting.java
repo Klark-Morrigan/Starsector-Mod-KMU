@@ -63,21 +63,9 @@ public final class StandingBlockRouting {
             List<GroupStanding> rankedStandings,
             StandingBlockRules rules) {
 
-        var contenders = new ArrayList<GroupStanding>();
-        var nonPolitical = new ArrayList<RoutedStanding>();
-
-        // The outer axis, taken before anything else is decided: a bloc barred from the contest
-        // cannot become the holder by ranking above everyone, and cannot be lifted into the allied
-        // block by an alliance set either, both of those being questions about the contest it is
-        // outside of.
-        for (var standing : rankedStandings) {
-            if (rules.candidacy().test(standing.blocId())) {
-                contenders.add(standing);
-            } else {
-                nonPolitical.add(RoutedStanding.routeWhole(standing));
-            }
-        }
-        var holder = contenders
+        var candidacy = partitionByCandidacy(rankedStandings, rules);
+        var holder = candidacy
+            .contenders()
             .stream()
             .limit(HOLDING_GROUP_COUNT)
             .toList();
@@ -85,7 +73,8 @@ public final class StandingBlockRouting {
         // Everyone in the running but the holder, which is the pool both blocks below it are drawn
         // from. Dropped once here rather than per block, so no routing rule can readmit the holder
         // to a block that is by definition about somebody else.
-        var contestants = contenders
+        var contestants = candidacy
+            .contenders()
             .stream()
             .skip(HOLDING_GROUP_COUNT)
             .toList();
@@ -103,25 +92,11 @@ public final class StandingBlockRouting {
             holderMemberFactionIds,
             rules);
 
-        var standingsByBlock = new EnumMap<StandingBlock, List<RoutedStanding>>(StandingBlock.class);
-
-        // Every block is filled by walking the block set itself, and what each one takes is answered
-        // by a switch with no default arm. That is what makes the closed set worth being one: a block
-        // added to StandingBlock and not answered for here fails to compile, where a map filled by a
-        // put per block would simply have drawn a block that never filled. Adding a default arm - or
-        // reaching for one to silence the error - gives that guarantee away.
-        for (var block : StandingBlock.values()) {
-
-            standingsByBlock.put(block, switch (block) {
-                case HOLDER -> routeWhole(holder);
-                case ALLIED -> routeWhole(
-                    sides.selectSide(ContestSide.ALLIED, contestants, GroupStanding::blocId));
-                case FRIENDLY -> rivals.selectFriendlyRivals();
-                case CONTESTED -> rivals.selectContestedRivals();
-                case NON_POLITICAL -> List.copyOf(nonPolitical);
-            });
-        }
-        return new StandingBlockRouting(standingsByBlock);
+        return new StandingBlockRouting(fillBlocks(
+            holder,
+            sides.selectSide(ContestSide.ALLIED, contestants, GroupStanding::blocId),
+            rivals,
+            candidacy.barred()));
     }
 
     /**
@@ -156,6 +131,56 @@ public final class StandingBlockRouting {
             .anyMatch(standings -> !standings.isEmpty());
     }
 
+    // The outer axis, taken before anything else is decided: a bloc barred from the contest cannot
+    // become the holder by ranking above everyone, and cannot be lifted into the allied block by an
+    // alliance set either, both of those being questions about the contest it is outside of. Split
+    // out so the routing reads the two sides by name; both keep the ranked order.
+    private static CandidacySplit partitionByCandidacy(
+            List<GroupStanding> rankedStandings,
+            StandingBlockRules rules) {
+
+        var contenders = new ArrayList<GroupStanding>();
+        var barred = new ArrayList<GroupStanding>();
+
+        for (var standing : rankedStandings) {
+            if (rules.candidacy().test(standing.blocId())) {
+                contenders.add(standing);
+            } else {
+                barred.add(standing);
+            }
+        }
+        return new CandidacySplit(contenders, barred);
+    }
+
+    // Every block filled from the groups already placed, split from the placement so the routing
+    // decides who goes where and this only lays the answers into the one map.
+    //
+    // Every block is filled by walking the block set itself, and what each one takes is answered by
+    // a switch with no default arm. That is what makes the closed set worth being one: a block added
+    // to StandingBlock and not answered for here fails to compile, where a map filled by a put per
+    // block would simply have drawn a block that never filled. Adding a default arm - or reaching for
+    // one to silence the error - gives that guarantee away.
+    private static Map<StandingBlock, List<RoutedStanding>> fillBlocks(
+            List<GroupStanding> holder,
+            List<GroupStanding> allied,
+            RivalDispositionSplit rivals,
+            List<GroupStanding> barred) {
+
+        var standingsByBlock = new EnumMap<StandingBlock, List<RoutedStanding>>(StandingBlock.class);
+
+        for (var block : StandingBlock.values()) {
+
+            standingsByBlock.put(block, switch (block) {
+                case HOLDER -> routeWhole(holder);
+                case ALLIED -> routeWhole(allied);
+                case FRIENDLY -> rivals.selectFriendlyRivals();
+                case CONTESTED -> rivals.selectContestedRivals();
+                case NON_POLITICAL -> routeWhole(barred);
+            });
+        }
+        return standingsByBlock;
+    }
+
     // Groups listed exactly as they ranked, which is what a block placed by membership lists: such a
     // block is true of every group whole, so no row it holds states a fraction of anything.
     private static List<RoutedStanding> routeWhole(List<GroupStanding> standings) {
@@ -176,5 +201,11 @@ public final class StandingBlockRouting {
             .map(GroupStanding::blocId)
             .findFirst()
             .orElse(null);
+    }
+
+    // The ranked groups either side of the candidacy bar, each still strongest first.
+    private record CandidacySplit(
+        List<GroupStanding> contenders,
+        List<GroupStanding> barred) {
     }
 }

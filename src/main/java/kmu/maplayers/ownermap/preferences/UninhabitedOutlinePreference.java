@@ -18,12 +18,9 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
  * <p>Per screen because it settles how much of the sector one panel shows, and the two panels are looked
  * at for different things.
  *
- * <p>Sidebar-only: the outline is driven solely by the overlay's uninhabited-systems checkbox, never a
- * settings-screen control, so it persists in sector memory (each save keeps its own choice and it
- * survives reload) rather than as a LunaLib field - a LunaLib field would render on a settings tab,
- * duplicating the sidebar checkbox, and an unregistered key would not round-trip. The outline's
- * supplementary tuning - the opacity and width it strokes at - stays on the settings screen, since
- * those are knobs rather than the toggle itself.
+ * <p>Sidebar-only, driven by the overlay's uninhabited-systems checkbox, for the reason
+ * {@link OwnerMapBodyPreferences} gives; the opacity and width it strokes at stay on the settings
+ * screen.
  *
  * <p>The flip fires a refresh: whether the category draws at all is baked into the drawables at
  * rebuild, so a flip has to invalidate them to show.
@@ -68,10 +65,7 @@ public final class UninhabitedOutlinePreference {
             boolean shouldDrawOutline,
             MapLayerRefreshBoard board) {
 
-        // Repaint only on a real write: before the sector exists the write no-ops and reports no
-        // write, so nothing bumps a revision no overlay would read. The refresh stands in for
-        // settingsRevision, which this sidebar-only toggle never moves since it is not a LunaLib
-        // field.
+        // Repaint only on a real write (see OwnerMapBodyPreferences).
         if (isOutlineDrawn.set(memoryScope, shouldDrawOutline)) {
             board.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE);
         }

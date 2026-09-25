@@ -65,6 +65,10 @@ final class SystemColonyReadingTest {
     // The concealment a case hands in, which is the one fact of the three no reading answers.
     private static final boolean IS_CONCEALED = true;
 
+    // A finding the painting layer leads a line with, already worded - handed in and carried as it
+    // stands, no reading of a system being able to supply one.
+    private static final String LEADING_FINDING = "strongest here";
+
     @BeforeEach
     void installStrings() {
         StarsectorSettingsFake.installSettings();
@@ -232,6 +236,55 @@ final class SystemColonyReadingTest {
 
             assertThat(reading.readConcealmentOf(DERELICT_ID, IS_OPEN))
                 .isEqualTo(new ColonyConcealment(true, false, false));
+        }
+    }
+
+    @Nested
+    class ReadQualifierFacts {
+
+        @Test
+        void readQualifierFactsGathersWhatItReadsBesideTheFactsHandedIn() {
+            // The four facts in the order the value names them - the kind and the concealment
+            // answered off this reading, the rest carried as handed - so a transposition here is a
+            // failing assertion rather than a line calling out the wrong word.
+            var reading = new SystemColonyReading(
+                new ColonyKindLookup(Map.of(DERELICT_ID, ColonyKind.SPACE_DERELICT)),
+                new ColonyDiscoveryLookup(Set.of(DERELICT_ID)),
+                OpenlyKnownColonyLookup.NONE,
+                ColonyObservationNotes.NONE);
+
+            assertThat(reading.readQualifierFacts(DERELICT_ID, IS_CONCEALED, IS_UNLISTED, LEADING_FINDING))
+                .isEqualTo(new ColonyQualifierFacts(
+                    ColonyKind.SPACE_DERELICT,
+                    "strongest here",
+                    new ColonyConcealment(false, true, false),
+                    false));
+        }
+
+        @Test
+        void readQualifierFactsStatesTheKindItIsHandedRatherThanTheOneItReads() {
+            // An account that met the colony through its own selection already holds its kind, and
+            // the kind stated has to be about the colony the line names rather than whatever this
+            // reading gathered under the same ID.
+            var reading = new SystemColonyReading(
+                new ColonyKindLookup(Map.of(DERELICT_ID, ColonyKind.SPACE_DERELICT)),
+                ColonyDiscoveryLookup.NONE,
+                OpenlyKnownColonyLookup.NONE,
+                ColonyObservationNotes.NONE);
+
+            var facts = reading.readQualifierFacts(
+                DERELICT_ID,
+                ColonyKind.UNGOVERNED_COLONY,
+                IS_OPEN,
+                IS_UNLISTED,
+                NO_LEADING_FINDING);
+
+            assertThat(facts)
+                .isEqualTo(new ColonyQualifierFacts(
+                    ColonyKind.UNGOVERNED_COLONY,
+                    null,
+                    new ColonyConcealment(true, false, false),
+                    false));
         }
     }
 

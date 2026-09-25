@@ -227,22 +227,14 @@ public final class StandingRowResolver {
         return entries;
     }
 
-    // One member's line: its crest, its name, and what the pass weighed it at.
-    //
-    // A presence-only standing's nought is drawn quiet, under the same treatment an unweighed colony
-    // line takes beneath it. The pass weighed nothing for that faction - every term of a dominance
-    // weight being economy-fed and its colonies unregistered - so the nought is the box's statement
-    // about it rather than a weight it competed with. Drawn as loudly as the scores around it, it
-    // would read as one competed for and lost, inviting exactly the comparison it cannot bear.
+    // One member's line: its crest, its name, and what the pass weighed it at. A presence-only
+    // standing is one the pass weighed nothing for - every term of a dominance weight being
+    // economy-fed and its colonies unregistered - so its nought is drawn quiet.
     private static CellTooltipEntryLine buildMemberLine(SectorAPI sector, FactionStanding member) {
-
-        var memberLine = FactionTooltipLine.buildCountedFactionLine(
+        return FactionTooltipLine.buildCountedFactionLine(
             sector,
             member.factionId(),
-            member.score());
-
-        return member instanceof WeighedFactionStanding
-            ? memberLine
-            : memberLine.statesUncountedValue();
+            member.score(),
+            member instanceof WeighedFactionStanding);
     }
 }

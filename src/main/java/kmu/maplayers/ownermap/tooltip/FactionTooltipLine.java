@@ -54,23 +54,34 @@ public final class FactionTooltipLine {
      * too long to draw whole is closed by a row summing what it left out, and only lines holding their
      * number can be summed.
      *
+     * <p>A faction the mechanic never weighed carries its nought in the quiet shade. That nought is the
+     * mechanic's statement about a faction it never reached rather than a figure the faction competed
+     * with - drawn as loudly as the scores around it, it would read as one competed for and lost,
+     * inviting exactly the comparison it cannot bear. Settled here so every block listing both kinds
+     * quietens the same one.
+     *
      * @param sector       the sector the faction's name and crest are read from
      * @param factionId    the ID of the faction the line names; an ID the sector does not know is
      *                     shown as itself rather than leaving the line nameless
      * @param countedValue what the block counts this line in
+     * @param isWeighed    whether the mechanic behind the block weighed this faction at all; false
+     *                     draws the number quiet
      * @return the line, ready to be listed or nested
      */
     public static CellTooltipEntryLine buildCountedFactionLine(
             SectorAPI sector,
             String factionId,
-            int countedValue) {
+            int countedValue,
+            boolean isWeighed) {
 
         var presentation = FactionPresentation.resolvePresentation(sector, factionId);
 
-        return CellTooltipEntryLine.createCountedLine(
+        var line = CellTooltipEntryLine.createCountedLine(
             resolveCrestMark(presentation),
             presentation.fullName(),
             countedValue);
+
+        return isWeighed ? line : line.statesUncountedValue();
     }
 
     // The mark a faction's line opens on: its crest as its asset authored it, and none at all for a

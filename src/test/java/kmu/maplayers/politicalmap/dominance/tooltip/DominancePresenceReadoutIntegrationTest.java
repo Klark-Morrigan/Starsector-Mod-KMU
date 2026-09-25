@@ -96,7 +96,7 @@ final class DominancePresenceReadoutIntegrationTest {
             var holding = buildHolderPassOver(sector);
 
             var band = new HeldSystemRibbonPlanner(
-                    DominancePass.over(holding, buildStabilityWeightedRules()),
+                    DominancePass.createOver(holding, buildStabilityWeightedRules()),
                     buildInputsFor(holding))
                 .planSystemRibbon(system);
 
@@ -130,7 +130,7 @@ final class DominancePresenceReadoutIntegrationTest {
             var holding = buildHolderPassOver(sector);
 
             var band = new HeldSystemRibbonPlanner(
-                    DominancePass.over(holding, buildStabilityWeightedRules()),
+                    DominancePass.createOver(holding, buildStabilityWeightedRules()),
                     buildInputsFor(holding))
                 .planSystemRibbon(buildOnlySystem(sector));
 
@@ -141,7 +141,7 @@ final class DominancePresenceReadoutIntegrationTest {
                     new RibbonSegment(TRITACHYON_BRIGHT, COLONY_RUN));
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(
-                    DominancePass.over(holding, buildStabilityWeightedRules()))
+                    DominancePass.createOver(holding, buildStabilityWeightedRules()))
                 .statsByBlocId())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
         }

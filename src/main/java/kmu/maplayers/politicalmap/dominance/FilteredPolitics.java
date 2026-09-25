@@ -9,6 +9,7 @@ import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SpotlitBlocs;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.holders.HolderResolution;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.LinkedHashMap;
@@ -32,7 +33,7 @@ import java.util.Set;
  * agnostic geometry ({@code CellShaper}, {@code SystemClusters}, and the border trace) fuses
  * the whole footprint into a single territory outlined by one frontier, with no awareness of
  * the filter. Which of those systems are contested is reported apart from the key, in
- * {@link FilteredHolder#contestedSystemKeys()}, so the render layer can split the fill per
+ * {@link HolderResolution#contestedSystemKeys()}, so the render layer can split the fill per
  * cell (solid where it dominates, hatched where contested) inside that one frontier rather than
  * fracturing the footprint into two separately-bordered clusters. The key itself is
  * {@link SpotlitBlocs}'s - asked for here and recognised there - so a resolve that stamps a
@@ -41,26 +42,6 @@ import java.util.Set;
 public final class FilteredPolitics {
 
     private FilteredPolitics() {
-    }
-
-    /**
-     * The presence-aware holders one filter pass resolves: the holder keyed by system, plus the
-     * subset of the spotlighted bloc's systems it is present in but does not dominate.
-     *
-     * <p>The whole spotlit footprint keys to one synthetic {@link SpotlitBlocs} key in
-     * {@code ownerBySystemKey} so the geometry traces one frontier over it;
-     * {@code contestedSystemKeys} is how the render layer then splits that footprint's fill per
-     * cell - solid where the bloc dominates, hatched where it is merely present - without the key
-     * having to fracture the cluster. A contested system is always a spotlit one; a dominant
-     * spotlit system is simply absent from the set. Off filter (no selection, or an empty sector)
-     * both are empty.
-     *
-     * @param ownerBySystemKey    the presence-aware holder per owned system
-     * @param contestedSystemKeys the spotlit systems the bloc is present in but does not dominate
-     */
-    public record FilteredHolder(
-        Map<SystemKey, SystemOwner> ownerBySystemKey,
-        Set<SystemKey> contestedSystemKeys) {
     }
 
     /**
@@ -137,7 +118,7 @@ public final class FilteredPolitics {
      * @param selectedBlocId the spotlighted bloc's ID; null yields empty holding (no filter)
      * @return the presence-aware holders: the holder per system and the contested spotlit systems
      */
-    public static FilteredHolder resolveFilteredHolder(
+    public static HolderResolution resolveFilteredHolder(
             HolderPass pass,
             String selectedBlocId) {
         return resolveFilteredHolder(
@@ -157,12 +138,15 @@ public final class FilteredPolitics {
      * returned contested set, the only place the dominant/contested split lives since both share
      * a key. A system with no owned markets is absent, exactly as in the normal pass.
      *
+     * <p>A contested system is always a spotlit one; a dominant spotlit system is simply absent from
+     * the set. The filter leaves every owned system filled, so the unfilled set is always empty.
+     *
      * @param pass           the weighting rule, colony rule, grouping, and sector walk this pass
      *                       resolves under; a pass over no sector yields empty holding
      * @param selectedBlocId the spotlighted bloc's ID; null yields empty holding
      * @return the presence-aware holders: the holder per system and the contested spotlit systems
      */
-    public static FilteredHolder resolveFilteredHolder(
+    public static HolderResolution resolveFilteredHolder(
             DominancePass pass,
             String selectedBlocId) {
 
@@ -170,7 +154,7 @@ public final class FilteredPolitics {
         var contestedSystemKeys = new LinkedHashSet<SystemKey>();
 
         if (!pass.canReadEconomy() || selectedBlocId == null) {
-            return new FilteredHolder(ownerBySystemKey, contestedSystemKeys);
+            return new HolderResolution(ownerBySystemKey, contestedSystemKeys, Set.of());
         }
         for (var system : pass.readSystems()) {
             var systemKey = SystemKey.readKeyOf(system);
@@ -179,7 +163,7 @@ public final class FilteredPolitics {
                 ownerBySystemKey.put(systemKey, holder);
             }
         }
-        return new FilteredHolder(ownerBySystemKey, contestedSystemKeys);
+        return new HolderResolution(ownerBySystemKey, contestedSystemKeys, Set.of());
     }
 
     /**
@@ -240,30 +224,27 @@ public final class FilteredPolitics {
         var footprintByBlocId = pass.readBlocFootprints(system);
         var presentBlocIds = pass.readHabitationIn(system).blocIds();
 
-        // The pass's own settling rules, so both the "does the selected bloc dominate" call and the
-        // receded real-holder fallback answer as the base layers do: a spotlight must never move a
-        // fill, and judging "dominates" under rules the fills were not resolved by would do exactly
-        // that. The tie-break inside is lazy, reading no geometry unless this system actually ties.
-        var rankingRules = pass.resolveRankingRulesFor(system);
-        var sector = pass.sector();
-        var grouping = pass.grouping();
+        // Judged under the pass's own settling rules, which the receded real-holder fallback settles
+        // by too, so both answer as the base layers do: a spotlight must never move a fill, and
+        // judging "dominates" under rules the fills were not resolved by would do exactly that. The
+        // tie-break inside is lazy, reading no geometry unless this system actually ties.
         var presence = classifySelectedBlocPresence(
             footprintByBlocId,
             presentBlocIds,
             selectedBlocId,
-            rankingRules);
+            pass.resolveRankingRulesFor(system));
 
         if (presence == SelectedBlocPresence.ABSENT) {
-            return resolveRealHolder(sector, grouping, footprintByBlocId, rankingRules);
+            return resolveRealHolder(system, pass, footprintByBlocId);
         }
-        var spotlit = resolveSpotlitHolder(sector, grouping, selectedBlocId);
+        var spotlit = resolveSpotlitHolder(pass.sector(), pass.grouping(), selectedBlocId);
 
         // A selectable bloc's colour faction resolves; this fallback only guards the degenerate
         // case where it vanished mid-session, so the system still draws (as its real receded
         // holder) rather than dropping off the map - and a system that fell back is not spotlit,
         // so it is not recorded contested.
         if (spotlit == null) {
-            return resolveRealHolder(sector, grouping, footprintByBlocId, rankingRules);
+            return resolveRealHolder(system, pass, footprintByBlocId);
         }
         if (presence == SelectedBlocPresence.PRESENT_BUT_DOMINATED) {
             contestedSystemKeys.add(systemKey);
@@ -273,20 +254,13 @@ public final class FilteredPolitics {
 
     // The system's real dominant holder, unchanged from the normal pass, for a system the
     // selected bloc is absent from. Its real key (rejected by isSpotlitBloc) is how the caller
-    // knows to recede it. Settled by the same rules the normal pass uses, so a receded system draws
+    // knows to recede it. Taken through the normal pass's own resolve, so a receded system draws
     // the holder it would off filter.
     private static SystemOwner resolveRealHolder(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            Map<String, MarketFootprint> footprintByBlocId,
-            HolderRankingRules rankingRules) {
+            StarSystemAPI system,
+            DominancePass pass,
+            Map<String, MarketFootprint> footprintByBlocId) {
 
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(
-            footprintByBlocId,
-            rankingRules);
-        if (dominantBlocId == null) {
-            return null;
-        }
-        return SystemOwner.resolveForBloc(sector, grouping, dominantBlocId);
+        return SectorPolitics.resolveDominantHolder(system, pass, footprintByBlocId);
     }
 }

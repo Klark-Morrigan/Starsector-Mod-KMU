@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.widgets.lists.ListPicker;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -33,17 +35,21 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins the glue that heals a loaded save's spotlight selections against each screen's selected view:
  * a screen with no view selected is skipped (its persisted filter is left for a later view to judge),
  * and a screen with one is healed with a predicate that reports a bloc selectable exactly when that
- * screen's view still lists it. The views, the sector, and the filter selection are stubbed so this
- * pins the wiring alone, not how the selection actually clears.
+ * screen's view still lists it, judged against the sector the caller handed over. The views, the
+ * sector, and the filter selection are stubbed so this pins the wiring alone, not how the selection
+ * actually clears.
  *
- * <p>The settings registration is pinned here too, that being the moment a live game can lose a bloc
- * from the picker without a load or a view switch to heal against.
+ * <p>The sector-less entries are pinned too - the settings registration, that being the moment a live
+ * game can lose a bloc from the picker without a load or a view switch to heal against, and the live
+ * entry a sidebar click takes - since each resolves the running sector once and must hand exactly that
+ * one down.
  */
 final class FilterSelectionHealTest {
 
@@ -67,7 +73,7 @@ final class FilterSelectionHealTest {
                 when(viewRegistryMock.getSelectedView(any()))
                     .thenReturn(null);
 
-                FilterSelectionHeal.healStaleSelectionAgainstActiveView(viewRegistryMock);
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
                 // No active view means no grouping to judge selectability under, so a persisted filter
                 // is left untouched rather than cleared against nothing.
@@ -78,13 +84,21 @@ final class FilterSelectionHealTest {
         }
 
         @Test
-        void healStaleSelectionAgainstActiveViewHealsWithTheActiveViewsSelectableBlocs() {
-            try (var globalMock = mockStatic(Global.class);
-                    var selectionMock = mockStatic(FilterSelection.class)) {
+        void healStaleSelectionAgainstActiveViewHealsNothingWithoutASector() {
+            // Against no sector every view offers no blocs, so judging a stored spotlight there would
+            // clear every one of them as lapsed. Nothing is judged instead.
+            try (var selectionMock = mockStatic(FilterSelection.class)) {
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView(null, viewRegistryMock);
+
+                selectionMock.verifyNoInteractions();
+                verifyNoInteractions(viewRegistryMock);
+            }
+        }
+
+        @Test
+        void healStaleSelectionAgainstActiveViewHealsWithTheActiveViewsSelectableBlocs() {
+            try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 when(viewRegistryMock.getSelectedView(any()))
                     .thenReturn(viewMock);
@@ -92,21 +106,9 @@ final class FilterSelectionHealTest {
                 when(viewMock.getId())
                     .thenReturn("factions");
 
-                // The heal matches on the ID alone, so the stats half of the option, the vocabulary
-                // bundled beside the list, and the presence beside the rows all stand in. Stubbed
-                // through doReturn because the seam answers a wildcarded read, whose captured item
-                // type a when() stub would have to name.
-                doReturn(new BlocPickerRead<>(
-                        new ListPicker<>(
-                            List.of(new RankedBloc<>(
-                                new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
-                                BlocMetricsFake.EMPTY_FAKE)),
-                            BlocSortModesFake.MODES),
-                        BlocPresenceIndex.EMPTY))
-                    .when(viewMock)
-                    .resolveBlocPickerRead(sectorMock);
+                stubOfferedBlocs(buildReadListing("hegemony"));
 
-                FilterSelectionHeal.healStaleSelectionAgainstActiveView(viewRegistryMock);
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
                 // The predicate handed to the heal reports a bloc selectable exactly when the active
                 // view still lists it, so a still-listed bloc survives and a vanished one is stale.
@@ -130,7 +132,7 @@ final class FilterSelectionHealTest {
                 when(viewMock.getId())
                     .thenReturn("factions");
 
-                FilterSelectionHeal.healStaleSelectionAgainstActiveView(viewRegistryMock);
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
                 var healedSlots = captureHealedSlots(selectionMock);
 
@@ -167,7 +169,7 @@ final class FilterSelectionHealTest {
 
                 stubOneViewPerScreen(viewRegistryMock, viewMock, otherViewMock);
 
-                FilterSelectionHeal.healStaleSelectionAgainstActiveView(viewRegistryMock);
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
                 // Each screen's slot under its own screen's view ID, which is the pairing a shared view
                 // read would collapse onto one id.
@@ -188,7 +190,7 @@ final class FilterSelectionHealTest {
 
                 stubOneViewPerScreen(viewRegistryMock, null, viewMock);
 
-                FilterSelectionHeal.healStaleSelectionAgainstActiveView(viewRegistryMock);
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
                 selectionMock.verify(
                     () -> FilterSelection.healStaleSelection(any(), any()),
@@ -202,12 +204,7 @@ final class FilterSelectionHealTest {
             // most saves hold no spotlight: resolving the view's blocs is a whole grouped holder
             // pass over the sector, so it must not run before the heal has found a stored ID worth
             // judging. Pinned on the seam that pass goes through, the pass itself being the view's.
-            try (var globalMock = mockStatic(Global.class);
-                    var selectionMock = mockStatic(FilterSelection.class)) {
-
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
+            try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 when(viewRegistryMock.getSelectedView(any()))
                     .thenReturn(viewMock);
@@ -215,13 +212,9 @@ final class FilterSelectionHealTest {
                 when(viewMock.getId())
                     .thenReturn("factions");
 
-                doReturn(new BlocPickerRead<>(
-                        new ListPicker<>(List.of(), BlocSortModesFake.MODES),
-                        BlocPresenceIndex.EMPTY))
-                    .when(viewMock)
-                    .resolveBlocPickerRead(sectorMock);
+                stubOfferedBlocs(buildReadListing());
 
-                FilterSelectionHeal.healStaleSelectionAgainstActiveView(viewRegistryMock);
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
                 verify(viewMock, never()).resolveBlocPickerRead(sectorMock);
 
@@ -235,6 +228,34 @@ final class FilterSelectionHealTest {
     }
 
     @Nested
+    class HealStaleSelectionAgainstLiveSector {
+
+        @Test
+        void healStaleSelectionAgainstLiveSectorJudgesAgainstTheRunningSector() {
+            // A sidebar click is handed no sector, so the running one is resolved at the entry and
+            // is the one the view's blocs are read off.
+            try (var globalMock = mockStatic(Global.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
+                stubRunningSector(globalMock);
+
+                when(viewRegistryMock.getSelectedView(any()))
+                    .thenReturn(viewMock);
+
+                when(viewMock.getId())
+                    .thenReturn("factions");
+
+                stubOfferedBlocs(buildReadListing("hegemony"));
+
+                FilterSelectionHeal.healStaleSelectionAgainstLiveSector(viewRegistryMock);
+
+                assertThat(capturePredicate(selectionMock).test("hegemony"))
+                    .isTrue();
+            }
+        }
+    }
+
+    @Nested
     class InstallHealOnSettingsChange {
 
         @Test
@@ -242,7 +263,10 @@ final class FilterSelectionHealTest {
             // A settings change is what takes a bloc off the picker mid-game (a visibility override
             // switched off can leave a faction with no visible market), so what is pinned is that the
             // runnable handed to the settings seam is the heal itself and not some other reaction.
-            try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
+            try (var globalMock = mockStatic(Global.class);
+                    var settingsMock = mockStatic(KmuLunaSettings.class)) {
+
+                stubRunningSector(globalMock);
 
                 when(viewRegistryMock.getSelectedView(any()))
                     .thenReturn(null);
@@ -260,6 +284,65 @@ final class FilterSelectionHealTest {
                 verify(viewRegistryMock, times(SCREEN_COUNT)).getSelectedView(any());
             }
         }
+
+        @Test
+        void installHealOnSettingsChangeResolvesTheSectorWhenTheChangeFires() {
+            // The listener outlives any one save, so the sector it judges against is the one running
+            // when a change fires rather than whichever was up when it was installed.
+            try (var globalMock = mockStatic(Global.class);
+                    var settingsMock = mockStatic(KmuLunaSettings.class)) {
+
+                stubRunningSector(globalMock);
+
+                FilterSelectionHeal.installHealOnSettingsChange(viewRegistryMock);
+
+                var captor = ArgumentCaptor.forClass(Runnable.class);
+                settingsMock.verify(
+                    () -> KmuLunaSettings.runOnSettingsChange(captor.capture()));
+
+                globalMock.verify(Global::getSector, never());
+
+                captor.getValue().run();
+
+                globalMock.verify(Global::getSector, times(1));
+            }
+        }
+    }
+
+    // Answers the running game's sector with the case's own, and a logger for whatever class first
+    // touches Global inside the block.
+    private void stubRunningSector(MockedStatic<Global> globalMock) {
+
+        globalMock
+            .when(Global::getSector)
+            .thenReturn(sectorMock);
+        StubbedGlobalLogger.answerLoggersOn(globalMock);
+    }
+
+    // Answers the case's view with a picker read listing the given blocs against the case's sector.
+    // Stubbed through doReturn because the seam answers a wildcarded read, whose captured item type a
+    // when() stub would have to name.
+    private void stubOfferedBlocs(BlocPickerRead<RankedBloc<BlocMetricsFake>> read) {
+
+        doReturn(read)
+            .when(viewMock)
+            .resolveBlocPickerRead(sectorMock);
+    }
+
+    // A picker read listing the given bloc IDs. The heal matches on the ID alone, so the stats half of
+    // each option, the vocabulary bundled beside the list, and the presence beside the rows all stand
+    // in.
+    private static BlocPickerRead<RankedBloc<BlocMetricsFake>> buildReadListing(String... blocIds) {
+
+        var rows = new ArrayList<RankedBloc<BlocMetricsFake>>();
+        for (var blocId : blocIds) {
+            rows.add(new RankedBloc<>(
+                new SelectableBloc(blocId, blocId, "crest_" + blocId),
+                BlocMetricsFake.EMPTY_FAKE));
+        }
+        return new BlocPickerRead<>(
+            new ListPicker<>(rows, BlocSortModesFake.MODES),
+            BlocPresenceIndex.EMPTY);
     }
 
     // Sets each screen's own selected view, in the order the screens are walked, so a case can pose two

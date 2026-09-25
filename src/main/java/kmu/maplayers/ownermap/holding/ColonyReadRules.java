@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap.holding;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
 import java.util.Objects;
 
@@ -36,5 +37,28 @@ public record ColonyReadRules(
     public ColonyReadRules {
         Objects.requireNonNull(colonyVisibility, "colonyVisibility");
         Objects.requireNonNull(decivilisedColonyHabitation, "decivilisedColonyHabitation");
+    }
+
+    /**
+     * Both rules as the player's live settings state them, sampled together.
+     *
+     * <p>The one place a live read assembles the pair, so every entry sampling the settings - a
+     * rebuild opening its pass, the picker path with no pass of its own - takes the same two
+     * answers. A caller composing the pair itself could take the visibility rule and assume the
+     * habitation one, settling out of sight whether a decivilised world offers its bloc while the
+     * map beside it settled that from the player's answer.
+     *
+     * <p>Sampled once where a rebuild or a picker read begins, so everything below it resolves
+     * under the settings in force when it started, even if the player flips a toggle mid-walk.
+     * The whole visibility rule is taken rather than the reveal alone, so a surface cannot be
+     * handed one of its gates and not the other.
+     *
+     * @return the rules the player's live settings ask for
+     */
+    public static ColonyReadRules readFromLunaSettings() {
+
+        return new ColonyReadRules(
+            MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
+            DecivilisedColonyHabitation.readFromLunaSettings());
     }
 }

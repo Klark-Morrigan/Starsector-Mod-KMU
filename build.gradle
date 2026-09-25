@@ -143,17 +143,16 @@ enforcePackageVocabulary {
 // compiles exactly like the first.
 //
 // So the reads are contained at the seams vanilla drives with no sector named,
-// and those seams are named here. Three of the four resolve a *sector* for a
-// screen that hands them none - the pause cover, the filter self-heal and the
-// live claim reader; the fourth is the installation index, which is where a
-// sector-less caller resolves the machinery it should draw through, and is the
-// one read the whole arrangement rests on.
+// and those seams are named here. Two of the three resolve a *sector* for a
+// screen that hands them none - the pause cover and the filter self-heal; the
+// third is the installation index, which is where a sector-less caller resolves
+// the machinery it should draw through, and is the one read the whole
+// arrangement rests on.
 enforceRestrictedCalls {
     restrictCall call: 'Global.getSector()',
         under: 'kmu.maplayers',
         toTypes: [
             'FilterSelectionHeal',
-            'LiveVisibilityClaimBreakdownReader',
             'SectorMapMachineryIndex',
             'PauseMenuMapCover']
 

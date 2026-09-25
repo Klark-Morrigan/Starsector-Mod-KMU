@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.claims.tooltip;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 
 import kmu.maplayers.politicalmap.dominance.tooltip.StandingBlock;
+import kmu.maplayers.politicalmap.tooltip.ContestBlockHeading;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
 import kmu.util.KmuStringKeys;
 
@@ -30,7 +31,7 @@ import java.util.function.Function;
  * the standings, and what it lists turns on what the banner above it said, so it is appended on its
  * own before this set is walked.
  */
-enum ClaimContestBlock {
+enum ClaimContestBlock implements ContestBlockHeading {
 
     /** Everyone present standing with the claim holder by alliance, of either eligibility. */
     ALLIED(
@@ -90,6 +91,11 @@ enum ClaimContestBlock {
         this.isStatingEligibilityOnLine = isStatingEligibilityOnLine;
     }
 
+    @Override
+    public String resolveHeadingKey(ContestWording contestWording) {
+        return headingKeySource.apply(contestWording);
+    }
+
     /**
      * Whether a line under this block states that its faction could never have taken the system.
      *
@@ -97,17 +103,6 @@ enum ClaimContestBlock {
      */
     boolean isStatingEligibilityOnLine() {
         return isStatingEligibilityOnLine;
-    }
-
-    /**
-     * The strings key of the heading this block draws under.
-     *
-     * @param contestWording how the install has the contest worded, which every block is offered and
-     *                       only the contested one reads
-     * @return the key, resolved against the player's own language where the block is drawn
-     */
-    String resolveHeadingKey(ContestWording contestWording) {
-        return headingKeySource.apply(contestWording);
     }
 
     /**

@@ -38,7 +38,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
  *
  * <p>Pure over the breakdown with no Starsector types, like the resolver that reads it.
  */
-public final class ClaimTieOutcomes {
+final class ClaimTieOutcomes {
 
     private ClaimTieOutcomes() {
     }

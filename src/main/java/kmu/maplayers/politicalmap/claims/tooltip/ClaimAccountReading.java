@@ -34,7 +34,7 @@ import java.util.Objects;
  * @param detailLevel                  how deep the box was asked to read, which the terms beneath a
  *                                     market are worked out only as far as
  */
-public record ClaimAccountReading(
+record ClaimAccountReading(
     SystemClaimBreakdown breakdown,
     SystemColonyReading colonyReading,
     boolean isListingUndiscoveredMarkets,

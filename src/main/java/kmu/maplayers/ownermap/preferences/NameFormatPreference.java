@@ -18,10 +18,8 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
  * <p>Per screen because the two panels frame the sector at different sizes, so the form that fits one is
  * not the form that fits the other.
  *
- * <p>Sidebar-only: the choice is driven solely by the overlay's Full/Short/No radio, never a
- * settings-screen control, so it persists in sector memory (each save keeps its own choice and it
- * survives reload) rather than as a LunaLib field - a LunaLib field would render on a settings tab,
- * duplicating the sidebar radio, and an unregistered key would not round-trip.
+ * <p>Sidebar-only, driven by the overlay's Full/Short/No radio, for the reason
+ * {@link OwnerMapBodyPreferences} gives.
  *
  * <p>Unlike the sidebar's list controls this fires a refresh: the choice decides both whether the
  * labels build at all and the text each is fitted and wrapped against, which is baked into the
@@ -73,10 +71,7 @@ public final class NameFormatPreference {
             FactionNameFormatChoice choice,
             MapLayerRefreshBoard board) {
 
-        // Repaint only on a real write: before the sector exists the write no-ops and reports no
-        // write, so nothing bumps a revision no overlay would read. The refresh stands in for
-        // settingsRevision, which this sidebar-only choice never moves since it is not a LunaLib
-        // field.
+        // Repaint only on a real write (see OwnerMapBodyPreferences).
         if (selectedNameFormat.set(memoryScope, choice.persistenceKey())) {
             board.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE);
         }

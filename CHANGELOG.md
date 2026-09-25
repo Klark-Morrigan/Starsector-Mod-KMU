@@ -61,7 +61,8 @@ None of these reach a player: every LunaLib field ID and every value saved in se
 - **A layer's state is its own:**
   - `MapLayerViewRegistry` is an instance a layer builds over its own save key, views, default view and host tab, in place of static members.
   - Per-sector pieces a layer holds go through `SectorMapMachinery.resolveLayerMachinery(layerId, type, make)`.
-  - `SelectableBlocCache.resolveBlocCacheIn` takes the layer ID, and `FilterSelectionHeal` takes the registry it heals against.
+  - `SelectableBlocCache.resolveBlocCacheIn` takes the layer ID.
+  - `FilterSelectionHeal.healStaleSelectionAgainstActiveView` takes the sector and the registry it heals against; `healStaleSelectionAgainstLiveSector(registry)` is the entry for a caller holding no sector.
   - `PoliticalMapLayer` is constructed with its views rather than being a singleton.
 - **Body preferences are the layer's:**
   - `NameFormatPreference`, `UninhabitedOutlinePreference` and `RecedePreferences` are instances over keys a layer names, handed to the tier together as `OwnerMapBodyPreferences`.
@@ -74,7 +75,8 @@ None of these reach a player: every LunaLib field ID and every value saved in se
     - `allianceNameByBlocId` is `groupNameByBlocId`, and `resolveAllianceName` is `resolveGroupName`.
     - `isAlliance` is `isGroupedBloc`, and `hasAnyAlliance` is `hasAnyGroupedBloc`.
   - `HolderPass.openClaimReaderThrough` is the political map's `PassClaimReaders.openClaimReaderOver`.
-  - `ColonyQualifierFacts.isHoldingTheClaim` is `leadingFinding`: a finding the painting layer states ahead of every other, already worded, or null.
+  - `ColonyQualifierFacts.isHoldingTheClaim` is `leadingFinding`: a finding the painting layer states ahead of every other, already worded, or null. `SystemColonyReading.readQualifierFacts` assembles one.
+  - `FactionTooltipLine.buildCountedFactionLine` takes whether the faction was weighed, drawing an unweighed one quietly.
 - **Polls, hover gates and colony transfers:**
   - `MapLayerSectorWatcher` is abstract. A layer installs its own subclass, because the engine removes transient scripts by exact class and a shared class let one layer's poll evict another's.
   - Hover gates:
@@ -83,6 +85,10 @@ None of these reach a player: every LunaLib field ID and every value saved in se
   - Colony transfers:
     - `PoliticalMapMarketTransferListener` implements KMU's own `kmu.starsector.listeners.MarketTransferListener` rather than Nexerelin's `InvasionListener`.
     - A listener of that type registered on a sector is told of every colony Nexerelin transfers there.
+- **The political map's hover boxes and dominance pass:**
+  - `SystemStandingsTooltip` and `SystemClaimContestTooltip` are gone, each merged into its one subclass, `SystemDominationTooltip` and `SystemClaimTooltip`. `LiveVisibilityClaimBreakdownReader` is gone too: the claim box opens its reader over the hover's own sector.
+  - `DominancePass.over` is `createOver`, and `MarketProximityTieBreak.forSystem` is `createForSystem`. `DominancePass.readFromLunaSettings` is gone.
+  - `FilteredPolitics.resolveFilteredHolder` returns a `HolderResolution`.
 - **Settings readers and string keys:**
   - Readers:
     - `KmuPoliticalMapDiagnosticsSettings`, `KmuPoliticalMapGeometrySettings`, `KmuPoliticalMapHighlightSettings` and `KmuPoliticalMapRibbonSettings` take `OwnerMap` for `PoliticalMap`.

@@ -66,7 +66,7 @@ public record DominancePass(
      * @param rules   the weighting rule scoring each market's worth
      * @return that reading under that rule
      */
-    public static DominancePass over(HolderPass holding, DominanceRules rules) {
+    public static DominancePass createOver(HolderPass holding, DominanceRules rules) {
         return new DominancePass(rules, holding);
     }
 
@@ -82,13 +82,13 @@ public record DominancePass(
      * @param grouping        the grouping this pass folds factions into blocs under
      * @return a pass over that sector carrying those knobs
      */
-    public static DominancePass over(
+    public static DominancePass createOver(
             SectorAPI sector,
             DominanceRules rules,
             ColonyReadRules colonyReadRules,
             HolderGrouping grouping) {
 
-        return over(
+        return createOver(
             HolderPass.over(sector, colonyReadRules, grouping),
             rules);
     }
@@ -102,7 +102,7 @@ public record DominancePass(
      * @return that reading under the live weighting rule
      */
     public static DominancePass readRulesFromLunaSettings(HolderPass holding) {
-        return over(holding, DominanceRules.readFromLunaSettings());
+        return createOver(holding, DominanceRules.readFromLunaSettings());
     }
 
     /**
@@ -116,17 +116,6 @@ public record DominancePass(
      */
     public static DominancePass readFromLunaSettings(SectorAPI sector, HolderGrouping grouping) {
         return readRulesFromLunaSettings(HolderPass.readFromLunaSettings(sector, grouping));
-    }
-
-    /**
-     * A pass reading the player's live settings under the faction (identity) grouping - every
-     * faction its own bloc - for the plain faction view.
-     *
-     * @param sector the sector this pass reads
-     * @return a pass carrying the live weighting and colony rules under the identity grouping
-     */
-    public static DominancePass readFromLunaSettings(SectorAPI sector) {
-        return readFromLunaSettings(sector, HolderGrouping.identity());
     }
 
     /**
@@ -324,11 +313,34 @@ public record DominancePass(
      */
     public HolderRankingRules resolveRankingRulesFor(StarSystemAPI system) {
         return new HolderRankingRules(
-            MarketProximityTieBreak.forSystem(
+            MarketProximityTieBreak.createForSystem(
                 system,
                 readColoniesIn(system),
                 colonyKnowledge(),
                 grouping()),
             BlocCandidacy.createForGrouping(grouping()));
+    }
+
+    /**
+     * The bloc that holds this system: its per-bloc footprints ranked under this pass's own
+     * ranking rules, candidacy bar and proximity tie-break included.
+     *
+     * <p>The one place a winner is settled, so the fill, the filter's receded holder, the picker's
+     * domination count and the band's opening run all name the same bloc for a system. It takes
+     * the footprints rather than reading them because every caller needs them for a question of
+     * its own too, and reading them twice would walk the fold twice for the same answer.
+     *
+     * @param system            the system being ranked
+     * @param footprintByBlocId the system's footprints as {@link #readBlocFootprints} read them off
+     *                          this pass
+     * @return the dominant bloc's ID, or null when the footprints are empty (nobody weighed here)
+     */
+    public String resolveDominantBlocId(
+            StarSystemAPI system,
+            Map<String, MarketFootprint> footprintByBlocId) {
+
+        return SystemDominance.resolveDominantFactionId(
+            footprintByBlocId,
+            resolveRankingRulesFor(system));
     }
 }

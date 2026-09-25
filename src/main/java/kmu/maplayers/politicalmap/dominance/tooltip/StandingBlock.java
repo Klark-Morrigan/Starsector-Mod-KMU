@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
+import kmu.maplayers.politicalmap.tooltip.ContestBlockHeading;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
 import kmu.util.KmuStringKeys;
 
@@ -24,7 +25,7 @@ import java.util.function.Function;
  * heading varies is declared here like any other, and nothing downstream has to know which of them
  * that is.
  */
-public enum StandingBlock {
+public enum StandingBlock implements ContestBlockHeading {
 
     /**
      * The bloc the map fills the system in the colour of. The strongest of those in the running,
@@ -62,13 +63,7 @@ public enum StandingBlock {
         this.headingKeySource = headingKeySource;
     }
 
-    /**
-     * The strings key of the heading this block draws under.
-     *
-     * @param contestWording how the install has the contest worded, which every block is offered and
-     *                       only the contested one reads
-     * @return the key, resolved against the player's own language where the block is drawn
-     */
+    @Override
     public String resolveHeadingKey(ContestWording contestWording) {
         return headingKeySource.apply(contestWording);
     }

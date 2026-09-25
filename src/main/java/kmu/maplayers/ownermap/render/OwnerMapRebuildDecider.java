@@ -146,7 +146,11 @@ final class OwnerMapRebuildDecider {
         // updateFromSector report its affected-cell set and drive a targeted reshape from it, the
         // geometry-side analogue of the marked-system fold.
 
-        var contentRevision = computeContentRevision(view, contentInputs);
+        // Read once and folded into both revisions below, so the two cannot be taken over two
+        // readings of the settings or the view's live inputs.
+        var viewRevision = computeViewRevision(view);
+
+        var contentRevision = computeContentRevision(viewRevision, contentInputs);
         var isContentStale = isCellCutStale
             || hasNothingBuilt
             || contentRevision != lastContentRevision;
@@ -156,7 +160,7 @@ final class OwnerMapRebuildDecider {
             isCellCutStale,
             contentInputs,
             contentRevision,
-            computeHoldingRevision(view, contentInputs),
+            computeHoldingRevision(viewRevision, contentInputs),
             isContentStale);
     }
 
@@ -207,47 +211,40 @@ final class OwnerMapRebuildDecider {
         lastHoldingRevision = staleHalves.holdingRevision();
     }
 
-    // The clusters-staleness token, folding everything the cells are styled under: the settings
-    // revision, since a settings change restyles every cell over the fixed geometry; the active
-    // view, since their grouping, styling and labels differ; the view's own fingerprint of whatever
-    // live inputs it samples, so a change to one of those rebuilds without any setting moving; and
-    // the sidebar picks this frame sampled.
-    //
-    // The view is asked for that fingerprint rather than this naming the signals behind it, which is
-    // what keeps the shared pipeline free of any one view's vocabulary: a view that samples nothing
-    // contributes a constant and is never churned by a change it does not render.
+    // The clusters-staleness token, folding everything the cells are styled under: the view
+    // revision below, and the sidebar picks this frame sampled.
     //
     // The picks are folded as the values sampled rather than as the counters their flips raise,
     // because a counter reports that somebody clicked something while the values answer the only
     // question a rebuild turns on: would this build come out the same. Two readings holding the
     // same picks are one bake whatever has been clicked between them, and a screen switch moves
     // every pick while no counter moves at all.
-    private int computeContentRevision(OwnerPaintedView view, ContentInputs contentInputs) {
-
-        var board = machinery.resolveRefreshBoard();
-
-        return Objects.hash(
-            KmuLunaSettings.getSettingsRevision(),
-            view.getId(),
-            view.getContentRevision(board),
-            contentInputs);
+    private static int computeContentRevision(int viewRevision, ContentInputs contentInputs) {
+        return Objects.hash(viewRevision, contentInputs);
     }
 
     // The content revision's holding half: the same fold over only what reaches the resolve. Of the
     // sidebar picks that is the spotlight alone - the two recedes, the name format and the outline
-    // reach the paint and nothing before it. The settings revision stays in, since the rule a view
-    // resolves holding by can read LunaLib fields, and the view's own live inputs stay in since a
-    // view that groups factions into blocs moves its holding whenever those groups move. A style
-    // pick moves the content revision and leaves this one where it was, which is what lets the
-    // rebuild it owes keep the holding.
-    private int computeHoldingRevision(OwnerPaintedView view, ContentInputs contentInputs) {
+    // reach the paint and nothing before it. The view revision stays in whole, since the rule a
+    // view resolves holding by can read LunaLib fields, and a view that groups factions into blocs
+    // moves its holding whenever those groups move. A style pick moves the content revision and
+    // leaves this one where it was, which is what lets the rebuild it owes keep the holding.
+    private static int computeHoldingRevision(int viewRevision, ContentInputs contentInputs) {
+        return Objects.hash(viewRevision, contentInputs.selectedBlocId());
+    }
 
-        var board = machinery.resolveRefreshBoard();
-
+    // The terms both revisions share, folded once: the settings revision, since a settings change
+    // restyles every cell over the fixed geometry; the active view, since their grouping, styling
+    // and labels differ; and the view's own fingerprint of whatever live inputs it samples, so a
+    // change to one of those rebuilds without any setting moving.
+    //
+    // The view is asked for that fingerprint rather than this naming the signals behind it, which is
+    // what keeps the shared pipeline free of any one view's vocabulary: a view that samples nothing
+    // contributes a constant and is never churned by a change it does not render.
+    private int computeViewRevision(OwnerPaintedView view) {
         return Objects.hash(
             KmuLunaSettings.getSettingsRevision(),
             view.getId(),
-            view.getContentRevision(board),
-            contentInputs.selectedBlocId());
+            view.getContentRevision(machinery.resolveRefreshBoard()));
     }
 }

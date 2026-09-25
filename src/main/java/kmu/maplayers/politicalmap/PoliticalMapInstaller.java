@@ -62,7 +62,7 @@ public final class PoliticalMapInstaller {
         // alliance dissolved), and a dangling spotlight would recede the sector behind a bloc the
         // player cannot unpick.
         runGuardedStep(
-            () -> FilterSelectionHeal.healStaleSelectionAgainstActiveView(viewRegistry),
+            () -> FilterSelectionHeal.healStaleSelectionAgainstActiveView(sector, viewRegistry),
             "Failed to heal KMU political map spotlight selection");
 
         runGuardedStep(

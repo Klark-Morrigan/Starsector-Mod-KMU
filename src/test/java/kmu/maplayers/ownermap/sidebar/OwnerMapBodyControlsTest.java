@@ -150,7 +150,7 @@ final class OwnerMapBodyControlsTest {
                     .selectView(BUILT_SCREEN, groupedViewMock);
 
                 healMock.verify(
-                    () -> FilterSelectionHeal.healStaleSelectionAgainstActiveView(viewRegistryMock));
+                    () -> FilterSelectionHeal.healStaleSelectionAgainstLiveSector(viewRegistryMock));
             }
         }
 
@@ -317,6 +317,53 @@ final class OwnerMapBodyControlsTest {
                         BUILT_SCREEN,
                         FactionNameFormatChoice.NONE,
                         BUILT_BOARD);
+            }
+        }
+
+        @Test
+        void buildSharedControlsLabelsTheNameRadioFullThenShortThenNo() {
+            // The labels, the lit segment and a click's choice read one order, so the labels are
+            // pinned in it too: a label out of step would caption a segment with the choice beside it.
+            try (var stringsMock = mockStatic(KmuStringKeys.class)) {
+
+                stubControlLabels(stringsMock);
+
+                stringsMock
+                    .when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_FULL))
+                    .thenReturn("Full");
+                stringsMock
+                    .when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_SHORT))
+                    .thenReturn("Short");
+                stringsMock
+                    .when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_NONE))
+                    .thenReturn("No");
+
+                var radio = (HorizontalRadioSpec) OwnerMapBodyControls
+                    .buildSharedControls(bodyPreferences, BUILT_TARGET)
+                    .get(1);
+
+                assertThat(radio.labels())
+                    .containsExactly("Full", "Short", "No");
+            }
+        }
+
+        @Test
+        void buildSharedControlsIgnoresANameSegmentOutsideTheThree() {
+            // A stray hit past the last segment writes no choice at all rather than a wrong one.
+            try (var stringsMock = mockStatic(KmuStringKeys.class)) {
+
+                stubControlLabels(stringsMock);
+
+                var radio = (HorizontalRadioSpec) OwnerMapBodyControls
+                    .buildSharedControls(bodyPreferences, BUILT_TARGET)
+                    .get(1);
+
+                radio
+                    .action()
+                    .activateCell(3);
+
+                verify(nameFormatMock, never())
+                    .selectNameFormat(any(), any(), any());
             }
         }
 

@@ -21,11 +21,9 @@ import kmu.settings.KmuOwnerMapStyleSettings;
  * <p>The set names the context and the screen names the panel, so one instance backs both screens
  * without either seeing the other's flips.
  *
- * <p>Sidebar-only: the toggles are driven solely by the overlay's tab-panel checkboxes, never a
- * settings-screen control, so they persist in sector memory (each save keeps its own choice and it
- * survives reload) rather than as LunaLib settings fields - every LunaLib field would render on a
- * settings tab. The supplementary tuning - how far Mute dims - stays a LunaLib knob shared across
- * every set, since that is a screen control.
+ * <p>Sidebar-only, driven by the overlay's tab-panel checkboxes, for the reason
+ * {@link OwnerMapBodyPreferences} gives; how far Mute dims stays one LunaLib knob shared across every
+ * set.
  *
  * <p>The two toggles carry different defaults for a save that holds no choice yet: Desaturate starts
  * on, Mute starts off. A spotlight only reads as a spotlight if the rest of the sector visibly gives
@@ -84,11 +82,9 @@ public final class RecedePreferences {
      *                    sector's backdrop repaints
      */
     public void setMuted(ScreenMemoryScope memoryScope, boolean isMuted, MapLayerRefreshBoard board) {
-        // Repaint only on a real write: before the sector exists the flag no-ops and reports no
-        // write, so nothing bumps a revision no overlay would read. The refresh stands in for
-        // settingsRevision, which these sidebar-only toggles never move since they are not LunaLib
-        // fields. The revision is one coarse signal every set shares, so a consumer only draws the
-        // backdrop it owns even though any set's flip advances it.
+        // Repaint only on a real write (see OwnerMapBodyPreferences). The signal is one coarse
+        // revision every set shares, so a consumer only draws the backdrop it owns even though any
+        // set's flip advances it.
         if (muteFlag.set(memoryScope, isMuted)) {
             board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
         }

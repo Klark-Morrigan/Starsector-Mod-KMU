@@ -143,7 +143,7 @@ public interface DominancePaintedView extends OwnerPaintedView {
         // the gate all read against the one snapshot rather than three live samples of a set that
         // moves (the alliances view samples Nexerelin).
         var grouping = resolveGrouping();
-        var pass = DominancePass.over(sector, rules, colonyReadRules, grouping);
+        var pass = DominancePass.createOver(sector, rules, colonyReadRules, grouping);
 
         // The aggregation is handed over whole rather than opened here: the rows come off its totals
         // and the presence off the very entries counted into them, so both halves of the picker read

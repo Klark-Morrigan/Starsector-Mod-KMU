@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SectorPassIndex;
-import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
@@ -19,7 +18,6 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderGroupingSource;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
@@ -54,21 +52,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the shape every box built on a hovered system's standings takes, whichever of them drew it:
- * ranked under the view that painted the fills, what the system is stated above the contest, and the
- * groups laid out under the blocks they route into.
+ * Pins the shape the domination box lays a hovered system's standings out in: ranked under the view
+ * that painted the fills, what the system is stated above the contest, and the groups laid out under
+ * the blocks they route into.
  *
- * <p>Asserted over the shape rather than over the box built on it, because the point is not that the
- * shallow reading and the deep one agree today but that agreeing is not the box's decision to make: a
- * case here that passed at one depth and failed at another would be describing two contests over one
- * system.
+ * <p>Asserted over the shape rather than over the account hung beneath each faction, because the point
+ * is not that the shallow reading and the deep one happen to agree but that agreeing is not the account's
+ * decision to make: a case here that passed at one depth and failed at another would be describing two
+ * contests over one system.
  *
- * <p>Driven through a box that lists whatever it is handed, so no case depends on what a real box goes
- * on to say. What the real box does decide belongs to its own suite
- * ({@link SystemDominationTooltipTest}), and the decree heading the box to
+ * <p>Driven through a box whose account source lists nothing, or records what it was asked for, so no
+ * case depends on what the real account goes on to say. What that account decides belongs to
+ * {@link SystemDominationTooltipTest}, and the decree heading the box to
  * {@link PoliticalMapCellTooltipTest}.
  */
-final class SystemStandingsTooltipTest {
+final class SystemDominationTooltipShapeTest {
 
     private static final String SYSTEM_ID = "askonia";
 
@@ -109,8 +107,15 @@ final class SystemStandingsTooltipTest {
     // permanently in and the state every case predating the allied block was written under.
     private HolderGrouping allianceSet = HolderGrouping.identity();
 
-    private final SystemStandingsTooltip tooltip =
-        new ListingStandingsTooltip(claimBreakdownReaderFake, () -> allianceSet);
+    // Headed as a contest throughout, the wording being the install's to vary: these cases are about
+    // which block a group lands in, which no wording reaches. Every faction is listed as its line alone,
+    // so a case here is about the shape and never about the account.
+    private final SystemDominationTooltip tooltip = new SystemDominationTooltip(
+        StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
+        claimBreakdownReaderFake,
+        () -> allianceSet,
+        ContestWordingFixtures.CONTESTED_WORDING,
+        (system, pass, detailLevel) -> FactionAccountResolver.NO_ACCOUNT);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
@@ -198,11 +203,11 @@ final class SystemStandingsTooltipTest {
         void composeBodyResolvesTheFactionsWithTheAccountTheBoxAsksFor() {
             // The one thing a box adds to the shared resolution has to reach it: asked for and then
             // dropped, every box would draw the glance and the detail mode would show nothing new.
-            new AccountingStandingsTooltip(claimBreakdownReaderFake)
+            buildTooltipAccountingThrough(new FactionAccountSourceFake())
                 .composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections();
 
             StandingsTooltipSeamsFake.verifyGroupsResolvedWithTheBoxsAccounts(
-                AccountingStandingsTooltip.FACTION_ACCOUNTS);
+                FactionAccountSourceFake.FACTION_ACCOUNTS);
         }
 
         @Test
@@ -211,11 +216,11 @@ final class SystemStandingsTooltipTest {
             // listed faction is subordinated over, so the shallowest level draws not one of its lines
             // - while the read behind it is the most expensive thing a hover makes. Asked for and then
             // cut, the level that shows the least would cost the most.
-            var accountingTooltip = new AccountingStandingsTooltip(claimBreakdownReaderFake);
+            var accountSourceFake = new FactionAccountSourceFake();
 
-            accountingTooltip.composeBody(sectorMock, systemMock, FACTIONS);
+            buildTooltipAccountingThrough(accountSourceFake).composeBody(sectorMock, systemMock, FACTIONS);
 
-            assertThat(accountingTooltip.readRequestedLevels())
+            assertThat(accountSourceFake.readRequestedLevels())
                 .isEmpty();
         }
 
@@ -224,12 +229,13 @@ final class SystemStandingsTooltipTest {
             // The level travels to the box rather than only gating the call, so an account carrying
             // tiers of its own stops where the cut would. Handed a fixed depth instead, the box would
             // work its deepest tiers out over every level that admits any account at all.
-            var accountingTooltip = new AccountingStandingsTooltip(claimBreakdownReaderFake);
+            var accountSourceFake = new FactionAccountSourceFake();
+            var accountingTooltip = buildTooltipAccountingThrough(accountSourceFake);
 
             accountingTooltip.composeBody(sectorMock, systemMock, SYSTEM_COMPOSITION);
             accountingTooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS);
 
-            assertThat(accountingTooltip.readRequestedLevels())
+            assertThat(accountSourceFake.readRequestedLevels())
                 .containsExactly(SYSTEM_COMPOSITION, PATROL_DETAILS);
         }
 
@@ -572,82 +578,39 @@ final class SystemStandingsTooltipTest {
             tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections());
     }
 
-    /**
-     * A box that lists each group as the line naming it and nothing beneath - the shared shape with
-     * whatever a real box goes on to say stripped out. So a case above is about the shape and never
-     * about one box's answer.
-     *
-     * <p>It answers {@link FactionAccountResolver#NO_ACCOUNT} outright rather than inheriting it: the
-     * shape leaves the account to the box, so hanging nothing is a stand-in's own answer here and not
-     * a default any real box could fall back on.
-     */
-    private static final class ListingStandingsTooltip extends SystemStandingsTooltip {
-
-        private ListingStandingsTooltip(
-                ClaimBreakdownReader claimBreakdownReader,
-                HolderGroupingSource holderGroupingSource) {
-
-            // Headed as a contest throughout, the wording being the concrete boxes' to vary: these
-            // cases are about which block a group lands in, which no wording reaches.
-            super(
-                StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
-                claimBreakdownReader,
-                holderGroupingSource,
-                ContestWordingFixtures.CONTESTED_WORDING);
-        }
-
-        @Override
-        protected HoverTooltipDetailLevel resolveDeepestAccountLevel() {
-            // The deepest the levels declare, which is what a box carrying every tier states - so a
-            // case here reads the shape's own combining rather than a stand-in's shallower bound.
-            return HoverTooltipDetailLevel.PATROL_DETAILS;
-        }
-
-        @Override
-        protected FactionAccountResolver createFactionAccountResolver(
-                StarSystemAPI system,
-                DominancePass pass,
-                HoverTooltipDetailLevel detailLevel) {
-
-            return FactionAccountResolver.NO_ACCOUNT;
-        }
+    // A box whose account comes from the source handed in, under the same seams as every other case.
+    private SystemDominationTooltip buildTooltipAccountingThrough(FactionAccountSourceFake accountSourceFake) {
+        return new SystemDominationTooltip(
+            StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
+            claimBreakdownReaderFake,
+            HolderGrouping::identity,
+            ContestWordingFixtures.CONTESTED_WORDING,
+            accountSourceFake);
     }
 
     /**
-     * A box that does have something to hang beneath the factions it lists, and that records every
-     * level it was asked to build one at - the shared shape's other side, and the only way to tell a
-     * box's own account reaching the resolution apart from an empty one reaching it. What the account
-     * says is never read; that it is this box's, and that it was asked for at all, are the points.
+     * An account source that does have something to hang beneath the factions a box lists, and that
+     * records every level it was asked to build one at - the only way to tell an account reaching the
+     * resolution apart from an empty one reaching it. What the account says is never read; that it is
+     * this source's, and that it was asked for at all, are the points.
      */
-    private static final class AccountingStandingsTooltip extends SystemStandingsTooltip {
+    private static final class FactionAccountSourceFake
+            implements SystemDominationTooltip.FactionAccountSource {
 
-        // Answers something rather than nothing, so this box's account cannot be mistaken for an empty
-        // one reaching the resolution by another route. What it says is never read.
+        // Answers something rather than nothing, so this account cannot be mistaken for an empty one
+        // reaching the resolution by another route. What it says is never read.
         private static final FactionAccountResolver FACTION_ACCOUNTS = standing -> List.of(
             CellTooltipEntry.createEntry(
                 CellTooltipEntryLine.createLine(null, standing.factionId(), "1")));
 
-        // The levels the shape asked this box for an account at, in the order it asked. Recorded
-        // rather than inferred from what the box went on to draw: an account built and then cut
-        // leaves a body identical to one never asked for, which is the whole distinction the cases
-        // reading this are about.
+        // The levels the box asked for an account at, in the order it asked. Recorded rather than
+        // inferred from what the box went on to draw: an account built and then cut leaves a body
+        // identical to one never asked for, which is the whole distinction the cases reading this are
+        // about.
         private final List<HoverTooltipDetailLevel> requestedLevels = new ArrayList<>();
 
-        private AccountingStandingsTooltip(ClaimBreakdownReader claimBreakdownReader) {
-            super(
-                StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
-                claimBreakdownReader,
-                HolderGrouping::identity,
-                ContestWordingFixtures.CONTESTED_WORDING);
-        }
-
         @Override
-        protected HoverTooltipDetailLevel resolveDeepestAccountLevel() {
-            return HoverTooltipDetailLevel.PATROL_DETAILS;
-        }
-
-        @Override
-        protected FactionAccountResolver createFactionAccountResolver(
+        public FactionAccountResolver createFactionAccountResolver(
                 StarSystemAPI system,
                 DominancePass pass,
                 HoverTooltipDetailLevel detailLevel) {

@@ -152,13 +152,13 @@ public final class MarketWeights {
 
         return new MarketWeightBreakdown(
             market.marketId(),
-            market.nameplate(),
+            market.marketNameplate(),
             market.isHidden(),
             market.isStation(),
             market.stability(),
             buildBaseSizeFactor(market, rules.baseSize(), stabilityScaling),
-            market.station().map(station ->
-                buildStationFactor(market, station, rules.station(), stabilityScaling)),
+            market.stationNameplate().map(stationNameplate ->
+                buildStationFactor(market, stationNameplate, rules.station(), stabilityScaling)),
             market.patrols().map(patrols ->
                 buildPatrolFactor(patrols, rules.patrols(), stabilityScaling)));
     }
@@ -189,15 +189,15 @@ public final class MarketWeights {
     // the rate removes - so both of the factor's cuts read the same way round.
     private static StationFactor buildStationFactor(
             WeighedMarket market,
-            EntityNameplate station,
+            EntityNameplate stationNameplate,
             StationWeighting rules,
             StabilityScaling stabilityScaling) {
 
         var hiddenMarketRate = market.isHidden() ? rules.hiddenMarketRate() : FULL_STATION_RATE;
         return new StationFactor(
-            station,
+            stationNameplate,
             rules.weight(),
-            1.0 - hiddenMarketRate,
+            FULL_STATION_RATE - hiddenMarketRate,
             stabilityScaling.computePenaltyFraction(rules.lowStabilityPenalty()),
             stabilityScaling.scaleFactor(
                 rules.weight() * hiddenMarketRate,
@@ -318,29 +318,30 @@ public final class MarketWeights {
      * scan, the dynamic-stat lookup and the two icon-spec reads are paid for once however many
      * times the market's worth is worked out.
      *
-     * @param nameplate how the colony is identified - its name and the glyph the sector map marks
-     *                  it with. Read here with the rest of the market, so what the breakdown
-     *                  carries belongs to the market that was weighed
-     * @param isHidden  whether the colony is concealed rather than held in the open
-     * @param isStation whether the colony sits on an orbital station rather than on a planet
-     * @param size      the colony's own size, as the economy reports it
-     * @param stability the colony's stability on its own 0..10 band - the reading behind
-     *                  every one of the penalties below, carried as the economy states it
-     *                  rather than as the fraction the scaling divides it down to
-     * @param station   how the market's orbital station is identified, when the station factor
-     *                  admitted one. Carried as the nameplate rather than as the token it was read
-     *                  from, because the token is a live entity whose specs cost a lookup apiece
-     *                  and the factor is built once per weighing while the station is found once
-     * @param patrols   the market's patrol-tier counts, when the patrol factor admitted them
+     * @param marketNameplate  how the colony is identified - its name and the glyph the sector map
+     *                         marks it with. Read here with the rest of the market, so what the
+     *                         breakdown carries belongs to the market that was weighed
+     * @param isHidden         whether the colony is concealed rather than held in the open
+     * @param isStation        whether the colony sits on an orbital station rather than on a planet
+     * @param size             the colony's own size, as the economy reports it
+     * @param stability        the colony's stability on its own 0..10 band - the reading behind
+     *                         every one of the penalties below, carried as the economy states it
+     *                         rather than as the fraction the scaling divides it down to
+     * @param stationNameplate how the market's orbital station is identified, when the station
+     *                         factor admitted one. Carried as the nameplate rather than as the token
+     *                         it was read from, because the token is a live entity whose specs cost
+     *                         a lookup apiece and the factor is built once per weighing while the
+     *                         station is found once
+     * @param patrols          the market's patrol-tier counts, when the patrol factor admitted them
      */
     private record WeighedMarket(
         String marketId,
-        EntityNameplate nameplate,
+        EntityNameplate marketNameplate,
         boolean isHidden,
         boolean isStation,
         int size,
         double stability,
-        Optional<EntityNameplate> station,
+        Optional<EntityNameplate> stationNameplate,
         Optional<PatrolCounts> patrols) {
     }
 }

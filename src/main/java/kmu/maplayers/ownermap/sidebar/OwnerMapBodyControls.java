@@ -13,7 +13,6 @@ import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.NameFormatPreference;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
-import kmu.maplayers.ownermap.preferences.UninhabitedOutlinePreference;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -40,11 +39,12 @@ public final class OwnerMapBodyControls {
 
     // The name radio's segments, in the order the layout lays them out left to right: the two drawn
     // forms longest-first, then No. The lit segment opens the sentence its trailing caption closes -
-    // "Full faction names", "No faction names" - which is why that caption is lowercase. The lit
-    // segment index maps back to this order.
-    private static final int NAME_FULL_SEGMENT = 0;
-    private static final int NAME_SHORT_SEGMENT = 1;
-    private static final int NAME_NONE_SEGMENT = 2;
+    // "Full faction names", "No faction names" - which is why that caption is lowercase. The labels,
+    // the lit segment and a click's choice are all read off this one order.
+    private static final List<FactionNameFormatChoice> NAME_SEGMENT_CHOICES = List.of(
+        FactionNameFormatChoice.FULL,
+        FactionNameFormatChoice.SHORT,
+        FactionNameFormatChoice.NONE);
 
     private OwnerMapBodyControls() {
     }
@@ -61,22 +61,27 @@ public final class OwnerMapBodyControls {
             OwnerMapBodyPreferences preferences,
             BodyControlTarget target) {
 
+        var outline = preferences.uninhabitedOutline();
+        var nameFormat = preferences.nameFormat();
+
         return List.of(
             CheckboxSpec.lit(
                 // The plain text tone: the box states an option rather than calling anything out.
                 new TextSpan(
                     KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_UNINHABITED),
                     StarsectorUiColour.VANILLA_TEXT.resolve()),
-                preferences.uninhabitedOutline().isOutlineDrawn(target.memoryScope()),
-                cellIndex -> toggleUninhabitedSystems(preferences.uninhabitedOutline(), target)),
+                outline.isOutlineDrawn(target.memoryScope()),
+                cellIndex -> PanelToggles.flipToggle(
+                    target,
+                    outline::isOutlineDrawn,
+                    outline::setOutlineDrawn)),
             HorizontalRadioSpec
                 .of(
-                    List.of(
-                        KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_FULL),
-                        KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_SHORT),
-                        KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_NONE)),
-                    nameFormatRadioState(preferences.nameFormat(), target.memoryScope()),
-                    segmentIndex -> selectNameFormatSegment(preferences.nameFormat(), segmentIndex, target))
+                    NAME_SEGMENT_CHOICES.stream()
+                        .map(OwnerMapBodyControls::resolveNameSegmentLabel)
+                        .toList(),
+                    NAME_SEGMENT_CHOICES.indexOf(nameFormat.getSelectedNameFormat(target.memoryScope())),
+                    segmentIndex -> selectNameFormatSegment(nameFormat, segmentIndex, target))
                 .showsCaption(KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES)));
     }
 
@@ -108,6 +113,32 @@ public final class OwnerMapBodyControls {
             segmentIndex -> selectViewSegment(viewRegistry, segmentIndex, memoryScope));
     }
 
+    // The resolved label of one name-radio segment.
+    private static String resolveNameSegmentLabel(FactionNameFormatChoice choice) {
+        return switch (choice) {
+            case FULL -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_FULL);
+            case SHORT -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_SHORT);
+            case NONE -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_NONE);
+        };
+    }
+
+    // Writes the name choice for the clicked radio segment. No is a choice like the other two rather
+    // than a separate gate, so turning the names off is the same one write. Any index outside the
+    // segments is ignored, so a stray hit changes nothing.
+    private static void selectNameFormatSegment(
+            NameFormatPreference nameFormat,
+            int segmentIndex,
+            BodyControlTarget target) {
+
+        if (segmentIndex < 0 || segmentIndex >= NAME_SEGMENT_CHOICES.size()) {
+            return;
+        }
+        nameFormat.selectNameFormat(
+            target.memoryScope(),
+            NAME_SEGMENT_CHOICES.get(segmentIndex),
+            target.board());
+    }
+
     // Activates the view its clicked segment names, on the screen the radio was placed on - where the
     // carried screen becomes the address of the slot written. Any index outside the registered views is
     // ignored, so a stray hit changes nothing. Each view remembers its own spotlight (a faction ID
@@ -117,7 +148,8 @@ public final class OwnerMapBodyControls {
     // selectable blocs, so a bloc that lapsed since it was last shown (a faction removed, a group
     // dissolved) does not spotlight an empty footprint; the switch itself repaints, so the cleared
     // spotlight shows without its own refresh request. The heal covers every screen, this one included,
-    // since what lapsed lapsed for both panels.
+    // since what lapsed lapsed for both panels. A click is handed no sector, so the heal judges against
+    // the running one.
     private static void selectViewSegment(
             MapLayerViewRegistry viewRegistry,
             int segmentIndex,
@@ -128,47 +160,6 @@ public final class OwnerMapBodyControls {
             return;
         }
         viewRegistry.selectView(memoryScope, views.get(segmentIndex));
-        FilterSelectionHeal.healStaleSelectionAgainstActiveView(viewRegistry);
-    }
-
-    // Flips the uninhabited-systems outline on or off for the panel this box was placed on: if it
-    // currently draws there, hide it; otherwise draw it. This is where the panel's screen stops being
-    // carried and becomes the address of the slot written.
-    private static void toggleUninhabitedSystems(
-            UninhabitedOutlinePreference outline,
-            BodyControlTarget target) {
-
-        outline.setOutlineDrawn(
-            target.memoryScope(),
-            !outline.isOutlineDrawn(target.memoryScope()),
-            target.board());
-    }
-
-    // Writes the name choice for the clicked radio segment, matching the Full-Short-No segment order
-    // the labels are supplied in. No is a choice like the other two rather than a separate gate, so
-    // turning the names off is the same one write. Any other index is ignored, so a stray hit outside
-    // the three known segments changes nothing.
-    private static void selectNameFormatSegment(
-            NameFormatPreference nameFormat,
-            int segmentIndex,
-            BodyControlTarget target) {
-
-        if (segmentIndex == NAME_FULL_SEGMENT) {
-            nameFormat.selectNameFormat(target.memoryScope(), FactionNameFormatChoice.FULL, target.board());
-        } else if (segmentIndex == NAME_SHORT_SEGMENT) {
-            nameFormat.selectNameFormat(target.memoryScope(), FactionNameFormatChoice.SHORT, target.board());
-        } else if (segmentIndex == NAME_NONE_SEGMENT) {
-            nameFormat.selectNameFormat(target.memoryScope(), FactionNameFormatChoice.NONE, target.board());
-        }
-    }
-
-    // The radio lights the segment for the screen's own name choice, matching the Full-Short-No segment
-    // order the labels are supplied in.
-    private static int nameFormatRadioState(NameFormatPreference nameFormat, ScreenMemoryScope memoryScope) {
-        return switch (nameFormat.getSelectedNameFormat(memoryScope)) {
-            case FULL -> NAME_FULL_SEGMENT;
-            case SHORT -> NAME_SHORT_SEGMENT;
-            case NONE -> NAME_NONE_SEGMENT;
-        };
+        FilterSelectionHeal.healStaleSelectionAgainstLiveSector(viewRegistry);
     }
 }

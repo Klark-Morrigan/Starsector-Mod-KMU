@@ -69,7 +69,7 @@ public final class MarketProximityTieBreak {
      *                         backstop resolve as the pass grouped them
      * @return a comparator ordering the closer-to-centre bloc first
      */
-    public static Comparator<String> forSystem(
+    public static Comparator<String> createForSystem(
             StarSystemAPI system,
             Colonies colonies,
             ColonyKnowledge colonyKnowledge,

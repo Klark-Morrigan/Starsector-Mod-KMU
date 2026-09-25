@@ -13,6 +13,7 @@ import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
+import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
@@ -97,49 +98,15 @@ public final class DebugBorderTracingBuilder {
         var renderStyle = RenderStyleReader.readRenderStyle(
             contentInputs.isUninhabitedOutlineDrawn());
 
-        var borderSmoothing = renderStyle.global().borderSmoothing();
         var stageCollector = new ClusterBorderStageCollector();
 
-        for (var memberCellKeys : cellGrouping.groupCellKeysByOwner().values()) {
+        addClusterOutlines(
+            geometryCache,
+            cellGrouping,
+            borderTrace,
+            renderStyle.global().borderSmoothing(),
+            stageCollector);
 
-            // Whole clusters, so no neighbour is coincident: every boundary edge takes the
-            // uniform channel, exactly as the drawn cluster border does.
-            var insetRings = borderTrace.traceRings(
-                memberCellKeys,
-                geometryCache.getCellEdgesByCellKey(),
-                cellGrouping);
-
-            if (insetRings.isEmpty()) {
-                continue;
-            }
-
-            // buildClusterGroup's pipeline with each stage kept: base first, then sand and
-            // round only when gated on, so what is captured is what each pass was handed.
-            //
-            // Short of it by the resolve that pipeline runs AFTER rounding, which is not a
-            // stage of its own to capture - it tidies the rounded loops rather than shaping
-            // them, and a crossing it closes was opened by an arc this overlay is drawn to
-            // show. So the last stage here is the rounding's own output, which is the one a
-            // reader looking at why a border bulges wants to see.
-            var base = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
-            stageCollector.captureBaseStage(base);
-            var smoothed = base;
-
-            if (borderSmoothing.spikeSanding().shouldSandSpikes()) {
-                smoothed = BorderSmoothing.sandBorderSpikes(
-                    smoothed,
-                    borderSmoothing.spikeSanding());
-
-                stageCollector.captureDespikedStage(smoothed);
-            }
-            if (borderSmoothing.cornerRounding().shouldRoundCorners()) {
-                smoothed = BorderSmoothing.roundBorderCorners(
-                    smoothed,
-                    borderSmoothing.cornerRounding());
-
-                stageCollector.captureRoundedStage(smoothed);
-            }
-        }
         // Only the rounding half: the factionless pass has no sanding stage to capture, so the
         // sanding numbers never reach it.
         addFactionlessOutlines(
@@ -150,6 +117,30 @@ public final class DebugBorderTracingBuilder {
             stageCollector);
 
         return stageCollector.buildOverlay();
+    }
+
+    // Traces every owned cluster and captures the stages its border passes through. Whole
+    // clusters, so no neighbour is coincident: every boundary edge takes the uniform channel,
+    // exactly as the drawn cluster border does. A cluster whose trace yields no ring has nothing
+    // to show at any stage and is skipped.
+    private static void addClusterOutlines(
+            CellGeometryCache geometryCache,
+            CellGrouping cellGrouping,
+            ClusterBorderTrace borderTrace,
+            BorderSmoothingStyle borderSmoothing,
+            ClusterBorderStageCollector stageCollector) {
+
+        for (var memberCellKeys : cellGrouping.groupCellKeysByOwner().values()) {
+
+            var insetRings = borderTrace.traceRings(
+                memberCellKeys,
+                geometryCache.getCellEdgesByCellKey(),
+                cellGrouping);
+
+            if (!insetRings.isEmpty()) {
+                captureClusterStages(insetRings, borderSmoothing, stageCollector);
+            }
+        }
     }
 
     // Appends each drawn factionless cell's outline as a base loop and, when rounding is
@@ -201,6 +192,38 @@ public final class DebugBorderTracingBuilder {
                 stageCollector.captureRoundedStage(
                     BorderSmoothing.roundBorderCorners(base, cornerRounding));
             }
+        }
+    }
+
+    // buildClusterGroup's pipeline with each stage kept: base first, then sand and round only when
+    // gated on, so what is captured is what each pass was handed.
+    //
+    // Short of it by the resolve that pipeline runs AFTER rounding, which is not a stage of its own
+    // to capture - it tidies the rounded loops rather than shaping them, and a crossing it closes
+    // was opened by an arc this overlay is drawn to show. So the last stage here is the rounding's
+    // own output, which is the one a reader looking at why a border bulges wants to see.
+    private static void captureClusterStages(
+            List<List<double[]>> insetRings,
+            BorderSmoothingStyle borderSmoothing,
+            ClusterBorderStageCollector stageCollector) {
+
+        var base = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
+        stageCollector.captureBaseStage(base);
+        var smoothed = base;
+
+        if (borderSmoothing.spikeSanding().shouldSandSpikes()) {
+            smoothed = BorderSmoothing.sandBorderSpikes(
+                smoothed,
+                borderSmoothing.spikeSanding());
+
+            stageCollector.captureDespikedStage(smoothed);
+        }
+        if (borderSmoothing.cornerRounding().shouldRoundCorners()) {
+            smoothed = BorderSmoothing.roundBorderCorners(
+                smoothed,
+                borderSmoothing.cornerRounding());
+
+            stageCollector.captureRoundedStage(smoothed);
         }
     }
 }

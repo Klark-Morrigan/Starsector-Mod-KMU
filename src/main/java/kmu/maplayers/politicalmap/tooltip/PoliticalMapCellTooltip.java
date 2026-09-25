@@ -4,17 +4,23 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.factions.relation.StarsectorFactionRelations;
+import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
+import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
+import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.SystemCellTooltip;
 import kmu.maplayers.ownermap.holding.BlocAffiliation;
 import kmu.maplayers.ownermap.holding.BlocFriendliness;
 import kmu.maplayers.ownermap.holding.HolderGroupingSource;
 import kmu.maplayers.ownermap.tooltip.BlocRelations;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * What every political-map view's hover box is beneath the framework's shape: a cell tooltip that may
@@ -37,21 +43,21 @@ import java.util.List;
 public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
 
     /**
-     * The reader every political-map tooltip runs on in game. Stateless, so the boxes share one
+     * The decree read every political-map tooltip runs on in game. Stateless, so the boxes share one
      * rather than each minting its own, and named in a single place so a change of binding cannot
      * reach one view and miss the other.
      *
-     * <p>It resolves the player's colony rule per read rather than holding one, since a box
-     * lives for the whole session while that rule is a setting the player may move between two
-     * hovers.
+     * <p>Opened knowing no colony at all: the decree answers off the system's own memory flag and
+     * reaches no colony for a rule to apply to, and the port undertakes that it stays a single memory
+     * read - so nothing, not even a settings lookup, is put in front of it. A box that reads the whole
+     * scored contest opens a reader of its own per hover, under the colony rule that hover sampled.
      */
-    public static final ClaimBreakdownReader VANILLA_CLAIM_BREAKDOWN_READER =
-        new LiveVisibilityClaimBreakdownReader();
+    protected static final ClaimBreakdownReader VANILLA_CLAIM_BREAKDOWN_READER =
+        new VanillaClaimBreakdownReader(KnownColonyReader.NOTHING_KNOWN);
 
     /**
-     * The claim read a body draws on - the whole scored contest, or the decree alone, whichever it
-     * has something to say about. Held rather than reached for statically, so a body draws on the
-     * read it is handed rather than on whichever one a running game happens to have.
+     * The claim read the box heads itself with. Held rather than reached for statically, so a box
+     * draws on the read it is handed rather than on whichever one a running game happens to have.
      */
     protected final ClaimBreakdownReader claimBreakdownReader;
 
@@ -115,17 +121,32 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
     }
 
     /**
-     * Takes the wording for the block listing everyone present who stands neither in the holder's
-     * alliance nor on good terms with it.
+     * Lays down a box's blocks in the order their set declares them, each under its heading and over
+     * the entries it lists. Every block is offered unconditionally, since a block standing over no
+     * entries is dropped by the same rule that drops any other.
      *
-     * <p>Bound here rather than by each shape for the reason the relations above are: both shapes
-     * draw that block, and two of them reading the install for themselves are two chances to word it
-     * as a contest on one tab and as plain presence on the next.
+     * <p>The wording is sampled once for the whole run, so every block of the box is headed under a
+     * single reading of the install - bound here rather than by each shape because two shapes reading
+     * the install for themselves are two chances to word the rival block as a contest on one tab and
+     * as plain presence on the next.
      *
-     * @return the wording the install calls for as the block is drawn
+     * @param body          the body the sections are appended to
+     * @param blocks        the box's block set, in the order it is laid down
+     * @param entriesSource the entries one block lists, in the order they are read
+     * @param <B>           the box's own block set
      */
-    protected final ContestWording resolveContestWording() {
-        return contestWordingSource.resolveWording();
+    protected final <B extends ContestBlockHeading> void appendContestBlockSections(
+            CellTooltipBody body,
+            B[] blocks,
+            Function<B, List<CellTooltipEntry>> entriesSource) {
+
+        var contestWording = contestWordingSource.resolveWording();
+
+        for (var block : blocks) {
+            body.appendSection(
+                KmuStringKeys.get(block.resolveHeadingKey(contestWording)),
+                entriesSource.apply(block));
+        }
     }
 
     /**

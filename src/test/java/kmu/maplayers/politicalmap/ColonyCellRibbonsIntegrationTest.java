@@ -95,7 +95,7 @@ final class ColonyCellRibbonsIntegrationTest {
             var inputs = buildInputsFor(holding);
 
             var heldPlan = new HeldSystemRibbonPlanner(
-                    DominancePass.over(
+                    DominancePass.createOver(
                         holding,
                         DominancePassFixtures.buildStabilityWeightedRules()),
                     inputs)
@@ -129,7 +129,7 @@ final class ColonyCellRibbonsIntegrationTest {
             var sector = buildSectorWhereTritachyonIsUnregistered();
             var system = buildOnlySystem(sector);
             var holding = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
-            var pass = DominancePass.over(
+            var pass = DominancePass.createOver(
                 holding,
                 DominancePassFixtures.buildStabilityWeightedRules());
 

@@ -2,36 +2,27 @@ package kmu.maplayers.ownermap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
-import kmlib.starsector.ui.widgets.lists.ListPicker;
-import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.holding.ColonyReadRules;
-import kmu.maplayers.ownermap.holding.DecivilisedColonyHabitation;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
 import kmu.maplayers.ownermap.picker.BlocMetrics;
 import kmu.maplayers.ownermap.picker.BlocPickerRead;
-import kmu.maplayers.ownermap.picker.BlocStandingReader;
 import kmu.maplayers.ownermap.picker.BlocStandingSortMode;
 import kmu.maplayers.ownermap.picker.BlocStatsRead;
 import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.picker.SelectableBloc;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -291,25 +282,16 @@ public interface OwnerPaintedView {
     }
 
     /**
-     * This view's picker under the player's current visibility settings - the live entry the
-     * sidebar and the stale-selection heal call, so neither has to read the toggles a running pass
-     * would already hold.
-     *
-     * <p>The one place the picker path samples those settings, so no view below decides a rule of
-     * its own: a view handed one rule and left to assume the other would settle out of sight
-     * whether a decivilised world offers its bloc, while the map beside it settled the same
-     * question from the player's answer.
+     * This view's picker under the player's live colony rules ({@link
+     * ColonyReadRules#readFromLunaSettings}) - the entry the sidebar and the stale-selection heal
+     * call, neither holding a running pass's rules.
      *
      * @param sector the sector whose colonies decide who is listed; null yields an empty read
      * @return this view's picker and presence under the player's live settings; empty when no bloc
      *         qualifies
      */
     default BlocPickerRead<?> resolveBlocPickerRead(SectorAPI sector) {
-        return resolveBlocPickerRead(
-            sector,
-            new ColonyReadRules(
-                MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
-                DecivilisedColonyHabitation.readFromLunaSettings()));
+        return resolveBlocPickerRead(sector, ColonyReadRules.readFromLunaSettings());
     }
 
     /**
@@ -364,11 +346,7 @@ public interface OwnerPaintedView {
             BlocStatsRead<S> statsRead,
             ListSortModes<RankedBloc<S>> vocabularyModes) {
 
-        return new BlocPickerRead<>(
-            new ListPicker<>(
-                buildSelectableBlocs(sector, grouping, statsRead.statsByBlocId()),
-                composeOfferedSortModes(sector, grouping, vocabularyModes)),
-            statsRead.presenceIndex());
+        return BlocPickerAssembly.buildBlocPickerRead(this, sector, grouping, statsRead, vocabularyModes);
     }
 
     /**
@@ -423,56 +401,5 @@ public interface OwnerPaintedView {
      */
     default Optional<MapHoverTooltip> resolveHoverTooltip() {
         return Optional.empty();
-    }
-
-    // The whole vocabulary the picker is offered: the calling layer's own modes, then the standing
-    // mode shared by every view. Appended last, so it takes the bottom row of the sort selector
-    // beneath the numbers the layer is painted by; the fallback mode is the layer's own, since the
-    // standing is a criterion a player picks rather than one a fresh save should open on.
-    private static <S extends BlocMetrics> ListSortModes<RankedBloc<S>> composeOfferedSortModes(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            ListSortModes<RankedBloc<S>> vocabularyModes) {
-
-        // No sector is no relations to read and no rows to rank - the read this builds is empty -
-        // so the vocabulary stands as its layer declared it rather than gaining a mode with nothing
-        // behind it to read.
-        if (sector == null) {
-            return vocabularyModes;
-        }
-        var offeredModes = new ArrayList<ListSortMode<RankedBloc<S>>>(vocabularyModes.modes());
-
-        offeredModes.add(
-            new BlocStandingSortMode<>(BlocStandingReader.createForSector(sector, grouping)));
-
-        return new ListSortModes<>(offeredModes, vocabularyModes.defaultMode());
-    }
-
-    // The row half of the assembly: each gated bloc paired with its metrics, in walk order. Private
-    // because the pairing is only ever half an answer - a list of rows with no vocabulary cannot be
-    // ranked and no presence beside it cannot be lit - so the whole read is the only thing worth
-    // offering a view.
-    private <S extends BlocMetrics> List<RankedBloc<S>> buildSelectableBlocs(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            Map<String, S> statsByBlocId) {
-
-        var isSelectable = resolveSelectableBlocGate(grouping);
-        var selectableBlocs = new ArrayList<RankedBloc<S>>();
-
-        for (var entry : statsByBlocId.entrySet()) {
-            var blocId = entry.getKey();
-            if (!isSelectable.test(blocId)) {
-                continue;
-            }
-            var colourFaction = sector.getFaction(grouping.resolveColourFactionId(blocId));
-            var identity = new SelectableBloc(
-                blocId,
-                resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT),
-                FactionCrests.resolveCrestPath(colourFaction));
-
-            selectableBlocs.add(new RankedBloc<>(identity, entry.getValue()));
-        }
-        return selectableBlocs;
     }
 }

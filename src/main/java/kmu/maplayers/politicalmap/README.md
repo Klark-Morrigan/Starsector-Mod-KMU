@@ -674,7 +674,7 @@ so no two depths can describe one system differently.
 Composition stops where the cut would,
 this layer's deeper tiers being the expensive ones.
 The account resolver is built only where the level shows a line of one
-(`isAdmittingAccounts`, gated in `SystemStandingsTooltip`),
+(`isAdmittingAccounts`, gated in `SystemDominationTooltip`),
 so the shallowest level makes no `readWeightBreakdownsByFaction`,
 no unweighed-colony read and no `SystemColonyReading` walk at all -
 the walk behind those being the most expensive thing a hover does,
@@ -685,21 +685,16 @@ its patrol tiers only at `PATROL_DETAILS`.
 What is *drawn* stays the cut's alone,
 so the box a level shows is identical either way.
 
-It sits on `SystemStandingsTooltip`,
-which settles everything but that nesting -
+`SystemDominationTooltip` settles the rest of the box -
 one pass read from the active view,
 the ranking,
 the status line,
 the headings and which of them a group falls under,
-the lines naming the blocs and the member factions inside them.
-What the box adds is one answer:
-what to hang beneath a faction as the account of its score (`FactionAccountResolver`),
+the lines naming the blocs and the member factions inside them -
+and what hangs beneath a faction as the account of its score (`FactionAccountResolver`),
 asked for once per paint and applied by `StandingRowResolver` where the standing
 and the line named from it are both in hand,
 so no faction's colonies can be listed under another's name.
-Every box on the shape answers it rather than inheriting an empty one:
-a box that hung nothing would draw the same thing at every level
-while `F1` went on offering to open it up.
 
 Beside it every box states how far that account reaches (`resolveDeepestAccountLevel`),
 which is where the cycle wraps for this box:
@@ -1052,14 +1047,11 @@ and each market into the terms its claim score is built from -
 one account,
 read to whatever depth was asked for and cut by the blocks,
 on the same terms as the domination box.
-It sits on `SystemClaimContestTooltip`,
-which settles the one read behind it,
+The same class settles the one read behind it,
 the claimant,
 the decree marker,
-and the five blocks,
-and leaves open only what hangs beneath a faction
-(`resolveAccountEntries`, answered by every box on the shape).
-It is asked at all only where the level shows a line of one (`isAdmittingAccounts`),
+and the five blocks.
+What hangs beneath a faction is asked for only where the level shows a line of one (`isAdmittingAccounts`),
 so the shallowest level selects,
 ranks and words no faction's markets;
 below it `ClaimScoreRowResolver` works out a market's terms only from `MARKET_STATS`.
@@ -1112,7 +1104,7 @@ it names the claimant rather than selecting over standings,
 and what it lists turns on what the banner above it said.
 Why the relations outrank eligibility,
 why disposition sorts inside alliance,
-and why an install without Nexerelin needs no branch are all `SystemClaimContestTooltip`'s to state.
+and why an install without Nexerelin needs no branch are all `SystemClaimTooltip`'s to state.
 It is also where the layer's heading is declined for both of them:
 the claim line names the decreed holder and marks the hold,
 so these are the two boxes that state the decree themselves.
@@ -1361,7 +1353,7 @@ Naming a faction over an account with nothing in it would tell the player exactl
 and `F1` is offered only where a standing survives that filter (`hasListedStanding`),
 so the key is never advertised over a box the fog has emptied.
 Both boxes ask that through one read of the contest
-(`SystemClaimContestTooltip.readListedContest`):
+(`SystemClaimTooltip.readListedContest`):
 the hint offers an account of exactly the factions the body lists,
 so answering the two apart would let a box advertise a key that does nothing.
 

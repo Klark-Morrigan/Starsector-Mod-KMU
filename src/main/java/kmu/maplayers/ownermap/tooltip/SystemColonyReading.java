@@ -177,6 +177,66 @@ public final class SystemColonyReading {
     }
 
     /**
+     * Everything a line may call out about the colony with this ID, gathered into the value its
+     * wording is chosen from - the kind and the concealment answered here, the rest handed in.
+     *
+     * <p>Assembled here rather than by each account for the reason {@link #readConcealmentOf} is: the
+     * same four facts written out per box are four chances to transpose two of them, which still
+     * compiles and simply calls out the wrong word.
+     *
+     * @param colonyId          the colony's market ID, as the account listing it carries
+     * @param isHiddenMarket    whether the colony conceals itself, which only the account's own
+     *                          breakdown carries
+     * @param isListedByEconomy whether the economy's own set holds this colony, as the walk that
+     *                          selected it decided
+     * @param leadingFinding    a finding the painting layer states ahead of every other, already
+     *                          worded; null states none
+     * @return the facts the colony's line is qualified from
+     */
+    public ColonyQualifierFacts readQualifierFacts(
+            String colonyId,
+            boolean isHiddenMarket,
+            boolean isListedByEconomy,
+            String leadingFinding) {
+
+        return readQualifierFacts(
+            colonyId,
+            readKindOf(colonyId),
+            isHiddenMarket,
+            isListedByEconomy,
+            leadingFinding);
+    }
+
+    /**
+     * The same facts for an account that already holds the colony's kind off the selection that met
+     * the colony, so the kind stated can only be about the colony the line names.
+     *
+     * @param colonyId          the colony's market ID, as the account listing it carries
+     * @param kind              what sort of place the colony is, as the account's own selection read
+     *                          it
+     * @param isHiddenMarket    whether the colony conceals itself, which only the account's own
+     *                          breakdown carries
+     * @param isListedByEconomy whether the economy's own set holds this colony, as the walk that
+     *                          selected it decided
+     * @param leadingFinding    a finding the painting layer states ahead of every other, already
+     *                          worded; null states none
+     * @return the facts the colony's line is qualified from
+     */
+    public ColonyQualifierFacts readQualifierFacts(
+            String colonyId,
+            ColonyKind kind,
+            boolean isHiddenMarket,
+            boolean isListedByEconomy,
+            String leadingFinding) {
+
+        return new ColonyQualifierFacts(
+            kind,
+            leadingFinding,
+            readConcealmentOf(colonyId, isHiddenMarket),
+            isListedByEconomy);
+    }
+
+    /**
      * Runs a colony's line on into everything a box has to say about the place beside its own
      * number: what it has found out about it, and how current that account is.
      *

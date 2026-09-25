@@ -8,6 +8,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.owners.SpotlitBlocs;
+import kmu.maplayers.ownermap.owners.holders.HolderResolution;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 
@@ -205,7 +206,7 @@ class FilteredPoliticsIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             var holder = FilteredPolitics.resolveFilteredHolder(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping),
+                    DominancePass.createOver(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping),
                     "alliance-1")
                 .ownerBySystemKey()
                 .get(buildCellKey("contested-system"));
@@ -360,6 +361,26 @@ class FilteredPoliticsIntegrationTest {
             assertThat(filtered.ownerBySystemKey())
                 .isEmpty();
             assertThat(filtered.contestedSystemKeys())
+                .isEmpty();
+        }
+
+        @Test
+        void resolveFilteredHolderLeavesNoSystemUnfilledEvenWhereTheSpotlitBlocIsContested() {
+            // The filter hatches a contested cell rather than blanking it, so the one resolution the
+            // render pass reads carries no unfilled system even beside a hatched one.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sector = buildSectorWith(
+                "owned-system",
+                List.of(hegemony, tritachyon),
+                buildVisibleMarket(hegemony, 5),
+                buildVisibleMarket(tritachyon, 3));
+
+            var filtered = resolveFor(sector, "tritachyon");
+
+            assertThat(filtered.contestedSystemKeys())
+                .containsExactly(buildCellKey("owned-system"));
+            assertThat(filtered.unfilledSystemKeys())
                 .isEmpty();
         }
     }
@@ -520,7 +541,7 @@ class FilteredPoliticsIntegrationTest {
 
     // Resolves the presence-aware holding for a selected faction under the identity grouping and
     // the shared stability rule, the shape every faction-view filter test reads.
-    private static FilteredPolitics.FilteredHolder resolveFor(
+    private static HolderResolution resolveFor(
             SectorAPI sector,
             String selectedBlocId) {
 
@@ -532,12 +553,12 @@ class FilteredPoliticsIntegrationTest {
     // The same resolve with the dev reveal lifting the fog, for the one case that poses a colony
     // the player has not found: the reveal is a knob on the reading of the sector rather than on
     // the weighting rule, so it cannot be reached through the shared pass builder.
-    private static FilteredPolitics.FilteredHolder resolveRevealedFor(
+    private static HolderResolution resolveRevealedFor(
             SectorAPI sector,
             String selectedBlocId) {
 
         return FilteredPolitics.resolveFilteredHolder(
-            DominancePass.over(
+            DominancePass.createOver(
                 sector,
                 STABILITY_WEIGHTED,
                 UNDER_THE_DEV_REVEAL,

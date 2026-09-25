@@ -169,9 +169,7 @@ public final class ClusterGroupBuilder {
                 bloc.getKey(),
                 bloc.getValue());
 
-            if (clusterGroup != null) {
-                clusters.getStyledClusterGroupByOwnerId().put(bloc.getKey(), clusterGroup);
-            }
+            clusters.putStyledClusterGroup(bloc.getKey(), clusterGroup);
         }
     }
 

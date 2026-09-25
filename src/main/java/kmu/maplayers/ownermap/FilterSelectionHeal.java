@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap;
 
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.KmuMod;
 import kmu.maplayers.base.layer.MapLayerScreens;
@@ -25,6 +26,10 @@ import kmu.settings.KmuLunaSettings;
  * registry it reads, since resolving "the active view and its selectable blocs" is a view concern the
  * framework's {@link FilterSelection} deliberately does not carry - and it is handed the registry of
  * the layer it heals, so one layer's heal judges only that layer's spotlights.
+ *
+ * <p>The sector is taken from the caller wherever one holds it. The entries driven by a settings
+ * change or a sidebar click are handed none, so those resolve the running game's sector once, at the
+ * entry, and pass it down like any other caller's.
  */
 public final class FilterSelectionHeal {
 
@@ -36,9 +41,9 @@ public final class FilterSelectionHeal {
      * longer offers it, a no-op for a screen with no view selected or whose stored bloc is still
      * selectable. Runs on game load, on a view switch, and on a settings change, before the overlay
      * repaints, so it clears without requesting a refresh - each of those already repaints, so there is
-     * nothing extra to invalidate. Reads the live sector and the player's current holding and
-     * visibility settings, the same gate the picker lists blocs under, so a bloc is healed away exactly
-     * when it would no longer appear in the picker.
+     * nothing extra to invalidate. Reads the player's current holding and visibility settings, the same
+     * gate the picker lists blocs under, so a bloc is healed away exactly when it would no longer appear
+     * in the picker.
      *
      * <p>Every screen rather than the one being looked at, because what lapsed is a fact about the
      * sector: a faction removed or a group dissolved is gone from both panels' pickers, and a
@@ -57,9 +62,17 @@ public final class FilterSelectionHeal {
      * is the minority of the calls, since every settings change arrives here - and the second
      * screen's call asks nothing at all unless it too has a spotlight of its own.
      *
+     * @param sector       the sector whose colonies decide which blocs are still offered; null heals
+     *                     nothing, since against no sector every stored bloc would read as lapsed
      * @param viewRegistry the layer whose spotlights are healed, judged under that layer's own views
      */
-    public static void healStaleSelectionAgainstActiveView(MapLayerViewRegistry viewRegistry) {
+    public static void healStaleSelectionAgainstActiveView(
+            SectorAPI sector,
+            MapLayerViewRegistry viewRegistry) {
+
+        if (sector == null) {
+            return;
+        }
         for (var screenPicks : MapLayerScreens.getAllScreenPicks()) {
 
             var view = viewRegistry.getSelectedView(screenPicks.memoryScope());
@@ -74,15 +87,26 @@ public final class FilterSelectionHeal {
                 new SelectionSlot(
                     new ScreenSelectionSlot(KmuMod.MAP_STORE_NAMESPACE, screenPicks.memoryScope()),
                     view.getId()),
-                spotlitBlocId -> isBlocOfferedBy(view, spotlitBlocId));
+                spotlitBlocId -> isBlocOfferedBy(view, sector, spotlitBlocId));
         }
+    }
+
+    /**
+     * {@link #healStaleSelectionAgainstActiveView} for a caller the game hands no sector - a settings
+     * change, a sidebar click - judged against the sector running at the moment of the call.
+     *
+     * @param viewRegistry the layer whose spotlights are healed, judged under that layer's own views
+     */
+    public static void healStaleSelectionAgainstLiveSector(MapLayerViewRegistry viewRegistry) {
+        healStaleSelectionAgainstActiveView(Global.getSector(), viewRegistry);
     }
 
     /**
      * Registers the heal against this mod's settings, so a knob that takes a bloc off the picker takes
      * its spotlight with it - a visibility override switched off can leave a faction with no visible
      * inhabited market, and the stored spotlight would otherwise go on receding the sector behind a
-     * bloc the player can no longer unpick.
+     * bloc the player can no longer unpick. Each change is judged against the sector running when it
+     * fires.
      *
      * <p>Call once per layer at application load: every call adds another listener.
      *
@@ -90,16 +114,16 @@ public final class FilterSelectionHeal {
      */
     public static void installHealOnSettingsChange(MapLayerViewRegistry viewRegistry) {
         KmuLunaSettings.runOnSettingsChange(
-            () -> healStaleSelectionAgainstActiveView(viewRegistry));
+            () -> healStaleSelectionAgainstLiveSector(viewRegistry));
     }
 
     // Whether the view still lists one bloc. Asked through the picker seam rather than the bloc
     // identity: the match is on the ID alone, so it needs nothing a view's own metrics carry and
     // stays valid for any of them. That is also why the view's sort vocabulary is passed over, and
     // the presence beside the rows with it - a heal ranks nothing and lights nothing.
-    private static boolean isBlocOfferedBy(OwnerPaintedView view, String blocId) {
+    private static boolean isBlocOfferedBy(OwnerPaintedView view, SectorAPI sector, String blocId) {
 
-        for (var bloc : view.resolveBlocPickerRead(Global.getSector()).picker().items()) {
+        for (var bloc : view.resolveBlocPickerRead(sector).picker().items()) {
             if (bloc.itemId().equals(blocId)) {
                 return true;
             }

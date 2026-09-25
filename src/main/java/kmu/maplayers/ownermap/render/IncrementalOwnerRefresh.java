@@ -359,10 +359,6 @@ public final class IncrementalOwnerRefresh {
                 factionId,
                 memberCellKeys);
 
-        if (clusterGroup == null) {
-            clusters.getStyledClusterGroupByOwnerId().remove(factionId);
-        } else {
-            clusters.getStyledClusterGroupByOwnerId().put(factionId, clusterGroup);
-        }
+        clusters.putStyledClusterGroup(factionId, clusterGroup);
     }
 }

@@ -30,6 +30,7 @@ import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsRead;
 import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner;
+import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
@@ -42,6 +43,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
@@ -62,6 +64,10 @@ import static org.mockito.Mockito.when;
  * in the muted style, and a bloc is labelled by its own faction's display name in the
  * player's chosen form. Reproducing these here is what lets the shared pipeline read the
  * faction view through {@link OwnerPaintedView} rather than the inlined tests it used to.
+ *
+ * <p>Beside them, what the view offers the player around the fills: every bloc as a spotlight
+ * target, since no faction here is folded into another, and the domination box on hover, since
+ * domination is what painted the cells.
  */
 final class FactionsViewTest {
 
@@ -310,6 +316,38 @@ final class FactionsViewTest {
                     sectorMock,
                     FactionNameFormatChoice.FULL))
                 .isNull();
+        }
+    }
+
+    @Nested
+    class ResolveHoverTooltip {
+
+        @Test
+        void resolveHoverTooltipOffersTheDominationBox() {
+            // The box explaining the fills this view paints, which are painted by domination.
+            assertThat(FactionsView.INSTANCE.resolveHoverTooltip())
+                .containsInstanceOf(SystemDominationTooltip.class);
+        }
+
+        @Test
+        void resolveHoverTooltipOffersTheSameBoxOnEveryAsk() {
+            // Held once by the view rather than built per hover, so every ask reads one box.
+            assertThat(FactionsView.INSTANCE.resolveHoverTooltip().orElseThrow())
+                .isSameAs(FactionsView.INSTANCE.resolveHoverTooltip().orElseThrow());
+        }
+    }
+
+    @Nested
+    class ResolveSelectableBlocGate {
+
+        @Test
+        void resolveSelectableBlocGateAdmitsEveryBloc() {
+            // Under identity every faction is its own bloc, so a core faction, independent space and
+            // a pirate bloc alike are spotlight targets; presence is the shared stats read's gate.
+            var gate = FactionsView.INSTANCE.resolveSelectableBlocGate(ANY_GROUPING);
+
+            assertThat(List.of("hegemony", Factions.INDEPENDENT, "pirates"))
+                .allMatch(gate);
         }
     }
 

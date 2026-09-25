@@ -15,7 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins how a faction appears wherever a hovered system's breakdown lists one: its long title beside its
- * crest, its bare ID when the sector does not know it, and whatever the block counts it in.
+ * crest, its bare ID when the sector does not know it, and whatever the block counts it in - quiet
+ * where the mechanic behind the block never weighed it, since every block listing both kinds has to
+ * quieten the same one.
  */
 final class FactionTooltipLineTest {
 
@@ -23,6 +25,11 @@ final class FactionTooltipLineTest {
     private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
     private static final CellTooltipMark HEGEMONY_MARK =
         CellTooltipMark.resolveMarkAsAuthored(HEGEMONY_CREST);
+
+    // Whether the mechanic behind the block weighed the faction at all, named so the case reads as
+    // the kind of standing it poses rather than as a bare flag.
+    private static final boolean IS_WEIGHED = true;
+    private static final boolean IS_NEVER_WEIGHED = false;
 
     @Nested
     class BuildFactionLine {
@@ -55,6 +62,50 @@ final class FactionTooltipLineTest {
                 .isEqualTo("ghost_faction");
             assertThat(line.mark())
                 .isNull();
+        }
+    }
+
+    @Nested
+    class BuildCountedFactionLine {
+
+        @Test
+        void buildCountedFactionLineStatesAWeighedFactionsCountInTheListsOwnShade() {
+            // A faction the mechanic weighed competed on its number, so the number reads as loudly as
+            // every other score in the block.
+            var line = FactionTooltipLine.buildCountedFactionLine(
+                buildSectorKnowingHegemony(),
+                HEGEMONY,
+                1200,
+                IS_WEIGHED);
+
+            assertThat(line.labelText())
+                .isEqualTo("The Hegemony");
+            assertThat(line.mark())
+                .isEqualTo(HEGEMONY_MARK);
+            assertThat(line.valueText())
+                .isEqualTo("1,200");
+            assertThat(line.countedValue())
+                .isEqualTo(1200);
+            assertThat(line.isValueUncounted())
+                .isFalse();
+        }
+
+        @Test
+        void buildCountedFactionLineQuietensTheNoughtOfAFactionNeverWeighed() {
+            // The nought is the mechanic's statement about a faction it never reached. Drawn as loudly
+            // as the scores around it, it would read as one competed for and lost.
+            var line = FactionTooltipLine.buildCountedFactionLine(
+                buildSectorKnowingHegemony(),
+                HEGEMONY,
+                0,
+                IS_NEVER_WEIGHED);
+
+            assertThat(line.labelText())
+                .isEqualTo("The Hegemony");
+            assertThat(line.valueText())
+                .isEqualTo("0");
+            assertThat(line.isValueUncounted())
+                .isTrue();
         }
     }
 

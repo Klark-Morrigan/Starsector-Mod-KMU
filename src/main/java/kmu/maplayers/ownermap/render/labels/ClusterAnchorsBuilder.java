@@ -11,6 +11,7 @@ import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement;
+import kmu.maplayers.base.labels.anchor.ClusterAnchorPlacement.ClusterAnchorFit;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 import kmu.maplayers.base.labels.anchor.ClusterLabelResolvers;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
@@ -88,34 +89,33 @@ public final class ClusterAnchorsBuilder {
     private ClusterAnchorsBuilder() {
     }
 
-    // Rebuilds the cluster-label placements in place: replaces the standing pair with this
-    // pass's, having - only when the placements are needed - split the owned systems into
-    // contiguous clusters and fitted one anchor to each. The placements feed two consumers: the
-    // faction-name labels and the debug anchor overlay. Building whenever either is on
-    // keeps them a single computation (an SSOT the labels and the overlay share), so the
-    // search never runs twice; each consumer then draws only under its own toggle. Shared
-    // by the full rebuild and the incremental refresh so an holder change keeps the
-    // placements in step with the fills and borders. Reads the toggles here (not at the
-    // call sites) so all paths gate identically; the search's tuning is read here too, so
-    // a settings change re-fits on the rebuild it triggers. The snapshot's view supplies each
-    // bloc's label (which the fit sizes the boxes for) and the style classifier the label
-    // colour follows, over the grouping snapshot the holder map was resolved under. Under a
-    // filter the label styling follows the same shared decision the fills do - receding every
-    // non-spotlit bloc, leaving the spotlit one full - and the synthetic spotlight keys resolve
-    // to the selected bloc's name, since the view cannot name a synthetic id. Leaves in the
-    // caller's pair what the placements it just fitted were made under: a placement list nothing
-    // states the rules of cannot be compared against a later rebuild's, and only this build knows
-    // the tuning it read. That same pair is what came in, so the placements already standing can
-    // be carried over for the clusters they still name rather than every one of them being
-    // searched again. The cells the fit clips and trims against are the caller's, and they arrive
-    // carrying the revision that names them, so no path can fit against one reading of the
-    // geometry and label its placements with another.
-    //
-    // What it reports back is which of the names this pass moved. The list it leaves says where
-    // every name ended up and nothing about which of them are new, so anything laid around the
-    // previous list has no choice but to be redone whole; the comparison is made here because
-    // this is where both lists exist at once - after that, the standing one is gone. Reported
-    // even by the gated-off path, where every standing name vanishing is the disturbance.
+    /**
+     * Rebuilds the cluster-label placements in place, replacing the standing pair with this pass's.
+     *
+     * <p>The placements feed the faction-name labels and the debug anchor overlay, so they are
+     * fitted whenever either is on - one search both share - and each consumer draws under its own
+     * toggle. Shared by the full rebuild and the incremental refresh, and the toggles and the
+     * search's tuning are read here rather than at the call sites, so every path gates identically
+     * and a settings change re-fits on the rebuild it triggers.
+     *
+     * <p>The snapshot's view supplies each bloc's label and the style its colour follows; under a
+     * filter the names recede exactly as the fills do, and the synthetic spotlight keys resolve to
+     * the selected bloc's name, since the view cannot name a synthetic id. The standing pair that
+     * came in lets placements whose clusters still stand carry over rather than be searched again,
+     * and the pair left behind states the rules this fit ran under, which only this build knows.
+     *
+     * @param standingAnchors the caller's placements and what they were fitted under, replaced
+     *                        here with this pass's
+     * @param cellGeometry    the cells the fit clips and trims against, carrying the revision that
+     *                        names them, so no path can fit against one reading of the geometry
+     *                        and label its placements with another
+     * @param sector          the sector the names are read from
+     * @param styling         everything the pass was baked under that styles a label
+     * @return which names this pass moved: the list left behind says where every name ended up
+     *         and nothing about which are new, and this is the only point where both lists exist
+     *         at once. Reported by the gated-off path too, where every standing name vanishing is
+     *         the disturbance
+     */
     public static ClusterNameDisturbance rebuildClusterAnchors(
             StandingClusterAnchors standingAnchors,
             RevisedCellGeometry cellGeometry,
@@ -298,24 +298,7 @@ public final class ClusterAnchorsBuilder {
                     contentInputs)),
             reusableAnchors);
 
-        // The placements are what the sweep is paid per, so they are the count. Its cost is the
-        // product of its inputs, so the sweep knobs and the keep-out count ride on the call - a
-        // slow fit is read off which multiplicand grew, not off the total alone. Three levels are
-        // named because each understates the next: the direction count reads as swept but is a
-        // tuning knob the fan adds fixed extras to, so it prints as swept-over-configured; the
-        // candidates are that fan crossed with the offsets over every cluster; and the band fits
-        // are what those candidates actually spent, many apiece, which is the level the duration
-        // tracks. Measured rather than recomputed from the knobs here, so a sweep that bailed out
-        // early reads as cheap.
-        fitScope.addCount(MapBuildCounters.LABELS, fit.anchors().size());
-        fitScope.tagCall("clusters=" + partition.clusterMemberSystemKeys().size()
-            + " directions="
-            + ClusterAnchorPlacement.countCandidateDirections(spec.search().directionCount())
-            + "/" + spec.search().directionCount()
-            + " offsets=" + spec.search().offsetCount()
-            + " candidates=" + fit.candidateCount()
-            + " bandFits=" + fit.bandFitCount()
-            + " keepOuts=" + partition.siteBySystemKey().size());
+        reportFitCosts(fitScope, spec, partition, fit);
 
         return fit.anchors();
     }
@@ -344,5 +327,31 @@ public final class ClusterAnchorsBuilder {
         return new AnchorFitFingerprint(
             LabelAnchorSpecification.readFromLunaSettings(),
             geometryRevision);
+    }
+
+    // Writes what a fit ran onto its scope, apart from the sweep so the sweep reads as the fit
+    // alone. The placements are what the sweep is paid per, so they are the count. Its cost is the
+    // product of its inputs, so the sweep knobs and the keep-out count ride on the call - a slow
+    // fit is read off which multiplicand grew, not off the total alone. Three levels are named
+    // because each understates the next: the direction count reads as swept but is a tuning knob
+    // the fan adds fixed extras to, so it prints as swept-over-configured; the candidates are that
+    // fan crossed with the offsets over every cluster; and the band fits are what those candidates
+    // actually spent, many apiece, which is the level the duration tracks. Measured rather than
+    // recomputed from the knobs here, so a sweep that bailed out early reads as cheap.
+    private static void reportFitCosts(
+            ProfileScope fitScope,
+            LabelAnchorSpecification spec,
+            ClusterPartition partition,
+            ClusterAnchorFit fit) {
+
+        fitScope.addCount(MapBuildCounters.LABELS, fit.anchors().size());
+        fitScope.tagCall("clusters=" + partition.clusterMemberSystemKeys().size()
+            + " directions="
+            + ClusterAnchorPlacement.countCandidateDirections(spec.search().directionCount())
+            + "/" + spec.search().directionCount()
+            + " offsets=" + spec.search().offsetCount()
+            + " candidates=" + fit.candidateCount()
+            + " bandFits=" + fit.bandFitCount()
+            + " keepOuts=" + partition.siteBySystemKey().size());
     }
 }

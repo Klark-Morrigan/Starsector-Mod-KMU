@@ -100,7 +100,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>How much of that account a given detail level admits is not this box's decision at all - the
  * account is composed whole and cut where the listing is laid out, which is pinned once over the
- * shared shape ({@link SystemStandingsTooltipTest}). So is the ranking, the status line, the headings
+ * shape ({@link SystemDominationTooltipShapeTest}). So is the ranking, the status line, the headings
  * and which of them a group falls under; the decree heading the box belongs to every one of the
  * layer's boxes and is pinned with the heading itself ({@link PoliticalMapCellTooltipTest}). Where a
  * colony then hangs is the shared resolution's ({@link StandingRowResolverTest}).
@@ -172,12 +172,12 @@ final class SystemDominationTooltipTest {
     // Opened over no sector, so every pass here answers the empty colony set: what these cases are
     // about is which set the box hands on and under which knobs, not what a walk would have found.
     private static final DominancePass ANY_PASS =
-        DominancePass.over(null, ANY_RULES, UNDER_THE_FOG, VIEW_GROUPING);
+        DominancePass.createOver(null, ANY_RULES, UNDER_THE_FOG, VIEW_GROUPING);
 
     // The same pass with the dev reveal on, so a case can tell a read that carries the pass's own
     // reveal from one that hardcodes the ordinary answer - which every other case would agree with.
     private static final DominancePass REVEALED_PASS =
-        DominancePass.over(null, ANY_RULES, UNDER_THE_DEV_REVEAL, VIEW_GROUPING);
+        DominancePass.createOver(null, ANY_RULES, UNDER_THE_DEV_REVEAL, VIEW_GROUPING);
 
     // A pass over a sector that has actually observed something, so its register is a real read of
     // that sector's memory rather than the empty one. The distinction is the whole of what the case
@@ -501,7 +501,7 @@ final class SystemDominationTooltipTest {
                 "tritachyon", List.of(buildBreakdown("Eventide", 5.0))));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
+                SystemDominationTooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             assertThat(readLabelTexts(accountResolver.resolveAccountEntries(LEAD_MEMBER)))
                 .containsExactly("Culann");
@@ -515,7 +515,7 @@ final class SystemDominationTooltipTest {
             // moved its weight hang beneath it rather than the number being left to be taken on trust.
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
 
-            var colonyEntries = tooltip
+            var colonyEntries = SystemDominationTooltip
                 .createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS)
                 .resolveAccountEntries(LEAD_MEMBER);
 
@@ -531,7 +531,7 @@ final class SystemDominationTooltipTest {
             // then dropped the lot.
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
 
-            var colonyEntries = tooltip
+            var colonyEntries = SystemDominationTooltip
                 .createFactionAccountResolver(systemMock, ANY_PASS, SYSTEM_COMPOSITION)
                 .resolveAccountEntries(LEAD_MEMBER);
 
@@ -547,7 +547,7 @@ final class SystemDominationTooltipTest {
             // what an empty answer means to the shape above - not a heading over an empty account.
             stubBreakdowns(Map.of("tritachyon", List.of(buildBreakdown("Eventide", 5.0))));
 
-            assertThat(tooltip
+            assertThat(SystemDominationTooltip
                     .createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS)
                     .resolveAccountEntries(LEAD_MEMBER))
                 .isEmpty();
@@ -564,7 +564,7 @@ final class SystemDominationTooltipTest {
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
+                SystemDominationTooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             assertThat(readLabelTexts(accountResolver.resolveAccountEntries(LEAD_MEMBER)))
                 .containsExactly("Culann", "Galatia Academy");
@@ -580,7 +580,7 @@ final class SystemDominationTooltipTest {
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
+                SystemDominationTooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             assertThat(accountResolver.resolveAccountEntries(LEAD_MEMBER))
                 .isEmpty();
@@ -599,7 +599,7 @@ final class SystemDominationTooltipTest {
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
+                SystemDominationTooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             assertThat(readLabelTexts(accountResolver.resolveAccountEntries(
                     new PresenceOnlyFactionStanding("tritachyon"))))
@@ -612,7 +612,7 @@ final class SystemDominationTooltipTest {
             // through, or the box would explain a number with arithmetic that did not produce it.
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
 
-            tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
+            SystemDominationTooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readBreakdownByFaction(
@@ -629,7 +629,7 @@ final class SystemDominationTooltipTest {
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
+                SystemDominationTooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             accountResolver.resolveAccountEntries(LEAD_MEMBER);
             accountResolver.resolveAccountEntries(OTHER_MEMBER);
@@ -652,7 +652,7 @@ final class SystemDominationTooltipTest {
             stubBreakdowns(Map.of());
             stubUnweighedColonies(Map.of());
 
-            tooltip.createFactionAccountResolver(systemMock, REVEALED_PASS, PATROL_DETAILS);
+            SystemDominationTooltip.createFactionAccountResolver(systemMock, REVEALED_PASS, PATROL_DETAILS);
 
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
@@ -671,7 +671,7 @@ final class SystemDominationTooltipTest {
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
+                SystemDominationTooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             accountResolver.resolveAccountEntries(LEAD_MEMBER);
             accountResolver.resolveAccountEntries(OTHER_MEMBER);
@@ -704,7 +704,7 @@ final class SystemDominationTooltipTest {
 
             try (var notesMock = Mockito.mockStatic(ColonyObservationNotes.class)) {
 
-                tooltip.createFactionAccountResolver(systemMock, OBSERVED_PASS, PATROL_DETAILS);
+                SystemDominationTooltip.createFactionAccountResolver(systemMock, OBSERVED_PASS, PATROL_DETAILS);
 
                 notesMock.verify(() -> ColonyObservationNotes.readNotesFor(
                     any(),
@@ -803,7 +803,7 @@ final class SystemDominationTooltipTest {
             sector,
             SectorOwnershipFixtures.buildOnlySystem(sector));
 
-        return DominancePass.over(sector, ANY_RULES, UNDER_THE_FOG, VIEW_GROUPING);
+        return DominancePass.createOver(sector, ANY_RULES, UNDER_THE_FOG, VIEW_GROUPING);
     }
 
     // One colony worth the given size points on its base size alone, so a case states a colony by the
