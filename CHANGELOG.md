@@ -68,6 +68,7 @@ None of these reach a player: every LunaLib field ID and every value saved in se
     - Their static members are gone, and so are the `RecedePreferences.FILTER` and `ALLIANCE_NON_ALLIED` sets.
     - `OwnerMapLayerRenderer.createForLiveScreen`, `OwnerMapCache`, `OwnerMapRebuildDecider` and `ContentInputs.sampleForView` take them.
   - `ContentInputs.allianceRecedeAdjustment` is `viewRecedeAdjustment`.
+  - `FactionNameFormatChoice.fromKeyOrDefault` is gone: the choice is a KMLib `PersistedChoice`, read back through `PersistedChoices.fromKey`.
 - **Groups and mechanics in the tier's own words:**
   - `HolderGrouping`:
     - `allianceNameByBlocId` is `groupNameByBlocId`, and `resolveAllianceName` is `resolveGroupName`.

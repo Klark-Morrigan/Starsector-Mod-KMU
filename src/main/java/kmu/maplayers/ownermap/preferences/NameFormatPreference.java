@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.preferences;
 
+import kmlib.persistence.PersistedChoices;
 import kmlib.starsector.memory.AddressedMemoryString;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
@@ -50,7 +51,9 @@ public final class NameFormatPreference {
      *         at all; full names before a save exists or when no choice was ever picked there
      */
     public FactionNameFormatChoice getSelectedNameFormat(ScreenMemoryScope memoryScope) {
-        return FactionNameFormatChoice.fromKeyOrDefault(
+
+        return PersistedChoices.fromKey(
+            FactionNameFormatChoice.values(),
             selectedNameFormat.get(memoryScope),
             DEFAULT_NAME_FORMAT);
     }
