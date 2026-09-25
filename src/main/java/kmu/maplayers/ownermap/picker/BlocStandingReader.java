@@ -4,14 +4,13 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.StarsectorPlayerFactionResolver;
 import kmlib.starsector.factions.relation.FactionRelation;
+import kmlib.starsector.factions.relation.RelationExtremes;
 import kmlib.starsector.factions.relation.StarsectorPlayerRelations;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -35,12 +34,6 @@ import java.util.Optional;
  * every call, so a reader outlives the reputations it is asked about.
  */
 public final class BlocStandingReader {
-
-    // The scale the two ends are picked off: the signed reputation, rather than the level the game
-    // names it, that being the finer of the two - two members a level apart in name and a point
-    // apart in fact still order, and the level rides along on whichever relation won an end.
-    private static final Comparator<FactionRelation> REPUTATION_ORDER =
-        Comparator.comparingInt(FactionRelation::reputation);
 
     private final HolderGrouping grouping;
     private final PlayerRelationSource relationSource;
@@ -114,7 +107,8 @@ public final class BlocStandingReader {
     // The bloc's members folded to the two ends of the range they hold, or unreadable where not one
     // of them answered a relation. A member the sector cannot look up is passed over rather than
     // counted at nought, which would drag an end to the scale's centre on a faction nothing is known
-    // about.
+    // about. The ends are the library's, which picks them off the signed reputation rather than the
+    // level the game names it, so two members a point apart still order.
     private BlocStanding foldMemberRelations(String blocId) {
 
         var memberRelations = new ArrayList<FactionRelation>();
@@ -122,12 +116,14 @@ public final class BlocStandingReader {
         for (var memberFactionId : grouping.resolveMemberFactionIds(blocId)) {
             relationSource.readRelationWithPlayer(memberFactionId).ifPresent(memberRelations::add);
         }
-        if (memberRelations.isEmpty()) {
+        var worstRelation = RelationExtremes.resolveWorst(memberRelations);
+        var bestRelation = RelationExtremes.resolveBest(memberRelations);
+
+        // Both ends are present together or not at all, the one set answering both.
+        if (worstRelation.isEmpty() || bestRelation.isEmpty()) {
             return BlocStanding.UNREADABLE;
         }
-        return new BlocStanding.Measured(
-            Collections.min(memberRelations, REPUTATION_ORDER),
-            Collections.max(memberRelations, REPUTATION_ORDER));
+        return new BlocStanding.Measured(worstRelation.get(), bestRelation.get());
     }
 
     /**
