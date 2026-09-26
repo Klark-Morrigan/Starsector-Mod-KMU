@@ -12,8 +12,8 @@ import java.util.function.Supplier;
  * {@link WiringSteps} logging as KMU.
  *
  * <p>What the boundary catches, why, and what a step that failed costs are stated there and held
- * there. This is the entry point KMU's installers name: statically imported by every one of them,
- * so a step reads as one call rather than as a guard fetched and then asked.
+ * there. This is the entry point every KMU installer names, static so a step reads as one call
+ * rather than as a guard fetched and then asked.
  *
  * <p>Held apart from the mod plugin so the installers it calls can guard their own steps at the same
  * granularity. A step guarded once per installer instead would put every registration in that

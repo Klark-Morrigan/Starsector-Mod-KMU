@@ -98,9 +98,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // App-scoped, once per launch: register KMU's LunaLib settings bindings before any save
         // loads. LunaLib is a hard dependency, so it has already loaded by the time this runs.
         //
-        // This and every settings listener below bind through LunaLib, so a LunaLib release that
-        // broke that binding is reported to the player under LunaLib rather than only logged. They
-        // share one description, so a break that fails them all is one report.
+        // This and every settings listener step below bind through LunaLib, so a LunaLib release
+        // that broke that binding is reported to the player under LunaLib rather than only logged.
+        // They share one description, so a break that fails them all is one report.
         KmuWiringSteps.runGuardedStep(
             KmuLunaSettings::installBindings,
             "Failed to install KMU LunaLib settings bindings",
@@ -127,6 +127,10 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // process-level and holds no sector state, so a map with nothing installed draws through
         // nothing at all - and gating it here would make the toggle need a restart rather than
         // taking effect where the player made it.
+        //
+        // Only logged, although its last act registers a settings listener: the step is mostly
+        // KMU's own layers, and a fault in one of those reported under LunaLib would name the
+        // wrong mod.
         KmuWiringSteps.runGuardedStep(
             MapLayers::registerAll,
             "Failed to register KMU map layers");
@@ -141,8 +145,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         // The same reaction to Random Assortment of Things' own saves, so the compatibility follows
         // that mod flipping its minimap switch live instead of at the next load. A second settings
-        // source rather than a second kind of step, which is why it reads like the one above - and
-        // is reported under LunaLib like it, LunaLib being what the listener binds to.
+        // source rather than a second kind of step, which is why it reads like the one above -
+        // reported under LunaLib too, since LunaLib is what it binds to.
         KmuWiringSteps.runGuardedStep(
             () -> RandomAssortmentOfThingsSettings.runOnSettingsChange(
                 KMU_ModPlugin::applySwitchedFeatures),
