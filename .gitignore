@@ -16,6 +16,10 @@ gradle.properties
 /data/config/LunaSettings.csv
 /data/strings/strings.json
 
+# Written by writeLocaleFiles too: mod_info.base.json with the built
+# locale's launcher text merged over it. The base is what is edited.
+/mod_info.json
+
 .idea/
 .vscode/
 bin/

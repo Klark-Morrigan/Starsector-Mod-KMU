@@ -200,7 +200,7 @@ In short:
 MAJOR for save-breaking changes,
 MINOR for save-safe new features,
 PATCH for fixes and tweaks.
-The same policy defines how KMU pins the KMLib dependency in both `mod_info.json` and `.github/workflows/*.yml`.
+The same policy defines how KMU pins the KMLib dependency in both `mod_info.base.json` and `.github/workflows/*.yml`.
 
 ### Build And Release
 
@@ -219,22 +219,26 @@ Pass the install root via `STARSECTOR_HOME` or `-PstarsectorRoot=<path>`.
 
 Releases are cut by KMLib's reusable pipeline,
 which [release.yml](.github/workflows/release.yml) calls on every push to `master` with no inputs -
-the pipeline reads `mod_info.json` for everything it needs.
+the pipeline reads `mod_info.base.json` and `localisation/manifest.json` for everything it needs.
 A push whose version matches the latest git tag stops after one cheap job;
 a version bump re-runs the PR gates on that commit,
-packages `KMU-<version>.zip`,
+packages one zip per locale, `KMU-<version>-<locale>.zip`,
 pushes the tag,
 and publishes a GitHub release
-whose body is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version -
+whose body is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version,
+followed by a line naming each locale's zip -
 so a release with no changelog section fails rather than shipping empty notes.
 
 Two committed files feed the update-check side of that release.
 [kmu.version.template](kmu.version.template) is the VersionChecker template:
 a complete `.version` file stating the shape KMU publishes,
-whose release-varying values are written as tokens for KMLib's `fill-version-file-template` action to substitute from `mod_info.json` -
+whose release-varying values are written as tokens for KMLib's `fill-version-file-template` action to substitute from `mod_info.base.json` -
 so no version number is restated by hand outside that file.
-The filled result rides inside the zip and is attached to the release in its own right,
+The filled result rides inside each zip as `kmu.version`,
+and each locale's copy is attached to the release in its own right as `kmu-<locale>.version`,
 that copy being the only form an update checker can poll.
+The default locale's is attached a second time as `kmu.version`,
+which is what an install from before per-locale releases polls.
 [data/config/version/version_files.csv](data/config/version/version_files.csv)
 is what points VersionChecker at the filled `kmu.version` in an install.
 
@@ -254,6 +258,10 @@ and where each bundle file lands.
 Edit the bundle, never the copy:
 `data/strings/strings.json` and `data/config/LunaSettings.csv` are written from one bundle
 by `gradlew jar` and are not committed.
+The launcher's `mod_info.json` is written the same way,
+from the committed [mod_info.base.json](mod_info.base.json)
+with the locale's own `mod_info.json`, where it has one, merged over it -
+so the version, the jar list and the dependencies are edited in the base.
 `-Plocale=<tag>` builds another declared locale.
 How the copy is made, and why a locale is chosen at build time rather than in play,
 is KMLib's `writeLocaleFiles`, described in

@@ -2,14 +2,16 @@
 # whole pipeline to KMLib's reusable mod-release workflow, which derives every
 # mod-specific value (mod id, version, runner label, zip name, jar path, and
 # the repos its Gradle build needs beside the checkout) from this repo's
-# mod_info.json - so this caller passes no inputs.
+# mod_info.base.json, and the locales it releases in from
+# localisation/manifest.json - so this caller passes no inputs.
 #
-# The pipeline only does real work when mod_info.json's version differs from
-# the latest git tag, so an ordinary push (no version bump) costs one cheap
-# config job and stops. On a bump it re-runs the PR gates against the exact
-# commit being released, packages the mod zip, tags, and publishes a GitHub
-# release whose body is this repo's CHANGELOG.md section for that version,
-# followed by a line naming the KMLib release it requires.
+# The pipeline only does real work when mod_info.base.json's version differs
+# from the latest git tag, so an ordinary push (no version bump) costs one
+# cheap config job and stops. On a bump it re-runs the PR gates against the
+# exact commit being released, packages one zip per locale, tags, and
+# publishes a GitHub release whose body is this repo's CHANGELOG.md section
+# for that version, followed by lines naming each locale's zip and the KMLib
+# release it requires.
 #
 # Pinned to a KMLib tag rather than a branch so an unrelated KMLib commit
 # cannot change how KMU releases after the fact. This pin and the kmlib
