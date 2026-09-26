@@ -18,9 +18,8 @@ import kmlib.settings.LabeledChoice;
  * only reorders the overlay against itself.
  *
  * <p>This names the two options, and the settings reader maps LunaLib's stored Radio label back
- * to one, so the render layer resolves a side without matching raw strings. The labels here must
- * match the {@code secondaryValue} options in data/config/LunaSettings.csv exactly, and both are
- * frozen once shipped - see {@link LabeledChoice} for what a reworded label costs.
+ * to one, so the render layer resolves a side without matching raw strings. Its labels are the
+ * Radio row's options, spelt identically - see {@link LabeledChoice} for why they never change.
  */
 public enum NebulaDrawOrderChoice implements LabeledChoice {
 

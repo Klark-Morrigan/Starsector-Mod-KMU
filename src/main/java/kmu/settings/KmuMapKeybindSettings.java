@@ -19,7 +19,7 @@ package kmu.settings;
  * row's box is KMU's own chrome with no such caller, so its ID is stated here like any other knob's.
  *
  * <p><b>No key is defaulted here</b>, unlike every other settings section: what a row is worth on a
- * fresh install is declared once, in the default column of data/config/LunaSettings.csv. A second
+ * fresh install is declared once, in the default column of the settings table. A second
  * number in Java would be a second answer to a question the table already settles, and the two would
  * part the day one of them moved, silently. So a read that cannot reach a row answers unbound, which
  * every path taking a keycode already treats as no key at all.

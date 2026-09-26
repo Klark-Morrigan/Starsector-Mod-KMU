@@ -14,11 +14,6 @@ import kmlib.math.ranges.Ranges;
  * far end would be a number with no reading of its own - it is only ever "a little past the first".
  * What that spread is derived as belongs to the loop that jitters rather than here, this class
  * holding the field ID, the fallback and the accessor and nothing else.
- *
- * <p>What each knob does for the player is stated once, in the description column of
- * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
- * here answers only what that column cannot: why a default is the number it is, and what a caller
- * has to know to use the value.
  */
 public final class KmuMapRefreshSettings {
 

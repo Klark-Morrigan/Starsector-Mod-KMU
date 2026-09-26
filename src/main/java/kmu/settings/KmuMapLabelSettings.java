@@ -8,11 +8,7 @@ package kmu.settings;
  * <p>One home because they are one pipeline read in one pass - a border is traced, an anchor is
  * scored inside it, a name is fitted to the anchor - and a caller drawing any part of it reads
  * across the whole set. The diagnostics sit here for the same reason: what they draw is the
- * search's own rejected and unbiased candidates, which nothing else can describe. *
- * <p>What each knob does for the player is stated once, in the description column of
- * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
- * here answers only what that column cannot: why a default is the number it is, and what a caller
- * has to know to use the value.
+ * search's own rejected and unbiased candidates, which nothing else can describe.
  */
 public final class KmuMapLabelSettings {
 

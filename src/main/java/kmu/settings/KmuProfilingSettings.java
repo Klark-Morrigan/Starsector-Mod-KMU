@@ -15,11 +15,6 @@ import kmlib.profiling.ProfileLevel;
  * though the measured code is what reads it back. It reaches that code as a bound value the
  * composition root binds rather than as a read of its own, so the framework names nothing here -
  * which is what lets the two rows share the one class the section has.
- *
- * <p>What each knob does for the player is stated once, in the description column of
- * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
- * here answers only what that column cannot: why a default is what it is, and what a caller has
- * to know to use the value.
  */
 public final class KmuProfilingSettings {
 

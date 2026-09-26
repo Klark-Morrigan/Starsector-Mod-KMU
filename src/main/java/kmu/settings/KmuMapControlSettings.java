@@ -9,13 +9,7 @@ package kmu.settings;
  * <p>Apart from {@link KmuMapSidebarSettings} because neither of these is a look. That class answers
  * where the sidebar sits and how it is drawn, every knob of it something a player sets to taste; a
  * hatch is what somebody opens to reach a control that is otherwise correctly out of the way, or to
- * stop the mod reaching for one at all. Two classes rather than one is also what keeps a suite that
- * stands in for the sidebar's look from silently answering for these.
- *
- * <p>What each knob does for the player is stated once, in the description column of
- * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
- * here answers only what that column cannot: why a default is what it is, and what a caller has to
- * know to use the value.
+ * stop the mod reaching for one at all.
  */
 public final class KmuMapControlSettings {
 

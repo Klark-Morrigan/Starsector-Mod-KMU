@@ -14,9 +14,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * moved, and the typed reads every settings accessor goes through.
  *
  * <p>Called once from {@code KMU_ModPlugin.onApplicationLoad}. The fields themselves are
- * declared in data/config/LunaSettings.csv rather than in Java, so binding is the logger
- * hookup and the settings-change listener and nothing more; what this class really owns is
- * the mod ID every read is scoped by.
+ * declared in the settings table, one per locale at localisation/&lt;locale&gt;/LunaSettings.csv
+ * and written to the data/config/LunaSettings.csv LunaLib reads, rather than in Java - so binding
+ * is the logger hookup and the settings-change listener and nothing more; what this class really
+ * owns is the mod ID every read is scoped by.
  *
  * <p>The knobs sit in classes beside this one, split first by which package reads them:
  * the {@code KmuMap*Settings} readers and {@link KmuMapKeybindSettings} for what the map-layer
@@ -56,10 +57,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * beside the accessor that answers with it, not beside the reader that fetches it. The keybind
  * section is the one that mirrors no default at all, and says there why.
  *
- * <p>What each knob does for the player is stated once, in the description column of
- * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
- * in those classes answers only what that column cannot: why a default is the number it is, and
- * what a caller has to know to use the value.
+ * <p>What each knob does for the player is stated once, in the settings table's description
+ * column, which is the text the settings screen actually shows. The prose in those classes
+ * answers only what that column cannot: why a default is the number it is, and what a caller
+ * has to know to use the value.
  *
  * <p>Every field ID spells the tab path a player finds the row under, segment by segment -
  * {@code kmu_<tab>_<section>_<group>_<knob>} - so a knob's stored key says where it is set
