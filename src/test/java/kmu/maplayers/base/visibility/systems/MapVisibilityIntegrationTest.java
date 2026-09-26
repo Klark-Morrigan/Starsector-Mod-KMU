@@ -16,6 +16,7 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.ModdedSystemAccessRoutes;
 import kmlib.starsector.systems.StarSystems;
+import kmlib.testfixtures.starsector.compatibility.CompatibilityFailureFixture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
@@ -195,7 +196,10 @@ class MapVisibilityIntegrationTest {
             // only thing that can admit it, and it has to admit it without a drawn star.
             var system = buildUnreachableSystem("a");
 
-            ModdedSystemAccessRoutes.registerRoute("a mod", askedSystem -> askedSystem == system);
+            ModdedSystemAccessRoutes.registerRoute(
+                "a mod",
+                askedSystem -> askedSystem == system,
+                () -> CompatibilityFailureFixture.MOD_INTEGRATION);
 
             assertThat(isDrawnUnderNoReveal(buildSectorWithoutStarAnchors(system), system))
                 .isTrue();
@@ -208,7 +212,10 @@ class MapVisibilityIntegrationTest {
             // not a standing yes for every place on an install carrying the mod.
             var system = buildUnreachableSystem("a");
 
-            ModdedSystemAccessRoutes.registerRoute("a mod", askedSystem -> false);
+            ModdedSystemAccessRoutes.registerRoute(
+                "a mod",
+                askedSystem -> false,
+                () -> CompatibilityFailureFixture.MOD_INTEGRATION);
 
             assertThat(isDrawnUnderNoReveal(buildSectorWithoutStarAnchors(system), system))
                 .isFalse();
