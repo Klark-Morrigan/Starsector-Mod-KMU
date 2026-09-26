@@ -59,12 +59,12 @@ class LandableFrontageIntegrationTest {
             // edges between them, so counting points would count each run's far end twice -
             // and counting starts alone would drop it, which is the notch at every junction
             // this once drew.
-            var bare = readBare(sector, readCellEdges(sector));
+            var partition = readPartition(sector, readCellEdges(sector));
 
             var onCells = 0;
             var frontage = 0;
 
-            for (var piece : bare.collectPieces()) {
+            for (var piece : partition.collectPieces()) {
 
                 onCells += countCellEdges(piece.edgeLabels());
 
@@ -77,7 +77,8 @@ class LandableFrontageIntegrationTest {
                 }
             }
 
-            assertThat(frontage).isEqualTo(onCells);
+            assertThat(frontage)
+                .isEqualTo(onCells);
         }
 
         @ParameterizedTest
@@ -94,6 +95,7 @@ class LandableFrontageIntegrationTest {
 
             for (var edges : cellEdges.values()) {
                 for (var edge : edges) {
+
                     if (edge.target() == EdgeTarget.REACH_BOUND) {
                         frontier++;
                     }
@@ -102,8 +104,9 @@ class LandableFrontageIntegrationTest {
 
             var frontage = 0;
 
-            for (var piece : readBare(sector, cellEdges).collectPieces()) {
+            for (var piece : readPartition(sector, cellEdges).collectPieces()) {
                 for (var run : LandableFrontage.collectLandableRuns(piece)) {
+
                     frontage += run.points().size() - 1;
                 }
             }
@@ -116,9 +119,9 @@ class LandableFrontageIntegrationTest {
         @MethodSource(SECTORS)
         void theSeaHasAShore(String sector) {
             // The piece the earlier reading left with nothing: its shore is its holes.
-            var bare = readBare(sector, readCellEdges(sector));
+            var partition = readPartition(sector, readCellEdges(sector));
 
-            for (var piece : bare.collectPieces()) {
+            for (var piece : partition.collectPieces()) {
 
                 if (piece.holes().isEmpty()) {
                     continue;
@@ -134,30 +137,32 @@ class LandableFrontageIntegrationTest {
         void everyRunLiesOnTheCellItNames(String sector) {
             // A run's corners stand on its cell's frontier: on the polygon inscribed in the
             // bound, welded to a neighbour's within the same distance either way.
-            var bare = readBare(sector, readCellEdges(sector));
+            var sites = SectorFixture.loadSector(sector).getSites();
             var slack = 2 * KNOBS.measureBoundSagitta();
+            var nearest = KNOBS.cellRadius() - slack;
+            var furthest = KNOBS.cellRadius() + slack;
 
-            for (var piece : bare.collectPieces()) {
+            for (var piece : readPartition(sector, readCellEdges(sector)).collectPieces()) {
                 for (var run : LandableFrontage.collectLandableRuns(piece)) {
 
-                    var site = bare.union().sites().get(run.cell());
+                    var site = sites.get(run.cell());
 
                     assertThat(run.points())
                         .as("a run on cell %d", run.cell())
-                        .allSatisfy(point ->
-                            assertThat(Points.computeDistance(point, site))
-                                .isBetween(
-                                    bare.union().reach() - slack,
-                                    bare.union().reach() + slack));
+                        .allSatisfy(point -> assertThat(Points.computeDistance(point, site))
+                            .isBetween(nearest, furthest));
                 }
             }
         }
     }
 
-    private static BareVoid readBare(String sector, Map<?, List<CellEdge>> cellEdges) {
+    private static VoidPartition readPartition(
+            String sector, Map<?, List<CellEdge>> cellEdges) {
 
-        return BareVoid.readBareVoid(
-            cellEdges, SectorFixture.loadSector(sector).getSites(), KNOBS);
+        return VoidPartition.readVoidPartition(
+            cellEdges,
+            SectorFixture.loadSector(sector).getSites(),
+            KNOBS);
     }
 
     private static Map<?, List<CellEdge>> readCellEdges(String sector) {
@@ -171,7 +176,7 @@ class LandableFrontageIntegrationTest {
         var onCells = 0;
 
         for (var label : labels) {
-            if (label != BareVoid.THE_FRAME) {
+            if (EdgeLabels.isCell(label)) {
                 onCells++;
             }
         }

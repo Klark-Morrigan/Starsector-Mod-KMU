@@ -118,7 +118,7 @@ class LandableFrontageTest {
             // starts none - and it breaks the run either side of it.
             var runs = LandableFrontage.collectLandableRuns(
                 Face.encloseFace(new LabelledRing(
-                    CORNERS, new int[] {0, BareVoid.THE_FRAME, 2, 3})));
+                    CORNERS, new int[] {0, VoidPartition.THE_FRAME, 2, 3})));
 
             assertThat(runs)
                 .extracting(LandableFrontage.Run::cell)

@@ -97,18 +97,10 @@ public final class FaceWalk {
             double weldTolerance,
             List<LabelledWall> laidWalls) {
 
-        var base = PlanarArrangement.weldArrangement(
-            SegmentCrossings.splitAtCrossings(collectLines(rings, walls)), weldTolerance);
-
-        // The base as it stands after the weld, so the laid lines are cut against corners
-        // that will not move again. Cut once more together, because the weld can swing a base
-        // line across a corner of its own just as it can a laid one.
-        var lines = new ArrayList<>(base.collectLines());
-
-        lines.addAll(laidWalls);
-
-        var arrangement = PlanarArrangement.weldArrangement(
-            SegmentCrossings.splitAtCrossings(lines), Limits.MIN_EDGE_LENGTH);
+        var arrangement = layOntoWeldedBase(
+            PlanarArrangement.weldArrangement(
+                SegmentCrossings.splitAtCrossings(collectLines(rings, walls)), weldTolerance),
+            laidWalls);
 
         var closed = new ArrayList<LabelledRing>();
         var groups = new ArrayList<Integer>();
@@ -136,6 +128,27 @@ public final class FaceWalk {
             }
         }
         return cutEnclosedRingsOut(closed, groups);
+    }
+
+    // The welded base with the laid lines cut into it, joined at rounding.
+    //
+    // The base as it stands after the weld, so the laid lines are cut against corners that will
+    // not move again. Cut once more together, because the weld can swing a base line across a
+    // corner of its own just as it can a laid one. With nothing laid there is nothing to cut
+    // against, and the base is the arrangement as it stands - the frontier alone is thousands
+    // of lines, and cutting them all a second time would find nothing new.
+    private static PlanarArrangement layOntoWeldedBase(
+            PlanarArrangement base, List<LabelledWall> laidWalls) {
+
+        if (laidWalls.isEmpty()) {
+            return base;
+        }
+        var lines = new ArrayList<>(base.collectLines());
+
+        lines.addAll(laidWalls);
+
+        return PlanarArrangement.weldArrangement(
+            SegmentCrossings.splitAtCrossings(lines), Limits.MIN_EDGE_LENGTH);
     }
 
     // Each ring as a face, with any ring it encloses cut out of it rather than standing as a
@@ -277,6 +290,14 @@ public final class FaceWalk {
     // thinner than the resolution the lines were joined at, so whether it is there at all is a
     // question about the arithmetic rather than about the shape - and a slit, which is a face
     // walked out and back with no width, is exactly that face with an area of nothing.
+    //
+    // The base's tolerance for every face, laid lines or not, although laid lines are joined
+    // at rounding. The map is drawn at the base's resolution, and a sliver a laid line closes
+    // against the shore thinner than that is below it in the same way as a sliver the frontier
+    // closes on its own - so both go, and the pieces cover the void less exactly those. The
+    // floor rounding alone would allow is no answer either: it is below what the area sum over
+    // map-sized coordinates can tell from nothing, so a slit would start coming back as a
+    // piece.
     private static double measureSmallestFace(double weldTolerance) {
 
         var resolution = Math.max(weldTolerance, Limits.MIN_EDGE_LENGTH);

@@ -9,7 +9,6 @@ import kmu.desktop.ui.swing.WindowLayout;
 import kmu.maplayers.base.geometry.CellEdges;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeClassifier;
-import kmu.maplayers.base.geometry.LakeReaches;
 import kmu.maplayers.base.geometry.NamedRegion;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
@@ -29,7 +28,7 @@ import kmu.maplayers.base.geometry.v3.DrawnSector;
 import kmu.maplayers.base.geometry.v3.PickLog;
 import kmu.maplayers.base.geometry.v3.VoidBridgeCache;
 import kmu.maplayers.base.geometry.v3.ui.ContinentCoastOverlay;
-import kmu.maplayers.base.geometry.v4.ui.BareVoidOverlay;
+import kmu.maplayers.base.geometry.v4.ui.VoidPartitionOverlay;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 
 import java.awt.BorderLayout;
@@ -189,8 +188,9 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     private final CellsOverlay cells = new CellsOverlay(settings);
     private final ContinentCoastOverlay continentCoasts =
         new ContinentCoastOverlay(settings);
+
     private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
-    private final BareVoidOverlay bareVoid = new BareVoidOverlay(settings);
+    private final VoidPartitionOverlay voidPartition = new VoidPartitionOverlay(settings);
 
     // The laying the last refresh drew the continent construction from, kept so that a file
     // saved from the window is a picture of that frame rather than of a laying opened again
@@ -220,7 +220,6 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // decision and not the rows' - and said before any row is built, since a row reads
         // its remembered value as it is built.
         SavedValues.rememberIn(SavedViewerSettings.savedValuesFile());
-
         SwingUtilities.invokeLater(() -> new SectorGeometryViewer().showWindow());
     }
 
@@ -399,7 +398,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // Read off the geometry the rebuild just built rather than built again: the two would
         // be the same partition computed twice, and v4 drawing against its own copy is how the
         // two constructions come to disagree about where a cell ends.
-        bareVoid.refresh(
+        voidPartition.refresh(
             geometry.cellEdgesByCellKey(),
             fixture,
             LakeReaches.collectLakeReaches(
@@ -725,7 +724,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             // what the older is drawn over rather than as a layer covering it. It is also the
             // widest thing on the map - every piece of void, undivided - so painted last it
             // would hide whatever it is meant to be compared with.
-            bareVoid.paintPieces(g2);
+            voidPartition.paintPieces(g2);
 
             continentCoasts.paintPocketFills(g2);
 
@@ -743,8 +742,8 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             // read against the cells it runs along, so it goes over everything filled.
             // The walls first, the frontage over them: the frontage is a diagnostic of what the
             // walls left open, and reads against the lines as much as against the fills.
-            bareVoid.paintLakeCoast(g2);
-            bareVoid.paintLandableFrontage(g2);
+            voidPartition.paintLakeCoast(g2);
+            voidPartition.paintLandableFrontage(g2);
             cells.paintSites(g2, fixture.getSites());
         }
 

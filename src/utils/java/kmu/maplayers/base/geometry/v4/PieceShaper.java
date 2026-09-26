@@ -108,6 +108,6 @@ public final class PieceShaper {
 
     // Whether there is anything across this edge to stand off from.
     private static boolean isAgainstSomething(int label) {
-        return label != BareVoid.THE_FRAME;
+        return label != VoidPartition.THE_FRAME;
     }
 }

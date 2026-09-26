@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.ui;
 
 import kmu.maplayers.base.geometry.v3.Coastlines;
 import kmu.maplayers.base.geometry.v4.ReachLine;
@@ -11,10 +11,11 @@ import java.util.List;
  *
  * <p>The one place the two constructions touch. v4 divides the void along lines and does not
  * trace any; v3 traces coasts and is where the smoothing lives that a coastline is for. So
- * v4's lake coast is v3's, and something has to hand it over - and that something sits above
- * both rather than inside either, because a version that imports the other is no longer a
- * version beside it but a layer on top of it. Here, v3 stays a tracer that knows nothing of
- * the walk, and v4 stays a walk that knows nothing of who traced its lines.
+ * v4's lake coast is v3's, and something has to hand it over - and that something is the
+ * window that draws both, because it already depends on both and nothing below it may. Put in
+ * either version it would make that version a layer on top of the other rather than a
+ * construction beside it; put in the package both versions build on, it would make that
+ * package depend on its own dependents.
  *
  * <p>What crosses is the least that can: a reach as two points and two cells. Fillets do not
  * cross at all - along a fillet the shore already is the coast - and which steps are reaches is
@@ -36,7 +37,8 @@ public final class LakeReaches {
      * @return one entry per reach, in the order the coasts are walked
      */
     public static List<ReachLine> collectLakeReaches(
-            Coastlines.TracedCoasts traced, double channel) {
+            Coastlines.TracedCoasts traced,
+            double channel) {
 
         var reaches = new ArrayList<ReachLine>();
 

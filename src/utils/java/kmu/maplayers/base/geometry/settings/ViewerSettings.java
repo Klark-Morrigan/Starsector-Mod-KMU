@@ -112,7 +112,7 @@ public final class ViewerSettings {
 
     public static final Color BRIDGE_FRONTAGE_DEFAULT = MapLook.BRIDGE_FRONTAGE;
 
-    public static final Color BARE_VOID_DEFAULT = MapLook.BARE_VOID;
+    public static final Color VOID_PIECES_V4_DEFAULT = MapLook.VOID_PIECES_V4;
 
     public static final Color LAKE_COAST_V4_DEFAULT = MapLook.LAKE_COAST_V4;
 
@@ -194,12 +194,13 @@ public final class ViewerSettings {
     // Off, so the window opens on exactly what it opened on before v4 existed.
     public boolean showVoidV4;
 
-    // v4's base: the void the cells close around, before any line divides it. Every later v4
-    // layer is a division of this, so it is the first thing that layer stack has to agree with.
-    public boolean showBareVoid = true;
+    // v4's pieces of void: the partition as every tier switched on has divided it, and with
+    // none on, the void as the cells alone leave it. Every tier is a division of that, so it is
+    // the first thing the stack has to agree with.
+    public boolean showVoidPiecesV4 = true;
 
     // Every stretch of v4's cell border facing void nothing has captured. A diagnostic of the
-    // bare void rather than a layer of it: nothing is laid from it yet, and it is drawn so that
+    // pieces rather than a layer of them: nothing is laid from it yet, and it is drawn so that
     // what a span may be anchored on can be looked at before any span is made to obey it. Off,
     // like v3's, since it is read for a reason rather than looked at every time.
     public boolean showLandableFrontageV4;
@@ -209,8 +210,8 @@ public final class ViewerSettings {
     // partition. Its own switch, apart from the spans that come after it, because a line laid
     // alone is a line whose effect on the partition can be measured alone.
     //
-    // Off, so the window opens on the bare partition and a reader turns the first tier on to
-    // see what it changed.
+    // Off, so the window opens on the partition the cells alone leave and a reader turns the
+    // first tier on to see what it changed.
     public boolean showLakeCoastV4;
 
     // Which edges of v4's pieces take the border channel. A mode of the layer above rather than
@@ -428,7 +429,7 @@ public final class ViewerSettings {
     public Color continentCoastalVoidColour = CONTINENT_COASTAL_VOID_DEFAULT;
     public Color continentCoastalVoidEdge = CONTINENT_COASTAL_VOID_DEFAULT;
 
-    public Color bareVoidColour = BARE_VOID_DEFAULT;
+    public Color voidPiecesV4Colour = VOID_PIECES_V4_DEFAULT;
     public Color landableFrontageV4Colour = LANDABLE_FRONTAGE_DEFAULT;
 
     public Color lakeCoastV4Colour = LAKE_COAST_V4_DEFAULT;
@@ -567,7 +568,8 @@ public final class ViewerSettings {
     }
 
     /**
-     * Whether v4's bare void is drawn, which is its construction's master and its own switch.
+     * Whether v4's pieces of void are drawn, which is its construction's master and its own
+     * switch.
      *
      * <p>Asked here rather than at the layer, for the reason the pairings above are: the master
      * and the leaf are two switches declared together, and a layer reading only its own would go
@@ -575,13 +577,13 @@ public final class ViewerSettings {
      *
      * @return true where both are on
      */
-    public boolean isBareVoidShown() {
-        return showVoidV4 && showBareVoid;
+    public boolean isVoidPiecesV4Shown() {
+        return showVoidV4 && showVoidPiecesV4;
     }
 
     /**
      * Whether v4's landable frontage is drawn, which is its construction's master and its own
-     * switch, for the reason {@link #isBareVoidShown} gives.
+     * switch, for the reason {@link #isVoidPiecesV4Shown} gives.
      *
      * @return true where both are on
      */
@@ -591,7 +593,7 @@ public final class ViewerSettings {
 
     /**
      * Whether v4's lake coast is laid, which is its construction's master and its own switch,
-     * for the reason {@link #isBareVoidShown} gives.
+     * for the reason {@link #isVoidPiecesV4Shown} gives.
      *
      * <p>Read where the walk is built rather than only where the lines are drawn: a wall
      * divides the water it stands over, so switching it off has to take the line out of the

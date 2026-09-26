@@ -1,6 +1,5 @@
 package kmu.maplayers.base.geometry.v4;
 
-import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
 import org.junit.jupiter.api.Nested;
@@ -30,8 +29,7 @@ class LakeCoastTest {
 
     private static final double[] RIGHT_SITE = {1000, 0};
 
-    private static final DiscUnion UNION =
-        DiscUnion.buildAtCellReach(List.of(LEFT_SITE, RIGHT_SITE), PARAMETERS);
+    private static final List<double[]> SITES = List.of(LEFT_SITE, RIGHT_SITE);
 
     // A reach 300 above the sites, running from directly above the left one to directly above
     // the right one, so each stub runs straight down and its far end is a round number.
@@ -46,7 +44,7 @@ class LakeCoastTest {
         @Test
         void aReachIsLaidAsItselfBetweenTwoStubs() {
 
-            var laid = LakeCoast.layCoastWalls(List.of(REACH), UNION, PARAMETERS);
+            var laid = LakeCoast.layCoastWalls(List.of(REACH), SITES, PARAMETERS);
 
             assertThat(laid.walls())
                 .hasSize(3);
@@ -63,7 +61,7 @@ class LakeCoastTest {
             // (1000, 0) by 100 is (1000, 200). A stub pointing at the wrong site would run
             // sideways, and one of the wrong length would stop short of the shore or reach
             // past a neighbour.
-            var laid = LakeCoast.layCoastWalls(List.of(REACH), UNION, PARAMETERS);
+            var laid = LakeCoast.layCoastWalls(List.of(REACH), SITES, PARAMETERS);
 
             assertThat(laid.walls().get(0).segment().readStart())
                 .satisfies(point -> {
@@ -87,7 +85,7 @@ class LakeCoastTest {
         void theStubsShareTheirEndsWithTheReachExactly() {
             // Shared to the bit, not to a tolerance: the walk joins what is laid at rounding,
             // and a stub ending a whisker off the reach's end is a stub joined to nothing.
-            var laid = LakeCoast.layCoastWalls(List.of(REACH), UNION, PARAMETERS);
+            var laid = LakeCoast.layCoastWalls(List.of(REACH), SITES, PARAMETERS);
 
             assertThat(laid.walls().get(0).segment().readEnd())
                 .containsExactly(0, 300);
@@ -98,7 +96,7 @@ class LakeCoastTest {
         @Test
         void everyWallCarriesTheLakeCoastLabel() {
 
-            var laid = LakeCoast.layCoastWalls(List.of(REACH), UNION, PARAMETERS);
+            var laid = LakeCoast.layCoastWalls(List.of(REACH), SITES, PARAMETERS);
 
             assertThat(laid.walls())
                 .extracting(LabelledWall::label)
@@ -108,7 +106,7 @@ class LakeCoastTest {
         @Test
         void onlyTheReachIsDrawn() {
 
-            var laid = LakeCoast.layCoastWalls(List.of(REACH), UNION, PARAMETERS);
+            var laid = LakeCoast.layCoastWalls(List.of(REACH), SITES, PARAMETERS);
 
             assertThat(laid.reachLines())
                 .hasSize(1);
@@ -122,7 +120,7 @@ class LakeCoastTest {
         @Test
         void noReachesLayNothing() {
 
-            var laid = LakeCoast.layCoastWalls(List.of(), UNION, PARAMETERS);
+            var laid = LakeCoast.layCoastWalls(List.of(), SITES, PARAMETERS);
 
             assertThat(laid.walls())
                 .isEmpty();

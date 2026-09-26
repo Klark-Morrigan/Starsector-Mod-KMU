@@ -3,7 +3,6 @@ package kmu.maplayers.base.geometry.v4;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segment;
 
-import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
 import java.util.ArrayList;
@@ -57,14 +56,14 @@ public final class LakeCoast {
      * Lays every reach as a wall, each end carried through its shore.
      *
      * @param reaches    the lakes' coast reaches, already told apart from the fillets
-     * @param union      the cells at their own reach, for the sites the stubs run towards
+     * @param sites      the cells' own positions, which the stubs run towards
      * @param parameters the knobs the map is drawn under, for the resolution that says how far
      *                   an end can float off the shore
      * @return the walls to lay, and the lines to draw
      */
     public static LaidLakeCoast layCoastWalls(
             List<ReachLine> reaches,
-            DiscUnion union,
+            List<double[]> sites,
             SectorGeometryParameters parameters) {
 
         var walls = new ArrayList<LabelledWall>();
@@ -78,8 +77,8 @@ public final class LakeCoast {
                 walls,
                 reach.from(),
                 reach.to(),
-                union.sites().get(reach.fromCell()),
-                union.sites().get(reach.toCell()),
+                sites.get(reach.fromCell()),
+                sites.get(reach.toCell()),
                 carry);
         }
         return new LaidLakeCoast(List.copyOf(walls), List.copyOf(reachLines));
