@@ -29,7 +29,7 @@ final class CellTooltipQualifierTest {
         @Test
         void stateFindingIntroducesTheFindingWithNothing() {
             // The plain status the great majority of lines carry: one finding and no sentence around
-            // it, which is what keeps it the single run it has always drawn as.
+            // it, which is what keeps it a single run.
             var qualifier = CellTooltipQualifier.stateFinding("undiscovered");
 
             assertThat(qualifier.hasLeadingWord())

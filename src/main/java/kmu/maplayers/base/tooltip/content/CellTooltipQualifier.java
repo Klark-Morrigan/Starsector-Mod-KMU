@@ -17,13 +17,11 @@ import java.util.Objects;
  *
  * <p>Only the finding reads in the highlight the box reserves for what it has worked out; the words
  * around it and the mark beside it are quiet. So the ordinary qualifier - a single word about the
- * line, with nothing around it - draws as the one gold run it has always drawn as.
- *
- * <p>That gold is the default and not a rule without exceptions: a finding whose colour is itself
- * what the box found - a relation level, a hazard band, a signal strength - carries that colour here
- * ({@link #drawsFindingIn}), since a fixed gold run would state the fact and contradict it in the same
- * line. Held on the qualifier rather than on the line, so a line calling nothing out has nowhere to
- * state how a finding would have been coloured.
+ * line, with nothing around it - draws as a single gold run. The one departure is a finding whose
+ * colour is itself what the box found - a relation level, a hazard band, a signal strength - which
+ * carries that colour here ({@link #drawsFindingIn}), a fixed gold run stating the fact and
+ * contradicting it in the same line. Held on the qualifier rather than on the line, so a line calling
+ * nothing out has nowhere to state how a finding would have been coloured.
  *
  * <p>Unspaced throughout: what parts each part from the next is the run vocabulary's own word space,
  * so nothing here carries a separator.
@@ -138,15 +136,11 @@ public record CellTooltipQualifier(
      * box's highlight - for a finding whose colour is part of what the box found, such as a relation
      * level read in the shade the map paints that relation.
      *
-     * <p>Only the finding takes it. The words either side stay the box's quiet connective and the mark
-     * keeps its own colouring, so what the colour says is said once, on the words it is about.
-     *
      * <p>Layered on rather than taken by each factory, because it is one exception over any shape of
      * status: a plain finding, an introduced one or an enclosed one may each be a finding whose colour
      * is the fact.
      *
-     * @param findingColour the colour the finding is drawn in, never null - a finding reading in the
-     *                      box's highlight states that by not being given one
+     * @param findingColour the colour the finding is drawn in, never null
      * @return an otherwise-identical status whose finding reads in that colour
      */
     public CellTooltipQualifier drawsFindingIn(Color findingColour) {

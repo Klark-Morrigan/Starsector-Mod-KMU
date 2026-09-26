@@ -289,7 +289,7 @@ since applied apart they leave a line free to end on a connective introducing no
 Only the finding is gold -
 the words either side are the box's own,
   and the closing one is a category rather than a name -
-  so the plain status nearly every line carries (`qualifiedWith`) stays the single gold run it has always been.
+  so the plain status nearly every line carries (`qualifiedWith`) stays a single gold run.
 
 The gold is the default and it admits one stated departure:
 a finding whose colour *is* the fact -
@@ -439,6 +439,10 @@ a place identifies the line,
 a word introducing a status is the box's own connective,
 and a remark is the box talking about its own account,
 so all three stay quiet and a reader scanning for findings passes over them.
+The quiet shade is decided once too
+(`CellTooltipLabels.resolveQuietColour`),
+and the value column's working and the footer's withheld count read it,
+so nothing the box says about its own account can stand out from the rest of it.
 
 ## Marks
 

@@ -98,6 +98,10 @@ final class SystemCellTooltipTest {
     private static final float LEADER_THICKNESS = 2f;
     private static final float LEADER_OPACITY = 0.4f;
 
+    // How far a withheld name's blocks sink from the colour of their line, at the strength this suite
+    // stands in for the player with - unlike the widget's own default, for the reason the leader pair is.
+    private static final float REDACTION_DARKENING_STRENGTH = 0.25f;
+
     // How far under the box's own voice a line stands - a holder speaking in that voice, what it holds,
     // a term of that, and a tier of that, which is as deep as the boxes go.
     private static final int IN_THE_BOXS_VOICE = 0;
@@ -209,6 +213,8 @@ final class SystemCellTooltipTest {
             .thenReturn(LEADER_THICKNESS);
         settingsMock.when(KmuMapTooltipSettings::getMapTooltipLeaderOpacity)
             .thenReturn(LEADER_OPACITY);
+        settingsMock.when(KmuMapTooltipSettings::getMapTooltipRedactionDarkeningStrength)
+            .thenReturn(REDACTION_DARKENING_STRENGTH);
     }
 
     @AfterEach
@@ -430,6 +436,17 @@ final class SystemCellTooltipTest {
                 .isEqualTo(LEADER_THICKNESS);
             assertThat(leaderLineStyle.alphaMult())
                 .isEqualTo(LEADER_OPACITY);
+        }
+
+        @Test
+        void renderForSinksWithheldNamesByTheStrengthThePlayerSet() {
+            // The other solid mark the box draws among its glyphs: how heavy a block standing for a
+            // withheld word reads beside text is a judgement made on screen, so the box carries the
+            // player's strength across rather than the widget's shipped one.
+            assertThat(captureDrawnBox(buildTooltipSayingSomething())
+                    .style()
+                    .redactionDarkeningStrength())
+                .isEqualTo(REDACTION_DARKENING_STRENGTH);
         }
 
         @Test
