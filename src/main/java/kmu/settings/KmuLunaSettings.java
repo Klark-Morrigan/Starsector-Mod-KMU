@@ -128,9 +128,7 @@ public final class KmuLunaSettings {
      */
     public static ModIntegration describeLunaLibIntegration() {
 
-        return new ModIntegration(
-            KmlibLunaSettings.LUNALIB_MOD_ID,
-            KmlibLunaSettings.LUNALIB_MOD_NAME,
+        return KmlibLunaSettings.describeLunaLibIntegration(
             new CompatibilityConsumer(
                 MOD_ID,
                 LUNALIB_SETTINGS_FEATURE_KEY,
