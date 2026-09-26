@@ -72,7 +72,7 @@ None of these reach a player: every LunaLib field ID and every value saved in se
   - `OwnerMapLayerRenderer.createForLiveScreen` composes the owner map's parts into one and returns it.
   - `OwnerMapCache` is the owner map's `MapFrameCache`: `refresh` is `refreshDrawLists`, and `resolveHoverTargets` is new.
 - **A layer's state is its own:**
-  - `MapLayerViewRegistry` is an instance a layer builds over its own save key, views, default view and host tab, in place of static members.
+  - `MapLayerViewRegistry` is an instance a layer builds over its own save key, views, default view and host tab, in place of static members. `getActiveView()` is gone: `resolveActiveViewOn(ScreenLayerPicks)` answers for the screen a frame read once.
   - Per-sector pieces a layer holds go through `SectorMapMachinery.resolveLayerMachinery(layerId, type, make)`.
   - `SelectableBlocCache.resolveBlocCacheIn` takes the layer ID.
   - `FilterSelectionHeal.healStaleSelectionAgainstActiveView` takes the sector and the registry it heals against; `healStaleSelectionAgainstLiveSector(registry)` is the entry for a caller holding no sector.
