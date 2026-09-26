@@ -155,6 +155,17 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
+        void skipsACommentRowWhileItsNeighboursLoad() throws Exception {
+            // Filed under its own text, a comment would read as a type nobody ships.
+            shipRows(
+                buildRow("#" + CRYOSLEEPER_TYPE, "true", ""),
+                buildRow(NEIGHBOUR_TYPE, "true", ""));
+
+            assertThat(tableReader.readTable().overridesByEntityTypeId())
+                .containsOnlyKeys(NEIGHBOUR_TYPE);
+        }
+
+        @Test
         void skipsAnEntryThatIsNotARowWhileItsNeighboursLoad() throws Exception {
 
             var rows = new JSONArray();
