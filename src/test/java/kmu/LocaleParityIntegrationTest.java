@@ -27,7 +27,7 @@ final class LocaleParityIntegrationTest {
 
     // What every KMU settings field ID starts with, which tells the mod's rows from the spacing rows
     // and the column-header line in each bundle's settings table.
-    private static final String FIELD_ID_PREFIX = "kmu_";
+    private static final String FIELD_ID_PREFIX = KmuMod.MOD_ID + "_";
 
     private static final LocaleParity LOCALE_PARITY =
         new LocaleParity(new LocalisationDirectory(LOCALISATION_DIRECTORY), FIELD_ID_PREFIX);

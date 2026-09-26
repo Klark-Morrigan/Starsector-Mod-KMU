@@ -4,6 +4,8 @@ import kmlib.settings.LabeledChoice;
 import kmlib.testfixtures.starsector.settings.LunaSettingsSourceText;
 import kmlib.testfixtures.starsector.settings.LunaSettingsTable;
 
+import kmu.KmuMod;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -102,7 +104,7 @@ final class LunaSettingsCsvIntegrationTest {
     // spacing rows and the file's own column-header line, and one of its ID literals from every
     // other string the sources hold. The prefix alone does not mark a string as a setting - the
     // second field-id walk below names its exceptions for that reason.
-    private static final String FIELD_ID_PREFIX = "kmu_";
+    private static final String FIELD_ID_PREFIX = KmuMod.MOD_ID + "_";
 
     // The two readings, opened over this mod's shipped file and sources. The readings themselves
     // are KMLib's: the file's shape is LunaLib's rather than KMU's, so a second mod on these
