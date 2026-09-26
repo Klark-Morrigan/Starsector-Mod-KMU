@@ -150,6 +150,16 @@ which a layer ANDs its own into.
 So one layer's box can go dark while another's stays up,
 and one row still silences them all.
 
+`MapLayerHoverGates` is the layer's side of that:
+the seam a layer answers its own pair through,
+each answer already ANDed with the tiers above,
+and what [the frame sequence](../render/README.md#the-frame-sequence) asks before it reads the cursor or offers a box.
+Its third question,
+whether the cursor is read at all,
+is the union of the pair and is stated once there as a default -
+the read backs both kinds of feedback,
+so a layer answering it apart from its own switches would take the box down with the effects.
+
 `RandomAssortmentOfThingsCompatibilityMode` is the same tab's per-mod switch:
 whether the player has left that mod's compatibility mode on *and* the mod is installed with its own minimap replacing the campaign radar,
 which is KMLib's `CampaignMinimap` role to answer -

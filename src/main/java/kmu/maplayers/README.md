@@ -98,7 +98,7 @@ The tree is three tiers deep and every import runs down it:
 
 | Tier | What it is | What it may import |
 | --- | --- | --- |
-| `kmu.maplayers.base` | the substrate under every layer: geometry, clusters, labels, theme, hover, the hover box, the sidebar host, the render seam | neither tier below |
+| `kmu.maplayers.base` | the substrate under every layer: geometry, clusters, labels, theme, hover, the hover box, the sidebar host, the render seam and the frame sequence over it | neither tier below |
 | `kmu.maplayers.ownermap` | one assembly of those primitives - cells keyed by an owner, fused, bordered, labelled and banded | `base` |
 | `kmu.maplayers.politicalmap` | a layer: what its owner key means, and the views that pick one | both above it |
 
@@ -368,6 +368,9 @@ and a player who ordered their bar once does not order it again per save.
   so it names no layer;
   a layer that only switches (No Layer) supplies none,
   which is read as nothing to draw.
+  A layer painting from a cache need not take the frame raw:
+  `SequencedMapLayerRenderer` runs the frame every such layer runs,
+  over the parts the layer supplies.
   Which sector it draws it finds through its own terrain entity,
   that being the one handle a plugin rebuilt from the save has.
   More than one terrain surface can paint one frame,
@@ -471,7 +474,7 @@ and a player who ordered their bar once does not order it again per save.
 - **[The owner-painted assembly](ownermap/README.md)** -
   the pipeline behind a layer that paints cells by an owner:
   the owner seam and the resolvers under it,
-  the cache and the renderer over it,
+  the cache and the compositor it hands the frame sequence,
   the fills and borders,
   the presence bands,
   the style resolvers,

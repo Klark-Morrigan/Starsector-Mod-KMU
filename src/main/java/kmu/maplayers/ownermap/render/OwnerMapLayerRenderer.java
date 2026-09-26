@@ -1,442 +1,99 @@
 package kmu.maplayers.ownermap.render;
 
-import com.fs.starfarer.api.Global;
-
-import kmlib.logging.ChangedLineTrace;
-import kmlib.starsector.compatibility.CompatibilityConsumer;
-import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
-import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
-import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
-import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
-
-import kmu.KmuMod;
-import kmu.maplayers.base.hover.MapHoverCues;
-import kmu.maplayers.base.hover.MapHoverPermission;
-import kmu.maplayers.base.hover.MapHoverPublisher;
-import kmu.maplayers.base.hover.MapHoverState;
-import kmu.maplayers.base.hover.cover.MapCoverReader;
-import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.hover.MapLayerHoverGates;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
-import kmu.maplayers.base.render.MapFrame;
-import kmu.maplayers.base.render.MapFrameBeats;
-import kmu.maplayers.base.render.MapFrameSections;
-import kmu.maplayers.base.render.MapLayerRenderer;
-import kmu.maplayers.base.render.MapOverlayBand;
-import kmu.maplayers.base.tooltip.MapHoverTooltip;
+import kmu.maplayers.base.render.MapLayerFrameParts;
+import kmu.maplayers.base.render.SequencedMapLayerRenderer;
 import kmu.maplayers.ownermap.MapLayerViewRegistry;
+import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveSource;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
-import kmu.maplayers.ownermap.render.hover.OwnerMapHoverGates;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
-import kmu.settings.KmuLoggingSettings;
-import kmu.util.KmuStringKeys;
 
-import org.apache.log4j.Logger;
-
-import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Draws an owner map on the sector map as merged HOI4-style clusters, where adjacent
- * same-holder systems fuse into one solid cluster. It is an owner-painted layer's whole
- * turn at a frame: the map surface hands it one while that tab is the active pick, and it draws
- * whichever view its layer's {@link MapLayerViewRegistry#getActiveView()} reports, or nothing when none is
- * active - the tab is open but every view is deselected.
+ * Draws an owner map on the sector map as merged HOI4-style clusters, where adjacent same-holder
+ * systems fuse into one solid cluster - by composing the owner-painted parts into the framework's
+ * frame sequence. The sequence itself, and every rule about when each part is asked, is
+ * {@link SequencedMapLayerRenderer}'s; what is settled here is which owner-map piece answers each part.
  *
- * <p>Resolving the view here rather than at the surface is what keeps the framework out of the
- * feature's business: which of a layer's views draws is that layer's own question, and
- * the surface learns only that some layer wants the frame. The hover box the layer shows for one
- * system is resolved the same way, off the same view read, so the framework's tooltip dispatcher names
- * no view either.
+ * <ul>
+ *   <li>The layer's {@link MapLayerViewRegistry} is the stand-down read: a frame paints whichever view
+ *       is active on the showing screen, or nothing when the tab is open with every view deselected.</li>
+ *   <li>The {@link OwnerMapCache} is the cache, built under that view's rules.</li>
+ *   <li>The {@link OwnerMapOverlayRenderer} is the compositor, stacking the overlay's sub-layers over the
+ *       cache's draw lists.</li>
+ *   <li>The layer's hover gates are its switches, and the active view's own box is its tooltip.</li>
+ * </ul>
  *
- * <p>Named for the layer, not for the overlay: this sequences a frame, while
- * {@link OwnerMapOverlayRenderer} one level down composes the overlay's own sub-layers. It
- * sequences three collaborators per frame - it asks its {@link OwnerMapCache} to bring the
- * cached draw lists up to date, has its {@link MapHoverPublisher} resolve what the cursor
- * is over, and hands the draw lists to the overlay renderer. All the real work - keeping the draw
- * lists fresh with the least work per frame, reading the cursor, and composing the overlay layers -
- * lives in those three.
- *
- * <p>Those three run at the three rates a frame has to offer, which is what lets one frame be
- * painted by more than one surface: under Starscape the map draws its own nebulae between two of
- * this layer's bands, so the bands are emitted from separate terrain passes. The refresh runs once
- * per frame in {@code prepareFrame}, the cursor read once per pass in {@code publishHoverForPass} -
- * each pass binding a transform of its own, and the last of them owning the answer - and the paint
- * per band in {@code renderOnMap}.
- *
- * <p>Everything <em>about</em> that read which does not turn on the pass is settled once, in the
- * preparation: whether any feedback still wants a hover, whether something is drawn over the cursor,
- * and what moment the frame before settled on. None of those changes between two passes of one
- * frame, and the dearest of them walks the live widget tree, so a pass asks only what its own
- * transform can answer.
- *
- * <p>Each of those beats is also where a frame's profiling rows begin, opened through the
- * {@link MapFrameBeats} this renderer was made with. The stand-down reads sit between a beat and
- * the layer's row inside it, so a frame with nothing to draw still reports what standing down cost
- * and opens no row for a layer that never ran.
+ * <p>Resolving the view through the registry rather than at the surface is what keeps the framework
+ * out of the layer's business: which of a layer's views draws is that layer's own question, and the
+ * sequence learns only what it was handed back.
  */
-public final class OwnerMapLayerRenderer implements MapLayerRenderer {
+public final class OwnerMapLayerRenderer {
 
-    private static final Logger LOG = Global.getLogger(OwnerMapLayerRenderer.class);
-
-    // The identity KMU's one renderer binding is recorded under when it stops holding. Stable for
-    // the session: it is what keeps a failure of this binding reported once however many times it
-    // is taken, and reported apart from another mod's over the same renderer.
-    //
-    // The feature alone, not the whole key: the library composes that from our mod ID and this, so
-    // a key two mods spell alike cannot happen. Such a collision is one nothing can see - the record
-    // reads a pair it already holds and ignores it, exactly as it does for the same mod recording
-    // twice - so the second mod's players would be told what the first mod lost and nothing would
-    // say so. What is spelled here names which of this mod's bindings broke, not which mod broke.
-    private static final String MAP_CURSOR_FEATURE_KEY = "map-cursor";
-
-    // The freshness cache and the overlay compositor this renderer delegates to. Plain final fields:
-    // a renderer belongs to one sector's installed machinery and never enters a save, so neither
-    // collaborator needs the transient marking or lazy rebuild a save-serialised holder would. The
-    // cache is made for the same machinery this renderer was, so the two draw one sector.
-    private final OwnerMapCache cache;
-    private final OwnerMapOverlayRenderer overlayRenderer;
-
-    // What the cursor is over on this renderer's own sector. Held rather than resolved at each park
-    // because the frame it is parked on is this sector's frame: a park taken against the running
-    // game would leave the cell this sector had lit standing while clearing another sector's.
-    private final MapHoverState hoverState;
-
-    // Where this frame's profiling rows are opened - this sector's group, and this layer's row
-    // inside each beat. Composed once and held, both halves being answers that do not change while
-    // a sector is loaded.
-    private final MapFrameBeats frameBeats;
-
-    // Whether anything is drawn over the map where the cursor rests. Handed in rather than composed
-    // here, so this layer neither names the things that can cover a map nor holds a set another
-    // layer could be given differently.
-    private final MapCoverReader mapCoverReader;
-
-    // Where the cursor read comes from when one is first wanted. A source rather than the read
-    // itself because the matrix binding it holds is chosen from the renderer in force, which can
-    // only be read from a running game - and because a player who leaves the hover off never needs
-    // one at all. Handed in for the cover reader's reason: what a frame does with the read is this
-    // class's business and answerable without a live map, while building one is not.
-    //
-    // It takes the hover holder rather than closing over one, so the publisher it builds and the
-    // park above cannot name two different sectors' hovers.
-    private final Function<MapHoverState, MapHoverPublisher> hoverPublisherSource;
-
-    // Which terrain icons the map holds and in what order, reported when that order moves. This
-    // layer rides on a terrain, so where its icon was seeded is what decides whether the map's own
-    // nebula fog paints over the overlay or under it - an insertion-order artefact of the live
-    // widget, not a contract, and one no published call reports. A build that starts seeding its
-    // icons differently shows up here as a moved position rather than as a picture nobody can
-    // account for.
-    //
-    // Reported under this mod's own verbosity rather than the library's, the line being about this
-    // layer's problem: a logger named after a library class would sit outside the switch a player
-    // reaches for when the map looks wrong.
-    private final ChangedLineTrace iconOrderTrace = ChangedLineTrace.createWholeLineTrace(
-        LOG, "Map icon order", MapIconOrderTrace::describeTerrainIconOrder);
-
-    // Which vanilla widgets the cursor is inside, reported when that changes. The hover comes from
-    // the map's own geometry and knows nothing of the chrome laid over it, which is what the covers
-    // answer for - and this is the line that says which widgets a build actually puts under the
-    // cursor, so a cover that stops fitting a game build is diagnosed from the tree rather than
-    // guessed at. Logged here for the reason above.
-    private final ChangedLineTrace widgetsUnderCursorTrace = ChangedLineTrace.createKeyedLineTrace(
-        LOG, "Map-tab widget trace", MapTabWidgetTrace::describeWidgetsUnderCursor);
-
-    // The cursor read, taken from the source above on the first pass that wants one.
-    private MapHoverPublisher hoverPublisher;
-
-    // Whether this frame's passes are to read the cursor at all: some feedback still wants a hover,
-    // and nothing is drawn over where the cursor rests. Settled once per frame because neither half
-    // turns on which pass is running, and asking per pass would walk the live widget tree two or
-    // three times over for one answer.
-    private boolean isHoverWantedThisFrame;
-
-    // The drawn layer's own switches for the two kinds of cursor feedback. Held rather than read,
-    // so the frame sequence runs identically whoever is drawing and whatever it offers to switch.
-    private final OwnerMapHoverGates hoverGates;
-
-    // The drawn layer's own views and the pick among them. Its own rather than a shared one, so a
-    // second layer's radio cannot move what this renderer paints.
-    private final MapLayerViewRegistry viewRegistry;
-
-    OwnerMapLayerRenderer(
-            MapLayerViewRegistry viewRegistry,
-            OwnerMapCache cache,
-            MapCoverReader mapCoverReader,
-            MapHoverState hoverState,
-            Function<MapHoverState, MapHoverPublisher> hoverPublisherSource,
-            OwnerMapPreviewHighlight previewHighlight,
-            OwnerMapHoverGates hoverGates,
-            Supplier<OwnerMapBandLayout> bandLayoutSource,
-            MapFrameBeats frameBeats) {
-
-        this.viewRegistry = viewRegistry;
-        this.cache = cache;
-        this.mapCoverReader = mapCoverReader;
-        this.hoverState = hoverState;
-        this.hoverPublisherSource = hoverPublisherSource;
-        this.frameBeats = frameBeats;
-        this.hoverGates = hoverGates;
-        this.overlayRenderer = new OwnerMapOverlayRenderer(
-            hoverState,
-            previewHighlight,
-            hoverGates,
-            bandLayoutSource);
+    private OwnerMapLayerRenderer() {
     }
 
     /**
-     * The renderer one sector's map machinery holds, reading the covers and the cursor of the screen
-     * the game is showing. Which sector it draws is the machinery's; where the reads come from is
-     * settled here, the renderer itself naming only the reader and the source.
+     * The renderer one sector's map machinery holds for an owner-painted layer, reading the covers
+     * and the cursor of the screen the game is showing.
      *
-     * @param machinery the machinery this renderer is being made for, whose sector its cache cuts
-     *                     its cells from, whose movers that cut leaves out, whose hover holder the
-     *                     cursor read publishes into, whose picker the preview is read off, and
-     *                     whose origin its profiling rows are grouped under
-     * @param layerId      the ID of the layer this renderer draws, which its rows are reported
-     *                     under - handed in by the layer rather than named here, so the renderer
-     *                     holds no second spelling of an ID the layer already owns
-     * @param viewRegistry the layer's own views, which decide whether a frame paints and under which
-     *                     view's rules
-     * @param bodyPreferences the layer's body preferences, stored under its own keys, which each
-     *                     rebuild samples its picks from
+     * @param machinery                 the machinery this renderer is being made for, whose sector its
+     *                                  cache cuts its cells from, whose movers that cut leaves out,
+     *                                  whose hover holder the cursor read publishes into, whose picker
+     *                                  the preview is read off, and whose origin its profiling rows are
+     *                                  grouped under
+     * @param layerId                   the ID of the layer this renderer draws, which its rows are
+     *                                  reported under - handed in by the layer rather than named here,
+     *                                  so the renderer holds no second spelling of an ID the layer
+     *                                  already owns
+     * @param viewRegistry              the layer's own views, which decide whether a frame paints and
+     *                                  under which view's rules
+     * @param bodyPreferences           the layer's body preferences, stored under its own keys, which
+     *                                  each rebuild samples its picks from
+     * @param previewHighlight          the picker preview over that same machinery
+     * @param hoverGates                the layer's own switches for the two kinds of cursor feedback
+     * @param bandLayoutSource          where the layer's choosable sub-layers ride, read per pass
+     * @param diagnosticsHolderProvider the holding the diagnostic overlays read
+     * @param holderResolveSource       the per-system holder read the incremental refresh uses
      * @return a renderer for that machinery, its cache empty until the first frame builds it
      */
-    public static OwnerMapLayerRenderer createForLiveScreen(
+    public static SequencedMapLayerRenderer<OwnerPaintedView> createForLiveScreen(
             SectorMapMachinery machinery,
             String layerId,
             MapLayerViewRegistry viewRegistry,
             OwnerMapBodyPreferences bodyPreferences,
             OwnerMapPreviewHighlight previewHighlight,
-            OwnerMapHoverGates hoverGates,
+            MapLayerHoverGates hoverGates,
             Supplier<OwnerMapBandLayout> bandLayoutSource,
             HolderProvider diagnosticsHolderProvider,
             SystemHolderResolveSource holderResolveSource) {
 
-        return new OwnerMapLayerRenderer(
-            viewRegistry,
-            new OwnerMapCache(machinery, bodyPreferences, diagnosticsHolderProvider, holderResolveSource),
-            MapCoverReader.createForLiveScreen(),
+        // The cache and the compositor are made for the same machinery, so the draw lists one builds
+        // and the hover the other lights are one sector's.
+        var cache = new OwnerMapCache(
+            machinery,
+            bodyPreferences,
+            diagnosticsHolderProvider,
+            holderResolveSource);
+
+        var overlayRenderer = new OwnerMapOverlayRenderer(
             machinery.resolveHoverState(),
-            OwnerMapLayerRenderer::buildLiveHoverPublisher,
             previewHighlight,
             hoverGates,
-            bandLayoutSource,
-            new MapFrameBeats(
-                machinery.resolveProfilingOrigin(),
-                MapFrameSections.resolveLayerSection(layerId)));
-    }
+            bandLayoutSource);
 
-    /**
-     * Releases everything derived from this renderer's sector, when the machinery holding it goes.
-     *
-     * <p>The draw lists behind it own GL buffers - one per cached faction name - so they are freed
-     * here rather than left to LazyLib's finalizer sweep. A sector whose layers are removed
-     * mid-session would otherwise leak every label it had built.
-     */
-    @Override
-    public void disposeMachinery() {
-        cache.disposeCachedState();
-    }
-
-    @Override
-    public void prepareFrame(float factor) {
-        try (var beatScope = frameBeats.openBeat(MapFrameSections.PREPARE)) {
-            // Which screen is showing, read once and carried: the view this frame paints and the
-            // sidebar preferences the rebuild bakes under are both that screen's, so resolving the
-            // screen twice could paint one panel's view under the other panel's picks - a map neither
-            // panel was ever set to.
-            var livePicks = MapLayerScreens.resolveLivePicks();
-
-            // Stands down when no view of this layer is active on that screen - its tab is open with
-            // every view deselected. Gating the refresh on one view read keeps a dark overlay
-            // near-free per frame, and reading the view - not a named faction gate - is what lets any
-            // registered view draw here.
-            var view = viewRegistry.resolveActiveViewOn(livePicks);
-            if (view == null) {
-                // The frame's passes stand down with it, or a deselected view would still pay for a
-                // matrix read per pass.
-                isHoverWantedThisFrame = false;
-                return;
-            }
-            try (var layerScope = frameBeats.openLayerRow()) {
-                traceReflectiveReadings();
-                announceArrivalOnTheFrameJustClosed();
-                decideWhetherTheHoverIsWantedThisFrame();
-
-                try (var refreshScope = frameBeats.openStep(MapFrameSections.REFRESH)) {
-                    cache.refresh(view, livePicks.memoryScope());
-                }
-            }
-        }
-    }
-
-    @Override
-    public void renderOnMap(float factor, float alphaMult, MapOverlayBand band) {
-        try (var beatScope = frameBeats.openBeat(MapFrameSections.resolveRenderSection(band))) {
-            // The live view read, asked again rather than remembered: it is a registry lookup, and a
-            // field holding the frame's answer would be render state on a renderer that deliberately
-            // holds none. It agrees with the preparation's carried read because a pass and the frame
-            // that prepared it are the same screen - the player cannot change screens mid-frame - so
-            // this pays only for resolving which screen that is.
-            var view = viewRegistry.getActiveView();
-            if (view == null) {
-                return;
-            }
-            try (var layerScope = frameBeats.openLayerRow()) {
-                // The engine's two loose values become the frame every pass below takes whole. Built
-                // here because this is the last point that still speaks the engine's signature: the
-                // seam above mirrors vanilla's call so the trail back to it survives, and everything
-                // under this line is ours to give a better shape.
-                overlayRenderer.renderOnMap(cache, new MapFrame(factor, alphaMult), band);
-            }
-        }
-    }
-
-    @Override
-    public Optional<MapHoverTooltip> resolveHoverTooltip() {
-        try (var beatScope = frameBeats.openBeat(MapFrameSections.TOOLTIP)) {
-            // This layer's own tooltip switch, off means no box from it - and the framework draws
-            // whatever the other layers offer regardless, which is the point of scoping it here
-            // rather than at the dispatcher.
-            if (!hoverGates.isHoverTooltipEnabled()) {
-                return Optional.empty();
-            }
-            // The hover box is resolved through the active view for the same reason the paint is:
-            // which view is up decides what there is to say about a system - one view may break its
-            // holding down, another offer no box at all - and the dispatcher above learns only that
-            // this layer has a box, or has not.
-            var view = viewRegistry.getActiveView();
-            if (view == null) {
-                return Optional.empty();
-            }
-            try (var layerScope = frameBeats.openLayerRow()) {
-                return view.resolveHoverTooltip();
-            }
-        }
-    }
-
-    /**
-     * Resolves the cursor for the pass now running, if the frame settled that a hover is wanted at
-     * all.
-     *
-     * <p>Only what turns on the pass is left here. The whole read - the map-matrix read (bridged,
-     * and a render-thread hop under Fast Rendering), the unproject, and the cell hit test - hangs
-     * off the frame's decision, so a player with both kinds of feedback off pays for none of it, and
-     * the publisher (with the renderer binding it holds) is never built.
-     *
-     * @param factor the per-vertex scale this pass applies, folding in its zoom
-     */
-    @Override
-    public void publishHoverForPass(float factor) {
-        try (var beatScope = frameBeats.openBeat(MapFrameSections.HOVER_PUBLISH)) {
-            if (!isHoverWantedThisFrame) {
-                return;
-            }
-            if (hoverPublisher == null) {
-                hoverPublisher = hoverPublisherSource.apply(hoverState);
-            }
-            try (var layerScope = frameBeats.openLayerRow()) {
-                // The cursor read sits between the frame's refresh and this pass's draw: after the
-                // refresh, so it tests against the shapes the frame actually paints, and before the
-                // draw, so the highlight layers have an answer when they emit. It is the one point
-                // in a pass with both the live GL matrices it needs and the current draw lists. The
-                // draw lists are handed over as the hover targets they satisfy - null when nothing
-                // was painted, which the publisher parks on.
-                hoverPublisher.publishHoverFrom(cache.getClusters(), factor);
-            }
-        }
-    }
-
-    // Settles whether this frame's passes are to read the cursor, and parks the hover when they are
-    // not so nothing downstream keeps a stale cell lit.
-    //
-    // Both halves are frame facts rather than pass facts - what the player has switched on, and
-    // where the cursor rests relative to what is drawn over the map - and the covers are dear, the
-    // last of them walking the live widget tree. Asked once, they cost one walk however many
-    // surfaces paint.
-    //
-    // The read is wanted for either kind of feedback, the halo and wash or the hover box, because
-    // the box needs the same hovered cell the halo does. The switches are asked first so a player
-    // who wants neither pays for no cover read either.
-    //
-    // Package-private so the frame's decision is answerable without a live map: the covers answer
-    // from the screen, while the refresh beside them needs a running sector.
-    void decideWhetherTheHoverIsWantedThisFrame() {
-
-        isHoverWantedThisFrame = hoverGates.isCursorReadNeeded()
-            && !mapCoverReader.isMapCoveredAtCursor();
-
-        if (!isHoverWantedThisFrame) {
-            hoverState.clearHover();
-        }
-    }
-
-    // The cursor read a running game gets, and what answers a cell reached under it: the binding is
-    // chosen from the renderer in force, and what a moment sounds like belongs to whatever owns the
-    // look - the publisher under them names only the moment. The cue is composed per arrival rather
-    // than fixed now, so a level changed on the settings screen reaches a publisher built long
-    // before it.
-    //
-    // Taken as a source rather than built at construction because both reads behind it need a game
-    // that is running, while the renderer is made whenever its sector's machinery is first asked for
-    // it.
-    private static MapHoverPublisher buildLiveHoverPublisher(MapHoverState hoverState) {
-
-        var soundPlayer = new VanillaUiSoundPlayer();
-
-        return new MapHoverPublisher(
-            hoverState,
-            // The binding is the library's and the consequence is KMU's: it knows which renderer
-            // stopped holding and which member moved, and nothing about the overlay drawn over the
-            // reading, so what a failed binding costs is said here and once.
-            ModelviewMatrixReaders.selectForActiveRenderer(new CompatibilityConsumer(
-                KmuMod.MOD_ID,
-                MAP_CURSOR_FEATURE_KEY,
-                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_LOST_MAP_CURSOR),
-                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_UNAFFECTED_MAP_CURSOR))),
-            () -> soundPlayer.playCueIfPresent(MapHoverCues.composeCellArrivalCue()),
-            // Taken from the shared permission rather than composed here, so this pass and the box
-            // that reports what it finds answer from one reading: a hover resolved on a frame no box
-            // may draw on would light a cell the map then refuses to name.
-            MapHoverPermission.createForLiveScreen()::isCursorLocatable);
-    }
-
-    // The two traces that read the game's own widget tree, asked only where the player has asked for
-    // them by name. Both walk the live tree and print about a kilobyte a line, which is out of all
-    // proportion to the rest of what DEBUG turns on here - so they answer to a switch of their own as
-    // well as to the level, and the level alone leaves them off.
-    //
-    // The switch is read before the traces rather than inside them, and that ordering is the point
-    // rather than a saved call: a walk that fails warns once a session, and a warning spent while
-    // this is off would be spent on nobody. Not walking at all until someone is listening is what
-    // keeps that line available for them - and what a reader who switches this on part way through a
-    // session is owed instead is handled where the switch moves.
-    private void traceReflectiveReadings() {
-
-        if (!KmuLoggingSettings.areReflectionProbesEnabled()) {
-            return;
-        }
-        iconOrderTrace.traceWhenChanged();
-        widgetsUnderCursorTrace.traceWhenChanged();
-    }
-
-    // Answers the moment the frame just closed settled on, that frame's last pass having had the
-    // final say on where the cursor was. Nothing is owed before the first pass has ever read, which
-    // is also the only state the publisher can be absent in.
-    //
-    // Driven from the preparation rather than from a pass because the arrival latch behind it must
-    // be stepped once a frame: several surfaces paint one frame, and one of them may be a foreign
-    // map's, so a latch stepped per pass would report the cursor crossing between two transforms'
-    // answers on every frame it rests still.
-    private void announceArrivalOnTheFrameJustClosed() {
-
-        if (hoverPublisher == null) {
-            return;
-        }
-        hoverPublisher.announceSettledArrival();
+        return SequencedMapLayerRenderer.createForLiveScreen(
+            machinery,
+            layerId,
+            new MapLayerFrameParts<>(
+                viewRegistry::resolveActiveViewOn,
+                cache,
+                (mapFrame, band) -> overlayRenderer.renderOnMap(cache, mapFrame, band),
+                hoverGates,
+                OwnerPaintedView::resolveHoverTooltip));
     }
 }

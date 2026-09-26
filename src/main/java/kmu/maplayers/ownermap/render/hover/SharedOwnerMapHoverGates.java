@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap.render.hover;
 
 import kmu.maplayers.base.hover.MapHoverGates;
+import kmu.maplayers.base.hover.MapLayerHoverGates;
 import kmu.settings.KmuOwnerMapHighlightSettings;
 
 /**
@@ -14,9 +15,9 @@ import kmu.settings.KmuOwnerMapHighlightSettings;
  * lighting up under the cursor gets exactly that.
  *
  * <p>Shared because the owner-map knobs are: a layer wanting switches of its own answers
- * {@link OwnerMapHoverGates} with them instead.
+ * {@link MapLayerHoverGates} with them instead.
  */
-public enum SharedOwnerMapHoverGates implements OwnerMapHoverGates {
+public enum SharedOwnerMapHoverGates implements MapLayerHoverGates {
 
     /** The one set of shared switches; it holds no state. */
     INSTANCE;

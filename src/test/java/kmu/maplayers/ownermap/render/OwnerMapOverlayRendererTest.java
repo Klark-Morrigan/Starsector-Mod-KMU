@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render;
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.hover.MapLayerHoverGates;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
 import kmu.maplayers.base.render.MapFrame;
@@ -13,7 +14,6 @@ import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellStore;
-import kmu.maplayers.ownermap.render.hover.OwnerMapHoverGates;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlightFake;
 import kmu.maplayers.ownermap.render.ribbon.CellPresenceRibbonRenderer;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
@@ -59,7 +59,7 @@ final class OwnerMapOverlayRendererTest {
     // The compositor's gates as this suite drives them. Only the effects switch is moved here -
     // the other two decide nothing about which band a sub-layer lands in, which is this suite's
     // whole subject.
-    private static final class HoverGatesStub implements OwnerMapHoverGates {
+    private static final class HoverGatesStub implements MapLayerHoverGates {
 
         private boolean isHoverEffectsOn;
 

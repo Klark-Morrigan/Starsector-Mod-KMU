@@ -175,10 +175,10 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     }
 
     @Nested
-    class Refresh {
+    class RefreshDrawLists {
 
         @Test
-        void refreshSelectsEachSystemsColoniesOnceForTheWholeRebuild() {
+        void refreshDrawListsSelectsEachSystemsColoniesOnceForTheWholeRebuild() {
             // The step's own claim. Every stage asks the same question of the same systems, so the
             // rebuild opens one reading of the sector and hands it down; three stages each opening
             // a reading of their own is what this stops, and each would show here as another
@@ -192,7 +192,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshKeepsTheRebuildInsideTheFrameworksWalkBudget() {
+        void refreshDrawListsKeepsTheRebuildInsideTheFrameworksWalkBudget() {
             // What the framework promises the frame it draws in, read off the row the frame opens
             // around this very call: one traversal of the sector per refresh, however many stages
             // run. A stage going looking for the system list on its own breaks it, and the breach
@@ -204,7 +204,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshKeepsTheRebuildInsideTheWalkBudgetOnARefreshSignalToo() {
+        void refreshDrawListsKeepsTheRebuildInsideTheWalkBudgetOnARefreshSignalToo() {
             // The second rebuild, which reads the sector afresh rather than off the first one's
             // reading. Each refresh is judged on its own call, so a second rebuild that traversed
             // twice would be the breach even though the first stayed inside the bound.
@@ -215,7 +215,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshWalksTheSectorAgainOnASecondRebuild() {
+        void refreshDrawListsWalksTheSectorAgainOnASecondRebuild() {
             // The bound's other half: one walk per refresh rather than one walk ever. A reading
             // kept between rebuilds would draw the second off the sector the first saw, which is
             // the change a rebuild exists to show - and would show here as the walk that never
@@ -229,7 +229,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshReadsNoSectorOnAFrameWithNothingStaleToRebuild() {
+        void refreshDrawListsReadsNoSectorOnAFrameWithNothingStaleToRebuild() {
             // The frame this cache spends nearly all of its life on: the map is open, refresh runs,
             // and no input has moved. Both staleness questions are settled before a reading of the
             // sector is opened for exactly this reason - a reading opened first would put a walk of
@@ -242,8 +242,8 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 DefaultHolderProvider.INSTANCE,
                 DominanceSystemHolderResolve::openResolveOver);
 
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             for (var system : sector.getStarSystems()) {
 
@@ -253,7 +253,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshSamplesTheVisibilityRulesOnceForTheWholeRebuild() {
+        void refreshDrawListsSamplesTheVisibilityRulesOnceForTheWholeRebuild() {
             // The other half of one reading: one sampling of the rules it is taken under. Three
             // samplings let a gate flipped mid-rebuild cut the cells under one rule and paint the
             // fills under another, which nothing on screen would report.
@@ -266,7 +266,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshReadsTheSectorAsItStandsOnEachRebuildRatherThanOffTheLastOnes() {
+        void refreshDrawListsReadsTheSectorAsItStandsOnEachRebuildRatherThanOffTheLastOnes() {
             // The other half of holding one reading per rebuild: it has to be this rebuild's. An
             // index kept between rebuilds would draw the second off the sector the first saw,
             // which is precisely the change a rebuild exists to show.
@@ -277,19 +277,19 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 DefaultHolderProvider.INSTANCE,
                 DominanceSystemHolderResolve::openResolveOver);
 
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             settleTheEmptyNeighbour(sector);
             requestTheNextRebuild();
 
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             assertThat(cache.getClusters().getOccupancy().getInhabitedSystemKeys())
                 .containsExactlyInAnyOrder(buildCellKey(ALPHA_ID), buildCellKey(BETA_ID));
         }
 
         @Test
-        void refreshResolvesEveryStageOfARebuildUnderTheRulesInForceForThatRebuild() {
+        void refreshDrawListsResolvesEveryStageOfARebuildUnderTheRulesInForceForThatRebuild() {
             // A gate flipped between two rebuilds, posed on a colony nobody has discovered: under
             // the shipped rule the system is unsettled, and under the reveal it is settled and
             // contested. So the second rebuild's cut, fills and bands each have to move, and a
@@ -302,14 +302,14 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 DefaultHolderProvider.INSTANCE,
                 DominanceSystemHolderResolve::openResolveOver);
 
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
             seams
                 .resolveVisibilityRulesSeam()
                 .when(MapVisibilityRules::readFromLunaSettings)
                 .thenReturn(UNDISCOVERED_REVEALED);
 
             requestTheNextRebuild();
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             var territories = cache.getClusters();
 
@@ -327,7 +327,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshLeavesOutTheSystemsItsOwnMachinerySawMoving() {
+        void refreshDrawListsLeavesOutTheSystemsItsOwnMachinerySawMoving() {
             // The cut consults the movers so a system drifting across hyperspace seeds no cell and
             // clips no neighbour, its borders having nowhere stable to sit. Posed here rather than
             // in a unit because the moving set is published by a real tracker off real observations
@@ -344,7 +344,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 DefaultHolderProvider.INSTANCE,
                 DominanceSystemHolderResolve::openResolveOver);
 
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             assertThat(cache.getClusters().getStyledCellByCellKey())
                 .containsKey(BETA_CELL)
@@ -352,7 +352,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshLeavesOutTheTwinAloneWhenOneOfAPairSharingAnIdMoves() {
+        void refreshDrawListsLeavesOutTheTwinAloneWhenOneOfAPairSharingAnIdMoves() {
             // The tracker and the cut address a system the same way now, so a mover leaves the
             // partition as itself and its twin under the shared ID stays cut. Posed with the twin
             // moving - the one an address by ID would have folded into the first - so it is the
@@ -367,7 +367,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 DefaultHolderProvider.INSTANCE,
                 DominanceSystemHolderResolve::openResolveOver);
 
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             assertThat(cache.getClusters().getStyledCellByCellKey())
                 .containsKeys(ANCHORED_ALPHA_CELL, BETA_CELL)
@@ -375,7 +375,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshCutsASystemAnotherMachinerySawMoving() {
+        void refreshDrawListsCutsASystemAnotherMachinerySawMoving() {
             // The half a cache holding its own machinery is for. A tracker is keyed by system
             // key and nothing forbids two sectors from minting a system under the same one, so a
             // cache reading the running game's movers would drop this sector's system for a
@@ -392,14 +392,14 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 DefaultHolderProvider.INSTANCE,
                 DominanceSystemHolderResolve::openResolveOver);
 
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             assertThat(cache.getClusters().getStyledCellByCellKey())
                 .containsKeys(ALPHA_CELL, BETA_CELL);
         }
 
         @Test
-        void refreshDrainsItsOwnMachineryStaleSystemsAndLeavesAnothersStanding() {
+        void refreshDrawListsDrainsItsOwnMachineryStaleSystemsAndLeavesAnothersStanding() {
             // The board's half of the same claim. A full rebuild re-derives every system, so it
             // drains the marks it has just accounted for - and nothing forbids two sectors from
             // minting a system under one key, so a rebuild draining a shared board would swallow
@@ -415,7 +415,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                     PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
                     DefaultHolderProvider.INSTANCE,
                     DominanceSystemHolderResolve::openResolveOver)
-                .refresh(FactionsView.INSTANCE, SCREEN);
+                .refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             assertThat(machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
                 .isEmpty();
@@ -424,7 +424,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshCutsTheSectorItsMachineryWasMadeForRatherThanTheRunningOne() {
+        void refreshDrawListsCutsTheSectorItsMachineryWasMadeForRatherThanTheRunningOne() {
             // The question this whole rework was for. Vanilla's map hook names no sector, so a
             // rebuild used to ask the running game which one it was drawing - which is right only
             // while the sector it holds cells for and the sector that is loaded are the same. Posed
@@ -439,7 +439,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 DefaultHolderProvider.INSTANCE,
                 DominanceSystemHolderResolve::openResolveOver);
 
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             assertThat(cache.getClusters().getStyledCellByCellKey())
                 .containsKeys(ALPHA_CELL, BETA_CELL)
@@ -456,7 +456,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
                 DefaultHolderProvider.INSTANCE,
                 DominanceSystemHolderResolve::openResolveOver)
-            .refresh(FactionsView.INSTANCE, SCREEN);
+            .refreshDrawLists(FactionsView.INSTANCE, SCREEN);
     }
 
     // One rebuild of the real cache over the staged sector, measured the way a frame measures it:
@@ -472,7 +472,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
         return captureRefreshesOf(profiler -> {
             try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
-                cache.refresh(FactionsView.INSTANCE, SCREEN);
+                cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
             }
         });
     }
@@ -491,12 +491,12 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         return captureRefreshesOf(profiler -> {
 
             try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
-                cache.refresh(FactionsView.INSTANCE, SCREEN);
+                cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
             }
             requestTheNextRebuild();
 
             try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
-                cache.refresh(FactionsView.INSTANCE, SCREEN);
+                cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
             }
         });
     }

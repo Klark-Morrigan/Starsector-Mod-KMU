@@ -70,7 +70,7 @@ Every place the tier needs a layer's answer is a seam the layer fills where it c
 | --- | --- |
 | each system's owner, for a whole rebuild | `HolderProvider`, one per view |
 | one system's owner, for an incremental refresh | `SystemHolderResolveSource` |
-| whether the cursor is answered at all | `OwnerMapHoverGates`, or the tier's `SharedOwnerMapHoverGates` over the shared owner-map switches |
+| whether the cursor is answered at all | the substrate's `MapLayerHoverGates`, or the tier's `SharedOwnerMapHoverGates` over the shared owner-map switches |
 | what the picker's hovered row lights | `OwnerMapPreviewHighlight`, or the tier's `SpotlightPreviewHighlightRenderer` for a layer offering the spotlight picker |
 | which side of the nebulae each sub-layer paints | `OwnerMapBandLayout`, supplied per frame |
 | which view paints, and what it groups by | `OwnerPaintedView` |
@@ -172,8 +172,8 @@ since that is what a player's stored setting is keyed by.
 | `render/labels` | what a cluster's name reads and what shade it draws in, handed to the substrate's overlay |
 | [`render/ribbon`](render/ribbon/README.md) | a planned band as triangles inside its cell's ring, and the draw |
 | [`ribbon`](ribbon/README.md) | what a band is made of before any geometry: the runs, their order and the count itself |
-| `render` | the cache, the renderer and the frame sequence over all of it, the incremental refresh, and the band order the sub-layers stack in |
-| `render/hover` | what the cursor is over on this map, the two seams a layer answers the cursor and the picker preview through, and the tier's shared answers to both |
+| `render` | the cache, the compositor stacking the sub-layers in their band order, the incremental refresh, and `OwnerMapLayerRenderer`, which hands the cache and the compositor to [the substrate's frame sequence](../base/render/README.md#the-frame-sequence) |
+| `render/hover` | what the cursor is over on this map, the seam a layer answers the picker preview through, and the tier's shared answers to it and to the substrate's cursor switches |
 | `tooltip` | the colony vocabulary and the line shapes every layer's hover box is written in |
 | `sidebar` | the body controls a layer built on this tier offers, and the memo behind its picker |
 

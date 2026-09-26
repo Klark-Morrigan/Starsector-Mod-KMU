@@ -1,12 +1,12 @@
-package kmu.maplayers.ownermap.render.hover;
+package kmu.maplayers.base.hover;
 
 /**
- * The drawn layer's cursor switches as a tier case sets them.
+ * The drawn layer's cursor switches as a case sets them.
  *
- * <p>Which switches a layer offers and how it spells them is its own business, so a tier case
- * states the three answers outright rather than reaching for a layer's settings reader.
+ * <p>Which switches a layer offers and how it spells them is its own business, so a case states the
+ * three answers outright rather than reaching for a layer's settings reader.
  */
-public final class OwnerMapHoverGatesFake implements OwnerMapHoverGates {
+public final class MapLayerHoverGatesFake implements MapLayerHoverGates {
 
     private boolean isHoverEffectsOn;
     private boolean isHoverTooltipOn;
@@ -16,10 +16,13 @@ public final class OwnerMapHoverGatesFake implements OwnerMapHoverGates {
      *
      * @return the gates
      */
-    public static OwnerMapHoverGatesFake createAnswering() {
-        var gatesFake = new OwnerMapHoverGatesFake();
+    public static MapLayerHoverGatesFake createAnswering() {
+
+        var gatesFake = new MapLayerHoverGatesFake();
+
         gatesFake.isHoverEffectsOn = true;
         gatesFake.isHoverTooltipOn = true;
+
         return gatesFake;
     }
 
@@ -28,8 +31,8 @@ public final class OwnerMapHoverGatesFake implements OwnerMapHoverGates {
      *
      * @return the gates
      */
-    public static OwnerMapHoverGatesFake createSilent() {
-        return new OwnerMapHoverGatesFake();
+    public static MapLayerHoverGatesFake createSilent() {
+        return new MapLayerHoverGatesFake();
     }
 
     /**

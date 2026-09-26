@@ -4,13 +4,13 @@ import com.fs.starfarer.api.Global;
 
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.hover.MapLayerHoverGates;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
 import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
-import kmu.maplayers.ownermap.render.hover.OwnerMapHoverGates;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
 import kmu.maplayers.ownermap.render.ribbon.CellPresenceRibbonRenderer;
@@ -66,7 +66,7 @@ final class OwnerMapOverlayRenderer {
 
     // Whether the layer being painted answers the cursor at all. Asked rather than read, so the
     // compositor stacks the sub-layers without holding an opinion about whose switches decide it.
-    private final OwnerMapHoverGates hoverGates;
+    private final MapLayerHoverGates hoverGates;
 
     // Where the layer's four choosable sub-layers ride this pass. Taken per pass rather than held,
     // since the answer follows a setting the player can move between frames.
@@ -86,7 +86,7 @@ final class OwnerMapOverlayRenderer {
     OwnerMapOverlayRenderer(
             MapHoverState hoverState,
             OwnerMapPreviewHighlight previewHighlight,
-            OwnerMapHoverGates hoverGates,
+            MapLayerHoverGates hoverGates,
             Supplier<OwnerMapBandLayout> bandLayoutSource) {
 
         this.hoverState = hoverState;

@@ -511,7 +511,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
         private OwnerMapClusters rebuild() {
 
-            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             return cache.getClusters();
         }
