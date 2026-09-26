@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
  * Pins the failure boundary the whole of start-up rests on: a step that throws costs its own
@@ -16,6 +17,10 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * exactly the promise made here - so a boundary that let a throw escape would take the rest of a
  * load with it, and the first anyone would know is a half-wired sector with no indication of which
  * piece went missing.
+ *
+ * <p>Both ends of the breadth are pinned, because both are decisions. A step that cannot link what
+ * it binds to is caught, that being how another mod's changed contract arrives; a failure of the
+ * process itself is not.
  */
 class KmuWiringStepsTest {
 
@@ -46,6 +51,35 @@ class KmuWiringStepsTest {
 
             assertThatCode(guardedThrow::run)
                 .doesNotThrowAnyException();
+        }
+
+        @Test
+        void swallowsAStepThatCouldNotLinkWhatItBindsTo() {
+            // The failure an integration step is guarded for, and the one a RuntimeException-only
+            // guard misses. A mod that moved a class or changed a signature is met here, where the
+            // step first reaches it, and arrives as an Error rather than an exception.
+            var unlinkableStep = (Runnable) () -> {
+                throw new NoSuchMethodError("the mod moved what the step binds to");
+            };
+
+            var guardedThrow = (Runnable) () ->
+                KmuWiringSteps.runGuardedStep(unlinkableStep, "Failed to install something");
+
+            assertThatCode(guardedThrow::run)
+                .doesNotThrowAnyException();
+        }
+
+        @Test
+        void letsAFailureOfTheProcessItselfThrough() {
+            // The limit on the breadth above. An exhausted heap is not this step's to answer for,
+            // and a guard that swallowed one would leave a game that cannot run reporting that it
+            // wired.
+            var exhaustedStep = (Runnable) () -> {
+                throw new OutOfMemoryError("Java heap space");
+            };
+
+            assertThatExceptionOfType(OutOfMemoryError.class)
+                .isThrownBy(() -> KmuWiringSteps.runGuardedStep(exhaustedStep, "unused"));
         }
 
         @Test

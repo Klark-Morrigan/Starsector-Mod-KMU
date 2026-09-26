@@ -18,6 +18,9 @@ import org.apache.log4j.Logger;
  * prevent - and an installer that guards each of its steps cannot itself throw, so the entry point
  * calls it directly rather than wrapping a guard around a guard.
  *
+ * <p>Catches what KMLib's {@code kmlib.starsector.startup.WiringSteps} catches, a failure to link
+ * alongside a throw, for the reasons given there.
+ *
  * <p>Final class with a private constructor: pure-function utility, no instance state.
  */
 public final class KmuWiringSteps {
@@ -43,7 +46,7 @@ public final class KmuWiringSteps {
         try {
             wiringStep.run();
 
-        } catch (RuntimeException exception) {
+        } catch (LinkageError | RuntimeException exception) {
             LOG.error(failureMessage, exception);
         }
     }
