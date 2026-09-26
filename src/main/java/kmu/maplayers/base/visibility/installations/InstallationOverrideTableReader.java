@@ -3,6 +3,8 @@ package kmu.maplayers.base.visibility.installations;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.SettingsAPI;
 
+import kmlib.starsector.spreadsheets.SpreadsheetRows;
+
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,9 +27,11 @@ import static kmu.util.KmuValues.normaliseText;
  * <p>Every failure is an empty answer rather than an exception, at both scales. A file a mod update
  * half-broke must still leave the map drawing: the alternative is a parse error taking down the
  * layer that was only consulting the file, over rows about entity types the player may not even
- * have in their sector. So an unreadable file reads as a table stating nothing, an unreadable row
- * is dropped while its neighbours load, and an unreadable cell falls to its own column's default -
- * each with a log line, so a modder who mistyped a row can find out why it did nothing.
+ * have in their sector. So an unreadable file reads as a table stating nothing and an unreadable
+ * cell falls to its own column's default, each with a log line, so a modder who mistyped a row can
+ * find out why it did nothing. A row naming no type - a blank ID spacing the table, a {@code #}
+ * comment - is left out while its neighbours load, being the table's own furniture rather than a
+ * statement anybody mistyped.
  *
  * <p>The three narrowing defaults all point the same way. Absent means "the facts decide", never
  * "admitted" and never a kind - the timid direction, since a row that fails to admit a station
@@ -86,8 +90,10 @@ public final class InstallationOverrideTableReader {
         }
         var overridesByEntityTypeId = new HashMap<String, InstallationOverride>();
 
-        for (var rowIndex = 0; rowIndex < rows.length(); rowIndex++) {
-            readRowInto(overridesByEntityTypeId, rows.opt(rowIndex), rowIndex);
+        // Blank-ID spacers and '#' comments left out here: neither is a statement about a type, and
+        // a comment filed under its own text would read as a type nobody ships.
+        for (var rowFields : SpreadsheetRows.readDataRows(rows, ENTITY_TYPE_COLUMN)) {
+            readRowInto(overridesByEntityTypeId, rowFields);
         }
         return new InstallationOverrideTable(overridesByEntityTypeId);
     }
@@ -112,31 +118,16 @@ public final class InstallationOverrideTableReader {
         }
     }
 
-    // One row folded into the table under the entity type it names.
+    // One row folded into the table under the entity type it names, which the data rows all carry.
     //
-    // The ID is what a row cannot do without: a statement about no type is a statement about
-    // nothing, and filing one under a blank key would hand its answers to every other unnamed row.
     // A row stating only its ID is kept as it is - it says nothing, which is a fair thing for a row
     // to say, and dropping it would make an author's placeholder look like a row that failed.
     private void readRowInto(
             Map<String, InstallationOverride> overridesByEntityTypeId,
-            Object row,
-            int rowIndex) {
+            JSONObject rowFields) {
 
-        if (!(row instanceof JSONObject rowFields)) {
-            LOG.warn(
-                "Row " + rowIndex + " of '" + TABLE_PATH + "' is not a row of the table and was "
-                    + "skipped; the rows around it were read.");
-            return;
-        }
         var entityTypeId = normaliseText(rowFields.optString(ENTITY_TYPE_COLUMN, null));
 
-        if (entityTypeId == null) {
-            LOG.warn(
-                "Row " + rowIndex + " of '" + TABLE_PATH + "' names no '" + ENTITY_TYPE_COLUMN
-                    + "' and was skipped; the rows around it were read.");
-            return;
-        }
         overridesByEntityTypeId.put(
             entityTypeId,
             new InstallationOverride(

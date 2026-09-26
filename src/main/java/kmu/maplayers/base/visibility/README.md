@@ -217,6 +217,8 @@ any mod shipping the same path adds its own rows,
 so a mod whose station carries no tag costs one row that its own author can write.
 A row may state one column and leave the other,
 research into what a modded entity really is arriving one question at a time.
+Rows are read through KMLib's `SpreadsheetRows`,
+so a blank row spacing the file and a `#` comment are left out as the game's own tables leave them.
 
 ## The shared register (`observations`)
 
