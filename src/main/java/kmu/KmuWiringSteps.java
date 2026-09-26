@@ -18,16 +18,8 @@ import org.apache.log4j.Logger;
  * prevent - and an installer that guards each of its steps cannot itself throw, so the entry point
  * calls it directly rather than wrapping a guard around a guard.
  *
- * <p>A failure to link is caught alongside a throw. A step that binds to another mod resolves that
- * mod's classes when it first reaches them, which is inside this guard, so a mod that moved a class
- * or changed a signature raises a {@link LinkageError} rather than an exception - and a guard
- * catching only {@link RuntimeException} would let a mere update take the load down. The
- * market-transfer listener is the live case: it implements an interface Nexerelin owns, and
- * constructing it is where that interface is resolved.
- *
- * <p>Nothing wider than those two is caught. An exhausted heap or a blown stack is the process's
- * trouble rather than this step's, and swallowing one would leave a game that cannot run reporting
- * that it wired.
+ * <p>Catches what KMLib's {@code kmlib.starsector.startup.WiringSteps} catches, a failure to link
+ * alongside a throw, for the reasons given there.
  *
  * <p>Final class with a private constructor: pure-function utility, no instance state.
  */

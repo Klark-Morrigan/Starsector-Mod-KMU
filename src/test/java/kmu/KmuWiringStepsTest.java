@@ -59,7 +59,7 @@ class KmuWiringStepsTest {
             // guard misses. A mod that moved a class or changed a signature is met here, where the
             // step first reaches it, and arrives as an Error rather than an exception.
             var unlinkableStep = (Runnable) () -> {
-                throw new NoSuchMethodError("exerelin.utilities.InvasionListener.reportMarketTransfered");
+                throw new NoSuchMethodError("the mod moved what the step binds to");
             };
 
             var guardedThrow = (Runnable) () ->
