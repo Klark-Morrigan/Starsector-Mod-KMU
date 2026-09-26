@@ -586,6 +586,14 @@ installed by `KMU_ModPlugin.installMapLayers` through `NexerelinInvasionListener
 forwards Nexerelin's transfers to every `MarketTransferListener` on the sector's listener manager.
 That keeps `kmu.maplayers` closed to optional-mod imports;
 on an install without Nexerelin the listener is registered and never called.
+Nexerelin calls the relay at the end of its market transfer, with no catch of its own above it,
+so the relay tells each listener behind a boundary:
+a listener that throws is logged with its trace,
+the listeners after it are still told,
+and it is told again on the next transfer.
+The listener is a fast path only -
+the staleness poll diffs every system's holder and repaints a changed one within seconds -
+so a throw there costs nothing worth a notice to the player.
 
 Beside those sits `PoliticalMapRefreshSignal`,
 the coarse changes only this layer can raise on the shared board,

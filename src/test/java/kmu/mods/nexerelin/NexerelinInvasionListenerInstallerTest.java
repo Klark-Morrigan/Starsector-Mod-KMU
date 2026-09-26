@@ -7,6 +7,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+
 import kmu.starsector.listeners.MarketTransferListener;
 
 import org.junit.jupiter.api.Nested;
@@ -140,6 +142,8 @@ final class NexerelinInvasionListenerInstallerTest {
         var settingsMock = mock(SettingsAPI.class);
         var modManagerMock = mock(ModManagerAPI.class);
 
+        // The install builds the relay, whose logger may be resolved for the first time here.
+        StubbedGlobalLogger.answerLoggersOn(globalMock);
         globalMock
             .when(Global::getSettings)
             .thenReturn(settingsMock);

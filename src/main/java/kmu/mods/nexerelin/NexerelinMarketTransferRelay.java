@@ -1,5 +1,6 @@
 package kmu.mods.nexerelin;
 
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignFleetAPI;
 import com.fs.starfarer.api.campaign.CargoAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
@@ -9,6 +10,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.rulecmd.salvage.Nex_MarketCMD;
 
 import kmu.starsector.listeners.MarketTransferListener;
+
+import org.apache.log4j.Logger;
 
 import java.util.List;
 
@@ -30,8 +33,18 @@ import exerelin.utilities.InvasionListener;
  *
  * <p>Holds the sector it was installed on, so a conquest is relayed to that sector's listeners
  * rather than to whichever sector is currently loaded.
+ *
+ * <p>Each listener is told behind a boundary of its own. Nexerelin tells its listeners in a bare
+ * loop at the end of its market transfer, from inside an invasion, a rebellion or a transfer dialog
+ * that has no catch of its own, so a throw escaping here would reach the engine and end the game
+ * with a stack through Nexerelin - for a fault that is KMU's. What a listener here does is a fast
+ * path the map's own poll covers within seconds, so a throw costs nothing worth telling the player:
+ * it is logged with its trace, the listeners after it are still told, and it is told again on the
+ * next transfer.
  */
 public class NexerelinMarketTransferRelay implements InvasionListener {
+
+    private static final Logger LOG = Global.getLogger(NexerelinMarketTransferRelay.class);
 
     private final SectorAPI sector;
 
@@ -63,7 +76,19 @@ public class NexerelinMarketTransferRelay implements InvasionListener {
             return;
         }
         for (var listener : listenerManager.getListeners(MarketTransferListener.class)) {
-            listener.reportMarketTransferred(market, oldHolder, newHolder, isCapture);
+            // Caught per listener rather than around the loop, so one listener failing costs only
+            // what it would have done and the listeners after it are still told. Logged with the
+            // trace each time: transfers are rare events, not a per-frame read, so there is nothing
+            // to throttle.
+            try {
+                listener.reportMarketTransferred(market, oldHolder, newHolder, isCapture);
+
+            } catch (LinkageError | RuntimeException listenerFailure) {
+
+                LOG.error(
+                    "A colony changing hands was not passed on to " + listener.getClass().getName(),
+                    listenerFailure);
+            }
         }
     }
 
