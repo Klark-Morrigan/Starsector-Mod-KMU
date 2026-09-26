@@ -10,6 +10,7 @@ import kmlib.text.KmlibStrings;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
+import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -34,9 +35,10 @@ import java.util.List;
  *
  * <p>The order is what a reader meets in turn: which one this is, what the box has found about it,
  * and last, how far its account of it can be trusted. Only the findings read gold
- * ({@link #buildFindingSpan}); the place identifying the line, any word a status is introduced by,
- * and the remark about the box's own account are quiet, so a reader scanning for findings passes
- * over all three.
+ * ({@link #buildFindingSpan}) - or, for a status whose finding's colour is itself the fact, the colour
+ * that status states; the place identifying the line, any word a status is introduced by, and the
+ * remark about the box's own account are quiet, so a reader scanning for findings passes over all
+ * three.
  *
  * <p>Runs rather than a built row, so nothing here holds an opinion about the shape the label ends up
  * on. A banner and a listed line compose their words differently and lay them out differently, and a
@@ -242,6 +244,9 @@ final class CellTooltipLabels {
     // The two words take the quiet shade a place and a remark take, being the box's own joining
     // words rather than anything it found; the mark keeps whatever colouring it was composed with, a
     // picture of a thing in its own right having its colours in its own pixels.
+    //
+    // The finding departs from the gold only where the status states a colour of its own, which is a
+    // finding whose colour is itself the fact (CellTooltipQualifier.drawsFindingIn argues the case).
     private static void appendQualifierRuns(
             List<LabelRun> labelRuns,
             CellTooltipEntryLine line,
@@ -258,11 +263,22 @@ final class CellTooltipLabels {
         if (qualifier.hasMark()) {
             labelRuns.add(resolveMarkSpan(qualifier.mark(), lineColour));
         }
-        labelRuns.add(buildFindingSpan(qualifier.findingText()));
+        labelRuns.add(buildQualifierFindingSpan(qualifier));
 
         if (qualifier.hasTrailingWord()) {
             labelRuns.add(buildQuietSpan(qualifier.trailingWordText()));
         }
+    }
+
+    // The run a status's finding is stated in: the colour the status carries for it where it carries
+    // one, and the one finding span every other finding reads in where it does not - so the default
+    // stays decided in one place and a stated colour is the only way off it.
+    private static TextSpan buildQualifierFindingSpan(CellTooltipQualifier qualifier) {
+
+        if (!qualifier.hasOwnFindingColour()) {
+            return buildFindingSpan(qualifier.findingText());
+        }
+        return new TextSpan(qualifier.findingText(), qualifier.findingColour());
     }
 
     // A run the box speaks in its own quiet voice: the words it joins a finding to the line with,

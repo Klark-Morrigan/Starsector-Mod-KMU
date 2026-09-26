@@ -333,7 +333,8 @@ public record CellTooltipEntryLine(
 
     /**
      * Returns a copy of this line calling {@code qualifier} out after its name - the same status, for
-     * a caller whose finding is introduced by a word or marked by a picture of what it names.
+     * a caller whose finding is introduced by a word, marked by a picture of what it names, or drawn
+     * in a colour that is itself the fact.
      *
      * @param qualifier the status called out after the line's name
      * @return an otherwise-identical line ending on that status
