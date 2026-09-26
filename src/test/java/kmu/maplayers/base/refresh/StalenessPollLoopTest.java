@@ -112,6 +112,25 @@ final class StalenessPollLoopTest {
         }
 
         @Test
+        void swallowsASourceThatCouldNotLinkWhatItReads() {
+            // A source reading another mod's state meets that mod's types on the poll, and a release
+            // that moved one arrives as an Error rather than an exception - which a guard catching
+            // only exceptions would let through into the engine.
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                var stalenessSourceMock = mock(MapLayerStalenessSource.class);
+                doThrow(new NoSuchMethodError("the mod moved what the poll reads"))
+                    .when(stalenessSourceMock)
+                    .markChangesSinceLastPoll();
+
+                var pollLoop = new StalenessPollLoop(stalenessSourceMock);
+
+                assertThatCode(() -> pollLoop.advancePoll(ADVANCE_PAST_POLL_INTERVAL))
+                    .doesNotThrowAnyException();
+            }
+        }
+
+        @Test
         void keepsPollingAfterTheSourceFaults() {
             // A transient fault (a half-built system mid-generation) must not silently
             // retire the poll for the rest of the save.
