@@ -1,5 +1,12 @@
 package kmu;
 
+import kmlib.starsector.compatibility.CompatibilityConsumer;
+import kmlib.starsector.compatibility.CompatibilityFailures;
+import kmlib.starsector.compatibility.ModIntegration;
+import kmlib.testfixtures.logging.LogAppenderFake;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -7,22 +14,34 @@ import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
- * Pins the failure boundary the whole of start-up rests on: a step that throws costs its own
- * registration and nothing else.
+ * Pins that {@link KmuWiringSteps} hands each step to KMLib's guard as KMU: a failed step logs under
+ * KMU's own logger, and only a step naming the mod it binds to is recorded for the player.
  *
- * <p>Nothing else pins it. Every installer is a list of these, and the lists are called unguarded on
- * exactly the promise made here - so a boundary that let a throw escape would take the rest of a
- * load with it, and the first anyone would know is a half-wired sector with no indication of which
- * piece went missing.
+ * <p>What the guard catches and what it lets through are pinned once, on KMLib's
+ * {@code WiringSteps}; here each entry point is driven far enough to show it reached that guard and
+ * which of its two halves.
  *
- * <p>Both ends of the breadth are pinned, because both are decisions. A step that cannot link what
- * it binds to is caught, that being how another mod's changed contract arrives; a failure of the
- * process itself is not.
+ * <p>The record is the process's own, which outlives a case, so it is drained on both sides of
+ * each. Its latch cannot be emptied, which is why every case recording into it names a third party
+ * of its own.
  */
-class KmuWiringStepsTest {
+final class KmuWiringStepsTest {
+
+    private static final String FAILURE_MESSAGE = "Failed to install something";
+
+    @BeforeEach
+    void drainTheSessionRecordBefore() {
+
+        drainTheSessionRecord();
+    }
+
+    @AfterEach
+    void drainTheSessionRecordAfter() {
+
+        drainTheSessionRecord();
+    }
 
     @Nested
     class RunGuardedStep {
@@ -32,72 +51,103 @@ class KmuWiringStepsTest {
 
             var stepsRun = new ArrayList<String>();
 
-            KmuWiringSteps.runGuardedStep(() -> stepsRun.add("ran"), "unused");
+            KmuWiringSteps.runGuardedStep(() -> stepsRun.add("ran"), FAILURE_MESSAGE);
 
             assertThat(stepsRun)
                 .containsExactly("ran");
         }
 
         @Test
-        void swallowsWhateverTheStepThrows() {
-            // The whole point: the caller carries on. A collaborator that throws is a collaborator
-            // that did not install, which is survivable; a throw reaching the engine's load is not.
-            var throwingStep = (Runnable) () -> {
-                throw new IllegalStateException("the collaborator broke");
-            };
+        void logsAStepThatThrewUnderKmusOwnLogger() {
+            // KMU's logger rather than KMLib's, so the line sits inside the subtree KMU's log-level
+            // setting reaches.
+            var capturedLog = LogAppenderFake.captureLogOf(
+                KmuWiringSteps.class,
+                () -> assertThatCode(() -> KmuWiringSteps.runGuardedStep(buildThrowingStep(), FAILURE_MESSAGE))
+                    .doesNotThrowAnyException());
 
-            var guardedThrow = (Runnable) () ->
-                KmuWiringSteps.runGuardedStep(throwingStep, "Failed to install something");
-
-            assertThatCode(guardedThrow::run)
-                .doesNotThrowAnyException();
+            assertThat(capturedLog.getMessages())
+                .containsExactly(FAILURE_MESSAGE);
         }
 
         @Test
-        void swallowsAStepThatCouldNotLinkWhatItBindsTo() {
-            // The failure an integration step is guarded for, and the one a RuntimeException-only
-            // guard misses. A mod that moved a class or changed a signature is met here, where the
-            // step first reaches it, and arrives as an Error rather than an exception.
-            var unlinkableStep = (Runnable) () -> {
-                throw new NoSuchMethodError("the mod moved what the step binds to");
-            };
+        void recordsNothingForThePlayer() {
 
-            var guardedThrow = (Runnable) () ->
-                KmuWiringSteps.runGuardedStep(unlinkableStep, "Failed to install something");
+            KmuWiringSteps.runGuardedStep(buildThrowingStep(), FAILURE_MESSAGE);
 
-            assertThatCode(guardedThrow::run)
-                .doesNotThrowAnyException();
+            assertThat(CompatibilityFailures.SESSION_RECORD.takeNextUnreported())
+                .isNull();
+        }
+    }
+
+    @Nested
+    class RunGuardedStepForAnIntegration {
+
+        @Test
+        void recordsTheFailureForThePlayerUnderTheIntegrationItNamed() {
+
+            var integration = createIntegrationWith("kmu-test-recorded-mod");
+
+            KmuWiringSteps.runGuardedStep(buildThrowingStep(), FAILURE_MESSAGE, () -> integration);
+
+            var failure = CompatibilityFailures.SESSION_RECORD.takeNextUnreported();
+
+            assertThat(failure.subject().name())
+                .isEqualTo("Test Mod");
+            assertThat(failure.consumer().consumerKey())
+                .isEqualTo("kmu:wiring-steps-test");
+            assertThat(CompatibilityFailures.SESSION_RECORD.takeNextUnreported())
+                .isNull();
         }
 
         @Test
-        void letsAFailureOfTheProcessItselfThrough() {
-            // The limit on the breadth above. An exhausted heap is not this step's to answer for,
-            // and a guard that swallowed one would leave a game that cannot run reporting that it
-            // wired.
-            var exhaustedStep = (Runnable) () -> {
-                throw new OutOfMemoryError("Java heap space");
-            };
+        void logsAStepThatThrewUnderKmusOwnLogger() {
 
-            assertThatExceptionOfType(OutOfMemoryError.class)
-                .isThrownBy(() -> KmuWiringSteps.runGuardedStep(exhaustedStep, "unused"));
+            var integration = createIntegrationWith("kmu-test-logged-mod");
+
+            var capturedLog = LogAppenderFake.captureLogOf(
+                KmuWiringSteps.class,
+                () -> KmuWiringSteps.runGuardedStep(buildThrowingStep(), FAILURE_MESSAGE, () -> integration));
+
+            assertThat(capturedLog.getMessages())
+                .anySatisfy(message -> assertThat(message).startsWith(FAILURE_MESSAGE));
         }
 
         @Test
-        void leavesEveryLaterStepStillRunning() {
-            // What a list of guarded steps is for, and the reason an installer's steps are listed
-            // rather than called in sequence: the one that broke is the only one that is missing.
-            var stepsRun = new ArrayList<String>();
+        void recordsNothingWhereTheStepInstalled() {
 
-            KmuWiringSteps.runGuardedStep(() -> stepsRun.add("first"), "unused");
-            KmuWiringSteps.runGuardedStep(
-                () -> {
-                    throw new IllegalStateException("the middle collaborator broke");
-                },
-                "Failed to install the middle one");
-            KmuWiringSteps.runGuardedStep(() -> stepsRun.add("third"), "unused");
+            var integration = createIntegrationWith("kmu-test-installed-mod");
 
-            assertThat(stepsRun)
-                .containsExactly("first", "third");
+            KmuWiringSteps.runGuardedStep(() -> { }, FAILURE_MESSAGE, () -> integration);
+
+            assertThat(CompatibilityFailures.SESSION_RECORD.takeNextUnreported())
+                .isNull();
+        }
+    }
+
+    private static Runnable buildThrowingStep() {
+        return () -> {
+            throw new IllegalStateException("the collaborator broke");
+        };
+    }
+
+    // An integration under a third party named for the one case recording against it. The latch is
+    // per third party and consumer for the whole run, so two cases sharing one would leave whichever
+    // ran second recording nothing.
+    private static ModIntegration createIntegrationWith(String subjectModId) {
+
+        return new ModIntegration(
+            subjectModId,
+            "Test Mod",
+            new CompatibilityConsumer(KmuMod.MOD_ID, "wiring-steps-test", "The test feature.", "Everything else."));
+    }
+
+    // Empties the process's own record. Left filled, the next case to read it finds a failure it
+    // never filed.
+    private static void drainTheSessionRecord() {
+
+        while (CompatibilityFailures.SESSION_RECORD.takeNextUnreported() != null) {
+            // drained for its side effect.
         }
     }
 }

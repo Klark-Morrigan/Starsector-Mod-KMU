@@ -30,6 +30,20 @@ public final class KmuStringKeys {
     /** What a Fast Rendering mismatch does not cost, for the notice's optional "No effect" row. */
     public static final String COMPATIBILITY_UNAFFECTED_MAP_CURSOR = "compatibility_unaffected_map_cursor";
 
+    /**
+     * What a session loses where a LunaLib settings listener did not register: KMU no longer
+     * answering a settings change where the player makes it. "May not take effect until you restart"
+     * rather than naming when each does, because the listeners differ - a feature switch is applied
+     * again at the next save load, the profiling level only at the next launch - and one sentence
+     * covers every one of them. No other mod is named, though one listener follows another mod's
+     * settings: the sentence reaches players without that mod too.
+     */
+    public static final String COMPATIBILITY_LOST_LUNALIB_SETTINGS = "compatibility_lost_lunalib_settings";
+
+    /** What a failed LunaLib binding does not cost, for the notice's optional "No effect" row. */
+    public static final String COMPATIBILITY_UNAFFECTED_LUNALIB_SETTINGS =
+        "compatibility_unaffected_lunalib_settings";
+
     public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
     public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
     public static final String CONDITION_MANAGER_SUMMARY = "condition_manager_summary";

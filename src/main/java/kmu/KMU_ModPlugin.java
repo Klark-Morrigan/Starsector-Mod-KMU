@@ -97,9 +97,14 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         // App-scoped, once per launch: register KMU's LunaLib settings bindings before any save
         // loads. LunaLib is a hard dependency, so it has already loaded by the time this runs.
+        //
+        // This and every settings listener below bind through LunaLib, so a LunaLib release that
+        // broke that binding is reported to the player under LunaLib rather than only logged. They
+        // share one description, so a break that fails them all is one report.
         KmuWiringSteps.runGuardedStep(
             KmuLunaSettings::installBindings,
-            "Failed to install KMU LunaLib settings bindings");
+            "Failed to install KMU LunaLib settings bindings",
+            KmuLunaSettings::describeLunaLibIntegration);
 
         // After the settings above, because which profiler is bound is itself a setting. Nothing
         // before this point is measured, which is what the shipped state asks for anyway: the
@@ -113,7 +118,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // one this has to be in place to re-arm.
         KmuWiringSteps.runGuardedStep(
             ReflectionTracingInstaller::installAll,
-            "Failed to install KMU reflection tracing listener");
+            "Failed to install KMU reflection tracing listener",
+            KmuLunaSettings::describeLunaLibIntegration);
 
         // Wire the concrete map layers into the framework registry once per launch, before any
         // sector map can open. The registry stays agnostic to which views exist; this is the
@@ -130,15 +136,18 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // there is one announcement to react to however many switches read it.
         KmuWiringSteps.runGuardedStep(
             () -> KmuLunaSettings.runOnSettingsChange(KMU_ModPlugin::applySwitchedFeatures),
-            "Failed to install KMU feature switch listener");
+            "Failed to install KMU feature switch listener",
+            KmuLunaSettings::describeLunaLibIntegration);
 
         // The same reaction to Random Assortment of Things' own saves, so the compatibility follows
         // that mod flipping its minimap switch live instead of at the next load. A second settings
-        // source rather than a second kind of step, which is why it reads like the one above.
+        // source rather than a second kind of step, which is why it reads like the one above - and
+        // is reported under LunaLib like it, LunaLib being what the listener binds to.
         KmuWiringSteps.runGuardedStep(
             () -> RandomAssortmentOfThingsSettings.runOnSettingsChange(
                 KMU_ModPlugin::applySwitchedFeatures),
-            "Failed to install KMU Random Assortment of Things settings listener");
+            "Failed to install KMU Random Assortment of Things settings listener",
+            KmuLunaSettings::describeLunaLibIntegration);
     }
 
     @Override

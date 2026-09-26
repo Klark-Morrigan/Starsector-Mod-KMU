@@ -1,11 +1,15 @@
 package kmu.settings;
 
 import kmlib.logging.KmLogging;
+import kmlib.settings.KmlibLunaSettings;
 import kmlib.settings.LabeledChoice;
 import kmlib.settings.LabeledChoices;
 import kmlib.settings.LunaSettingsReader;
+import kmlib.starsector.compatibility.CompatibilityConsumer;
+import kmlib.starsector.compatibility.ModIntegration;
 
 import kmu.KmuMod;
+import kmu.util.KmuStringKeys;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -96,6 +100,11 @@ public final class KmuLunaSettings {
     // of that section's rows, so which logging rows exist has one answer rather than two.
     private static final String MOD_ID = KmuMod.MOD_ID;
 
+    // Which of KMU's features a failed LunaLib binding costs, as the half of a latch key the mod ID
+    // does not cover. One key for every binding, because they all go through the same LunaLib entry
+    // point and what each costs is the same loss: KMU no longer answering a settings change.
+    private static final String LUNALIB_SETTINGS_FEATURE_KEY = "lunalib-settings";
+
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
     // derived state (e.g. the owner-map overlay cache) read this revision and
     // rebuild only when it moves, so they react to settings changes live off a
@@ -103,6 +112,30 @@ public final class KmuLunaSettings {
     private static final AtomicInteger settingsRevision = new AtomicInteger();
 
     private KmuLunaSettings() {
+    }
+
+    /**
+     * KMU's LunaLib bindings as the compatibility channel states them: LunaLib as the third party,
+     * and KMU as the mod that loses something by it.
+     *
+     * <p>One description for every step that binds a settings listener, whichever mod's settings it
+     * listens to, so a LunaLib release that breaks the registration they share is one report rather
+     * than one per step. Composed only once a step has failed, so the wording read out of
+     * strings.json and the mod manager read behind the installed version stay off every load where
+     * the bindings took.
+     *
+     * @return the integration a failed LunaLib binding is reported under
+     */
+    public static ModIntegration describeLunaLibIntegration() {
+
+        return new ModIntegration(
+            KmlibLunaSettings.LUNALIB_MOD_ID,
+            KmlibLunaSettings.LUNALIB_MOD_NAME,
+            new CompatibilityConsumer(
+                MOD_ID,
+                LUNALIB_SETTINGS_FEATURE_KEY,
+                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_LOST_LUNALIB_SETTINGS),
+                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_UNAFFECTED_LUNALIB_SETTINGS)));
     }
 
     /**
