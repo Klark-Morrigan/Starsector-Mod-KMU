@@ -4,6 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.compatibility.CompatibilityFailures;
+import kmlib.testfixtures.starsector.compatibility.CompatibilityFailureFixture;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 
 import kmu.diagnostics.ProfilingCaptureInstaller;
@@ -78,14 +79,14 @@ class KMU_ModPluginTest {
         @BeforeEach
         void drainTheSessionRecordBefore() {
 
-            drainTheSessionRecord();
+            CompatibilityFailureFixture.drainSessionRecord();
         }
 
         @AfterEach
         void clearSettingsAndDrainTheSessionRecord() {
 
             StarsectorSettingsFake.clearSettings();
-            drainTheSessionRecord();
+            CompatibilityFailureFixture.drainSessionRecord();
         }
 
         @Test
@@ -207,15 +208,6 @@ class KMU_ModPluginTest {
                 installers.verifyEveryTakeBackFor(sectorMock, times(1));
                 installers.verifyEveryStandUpFor(sectorMock, never());
             }
-        }
-    }
-
-    // Empties the process's own record, which outlives a case. Left filled, the next case to read it
-    // finds a failure it never filed.
-    private static void drainTheSessionRecord() {
-
-        while (CompatibilityFailures.SESSION_RECORD.takeNextUnreported() != null) {
-            // drained for its side effect.
         }
     }
 

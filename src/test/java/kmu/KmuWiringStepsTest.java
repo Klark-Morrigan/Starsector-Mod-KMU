@@ -4,6 +4,7 @@ import kmlib.starsector.compatibility.CompatibilityConsumer;
 import kmlib.starsector.compatibility.CompatibilityFailures;
 import kmlib.starsector.compatibility.ModIntegration;
 import kmlib.testfixtures.logging.LogAppenderFake;
+import kmlib.testfixtures.starsector.compatibility.CompatibilityFailureFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,13 +35,13 @@ final class KmuWiringStepsTest {
     @BeforeEach
     void drainTheSessionRecordBefore() {
 
-        drainTheSessionRecord();
+        CompatibilityFailureFixture.drainSessionRecord();
     }
 
     @AfterEach
     void drainTheSessionRecordAfter() {
 
-        drainTheSessionRecord();
+        CompatibilityFailureFixture.drainSessionRecord();
     }
 
     @Nested
@@ -142,12 +143,4 @@ final class KmuWiringStepsTest {
             new CompatibilityConsumer(KmuMod.MOD_ID, "wiring-steps-test", "The test feature.", "Everything else."));
     }
 
-    // Empties the process's own record. Left filled, the next case to read it finds a failure it
-    // never filed.
-    private static void drainTheSessionRecord() {
-
-        while (CompatibilityFailures.SESSION_RECORD.takeNextUnreported() != null) {
-            // drained for its side effect.
-        }
-    }
 }
