@@ -13,9 +13,8 @@ import kmlib.profiling.ProfileSection;
  * for. What this holds is the pair of answers both opens need, which do not change while a sector
  * is loaded: which game the rows are grouped under, and which row this layer's work sits on.
  *
- * <p>Held by whatever sequences the frame, so the sequence names a beat and nothing else. That is
- * the renderer today and the framework once the roster takes foreign layers, at which point this
- * moves with the sequence and each layer gets one composed from its own id.
+ * <p>Held by {@link SequencedMapLayerRenderer}, one composed from each layer's own ID, so the
+ * sequence names a beat and nothing else.
  *
  * <p>The profiler is resolved per open rather than held, since the binding can change mid-session -
  * a readout switched on, or the level knob rebinding - and a held one would go on recording into a

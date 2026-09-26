@@ -12,6 +12,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
+import kmu.maplayers.base.hover.MapHoverTargets;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
@@ -20,6 +21,7 @@ import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshSignal;
 import kmu.maplayers.base.refresh.RefreshSignalTracker;
+import kmu.maplayers.base.render.MapFrameCache;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.ownermap.ContentInputs;
@@ -43,9 +45,9 @@ import java.util.Set;
 
 /**
  * Keeps an owner map's derived draw lists fresh with the least work per frame, and hands
- * the current ones to the renderer. The layer renderer holds one of these and asks it to
- * {@link #refresh} each frame the map is open; everything the map draws is cached here and rebuilt
- * only when its inputs change.
+ * the current ones to the renderer. The framework's frame sequence holds one of these as the layer's
+ * {@link MapFrameCache} and asks it to {@link #refreshDrawLists} each frame the map is open;
+ * everything the map draws is cached here and rebuilt only when its inputs change.
  *
  * <p>System positions in hyperspace are fixed for the life of a save, so the raw cells are built
  * once and cached; they are reseeded only when the reachable-system set changes, the
@@ -81,7 +83,8 @@ import java.util.Set;
  * rebuild reads comes off the machinery this cache was made for rather than off the running
  * game: asking the running game is how a cache comes to be handed a second sector at all.
  */
-public final class OwnerMapCache {
+public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
+
     private static final Logger LOG = Global.getLogger(OwnerMapCache.class);
 
     // Everything a rebuild derives from the cells. Writes its line on every call, a rebuild being
@@ -169,6 +172,7 @@ public final class OwnerMapCache {
             OwnerMapBodyPreferences bodyPreferences,
             HolderProvider diagnosticsHolderProvider,
             SystemHolderResolveSource holderResolveSource) {
+
         this.machinery = machinery;
         this.diagnosticsHolderProvider = diagnosticsHolderProvider;
         this.holderResolveSource = holderResolveSource;
@@ -180,6 +184,15 @@ public final class OwnerMapCache {
 
     /** @return the built production draw lists, or null while the debug overlay has replaced them */
     public OwnerMapClusters getClusters() {
+        return drawables.getClusters();
+    }
+
+    /**
+     * @return the production draw lists as the shapes a cursor read tests against - null while the
+     *         debug overlay has replaced them, which the read parks on
+     */
+    @Override
+    public MapHoverTargets resolveHoverTargets() {
         return drawables.getClusters();
     }
 
@@ -219,9 +232,14 @@ public final class OwnerMapCache {
      * sector after this one is drawn by a cache of its own, which begins at its seeds. What that
      * release covers, the labels' GL buffers included, is the drawables' own.
      */
+    @Override
     public void disposeCachedState() {
+
         drawables.disposeAll();
-        cellGeometry.cells().clearCachedCells();
+
+        cellGeometry
+            .cells()
+            .clearCachedCells();
     }
 
     /**
@@ -237,13 +255,18 @@ public final class OwnerMapCache {
      *                    picks it is drawn under come off the frame's one reading of which screen is
      *                    showing
      */
-    public void refresh(OwnerPaintedView view, ScreenMemoryScope memoryScope) {
+    @Override
+    public void refreshDrawLists(OwnerPaintedView view, ScreenMemoryScope memoryScope) {
+
         try {
             rebuildStaleHalves(view, memoryScope);
-        } catch (RuntimeException exception) {
+
+        } catch (RuntimeException runtimeException) {
+
             rebuildFaultWarning.warnOnce(
                 "Owner map rebuild failed; retrying next frame, keeping last good draw lists",
-                exception);
+                runtimeException);
+
             drawables.ensureClustersNonNull(view);
         }
     }
@@ -350,7 +373,6 @@ public final class OwnerMapCache {
         // The name choice comes off this rebuild's own sampling rather than the preference, so
         // what is minted matches what was fitted.
         drawables.rebuildLabels(staleHalves.contentInputs().nameFormat().areNamesDrawn());
-
         decider.recordContentRebuilt(staleHalves);
 
         return wasHoldingReused;

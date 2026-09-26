@@ -20,6 +20,7 @@ import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.render.SequencedMapLayerRenderer;
 import kmu.maplayers.base.sidebar.ListPickerBinder;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.picker.BlocPickerRead;
@@ -28,7 +29,6 @@ import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.picker.SelectableBloc;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
-import kmu.maplayers.ownermap.render.OwnerMapLayerRenderer;
 import kmu.maplayers.ownermap.sidebar.OwnerMapBodyControls;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.dominance.DominanceSortModes;
@@ -228,7 +228,7 @@ final class PoliticalMapLayerTest {
             // one sector is once, since the surface resolves it every frame and the hover box again
             // in the pass after.
             assertThat(layer.resolveRenderer(machinery))
-                .isInstanceOf(OwnerMapLayerRenderer.class)
+                .isInstanceOf(SequencedMapLayerRenderer.class)
                 .isSameAs(layer.resolveRenderer(machinery));
         }
 

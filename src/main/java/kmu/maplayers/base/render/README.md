@@ -13,6 +13,7 @@ see the [mod README](../../../../../../../README.md) for project context.
 ## Index
 
 - [Who gets the frame](#who-gets-the-frame)
+- [The frame sequence](#the-frame-sequence)
 - [Bands](#bands)
 - [One preparation per frame, one cursor read per pass](#one-preparation-per-frame-one-cursor-read-per-pass)
 - [What a frame costs](#what-a-frame-costs)
@@ -128,6 +129,103 @@ both passes satisfy the hover constraint.
 The render constraint is what closes that case,
 by keeping the foreign pass from running at all.
 
+## The frame sequence
+
+`MapLayerRenderer` is the raw seam,
+and a layer may implement it directly and take the frame whole.
+A layer that paints from a cache it keeps fresh does not have to:
+`SequencedMapLayerRenderer` runs the frame every such layer runs,
+over the parts the layer hands it,
+and `createForLiveScreen(machinery, layerId, parts)` is what a layer's `resolveRenderer` returns.
+
+```plaintext
+prepareFrame(factor)
+  read which screen is showing, once
+  stand down if nothing to draw        -> parks the hover; the frame costs one read
+  diagnostic traces                    -> icon order, widgets under the cursor
+  announce the arrival the last frame settled on
+  decide whether the hover is wanted   -> switches first, then the covers
+  refresh the cache                    -> under the subject and that screen's scope
+
+publishHoverForPass(factor)
+  gate on the frame's decision
+  build the publisher on first want    -> needs a running renderer; never built if the hover is off
+  read the cursor against the cache's hover targets
+
+renderOnMap(factor, alphaMult, band)
+  stand down
+  hand the band to the compositor
+
+resolveHoverTooltip()
+  the layer's own switch, then its box
+```
+
+Four rules in there are load-bearing and invisible from outside,
+and every one of them fails only in play:
+
+- **The cover read is settled once per frame.**
+  Its last cover walks the live widget tree,
+  so a pass reads a flag the preparation set rather than asking again.
+- **The arrival latch is stepped once per frame.**
+  Several surfaces paint one frame,
+  and a latch stepped per pass reports a crossing on every frame the cursor rests still.
+- **The cursor read is taken per pass,
+  the last winning.**
+  Each pass binds a transform of its own -
+  see [below](#one-preparation-per-frame-one-cursor-read-per-pass).
+- **A frame that stands down parks the hover.**
+  It reads no cursor on any pass,
+  so a cell left lit would light again the moment something is selected,
+  before any pass had read where the cursor now is.
+
+What a layer supplies is `MapLayerFrameParts`,
+five parts tied together by the frame's subject -
+what a frame is painted under,
+which is the active view for a layer offering several
+and one constant for a layer that has nothing to choose between:
+
+| Part | What it answers |
+| --- | --- |
+| `subjectRead` | the subject for the screen showing, or null to stand the frame down |
+| `cache` (`MapFrameCache`) | brings the draw lists up to date under the subject, hands the cursor read its targets, and releases what it built |
+| `compositor` (`MapFrameCompositor`) | emits one band from the cache |
+| `hoverGates` (`MapLayerHoverGates`) | the layer's own switches for the two kinds of cursor feedback |
+| `tooltipRead` | the layer's box under the subject painting |
+
+The subject and the refresh's scope come off one reading of which screen is showing,
+because both are per-screen picks:
+read twice,
+they could paint one panel's view under the other panel's preferences.
+The passes read the screen again rather than remember the preparation's answer,
+since the player cannot change screens mid-frame
+and a field holding it would be render state on a renderer that holds none.
+
+**Why it is here and not in the owner-map tier.**
+The sequence is about the map's render pass,
+not about cells:
+a relay-network layer drawing a graph performs the same beats in the same order,
+and would get the cover read and the arrival latch wrong the same ways.
+So the owner-painted pipeline hands the sequence its cache and its compositor
+and keeps nothing of the frame itself.
+
+Two things came down with the sequence for the same reason.
+The hover publisher is built here,
+over the matrix reader,
+the arrival sound and the shared hover permission -
+none of them about any layer,
+and a publisher built differently for another layer would report a different cursor for the same frame.
+And the two diagnostic traces run here,
+icon order and widgets under the cursor,
+since they are facts about a game build and the chrome over the map;
+they log under KMU's verbosity,
+KMU being the framework's host.
+
+What does not come down is anything only some layers have.
+A picker's hover preview is the clearest case:
+it is handed to the owner-map tier's compositor,
+because a sequence taking it would state that every layer has a picker,
+which is false.
+
 ## Bands
 
 `MapOverlayBand` splits an overlay in two at the one place the map draws something of its own between the parts:
@@ -235,9 +333,7 @@ so a consumer layer names the beat it runs under from one place
 and a reader matching a name in a report finds the point in the sequence it belongs to.
 
 `MapFrameBeats` is what opens them,
-held by whatever sequences the frame -
-the renderer today,
-the framework once the roster takes foreign layers -
+held by [the frame sequence](#the-frame-sequence) and composed from each layer's own ID,
 so the sequence names a beat and nothing else.
 
 Each beat opens a **root** under the sector's profiling origin,

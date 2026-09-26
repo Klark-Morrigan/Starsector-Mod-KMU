@@ -105,7 +105,7 @@ which is a release contract and nothing else:
 ```java
 machinery.resolveLayerMachinery(
     LAYER_ID,
-    OwnerMapLayerRenderer.class,
+    MapLayerRenderer.class,
     () -> OwnerMapLayerRenderer.createForLiveScreen(machinery, LAYER_ID /* , the layer's answers */));
 ```
 

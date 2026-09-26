@@ -43,7 +43,7 @@ None of these reach a player: every LunaLib field ID and every value saved in se
 - **Tier types renamed with the move:**
   - `PoliticalMapView` is `OwnerPaintedView`, and `PoliticalMapViewRegistry` is `MapLayerViewRegistry`.
   - These take `OwnerMap` for `PoliticalMap`:
-    - `PoliticalMapLayerRenderer`, `PoliticalMapOverlayRenderer`, `PoliticalMapCache`, `PoliticalMapDrawables` and `PoliticalMapRebuildDecider`.
+    - `PoliticalMapOverlayRenderer`, `PoliticalMapCache`, `PoliticalMapDrawables` and `PoliticalMapRebuildDecider`.
     - `PoliticalMapBandLayout`, `PoliticalMapCategory`, `PoliticalMapBodyControls`, `PoliticalMapInhabitation` and `PoliticalMapHoverHighlightSource`.
   - The cluster build:
     - `PoliticalMapTerritories` is `OwnerMapClusters`.
@@ -59,6 +59,10 @@ None of these reach a player: every LunaLib field ID and every value saved in se
   - `resolveHolderProvider()` has no default.
   - `resolveViewRecedeAdjustment(ScreenMemoryScope)` is new, defaulting to receding nothing.
   - `computeAllianceContentRevision` left the seam for the political map's own refresh signal.
+- **The frame sequence is the framework's:**
+  - `PoliticalMapLayerRenderer` is gone. `kmu.maplayers.base.render.SequencedMapLayerRenderer` runs the frame every painting layer runs - the stand-down, the refresh, the cursor read per pass, the paint per band and the hover box - over the `MapLayerFrameParts` a layer supplies: a stand-down read, a `MapFrameCache`, a `MapFrameCompositor`, its `MapLayerHoverGates` and its box.
+  - `OwnerMapLayerRenderer.createForLiveScreen` composes the owner map's parts into one and returns it.
+  - `OwnerMapCache` is the owner map's `MapFrameCache`: `refresh` is `refreshDrawLists`, and `resolveHoverTargets` is new.
 - **A layer's state is its own:**
   - `MapLayerViewRegistry` is an instance a layer builds over its own save key, views, default view and host tab, in place of static members.
   - Per-sector pieces a layer holds go through `SectorMapMachinery.resolveLayerMachinery(layerId, type, make)`.
@@ -82,8 +86,8 @@ None of these reach a player: every LunaLib field ID and every value saved in se
 - **Polls, hover gates and colony transfers:**
   - `MapLayerSectorWatcher` is abstract. A layer installs its own subclass, because the engine removes transient scripts by exact class and a shared class let one layer's poll evict another's.
   - Hover gates:
-    - `PoliticalMapHoverGates` is gone: `SharedOwnerMapHoverGates` reads the one shared set of owner-map hover switches.
-    - `OwnerMapHoverGates.isCursorReadNeeded()` is a default method.
+    - `PoliticalMapHoverGates` is gone: a layer answers its own cursor switches through `kmu.maplayers.base.hover.MapLayerHoverGates`, and `SharedOwnerMapHoverGates` answers it from the one shared set of owner-map hover switches.
+    - `MapLayerHoverGates.isCursorReadNeeded()` is a default method.
   - Colony transfers:
     - `PoliticalMapMarketTransferListener` implements KMU's own `kmu.starsector.listeners.MarketTransferListener` rather than Nexerelin's `InvasionListener`.
     - A listener of that type registered on a sector is told of every colony Nexerelin transfers there.

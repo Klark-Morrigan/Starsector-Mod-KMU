@@ -593,8 +593,9 @@ alliance membership being the one.
 
 ### Render orchestration
 
-The frame,
-the order the sub-layers stack in and the incremental refresh are the tier's -
+The frame is the substrate's -
+see [the frame sequence](../base/render/README.md#the-frame-sequence) -
+and the order the sub-layers stack in and the incremental refresh are the tier's -
 see [the owner-map tier](../ownermap/README.md#where-each-part-lives).
 What this layer hands over are its answers to the tier's render seams
 ([what a layer supplies](../ownermap/README.md#what-a-layer-supplies)),
@@ -614,6 +615,9 @@ all of them where `PoliticalMapLayer` builds its renderer:
   what hovering a row of the spotlight picker lights,
   built over this layer's ID and `KmuMod.MAP_STORE_NAMESPACE`,
   the namespace its picker stores its picks and reports its hover under.
+  It goes to the tier's compositor and deliberately not to the frame sequence:
+  the sequence taking it would state that every layer has a picker with a hover preview,
+  which is false.
 - **`DefaultHolderProvider`** and **`DominanceSystemHolderResolve`**,
   in `holders` -
   the holding the diagnostic overlays read,

@@ -110,10 +110,10 @@ final class OwnerMapCacheTest {
     }
 
     @Nested
-    class Refresh {
+    class RefreshDrawLists {
 
         @Test
-        void refreshInstallsAnEmptyPlaceholderWhenTheRebuildThrows() {
+        void refreshDrawListsInstallsAnEmptyPlaceholderWhenTheRebuildThrows() {
             // No sector, so the rebuild throws part way through. The renderer must still find a draw
             // list rather than dereference a null one, and the next frame retries.
             var cache = buildCacheOver(machinery);
@@ -124,7 +124,7 @@ final class OwnerMapCacheTest {
                     var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
-                cache.refresh(viewMock, SCREEN);
+                cache.refreshDrawLists(viewMock, SCREEN);
             }
 
             assertThat(cache.getClusters())
@@ -134,7 +134,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshBuildsTheBorderTracingOverlayInPlaceOfTheDrawListsUnderTheDebugToggle() {
+        void refreshDrawListsBuildsTheBorderTracingOverlayInPlaceOfTheDrawListsUnderTheDebugToggle() {
             // The overlay replaces the production view outright rather than drawing over it, so
             // the builder of the other view is never asked and its draw lists are left null.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
@@ -142,7 +142,7 @@ final class OwnerMapCacheTest {
 
             var cache = buildCacheOver(emptySectorMachinery);
 
-            cache.refresh(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
 
             assertThat(cache.isDebug())
                 .isTrue();
@@ -155,14 +155,14 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshBuildsTheDrawListsAndNoOverlayWithTheDebugToggleOff() {
+        void refreshDrawListsBuildsTheDrawListsAndNoOverlayWithTheDebugToggleOff() {
 
             var builtClusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
             openEverySeamARebuildReaches(builtClusters);
 
             var cache = buildCacheOver(emptySectorMachinery);
 
-            cache.refresh(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
 
             assertThat(cache.isDebug())
                 .isFalse();
@@ -175,7 +175,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshFoldsAMarkedSystemIntoTheStandingMapOnAFrameOwingNoRebuild() {
+        void refreshDrawListsFoldsAMarkedSystemIntoTheStandingMapOnAFrameOwingNoRebuild() {
             // The colony event's path: nothing a decision reads moved, so no rebuild is owed, and
             // the one system marked since is handed to the fold rather than left for a rebuild
             // nothing is going to run.
@@ -183,9 +183,9 @@ final class OwnerMapCacheTest {
 
             var cache = buildCacheOver(emptySectorMachinery);
 
-            cache.refresh(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
             emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
-            cache.refresh(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
 
             incrementalRefreshMock.verify(() -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(
                 same(emptySectorMock),
@@ -195,21 +195,21 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshFoldsNothingOnAFrameWithNoSystemMarked() {
+        void refreshDrawListsFoldsNothingOnAFrameWithNoSystemMarked() {
             // The frame the map spends nearly all of its life on: nothing to rebuild and nothing
             // marked, so the fold is not so much as asked.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
 
             var cache = buildCacheOver(emptySectorMachinery);
 
-            cache.refresh(VIEW, SCREEN);
-            cache.refresh(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
 
             incrementalRefreshMock.verifyNoInteractions();
         }
 
         @Test
-        void refreshDefersAMarkedSystemToTheNextRebuildWhileTheMapIsFiltered() {
+        void refreshDrawListsDefersAMarkedSystemToTheNextRebuildWhileTheMapIsFiltered() {
             // The fold re-derives holders through the unfiltered holding, which would overwrite the
             // spotlight's synthetic keys - so a filtered map drops the mark rather than folding it,
             // and leaves nothing on the board for the next frame to find either.
@@ -221,9 +221,9 @@ final class OwnerMapCacheTest {
 
             var cache = buildCacheOver(emptySectorMachinery);
 
-            cache.refresh(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
             emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
-            cache.refresh(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
 
             incrementalRefreshMock.verify(
                 () -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(any(), any(), any(), any()),
@@ -234,7 +234,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshDropsAMarkedSystemWhileTheBorderTracingOverlayIsBuilt() {
+        void refreshDrawListsDropsAMarkedSystemWhileTheBorderTracingOverlayIsBuilt() {
             // The overlay builds no draw lists for a fold to patch, so the mark is dropped and the
             // overlay picks the change up on its next full rebuild.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
@@ -242,9 +242,9 @@ final class OwnerMapCacheTest {
 
             var cache = buildCacheOver(emptySectorMachinery);
 
-            cache.refresh(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
             emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
-            cache.refresh(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
 
             incrementalRefreshMock.verify(
                 () -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(any(), any(), any(), any()),
@@ -252,6 +252,40 @@ final class OwnerMapCacheTest {
 
             assertThat(emptySectorMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
                 .isEmpty();
+        }
+    }
+
+    @Nested
+    class ResolveHoverTargets {
+
+        @Test
+        void resolveHoverTargetsIsTheBuiltDrawLists() {
+            // The cursor is tested against the shapes the frame paints, so the targets are the very
+            // draw lists the rebuild left rather than a copy that could drift from them.
+            var builtClusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
+            openEverySeamARebuildReaches(builtClusters);
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            assertThat(cache.resolveHoverTargets())
+                .isSameAs(builtClusters);
+        }
+
+        @Test
+        void resolveHoverTargetsIsNullWhileTheBorderTracingOverlayReplacesTheDrawLists() {
+            // Nothing painted is a cell under the debug overlay, and a null is what the cursor read
+            // parks on rather than resolving a hover into shapes nobody drew.
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            traceBordersForDebug();
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            assertThat(cache.resolveHoverTargets())
+                .isNull();
         }
     }
 
@@ -269,7 +303,7 @@ final class OwnerMapCacheTest {
                     var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
-                cache.refresh(viewMock, SCREEN);
+                cache.refreshDrawLists(viewMock, SCREEN);
             }
 
             assertThat(cache.getClusters())

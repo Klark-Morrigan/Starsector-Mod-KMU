@@ -171,20 +171,20 @@ public final class PoliticalMapLayer implements MapLayer {
 
     @Override
     public MapLayerRenderer resolveRenderer(SectorMapMachinery machinery) {
-        // View-neutral here as everywhere else on this tab: the renderer resolves which view is up,
-        // so the tab hands over one renderer rather than branching on the view roster.
+        // View-neutral here as everywhere else on this tab: the frame asks the view registry which
+        // view is up, so the tab hands over one renderer rather than branching on the view roster.
         //
         // Held by the machinery rather than by this tab, because everything behind the renderer -
         // the cut cells, the territories, the fitted labels - is one sector's. This tab is
         // registered once for the process and would otherwise be where two sectors met.
         //
-        // Held under this layer's ID as well as the renderer's class: another owner-painted layer
-        // draws through a renderer of the same class, and keyed by the class alone it would be handed
-        // this one. The ID goes over to the renderer too, which reports its frame's rows under it.
-        // Handed down rather than looked up, so there is one spelling of it.
+        // Held under this layer's ID as well as the renderer's type: every painting layer draws
+        // through the framework's one renderer class, and keyed by the type alone another would be
+        // handed this one. The ID goes over to the renderer too, which reports its frame's rows under
+        // it. Handed down rather than looked up, so there is one spelling of it.
         return machinery.resolveLayerMachinery(
             LAYER_ID,
-            OwnerMapLayerRenderer.class,
+            MapLayerRenderer.class,
             () -> OwnerMapLayerRenderer.createForLiveScreen(
                 machinery,
                 LAYER_ID,
