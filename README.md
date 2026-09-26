@@ -16,6 +16,7 @@
 - [For developers](#for-developers)
   - [Versioning](#versioning)
   - [Build And Release](#build-and-release)
+  - [Localisation](#localisation)
   - [Local linting](#local-linting)
   - [Caching](#caching)
   - [Documentation](#documentation)
@@ -243,6 +244,28 @@ That generated file is never committed.
 The task doing it is `writeVersionFile`,
 which KMLib's shared Starsector conventions register for any mod that commits a template -
 KMU states no build wiring of its own for it.
+
+### Localisation
+
+KMU's player-facing text is kept per language under [localisation/](localisation/),
+one bundle directory per locale,
+with [localisation/manifest.json](localisation/manifest.json) naming the locales, the default,
+and where each bundle file lands.
+Edit the bundle, never the copy:
+`data/strings/strings.json` and `data/config/LunaSettings.csv` are written from one bundle
+by `gradlew jar` (or `gradlew writeLocaleFiles`) and are not committed.
+`-Plocale=<tag>` builds another declared locale;
+omitted, the manifest's default is built.
+The task is KMLib's `writeLocaleFiles`,
+registered by its shared Starsector conventions for any mod that commits a manifest.
+
+A locale is a build-time choice because nothing in the game can make it a play-time one:
+LunaLib reads each mod's single settings table and has no language concept.
+
+`LocaleParityIntegrationTest` holds every locale to the default under `test`:
+the same strings keys and format arguments,
+the same settings rows storing the same values,
+and the same tab grouping.
 
 ### Local linting
 

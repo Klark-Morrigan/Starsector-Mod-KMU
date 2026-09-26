@@ -129,7 +129,7 @@ it has to be a mod-drawn control rendered over the map in UI coordinates.
   persisted in sector memory
   (see [Toggle state contract](#toggle-state-contract)).
 - Sidebar label / tooltip text stored in
-  [data/strings/strings.json](../../../../data/strings/strings.json)
+  [localisation/en/strings.json](../../../../localisation/en/strings.json)
   and resolved through `kmu.util.KmuStringKeys`,
   never inlined as Java string literals at the use site.
 
