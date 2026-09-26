@@ -39,8 +39,7 @@ import exerelin.utilities.InvasionListener;
  * that has no catch of its own, so a throw escaping here would reach the engine and end the game
  * with a stack through Nexerelin - for a fault that is KMU's. What a listener here does is a fast
  * path the map's own poll covers within seconds, so a throw costs nothing worth telling the player:
- * it is logged with its trace, the listeners after it are still told, and it is told again on the
- * next transfer.
+ * it is logged, the listeners after it are still told, and it is told again on the next transfer.
  */
 public class NexerelinMarketTransferRelay implements InvasionListener {
 
@@ -76,10 +75,8 @@ public class NexerelinMarketTransferRelay implements InvasionListener {
             return;
         }
         for (var listener : listenerManager.getListeners(MarketTransferListener.class)) {
-            // Caught per listener rather than around the loop, so one listener failing costs only
-            // what it would have done and the listeners after it are still told. Logged with the
-            // trace each time: transfers are rare events, not a per-frame read, so there is nothing
-            // to throttle.
+            // Logged with the trace on every failure rather than once: transfers are rare events,
+            // not a per-frame read, so there is nothing to throttle.
             try {
                 listener.reportMarketTransferred(market, oldHolder, newHolder, isCapture);
 

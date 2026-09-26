@@ -10,8 +10,11 @@ import kmu.starsector.listeners.MarketTransferListener;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
@@ -48,7 +51,7 @@ final class NexerelinMarketTransferRelayTest {
     class ReportMarketTransfered {
 
         @Test
-        void reportMarketTransferedTellsEveryRegisteredListener() {
+        void tellsEveryRegisteredListener() {
 
             when(listenerManagerMock.getListeners(MarketTransferListener.class))
                 .thenReturn(List.of(firstListenerMock, secondListenerMock));
@@ -64,21 +67,21 @@ final class NexerelinMarketTransferRelayTest {
         }
 
         @Test
-        void reportMarketTransferedTellsNobodyOnASectorWithoutAListenerManager() {
+        void passesOverASectorWithoutAListenerManager() {
 
             var relayWithoutManager = new NexerelinMarketTransferRelay(buildSectorWith(null));
 
-            relayWithoutManager.reportMarketTransfered(
-                marketMock, newHolderMock, oldHolderMock, true, true, List.of(), 1.0f);
-
-            verifyNoInteractions(firstListenerMock);
+            assertThatCode(() -> relayWithoutManager.reportMarketTransfered(
+                    marketMock, newHolderMock, oldHolderMock, true, true, List.of(), 1.0f))
+                .doesNotThrowAnyException();
         }
 
-        @Test
-        void reportMarketTransferedKeepsAListenerThatThrewFromReachingNexerelin() {
+        @ParameterizedTest(name = "{0}")
+        @MethodSource("kmu.mods.nexerelin.NexerelinMarketTransferRelayTest#listListenerFailures")
+        void keepsAListenerThatThrewFromReachingNexerelin(Throwable listenerFailure) {
             // Nexerelin tells its listeners from the end of its market transfer, with no catch of
             // its own above it: a throw escaping here would reach the engine and end the game.
-            doThrow(new IllegalStateException("the refresh read a half-built overlay"))
+            doThrow(listenerFailure)
                 .when(firstListenerMock)
                 .reportMarketTransferred(any(), any(), any(), anyBoolean());
             when(listenerManagerMock.getListeners(MarketTransferListener.class))
@@ -89,20 +92,7 @@ final class NexerelinMarketTransferRelayTest {
         }
 
         @Test
-        void reportMarketTransferedKeepsAListenerThatCouldNotLinkFromReachingNexerelin() {
-
-            doThrow(new NoSuchMethodError("a member the refresh reads has moved"))
-                .when(firstListenerMock)
-                .reportMarketTransferred(any(), any(), any(), anyBoolean());
-            when(listenerManagerMock.getListeners(MarketTransferListener.class))
-                .thenReturn(List.of(firstListenerMock));
-
-            assertThatCode(() -> relayTransfer())
-                .doesNotThrowAnyException();
-        }
-
-        @Test
-        void reportMarketTransferedTellsTheListenersAfterOneThatThrew() {
+        void tellsTheListenersAfterOneThatThrew() {
             // One listener failing costs only its own work; the ones after it still hear of the
             // transfer.
             doThrow(new IllegalStateException("the refresh read a half-built overlay"))
@@ -118,7 +108,7 @@ final class NexerelinMarketTransferRelayTest {
         }
 
         @Test
-        void reportMarketTransferedTellsAListenerThatThrewOfTheNextTransfer() {
+        void tellsAListenerThatThrewOfTheNextTransfer() {
             // What failed was that transfer's state, not a build that no longer fits, so the
             // listener is not taken out and the next transfer is tried.
             doThrow(new IllegalStateException("the refresh read a half-built overlay"))
@@ -140,7 +130,7 @@ final class NexerelinMarketTransferRelayTest {
     class ReportInvasionFinished {
 
         @Test
-        void reportInvasionFinishedTellsNobodySinceTheTransferReportsTheHolderChange() {
+        void tellsNobodySinceTheTransferReportsTheHolderChange() {
             // An invasion finishing does not itself transfer holding; a successful one is
             // reported through the transfer, so relaying this too would report it twice.
             relay.reportInvasionFinished(
@@ -148,6 +138,15 @@ final class NexerelinMarketTransferRelayTest {
 
             verifyNoInteractions(listenerManagerMock);
         }
+    }
+
+    // Both halves of what a listener can throw: a fault of its own, and a member it reads that is
+    // no longer where it was compiled against.
+    static Stream<Throwable> listListenerFailures() {
+
+        return Stream.of(
+            new IllegalStateException("the refresh read a half-built overlay"),
+            new NoSuchMethodError("a member the refresh reads has moved"));
     }
 
     // A capture, as Nexerelin reports one: the new holder before the old.
