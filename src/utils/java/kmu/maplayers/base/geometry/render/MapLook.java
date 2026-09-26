@@ -73,6 +73,12 @@ public final class MapLook {
     // shapes below is the one mistake that would make it look right when it is not.
     public static final Color CONTINENT_COAST = new Color(0xc0, 0x60, 0xff);
 
+    // The line v4's lake coast lays: a reach cutting across a bay. Its own colour rather than
+    // v3's coast one, because the two constructions are drawn on one map to be compared, and a
+    // reader has to see at a glance which of them laid a line. Warm against v3's cool, so the
+    // eye sorts them without reading.
+    public static final Color LAKE_COAST_V4 = new Color(0xff, 0xa0, 0x30);
+
     // A bridge offered to a sector that already has continent coastlines on it, and kept
     // because it spans open sea rather than void a coast had already taken. Its own colour
     // rather than the coast's: a span and the line that judged it meet all over the map, and

@@ -16,6 +16,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 - [Why the cells are the input](#why-the-cells-are-the-input)
 - [What a piece is](#what-a-piece-is)
 - [The open sea](#the-open-sea)
+- [Welded once, before anything is laid](#welded-once-before-anything-is-laid)
 - [Frontage](#frontage)
 - [The channel](#the-channel)
 - [What the resolution decides](#what-the-resolution-decides)
@@ -27,6 +28,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | the cells' own frontier | `BareVoid` | each cell's adjacency-tagged edges | the lines between cell and void |
 | cut lines at crossings | `SegmentCrossings` | lines | lines meeting only at their ends |
 | weld and order | `PlanarArrangement` | those lines | a graph knowing the turn order at each vertex |
+| lay a tier's lines | `LakeCoast` | reaches as `ReachLine`, two points and two cells | walls into the same walk, each end carried through the shore |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
 | read the shore | `LandableFrontage` | a piece | its runs of border, by cell |
 | cut the channel | `PieceShaper` | a piece, an `EdgeInset` | its rings pulled off what they face, crossings and all |
@@ -38,6 +40,10 @@ They are in the table because leaving them out is what made the inset look finis
 
 `LabelledRing` and `LabelledWall` are what goes into the walk - a ring or a loose line, each edge carrying an int naming what it lies on.
 `Face` is what comes out.
+
+Nothing here imports v3, and the layering gate holds it to that.
+The lake coast is v3's trace, and it crosses as `ReachLine`s through `LakeReaches` in the package above both:
+a version that imported the other would be a layer on top of it rather than a construction beside it.
 
 ## Why the cells are the input
 
@@ -73,6 +79,22 @@ The check is that the pieces and the cells together cover the frame exactly once
 
 A piece that runs around another carries it as a hole.
 Drawn from its outline alone, the sea paints over every cell on the map.
+
+## Welded once, before anything is laid
+
+The frontier reports each shared corner twice, up to a sagitta apart, and the weld at that tolerance is what closes its rings.
+A tier's line needs none of that:
+its ends are where its tier put them, and the walk cuts it at the shore where its stubs cross.
+
+Welded together with the frontier, the line's ends are pulled up to a sagitta sideways after the cutting has run.
+A reach that grazes a cell, which v3's do, passes a polygon corner by less than that,
+and the pull swings it across the corner - a crossing the walk cannot turn at, and the whole lake walked out and back as a tree of area nothing.
+Measured before the fix: 6 of 28 reaches on 366 swung across a corner, and every one that took a lake with it had.
+
+So `FaceWalk` joins in two stages.
+The frontier and the frame are cut and welded on their own and come back as exact lines;
+what a tier lays is cut against those and welded at rounding.
+Nothing moves after it was cut, which is the invariant the cutting rests on.
 
 ## Frontage
 

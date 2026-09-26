@@ -929,7 +929,7 @@ public final class Coastlines {
      *                than a reach across void
      * @return one entry per reach, in walk order
      */
-    static List<CoastReach> collectStraightReaches(List<Coast> coasts, double channel) {
+    public static List<CoastReach> collectStraightReaches(List<Coast> coasts, double channel) {
 
         var reaches = new ArrayList<CoastReach>();
 

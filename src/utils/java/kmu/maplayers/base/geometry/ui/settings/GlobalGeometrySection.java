@@ -194,11 +194,13 @@ final class GlobalGeometrySection extends PanelSection {
 
     // How much water there has to be before it is drawn a shore at all.
     //
-    // Global rather than v3's, though only v3 reads them today. They are the terms a shore is
-    // judged in - how far a cell must face the water, how much water there must be - and the
-    // one way to tell two constructions apart is to build both under the same terms. Left in
-    // the v3 section they would be v3's own dial, and a v4 built to different floors could
-    // differ from it for that reason alone with nothing on screen saying so.
+    // Global rather than v3's. They are the terms a shore is judged in - how far a cell must
+    // face the water, how much water there must be - and the one way to tell two
+    // constructions apart is to build both under the same terms: v3 traces its lakes under
+    // them, and v4 lays the coasts of those same lakes, so the lake floor is what decides for
+    // both which holes are lakes and which are left for the puddle tier. Left in the v3
+    // section they would be v3's own dial, and a v4 built to different floors could differ
+    // from it for that reason alone with nothing on screen saying so.
     private void addShoreFloorRows(JPanel controls) {
 
         // On one line because they work as a pair: the frontage one judges a cell's stretch of

@@ -7,11 +7,14 @@ import kmu.desktop.ui.SavedValues;
 import kmu.desktop.ui.swing.ControlRows;
 import kmu.desktop.ui.swing.WindowLayout;
 import kmu.maplayers.base.geometry.CellEdges;
+import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeClassifier;
+import kmu.maplayers.base.geometry.LakeReaches;
 import kmu.maplayers.base.geometry.NamedRegion;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.SystemClusterBorders;
 import kmu.maplayers.base.geometry.UnboundedCells;
 import kmu.maplayers.base.geometry.output.SectorSvgWriter;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
@@ -370,6 +373,11 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // traced from the same settings.
         continentCoasts.refresh(fixture, continents);
         refreshVoidSections(continents);
+
+        // And so does v4, whose lake coast is this trace: a coast knob that re-traced the lakes
+        // and left v4 laying the old reaches would show two constructions drawn from different
+        // coasts, which is exactly the comparison the window exists to rule out.
+        refreshVoidV4();
     }
 
     // Not on the refresh contract: the panel has no knob that moves the sections without
@@ -381,9 +389,9 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         repaintMap();
     }
 
-    // v4's own refresh, reaching nothing of v3's. The two constructions share the fixture and
-    // the cell knobs and nothing else, which is the whole point of the split - so this reads the
-    // void again and stops.
+    // v4's own refresh. The two constructions share the fixture, the cell knobs and one traced
+    // coast, and nothing else - and the coast crosses as plain reaches, handed over here rather
+    // than reached for, so v4 stays a walk that knows nothing of who traced its lines.
     @Override
     public void refreshVoidV4() {
 
@@ -391,7 +399,11 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // Read off the geometry the rebuild just built rather than built again: the two would
         // be the same partition computed twice, and v4 drawing against its own copy is how the
         // two constructions come to disagree about where a cell ends.
-        bareVoid.refresh(geometry.cellEdgesByCellKey(), fixture);
+        bareVoid.refresh(
+            geometry.cellEdgesByCellKey(),
+            fixture,
+            LakeReaches.collectLakeReaches(
+                continents.traceCoasts(), settings.parameters.borderInset()));
         repaintMap();
     }
 
@@ -463,12 +475,9 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                 fixture.getSites(),
                 settings.parameters.boundSegments());
         }
+        // Both constructions, through the one refresh: the coast is re-traced here, and v4
+        // rides its refresh because its lake coast is that trace.
         refreshCoastlines();
-
-        // Both constructions, because what moved is under both of them: the reach the cells
-        // stand at and the bound their arcs are flattened onto are the cells' own knobs, and a
-        // v4 layer left unread here would be drawn against the sector as it used to be.
-        refreshVoidV4();
 
         lastBuildMillis = (System.nanoTime() - start) / NANOS_PER_MILLI;
         refreshStatus();
@@ -732,6 +741,9 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
             // v4's frontage in the same pass as v3's, for the same reason: a run of border is
             // read against the cells it runs along, so it goes over everything filled.
+            // The walls first, the frontage over them: the frontage is a diagnostic of what the
+            // walls left open, and reads against the lines as much as against the fills.
+            bareVoid.paintLakeCoast(g2);
             bareVoid.paintLandableFrontage(g2);
             cells.paintSites(g2, fixture.getSites());
         }

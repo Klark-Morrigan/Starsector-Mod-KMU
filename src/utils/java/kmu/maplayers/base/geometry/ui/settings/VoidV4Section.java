@@ -27,6 +27,15 @@ final class VoidV4Section extends PanelSection {
 
     private static final String LANDABLE_FRONTAGE = "showLandableFrontageV4";
 
+    // The tiers of the stack, one branch each, in the order they go down: a tier's lines, then
+    // its fills, then its names, each a switch under the tier's own roll-up. A branch holds
+    // only what has landed, and a substep lands into its slot rather than onto the end of a
+    // list - so the tree has the shape of the stack from the first tier on, and a reader who
+    // learnt it at one tier finds the next in the same place.
+    private static final String LAKES_BRANCH = "lakesV4";
+
+    private static final String LAKE_COAST = "showLakeCoastV4";
+
     // Not a layer, so not in the roll-up above it: it changes how the bare void is drawn rather
     // than whether it is, and a roll-up that turned it on with the layers would claim to have
     // switched on something there is no separate thing to see.
@@ -53,8 +62,13 @@ final class VoidV4Section extends PanelSection {
             SettingRows.buildSectionBody(this::addRows));
     }
 
-    // v4's layers, in the same shape v3's are: a tree with a roll-up at its root and the layers
-    // under it. The frontage sits last, after the layer it is a diagnostic of, as v3's does.
+    // v4's layers, in the same shape v3's are: a tree with a roll-up at its root, the bare void
+    // first, then a branch per tier in the order the tiers go down, and the frontage last,
+    // after everything it is a diagnostic of.
+    //
+    // The floor that decides which holes are lakes at all is not here: it sits under Global
+    // geometry with the frontage floor, because both constructions are built under it and a
+    // dial of v4's own is how the two would come to disagree about what a lake is.
     //
     // The colours sit beside the switches rather than with the cells' colours. Two
     // constructions are compared by their fills, so which colour each is drawn in is part of
@@ -64,12 +78,19 @@ final class VoidV4Section extends PanelSection {
         controls.add(ToggleTree.buildToggleTree(
             refreshes::refreshVoidV4,
             ToggleTree.Row.ofRollUp(
-                0, "allVoidV4Layers", "Every v4 layer", BARE_VOID, LANDABLE_FRONTAGE),
+                0, "allVoidV4Layers", "Every v4 layer",
+                BARE_VOID, LAKE_COAST, LANDABLE_FRONTAGE),
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 BARE_VOID,
                 "Bare void",
                 true,
                 on -> settings.showBareVoid = on)),
+            ToggleTree.Row.ofRollUp(1, LAKES_BRANCH, "Lakes", LAKE_COAST),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                LAKE_COAST,
+                "Coast",
+                false,
+                on -> settings.showLakeCoastV4 = on)),
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 LANDABLE_FRONTAGE,
                 "Landable frontage",
@@ -98,6 +119,13 @@ final class VoidV4Section extends PanelSection {
             "Bare void",
             ViewerSettings.BARE_VOID_DEFAULT,
             colour -> settings.bareVoidColour = colour,
+            refreshes::repaintMap));
+
+        controls.add(ColourRows.buildColour(
+            "lakeCoastV4Colour",
+            "Lake coast reaches",
+            ViewerSettings.LAKE_COAST_V4_DEFAULT,
+            colour -> settings.lakeCoastV4Colour = colour,
             refreshes::repaintMap));
 
         controls.add(ColourRows.buildColour(

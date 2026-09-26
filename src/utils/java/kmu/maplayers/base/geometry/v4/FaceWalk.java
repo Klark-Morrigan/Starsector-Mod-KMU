@@ -36,6 +36,15 @@ import java.util.Set;
  * right. It becomes a hole, and the face it was cut from loses its area. Only the outside of
  * everything survives as an outer face, which is what makes a frame worth laying: framed, every
  * piece is bounded and the pieces cover the frame exactly once.
+ *
+ * <p><b>The base is welded once, before anything is laid onto it.</b> The welding tolerance is
+ * the base's own: the cells' frontier reports each shared corner twice, up to a sagitta apart,
+ * and the weld is what closes those rings. It is far too coarse for a line laid across the
+ * void. Welded together with the base, such a line has its ends pulled up to a sagitta
+ * sideways, after the cutting has already run - and a line that grazes a corner is swung
+ * across it, leaving a crossing the walk cannot turn at. So the base is cut and welded on its
+ * own and becomes exact; what is laid is then cut against the base as it stands and welded at
+ * rounding, and nothing moves after it was cut.
  */
 public final class FaceWalk {
 
@@ -62,8 +71,44 @@ public final class FaceWalk {
             List<LabelledWall> walls,
             double weldTolerance) {
 
-        var arrangement = PlanarArrangement.weldArrangement(
+        return walkFaces(rings, walls, weldTolerance, List.of());
+    }
+
+    /**
+     * Divides the plane along the base lines and everything laid onto them.
+     *
+     * <p>Two kinds of line in, because they are joined at two different resolutions: the base
+     * is welded at the tolerance given, and what is laid is cut against the welded base and
+     * joined at rounding. See the class note on why one weld over both is wrong.
+     *
+     * @param rings         closed outlines of the base, each edge saying which line it lies on;
+     *                      rings too short to enclose anything are ignored
+     * @param walls         the base's loose lines, laid across whatever they fall on
+     * @param weldTolerance how far two reports of one base corner may stand apart and still
+     *                      meet
+     * @param laidWalls     lines laid onto the base after it, each ending exactly where it
+     *                      says it does
+     * @return every piece, bounded ones and outer ones together, each telling which it is by
+     *         its own winding
+     */
+    public static List<Face> walkFaces(
+            List<LabelledRing> rings,
+            List<LabelledWall> walls,
+            double weldTolerance,
+            List<LabelledWall> laidWalls) {
+
+        var base = PlanarArrangement.weldArrangement(
             SegmentCrossings.splitAtCrossings(collectLines(rings, walls)), weldTolerance);
+
+        // The base as it stands after the weld, so the laid lines are cut against corners
+        // that will not move again. Cut once more together, because the weld can swing a base
+        // line across a corner of its own just as it can a laid one.
+        var lines = new ArrayList<>(base.collectLines());
+
+        lines.addAll(laidWalls);
+
+        var arrangement = PlanarArrangement.weldArrangement(
+            SegmentCrossings.splitAtCrossings(lines), Limits.MIN_EDGE_LENGTH);
 
         var closed = new ArrayList<LabelledRing>();
         var groups = new ArrayList<Integer>();

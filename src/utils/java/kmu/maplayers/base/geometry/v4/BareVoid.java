@@ -67,7 +67,7 @@ public final class BareVoid {
     }
 
     /**
-     * Reads the void a sector's cells leave.
+     * Reads the void a sector's cells leave, with nothing laid into it.
      *
      * @param cellEdges  every cell, as its adjacency-tagged edges
      * @param sites      the cells' own positions
@@ -79,12 +79,42 @@ public final class BareVoid {
             List<double[]> sites,
             SectorGeometryParameters parameters) {
 
+        return readBareVoid(cellEdges, sites, parameters, List.of());
+    }
+
+    /**
+     * Reads the void with a tier's lines laid into it.
+     *
+     * <p>The same walk, not a second one. Every tier of the stack divides the one partition by
+     * adding its lines to it, so the pieces a tier leaves are pieces of the same division every
+     * earlier tier left - which is what lets the partition be checked over everything down so
+     * far rather than over each tier's own reading of the map.
+     *
+     * @param cellEdges  every cell, as its adjacency-tagged edges
+     * @param sites      the cells' own positions
+     * @param parameters the knobs the cells were built under
+     * @param laidWalls  the lines the tiers so far have laid, each saying which line it is
+     * @return the void those lines divide
+     */
+    public static BareVoid readBareVoid(
+            Map<?, List<CellEdge>> cellEdges,
+            List<double[]> sites,
+            SectorGeometryParameters parameters,
+            List<LabelledWall> laidWalls) {
+
         var frontier = collectFrontier(cellEdges);
         var pieces = new ArrayList<Face>();
 
-        for (var face : FaceWalk.walkFaces(
-                List.of(), frameTheSector(frontier, sites, parameters),
-                measureBoundGap(parameters))) {
+        // The frontier and the frame are the base, welded at the gap the frontier's own
+        // corners need; the laid lines go in after it, at rounding, so the weld cannot move
+        // them off where their tier put them.
+        var faces = FaceWalk.walkFaces(
+            List.of(),
+            frameTheSector(frontier, sites, parameters),
+            measureBoundGap(parameters),
+            laidWalls);
+
+        for (var face : faces) {
 
             if (!face.isOuterFace() && !isLand(face, sites)) {
                 pieces.add(face);
