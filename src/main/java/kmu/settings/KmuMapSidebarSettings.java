@@ -9,11 +9,7 @@ import kmlib.math.ranges.Ranges;
  *
  * <p>The panel is drawn on two screens whose chrome differs, so several knobs come in pairs: what
  * reads correctly beside the intel screen's buttons is not what reads correctly under the sector
- * map's tabs, and it is the chrome each row abuts that decides rather than the face. *
- * <p>What each knob does for the player is stated once, in the description column of
- * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
- * here answers only what that column cannot: why a default is the number it is, and what a caller
- * has to know to use the value.
+ * map's tabs, and it is the chrome each row abuts that decides rather than the face.
  */
 public final class KmuMapSidebarSettings {
 
@@ -62,9 +58,8 @@ public final class KmuMapSidebarSettings {
         "kmu_map_dev_ui_fontSharpness_tabHeaders_sidebar_mMap";
 
     // Fallbacks answering only while a setting is read before LunaLib has loaded it; the live
-    // values come from LunaLib. Each mirrors the defaultValue column in
-    // data/config/LunaSettings.csv, which is the number a fresh player is actually given, and is
-    // held against it by the settings suite. Only the numbers whose reasoning is not in that
+    // values come from LunaLib. Each mirrors the settings table's defaultValue column, which is
+    // the number a fresh player is actually given. Only the numbers whose reasoning is not in that
     // column carry a note.
     private static final int DEFAULT_SIDEBAR_PADDING_TOP = 36;
 

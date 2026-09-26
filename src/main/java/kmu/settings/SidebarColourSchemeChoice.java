@@ -17,9 +17,8 @@ import kmlib.settings.LabeledChoice;
  * palette and ruled in another reads worse than either of the two looks it is made of. Per-colour knobs
  * would offer exactly that as a combination.
  *
- * <p>The labels here must match the {@code secondaryValue} options in data/config/LunaSettings.csv
- * exactly, and all three are frozen once shipped - see {@link LabeledChoice} for what a reworded label
- * costs.
+ * <p>Its labels are the Radio row's options, spelt identically - see {@link LabeledChoice} for why
+ * they never change.
  */
 public enum SidebarColourSchemeChoice implements LabeledChoice {
 

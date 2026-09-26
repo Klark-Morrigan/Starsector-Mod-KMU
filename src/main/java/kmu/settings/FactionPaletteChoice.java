@@ -11,10 +11,9 @@ import kmlib.settings.LabeledChoice;
  * point each element (fill, outer border, inner seam) at either, or turn it off
  * with {@link #NONE}. This names the options, and the settings reader maps LunaLib's
  * stored Radio label back to one, so the render layer picks {@code owner.primaryColour()},
- * {@code owner.secondaryColour()}, or no draw without matching raw strings. The
- * labels here must match the {@code secondaryValue} options in
- * data/config/LunaSettings.csv exactly, and both are frozen once shipped - see
- * {@link LabeledChoice} for what a reworded label costs.
+ * {@code owner.secondaryColour()}, or no draw without matching raw strings. Its
+ * labels are the Radio row's options, spelt identically - see {@link LabeledChoice}
+ * for why they never change.
  */
 public enum FactionPaletteChoice implements LabeledChoice {
 

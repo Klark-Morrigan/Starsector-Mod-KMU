@@ -5,11 +5,7 @@ package kmu.settings;
  *
  * <p>Stated by depth rather than by what a layer lists at that depth, the box being shared: one
  * layer's box lands the player on a colony's terms, another's box of the same shape is set by the
- * same knobs. *
- * <p>What each knob does for the player is stated once, in the description column of
- * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
- * here answers only what that column cannot: why a default is the number it is, and what a caller
- * has to know to use the value.
+ * same knobs.
  */
 public final class KmuMapTooltipSettings {
 

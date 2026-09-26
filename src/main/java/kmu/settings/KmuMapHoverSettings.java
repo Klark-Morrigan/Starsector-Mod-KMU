@@ -6,11 +6,7 @@ package kmu.settings;
  * <p>Two questions rather than one, and they are here together because the second only ever
  * narrows the first: the three tiers say whether hovering, its effects and its box are wanted at
  * all, and the surface knobs say where that permission reaches once granted. A caller asking
- * either alone would still have to ask the other before drawing. *
- * <p>What each knob does for the player is stated once, in the description column of
- * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
- * here answers only what that column cannot: why a default is the number it is, and what a caller
- * has to know to use the value.
+ * either alone would still have to ask the other before drawing.
  */
 public final class KmuMapHoverSettings {
 

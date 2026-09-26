@@ -15,9 +15,8 @@ import kmlib.settings.LabeledChoice;
  *
  * <p>Its own enum rather than the game's, because a LunaLib Radio row is a list of labels and
  * {@link SurveyLevel} carries none - and a label is a stored key once shipped, where an engine
- * enum's constant names are the engine's to rename. The labels here must match the
- * {@code secondaryValue} options in data/config/LunaSettings.csv exactly, and both are frozen once
- * shipped - see {@link LabeledChoice} for what a reworded label costs.
+ * enum's constant names are the engine's to rename. Its labels are the Radio row's options, spelt
+ * identically - see {@link LabeledChoice} for why they never change.
  */
 public enum SurveyLevelChoice implements LabeledChoice {
 

@@ -7,11 +7,7 @@ package kmu.settings;
  * <p>Named for what the player is reaching rather than for the widget classes, which is what keeps
  * the set closed as widgets are added. The levels are only meaningful against each other - the gap
  * between them is what stops a column of listed rows reading as chatter - so they are read as one
- * balance rather than as five independent volumes. *
- * <p>What each knob does for the player is stated once, in the description column of
- * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
- * here answers only what that column cannot: why a default is the number it is, and what a caller
- * has to know to use the value.
+ * balance rather than as five independent volumes.
  */
 public final class KmuMapSoundSettings {
 
