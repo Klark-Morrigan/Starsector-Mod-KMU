@@ -47,13 +47,8 @@ import java.util.function.Supplier;
  *   <li>a frame that stands down parks the hover, rather than leaving the last one standing.</li>
  * </ul>
  *
- * <p>Those run at the three rates a frame has to offer, which is what lets one frame be painted by
- * more than one surface: under Starscape the map draws its own nebulae between two of a layer's bands,
- * so the bands are emitted from separate terrain passes. The refresh runs once per frame in
- * {@code prepareFrame}, the cursor read once per pass in {@code publishHoverForPass}, and the paint
- * per band in {@code renderOnMap}. Everything <em>about</em> the read which does not turn on the pass
- * is settled once, in the preparation: whether any feedback still wants a hover, whether something is
- * drawn over the cursor, and what moment the frame before settled on.
+ * <p>Why a frame has those rates at all - one preparation, a cursor read per pass, a paint per band -
+ * is {@link MapLayerRenderer}'s contract; this class is where they are kept.
  *
  * <p>Each of those beats is also where a frame's profiling rows begin, opened through the
  * {@link MapFrameBeats} this renderer was made with. The stand-down reads sit between a beat and the

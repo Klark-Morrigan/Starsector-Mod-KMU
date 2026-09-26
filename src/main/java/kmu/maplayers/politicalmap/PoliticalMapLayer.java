@@ -171,8 +171,8 @@ public final class PoliticalMapLayer implements MapLayer {
 
     @Override
     public MapLayerRenderer resolveRenderer(SectorMapMachinery machinery) {
-        // View-neutral here as everywhere else on this tab: the renderer resolves which view is up,
-        // so the tab hands over one renderer rather than branching on the view roster.
+        // View-neutral here as everywhere else on this tab: the frame asks the view registry which
+        // view is up, so the tab hands over one renderer rather than branching on the view roster.
         //
         // Held by the machinery rather than by this tab, because everything behind the renderer -
         // the cut cells, the territories, the fitted labels - is one sector's. This tab is

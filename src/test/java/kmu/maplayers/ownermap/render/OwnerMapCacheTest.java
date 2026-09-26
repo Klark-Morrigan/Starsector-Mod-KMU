@@ -256,6 +256,40 @@ final class OwnerMapCacheTest {
     }
 
     @Nested
+    class ResolveHoverTargets {
+
+        @Test
+        void resolveHoverTargetsIsTheBuiltDrawLists() {
+            // The cursor is tested against the shapes the frame paints, so the targets are the very
+            // draw lists the rebuild left rather than a copy that could drift from them.
+            var builtClusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
+            openEverySeamARebuildReaches(builtClusters);
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            assertThat(cache.resolveHoverTargets())
+                .isSameAs(builtClusters);
+        }
+
+        @Test
+        void resolveHoverTargetsIsNullWhileTheBorderTracingOverlayReplacesTheDrawLists() {
+            // Nothing painted is a cell under the debug overlay, and a null is what the cursor read
+            // parks on rather than resolving a hover into shapes nobody drew.
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+            traceBordersForDebug();
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            assertThat(cache.resolveHoverTargets())
+                .isNull();
+        }
+    }
+
+    @Nested
     class DisposeCachedState {
 
         @Test

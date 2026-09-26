@@ -80,19 +80,18 @@ public final class OwnerMapLayerRenderer {
             diagnosticsHolderProvider,
             holderResolveSource);
 
-        var overlayRenderer = new OwnerMapOverlayRenderer(
-            machinery.resolveHoverState(),
-            previewHighlight,
-            hoverGates,
-            bandLayoutSource);
-
         return SequencedMapLayerRenderer.createForLiveScreen(
             machinery,
             layerId,
             new MapLayerFrameParts<>(
                 viewRegistry::resolveActiveViewOn,
                 cache,
-                (mapFrame, band) -> overlayRenderer.renderOnMap(cache, mapFrame, band),
+                new OwnerMapOverlayRenderer(
+                    cache,
+                    machinery.resolveHoverState(),
+                    previewHighlight,
+                    hoverGates,
+                    bandLayoutSource),
                 hoverGates,
                 OwnerPaintedView::resolveHoverTooltip));
     }

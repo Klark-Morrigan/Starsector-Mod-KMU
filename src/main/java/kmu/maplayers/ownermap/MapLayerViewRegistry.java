@@ -14,13 +14,13 @@ import java.util.List;
 /**
  * A layer's view registry and the single source of truth for which of its views paints. The
  * view-selector radio composes its segments from {@link #getViews()}, lights the one
- * {@link #getSelectedViewIndex} reports, and writes a click through {@link #selectView}; the layer's
- * renderer reads {@link #getActiveView()} to decide both whether to paint and which view's rules to
- * paint under - so the renderer names no concrete view and stays view-neutral.
+ * {@link #getSelectedViewIndex} reports, and writes a click through {@link #selectView}; the frame
+ * sequence asks {@link #resolveActiveViewOn} for the screen showing to decide both whether to paint
+ * and which view's rules to paint under - so the frame names no concrete view and stays view-neutral.
  *
  * <p>Two selections are distinguished. The stored pick ({@link #getSelectedView}) is what the
  * player last chose in the radio, independent of which tab is open - the radio lights it whenever
- * the layer's tab is up. The active view ({@link #getActiveView}) additionally requires that
+ * the layer's tab is up. The active view ({@link #resolveActiveViewOn}) additionally requires that
  * tab to be the active pick, so switching to another tab (No Layer) stops the paint without
  * disturbing the stored view, which the layer's tab restores when reselected. The host tab is
  * a plain {@link MapLayer} the composition root supplies, so this framework half names no concrete
