@@ -131,13 +131,19 @@ public final class CellRibbonPathRenderer {
         // very stretch that opens there.
         GL11.glPointSize(PATH_START_DOT_SIZE);
         GL11.glBegin(GL11.GL_POINTS);
-        for (var ribbonPath : ribbonPaths) {
-            GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
-            GL11.glVertex2f(
-                ribbonPath.startPoint()[START_X] * mapFrame.factor(),
-                ribbonPath.startPoint()[START_Y] * mapFrame.factor());
+
+        // Ended in a finally block for the reason GlRuns ends its runs in one: a throw left inside
+        // glBegin would have the map's own draws refused for the rest of the frame.
+        try {
+            for (var ribbonPath : ribbonPaths) {
+                GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
+                GL11.glVertex2f(
+                    ribbonPath.startPoint()[START_X] * mapFrame.factor(),
+                    ribbonPath.startPoint()[START_Y] * mapFrame.factor());
+            }
+        } finally {
+            GL11.glEnd();
         }
-        GL11.glEnd();
     }
 
     // One open strip per stretch. Open rather than closed because a carved ring is no longer a

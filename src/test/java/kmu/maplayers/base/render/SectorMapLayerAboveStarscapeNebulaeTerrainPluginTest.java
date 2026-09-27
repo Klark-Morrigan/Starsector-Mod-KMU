@@ -1,5 +1,6 @@
 package kmu.maplayers.base.render;
 
+import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -20,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins the whole of what this surface adds over the one it extends: it paints the upper band and
@@ -46,6 +48,9 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
     private static final float FULLY_SHOWN = 1f;
 
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
+
+    // The layer the active pick resolves to, answering with the renderer above on any sector.
+    private final MapLayer drawingLayerMock = mock(MapLayer.class);
 
     // The surface reads the compatibility constraint before it draws, and that read reaches LunaLib,
     // which no test has. Stubbed for the class rather than per case because every case here is about
@@ -91,9 +96,12 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
     // below to nothing - the pass is what these cases are about, not the dissolve.
     private void stubTheActiveLayersRendererOnAShownScreen() {
 
-        layerRegistryMock
-            .when(() -> MapLayerRegistry.resolveDrawnMapRenderer(any()))
+        when(drawingLayerMock.resolveRenderer(any()))
             .thenReturn(layerRendererMock);
+
+        layerRegistryMock
+            .when(MapLayerRegistry::getDrawnLayer)
+            .thenReturn(drawingLayerMock);
 
         layerScreensMock
             .when(MapLayerScreens::resolveShownFadeOnLiveScreen)

@@ -9,6 +9,7 @@ import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlLines;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlQuads;
+import kmlib.opengl.GlRuns;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 
@@ -122,9 +123,10 @@ public final class ClusterAnchorRenderer {
         GL11.glPointSize(ANCHOR_DOT_SIZE);
         for (var anchor : anchors) {
             GlColour.set(anchor.colour(), lineAlpha);
-            GL11.glBegin(GL11.GL_POINTS);
-            GL11.glVertex2f(anchor.anchorX() * mapFrame.factor(), anchor.anchorY() * mapFrame.factor());
-            GL11.glEnd();
+            GlRuns.drawScaled(
+                GL11.GL_POINTS,
+                new float[] {anchor.anchorX(), anchor.anchorY()},
+                mapFrame.factor());
         }
     }
 
@@ -176,14 +178,14 @@ public final class ClusterAnchorRenderer {
             if (segment == null) {
                 continue;
             }
-            GL11.glBegin(GL11.GL_LINES);
-            GL11.glVertex2f(
-                (float) (segment.startX() * factor),
-                (float) (segment.startY() * factor));
-            GL11.glVertex2f(
-                (float) (segment.endX() * factor),
-                (float) (segment.endY() * factor));
-            GL11.glEnd();
+            GlRuns.drawScaled(
+                GL11.GL_LINES,
+                new float[] {
+                    (float) segment.startX(),
+                    (float) segment.startY(),
+                    (float) segment.endX(),
+                    (float) segment.endY()},
+                factor);
         }
     }
 
@@ -249,19 +251,25 @@ public final class ClusterAnchorRenderer {
             return;
         }
         GL11.glBegin(GL11.GL_LINES);
-        for (var rule = 1; rule < lineCount; rule++) {
 
-            // Step from one edge (-half) across the girth in even lane widths.
-            var offset = -thickness / 2f + thickness * rule / lineCount;
+        // Ended in a finally block for the reason GlRuns ends its runs in one: a throw left inside
+        // glBegin would have the map's own draws refused for the rest of the frame.
+        try {
+            for (var rule = 1; rule < lineCount; rule++) {
 
-            GL11.glVertex2f(
-                (float) (segment.startX() + normal[0] * offset) * factor,
-                (float) (segment.startY() + normal[1] * offset) * factor);
-            GL11.glVertex2f(
-                (float) (segment.endX() + normal[0] * offset) * factor,
-                (float) (segment.endY() + normal[1] * offset) * factor);
+                // Step from one edge (-half) across the girth in even lane widths.
+                var offset = -thickness / 2f + thickness * rule / lineCount;
+
+                GL11.glVertex2f(
+                    (float) (segment.startX() + normal[0] * offset) * factor,
+                    (float) (segment.startY() + normal[1] * offset) * factor);
+                GL11.glVertex2f(
+                    (float) (segment.endX() + normal[0] * offset) * factor,
+                    (float) (segment.endY() + normal[1] * offset) * factor);
+            }
+        } finally {
+            GL11.glEnd();
         }
-        GL11.glEnd();
     }
 
     /**

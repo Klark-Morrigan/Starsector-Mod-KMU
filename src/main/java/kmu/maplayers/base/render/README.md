@@ -43,7 +43,10 @@ It reads the layer being drawn -
 the screen's pick,
 or the picture still dissolving off it -
 asks that layer for the renderer belonging to the sector being drawn,
-and draws through it.
+and draws through it -
+behind that sector's `DrawnLayerGuard`,
+so a layer that throws is switched off there rather than ending the game
+([the layer framework](../layer/README.md#a-layer-that-throws) has why).
 A layer that supplies none -
 No Layer,
 or any future switch-only tab -

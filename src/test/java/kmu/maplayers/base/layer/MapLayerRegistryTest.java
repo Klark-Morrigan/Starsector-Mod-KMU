@@ -4,8 +4,6 @@ import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.machinery.SectorMapMachinery;
-import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.settings.KmuMapSidebarSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -47,13 +45,8 @@ final class MapLayerRegistryTest {
     private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
 
     // A hide pace long enough that a reading taken straight after the flip is unmistakably part-way down
-    // the ramp rather than past its end, which is the state the registry must still hand a renderer for.
+    // the ramp rather than past its end, which is the state the registry must still answer the layer in.
     private static final float LONG_HIDE_FADE_SECONDS = 1_000f;
-
-    // The machinery of the sector being drawn, which the registry passes through rather than
-    // resolves. One for the class, so a case asserting it reached the layer is comparing against
-    // the very object it handed in.
-    private final SectorMapMachinery machinery = new SectorMapMachinery(null);
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
@@ -344,68 +337,16 @@ final class MapLayerRegistryTest {
             assertThat(MapLayerRegistry.getDrawnLayer())
                 .isNull();
         }
-    }
-
-    @Nested
-    class ResolveDrawnMapRenderer {
 
         @Test
-        void resolveDrawnMapRendererAsksTheDrawnLayerAboutTheMachineryItWasHanded() {
-            // The roster is the process's while a renderer is one sector's, so the registry must
-            // pass the machinery through rather than resolve one of its own - a registry that
-            // picked the running sector's would hand every surface the same renderer however many
-            // sectors were being drawn. Pinned by stubbing that one machinery and no other, so a
-            // registry substituting its own would find nothing stubbed for it.
-            var layerRendererMock = mock(MapLayerRenderer.class);
-
-            when(secondLayerMock.resolveRenderer(machinery))
-                .thenReturn(layerRendererMock);
-
-            sectorMemoryFake.removeSector();
-
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
-                .isSameAs(layerRendererMock);
-        }
-
-        @Test
-        void resolveDrawnMapRendererIsNullWhenTheDrawnLayerPaintsNothing() {
-            // The switch-only tab, whose whole expression is a null renderer - and the pre-
-            // registration frame below it, answered the same way so no pass driven by the drawn
-            // layer needs a case for either. Stated rather than left to the stub's own default, or
-            // the case would pass on a layer that was never asked at all.
-            when(secondLayerMock.resolveRenderer(machinery))
-                .thenReturn(null);
-
-            sectorMemoryFake.removeSector();
-
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
-                .isNull();
-        }
-
-        @Test
-        void resolveDrawnMapRendererIsNullBeforeAnyLayerIsRegistered() {
-
-            MapLayerRosters.forgetEveryLayer();
-            sectorMemoryFake.removeSector();
-
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
-                .isNull();
-        }
-
-        @Test
-        void resolveDrawnMapRendererStillDrawsPartWayThroughTheHide() {
+        void stillAnswersTheLayerPartWayThroughTheHide() {
             // What the fade is for: the pick already reads hidden, and the overlay must go on being
-            // handed a renderer until the dissolve is over, or the picture would blink out from under
-            // the sidebar that is still thinning beside it.
-            var layerRendererMock = mock(MapLayerRenderer.class);
-
-            when(secondLayerMock.resolveRenderer(machinery))
-                .thenReturn(layerRendererMock);
-
+            // drawn until the dissolve is over, or the picture would blink out from under the sidebar
+            // that is still thinning beside it.
             startHidingTheMapScreensLayers();
 
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
-                .isSameAs(layerRendererMock);
+            assertThat(MapLayerRegistry.getDrawnLayer())
+                .isSameAs(secondLayerMock);
         }
     }
 

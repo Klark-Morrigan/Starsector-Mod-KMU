@@ -30,6 +30,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **A commented-out row in `data/config/kmu/installations.csv` is ignored.** A row whose entity type starts with `#`, the way the game's own tables comment a row out, was read as an entry for a type named after the comment. It now stays out of the table, as a blank row spacing the file does.
 - **A fault in the political map's repaint of a conquered colony no longer ends the game.** Nexerelin tells KMU of a colony changing hands at the end of its own transfer, from inside an invasion, a rebellion or a transfer dialog with no catch of its own, so a failure while the political map repainted that colony would have reached the engine and ended the game with an error naming Nexerelin. It is now caught and logged, and everything Nexerelin does after telling its listeners still runs. The colony is repainted by the map's next check a few seconds later.
+- **A fault in a map layer no longer ends the game.** Nothing under the sector map's drawing, or under the star system tooltip over it, caught a failure, so any fault in the layer being drawn took the game down with the map open. The failing layer now stops drawing until you next load a save or switch *Features* **Enable map layers** off and back on, and the fault is logged in `starsector.log` with its trace. The map, the sidebar and your other layers keep drawing.
 
 ### Public contracts changed (**breaking**)
 
@@ -113,6 +114,7 @@ None of these reach a player: every LunaLib field ID and every value saved in se
     - And `shouldDecivilisedSystemsDrawTerritory`, which is `shouldCountDecivilisedSystemsAsPopulated`.
   - The nineteen `KmuStringKeys.POLITICAL_MAP_*` constants the tier labels its controls with are `OWNER_MAP_*`, with their `strings.json` keys.
 - **A hover-box status may colour its own finding:** `CellTooltipQualifier` carries a `findingColour`, set with `drawsFindingIn(Color)`, for a finding whose colour is itself the fact - a relation level, say. Left unset, the finding reads in the box's gold. The canonical constructor takes it between `findingText` and `trailingWordText`.
+- **A pass reaches the drawn layer through its sector's guard:** `MapLayerRegistry.resolveDrawnMapRenderer` is gone. `DrawnLayerGuard.resolveGuardIn(machinery)`, in `kmu.maplayers.base.layer`, hands a pass's work the drawn layer's renderer on that sector, and switches off there a layer that throws from it.
 
 ## [0.1.2] - 2026-09-16
 
