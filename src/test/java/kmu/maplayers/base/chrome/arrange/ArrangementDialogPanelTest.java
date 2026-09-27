@@ -2,8 +2,6 @@ package kmu.maplayers.base.chrome.arrange;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
-import kmlib.testfixtures.starsector.ui.coreui.CoreUiReachFailures;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.input.Keyboard;
@@ -20,15 +18,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what the dialog's surface does with a screen: the rule about whether there is still a map
- * under it, and then the frame hooks the engine drives once a panel is standing.
- *
- * <p>The map rule is the only cover-shaped reading in this mod that fails <b>closed</b>, and the
- * direction is what has to be pinned. Everything under {@code base/hover/cover} answers "not
- * covering" on a reading it cannot take, because a read added to refine a hover must not switch one
- * off; this answers "no map" on the same failure, because a dialog that cannot find the screen it
- * was opened over should come down rather than stand on it. Written the other way round it would
- * strand the box on screen with the reach raising every frame.
+ * Pins what the dialog's surface does with a screen: the frame hooks the engine drives once a panel
+ * is standing, and the panel coming down with the map under it. Whether there is still a map is
+ * {@code ShownMapTab}'s read, which fails closed and is pinned there.
  *
  * <p>The hooks are reached through {@link ArrangementDialogScreenScope}, which stands in the three
  * static reaches a panel is built over. They are worth reaching because what they hold is not glue:
@@ -47,49 +39,6 @@ final class ArrangementDialogPanelTest {
     // The alpha a frame hands a panel standing at full - whatever the engine multiplies in is the
     // engine's, and what matters here is that the number arrives unaltered.
     private static final float FULLY_PAINTED = 1f;
-
-    @Nested
-    class IsMapShowing {
-
-        @Test
-        void isMapShowingAnswersShowingWhileAMapTabIsOnScreen() {
-
-            assertThat(ArrangementDialogPanel.isMapShowing(Object::new))
-                .isTrue();
-        }
-
-        @Test
-        void isMapShowingAnswersNoMapWhereNoTabIsOnScreen() {
-            // The ordinary way out: the player left the map, so the reach answers rather than raises.
-            assertThat(ArrangementDialogPanel.isMapShowing(() -> null))
-                .isFalse();
-        }
-
-        @Test
-        void isMapShowingFailsClosedWhereTheWidgetTreeCannotBeWalked() {
-            // The reach raises rather than answering, which is a screen nothing can be placed on -
-            // so the dialog comes down instead of standing over one it can no longer see.
-            assertThat(ArrangementDialogPanel.isMapShowing(() -> {
-                throw new IllegalStateException("the widget tree could not be walked");
-            }))
-                .isFalse();
-        }
-
-        @Test
-        void isMapShowingFailsClosedWhereTheGamesOwnFailureComesBackChecked() {
-            // How the reach hands on a game method that threw: wrapped, checked and undeclared, so
-            // a boundary catching unchecked failures alone would let it end the frame.
-            assertThat(ArrangementDialogPanel.isMapShowing(CoreUiReachFailures::throwWrappedGameFailure))
-                .isFalse();
-        }
-
-        @Test
-        void isMapShowingFailsClosedWhereAMemberNoLongerLinks() {
-
-            assertThat(ArrangementDialogPanel.isMapShowing(CoreUiReachFailures::throwUnlinkedMember))
-                .isFalse();
-        }
-    }
 
     @Nested
     class RaisePanel {

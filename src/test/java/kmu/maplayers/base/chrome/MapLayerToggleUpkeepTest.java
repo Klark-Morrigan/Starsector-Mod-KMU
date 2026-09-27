@@ -466,8 +466,7 @@ final class MapLayerToggleUpkeepTest {
 
         @Test
         void advanceContainsTheGamesOwnFailureComingBackChecked() {
-            // How the walk's reach hands on a game method that threw: wrapped, checked and
-            // undeclared, so a boundary catching unchecked failures alone would let it end the frame.
+
             var upkeep = new MapLayerToggleUpkeep(
                 SWITCH_OPEN,
                 MapLayerToggleUpkeepTest::buildScreenPicks,

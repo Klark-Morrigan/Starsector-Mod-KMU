@@ -143,9 +143,8 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
         CoreUITabId shownCoreTab = null;
 
         // The switch read is inside the boundary too: it reaches the settings substrate, as able to
-        // throw on an unfamiliar install as the widget walk below it. Over Throwable, as the walk's
-        // reach asks of its callers: the game's own failure comes back checked and undeclared, and a
-        // member a new build dropped as a LinkageError, and either escaping ends the campaign frame.
+        // throw on an unfamiliar install as the widget walk below it. Over Throwable, as CoreUiTree
+        // asks of the callers of its reach.
         try {
             shownCoreTab = resolveShownCoreTab.get();
 
