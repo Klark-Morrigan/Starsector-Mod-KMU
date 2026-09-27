@@ -4,7 +4,6 @@ import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Segment;
 
 import kmu.maplayers.base.geometry.CellEdge;
-import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
@@ -13,11 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The void the cells leave: everywhere no cell reaches, divided into its pieces.
+ * The void the cells leave, divided into its pieces by the cells and by every line the tiers
+ * lay into it.
  *
- * <p>The base every later layer divides. Nothing here knows what a coast is or what a span is:
- * this is the sector's void as the cells alone leave it, which is the one reading no
- * construction can disagree with because no construction has contributed to it yet.
+ * <p>The one partition every tier divides. With nothing laid it is the sector's void as the
+ * cells alone leave it, which is the one reading no construction can disagree with because no
+ * construction has contributed to it yet; each tier's lines then divide those same pieces
+ * further, in the same walk, rather than being read off a second one.
  *
  * <p><b>Read off the cells, which already know where it is.</b> Every cell edge says what lies
  * across it, and {@link EdgeTarget#REACH_BOUND} says nothing does - the cell stopped at its own
@@ -40,7 +41,7 @@ import java.util.Map;
  * <p>At the cells' OWN reach, always. The reach a shape is drawn at is a presentation choice
  * made per layer; what void there is, is not.
  */
-public final class BareVoid {
+public final class VoidPartition {
 
     // What the frame is labelled with.
     //
@@ -57,40 +58,68 @@ public final class BareVoid {
     // that the piece is about this sector rather than about the number chosen here.
     private static final double FRAME_MARGIN_SHARE = 0.05;
 
-    private final DiscUnion union;
-
     private final List<Face> pieces;
 
-    private BareVoid(DiscUnion union, List<Face> pieces) {
-        this.union = union;
+    private VoidPartition(List<Face> pieces) {
         this.pieces = pieces;
     }
 
     /**
-     * Reads the void a sector's cells leave.
+     * Reads the void a sector's cells leave, with nothing laid into it.
      *
      * @param cellEdges  every cell, as its adjacency-tagged edges
      * @param sites      the cells' own positions
      * @param parameters the knobs the cells were built under
-     * @return the bare void
+     * @return the void as the cells alone divide it
      */
-    public static BareVoid readBareVoid(
+    public static VoidPartition readVoidPartition(
             Map<?, List<CellEdge>> cellEdges,
             List<double[]> sites,
             SectorGeometryParameters parameters) {
 
+        return readVoidPartition(cellEdges, sites, parameters, List.of());
+    }
+
+    /**
+     * Reads the void with the tiers' lines laid into it.
+     *
+     * <p>The same walk, not a second one. Every tier of the stack divides the one partition by
+     * adding its lines to it, so the pieces a tier leaves are pieces of the same division every
+     * earlier tier left - which is what lets the partition be checked over everything down so
+     * far rather than over each tier's own reading of the map.
+     *
+     * @param cellEdges  every cell, as its adjacency-tagged edges
+     * @param sites      the cells' own positions
+     * @param parameters the knobs the cells were built under
+     * @param laidWalls  the lines the tiers so far have laid, each saying which line it is and
+     *                   each ending exactly where its tier put it
+     * @return the void those lines divide
+     */
+    public static VoidPartition readVoidPartition(
+            Map<?, List<CellEdge>> cellEdges,
+            List<double[]> sites,
+            SectorGeometryParameters parameters,
+            List<LabelledWall> laidWalls) {
+
         var frontier = collectFrontier(cellEdges);
         var pieces = new ArrayList<Face>();
 
-        for (var face : FaceWalk.walkFaces(
-                List.of(), frameTheSector(frontier, sites, parameters),
-                measureBoundGap(parameters))) {
+        // The frontier and the frame are the base, welded at the gap the frontier's own
+        // corners need; the laid lines go in after it, at rounding, so the weld cannot move
+        // them off where their tier put them.
+        var faces = FaceWalk.walkFaces(
+            List.of(),
+            frameTheSector(frontier, sites, parameters),
+            measureBoundGap(parameters),
+            laidWalls);
+
+        for (var face : faces) {
 
             if (!face.isOuterFace() && !isLand(face, sites)) {
                 pieces.add(face);
             }
         }
-        return new BareVoid(DiscUnion.buildAtCellReach(sites, parameters), List.copyOf(pieces));
+        return new VoidPartition(List.copyOf(pieces));
     }
 
     /**
@@ -112,21 +141,12 @@ public final class BareVoid {
     }
 
     /**
-     * How many pieces the cells leave.
+     * How many pieces the void is divided into.
      *
      * @return the count
      */
     public int countPieces() {
         return pieces.size();
-    }
-
-    /**
-     * The discs the pieces were read between.
-     *
-     * @return the cells at their own reach
-     */
-    public DiscUnion union() {
-        return union;
     }
 
     // Whether a piece is cells rather than void.

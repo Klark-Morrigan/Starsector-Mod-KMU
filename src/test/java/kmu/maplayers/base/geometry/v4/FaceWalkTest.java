@@ -62,6 +62,28 @@ class FaceWalkTest {
     // literal, so the welding joins what genuinely coincides and reaches nothing else.
     private static final double WELD_TOLERANCE = 1e-3;
 
+    // A weld coarse enough to reach across the fixtures below, for the cases about what a
+    // coarse weld may and may not move.
+    private static final double COARSE_WELD = 10;
+
+    // The square with a notch in its top reaching down to (50, 46), and a corner on its left
+    // side at (0, 50). Encloses 7300. A wall laid along y = 44 crosses the left side 6 below
+    // that corner and passes 2 below the notch's tip - within the coarse weld of the one, and
+    // not of the other.
+    private static final LabelledRing NOTCHED_SQUARE = new LabelledRing(
+        List.of(
+            new double[] {0, 0},
+            new double[] {100, 0},
+            new double[] {100, 100},
+            new double[] {50, 46},
+            new double[] {0, 100},
+            new double[] {0, 50}),
+        new int[] {0, 1, 2, 2, 3, 3});
+
+    // That wall, reaching 8 past each side so it crosses both outright.
+    private static final LabelledWall WALL_UNDER_THE_NOTCH =
+        new LabelledWall(new Segment(-8, 44, 108, 44), WALL);
+
     // How far a reported area may sit from the stated one. The shoelace sum over coordinates
     // this round is exact in binary, so this is room against a change in the arithmetic rather
     // than room the shapes need.
@@ -81,10 +103,11 @@ class FaceWalkTest {
             // nothing labelled.
             var faces = FaceWalk.walkFaces(List.of(SQUARE), List.of(), WELD_TOLERANCE);
 
-            assertThat(faces).hasSize(2);
+            assertThat(faces)
+                .hasSize(2);
 
-            assertThat(measureBoundedAreas(faces)).hasSize(1);
-
+            assertThat(measureBoundedAreas(faces))
+                .hasSize(1);
             assertThat(measureBoundedAreas(faces).get(0))
                 .isCloseTo(10000.0, within(AREA_SLACK));
 
@@ -141,10 +164,13 @@ class FaceWalkTest {
 
             var areas = measureBoundedAreas(faces);
 
-            assertThat(areas).hasSize(2);
+            assertThat(areas)
+                .hasSize(2);
 
-            assertThat(areas.get(0)).isCloseTo(2500.0, within(AREA_SLACK));
-            assertThat(areas.get(1)).isCloseTo(7500.0, within(AREA_SLACK));
+            assertThat(areas.get(0))
+                .isCloseTo(2500.0, within(AREA_SLACK));
+            assertThat(areas.get(1))
+                .isCloseTo(7500.0, within(AREA_SLACK));
         }
 
         @Test
@@ -159,9 +185,10 @@ class FaceWalkTest {
 
             var areas = measureBoundedAreas(faces);
 
-            assertThat(areas).hasSize(1);
-
-            assertThat(areas.get(0)).isCloseTo(10000.0, within(AREA_SLACK));
+            assertThat(areas)
+                .hasSize(1);
+            assertThat(areas.get(0))
+                .isCloseTo(10000.0, within(AREA_SLACK));
         }
 
         @Test
@@ -222,12 +249,14 @@ class FaceWalkTest {
             // loses its area. Left as a piece, the two would overlap and everything that adds
             // up areas over a division would count the middle twice.
             var faces = FaceWalk.walkFaces(
-                List.of(SQUARE, INNER_SQUARE), List.of(), WELD_TOLERANCE);
+                List.of(SQUARE, INNER_SQUARE),
+                List.of(),
+                WELD_TOLERANCE);
 
             var outer = findPieceOfArea(faces, 9600.0);
 
-            assertThat(outer.holes()).hasSize(1);
-
+            assertThat(outer.holes())
+                .hasSize(1);
             assertThat(outer.holes().get(0).edgeLabels())
                 .containsOnly(INNER);
         }
@@ -237,7 +266,9 @@ class FaceWalkTest {
             // Being cut out of the piece around it does not stop it being one. What the walk
             // hands back is every piece, and the inner ring bounds one.
             var faces = FaceWalk.walkFaces(
-                List.of(SQUARE, INNER_SQUARE), List.of(), WELD_TOLERANCE);
+                List.of(SQUARE, INNER_SQUARE),
+                List.of(),
+                WELD_TOLERANCE);
 
             assertThat(measureBoundedAreas(faces))
                 .hasSize(2);
@@ -252,7 +283,9 @@ class FaceWalkTest {
             // whole division - which is what makes a frame worth laying, since framed there is
             // no such face and every piece is bounded.
             var faces = FaceWalk.walkFaces(
-                List.of(SQUARE, INNER_SQUARE), List.of(), WELD_TOLERANCE);
+                List.of(SQUARE, INNER_SQUARE),
+                List.of(),
+                WELD_TOLERANCE);
 
             assertThat(faces)
                 .filteredOn(Face::isOuterFace)
@@ -271,7 +304,8 @@ class FaceWalkTest {
                 WELD_TOLERANCE);
 
             assertThat(collectBoundedFaces(faces))
-                .allSatisfy(piece -> assertThat(piece.holes()).isEmpty());
+                .allSatisfy(piece -> assertThat(piece.holes())
+                    .isEmpty());
         }
 
         @Test
@@ -286,7 +320,71 @@ class FaceWalkTest {
 
             assertThat(faces)
                 .allSatisfy(face ->
-                    assertThat(face.edgeLabels()).hasSize(face.boundary().size()));
+                    assertThat(face.edgeLabels())
+                        .hasSize(face.boundary().size()));
+        }
+
+        @Test
+        void aLaidWallIsNotSwungAcrossACornerByTheBaseWeld() {
+            // The wall crosses the left side at (0, 44), six below the ring's corner at
+            // (0, 50) - within the coarse weld. Welded together with the ring, that junction is
+            // pulled onto the corner and the wall now runs from (0, 50) to (100, 44): at
+            // x = 50 it stands at 47, above the notch's tip at 46, and crosses a line the
+            // cutting never saw. Laid after the base, the junction stays at (0, 44), and the
+            // wall divides the ring into the 100 by 44 below it and the 2900 above.
+            var faces = FaceWalk.walkFaces(
+                List.of(NOTCHED_SQUARE),
+                List.of(),
+                COARSE_WELD,
+                List.of(WALL_UNDER_THE_NOTCH));
+
+            var areas = measureBoundedAreas(faces);
+
+            assertThat(areas)
+                .hasSize(2);
+
+            assertThat(areas.get(0))
+                .isCloseTo(2900.0, within(AREA_SLACK));
+            assertThat(areas.get(1))
+                .isCloseTo(4400.0, within(AREA_SLACK));
+        }
+
+        @Test
+        void aLaidWallsLooseEndStaysWhereItWasLaid() {
+            // The other thing the base weld must not do to a laid line: reach its loose end.
+            // The end at (-8, 44) is within the coarse weld of the junction at (0, 44), and
+            // pulled onto it the stub outside the ring would vanish. It is a slit in the
+            // outside, and the outside is walked to it and back.
+            var faces = FaceWalk.walkFaces(
+                List.of(NOTCHED_SQUARE),
+                List.of(),
+                COARSE_WELD,
+                List.of(WALL_UNDER_THE_NOTCH));
+
+            assertThat(findTheOuterFace(faces).boundary())
+                .anySatisfy(corner -> assertThat(
+                        Points.computeDistance(corner, new double[] {-8, 44}))
+                    .isLessThan(SAME_POINT));
+        }
+
+        @Test
+        void theBaseIsStillWeldedAtItsOwnTolerance() {
+            // What the two-stage joining must keep: the base's own corners, reported apart by
+            // less than its tolerance, still meet. The square laid as five loose walls, its
+            // left side in two that miss each other by 4; under the coarse weld it closes.
+            var faces = FaceWalk.walkFaces(
+                List.of(),
+                List.of(
+                    new LabelledWall(new Segment(0, 0, 100, 0), 0),
+                    new LabelledWall(new Segment(100, 0, 100, 100), 1),
+                    new LabelledWall(new Segment(100, 100, 0, 100), 2),
+                    new LabelledWall(new Segment(0, 100, 0, 54), 3),
+                    new LabelledWall(new Segment(0, 50, 0, 0), 3)),
+                COARSE_WELD,
+                List.of());
+
+            assertThat(measureBoundedAreas(faces))
+                .hasSize(1);
         }
     }
 

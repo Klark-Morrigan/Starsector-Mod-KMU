@@ -35,10 +35,13 @@ class PieceShaperTest {
     private static final int[] ALL_AGAINST_CELLS = {0, 1, 2, 3};
 
     // The bottom edge is the sector's own rim and the other three face cells.
-    private static final int[] BOTTOM_IS_THE_FRAME = {BareVoid.THE_FRAME, 1, 2, 3};
+    private static final int[] BOTTOM_IS_THE_FRAME = {VoidPartition.THE_FRAME, 1, 2, 3};
 
     private static final int[] ALL_THE_FRAME = {
-        BareVoid.THE_FRAME, BareVoid.THE_FRAME, BareVoid.THE_FRAME, BareVoid.THE_FRAME};
+        VoidPartition.THE_FRAME,
+        VoidPartition.THE_FRAME,
+        VoidPartition.THE_FRAME,
+        VoidPartition.THE_FRAME};
 
     // A smaller square inside the first, wound the other way, as a hole is.
     private static final List<double[]> HOLE = List.of(
@@ -200,8 +203,10 @@ class PieceShaperTest {
                 new EdgeInset(EdgeInsetRule.AT_EVERY_BORDER, DEEPER_THAN_HALF_THE_STRAIT),
                 MITER_SPIKE_LIMIT);
 
-            assertThat(shaped.outerRing()).isEmpty();
-            assertThat(shaped.holeRings()).isEmpty();
+            assertThat(shaped.outerRing())
+                .isEmpty();
+            assertThat(shaped.holeRings())
+                .isEmpty();
         }
     }
 }

@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.v4;
 
 import kmlib.math.geometry.Points;
+import kmlib.math.geometry.Segment;
 import kmlib.math.geometry.VertexWelder;
 
 import java.util.ArrayDeque;
@@ -106,6 +107,38 @@ final class PlanarArrangement {
             edges.addAll(atVertex);
         }
         return edges;
+    }
+
+    /**
+     * The graph as lines again: every edge once, between the corners it was welded to.
+     *
+     * <p>What lets a set of lines be welded in one step and cut in a later one. The welding
+     * moves ends, and an end moved is a line that may now cross something it did not cross
+     * when the cutting ran - so anything laid against welded lines has to be cut against
+     * THESE, the lines as they stand after the weld, and not against the lines as they
+     * arrived.
+     *
+     * @return one line per edge, each under its label, with both ends on a corner of the graph
+     */
+    List<LabelledWall> collectLines() {
+
+        var lines = new ArrayList<LabelledWall>();
+
+        for (var atVertex : outgoing) {
+            for (var edge : atVertex) {
+
+                // Each edge is held in both directions; one of them is enough for a line.
+                if (edge.from() < edge.to()) {
+
+                    var from = vertices.get(edge.from());
+                    var to = vertices.get(edge.to());
+
+                    lines.add(new LabelledWall(
+                        new Segment(from[0], from[1], to[0], to[1]), labels.get(edge)));
+                }
+            }
+        }
+        return lines;
     }
 
     /**

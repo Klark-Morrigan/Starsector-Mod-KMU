@@ -6,9 +6,9 @@ import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
-import kmu.maplayers.base.geometry.v4.BareVoid;
 import kmu.maplayers.base.geometry.v4.Face;
 import kmu.maplayers.base.geometry.v4.PieceShaper;
+import kmu.maplayers.base.geometry.v4.VoidPartition;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
@@ -65,8 +65,10 @@ class PieceRegionsIntegrationTest {
 
         var fixture = SectorFixture.loadSector(sectorName);
 
-        return BareVoid.readBareVoid(
-            fixture.buildCellEdgesBySystemKey(KNOBS), fixture.getSites(), KNOBS)
+        return VoidPartition.readVoidPartition(
+                fixture.buildCellEdgesBySystemKey(KNOBS),
+                fixture.getSites(),
+                KNOBS)
             .collectPieces();
     }
 
@@ -78,9 +80,13 @@ class PieceRegionsIntegrationTest {
         void noRingOfAnyRegionCrossesItself(String sectorName) {
 
             var regions = PieceRegions.collectDrawableRegions(
-                readPieces(sectorName), INSET, KNOBS.miterSpikeLimit(), SMOOTHING);
+                readPieces(sectorName),
+                INSET,
+                KNOBS.miterSpikeLimit(),
+                SMOOTHING);
 
-            assertThat(regions).isNotEmpty();
+            assertThat(regions)
+                .isNotEmpty();
 
             for (var region : regions) {
                 for (var ring : region.toRings()) {
@@ -120,7 +126,10 @@ class PieceRegionsIntegrationTest {
             // A region with an empty outer ring is one the sequence lost hold of rather than
             // one it dropped: a folded piece contributes no region at all.
             var regions = PieceRegions.collectDrawableRegions(
-                readPieces(sectorName), INSET, KNOBS.miterSpikeLimit(), SMOOTHING);
+                readPieces(sectorName),
+                INSET,
+                KNOBS.miterSpikeLimit(),
+                SMOOTHING);
 
             for (var region : regions) {
 
@@ -138,7 +147,10 @@ class PieceRegionsIntegrationTest {
             var pieces = readPieces(sectorName);
 
             var regions = PieceRegions.collectDrawableRegions(
-                pieces, NO_INSET, KNOBS.miterSpikeLimit(), SMOOTHING);
+                pieces,
+                NO_INSET,
+                KNOBS.miterSpikeLimit(),
+                SMOOTHING);
 
             assertThat(regions)
                 .as("regions of %s with nothing inset", sectorName)

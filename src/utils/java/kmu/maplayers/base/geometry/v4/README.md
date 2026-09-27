@@ -16,6 +16,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 - [Why the cells are the input](#why-the-cells-are-the-input)
 - [What a piece is](#what-a-piece-is)
 - [The open sea](#the-open-sea)
+- [Welded once, before anything is laid](#welded-once-before-anything-is-laid)
 - [Frontage](#frontage)
 - [The channel](#the-channel)
 - [What the resolution decides](#what-the-resolution-decides)
@@ -24,9 +25,12 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 
 | Step | Class | In | Out |
 | --- | --- | --- | --- |
-| the cells' own frontier | `BareVoid` | each cell's adjacency-tagged edges | the lines between cell and void |
-| cut lines at crossings | `SegmentCrossings` | lines | lines meeting only at their ends |
-| weld and order | `PlanarArrangement` | those lines | a graph knowing the turn order at each vertex |
+| the cells' own frontier | `VoidPartition` | each cell's adjacency-tagged edges | the lines between cell and void, and a frame round the sector |
+| cut the base at crossings | `SegmentCrossings` | those lines | lines meeting only at their ends |
+| weld and order the base | `PlanarArrangement` | those lines, at the sagitta | a graph knowing the turn order at each vertex |
+| lay a tier's lines | `LakeCoast` | reaches as `ReachLine`, two points and two cells | walls, each end carried through the shore |
+| cut them into the base | `SegmentCrossings` | the welded base read back as lines, and the walls | lines meeting only at their ends |
+| weld and order again | `PlanarArrangement` | those lines, at rounding | the graph the faces are walked on |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
 | read the shore | `LandableFrontage` | a piece | its runs of border, by cell |
 | cut the channel | `PieceShaper` | a piece, an `EdgeInset` | its rings pulled off what they face, crossings and all |
@@ -36,8 +40,15 @@ The last two are drawing rather than geometry, and the partition does not change
 the shaping is paint over pieces that already exist, and under `EdgeInsetRule.NOWHERE` what it hands back is the piece itself.
 They are in the table because leaving them out is what made the inset look finished when it was not - see [the channel](#the-channel).
 
+With nothing laid, the three rows about laid lines do nothing, and the walk runs on the welded base as it stands.
+
 `LabelledRing` and `LabelledWall` are what goes into the walk - a ring or a loose line, each edge carrying an int naming what it lies on.
 `Face` is what comes out.
+
+Nothing here imports v3, and the layering gate holds it to that.
+The lake coast is v3's trace, and it crosses as `ReachLine`s through `LakeReaches` in the viewer's own package, which already depends on both:
+a version that imported the other would be a layer on top of it rather than a construction beside it,
+and the package both versions build on would depend on its own dependents.
 
 ## Why the cells are the input
 
@@ -55,8 +66,10 @@ it rediscovers by arithmetic a line the cells already carry, and it reports only
 A `Face` is the ring around one piece, what each of its edges lies on, and the rings of anything cut out of it.
 
 The labels are the part that makes a piece readable rather than merely drawable.
-An edge names the cell whose border it runs along, or `BareVoid.THE_FRAME` for the edge of the sector.
-That number is deliberately not the one KMLib's `VoronoiCellBuilder.BOUND_EDGE` uses:
+An edge names the cell whose border it runs along, as that cell's index,
+or the line some tier laid, as a negative of that tier's own - the frame and the lake coast so far.
+`EdgeLabels` holds the convention and lists the negatives in use; ask it whether an edge is a cell's rather than testing for the frame, which stopped being the only negative with the first tier.
+The frame's number is deliberately not the one KMLib's `VoronoiCellBuilder.BOUND_EDGE` uses:
 both reach a piece's labels and they say opposite things, so sharing a value would let a reader take the edge of the map for somebody's shore.
 
 Bounded or outer is read off the winding rather than carried beside it,
@@ -73,6 +86,21 @@ The check is that the pieces and the cells together cover the frame exactly once
 
 A piece that runs around another carries it as a hole.
 Drawn from its outline alone, the sea paints over every cell on the map.
+
+## Welded once, before anything is laid
+
+The frontier reports each shared corner twice, up to a sagitta apart, and the weld at that tolerance is what closes its rings.
+A tier's line needs none of that:
+its ends are where its tier put them, and the walk cuts it at the shore where its stubs cross.
+
+Welded together with the frontier, the line's ends are pulled up to a sagitta sideways after the cutting has run.
+A reach that grazes a cell, which v3's do, passes a polygon corner by less than that,
+and the pull swings it across the corner - a crossing the walk cannot turn at, and the whole lake walked out and back as a tree of area nothing.
+
+So `FaceWalk` joins in two stages.
+The frontier and the frame are cut and welded on their own and come back as exact lines;
+what a tier lays is cut against those and welded at rounding.
+Nothing moves after it was cut, which is the invariant the cutting rests on.
 
 ## Frontage
 
@@ -113,5 +141,9 @@ KMLib lays the corner two neighbours share from the two sites and the reach, and
 
 What it does set is the resolution everything here is judged at,
 which is `SectorGeometryParameters.measureBoundSagitta()`:
-the welding tolerance the walk closes rings at, and the floor below which a piece is too small to be a piece.
+the tolerance the frontier's own corners are welded at, and the floor below which a piece is too small to be a piece.
+Laid lines are joined at rounding rather than at it, for the reason [the two-stage weld](#welded-once-before-anything-is-laid) gives,
+but the floor is still the sagitta's:
+a sliver a laid line closes against the shore thinner than the map is drawn is no more a piece than one the frontier closes on its own,
+so the pieces cover the void less exactly those.
 Read it rather than restating it - a pass holding a number that was right at one setting goes on judging at a resolution the map no longer has.

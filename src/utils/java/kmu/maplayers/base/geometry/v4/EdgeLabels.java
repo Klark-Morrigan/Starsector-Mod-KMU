@@ -11,7 +11,8 @@ package kmu.maplayers.base.geometry.v4;
  * <p>The negatives in use, each declared where the thing it names is built:
  *
  * <ul>
- *   <li>{@link BareVoid#THE_FRAME} - the edge of the sector, which is nobody's.</li>
+ *   <li>{@link VoidPartition#THE_FRAME} - the edge of the sector, which is nobody's.</li>
+ *   <li>{@link LakeCoast#THE_LAKE_COAST} - a reach of a lake's coast, cutting across a bay.</li>
  * </ul>
  *
  * <p>KMLib's {@code VoronoiCellBuilder.BOUND_EDGE} is another negative and deliberately not one
