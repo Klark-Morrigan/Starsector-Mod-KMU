@@ -201,7 +201,7 @@ final class LunaSettingsCsvIntegrationTest {
         "Market Condition Manager (MCM)");
 
     // The Radio fields whose options are not a LabeledChoice enum's labels, and so cannot be held
-    // against one. The log level's options are log4j's own level names, which KmLogging hands
+    // against one. The log level's options are log4j's own level names, which LunaLogLevelBinding hands
     // straight to the logger; naming them here is what keeps the coverage walk exhaustive without
     // pretending the row is choice-backed.
     private static final List<String> NON_CHOICE_BACKED_RADIO_FIELDS = List.of("kmu_dev_logging_level");
