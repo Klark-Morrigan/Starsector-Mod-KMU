@@ -2,6 +2,8 @@ package kmu.maplayers.base.chrome.arrange;
 
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.testfixtures.starsector.ui.coreui.CoreUiReachFailures;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.input.Keyboard;
@@ -70,6 +72,21 @@ final class ArrangementDialogPanelTest {
             assertThat(ArrangementDialogPanel.isMapShowing(() -> {
                 throw new IllegalStateException("the widget tree could not be walked");
             }))
+                .isFalse();
+        }
+
+        @Test
+        void isMapShowingFailsClosedWhereTheGamesOwnFailureComesBackChecked() {
+            // How the reach hands on a game method that threw: wrapped, checked and undeclared, so
+            // a boundary catching unchecked failures alone would let it end the frame.
+            assertThat(ArrangementDialogPanel.isMapShowing(CoreUiReachFailures::throwWrappedGameFailure))
+                .isFalse();
+        }
+
+        @Test
+        void isMapShowingFailsClosedWhereAMemberNoLongerLinks() {
+
+            assertThat(ArrangementDialogPanel.isMapShowing(CoreUiReachFailures::throwUnlinkedMember))
                 .isFalse();
         }
     }

@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.CoreUITabId;
 
 import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterToggle;
+import kmlib.testfixtures.starsector.ui.coreui.CoreUiReachFailures;
 import kmlib.testfixtures.starsector.ui.map.controls.MapFilterButtonFake;
 import kmlib.testfixtures.starsector.ui.map.controls.MapFilterRowFake;
 
@@ -461,6 +462,35 @@ final class MapLayerToggleUpkeepTest {
             // the screen whose shape it was, so the other one still gets its box.
             verify(toggleAttacherMock)
                 .attachToggleTo(shownRow, readStoredVisibility(screenPicks));
+        }
+
+        @Test
+        void advanceContainsTheGamesOwnFailureComingBackChecked() {
+            // How the walk's reach hands on a game method that threw: wrapped, checked and
+            // undeclared, so a boundary catching unchecked failures alone would let it end the frame.
+            var upkeep = new MapLayerToggleUpkeep(
+                SWITCH_OPEN,
+                MapLayerToggleUpkeepTest::buildScreenPicks,
+                CoreUiReachFailures::throwWrappedGameFailure,
+                () -> CoreUITabId.MAP,
+                buildAcceptingAttacherMock());
+
+            assertThatCode(() -> upkeep.advance(PAUSED_FRAME))
+                .doesNotThrowAnyException();
+        }
+
+        @Test
+        void advanceContainsAMemberThatNoLongerLinks() {
+
+            var upkeep = new MapLayerToggleUpkeep(
+                SWITCH_OPEN,
+                MapLayerToggleUpkeepTest::buildScreenPicks,
+                CoreUiReachFailures::throwUnlinkedMember,
+                () -> CoreUITabId.MAP,
+                buildAcceptingAttacherMock());
+
+            assertThatCode(() -> upkeep.advance(PAUSED_FRAME))
+                .doesNotThrowAnyException();
         }
     }
 

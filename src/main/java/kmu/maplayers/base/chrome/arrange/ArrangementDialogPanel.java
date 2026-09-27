@@ -126,6 +126,10 @@ final class ArrangementDialogPanel {
      * <p>Takes the reach rather than making it, so the rule is answerable without a running game -
      * the raise is the half that only ever happens on a screen nothing can be built on.
      *
+     * <p>Caught over {@link Throwable}, as the reach asks of its callers: the game's own failure
+     * comes back checked and undeclared, and a member a new build dropped as a
+     * {@link LinkageError}, and either escaping would end the frame rather than take the dialog down.
+     *
      * @param resolveShownMapTab the reach for the map tab currently on screen, which answers null
      *                           where none is and raises where the tree cannot be walked
      * @return whether a map is showing
@@ -135,7 +139,7 @@ final class ArrangementDialogPanel {
         try {
             return resolveShownMapTab.get() != null;
 
-        } catch (RuntimeException cannotReachMap) {
+        } catch (Throwable exception) {
             return false;
         }
     }
