@@ -60,11 +60,6 @@ public final class CellRibbonPathRenderer {
     // own band does not hide the band it is drawn to be compared with.
     private static final float PATH_ALPHA = 0.9f;
 
-    // The packed [x, y] the path is walked from, which is the point a band opens at - named so
-    // the dot pass reads by what it marks rather than by bare index.
-    private static final int START_X = 0;
-    private static final int START_Y = 1;
-
     // Emits only; never instantiated.
     private CellRibbonPathRenderer() {
     }
@@ -130,19 +125,10 @@ public final class CellRibbonPathRenderer {
         // a traced ring says which point of it a band would open at, and the carve can take the
         // very stretch that opens there.
         GL11.glPointSize(PATH_START_DOT_SIZE);
-        GL11.glBegin(GL11.GL_POINTS);
-
-        // Ended in a finally block for the reason GlRuns ends its runs in one: a throw left inside
-        // glBegin would have the map's own draws refused for the rest of the frame.
-        try {
-            for (var ribbonPath : ribbonPaths) {
-                GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
-                GL11.glVertex2f(
-                    ribbonPath.startPoint()[START_X] * mapFrame.factor(),
-                    ribbonPath.startPoint()[START_Y] * mapFrame.factor());
-            }
-        } finally {
-            GL11.glEnd();
+        for (var ribbonPath : ribbonPaths) {
+            // The start point is already a packed [x, y] run, so it is emitted as one.
+            GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
+            GlRuns.drawScaled(GL11.GL_POINTS, ribbonPath.startPoint(), mapFrame.factor());
         }
     }
 

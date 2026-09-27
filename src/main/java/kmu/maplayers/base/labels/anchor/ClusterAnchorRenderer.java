@@ -10,6 +10,7 @@ import kmlib.opengl.GlLines;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlQuads;
 import kmlib.opengl.GlRuns;
+import kmlib.opengl.GlVertexRuns;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 
@@ -250,26 +251,21 @@ public final class ClusterAnchorRenderer {
         if (normal == null) {
             return;
         }
-        GL11.glBegin(GL11.GL_LINES);
+        // One segment per rule, packed as the run the rules are drawn from.
+        var rules = new float[(lineCount - 1) * GlVertexRuns.FLOATS_PER_SEGMENT];
+        var next = 0;
 
-        // Ended in a finally block for the reason GlRuns ends its runs in one: a throw left inside
-        // glBegin would have the map's own draws refused for the rest of the frame.
-        try {
-            for (var rule = 1; rule < lineCount; rule++) {
+        for (var rule = 1; rule < lineCount; rule++) {
 
-                // Step from one edge (-half) across the girth in even lane widths.
-                var offset = -thickness / 2f + thickness * rule / lineCount;
+            // Step from one edge (-half) across the girth in even lane widths.
+            var offset = -thickness / 2f + thickness * rule / lineCount;
 
-                GL11.glVertex2f(
-                    (float) (segment.startX() + normal[0] * offset) * factor,
-                    (float) (segment.startY() + normal[1] * offset) * factor);
-                GL11.glVertex2f(
-                    (float) (segment.endX() + normal[0] * offset) * factor,
-                    (float) (segment.endY() + normal[1] * offset) * factor);
-            }
-        } finally {
-            GL11.glEnd();
+            rules[next++] = (float) (segment.startX() + normal[0] * offset);
+            rules[next++] = (float) (segment.startY() + normal[1] * offset);
+            rules[next++] = (float) (segment.endX() + normal[0] * offset);
+            rules[next++] = (float) (segment.endY() + normal[1] * offset);
         }
+        GlRuns.drawScaled(GL11.GL_LINES, rules, factor);
     }
 
     /**
