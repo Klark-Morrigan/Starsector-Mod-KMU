@@ -10,6 +10,7 @@ import kmlib.text.KmlibStrings;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
+import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -34,9 +35,10 @@ import java.util.List;
  *
  * <p>The order is what a reader meets in turn: which one this is, what the box has found about it,
  * and last, how far its account of it can be trusted. Only the findings read gold
- * ({@link #buildFindingSpan}); the place identifying the line, any word a status is introduced by,
- * and the remark about the box's own account are quiet, so a reader scanning for findings passes
- * over all three.
+ * ({@link #buildFindingSpan}) - or, for a status whose finding's colour is itself the fact, the colour
+ * that status states; the place identifying the line, any word a status is introduced by, and the
+ * remark about the box's own account are quiet ({@link #resolveQuietColour}), so a reader scanning
+ * for findings passes over all three.
  *
  * <p>Runs rather than a built row, so nothing here holds an opinion about the shape the label ends up
  * on. A banner and a listed line compose their words differently and lay them out differently, and a
@@ -103,13 +105,28 @@ final class CellTooltipLabels {
             StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve());
     }
 
+    /**
+     * Resolves the quiet shade the box speaks in when it is not stating a finding: its own joining
+     * words, the working behind a number, a number nothing earned, a place that settled nothing, and a
+     * remark about its own account.
+     *
+     * <p>The counterpart of {@link #buildFindingSpan}, and decided here for the same reason: every part
+     * of a line that reads as the box's aside rather than as what it found must read in one shade, or a
+     * reader scanning past asides would stop on the one drawn differently.
+     *
+     * @return the quiet shade
+     */
+    static Color resolveQuietColour() {
+        return StarsectorUiColour.VANILLA_GRAY.resolve();
+    }
+
     // What a line's own name reads in: the tier's colour, or the quiet shade for a line that is a note
     // about the list rather than one of the things in it. One rule for both tiers, so an aside beneath
     // a listed thing and one beneath a member read alike - and in the same shade a value's working
     // takes, since both are arithmetic rather than a finding.
     private static Color resolveLabelColour(CellTooltipEntryLine line, Color tierColour) {
         return line.isAside()
-            ? StarsectorUiColour.VANILLA_GRAY.resolve()
+            ? resolveQuietColour()
             : tierColour;
     }
 
@@ -226,7 +243,7 @@ final class CellTooltipLabels {
         return switch (outcome) {
             case WON -> StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve();
             case LOST -> StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve();
-            case UNCONTESTED -> StarsectorUiColour.VANILLA_GRAY.resolve();
+            case UNCONTESTED -> resolveQuietColour();
         };
     }
 
@@ -236,8 +253,9 @@ final class CellTooltipLabels {
     // A status introduced by a word, marked by a picture of what it names and closed by what kind of
     // thing that is reads as four runs in the order a player meets them: the box's own connective,
     // the picture, the finding itself, then the kind. Only the finding is gold, on the one rule that
-    // gilds what the box has worked out and nothing else - so the plainest status there is comes to
-    // the single gold run it has always been.
+    // gilds what the box has worked out and nothing else - so the plainest status there is comes to a
+    // single gold run. It departs from the gold only where the status states a colour of its own
+    // (CellTooltipQualifier.drawsFindingIn).
     //
     // The two words take the quiet shade a place and a remark take, being the box's own joining
     // words rather than anything it found; the mark keeps whatever colouring it was composed with, a
@@ -258,19 +276,28 @@ final class CellTooltipLabels {
         if (qualifier.hasMark()) {
             labelRuns.add(resolveMarkSpan(qualifier.mark(), lineColour));
         }
-        labelRuns.add(buildFindingSpan(qualifier.findingText()));
+        labelRuns.add(buildQualifierFindingSpan(qualifier));
 
         if (qualifier.hasTrailingWord()) {
             labelRuns.add(buildQuietSpan(qualifier.trailingWordText()));
         }
     }
 
-    // A run the box speaks in its own quiet voice: the words it joins a finding to the line with,
-    // which are not findings and must not read as any. One place decides that shade, so the words
-    // either side of a finding cannot part on it.
-    private static TextSpan buildQuietSpan(String text) {
+    // The run a status's finding is stated in: the colour the status carries for it where it carries
+    // one, and the one finding span every other finding reads in where it does not - so the default
+    // stays decided in one place and a stated colour is the only way off it.
+    private static TextSpan buildQualifierFindingSpan(CellTooltipQualifier qualifier) {
 
-        return new TextSpan(text, StarsectorUiColour.VANILLA_GRAY.resolve());
+        if (!qualifier.hasOwnFindingColour()) {
+            return buildFindingSpan(qualifier.findingText());
+        }
+        return new TextSpan(qualifier.findingText(), qualifier.findingColour());
+    }
+
+    // A run the box speaks in its own quiet voice: the words it joins a finding to the line with, or a
+    // remark about its own account - neither a finding, and neither to read as one.
+    private static TextSpan buildQuietSpan(String text) {
+        return new TextSpan(text, resolveQuietColour());
     }
 
     // Runs the label on into whatever it remarks about the thing on the line. Laid last, after the
@@ -290,8 +317,6 @@ final class CellTooltipLabels {
         if (!KmlibStrings.hasText(line.noteText())) {
             return;
         }
-        labelRuns.add(new TextSpan(
-            line.noteText(),
-            StarsectorUiColour.VANILLA_GRAY.resolve()));
+        labelRuns.add(buildQuietSpan(line.noteText()));
     }
 }

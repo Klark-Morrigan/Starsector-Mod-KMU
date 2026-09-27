@@ -27,7 +27,8 @@ its status,
 its place in an ordering -
 and imports none of the rest,
   so what a line says can be stated without knowing which tier it lands at,
-  what colour that tier speaks in,
+  what colour that tier speaks in
+  (a status whose colour is the fact states that colour, which is content rather than look),
   or whether the box has room for it;
   **`detail`** is how deep the player asked the box to read,
   as a value and the held choice behind it,
@@ -288,7 +289,22 @@ since applied apart they leave a line free to end on a connective introducing no
 Only the finding is gold -
 the words either side are the box's own,
   and the closing one is a category rather than a name -
-  so the plain status nearly every line carries (`qualifiedWith`) stays the single gold run it has always been.
+  so the plain status nearly every line carries (`qualifiedWith`) stays a single gold run.
+
+The gold is the default and it admits one stated departure:
+a finding whose colour *is* the fact -
+a relation level,
+a hazard band,
+a signal strength -
+carries that colour on its status (`drawsFindingIn`).
+A fixed gold run there would state the fact and contradict it in the same line.
+Everything else holds:
+the words either side stay quiet,
+the mark keeps its own colouring,
+and a finding picked out of the line's name stays gold,
+so two layers calling out ordinary findings still call them out alike.
+The colour rides on the status rather than on the line,
+so a line calling nothing out has nowhere to state how a finding would have been coloured.
 
 A finding may also sit inside the line's own name (`callsOutInLabel`),
 as a `CellTooltipLabelFinding` -
@@ -417,11 +433,16 @@ The label is handed the tier's colour rather than choosing one,
 and hands back runs rather than a row,
 so nothing about what a line says commits it to the shape it says it on.
 Only the findings read gold
-(`CellTooltipLabels.buildFindingSpan`, which the banner's public `buildQualifierSpan` is the outward face of);
+(`CellTooltipLabels.buildFindingSpan`, which the banner's public `buildQualifierSpan` is the outward face of),
+a status stating its finding's own colour being the one departure;
 a place identifies the line,
 a word introducing a status is the box's own connective,
 and a remark is the box talking about its own account,
 so all three stay quiet and a reader scanning for findings passes over them.
+The quiet shade is decided once too
+(`CellTooltipLabels.resolveQuietColour`),
+and the value column's working and the footer's withheld count read it,
+so nothing the box says about its own account can stand out from the rest of it.
 
 ## Marks
 

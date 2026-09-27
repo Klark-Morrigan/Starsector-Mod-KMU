@@ -2,6 +2,9 @@ package kmu.maplayers.base.tooltip.content;
 
 import kmlib.text.KmlibStrings;
 
+import java.awt.Color;
+import java.util.Objects;
+
 /**
  * The status a listed line calls out after its name: what the box found about the thing on the line,
  * optionally introduced by a word of the box's own, marked by a picture of what that finding names,
@@ -14,7 +17,11 @@ import kmlib.text.KmlibStrings;
  *
  * <p>Only the finding reads in the highlight the box reserves for what it has worked out; the words
  * around it and the mark beside it are quiet. So the ordinary qualifier - a single word about the
- * line, with nothing around it - draws as the one gold run it has always drawn as.
+ * line, with nothing around it - draws as a single gold run. The one departure is a finding whose
+ * colour is itself what the box found - a relation level, a hazard band, a signal strength - which
+ * carries that colour here ({@link #drawsFindingIn}), a fixed gold run stating the fact and
+ * contradicting it in the same line. Held on the qualifier rather than on the line, so a line calling
+ * nothing out has nowhere to state how a finding would have been coloured.
  *
  * <p>Unspaced throughout: what parts each part from the next is the run vocabulary's own word space,
  * so nothing here carries a separator.
@@ -25,6 +32,9 @@ import kmlib.text.KmlibStrings;
  *                         finding itself, or null where the finding names nothing there is a picture
  *                         of
  * @param findingText      what the box found about the thing on the line
+ * @param findingColour    the colour the finding is drawn in where that colour is itself part of what
+ *                         the box found, or null where it reads in the box's highlight like every
+ *                         other finding
  * @param trailingWordText the word closing the status, saying what kind of thing the finding names,
  *                         or null where the finding says that itself. Quiet for the same reason the
  *                         leading word is: what kind of thing it is, is the box's word and not the
@@ -34,12 +44,14 @@ public record CellTooltipQualifier(
     String leadingWordText,
     CellTooltipMark mark,
     String findingText,
+    Color findingColour,
     String trailingWordText) {
 
-    // What a qualifier carries where no word stands either side of its finding. Named rather than
-    // passed as bare nulls, so the factories below say what a case has none of instead of handing
-    // the constructor unexplained absences.
+    // What a qualifier carries where no word stands either side of its finding, and where its finding
+    // reads in the box's own highlight. Named rather than passed as bare nulls, so the factories below
+    // say what a case has none of instead of handing the constructor unexplained absences.
     private static final String NO_LEADING_WORD = null;
+    private static final Color NO_OWN_COLOUR = null;
     private static final String NO_TRAILING_WORD = null;
 
     /**
@@ -68,6 +80,7 @@ public record CellTooltipQualifier(
             NO_LEADING_WORD,
             CellTooltipMark.NO_MARK,
             findingText,
+            NO_OWN_COLOUR,
             NO_TRAILING_WORD);
     }
 
@@ -90,6 +103,7 @@ public record CellTooltipQualifier(
             leadingWordText,
             mark,
             findingText,
+            NO_OWN_COLOUR,
             NO_TRAILING_WORD);
     }
 
@@ -109,7 +123,46 @@ public record CellTooltipQualifier(
             String findingText,
             String trailingWordText) {
 
-        return new CellTooltipQualifier(leadingWordText, mark, findingText, trailingWordText);
+        return new CellTooltipQualifier(
+            leadingWordText,
+            mark,
+            findingText,
+            NO_OWN_COLOUR,
+            trailingWordText);
+    }
+
+    /**
+     * Returns a copy of this status drawing its finding in {@code findingColour} rather than in the
+     * box's highlight - for a finding whose colour is part of what the box found, such as a relation
+     * level read in the shade the map paints that relation.
+     *
+     * <p>Layered on rather than taken by each factory, because it is one exception over any shape of
+     * status: a plain finding, an introduced one or an enclosed one may each be a finding whose colour
+     * is the fact.
+     *
+     * @param findingColour the colour the finding is drawn in, never null
+     * @return an otherwise-identical status whose finding reads in that colour
+     */
+    public CellTooltipQualifier drawsFindingIn(Color findingColour) {
+        Objects.requireNonNull(findingColour, "findingColour");
+
+        return new CellTooltipQualifier(
+            leadingWordText,
+            mark,
+            findingText,
+            findingColour,
+            trailingWordText);
+    }
+
+    /**
+     * Whether the finding carries a colour of its own rather than reading in the box's highlight.
+     * Judged here like the other absences, so the one place the default is chosen is the one place
+     * that asks.
+     *
+     * @return true where the finding is drawn in a colour the status states
+     */
+    public boolean hasOwnFindingColour() {
+        return findingColour != null;
     }
 
     /**

@@ -24,7 +24,7 @@ import static org.mockito.Mockito.times;
  * nothing and explaining nothing; re-arming on every announcement turns an unrelated knob into a way
  * to unmute a warning nobody asked to hear, on a path read once a frame.
  */
-class ReflectionTracingInstallerTest {
+final class ReflectionTracingInstallerTest {
 
     // Runs the installer against a switch reading `enabledAtInstall`, then fires one settings change
     // with it reading `enabledAtChange`, and hands back the probe-warning mock to assert on. LunaLib
@@ -62,7 +62,7 @@ class ReflectionTracingInstallerTest {
     class InstallAll {
 
         @Test
-        void installAllRearmsTheProbeWarningsWhenTheTracesAreSwitchedOn() {
+        void rearmsTheProbeWarningsWhenTheTracesAreSwitchedOn() {
             // The case the whole class exists for: a reach broke during ordinary play and spent its
             // one line, and the reader who then asks for the traces is owed that line again.
             installThenChangeSettings(false, true, warningsMock ->
@@ -70,14 +70,14 @@ class ReflectionTracingInstallerTest {
         }
 
         @Test
-        void installAllRearmsNothingWhileTheTracesStayOff() {
+        void rearmsNothingWhileTheTracesStayOff() {
 
             installThenChangeSettings(false, false, warningsMock ->
                 warningsMock.verify(MapProbeWarnings::rearmAllWarnings, never()));
         }
 
         @Test
-        void installAllRearmsNothingOnAChangeThatLeavesTheTracesOn() {
+        void rearmsNothingOnAChangeThatLeavesTheTracesOn() {
             // The guard against unrelated knobs. Settings changes arrive for every field, and a
             // re-arm on each would unmute a warning on a path that runs once a frame.
             installThenChangeSettings(true, true, warningsMock ->
@@ -85,7 +85,7 @@ class ReflectionTracingInstallerTest {
         }
 
         @Test
-        void installAllRearmsNothingWhenTheTracesAreSwitchedOff() {
+        void rearmsNothingWhenTheTracesAreSwitchedOff() {
             // A reader who has just stopped listening is owed no line.
             installThenChangeSettings(true, false, warningsMock ->
                 warningsMock.verify(MapProbeWarnings::rearmAllWarnings, never()));

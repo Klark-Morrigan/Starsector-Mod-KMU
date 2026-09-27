@@ -12,10 +12,11 @@ import java.util.Objects;
  * listed - and nothing whatever about how it is laid.
  *
  * <p>Held as a value rather than as a built line because the two decisions belong on opposite sides of
- * the box. A layer knows what its block lists; the laying-out ({@code kmu.maplayers.base.tooltip.layout}) knows the tier,
- * the colours, and the value column a listed thing is laid in. So two layers listing
- * unrelated content still list it alike, and a body cannot quietly author a third look by reaching for
- * the line vocabulary itself.
+ * the box. A layer knows what its block lists; the laying-out ({@code kmu.maplayers.base.tooltip.layout})
+ * knows the tier, the colours, and the value column a listed thing is laid in - bar the one colour a
+ * status states because the colour is itself its finding ({@link CellTooltipQualifier#drawsFindingIn}).
+ * So two layers listing unrelated content still list it alike, and a body cannot quietly author a third
+ * look by reaching for the line vocabulary itself.
  *
  * <p>Nothing here is faction-shaped. The mark is a texture path a caller may simply not have, so a list
  * of things that carry none - industries, conditions, hazards - is this same shape with a null in it.
@@ -333,7 +334,8 @@ public record CellTooltipEntryLine(
 
     /**
      * Returns a copy of this line calling {@code qualifier} out after its name - the same status, for
-     * a caller whose finding is introduced by a word or marked by a picture of what it names.
+     * a caller whose finding is introduced by a word, marked by a picture of what it names, or drawn
+     * in a colour that is itself the fact.
      *
      * @param qualifier the status called out after the line's name
      * @return an otherwise-identical line ending on that status

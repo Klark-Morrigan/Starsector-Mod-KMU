@@ -112,6 +112,7 @@ None of these reach a player: every LunaLib field ID and every value saved in se
     - Except `getPoliticalMapAllianceMutedOpacityModifier`, which is `getOwnerMapMutedOpacityModifier`.
     - And `shouldDecivilisedSystemsDrawTerritory`, which is `shouldCountDecivilisedSystemsAsPopulated`.
   - The nineteen `KmuStringKeys.POLITICAL_MAP_*` constants the tier labels its controls with are `OWNER_MAP_*`, with their `strings.json` keys.
+- **A hover-box status may colour its own finding:** `CellTooltipQualifier` carries a `findingColour`, set with `drawsFindingIn(Color)`, for a finding whose colour is itself the fact - a relation level, say. Left unset, the finding reads in the box's gold. The canonical constructor takes it between `findingText` and `trailingWordText`.
 
 ## [0.1.2] - 2026-09-16
 

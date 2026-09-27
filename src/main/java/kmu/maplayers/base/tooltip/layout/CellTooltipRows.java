@@ -27,8 +27,8 @@ import java.util.List;
  * <p>Everything a listed line <em>says</em> - its mark, its name, where it falls in an ordering, what
  * it calls out and what it remarks - is {@link CellTooltipLabels}', arriving here as the runs of one
  * label. This decides only where the line sits, how loudly it speaks and what fills its value column.
- * A mark travels inside the label on every shape here rather than in a leading column, which is what a
- * banner has always done, so the box has one rule for images rather than two.
+ * A mark travels inside the label on every shape here rather than in a leading column, as a banner's
+ * does, so the box has one rule for images rather than two.
  *
  * <p>Held apart from {@link SystemCellTooltip} because the two answer different questions - that class
  * decides how the box is framed, these decide how one line inside it reads - and because a body is
@@ -220,22 +220,14 @@ public final class CellTooltipRows {
         return placeRow(appendValue(row, line, valueColour), level);
     }
 
-    // Opens a listed line on its label: the row is created on the first run the label came to and
-    // continued with the rest, so a name picked apart into stretches lands on one row exactly as a
-    // name of one run does.
+    // Opens a listed line on its label, so a name picked apart into stretches lands on one row exactly
+    // as a name of one run does.
     //
     // What those runs are is CellTooltipLabels', which is the line's sentence rather than its
     // placement - and the tier's colour is handed over rather than read there, that being the one
     // thing about a label only the row knows.
     private static TooltipRow.TableRow openLabel(CellTooltipEntryLine line, Color labelColour) {
-
-        var labelRuns = CellTooltipLabels.resolveLabelRuns(line, labelColour).iterator();
-        var openedRow = TooltipRow.createRow(labelRuns.next());
-
-        while (labelRuns.hasNext()) {
-            openedRow = openedRow.continuesWith(labelRuns.next());
-        }
-        return openedRow;
+        return TooltipRow.createRow(CellTooltipLabels.resolveLabelRuns(line, labelColour));
     }
 
     // Fills a line's value column: its number in the line's own colour, opened where the line states
@@ -260,16 +252,14 @@ public final class CellTooltipRows {
         var valueSpan = new TextSpan(
             line.valueText(),
             line.isValueUncounted()
-                ? StarsectorUiColour.VANILLA_GRAY.resolve()
+                ? CellTooltipLabels.resolveQuietColour()
                 : valueColour);
 
         if (!KmlibStrings.hasText(line.valueWorkingText())) {
             return row.carriesValue(valueSpan);
         }
         return row.carriesValueRuns(List.of(
-            new TextSpan(
-                line.valueWorkingText(),
-                StarsectorUiColour.VANILLA_GRAY.resolve()),
+            new TextSpan(line.valueWorkingText(), CellTooltipLabels.resolveQuietColour()),
             valueSpan));
     }
 

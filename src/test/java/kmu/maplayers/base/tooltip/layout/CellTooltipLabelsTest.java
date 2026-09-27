@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
 import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
@@ -58,6 +59,10 @@ final class CellTooltipLabelsTest {
     // The shape of a withheld name: two words of seven and four characters, standing in for a colony
     // the player has not found.
     private static final List<Integer> WITHHELD_NAME = List.of(7, 4);
+
+    // A colour standing for a relation level, the kind of finding whose colour is itself the fact.
+    // Unlike every shade in the fake palette, so a run taking it cannot pass for one the box chose.
+    private static final Color HOSTILE_SHADE = new Color(210, 60, 50);
 
     @BeforeEach
     void installColours() {
@@ -370,6 +375,44 @@ final class CellTooltipLabelsTest {
                     new TextSpan("of the", GRAY),
                     new ImageSpan(CREST),
                     new TextSpan("C.O.G.R.", HIGHLIGHT),
+                    new TextSpan("alliance", GRAY));
+        }
+
+        @Test
+        void resolveLabelRunsDrawsAColouredFindingInItsOwnColour() {
+            // A finding whose colour is the fact - a relation level here - read in the colour the
+            // status states rather than the box's gold, which would state the level and contradict
+            // it in the same line.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(NO_MARK, "Hegemony", "+100")
+                        .callsOut(CellTooltipQualifier
+                            .stateFinding("hostile")
+                            .drawsFindingIn(HOSTILE_SHADE)),
+                    PLAYER_BRIGHT))
+                .containsExactly(
+                    new TextSpan("Hegemony", PLAYER_BRIGHT),
+                    new TextSpan("hostile", HOSTILE_SHADE));
+        }
+
+        @Test
+        void resolveLabelRunsColoursTheStatusFindingAloneAndNothingElseOnTheLine() {
+            // The colour belongs to the one finding the status states: the words around it stay the
+            // box's quiet connective, and a finding picked out of the line's own name is a different
+            // finding and keeps the shared gold.
+            assertThat(CellTooltipLabels.resolveLabelRuns(
+                    CellTooltipEntryLine
+                        .createLine(NO_MARK, "Abandoned Station", "0")
+                        .callsOutInLabel(0, 9)
+                        .callsOut(CellTooltipQualifier
+                            .encloseFinding("of the", NO_MARK, "C.O.G.R.", "alliance")
+                            .drawsFindingIn(HOSTILE_SHADE)),
+                    PLAYER_BRIGHT))
+                .containsExactly(
+                    new TextSpan("Abandoned", HIGHLIGHT),
+                    new TextSpan(" Station", PLAYER_BRIGHT).joinsPreviousRun(),
+                    new TextSpan("of the", GRAY),
+                    new TextSpan("C.O.G.R.", HOSTILE_SHADE),
                     new TextSpan("alliance", GRAY));
         }
 

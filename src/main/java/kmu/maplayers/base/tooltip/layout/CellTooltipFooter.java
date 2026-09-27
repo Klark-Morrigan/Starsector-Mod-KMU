@@ -1,6 +1,7 @@
 package kmu.maplayers.base.tooltip.layout;
 
 import kmlib.starsector.ui.colour.StarsectorUiColour;
+import kmlib.starsector.ui.text.LabelRun;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
@@ -126,7 +127,7 @@ final class CellTooltipFooter {
     // above.
     private static TooltipRow buildRow(String phrase, String withheldPhrase) {
 
-        var runs = new ArrayList<TextSpan>();
+        var runs = new ArrayList<LabelRun>();
 
         if (phrase != NO_OFFER) {
 
@@ -137,17 +138,12 @@ final class CellTooltipFooter {
             runs.add(new TextSpan(phrase, StarsectorUiColour.VANILLA_GRAY.resolve()));
         }
         if (withheldPhrase != NOTHING_TO_STATE) {
-            runs.add(new TextSpan(withheldPhrase, StarsectorUiColour.VANILLA_GRAY.resolve()));
+            runs.add(new TextSpan(withheldPhrase, CellTooltipLabels.resolveQuietColour()));
         }
-        var remainingRuns = runs.iterator();
-        var row = TooltipRow
-            .createRow(remainingRuns.next())
-            .clearsCrestColumn();
-
-        while (remainingRuns.hasNext()) {
-            row = row.continuesWith(remainingRuns.next());
-        }
-        return row.readsAs(TooltipLineStyle.FOOTNOTE);
+        return TooltipRow
+            .createRow(runs)
+            .clearsCrestColumn()
+            .readsAs(TooltipLineStyle.FOOTNOTE);
     }
 
     // What the line says about the entries the box could not fit - the count over the whole box,
