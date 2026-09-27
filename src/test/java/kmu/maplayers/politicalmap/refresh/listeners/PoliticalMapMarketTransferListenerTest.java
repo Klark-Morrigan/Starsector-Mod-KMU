@@ -40,7 +40,7 @@ final class PoliticalMapMarketTransferListenerTest {
     class ReportMarketTransferred {
 
         @Test
-        void reportMarketTransferredMarksTheTransferredColonysSystemStale() {
+        void marksTheTransferredColonysSystemStale() {
 
             listener.reportMarketTransferred(
                 mockMarketInSystem("sys"),
@@ -53,7 +53,7 @@ final class PoliticalMapMarketTransferListenerTest {
         }
 
         @Test
-        void reportMarketTransferredMarksNothingForMarketWithoutStarSystem() {
+        void marksNothingForAMarketWithoutAStarSystem() {
 
             listener.reportMarketTransferred(
                 mockUnseatedMarket(),
@@ -66,7 +66,7 @@ final class PoliticalMapMarketTransferListenerTest {
         }
 
         @Test
-        void reportMarketTransferredMarksNothingForNullMarket() {
+        void marksNothingForANullMarket() {
 
             listener.reportMarketTransferred(
                 null,

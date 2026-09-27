@@ -1,38 +1,36 @@
 package kmu.mods.nexerelin;
 
-import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.ModManagerAPI;
-import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
+
+import kmlib.testfixtures.starsector.settings.ModStateScopes;
 
 import kmu.starsector.listeners.MarketTransferListener;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedStatic;
 
 import java.util.List;
 
 import static kmlib.testfixtures.starsector.settings.StubbedModIds.NEXERELIN;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link NexerelinInvasionListenerInstaller}: when Nexerelin is enabled the transfer relay is
- * (re)installed fresh and transient (not persisted), and when it is disabled nothing is touched.
- * Transience matters because the relay implements a Nex interface - persisting it would fail to
- * load if Nex were removed. The mod-enabled gate is what makes the Nex dependency optional, so the
- * disabled case is pinned alongside the install.
+ * (re)installed fresh and transient (not persisted), and removed again on the way out; when it is
+ * disabled nothing is touched either way. Transience matters because the relay implements a
+ * Nexerelin interface - persisting it would fail to load if Nexerelin were removed. The mod-enabled
+ * gate is what makes the dependency optional, so the disabled cases are pinned alongside the
+ * enabled ones.
  *
  * <p>And that the relay is built against the sector it is being installed on: it tells that
  * sector's own listeners about a conquest, so an installer handing over anything else would leave
@@ -40,48 +38,41 @@ import static org.mockito.Mockito.when;
  */
 final class NexerelinInvasionListenerInstallerTest {
 
+    private final ListenerManagerAPI listenerManagerMock = mock(ListenerManagerAPI.class);
+    private final SectorAPI sectorMock = buildSectorWith(listenerManagerMock);
+
     @Nested
     class InstallIfPresent {
 
         @Test
-        void installIfPresentReinstallsFreshTransientRelayWhenNexEnabled() {
+        void reinstallsAFreshTransientRelayWhenNexerelinIsEnabled() {
 
-            var listenerManagerMock = mock(ListenerManagerAPI.class);
-            var sectorMock = buildSectorWith(listenerManagerMock);
+            ModStateScopes.runWithModEnabled(NEXERELIN, true, () ->
+                NexerelinInvasionListenerInstaller.installIfPresent(sectorMock));
 
-            try (var globalMock = mockStatic(Global.class)) {
-
-                stubModEnabled(globalMock, true);
-                NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
-
-                // Remove-then-add: clears any copy an older build persisted into the save,
-                // then adds the relay transiently (true) so it never enters the save - it
-                // implements a Nex interface and would fail to load if Nex were removed.
-                verify(listenerManagerMock)
-                    .removeListenerOfClass(NexerelinMarketTransferRelay.class);
-                verify(listenerManagerMock)
-                    .addListener(any(NexerelinMarketTransferRelay.class), eq(true));
-            }
+            // Remove-then-add: clears any copy an older build persisted into the save, then adds
+            // the relay transiently (true) so it never enters the save - it implements a Nexerelin
+            // interface and would fail to load if Nexerelin were removed.
+            verify(listenerManagerMock)
+                .removeListenerOfClass(NexerelinMarketTransferRelay.class);
+            verify(listenerManagerMock)
+                .addListener(any(NexerelinMarketTransferRelay.class), eq(true));
         }
 
         @Test
-        void installIfPresentBuildsTheRelayAgainstTheSectorItIsInstalledOn() {
+        void buildsTheRelayAgainstTheSectorItIsInstalledOn() {
             // Read by driving the registered relay and looking for the call on a listener of the
             // installed sector: what the wiring is for is where a conquest lands, and a relay
             // holding the right sector while telling elsewhere would pass a check on the field.
-            var listenerManagerMock = mock(ListenerManagerAPI.class);
-            var sectorMock = buildSectorWith(listenerManagerMock);
             var transferListenerMock = mock(MarketTransferListener.class);
             var marketMock = mock(MarketAPI.class);
 
             when(listenerManagerMock.getListeners(MarketTransferListener.class))
                 .thenReturn(List.of(transferListenerMock));
 
-            try (var globalMock = mockStatic(Global.class)) {
+            ModStateScopes.runWithModEnabled(NEXERELIN, true, () ->
+                NexerelinInvasionListenerInstaller.installIfPresent(sectorMock));
 
-                stubModEnabled(globalMock, true);
-                NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
-            }
             var installedRelay = ArgumentCaptor.forClass(NexerelinMarketTransferRelay.class);
 
             verify(listenerManagerMock)
@@ -95,33 +86,72 @@ final class NexerelinInvasionListenerInstallerTest {
         }
 
         @Test
-        void installIfPresentAddsNothingWhenNexDisabled() {
+        void addsNothingWhenNexerelinIsDisabled() {
 
-            var listenerManagerMock = mock(ListenerManagerAPI.class);
-            var sectorMock = buildSectorWith(listenerManagerMock);
+            ModStateScopes.runWithModEnabled(NEXERELIN, false, () ->
+                NexerelinInvasionListenerInstaller.installIfPresent(sectorMock));
 
-            try (var globalMock = mockStatic(Global.class)) {
-
-                stubModEnabled(globalMock, false);
-                NexerelinInvasionListenerInstaller.installIfPresent(sectorMock);
-
-                verify(listenerManagerMock, never())
-                    .addListener(any(), anyBoolean());
-                verify(listenerManagerMock, never())
-                    .removeListenerOfClass(NexerelinMarketTransferRelay.class);
-            }
+            verifyNoInteractions(listenerManagerMock);
         }
 
         @Test
-        void installIfPresentIgnoresNullSectorWithoutConsultingModState() {
+        void addsNothingToASectorWithoutAListenerManager() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            var sectorWithoutManager = buildSectorWith(null);
 
-                // Null short-circuits before the mod-enabled check, so Global is
-                // never consulted.
-                NexerelinInvasionListenerInstaller.installIfPresent(null);
-                globalMock.verifyNoInteractions();
-            }
+            ModStateScopes.runWithModEnabled(NEXERELIN, true, () ->
+                assertThatCode(() -> NexerelinInvasionListenerInstaller.installIfPresent(sectorWithoutManager))
+                    .doesNotThrowAnyException());
+        }
+
+        @Test
+        void ignoresANullSector() {
+
+            ModStateScopes.runWithModEnabled(NEXERELIN, true, () ->
+                assertThatCode(() -> NexerelinInvasionListenerInstaller.installIfPresent(null))
+                    .doesNotThrowAnyException());
+        }
+    }
+
+    @Nested
+    class UninstallIfPresent {
+
+        @Test
+        void removesTheRelayWhenNexerelinIsEnabled() {
+
+            ModStateScopes.runWithModEnabled(NEXERELIN, true, () ->
+                NexerelinInvasionListenerInstaller.uninstallIfPresent(sectorMock));
+
+            verify(listenerManagerMock)
+                .removeListenerOfClass(NexerelinMarketTransferRelay.class);
+        }
+
+        @Test
+        void removesNothingWhenNexerelinIsDisabled() {
+            // Naming the relay's class to remove it would load it, and with it the Nexerelin
+            // interface it implements - which an install without Nexerelin does not have.
+            ModStateScopes.runWithModEnabled(NEXERELIN, false, () ->
+                NexerelinInvasionListenerInstaller.uninstallIfPresent(sectorMock));
+
+            verifyNoInteractions(listenerManagerMock);
+        }
+
+        @Test
+        void removesNothingFromASectorWithoutAListenerManager() {
+
+            var sectorWithoutManager = buildSectorWith(null);
+
+            ModStateScopes.runWithModEnabled(NEXERELIN, true, () ->
+                assertThatCode(() -> NexerelinInvasionListenerInstaller.uninstallIfPresent(sectorWithoutManager))
+                    .doesNotThrowAnyException());
+        }
+
+        @Test
+        void ignoresANullSector() {
+
+            ModStateScopes.runWithModEnabled(NEXERELIN, true, () ->
+                assertThatCode(() -> NexerelinInvasionListenerInstaller.uninstallIfPresent(null))
+                    .doesNotThrowAnyException());
         }
     }
 
@@ -133,20 +163,5 @@ final class NexerelinInvasionListenerInstallerTest {
             .thenReturn(listenerManager);
 
         return sectorMock;
-    }
-
-    private static void stubModEnabled(MockedStatic<Global> globalMock, boolean isEnabled) {
-
-        var settingsMock = mock(SettingsAPI.class);
-        var modManagerMock = mock(ModManagerAPI.class);
-
-        globalMock
-            .when(Global::getSettings)
-            .thenReturn(settingsMock);
-
-        when(settingsMock.getModManager())
-            .thenReturn(modManagerMock);
-        when(modManagerMock.isModEnabled(NEXERELIN))
-            .thenReturn(isEnabled);
     }
 }

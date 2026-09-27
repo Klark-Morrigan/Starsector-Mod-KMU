@@ -5,6 +5,8 @@ import com.fs.starfarer.api.SettingsAPI;
 
 import kmlib.starsector.spreadsheets.SpreadsheetRows;
 
+import kmu.KmuMod;
+
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -55,7 +57,7 @@ public final class InstallationOverrideTableReader {
 
     // Which mod owns the table, which is what makes the read a merge: the game gathers this path
     // from every enabled mod and folds the rows onto the ones shipped here, keyed by entity type.
-    private static final String OWNING_MOD_ID = "kmu";
+    private static final String OWNING_MOD_ID = KmuMod.MOD_ID;
 
     // The two words the admission column understands. Written out rather than parsed through
     // Boolean.parseBoolean, which reads every other word in the language as false - so a mistyped
