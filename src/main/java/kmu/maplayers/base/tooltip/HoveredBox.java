@@ -6,10 +6,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.layer.DrawnLayerGuard;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
+import kmu.maplayers.base.render.DrawnLayerGuard;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 

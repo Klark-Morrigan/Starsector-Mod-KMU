@@ -1,10 +1,11 @@
-package kmu.maplayers.base.layer;
+package kmu.maplayers.base.render;
 
 import kmlib.testfixtures.logging.LogAppenderFake;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
-import kmu.maplayers.base.render.MapLayerRenderer;
 
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -110,11 +111,7 @@ final class DrawnLayerGuardTest {
         void answersNothingDrawnWhereTheWorkThrows() {
             // The pass is what the game drives with nothing under it that catches, so the throw ends
             // here: reaching the caller would end the game with the map open.
-            assertThat(guard.callOnDrawnRenderer(
-                    layerRenderer -> {
-                        throw new IllegalStateException("draw list half built");
-                    },
-                    NOTHING_DRAWN))
+            assertThat(guard.callOnDrawnRenderer(DrawnLayerGuardTest::throwFromTheLayer, NOTHING_DRAWN))
                 .isEqualTo(NOTHING_DRAWN);
         }
 
@@ -199,9 +196,7 @@ final class DrawnLayerGuardTest {
         @Test
         void containsWorkThatThrows() {
 
-            guard.runOnDrawnRenderer(layerRenderer -> {
-                throw new IllegalStateException("band emitted from a released buffer");
-            });
+            guard.runOnDrawnRenderer(DrawnLayerGuardTest::throwFromTheLayer);
             guard.runOnDrawnRenderer(layerRenderer -> layerRenderer.prepareFrame(1.5f));
 
             verify(layerRendererMock, never())
@@ -231,9 +226,7 @@ final class DrawnLayerGuardTest {
 
             DrawnLayerGuard
                 .resolveGuardIn(machinery)
-                .runOnDrawnRenderer(layerRenderer -> {
-                    throw new IllegalStateException("draw list half built");
-                });
+                .runOnDrawnRenderer(DrawnLayerGuardTest::throwFromTheLayer);
 
             var nextGuard = DrawnLayerGuard.resolveGuardIn(nextMachinery);
 
@@ -252,11 +245,12 @@ final class DrawnLayerGuardTest {
 
     // Has the drawn layer throw from inside a pass's work, which switches it off.
     private void failTheDrawnLayer() {
+        guard.runOnDrawnRenderer(DrawnLayerGuardTest::throwFromTheLayer);
+    }
 
-        guard.callOnDrawnRenderer(
-            layerRenderer -> {
-                throw new IllegalStateException("draw list half built");
-            },
-            null);
+    // A pass's work failing the way a layer's draw does. Typed to answer anything, so one stand-in
+    // serves both the work that answers and the work that only runs.
+    private static <T> T throwFromTheLayer(MapLayerRenderer layerRenderer) {
+        throw new IllegalStateException("draw list half built");
     }
 }

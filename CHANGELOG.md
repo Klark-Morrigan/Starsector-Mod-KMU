@@ -114,7 +114,7 @@ None of these reach a player: every LunaLib field ID and every value saved in se
     - And `shouldDecivilisedSystemsDrawTerritory`, which is `shouldCountDecivilisedSystemsAsPopulated`.
   - The nineteen `KmuStringKeys.POLITICAL_MAP_*` constants the tier labels its controls with are `OWNER_MAP_*`, with their `strings.json` keys.
 - **A hover-box status may colour its own finding:** `CellTooltipQualifier` carries a `findingColour`, set with `drawsFindingIn(Color)`, for a finding whose colour is itself the fact - a relation level, say. Left unset, the finding reads in the box's gold. The canonical constructor takes it between `findingText` and `trailingWordText`.
-- **A pass reaches the drawn layer through its sector's guard:** `MapLayerRegistry.resolveDrawnMapRenderer` is gone. `DrawnLayerGuard.resolveGuardIn(machinery)`, in `kmu.maplayers.base.layer`, hands a pass's work the drawn layer's renderer on that sector, and switches off there a layer that throws from it.
+- **A pass reaches the drawn layer through its sector's guard:** `MapLayerRegistry.resolveDrawnMapRenderer` is gone. `DrawnLayerGuard.resolveGuardIn(machinery)`, in `kmu.maplayers.base.render`, hands a pass's work the drawn layer's renderer on that sector, and switches off there a layer that throws from it.
 
 ## [0.1.2] - 2026-09-16
 

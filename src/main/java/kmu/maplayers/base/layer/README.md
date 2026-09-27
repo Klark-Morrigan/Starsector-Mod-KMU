@@ -18,7 +18,6 @@ the shared vocabulary and the per-screen key scheme these types compose their ke
 - [The roster](#the-roster)
 - [A screen's two picks](#a-screens-two-picks)
 - [What a screen is drawing](#what-a-screen-is-drawing)
-- [A layer that throws](#a-layer-that-throws)
 - [Which tabs a screen is offered](#which-tabs-a-screen-is-offered)
 - [The bar arrangement](#the-bar-arrangement)
 - [What a hidden tab stands down](#what-a-hidden-tab-stands-down)
@@ -34,7 +33,7 @@ and a shortcut key.
 A layer is registered once for the process while what it draws with belongs to one sector,
 so it holds no renderer.
 It is asked for the one belonging to the machinery being drawn,
-and `DrawnLayerGuard` passes that machinery through rather than resolving one of its own.
+and [the render surface](../render/README.md#a-layer-that-throws)'s `DrawnLayerGuard` passes that machinery through rather than resolving one of its own.
 What it *runs* on a sector is held the same way round and for the same reason:
 a layer states a `MapLayerStanding` rather than registering anything itself,
 and is asked to stand up or down against a named sector.
@@ -111,7 +110,7 @@ and the session's rather than the save's.
 What a screen is set to and what is on it are the same answer except while a dissolve runs,
 and `ScreenDrawnLayer` is where they part.
 It is what `MapLayerRegistry.getDrawnLayer` and `isDrawnLayer` both resolve through,
-and what [the guard](#a-layer-that-throws) asks for the layer it runs,
+and what [the render surface's guard](../render/README.md#a-layer-that-throws) asks for the layer it runs,
 so every pass driven by "what draws" reads one answer,
 and the two picks are left saying only what they are each about.
 The registry says *drawn* rather than *active* for that reason:
@@ -150,41 +149,6 @@ Nothing takes it back on a campaign load because nothing has to:
 a loaded campaign has no control standing on either screen,
 so both read as shown until one does,
 and the first read of the new campaign catches its own pick.
-
-## A layer that throws
-
-The map surface and the hover box are the game's own passes,
-with nothing under them that catches,
-so a layer throwing from either would end the game with the map open.
-`DrawnLayerGuard` is the one way either reaches the drawn layer's renderer,
-and each pass's work with it runs behind the guard.
-A layer that throws there is switched off on that sector:
-every later pass reads it as a layer that draws nothing,
-the same answer a switch-only tab gives,
-and the map and every other layer draw on.
-The hover it last published is parked with it,
-no pass of its own being left to park it.
-
-Off rather than retried,
-since nothing can tell a layer that failed on one frame from one failing on the sector,
-and the second would throw a trace a frame.
-The guard is [installed machinery](../machinery/README.md),
-so the switch clears where trying again means something -
-the next load,
-or the map layers switched off and back on -
-and never once a frame.
-It is logged with its trace rather than reported to the player:
-every layer registered today is KMU's own,
-and the compatibility notice names third parties.
-
-The frame is contained as well as the layer
-because every GL bracket under the pass closes itself in a `finally` -
-an attribute save,
-a pushed matrix,
-an open primitive -
-so the state is balanced again by the time the throw reaches the guard.
-Restoring it from the guard instead would mean reading the stack depths back from the driver,
-which stalls the frame and is fatal under Fast Rendering.
 
 ## Which tabs a screen is offered
 

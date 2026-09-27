@@ -8,8 +8,6 @@ import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 
-import kmu.maplayers.base.layer.DrawnLayerGuard;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -21,12 +19,13 @@ import java.util.List;
 /**
  * The map's render surface: the terrain plugin that owns the sector (M) map's overlay render pass
  * and hands each frame to whichever map layer the player has selected. It names no layer of its own -
- * it asks {@link MapLayerRegistry} what draws for the showing screen and draws through that - so a new
- * layer draws here by registering rather than by being named here.
+ * it draws through whatever {@link DrawnLayerGuard} hands it for the showing screen - so a new layer
+ * draws here by registering rather than by being named here.
  *
- * <p>A layer that supplies no renderer, and a frame with no active pick at all, arrive as the same
- * answer: nothing to draw. That is what makes the "show nothing" tab an ordinary layer rather than a
- * special case in this class.
+ * <p>A layer that supplies no renderer, a frame with no active pick at all, and a layer switched off
+ * for having thrown arrive as the same answer: nothing to draw. That is what makes the "show nothing"
+ * tab an ordinary layer rather than a special case in this class, and what keeps a failing layer from
+ * ending the game.
  *
  * <p>Terrain is the surface because the sector map renders terrain through {@code renderOnMap} -
  * the same hook the vanilla nebulae draw with. A custom campaign entity has no map-render hook, so

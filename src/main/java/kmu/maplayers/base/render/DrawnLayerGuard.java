@@ -1,10 +1,11 @@
-package kmu.maplayers.base.layer;
+package kmu.maplayers.base.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.machinery.InstalledMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
-import kmu.maplayers.base.render.MapLayerRenderer;
 
 import org.apache.log4j.Logger;
 
@@ -15,28 +16,12 @@ import java.util.function.Function;
 
 /**
  * The one way a pass reaches the drawn layer's renderer on a sector, and the boundary that pass's
- * work with it runs behind.
+ * work with it runs behind. The map surface and the hover box are the game's own passes, with
+ * nothing under them that catches, so a layer throwing from either would otherwise end the game.
  *
- * <p>The map surface and the hover box are both driven by the game with nothing under them that
- * catches, so a layer throwing from either would end the game with the map open. Here a layer that
- * throws is switched off on the sector it threw on, and every later pass over that sector reads it
- * as a layer that draws nothing: the map goes on drawing, and so does any other layer the player
- * picks.
- *
- * <p>Off rather than retried. A layer that failed on one frame's state would have drawn again a frame
- * later, but nothing here can tell that from a layer failing on the sector itself, which would throw
- * on every frame and bury the first trace under one a frame. Held by the sector's machinery, so the
- * switch clears exactly where trying again means something - the next load, or the map layers being
- * switched off and back on - and never once a frame.
- *
- * <p>Logged rather than reported to the player: every layer registered today is this mod's own, so a
- * layer's fault has no third party for the compatibility notice to name.
- *
- * <p>Holding the draw itself to account is not enough on its own: a throw mid-draw also leaves
- * whatever GL state the draw had set up. Every bracket under the pass - an attribute save, a pushed
- * matrix, an open primitive - therefore closes itself in a finally block, so the frame is handed back
- * balanced by the time the throw reaches here. Restoring it from here instead would take reading the
- * stack depths back from the driver, which stalls the frame and is fatal under Fast Rendering.
+ * <p>A layer that throws is switched off on the sector it threw on, for as long as that sector's
+ * machinery stands, and logged once. Why off rather than retried, why logged rather than reported,
+ * and how the frame's GL state is left balanced are set out in {@code base/render/README.md}.
  *
  * <p>Read and written on the game thread alone - the render pass and the UI passes asking for the
  * hover box all run there - so the state needs no publication guarantee of its own.
