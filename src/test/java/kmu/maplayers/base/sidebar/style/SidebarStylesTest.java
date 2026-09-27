@@ -10,6 +10,8 @@ import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
+import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
+import kmlib.testfixtures.starsector.ui.font.LazyFontLineHeightReaderMock;
 
 import kmu.settings.SidebarColourSchemeChoice;
 import kmu.settings.SidebarSettingsMock;
@@ -50,19 +52,30 @@ final class SidebarStylesTest {
     // audible level does; it is named so the case's expectation and the level it set are one value.
     private static final float LAST_AUDIBLE_VOLUME = 0.25f;
 
+    // The line heights the installed atlases state for the two tab faces: a localised install's, taller
+    // than vanilla's 15 and 9, so a face drawn at a size written down for vanilla cannot pass.
+    private static final double INSTALLED_CONDENSED_LINE_HEIGHT = 16d;
+    private static final double INSTALLED_PIXEL_LINE_HEIGHT = 10d;
+
     private StarsectorUiColoursMock uiColoursMock;
     private SidebarSettingsMock sidebarSettingsMock;
+    private LazyFontLineHeightReaderMock lineHeightsMock;
 
     @BeforeEach
     void mockLiveColoursAndSettings() {
 
         uiColoursMock = StarsectorUiColoursMock.install();
         sidebarSettingsMock = SidebarSettingsMock.install();
+        lineHeightsMock = LazyFontLineHeightReaderMock.install(FaceLineHeightReaderFake
+            .createVanillaLineHeights()
+            .answeringLineHeight(StarsectorFont.VANILLA_ORBITRON_12_CONDENSED, INSTALLED_CONDENSED_LINE_HEIGHT)
+            .answeringLineHeight(StarsectorFont.VANILLA_VICTOR_10, INSTALLED_PIXEL_LINE_HEIGHT));
     }
 
     @AfterEach
     void closeLiveColoursAndSettings() {
 
+        lineHeightsMock.close();
         sidebarSettingsMock.close();
         uiColoursMock.close();
     }
@@ -321,16 +334,16 @@ final class SidebarStylesTest {
 
         @Test
         void buildStripTabStyleLettersTheRowInTheMapsOwnCondensedOrbitronAtItsNativeSize() {
-            // The face the vanilla tabs a strip sits beneath are actually set in, at the size its atlas
-            // draws at. Pinned because the strip was lettered in the title orbitron on the belief that
-            // vanilla used it here, and the size alone cannot catch that: both faces land at 15, and only
-            // the atlas tells them apart.
+            // The face the vanilla tabs a strip sits beneath are actually set in, at the size its
+            // installed atlas draws at. Pinned because the strip was lettered in the title orbitron on the
+            // belief that vanilla used it here, and the size alone cannot catch that on vanilla: both
+            // faces land at 15 there, and only the atlas tells them apart.
             var face = SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).face();
 
             assertThat(face.font())
                 .isEqualTo(StarsectorFont.VANILLA_ORBITRON_12_CONDENSED);
             assertThat(face.size())
-                .isEqualTo(15d);
+                .isEqualTo(16d);
         }
 
         @Test
@@ -421,16 +434,16 @@ final class SidebarStylesTest {
 
         @Test
         void buildRaisedButtonTabStyleLettersTheRowInVanillasPixelFaceAtItsAtlasSize() {
-            // The face the intel screen's own map toggles are lettered in, and at the size its atlas draws
-            // 1:1 at - the nine its line height states, not the ten its name carries. A pixel face is crisp
-            // at one size only, so a row copying those buttons at any other would read as a blurred
-            // imitation of the row beside it.
+            // The face the intel screen's own map toggles are lettered in, and at the size its installed
+            // atlas draws 1:1 at - the line height that atlas states, whatever its name carries. A pixel
+            // face is crisp at one size only, so a row copying those buttons at any other would read as a
+            // blurred imitation of the row beside it.
             var face = SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).face();
 
             assertThat(face.font())
                 .isEqualTo(StarsectorFont.VANILLA_VICTOR_10);
             assertThat(face.size())
-                .isEqualTo(9d);
+                .isEqualTo(10d);
         }
 
         @Test

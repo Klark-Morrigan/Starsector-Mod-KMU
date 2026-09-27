@@ -8,6 +8,8 @@ import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
+import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
+import kmlib.testfixtures.starsector.ui.font.LazyFontLineHeightReaderMock;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayerScreenControls;
@@ -191,16 +193,22 @@ final class MapSidebarHostTest {
         private StarsectorUiColoursMock uiColoursMock;
         private SidebarSettingsMock sidebarSettingsMock;
 
+        // The tab face is read off the installed atlas, which no test JVM can load.
+        private LazyFontLineHeightReaderMock lineHeightsMock;
+
         @BeforeEach
         void mockLiveColoursAndSettings() {
 
             uiColoursMock = StarsectorUiColoursMock.install();
             sidebarSettingsMock = SidebarSettingsMock.install();
+            lineHeightsMock = LazyFontLineHeightReaderMock.install(
+                FaceLineHeightReaderFake.createVanillaLineHeights());
         }
 
         @AfterEach
         void closeLiveColoursAndSettings() {
 
+            lineHeightsMock.close();
             sidebarSettingsMock.close();
             uiColoursMock.close();
         }

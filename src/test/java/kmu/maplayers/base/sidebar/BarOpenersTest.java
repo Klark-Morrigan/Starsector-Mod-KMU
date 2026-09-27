@@ -3,6 +3,8 @@ package kmu.maplayers.base.sidebar;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.widgets.tabs.BandButtonSpec;
 import kmlib.starsector.ui.widgets.tabs.style.TabBox;
+import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
+import kmlib.testfixtures.starsector.ui.font.LazyFontLineHeightReaderMock;
 
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 import kmu.settings.SidebarSettingsMock;
@@ -35,16 +37,21 @@ final class BarOpenersTest {
     private StarsectorUiColoursMock uiColoursMock;
     private SidebarSettingsMock sidebarSettingsMock;
 
+    // The host row's face is read off the installed atlas, which no test JVM can load.
+    private LazyFontLineHeightReaderMock lineHeightsMock;
+
     @BeforeEach
     void mockLiveColoursAndSettings() {
 
         uiColoursMock = StarsectorUiColoursMock.install();
         sidebarSettingsMock = SidebarSettingsMock.install();
+        lineHeightsMock = LazyFontLineHeightReaderMock.install(FaceLineHeightReaderFake.createVanillaLineHeights());
     }
 
     @AfterEach
     void closeLiveColoursAndSettings() {
 
+        lineHeightsMock.close();
         sidebarSettingsMock.close();
         uiColoursMock.close();
     }

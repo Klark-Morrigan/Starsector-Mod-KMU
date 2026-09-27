@@ -14,6 +14,8 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
+import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
+import kmlib.testfixtures.starsector.ui.font.LazyFontLineHeightReaderMock;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
@@ -69,9 +71,10 @@ final class SystemCellTooltipTest {
     // line reached the box at all.
     private static final String EXPAND_SYSTEM_COMPOSITION = "expand system composition";
 
-    // The sizes the atlases were rasterised at, restated here rather than read off the enum: taking the
-    // native size is the decision under test, and an expectation reading it from the same value the
-    // style resolved it from would hold whatever size the box ended up drawing at.
+    // The line heights the vanilla atlases state, which the installed-atlas reader is stood in to answer
+    // below. Restated here rather than read off that stand-in: taking the native size is the decision
+    // under test, and an expectation reading it from the same value the style resolved it from would hold
+    // whatever size the box ended up drawing at.
     private static final double HEADER_FONT_SIZE = 20d;
     private static final double BODY_FONT_SIZE = 15d;
 
@@ -191,9 +194,18 @@ final class SystemCellTooltipTest {
     // draws nothing, which would otherwise read the live settings from outside the game.
     private MockedStatic<KmuMapTooltipSettings> settingsMock;
 
+    // The box's faces are read off the installed atlases each paint, which no test JVM can load. Held
+    // over every case for the reason the density knobs are.
+    private LazyFontLineHeightReaderMock lineHeightsMock;
+
     @BeforeEach
     void installColours() {
         CellTooltipPaletteFake.installPalette();
+    }
+
+    @BeforeEach
+    void installLineHeights() {
+        lineHeightsMock = LazyFontLineHeightReaderMock.install(FaceLineHeightReaderFake.createVanillaLineHeights());
     }
 
     @BeforeEach
@@ -225,6 +237,11 @@ final class SystemCellTooltipTest {
     @AfterEach
     void clearDensitySettings() {
         settingsMock.close();
+    }
+
+    @AfterEach
+    void clearLineHeights() {
+        lineHeightsMock.close();
     }
 
     @Nested

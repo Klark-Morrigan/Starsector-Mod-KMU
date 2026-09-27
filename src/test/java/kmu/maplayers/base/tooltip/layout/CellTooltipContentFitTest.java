@@ -1,11 +1,13 @@
 package kmu.maplayers.base.tooltip.layout;
 
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.text.TextStyle;
 import kmlib.starsector.ui.widgets.tooltip.CursorTooltip;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLineGaps;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
+import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
@@ -193,9 +195,14 @@ final class CellTooltipContentFitTest {
     private static TooltipStyle buildStyle() {
         return TooltipStyle
             .createStyle(
-                TextStyle.createStyle(StarsectorFont.VANILLA_ORBITRON_20AA),
-                TextStyle.createStyle(StarsectorFont.VANILLA_INSIGNIA_15))
+                TextStyle.createStyle(createVanillaNativeFace(StarsectorFont.VANILLA_ORBITRON_20AA)),
+                TextStyle.createStyle(createVanillaNativeFace(StarsectorFont.VANILLA_INSIGNIA_15)))
             .shrunkPerLevel(LEVEL_SHRINK)
             .stackedAt(TooltipLineGaps.createGaps(LINE_GAP));
+    }
+
+    // A face at the size a vanilla install's atlas draws it 1:1 at, the box being authored against one.
+    private static TextFace createVanillaNativeFace(StarsectorFont font) {
+        return TextFace.createNativeFace(font, FaceLineHeightReaderFake.createVanillaLineHeights());
     }
 }
