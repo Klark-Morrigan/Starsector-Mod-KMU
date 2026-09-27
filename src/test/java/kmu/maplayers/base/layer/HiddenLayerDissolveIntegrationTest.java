@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.util.List;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -132,7 +133,7 @@ final class HiddenLayerDissolveIntegrationTest {
             drawAFrame();
             takeThePaintingTabOffTheBar();
 
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
+            assertThat(resolveTheDrawnRenderer())
                 .isSameAs(layerRendererMock);
         }
 
@@ -146,7 +147,7 @@ final class HiddenLayerDissolveIntegrationTest {
 
             MapLayerStandings.applyArrangementWhereverInstalled();
 
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
+            assertThat(resolveTheDrawnRenderer())
                 .isNull();
         }
 
@@ -158,7 +159,7 @@ final class HiddenLayerDissolveIntegrationTest {
             drawAFrame();
             takeThePaintingTabOffTheBar();
 
-            MapLayerRegistry.resolveDrawnMapRenderer(machinery);
+            resolveTheDrawnRenderer();
             MapLayerStandings.applyArrangementWhereverInstalled();
 
             verify(standingMock, times(1)).standLayerDownFrom(sectorMock);
@@ -173,6 +174,14 @@ final class HiddenLayerDissolveIntegrationTest {
         standAControlOnTheMapScreen();
 
         MapLayerRegistry.getDrawnLayer();
+    }
+
+    // The renderer the map surface would be handed this frame, read the way the surface reads it.
+    private MapLayerRenderer resolveTheDrawnRenderer() {
+
+        return DrawnLayerGuard
+            .resolveGuardIn(machinery)
+            .callOnDrawnRenderer(Function.identity(), null);
     }
 
     // What the player's press does, in the order the running game does it: the arrangement is written

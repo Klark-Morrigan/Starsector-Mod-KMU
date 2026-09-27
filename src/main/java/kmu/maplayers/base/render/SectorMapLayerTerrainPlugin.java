@@ -8,6 +8,7 @@ import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 
+import kmu.maplayers.base.layer.DrawnLayerGuard;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -128,13 +129,31 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         }
         // Draws through the pick of whichever screen is showing this frame, over the machinery
         // installed on the sector being drawn, so switching a tab switches what paints with no
-        // per-layer branch here. Null when nothing draws at all - no registered pick yet, or a pick
-        // that paints nothing.
-        var layerRenderer = MapLayerRegistry.resolveDrawnMapRenderer(machinery);
+        // per-layer branch here. Behind the sector's guard, since nothing between this hook and the
+        // game catches: a layer that throws is switched off on this sector and the map draws on.
+        DrawnLayerGuard
+            .resolveGuardIn(machinery)
+            .runOnDrawnRenderer(layerRenderer -> drawFrameThrough(layerRenderer, machinery, factor, alphaMult));
+    }
 
-        if (layerRenderer == null) {
-            return;
-        }
+    /**
+     * The bands this surface paints, in the order it paints them. Overridden by the surfaces that
+     * paint only one of them, which is the whole of what a split surface is: the entity it rides on
+     * decides where in the map's draw order the pass lands, and this decides what goes in it.
+     *
+     * @return this surface's bands, bottom first
+     */
+    protected List<MapOverlayBand> resolvePaintedBands() {
+        return BOTH_BANDS;
+    }
+
+    // One pass of the drawn layer's frame: its preparation where this pass owns it, its cursor read,
+    // and its bands.
+    private void drawFrameThrough(
+            MapLayerRenderer layerRenderer,
+            SectorMapMachinery machinery,
+            float factor,
+            float alphaMult) {
 
         var paintedBands = resolvePaintedBands();
 
@@ -166,17 +185,6 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         for (var band : paintedBands) {
             layerRenderer.renderOnMap(factor, shownAlpha, band);
         }
-    }
-
-    /**
-     * The bands this surface paints, in the order it paints them. Overridden by the surfaces that
-     * paint only one of them, which is the whole of what a split surface is: the entity it rides on
-     * decides where in the map's draw order the pass lands, and this decides what goes in it.
-     *
-     * @return this surface's bands, bottom first
-     */
-    protected List<MapOverlayBand> resolvePaintedBands() {
-        return BOTH_BANDS;
     }
 
     /**

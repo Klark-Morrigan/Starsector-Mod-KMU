@@ -6,10 +6,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.DrawnLayerGuard;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
+import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 
 import java.util.Optional;
@@ -99,9 +100,11 @@ record HoveredBox(
     }
 
     /**
-     * The tooltip the frame would draw, asked of whatever draws for the showing screen - the same read
-     * the map surface paints through. Nothing drawing at all resolves the same as an injected empty:
-     * nothing to show, so a switch-only tab and a pre-registration frame need no case of their own.
+     * The tooltip the frame would draw, asked of whatever draws for the showing screen - through the
+     * same guard the map surface paints through, so a layer switched off there shows no box either,
+     * and one throwing here is switched off with it. Nothing drawing at all resolves the same as an
+     * injected empty: nothing to show, so a switch-only tab and a pre-registration frame need no case
+     * of their own.
      *
      * @param machinery the machinery installed on the sector the box would describe, whose
      *                     renderer is the one holding the draw lists the hover was resolved against
@@ -115,11 +118,9 @@ record HoveredBox(
         if (!MapLayerScreens.areLayersShownOnLiveScreen()) {
             return Optional.empty();
         }
-        var layerRenderer = MapLayerRegistry.resolveDrawnMapRenderer(machinery);
-        if (layerRenderer == null) {
-            return Optional.empty();
-        }
-        return layerRenderer.resolveHoverTooltip();
+        return DrawnLayerGuard
+            .resolveGuardIn(machinery)
+            .callOnDrawnRenderer(MapLayerRenderer::resolveHoverTooltip, Optional.empty());
     }
 
     /**

@@ -2,9 +2,6 @@ package kmu.maplayers.base.layer;
 
 import com.fs.starfarer.api.Global;
 
-import kmu.maplayers.base.machinery.SectorMapMachinery;
-import kmu.maplayers.base.render.MapLayerRenderer;
-
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -13,8 +10,8 @@ import java.util.List;
 /**
  * The roster of map layers, and the one answer everything that paints hangs off: which of them is on
  * the screen showing this frame. Each layer's own state reads {@link #isDrawnLayer} to decide whether
- * it is the one to draw, and the map surface dispatches through {@link #resolveDrawnMapRenderer} - so
- * all agree on one reading without sharing state directly.
+ * it is the one to draw, and the map surface dispatches through {@link #getDrawnLayer}, by way of
+ * {@link DrawnLayerGuard} - so all agree on one reading without sharing state directly.
  *
  * <p>Drawn rather than picked, throughout. What a screen is set to is its {@link ActiveLayerSelection}
  * and stays that class's word; what is on the screen is {@link ScreenDrawnLayer}'s, and the two part
@@ -150,28 +147,6 @@ public final class MapLayerRegistry {
      */
     public static MapLayer getDrawnLayer() {
         return MapLayerScreens.resolveLivePicks().drawnLayer().resolveDrawnLayer();
-    }
-
-    /**
-     * What draws for the screen showing this frame, over {@code machinery}'s sector, or null when
-     * nothing does - because no layer is picked yet (before a composition root has registered any),
-     * because that screen's layers have faded off it, or because the active one draws nothing. They
-     * are one answer on purpose: every pass driven by the active pick treats them alike, so neither a
-     * switch-only tab nor a hidden screen needs a case of its own in any of them.
-     *
-     * <p>The machinery is passed rather than resolved here because which sector is being drawn is
-     * the caller's to know: the roster this registry holds is the process's, while the renderer it
-     * hands back is one sector's.
-     *
-     * @param machinery the machinery installed on the sector being drawn
-     * @return that sector's renderer for the drawn layer, or null when nothing draws
-     */
-    public static MapLayerRenderer resolveDrawnMapRenderer(SectorMapMachinery machinery) {
-        var drawnLayer = getDrawnLayer();
-        if (drawnLayer == null) {
-            return null;
-        }
-        return drawnLayer.resolveRenderer(machinery);
     }
 
     /**

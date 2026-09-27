@@ -60,15 +60,21 @@ public final class LabelRenderer {
     // coordinates so the glyphs scale with the cluster. Each label's colour is refaded to
     // the map's alpha first (no buffer rebuild, since there is no per-substring colour), so
     // the names fade with the fills at the edges of the map's zoom range.
+    //
+    // The matrix is popped in a finally block: a label that throws mid-draw would otherwise leave
+    // the map's own transform scaled for the rest of the frame, and the matrix stack one deep.
     private static void drawLabels(List<Label> labels, MapFrame mapFrame) {
         GL11.glPushMatrix();
-        GL11.glScalef(mapFrame.factor(), mapFrame.factor(), 1f);
-        for (var label : labels) {
-            // Refade the label to the frame's alpha so it dims in step with the cluster
-            // it sits on; scaleAlpha keeps a copy, so the cached base colour is untouched.
-            label.text().setBaseColor(Colours.scaleAlpha(label.baseColour(), mapFrame.alphaMult()));
-            label.text().drawAtAngle(label.hangX(), label.hangY(), label.slantDegrees());
+        try {
+            GL11.glScalef(mapFrame.factor(), mapFrame.factor(), 1f);
+            for (var label : labels) {
+                // Refade the label to the frame's alpha so it dims in step with the cluster
+                // it sits on; scaleAlpha keeps a copy, so the cached base colour is untouched.
+                label.text().setBaseColor(Colours.scaleAlpha(label.baseColour(), mapFrame.alphaMult()));
+                label.text().drawAtAngle(label.hangX(), label.hangY(), label.slantDegrees());
+            }
+        } finally {
+            GL11.glPopMatrix();
         }
-        GL11.glPopMatrix();
     }
 }

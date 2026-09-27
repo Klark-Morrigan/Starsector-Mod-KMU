@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
@@ -351,6 +352,25 @@ final class HoveredBoxTest {
         }
 
         @Test
+        void isEmptyWhereTheLayersBoxThrows() {
+            // Both passes asking for the box are the game's, with nothing under them that catches, so
+            // the box is asked through the guard the overlay is drawn through: a throw switches the
+            // layer off rather than ending the game, and the pass reads no box.
+            when(layerRendererMock.resolveHoverTooltip())
+                .thenThrow(new IllegalStateException("box read a released cache"));
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
+                    .isEmpty();
+            }
+        }
+
+        @Test
         void resolveActiveTooltipIsEmptyWhenTheActiveLayerHasNoRenderer() {
             // The "show nothing" tab's shape: a registered layer that supplies no renderer, which must
             // stay an ordinary layer here rather than a named special case.
@@ -386,8 +406,8 @@ final class HoveredBoxTest {
                     .thenReturn(false);
 
                 layerRegistryMock
-                    .when(() -> MapLayerRegistry.resolveDrawnMapRenderer(any()))
-                    .thenReturn(layerRendererMock);
+                    .when(MapLayerRegistry::getDrawnLayer)
+                    .thenReturn(tooltipLayerMock);
 
                 assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
                     .isEmpty();

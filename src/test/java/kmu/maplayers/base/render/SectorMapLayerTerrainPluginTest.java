@@ -3,6 +3,7 @@ package kmu.maplayers.base.render;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.LocationAPI;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
@@ -25,9 +26,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -77,6 +80,11 @@ final class SectorMapLayerTerrainPluginTest {
         new SectorMapLayerTerrainPlugin();
 
         globalMock = mockStatic(Global.class);
+
+        // Loggers answered as the game answers them: a guard made during a case takes its logger
+        // from here, and one handed the stand-in's null would fault on the very line it exists to
+        // write.
+        StubbedGlobalLogger.answerLoggersOn(globalMock);
 
         globalMock
             .when(Global::getSector)
@@ -225,8 +233,8 @@ final class SectorMapLayerTerrainPluginTest {
                  var layerScreensMock = mockStatic(MapLayerScreens.class)) {
 
                 layerRegistryMock
-                    .when(() -> MapLayerRegistry.resolveDrawnMapRenderer(any()))
-                    .thenReturn(layerRendererMock);
+                    .when(MapLayerRegistry::getDrawnLayer)
+                    .thenReturn(drawingLayerMock);
 
                 layerScreensMock
                     .when(MapLayerScreens::resolveShownFadeOnLiveScreen)
@@ -386,6 +394,53 @@ final class SectorMapLayerTerrainPluginTest {
             plugin.renderOnMap(1.5f, 0.25f);
 
             verifyNoInteractions(layerRendererMock);
+        }
+
+        @Test
+        void containsALayerThatThrowsAndDrawsNothingMoreThroughIt() {
+            // Nothing between this hook and the game catches, so a throw let through would end the
+            // game with the map open. Contained, the layer is off for the sector rather than retried,
+            // which is what keeps a layer failing on the sector from throwing a trace a frame.
+            doThrow(new IllegalStateException("draw list half built"))
+                .when(layerRendererMock)
+                .prepareFrame(anyFloat());
+
+            var plugin = new SectorMapLayerTerrainPlugin();
+
+            seatSurfacesInAnInstalledSector(plugin);
+
+            assertThatCode(() -> {
+                plugin.renderOnMap(1.5f, 0.25f);
+                plugin.renderOnMap(1.5f, 0.25f);
+            })
+                .doesNotThrowAnyException();
+
+            verify(layerRendererMock, times(1))
+                .prepareFrame(anyFloat());
+            verify(layerRendererMock, never())
+                .renderOnMap(anyFloat(), anyFloat(), any());
+        }
+
+        @Test
+        void drawsALayerThatThrewAgainOnceItsSectorIsInstalledAfresh() {
+            // The switch goes with the machinery, so a load - or the layers switched off and back on
+            // - is the retry, rather than the next frame.
+            doThrow(new IllegalStateException("draw list half built"))
+                .doNothing()
+                .when(layerRendererMock)
+                .prepareFrame(anyFloat());
+
+            var plugin = new SectorMapLayerTerrainPlugin();
+
+            seatSurfacesInAnInstalledSector(plugin);
+            plugin.renderOnMap(1.5f, 0.25f);
+
+            SectorMapMachineryIndex.disposeAllMachinery();
+            seatSurfacesInAnInstalledSector(plugin);
+            plugin.renderOnMap(1.5f, 0.25f);
+
+            verify(layerRendererMock)
+                .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
         }
 
         @Test
