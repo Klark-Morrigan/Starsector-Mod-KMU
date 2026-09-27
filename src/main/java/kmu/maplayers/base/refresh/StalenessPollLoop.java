@@ -52,6 +52,7 @@ final class StalenessPollLoop {
     StalenessPollLoop(MapLayerStalenessSource stalenessSource) {
 
         this.stalenessSource = stalenessSource;
+
         // Read at construction rather than on the first retune, so a poll installed mid-campaign
         // runs at the cadence in force rather than at the shipped one until the player next touches
         // the settings screen. Outside a running game the read answers with its own fallback.
@@ -72,6 +73,7 @@ final class StalenessPollLoop {
 
         applyRetunedCadence();
         pollInterval.advance(amount);
+
         if (!pollInterval.intervalElapsed()) {
             return;
         }
@@ -79,12 +81,19 @@ final class StalenessPollLoop {
         // API change) is recorded rather than lost in the per-frame engine noise, and
         // does not stop the poll from running on the next interval.
         //
+        // A failure to link is caught alongside a throw. A source that reads another mod's
+        // state meets that mod's types here, on the poll, and a release that moved one
+        // arrives as a LinkageError rather than an exception - the one fault a poll over a
+        // third party is most likely to meet.
+        //
         // The source is named in the line because several polls run at once: which one
         // faulted is the first thing a reader of the log needs, and the driving script's
         // name says only that some poll did.
         try {
             stalenessSource.markChangesSinceLastPoll();
-        } catch (RuntimeException exception) {
+
+        } catch (LinkageError | RuntimeException exception) {
+
             pollFaultWarning.warnOnce(
                 "Map layer staleness poll failed; source="
                     + stalenessSource.getClass().getSimpleName(),
@@ -116,17 +125,17 @@ final class StalenessPollLoop {
     private void applyRetunedCadence() {
 
         var settingsRevision = KmuLunaSettings.getSettingsRevision();
-
         if (settingsRevision == actedOnSettingsRevision) {
             return;
         }
+
         actedOnSettingsRevision = settingsRevision;
 
         var pollSeconds = KmuMapRefreshSettings.getMapRefreshPollSeconds();
-
         if (pollSeconds == installedPollSeconds) {
             return;
         }
+
         installedPollSeconds = pollSeconds;
         pollInterval.setInterval(pollSeconds, resolveJitteredCeilingSeconds(pollSeconds));
     }
