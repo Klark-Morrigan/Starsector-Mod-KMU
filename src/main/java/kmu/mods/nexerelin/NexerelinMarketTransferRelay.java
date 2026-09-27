@@ -40,6 +40,11 @@ import exerelin.utilities.InvasionListener;
  * with a stack through Nexerelin - for a fault that is KMU's. What a listener here does is a fast
  * path the map's own poll covers within seconds, so a throw costs nothing worth telling the player:
  * it is logged, the listeners after it are still told, and it is told again on the next transfer.
+ *
+ * <p>What no boundary here reaches is Nexerelin adding a method to {@link InvasionListener}. None of
+ * the four has a default, so a fifth would be missing from this class, and Nexerelin's call to it
+ * would throw {@code AbstractMethodError} in Nexerelin's own frame, before anything here runs. Only
+ * Nexerelin giving a new method a default prevents that; failing it, the mend is a KMU release.
  */
 public class NexerelinMarketTransferRelay implements InvasionListener {
 
