@@ -143,13 +143,14 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
         CoreUITabId shownCoreTab = null;
 
         // The switch read is inside the boundary too: it reaches the settings substrate, as able to
-        // throw on an unfamiliar install as the widget walk below it.
+        // throw on an unfamiliar install as the widget walk below it. Over Throwable, as CoreUiTree
+        // asks of the callers of its reach.
         try {
             shownCoreTab = resolveShownCoreTab.get();
 
             keepTheBoxStandingAndTruthful(shownCoreTab);
 
-        } catch (RuntimeException failure) {
+        } catch (Throwable exception) {
 
             if (shownCoreTab != null) {
                 screenTheReachRefused = shownCoreTab;
@@ -159,7 +160,7 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
                 "The control that shows and hides the map layers could not be put on the game's "
                     + "map filter row; that row is left as the game built it, and the layers stay "
                     + "shown.",
-                failure);
+                exception);
         }
     }
 

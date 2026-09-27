@@ -5,7 +5,6 @@ import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.CustomUIPanelPlugin;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
-import com.fs.starfarer.api.ui.UIComponentAPI;
 
 import kmlib.starsector.ui.coreui.CoreUiOverlayPanels;
 import kmlib.starsector.ui.map.probes.ShownMapTab;
@@ -129,12 +128,12 @@ final class ArrangementDialogScreenScope implements AutoCloseable {
     /**
      * Settles whether a map is still on screen under the dialog.
      *
-     * @param isMapShowing whether the map-tab reach answers with a tab
+     * @param isMapShowing whether the map-tab read answers that a map is showing
      */
     void settleMapShowing(boolean isMapShowing) {
 
         shownMapTabMock
-            .when(ShownMapTab::resolveShownMapTab)
-            .thenReturn(isMapShowing ? mock(UIComponentAPI.class) : null);
+            .when(ShownMapTab::isMapTabShowing)
+            .thenReturn(isMapShowing);
     }
 }

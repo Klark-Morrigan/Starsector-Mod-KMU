@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins which report a failed KMU LunaLib binding files under.
  *
- * <p>The bindings themselves go through KMLib's {@code LunaSettingsReader} and {@code KmLogging} and
+ * <p>The bindings themselves go through KMLib's {@code LunaSettingsReader} and {@code LunaLogLevelBinding} and
  * are pinned there.
  */
 final class KmuLunaSettingsTest {

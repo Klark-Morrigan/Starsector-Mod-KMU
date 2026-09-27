@@ -1,6 +1,6 @@
 package kmu.diagnostics;
 
-import kmlib.starsector.ui.map.probes.MapProbeWarnings;
+import kmlib.logging.RearmableWarnings;
 
 import kmu.settings.KmuLoggingSettings;
 import kmu.settings.KmuLunaSettings;
@@ -15,8 +15,8 @@ import kmu.settings.KmuLunaSettings;
  * and be silent by the time the traces are switched on. The trace then reports nothing, and the line
  * saying why was spent hours earlier on a reader who was not asking.
  *
- * <p>So the switch moving to on is treated as a new reader arriving, and the probes' warnings are let
- * speak again. On the edge rather than on every settings change, because LunaLib announces the
+ * <p>So the switch moving to on is treated as a new reader arriving, and every class-wide warning a
+ * reach into the game's widgets keeps is let speak again. On the edge rather than on every settings change, because LunaLib announces the
  * settings rather than the setting: re-arming on each announcement would let an unrelated knob
  * unmute a warning nobody asked to hear.
  */
@@ -29,7 +29,7 @@ public final class ReflectionTracingInstaller {
     }
 
     /**
-     * Registers the listener that re-arms the probes' warnings when the traces are switched on.
+     * Registers the listener that re-arms the reaches' warnings when the traces are switched on.
      *
      * <p>Call once at load, after KMU's settings bindings are in place.
      */
@@ -51,7 +51,7 @@ public final class ReflectionTracingInstaller {
         var isEnabled = KmuLoggingSettings.areReflectionProbesEnabled();
 
         if (isEnabled && !wasEnabled) {
-            MapProbeWarnings.rearmAllWarnings();
+            RearmableWarnings.rearmAllWarnings();
         }
         wasEnabled = isEnabled;
     }
