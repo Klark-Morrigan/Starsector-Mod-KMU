@@ -21,7 +21,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 import java.util.List;
@@ -38,14 +37,14 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the view registry's contract with fake views and a fake host tab: the view
  * order it hands back, the pick an untouched save resolves to, the off sentinel that turns the map
- * dark, the ID it stores on a pick, and the active-view read the layer renderer gates on - which
- * additionally requires the host tab to be the active pick. The concrete view set is the composition
- * root's concern; this names none.
+ * dark, the ID it stores on a pick, and the active-view read the frame gates on - which additionally
+ * requires the host tab to be the active pick. The concrete view set is the composition root's
+ * concern; this names none.
  *
  * <p>And that the pick is one per screen. Every read and write names the screen it means, so two
- * panels set to different views hold them apart; the live reads name the screen showing, and the
- * carried read names a screen handed in - which is what lets a frame take the view and the screen's
- * scope off one reading of which panel is up.
+ * panels set to different views hold them apart; the active-view read answers for a screen handed in
+ * rather than the one showing - which is what lets a frame take the view and the screen's scope off
+ * one reading of which panel is up.
  *
  * <p>And that it is one per layer. A second registry over a foreign pair of views, under a key of
  * its own, stands beside the first in the last group: a pick on one layer's radio must leave the
@@ -59,7 +58,6 @@ final class MapLayerViewRegistryTest {
     private static final String BASE_ACTIVE_VIEW_KEY = "$test_layer_active_view";
     private static final String ACTIVE_VIEW_KEY = "$test_layer_active_view_test";
     private static final String OTHER_SCREEN_ACTIVE_VIEW_KEY = "$test_layer_active_view_other";
-    private static final String MAP_ACTIVE_VIEW_KEY = "$test_layer_active_view_map";
     private static final String INTEL_ACTIVE_VIEW_KEY = "$test_layer_active_view_intel";
 
     // The second layer's, which stands beside the first in the cases about two registries.
@@ -106,7 +104,7 @@ final class MapLayerViewRegistryTest {
 
         // First view is the default, so an untouched save resolves to it - the map is up the first
         // time the sector map opens. The host tab is registered default-active in the layer
-        // registry, so getActiveView's tab gate is up unless a test switches tabs.
+        // registry, so the active-view read's tab gate is up unless a case switches tabs.
         registry = new MapLayerViewRegistry(
             BASE_ACTIVE_VIEW_KEY,
             List.of(firstViewMock, secondViewMock),
@@ -261,74 +259,21 @@ final class MapLayerViewRegistryTest {
     }
 
     @Nested
-    class GetActiveView {
+    class ResolveActiveViewOn {
 
         @Test
-        void getActiveViewIsTheSelectedViewWhenTheHostTabIsActive() {
-            // No sector: the layer registry resolves its default (the host tab) as active, and the
-            // view registry its default view, so the map paints the default view.
+        void resolveActiveViewOnIsTheDefaultViewWhileNoSaveHoldsAPick() {
+            // No sector, so nothing is stored: the host tab being that screen's pick, the map paints
+            // the view an untouched save resolves to rather than staying dark.
             try (var globalMock = mockStatic(Global.class)) {
 
                 globalMock.when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(registry.getActiveView())
+                assertThat(registry.resolveActiveViewOn(picksOnTheHostTab(SCREEN)))
                     .isSameAs(firstViewMock);
             }
         }
-
-        @Test
-        void getActiveViewIsNullWhenAnotherTabIsActive() {
-            // The stored active tab is not the host tab, so the layer does not paint even
-            // though a view is selected - switching to No Layer stops the paint without disturbing
-            // the stored view.
-            try (var globalMock = mockStatic(Global.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                linkSectorMemoryTo(globalMock, memoryMock);
-
-                // The other tab is picked through the showing screen's own selection and that write is
-                // read back as the stored pick, so the gate is driven through whatever key the layer
-                // registry keeps its pick under rather than a spelling of it copied here.
-                var layerKeyCaptor = ArgumentCaptor.forClass(String.class);
-
-                MapLayerScreens.resolveLivePicks().layerSelection().selectLayer(otherTabMock);
-
-                verify(memoryMock)
-                    .set(layerKeyCaptor.capture(), eq("other"));
-
-                storeViewIdAt(memoryMock, layerKeyCaptor.getValue(), "other");
-
-                assertThat(registry.getActiveView())
-                    .isNull();
-            }
-        }
-
-        @Test
-        void getActiveViewIsTheShowingScreensOwnPick() {
-            // The live read follows the panel the player is looking at, so opening the visor over a
-            // sector map set to another view paints what the visor's own panel was set to.
-            var intelScreenFake = new IntelScreenViewFake();
-            intelScreenFake.setIntelTabOpen(true);
-            MapLayerScreens.registerIntelScreen(intelScreenFake);
-
-            try (var globalMock = mockStatic(Global.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                linkSectorMemoryTo(globalMock, memoryMock);
-                storeViewIdAt(memoryMock, MAP_ACTIVE_VIEW_KEY, "first");
-                storeViewIdAt(memoryMock, INTEL_ACTIVE_VIEW_KEY, "second");
-
-                assertThat(registry.getActiveView())
-                    .isSameAs(secondViewMock);
-            }
-        }
-    }
-
-    @Nested
-    class ResolveActiveViewOn {
 
         @Test
         void resolveActiveViewOnAnswersForTheScreenHandedInRatherThanTheShowingOne() {

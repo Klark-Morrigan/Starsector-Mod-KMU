@@ -5,7 +5,6 @@ import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 
@@ -131,25 +130,17 @@ public final class MapLayerViewRegistry {
     }
 
     /**
-     * @return the view that paints right now on the screen showing this frame: that screen's selected
-     *         view when the layer's tab is its active pick, or null when that tab is not active
-     *         there or no view is selected on it. This is the renderer's one read - it gates the paint
-     *         and supplies the view's rules in one call
-     */
-    public OwnerPaintedView getActiveView() {
-        return resolveActiveViewOn(MapLayerScreens.resolveLivePicks());
-    }
-
-    /**
-     * The same answer as {@link #getActiveView()} for a screen already in hand.
+     * The view that paints on the given screen - the frame's one read, gating the paint and supplying
+     * the view's rules in one call.
      *
-     * <p>For the caller that needs the view and the screen's scope together: the frame paints one
-     * screen's view under that screen's preferences, so both come off one reading of which screen is
-     * showing. Resolved separately they could name two screens, which is a picture neither panel was
-     * ever set to.
+     * <p>Taken for a screen already in hand rather than resolving the one showing: the frame paints
+     * one screen's view under that screen's preferences, so both come off one reading of which screen
+     * is showing. Resolved separately they could name two screens, which is a picture neither panel
+     * was ever set to.
      *
      * @param screenPicks the screen being answered for
-     * @return that screen's selected view while the layer's tab is its active pick, else null
+     * @return that screen's selected view while the layer's tab is its active pick, or null when that
+     *         tab is not active there or no view is selected on it
      */
     public OwnerPaintedView resolveActiveViewOn(ScreenLayerPicks screenPicks) {
         if (!MapLayerRegistry.isDrawnLayerOn(screenPicks, hostTab)) {

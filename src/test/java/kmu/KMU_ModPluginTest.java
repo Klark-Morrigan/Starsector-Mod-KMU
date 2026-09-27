@@ -3,6 +3,9 @@ package kmu;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.compatibility.CompatibilityFailures;
+import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
+
 import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
@@ -17,6 +20,8 @@ import kmu.mods.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.mods.rat.RandomAssortmentOfThingsSettings;
 import kmu.settings.KmuLunaSettings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -39,10 +44,10 @@ import static org.mockito.Mockito.times;
  * installers the map layers are made of, and that switching them off reaches every one of them.
  *
  * <p>Every step a launch runs names a class this mod owns, which is what makes the list assertable
- * at all: LunaLib is on no test classpath, so a step reaching it directly would fail to initialise
- * and throw an {@code Error} the wiring guard deliberately does not catch. The one binding that
- * must touch LunaLib is held behind {@code RandomAssortmentOfThingsSettings}, which is stood in for
- * here like the rest.
+ * at all: LunaLib is on no test classpath, so a step reaching it directly would fail to link, and
+ * the wiring guard catching that would leave a case passing over a step that never ran. The one
+ * binding that must touch LunaLib is held behind {@code RandomAssortmentOfThingsSettings}, which is
+ * stood in for here like the rest.
  *
  * <p>What each installer registers is pinned beside that installer, and when a switch is worth
  * acting on is pinned on {@link KmuToggledFeature}. Neither is re-asserted here: this suite is
@@ -67,6 +72,21 @@ class KMU_ModPluginTest {
 
     @Nested
     class OnApplicationLoad {
+
+        // The session's record is the process's own and outlives a case, so a case reading it reads
+        // its own failure alone only when it starts and leaves the record empty.
+        @BeforeEach
+        void drainTheSessionRecordBefore() {
+
+            drainTheSessionRecord();
+        }
+
+        @AfterEach
+        void clearSettingsAndDrainTheSessionRecord() {
+
+            StarsectorSettingsFake.clearSettings();
+            drainTheSessionRecord();
+        }
 
         @Test
         void standsUpEveryStepALaunchIsMadeOf() {
@@ -102,6 +122,35 @@ class KMU_ModPluginTest {
                 ratSettingsMock.verify(
                     () -> RandomAssortmentOfThingsSettings.runOnSettingsChange(any()));
             }
+        }
+
+        @Test
+        void reportsALunaLibBindingThatRefusedToInstallToThePlayer() {
+            // The LunaLib steps take the guard that reports, where every other step only logs.
+            StarsectorSettingsFake.installSettings((category, key) -> "the sentence for " + key);
+
+            try (var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
+                    var mapLayersMock = mockStatic(MapLayers.class);
+                    var profilingMock = mockStatic(ProfilingCaptureInstaller.class);
+                    var reflectionTracingMock = mockStatic(ReflectionTracingInstaller.class);
+                    var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
+
+                lunaSettingsMock.when(KmuLunaSettings::installBindings)
+                    .thenThrow(new NoSuchMethodError("LunaLib moved what the bindings call"));
+                // The report is composed from the bindings' own description, which a class stood in
+                // for whole would answer with nothing.
+                lunaSettingsMock.when(KmuLunaSettings::describeLunaLibIntegration)
+                    .thenCallRealMethod();
+
+                new KMU_ModPlugin().onApplicationLoad();
+            }
+
+            var failure = CompatibilityFailures.SESSION_RECORD.takeNextUnreported();
+
+            assertThat(failure.subject().name())
+                .isEqualTo("LunaLib");
+            assertThat(failure.consumer().consumerKey())
+                .isEqualTo("kmu:lunalib-settings");
         }
     }
 
@@ -158,6 +207,15 @@ class KMU_ModPluginTest {
                 installers.verifyEveryTakeBackFor(sectorMock, times(1));
                 installers.verifyEveryStandUpFor(sectorMock, never());
             }
+        }
+    }
+
+    // Empties the process's own record, which outlives a case. Left filled, the next case to read it
+    // finds a failure it never filed.
+    private static void drainTheSessionRecord() {
+
+        while (CompatibilityFailures.SESSION_RECORD.takeNextUnreported() != null) {
+            // drained for its side effect.
         }
     }
 

@@ -51,10 +51,13 @@ public final class ProfilingCaptureInstaller {
             ProfilingCaptureInstaller::applySettingsLevel,
             "Failed to bind the KMU profiler");
 
+        // Reported under LunaLib where it fails, as every KMU settings listener is: registering one
+        // is a binding to LunaLib, where the two steps above bind nothing but KMU's own.
         KmuWiringSteps.runGuardedStep(
             () -> KmuLunaSettings.runOnSettingsChange(
                 ProfilingCaptureInstaller::applySettingsLevel),
-            "Failed to install the KMU profiling level listener");
+            "Failed to install the KMU profiling level listener",
+            KmuLunaSettings::describeLunaLibIntegration);
     }
 
     /**
