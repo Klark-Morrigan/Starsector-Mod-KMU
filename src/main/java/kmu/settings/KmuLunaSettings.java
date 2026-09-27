@@ -1,9 +1,9 @@
 package kmu.settings;
 
-import kmlib.logging.KmLogging;
 import kmlib.settings.KmlibLunaSettings;
 import kmlib.settings.LabeledChoice;
 import kmlib.settings.LabeledChoices;
+import kmlib.settings.LunaLogLevelBinding;
 import kmlib.settings.LunaSettingsReader;
 import kmlib.starsector.compatibility.CompatibilityConsumer;
 import kmlib.starsector.compatibility.ModIntegration;
@@ -142,7 +142,7 @@ public final class KmuLunaSettings {
      * mod plugin calls this.
      */
     public static void installBindings() {
-        KmLogging.bindToLunaSetting(
+        LunaLogLevelBinding.bindLogLevel(
             MOD_ID,
             KmuLoggingSettings.LOGGER_ROOT,
             KmuLoggingSettings.LOG_LEVEL_FIELD);
