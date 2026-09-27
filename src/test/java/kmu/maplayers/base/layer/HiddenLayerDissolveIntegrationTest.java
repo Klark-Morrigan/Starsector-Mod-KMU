@@ -7,6 +7,7 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
+import kmu.maplayers.base.render.DrawnLayerGuard;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.settings.KmuMapSidebarSettings;
 

@@ -2,6 +2,8 @@ package kmu.maplayers.base.layer;
 
 import com.fs.starfarer.api.Global;
 
+import kmu.maplayers.base.render.DrawnLayerGuard;
+
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;

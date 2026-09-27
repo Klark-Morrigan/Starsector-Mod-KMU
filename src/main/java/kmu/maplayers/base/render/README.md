@@ -13,6 +13,7 @@ see the [mod README](../../../../../../../README.md) for project context.
 ## Index
 
 - [Who gets the frame](#who-gets-the-frame)
+- [A layer that throws](#a-layer-that-throws)
 - [The frame sequence](#the-frame-sequence)
 - [Bands](#bands)
 - [One preparation per frame, one cursor read per pass](#one-preparation-per-frame-one-cursor-read-per-pass)
@@ -46,7 +47,7 @@ asks that layer for the renderer belonging to the sector being drawn,
 and draws through it -
 behind that sector's `DrawnLayerGuard`,
 so a layer that throws is switched off there rather than ending the game
-([the layer framework](../layer/README.md#a-layer-that-throws) has why).
+([below](#a-layer-that-throws)).
 A layer that supplies none -
 No Layer,
 or any future switch-only tab -
@@ -131,6 +132,41 @@ so while one is showing and a foreign map also draws,
 both passes satisfy the hover constraint.
 The render constraint is what closes that case,
 by keeping the foreign pass from running at all.
+
+## A layer that throws
+
+The map surface and the hover box are the game's own passes,
+with nothing under them that catches,
+so a layer throwing from either would end the game with the map open.
+`DrawnLayerGuard` is the one way either reaches the drawn layer's renderer,
+and each pass's work with it runs behind the guard.
+A layer that throws there is switched off on that sector:
+every later pass reads it as a layer that draws nothing,
+the same answer a switch-only tab gives,
+and the map and every other layer draw on.
+The hover it last published is parked with it,
+no pass of its own being left to park it.
+
+Off rather than retried,
+since nothing can tell a layer that failed on one frame from one failing on the sector,
+and the second would throw a trace a frame.
+The guard is [installed machinery](../machinery/README.md),
+so the switch clears where trying again means something -
+the next load,
+or the map layers switched off and back on -
+and never once a frame.
+It is logged with its trace rather than reported to the player:
+every layer registered today is KMU's own,
+and the compatibility notice names third parties.
+
+The frame is contained as well as the layer
+because every GL bracket under the pass closes itself in a `finally` -
+an attribute save,
+a pushed matrix,
+an open primitive -
+so the state is balanced again by the time the throw reaches the guard.
+Restoring it from the guard instead would mean reading the stack depths back from the driver,
+which stalls the frame and is fatal under Fast Rendering.
 
 ## The frame sequence
 

@@ -44,7 +44,8 @@ import static org.mockito.Mockito.when;
  * terrain is added on a fresh game, so failing to override it crashed onGameLoad. The dispatch is
  * pinned with a stand-in layer, since which concrete layers exist is the composition root's business
  * and the surface must not know: it draws through the active pick's renderer, and treats an absent
- * renderer or an absent pick alike as nothing to draw. The draw-list build and GL emission live
+ * renderer or an absent pick alike as nothing to draw. A layer that throws is contained here as well as
+ * in the guard's own suite, since a surface drawing around the guard would put the game back at risk. The draw-list build and GL emission live
  * behind that renderer and are covered there; the emission itself runs only in-engine.
  *
  * <p>Every case seats the surface on an installed sector first, that being what a surface needs
