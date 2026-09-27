@@ -1,6 +1,6 @@
 package kmu.diagnostics;
 
-import kmlib.starsector.ui.map.probes.MapProbeWarnings;
+import kmlib.logging.RearmableWarnings;
 
 import kmu.settings.KmuLoggingSettings;
 import kmu.settings.KmuLunaSettings;
@@ -33,11 +33,11 @@ final class ReflectionTracingInstallerTest {
     private static void installThenChangeSettings(
             boolean enabledAtInstall,
             boolean enabledAtChange,
-            Consumer<MockedStatic<MapProbeWarnings>> assertOn) {
+            Consumer<MockedStatic<RearmableWarnings>> assertOn) {
 
         try (var settingsMock = mockStatic(KmuLoggingSettings.class);
                 var lunaMock = mockStatic(KmuLunaSettings.class);
-                var warningsMock = mockStatic(MapProbeWarnings.class)) {
+                var warningsMock = mockStatic(RearmableWarnings.class)) {
 
             var onSettingsChange = new Runnable[1];
             lunaMock.when(() -> KmuLunaSettings.runOnSettingsChange(any()))
@@ -66,14 +66,14 @@ final class ReflectionTracingInstallerTest {
             // The case the whole class exists for: a reach broke during ordinary play and spent its
             // one line, and the reader who then asks for the traces is owed that line again.
             installThenChangeSettings(false, true, warningsMock ->
-                warningsMock.verify(MapProbeWarnings::rearmAllWarnings, times(1)));
+                warningsMock.verify(RearmableWarnings::rearmAllWarnings, times(1)));
         }
 
         @Test
         void rearmsNothingWhileTheTracesStayOff() {
 
             installThenChangeSettings(false, false, warningsMock ->
-                warningsMock.verify(MapProbeWarnings::rearmAllWarnings, never()));
+                warningsMock.verify(RearmableWarnings::rearmAllWarnings, never()));
         }
 
         @Test
@@ -81,14 +81,14 @@ final class ReflectionTracingInstallerTest {
             // The guard against unrelated knobs. Settings changes arrive for every field, and a
             // re-arm on each would unmute a warning on a path that runs once a frame.
             installThenChangeSettings(true, true, warningsMock ->
-                warningsMock.verify(MapProbeWarnings::rearmAllWarnings, never()));
+                warningsMock.verify(RearmableWarnings::rearmAllWarnings, never()));
         }
 
         @Test
         void rearmsNothingWhenTheTracesAreSwitchedOff() {
             // A reader who has just stopped listening is owed no line.
             installThenChangeSettings(true, false, warningsMock ->
-                warningsMock.verify(MapProbeWarnings::rearmAllWarnings, never()));
+                warningsMock.verify(RearmableWarnings::rearmAllWarnings, never()));
         }
     }
 }
