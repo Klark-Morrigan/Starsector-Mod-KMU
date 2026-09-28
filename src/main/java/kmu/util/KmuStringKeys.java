@@ -44,6 +44,34 @@ public final class KmuStringKeys {
     public static final String COMPATIBILITY_UNAFFECTED_LUNALIB_SETTINGS =
         "compatibility_unaffected_lunalib_settings";
 
+    // What each of the map layers' reaches into the game costs when a game release breaks it, and
+    // what it does not: one pair per MapLayerGameReach constant, which is where each loss is described.
+
+    /**
+     * "May not show", and on either map, because the sector map and the intel screen's are read
+     * apart and either can break alone.
+     */
+    public static final String COMPATIBILITY_LOST_MAP_VIEW = "compatibility_lost_map_view";
+    public static final String COMPATIBILITY_UNAFFECTED_MAP_VIEW = "compatibility_unaffected_map_view";
+
+    /** Says the layers stay shown, since a map with no tick box has no way to hide them. */
+    public static final String COMPATIBILITY_LOST_FILTER_ROW_TOGGLE = "compatibility_lost_filter_row_toggle";
+    public static final String COMPATIBILITY_UNAFFECTED_FILTER_ROW_TOGGLE =
+        "compatibility_unaffected_filter_row_toggle";
+
+    public static final String COMPATIBILITY_LOST_ARRANGE_DIALOG = "compatibility_lost_arrange_dialog";
+    public static final String COMPATIBILITY_UNAFFECTED_ARRANGE_DIALOG = "compatibility_unaffected_arrange_dialog";
+    public static final String COMPATIBILITY_LOST_SCREEN_COVERS = "compatibility_lost_screen_covers";
+    public static final String COMPATIBILITY_UNAFFECTED_SCREEN_COVERS = "compatibility_unaffected_screen_covers";
+    public static final String COMPATIBILITY_LOST_MAP_TOOLTIPS = "compatibility_lost_map_tooltips";
+    public static final String COMPATIBILITY_UNAFFECTED_MAP_TOOLTIPS = "compatibility_unaffected_map_tooltips";
+    public static final String COMPATIBILITY_LOST_STARSCAPE_RESEAT = "compatibility_lost_starscape_reseat";
+    public static final String COMPATIBILITY_UNAFFECTED_STARSCAPE_RESEAT =
+        "compatibility_unaffected_starscape_reseat";
+    public static final String COMPATIBILITY_LOST_STARSCAPE_TERRAIN = "compatibility_lost_starscape_terrain";
+    public static final String COMPATIBILITY_UNAFFECTED_STARSCAPE_TERRAIN =
+        "compatibility_unaffected_starscape_terrain";
+
     public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
     public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
     public static final String CONDITION_MANAGER_SUMMARY = "condition_manager_summary";

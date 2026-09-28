@@ -6,6 +6,7 @@ import kmlib.starsector.ui.input.VanillaCursorPosition;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMap;
 
+import kmu.maplayers.base.compatibility.MapLayerGameReach;
 import kmu.maplayers.base.hover.cover.MapCover;
 import kmu.starsector.ui.SingleEmbeddedMapReader;
 
@@ -97,7 +98,7 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
     public static RandomAssortmentOfThingsMinimapCover createForLiveScreen() {
         return new RandomAssortmentOfThingsMinimapCover(
             RandomAssortmentOfThingsCompatibilityMode.createForLiveGame(),
-            new MapPresence()::isAnyMapShowing,
+            new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter())::isAnyMapShowing,
             SingleEmbeddedMapReader.INSTANCE::resolveSingleEmbeddedMap,
             new VanillaCursorPosition());
     }

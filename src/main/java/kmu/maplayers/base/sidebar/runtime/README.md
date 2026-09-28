@@ -314,7 +314,8 @@ neither of which exists outside a running one,
 while whether a repaint happens,
 which region it is clipped to,
 and how a failed draw is survived are decisions that hold anywhere.
-`ReflectiveCoreUiComponentRepainter.INSTANCE` is the binding the plugin wires in.
+`ReflectiveCoreUiComponentRepainter` is the binding the plugin wires in,
+built with the reporter a repaint the game stopped offering is filed through.
 
 The animations run either side of the layout,
 which is why the frame's elapsed time is read once and spent on both sides:

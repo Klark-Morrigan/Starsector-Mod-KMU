@@ -62,7 +62,7 @@ final class ArrangementDialogScreenScope implements AutoCloseable {
             .thenReturn(settingsMock);
 
         overlayPanelsMock
-            .when(() -> CoreUiOverlayPanels.attachOverlayPanel(any()))
+            .when(() -> CoreUiOverlayPanels.attachOverlayPanel(any(), any()))
             .thenReturn(isCoreUiReachable ? mock(PositionAPI.class) : null);
 
         settleMapShowing(true);

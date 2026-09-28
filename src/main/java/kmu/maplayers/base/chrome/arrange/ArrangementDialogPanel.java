@@ -10,6 +10,8 @@ import kmlib.starsector.ui.coreui.CoreUiOverlayPanels;
 import kmlib.starsector.ui.coreui.OverlayPresence;
 import kmlib.starsector.ui.map.probes.ShownMapTab;
 
+import kmu.maplayers.base.compatibility.MapLayerGameReach;
+
 import java.util.List;
 import java.util.function.Function;
 
@@ -156,7 +158,7 @@ final class ArrangementDialogPanel {
             settings.getScreenHeight(),
             new DialogPanelPlugin());
 
-        var placement = CoreUiOverlayPanels.attachOverlayPanel(newPanel);
+        var placement = CoreUiOverlayPanels.attachOverlayPanel(newPanel, MapLayerGameReach.ARRANGE_DIALOG.getReporter());
         if (placement == null) {
             return false;
         }

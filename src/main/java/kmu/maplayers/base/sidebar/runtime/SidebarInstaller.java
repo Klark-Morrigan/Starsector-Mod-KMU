@@ -6,6 +6,8 @@ import kmlib.starsector.listeners.SectorListeners;
 import kmlib.starsector.ui.coreui.ReflectiveCoreUiComponentRepainter;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
+import kmu.maplayers.base.compatibility.MapLayerGameReach;
+
 import static kmu.KmuWiringSteps.runGuardedStep;
 
 /**
@@ -102,8 +104,8 @@ public final class SidebarInstaller {
             listenerManager.addListener(
                 new SidebarRenderer(
                     host,
-                    new VanillaMapTooltipProbe(),
-                    ReflectiveCoreUiComponentRepainter.INSTANCE),
+                    new VanillaMapTooltipProbe(MapLayerGameReach.MAP_TOOLTIPS.getReporter()),
+                    new ReflectiveCoreUiComponentRepainter(MapLayerGameReach.MAP_TOOLTIPS.getReporter())),
                 true);
             listenerManager.addListener(new SidebarInput(host), true);
         }

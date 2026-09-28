@@ -333,7 +333,7 @@ class MapLayerCellTooltipGateIntegrationTest {
              var globalMock = mockStatic(Global.class)) {
 
             mapViewMock
-                .when(CampaignMapView::resolveSectorMapState)
+                .when(() -> CampaignMapView.resolveSectorMapState(any()))
                 .thenReturn(sectorMapState);
 
             globalMock
