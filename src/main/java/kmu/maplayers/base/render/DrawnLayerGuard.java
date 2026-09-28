@@ -28,21 +28,19 @@ import java.util.function.Function;
  */
 public final class DrawnLayerGuard implements InstalledMachinery {
 
+    private static final Logger LOG = Global.getLogger(DrawnLayerGuard.class);
+
     // The sector this guard belongs to: the one a layer is asked for its renderer over, and whose
     // hover a switched-off layer leaves parked.
     private final SectorMapMachinery machinery;
-
-    // Where a layer being switched off is said, with the trace that did it.
-    private final Logger log;
 
     // The layers switched off on this sector. Held by layer rather than by renderer, because
     // resolving the renderer is itself part of what can throw.
     private final Set<MapLayer> switchedOffLayers = new HashSet<>();
 
     // Reached through resolveGuardIn, so the only guards that exist are ones machinery holds.
-    DrawnLayerGuard(SectorMapMachinery machinery, Logger log) {
+    DrawnLayerGuard(SectorMapMachinery machinery) {
         this.machinery = machinery;
-        this.log = log;
     }
 
     /**
@@ -56,7 +54,7 @@ public final class DrawnLayerGuard implements InstalledMachinery {
 
         return machinery.resolveMachinery(
             DrawnLayerGuard.class,
-            () -> new DrawnLayerGuard(machinery, Global.getLogger(DrawnLayerGuard.class)));
+            () -> new DrawnLayerGuard(machinery));
     }
 
     /**
@@ -136,7 +134,7 @@ public final class DrawnLayerGuard implements InstalledMachinery {
             .resolveHoverState()
             .clearHover();
 
-        log.error("Map layer '" + failedLayer.getId() + "' failed and is switched off on this sector"
+        LOG.error("Map layer '" + failedLayer.getId() + "' failed and is switched off on this sector"
             + " until the next load, or until the map layers are switched off and back on.", failure);
     }
 }
