@@ -84,10 +84,10 @@ public final class CarriedLines {
             int label) {
 
         walls.add(new LabelledWall(
-            buildSegment(carryTowards(from, fromSite, carry), from), label));
-        walls.add(new LabelledWall(buildSegment(from, to), label));
+            Segment.joinPoints(carryTowards(from, fromSite, carry), from), label));
+        walls.add(new LabelledWall(Segment.joinPoints(from, to), label));
         walls.add(new LabelledWall(
-            buildSegment(to, carryTowards(to, toSite, carry)), label));
+            Segment.joinPoints(to, carryTowards(to, toSite, carry)), label));
     }
 
     // The point that far from an end along the line to its own site.
@@ -98,10 +98,6 @@ public final class CarriedLines {
         return new double[] {
             end[0] + (site[0] - end[0]) * carry / distance,
             end[1] + (site[1] - end[1]) * carry / distance};
-    }
-
-    private static Segment buildSegment(double[] from, double[] to) {
-        return new Segment(from[0], from[1], to[0], to[1]);
     }
 
     /**

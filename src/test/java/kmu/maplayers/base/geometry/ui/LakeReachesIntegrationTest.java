@@ -3,16 +3,18 @@ package kmu.maplayers.base.geometry.ui;
 import kmlib.math.geometry.Points;
 
 import kmu.maplayers.base.geometry.SectorFixture;
-import kmu.maplayers.base.geometry.SectorGeometryParameters;
-import kmu.maplayers.base.geometry.v3.Coastlines;
-import kmu.maplayers.base.geometry.v4.LakeCoast;
-import kmu.maplayers.base.geometry.v4.VoidPartition;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
+
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.KNOBS;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.NOTHING_LAID;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.measureSea;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.measureVoid;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.readPartition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withinPercentage;
@@ -31,9 +33,6 @@ class LakeReachesIntegrationTest {
 
     private static final String SECTORS =
         "kmu.maplayers.base.geometry.ui.LakeReachesIntegrationTest#provideSectorNames";
-
-    private static final SectorGeometryParameters KNOBS =
-        SectorGeometryParameters.createDefaults();
 
     // A channel of nothing, which is what a continent trace carries of its own: it lays no
     // walls, so the channel on its walls is zero.
@@ -61,7 +60,7 @@ class LakeReachesIntegrationTest {
             // The two things that make a step of a coast a reach rather than a fillet or a
             // handover: it leaves one cell and arrives on another, and it crosses void wide
             // enough to have two sides.
-            var reaches = LakeReaches.collectLakeReaches(traceCoasts(sector), KNOBS.borderInset());
+            var reaches = LakePartitions.collectReaches(LakePartitions.layContinents(sector));
 
             assertThat(reaches)
                 .isNotEmpty()
@@ -81,11 +80,10 @@ class LakeReachesIntegrationTest {
             // the coast hands over from one to the other in a step of no length, and under a
             // channel of nothing that step names two cells and is long enough - so it would be
             // laid as a wall across the point where two cells meet.
-            var traced = traceCoasts(sector);
+            var continents = LakePartitions.layContinents(sector);
 
-            assertThat(LakeReaches.collectLakeReaches(traced, NO_CHANNEL))
-                .hasSizeGreaterThan(
-                    LakeReaches.collectLakeReaches(traced, KNOBS.borderInset()).size());
+            assertThat(LakeReaches.collectLakeReaches(continents.traceCoasts(), NO_CHANNEL))
+                .hasSizeGreaterThan(LakePartitions.collectReaches(continents).size());
         }
 
         @ParameterizedTest
@@ -93,12 +91,8 @@ class LakeReachesIntegrationTest {
         void theReachesDivideTheLakes(String sector) {
             // The floor under the two checks below: a coast that divided nothing would pass
             // them both.
-            var fixture = SectorFixture.loadSector(sector);
-            var cellEdges = fixture.buildCellEdgesBySystemKey(KNOBS);
-            var before = VoidPartition.readVoidPartition(cellEdges, fixture.getSites(), KNOBS);
-
-            assertThat(readWithLakeCoast(sector).countPieces())
-                .isGreaterThan(before.countPieces());
+            assertThat(LakePartitions.readCoastPartition(sector).countPieces())
+                .isGreaterThan(readPartition(sector, NOTHING_LAID).countPieces());
         }
 
         @ParameterizedTest
@@ -108,17 +102,12 @@ class LakeReachesIntegrationTest {
             // and after them is the same number - bar the faces the walk does not keep, which
             // are those under a sagitta squared. A reach can shut one in at each end, where it
             // meets the shore; a leak, a lake walked as a tree of no area, costs millions.
-            var fixture = SectorFixture.loadSector(sector);
-            var cellEdges = fixture.buildCellEdgesBySystemKey(KNOBS);
-            var before = VoidPartition.readVoidPartition(cellEdges, fixture.getSites(), KNOBS);
-            var reachCount = LakeReaches.collectLakeReaches(
-                    traceCoasts(sector),
-                    KNOBS.borderInset())
-                .size();
-
+            var reachCount =
+                LakePartitions.collectReaches(LakePartitions.layContinents(sector)).size();
             var sagitta = KNOBS.measureBoundSagitta();
 
-            assertThat(PartitionAreas.measureVoid(before) - PartitionAreas.measureVoid(readWithLakeCoast(sector)))
+            assertThat(measureVoid(readPartition(sector, NOTHING_LAID))
+                    - measureVoid(LakePartitions.readCoastPartition(sector)))
                 .isBetween(0.0, SLIVERS_PER_REACH * reachCount * sagitta * sagitta);
         }
 
@@ -126,37 +115,10 @@ class LakeReachesIntegrationTest {
         @MethodSource(SECTORS)
         void theOpenSeaIsUntouched(String sector) {
             // Every lake is inside a continent, so no lake coast reaches the sea.
-            var fixture = SectorFixture.loadSector(sector);
-            var cellEdges = fixture.buildCellEdgesBySystemKey(KNOBS);
-            var before = VoidPartition.readVoidPartition(cellEdges, fixture.getSites(), KNOBS);
-
-            assertThat(PartitionAreas.measureSea(readWithLakeCoast(sector)))
-                .isCloseTo(PartitionAreas.measureSea(before), withinPercentage(AREA_SHARE));
+            assertThat(measureSea(LakePartitions.readCoastPartition(sector)))
+                .isCloseTo(
+                    measureSea(readPartition(sector, NOTHING_LAID)),
+                    withinPercentage(AREA_SHARE));
         }
-    }
-
-    private static Coastlines.TracedCoasts traceCoasts(String sector) {
-
-        return Coastlines.traceContinentCoasts(
-            SectorFixture.loadSector(sector).getSites(),
-            KNOBS,
-            Coastlines.DEFAULT_RULES);
-    }
-
-    // The partition with every lake's coast laid, as the window lays it.
-    private static VoidPartition readWithLakeCoast(String sector) {
-
-        var fixture = SectorFixture.loadSector(sector);
-        var sites = fixture.getSites();
-        var laid = LakeCoast.layCoastWalls(
-            LakeReaches.collectLakeReaches(traceCoasts(sector), KNOBS.borderInset()),
-            sites,
-            KNOBS);
-
-        return VoidPartition.readVoidPartition(
-            fixture.buildCellEdgesBySystemKey(KNOBS),
-            sites,
-            KNOBS,
-            laid.walls());
     }
 }

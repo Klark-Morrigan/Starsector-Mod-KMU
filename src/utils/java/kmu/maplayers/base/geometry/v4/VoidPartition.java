@@ -65,22 +65,6 @@ public final class VoidPartition {
     }
 
     /**
-     * Reads the void a sector's cells leave, with nothing laid into it.
-     *
-     * @param cellEdges  every cell, as its adjacency-tagged edges
-     * @param sites      the cells' own positions
-     * @param parameters the knobs the cells were built under
-     * @return the void as the cells alone divide it
-     */
-    public static VoidPartition readVoidPartition(
-            Map<?, List<CellEdge>> cellEdges,
-            List<double[]> sites,
-            SectorGeometryParameters parameters) {
-
-        return readVoidPartition(cellEdges, sites, parameters, List.of());
-    }
-
-    /**
      * Reads the void with the tiers' lines laid into it.
      *
      * <p>The same walk, not a second one. Every tier of the stack divides the one partition by
@@ -92,7 +76,8 @@ public final class VoidPartition {
      * @param sites      the cells' own positions
      * @param parameters the knobs the cells were built under
      * @param laidWalls  the lines the tiers so far have laid, each saying which line it is and
-     *                   each ending exactly where its tier put it
+     *                   each ending exactly where its tier put it; none, for the void as the
+     *                   cells alone leave it
      * @return the void those lines divide
      */
     public static VoidPartition readVoidPartition(
@@ -108,7 +93,6 @@ public final class VoidPartition {
         // corners need; the laid lines go in after it, at rounding, so the weld cannot move
         // them off where their tier put them.
         var faces = FaceWalk.walkFaces(
-            List.of(),
             frameTheSector(frontier, sites, parameters),
             measureBoundGap(parameters),
             laidWalls);
@@ -120,15 +104,6 @@ public final class VoidPartition {
             }
         }
         return new VoidPartition(List.copyOf(pieces));
-    }
-
-    /**
-     * Every piece of void, as the closed outline of each.
-     *
-     * @return one ring per piece, wound to fill, in the order the walk closed them
-     */
-    public List<List<double[]>> collectOutlines() {
-        return pieces.stream().map(Face::boundary).toList();
     }
 
     /**

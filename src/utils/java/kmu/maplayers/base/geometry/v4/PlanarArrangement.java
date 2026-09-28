@@ -134,7 +134,7 @@ final class PlanarArrangement {
                     var to = vertices.get(edge.to());
 
                     lines.add(new LabelledWall(
-                        new Segment(from[0], from[1], to[0], to[1]), labels.get(edge)));
+                        Segment.joinPoints(from, to), labels.get(edge)));
                 }
             }
         }

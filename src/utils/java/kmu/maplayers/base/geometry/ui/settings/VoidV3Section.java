@@ -428,7 +428,7 @@ final class VoidV3Section extends PanelSection {
                     () -> { })),
             new SliderRows.SliderSpec(
                 "spanAnchorSeparation",
-                "Least space between two span feet",
+                "Least space between two bridge feet",
                 new SliderRows.SliderRange(
                     ANCHOR_SEPARATION_MINIMUM,
                     ANCHOR_SEPARATION_MAXIMUM,
@@ -441,9 +441,12 @@ final class VoidV3Section extends PanelSection {
         // A rule rather than a layer, so it sits with the sliders that decide which spans
         // exist rather than among the switches that decide what is drawn. Rebuilds, because
         // what it changes is the set itself.
+        //
+        // The label says bridge where the key says span: the key is what saved windows hold,
+        // and the label is what v4's lake bridges, laid off this same search, are called.
         controls.add(rows.buildToggle(
             "shouldThinSpanFormations",
-            "Thin shared-anchor spans",
+            "Thin shared-anchor bridges",
             true,
             on -> {
                 settings.shouldThinSpanFormations = on;

@@ -43,21 +43,20 @@ public final class LakeReaches {
             Coastlines.TracedCoasts traced,
             double channel) {
 
+        var shores = traced.lakes().stream().map(Coastlines.Lake::shore).toList();
         var reaches = new ArrayList<CellGap>();
 
-        for (var lake : traced.lakes()) {
-            for (var reach : Coastlines.collectStraightReaches(List.of(lake.shore()), channel)) {
+        for (var reach : Coastlines.collectStraightReaches(shores, channel)) {
 
-                var from = reach.from().point();
-                var to = reach.to().point();
+            var from = reach.from().point();
+            var to = reach.to().point();
 
-                reaches.add(new CellGap(
-                    reach.from().circle(),
-                    reach.to().circle(),
-                    from,
-                    to,
-                    Points.computeDistance(from, to)));
-            }
+            reaches.add(new CellGap(
+                reach.from().circle(),
+                reach.to().circle(),
+                from,
+                to,
+                Points.computeDistance(from, to)));
         }
         return List.copyOf(reaches);
     }

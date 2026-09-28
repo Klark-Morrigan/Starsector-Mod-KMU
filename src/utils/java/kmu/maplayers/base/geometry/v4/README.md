@@ -28,7 +28,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | the cells' own frontier | `VoidPartition` | each cell's adjacency-tagged edges | the lines between cell and void, and a frame round the sector |
 | cut the base at crossings | `SegmentCrossings` | those lines | lines meeting only at their ends |
 | weld and order the base | `PlanarArrangement` | those lines, at the sagitta | a graph knowing the turn order at each vertex |
-| lay a tier's lines | `LakeCoast`, `LakeBridges`, through `CarriedLines` | lines as `CellGap`s, two points and two cells | walls, each end carried through the shore |
+| lay a tier's lines | `LakeTier`, through `CarriedLines` | lines as `CellGap`s, two points and two cells | walls, each end carried through the shore |
 | cut them into the base | `SegmentCrossings` | the welded base read back as lines, and the walls | lines meeting only at their ends |
 | weld and order again | `PlanarArrangement` | those lines, at rounding | the graph the faces are walked on |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
@@ -42,8 +42,8 @@ They are in the table because leaving them out is what made the inset look finis
 
 With nothing laid, the three rows about laid lines do nothing, and the walk runs on the welded base as it stands.
 
-`LabelledRing` and `LabelledWall` are what goes into the walk - a ring or a loose line, each edge carrying an int naming what it lies on.
-`Face` is what comes out.
+`LabelledWall` is what goes into the walk - a line carrying an int naming what it lies on; a closed outline goes in as its sides.
+`Face` is what comes out, its outline and holes each a `LabelledRing` whose every edge keeps that int.
 
 Nothing here imports v3, and the layering gate holds it to that.
 The lake coast is v3's trace and the lake bridges are v3's search,
@@ -117,6 +117,10 @@ That is the whole of it.
 There is no measurement, because the question of HOW something lands - how far, from where, past what - belongs to whatever lays it, and each layer answers it for itself.
 It shrinks as the layers go down:
 water a coastline closes off is captured, and a border facing captured water faces nothing anything can still arrive from.
+
+TODO: `LandableFrontage` neither shrinks nor offers single points yet.
+It reads every piece as open, so a bay behind a reach still counts,
+and its runs are edges, so a single point of contact offers nothing.
 
 A run carries both ends of every edge it covers, so consecutive runs share the corner where one cell gives way to the next.
 Carrying only each edge's start leaves a notch at every junction.

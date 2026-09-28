@@ -11,8 +11,7 @@ import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.v4.CarriedLines;
 import kmu.maplayers.base.geometry.v4.LabelledWall;
-import kmu.maplayers.base.geometry.v4.LakeBridges;
-import kmu.maplayers.base.geometry.v4.LakeCoast;
+import kmu.maplayers.base.geometry.v4.LakeTier;
 import kmu.maplayers.base.geometry.v4.LandableFrontage;
 import kmu.maplayers.base.geometry.v4.VoidPartition;
 
@@ -86,10 +85,10 @@ public final class VoidPartitionOverlay {
 
         var sites = fixture.getSites();
         var coast = settings.isLakeCoastV4Shown()
-            ? LakeCoast.layCoastWalls(lakeReaches, sites, settings.parameters)
+            ? LakeTier.layCoastWalls(lakeReaches, sites, settings.parameters)
             : NOTHING_LAID;
         var bridges = settings.isLakeBridgesV4Shown()
-            ? LakeBridges.layBridgeWalls(lakeBridges.get(), sites, settings.parameters)
+            ? LakeTier.layBridgeWalls(lakeBridges.get(), sites, settings.parameters)
             : NOTHING_LAID;
 
         lakeCoastLines = coast.lines();

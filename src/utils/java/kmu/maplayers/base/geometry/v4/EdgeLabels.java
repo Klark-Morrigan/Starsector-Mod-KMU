@@ -12,8 +12,8 @@ package kmu.maplayers.base.geometry.v4;
  *
  * <ul>
  *   <li>{@link VoidPartition#THE_FRAME} - the edge of the sector, which is nobody's.</li>
- *   <li>{@link LakeCoast#THE_LAKE_COAST} - a reach of a lake's coast, cutting across a bay.</li>
- *   <li>{@link LakeBridges#THE_LAKE_BRIDGES} - a bridge across a lake, cell to cell.</li>
+ *   <li>{@link LakeTier#THE_LAKE_COAST} - a reach of a lake's coast, cutting across a bay.</li>
+ *   <li>{@link LakeTier#THE_LAKE_BRIDGES} - a bridge across a lake, cell to cell.</li>
  * </ul>
  *
  * <p>KMLib's {@code VoronoiCellBuilder.BOUND_EDGE} is another negative and deliberately not one

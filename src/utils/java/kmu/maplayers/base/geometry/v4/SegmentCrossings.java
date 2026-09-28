@@ -229,6 +229,6 @@ final class SegmentCrossings {
         if (Points.computeDistance(from, to) < Limits.MIN_EDGE_LENGTH) {
             return;
         }
-        pieces.add(new LabelledWall(new Segment(from[0], from[1], to[0], to[1]), label));
+        pieces.add(new LabelledWall(Segment.joinPoints(from, to), label));
     }
 }

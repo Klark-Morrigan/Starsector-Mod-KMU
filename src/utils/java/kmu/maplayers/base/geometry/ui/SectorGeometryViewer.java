@@ -423,21 +423,6 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     }
 
     /**
-     * Every owner's cluster rings as the line the map draws, smoothed through the shipped
-     * pass.
-     *
-     * <p>Through {@link BorderSmoothing} rather than through the two primitives it is made
-     * of. Which passes run, and the order they run in, is that class's answer - sanding
-     * before rounding, because a needle whose own edges are shorter than the rounding steps
-     * back by survives rounding untouched - and a window that answered it again here would
-     * be drawing a border the mod does not.
-     *
-     * <p>Two things still differ from the map. The profile is this window's sliders rather
-     * than the player's theme, and the map resolves its loops either side of the smoothing
-     * where this does not - so a rounding sharp enough to push one arc through another shows
-     * here as a crossing the map would have cleaned up.
-     */
-    /**
      * The sector as the window is currently drawing it, for anything that draws it a second
      * way.
      *
@@ -455,6 +440,21 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             settings.resolvePocketShaping());
     }
 
+    /**
+     * Every owner's cluster rings as the line the map draws, smoothed through the shipped
+     * pass.
+     *
+     * <p>Through {@link BorderSmoothing} rather than through the two primitives it is made
+     * of. Which passes run, and the order they run in, is that class's answer - sanding
+     * before rounding, because a needle whose own edges are shorter than the rounding steps
+     * back by survives rounding untouched - and a window that answered it again here would
+     * be drawing a border the mod does not.
+     *
+     * <p>Two things still differ from the map. The profile is this window's sliders rather
+     * than the player's theme, and the map resolves its loops either side of the smoothing
+     * where this does not - so a rounding sharp enough to push one arc through another shows
+     * here as a crossing the map would have cleaned up.
+     */
     private Map<String, List<List<double[]>>> smoothClusterRings(SectorGeometry built) {
 
         var profile = settings.resolveBorderSmoothing();
