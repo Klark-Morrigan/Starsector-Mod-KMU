@@ -21,8 +21,8 @@ import java.util.List;
  *
  * <p>What crosses is the least that can: a reach as the {@link CellGap} it is, two points and
  * two cells. Fillets do not cross at all - along a fillet the shore already is the coast - and
- * which steps are reaches is v3's own answer, not re-derived here. The lake bridges need no
- * reading of their own: v3 already hands them over as gaps.
+ * which steps are reaches is v3's own answer, not re-derived here. The lake bridges cross
+ * through {@link LakeBridges}, which v3 already finds as gaps.
  */
 public final class LakeReaches {
 

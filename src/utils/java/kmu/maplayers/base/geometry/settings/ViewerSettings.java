@@ -217,9 +217,16 @@ public final class ViewerSettings {
     public boolean showLakeCoastV4;
 
     // The lake bridges: the runs across each lake from one cell on its coast to another, laid
-    // into v4's walk. The bridges are v3's, found by v3's search under v3's bridge knobs; what
-    // this switches is whether they divide v4's partition. Off, for the coast's reason.
+    // into v4's walk. The bridges are found by v3's search under v3's bridge knobs, bar the
+    // thinning below; what this switches is whether they divide v4's partition. Off, for the
+    // coast's reason.
     public boolean showLakeBridgesV4;
+
+    // Whether v4's lake bridges sharing an anchor are thinned: chains down to their end walls,
+    // fans down to one. v4's own rather than v3's shouldThinSpanFormations, because it is a rule
+    // of the tier laying the bridges, and turning it off in one construction to see its
+    // formations unthinned must not move what the other lays. On, as v3's is and the map lays.
+    public boolean shouldThinLakeBridgesV4 = true;
 
     // Which edges of v4's pieces take the border channel. A mode of the layer above rather than
     // a layer of its own: it is one division painted several ways, and the pieces do not change

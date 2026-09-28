@@ -18,14 +18,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withinPercentage;
 
 /**
- * Integration coverage for v3's lake bridges laid into v4, over the real sectors.
+ * Integration coverage for v3's lake bridges found under v4's thinning and laid into v4, over the
+ * real sectors.
  *
  * <p>Here rather than beside {@link LakeTier}, because it reads both constructions and the
  * layering keeps each of them from reading the other - in tests as in the code.
  *
- * <p><b>Two things are pinned.</b> That every bridge lands on the lake's frontage, since that is
- * the one place a bridge may land; and what the bridges do once laid over the coast, since a
- * line that divides water may not take any of it away.
+ * <p><b>Three things are pinned.</b> That v4's thinning switch changes which bridges come back
+ * and nothing else, reusing v3's laying where the two agree; that every bridge lands on the
+ * lake's frontage, since that is the one place a bridge may land; and what the bridges do once
+ * laid over the coast, since a line that divides water may not take any of it away.
  */
 class LakeBridgesIntegrationTest {
 
@@ -47,6 +49,37 @@ class LakeBridgesIntegrationTest {
 
     static Stream<String> provideSectorNames() {
         return SectorFixture.listSectorNames().stream();
+    }
+
+    @Nested
+    class CollectLakeBridges {
+
+        @ParameterizedTest
+        @MethodSource(SECTORS)
+        void whereTheThinningAgreesTheBridgesAreTheLayingsOwn(String sector) {
+            // Not an equal set searched again but the same one: the search is the dearest
+            // thing the laying runs, and two constructions set alike pay for it once.
+            var continents = LakePartitions.layContinents(sector);
+
+            assertThat(LakeBridges.collectLakeBridges(
+                    continents, continents.bridgeRules().shouldThinFormations()))
+                .isSameAs(continents.layLakeSpans());
+        }
+
+        @ParameterizedTest
+        @MethodSource(SECTORS)
+        void unthinnedKeepsEveryThinnedBridgeAndMore(String sector) {
+            // Thinning only drops, so the unthinned set is the thinned one with the chains and
+            // fans put back - and on both fixtures there are some to put back, or the switch
+            // would be tested over nothing.
+            var continents = LakePartitions.layContinents(sector);
+            var thinned = LakeBridges.collectLakeBridges(continents, true);
+
+            assertThat(LakeBridges.collectLakeBridges(continents, false))
+                .hasSizeGreaterThan(thinned.size())
+                .usingRecursiveFieldByFieldElementComparator()
+                .containsAll(thinned);
+        }
     }
 
     @Nested

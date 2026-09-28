@@ -406,14 +406,15 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // be the same partition computed twice, and v4 drawing against its own copy is how the
         // two constructions come to disagree about where a cell ends.
         //
-        // The bridges are the laying's own, under the window's bridge knobs, so v4 lays exactly
-        // the set v3 draws, and whichever of the two asks first is the only one that pays.
+        // The bridges are the laying's own search under the window's bridge knobs, bar v4's own
+        // say on thinning: where the two constructions' thinning agrees v4 lays exactly the set
+        // v3 draws, and whichever of the two asks first is the only one that pays.
         voidPartition.refresh(
             geometry.cellEdgesByCellKey(),
             fixture,
             LakeReaches.collectLakeReaches(
                 continents.traceCoasts(), settings.parameters.borderInset()),
-            continents::layLakeSpans);
+            () -> LakeBridges.collectLakeBridges(continents, settings.shouldThinLakeBridgesV4));
         repaintMap();
     }
 

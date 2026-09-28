@@ -49,7 +49,8 @@ Nothing here imports v3, and the layering gate holds it to that.
 The lake coast is v3's trace and the lake bridges are v3's search,
 and both cross as `CellGap`s - the shared package's one value for a straight run between two cells -
 handed over by the viewer, which already depends on both.
-The coast's reaches are read off the trace by `LakeReaches` in the viewer's own package; the bridges need no reading, since v3 hands them over as gaps already.
+The coast's reaches are read off the trace by `LakeReaches` in the viewer's own package, and the bridges are found by `LakeBridges` beside it:
+v3's search under v3's knobs, bar whether chains and fans are thinned, which is a rule of the tier laying them and so a switch of v4's own.
 A version that imported the other would be a layer on top of it rather than a construction beside it,
 and the package both versions build on would depend on its own dependents.
 
