@@ -18,6 +18,12 @@ import java.util.List;
  * a layer is laid against is what the pieces still open leave, and it is read again after each
  * layer rather than settled once. At the base there is no line laid and every piece is open.
  *
+ * <p>TODO: every piece is still read as open, laid lines or not, so a bay behind a lake
+ * coast's reach still counts as frontage. The captured-piece rule is its own step.
+ *
+ * <p>TODO: a run is edges, so a cell a coast only touches at one point - between two reaches -
+ * offers no run at all, though a bridge may land there.
+ *
  * <p>Inland void or open sea, it does not matter. The sea's shore is what the sea runs around -
  * the holes cut out of it - and a pocket's shore is its outline, and both are frontage the same
  * way. What is not is any edge naming no cell: the edge of the sector is not a cell's border,

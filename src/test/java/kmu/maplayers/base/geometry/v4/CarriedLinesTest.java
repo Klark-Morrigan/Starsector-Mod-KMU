@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry.v4;
 
+import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
 import org.junit.jupiter.api.Nested;
@@ -11,14 +12,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Unit coverage for how a reach becomes walls: one line, and a stub off each end towards its
- * own cell.
+ * Unit coverage for how a line becomes walls: the line itself, and a stub off each end towards
+ * its own cell.
  *
- * <p>The stubs are the subject. The reach itself is copied to the unit, so what can go wrong
- * is which way a stub points and how far it runs - both of which decide whether the walk finds
- * a junction at the shore or a wall floating beside it.
+ * <p>The stubs are the subject. The line itself is copied to the unit, so what can go wrong is
+ * which way a stub points and how far it runs - both of which decide whether the walk finds a
+ * junction at the shore or a wall floating beside it.
  */
-class LakeCoastTest {
+class CarriedLinesTest {
 
     // Cells drawn with three sides round the circle, so the sagitta is exactly half the cell
     // radius: 100 * (1 - cos 60 degrees) = 50. A stub is two of those, which is 100.
@@ -31,20 +32,23 @@ class LakeCoastTest {
 
     private static final List<double[]> SITES = List.of(LEFT_SITE, RIGHT_SITE);
 
-    // A reach 300 above the sites, running from directly above the left one to directly above
+    // A line 300 above the sites, running from directly above the left one to directly above
     // the right one, so each stub runs straight down and its far end is a round number.
-    private static final ReachLine REACH =
-        new ReachLine(new double[] {0, 300}, new double[] {1000, 300}, 0, 1);
+    private static final CellGap LINE =
+        new CellGap(0, 1, new double[] {0, 300}, new double[] {1000, 300}, 1000);
+
+    // Any negative a tier might lay under; the walls take whatever they are handed.
+    private static final int SOME_TIER = -7;
 
     private static final double SAME_POINT = 1e-9;
 
     @Nested
-    class LayCoastWalls {
+    class LayCarriedLines {
 
         @Test
-        void aReachIsLaidAsItselfBetweenTwoStubs() {
+        void aLineIsLaidAsItselfBetweenTwoStubs() {
 
-            var laid = LakeCoast.layCoastWalls(List.of(REACH), SITES, PARAMETERS);
+            var laid = CarriedLines.layCarriedLines(List.of(LINE), SITES, PARAMETERS, SOME_TIER);
 
             assertThat(laid.walls())
                 .hasSize(3);
@@ -61,7 +65,7 @@ class LakeCoastTest {
             // (1000, 0) by 100 is (1000, 200). A stub pointing at the wrong site would run
             // sideways, and one of the wrong length would stop short of the shore or reach
             // past a neighbour.
-            var laid = LakeCoast.layCoastWalls(List.of(REACH), SITES, PARAMETERS);
+            var laid = CarriedLines.layCarriedLines(List.of(LINE), SITES, PARAMETERS, SOME_TIER);
 
             assertThat(laid.walls().get(0).segment().readStart())
                 .satisfies(point -> {
@@ -82,10 +86,10 @@ class LakeCoastTest {
         }
 
         @Test
-        void theStubsShareTheirEndsWithTheReachExactly() {
+        void theStubsShareTheirEndsWithTheLineExactly() {
             // Shared to the bit, not to a tolerance: the walk joins what is laid at rounding,
-            // and a stub ending a whisker off the reach's end is a stub joined to nothing.
-            var laid = LakeCoast.layCoastWalls(List.of(REACH), SITES, PARAMETERS);
+            // and a stub ending a whisker off the line's end is a stub joined to nothing.
+            var laid = CarriedLines.layCarriedLines(List.of(LINE), SITES, PARAMETERS, SOME_TIER);
 
             assertThat(laid.walls().get(0).segment().readEnd())
                 .containsExactly(0, 300);
@@ -94,37 +98,37 @@ class LakeCoastTest {
         }
 
         @Test
-        void everyWallCarriesTheLakeCoastLabel() {
+        void everyWallCarriesTheLabelItWasHanded() {
 
-            var laid = LakeCoast.layCoastWalls(List.of(REACH), SITES, PARAMETERS);
+            var laid = CarriedLines.layCarriedLines(List.of(LINE), SITES, PARAMETERS, SOME_TIER);
 
             assertThat(laid.walls())
                 .extracting(LabelledWall::label)
-                .containsOnly(LakeCoast.THE_LAKE_COAST);
+                .containsOnly(SOME_TIER);
         }
 
         @Test
-        void onlyTheReachIsDrawn() {
+        void onlyTheLineIsDrawn() {
 
-            var laid = LakeCoast.layCoastWalls(List.of(REACH), SITES, PARAMETERS);
+            var laid = CarriedLines.layCarriedLines(List.of(LINE), SITES, PARAMETERS, SOME_TIER);
 
-            assertThat(laid.reachLines())
+            assertThat(laid.lines())
                 .hasSize(1);
 
-            assertThat(laid.reachLines().get(0).get(0))
+            assertThat(laid.lines().get(0).get(0))
                 .containsExactly(0, 300);
-            assertThat(laid.reachLines().get(0).get(1))
+            assertThat(laid.lines().get(0).get(1))
                 .containsExactly(1000, 300);
         }
 
         @Test
-        void noReachesLayNothing() {
+        void noLinesLayNothing() {
 
-            var laid = LakeCoast.layCoastWalls(List.of(), SITES, PARAMETERS);
+            var laid = CarriedLines.layCarriedLines(List.of(), SITES, PARAMETERS, SOME_TIER);
 
             assertThat(laid.walls())
                 .isEmpty();
-            assertThat(laid.reachLines())
+            assertThat(laid.lines())
                 .isEmpty();
         }
     }

@@ -2,18 +2,19 @@ package kmu.maplayers.base.geometry.v4;
 
 import kmlib.math.geometry.Points;
 
-import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.SectorFixture;
-import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
+
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.KNOBS;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.NOTHING_LAID;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.readCellEdges;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.readPartition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,9 +34,6 @@ class LandableFrontageIntegrationTest {
 
     private static final String SECTORS =
         "kmu.maplayers.base.geometry.v4.LandableFrontageIntegrationTest#provideSectorNames";
-
-    private static final SectorGeometryParameters KNOBS =
-        SectorGeometryParameters.createDefaults();
 
     // How many frontier edges the walk may drop for being finer than the map is drawn at.
     // Measured at fifteen of 366's 5,535 and twenty-one of 491's 8,671, and left room above
@@ -59,7 +57,7 @@ class LandableFrontageIntegrationTest {
             // edges between them, so counting points would count each run's far end twice -
             // and counting starts alone would drop it, which is the notch at every junction
             // this once drew.
-            var partition = readPartition(sector, readCellEdges(sector));
+            var partition = readPartition(sector, NOTHING_LAID);
 
             var onCells = 0;
             var frontage = 0;
@@ -104,7 +102,7 @@ class LandableFrontageIntegrationTest {
 
             var frontage = 0;
 
-            for (var piece : readPartition(sector, cellEdges).collectPieces()) {
+            for (var piece : readPartition(sector, NOTHING_LAID).collectPieces()) {
                 for (var run : LandableFrontage.collectLandableRuns(piece)) {
 
                     frontage += run.points().size() - 1;
@@ -119,7 +117,7 @@ class LandableFrontageIntegrationTest {
         @MethodSource(SECTORS)
         void theSeaHasAShore(String sector) {
             // The piece the earlier reading left with nothing: its shore is its holes.
-            var partition = readPartition(sector, readCellEdges(sector));
+            var partition = readPartition(sector, NOTHING_LAID);
 
             for (var piece : partition.collectPieces()) {
 
@@ -142,7 +140,7 @@ class LandableFrontageIntegrationTest {
             var nearest = KNOBS.cellRadius() - slack;
             var furthest = KNOBS.cellRadius() + slack;
 
-            for (var piece : readPartition(sector, readCellEdges(sector)).collectPieces()) {
+            for (var piece : readPartition(sector, NOTHING_LAID).collectPieces()) {
                 for (var run : LandableFrontage.collectLandableRuns(piece)) {
 
                     var site = sites.get(run.cell());
@@ -154,21 +152,6 @@ class LandableFrontageIntegrationTest {
                 }
             }
         }
-    }
-
-    private static VoidPartition readPartition(
-            String sector, Map<?, List<CellEdge>> cellEdges) {
-
-        return VoidPartition.readVoidPartition(
-            cellEdges,
-            SectorFixture.loadSector(sector).getSites(),
-            KNOBS);
-    }
-
-    private static Map<?, List<CellEdge>> readCellEdges(String sector) {
-
-        return SectorFixture.loadSector(sector)
-            .buildCellEdgesBySystemKey(KNOBS);
     }
 
     private static int countCellEdges(int[] labels) {

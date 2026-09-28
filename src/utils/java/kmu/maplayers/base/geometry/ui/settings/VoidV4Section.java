@@ -37,6 +37,13 @@ final class VoidV4Section extends PanelSection {
 
     private static final String LAKE_COAST = "showLakeCoastV4";
 
+    private static final String LAKE_BRIDGES = "showLakeBridgesV4";
+
+    // A rule of the bridges rather than a layer, so it sits under them and in no roll-up: a
+    // roll-up turning it on with the layers would claim to show something there is nothing
+    // separate to see.
+    private static final String THIN_LAKE_BRIDGES = "shouldThinLakeBridgesV4";
+
     // Not a layer, so not in the roll-up above it: it changes how the pieces are drawn rather
     // than whether they are, and a roll-up that turned it on with the layers would claim to have
     // switched on something there is no separate thing to see.
@@ -83,18 +90,28 @@ final class VoidV4Section extends PanelSection {
             refreshes::refreshVoidV4,
             ToggleTree.Row.ofRollUp(
                 0, "allVoidV4Layers", "Every v4 layer",
-                VOID_PIECES, LAKE_COAST, LANDABLE_FRONTAGE),
+                VOID_PIECES, LAKE_COAST, LAKE_BRIDGES, LANDABLE_FRONTAGE),
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 VOID_PIECES,
                 "Pieces",
                 true,
                 on -> settings.showVoidPiecesV4 = on)),
-            ToggleTree.Row.ofRollUp(1, LAKES_BRANCH, "Lakes", LAKE_COAST),
+            ToggleTree.Row.ofRollUp(1, LAKES_BRANCH, "Lakes", LAKE_COAST, LAKE_BRIDGES),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 LAKE_COAST,
                 "Coast",
                 false,
                 on -> settings.showLakeCoastV4 = on)),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                LAKE_BRIDGES,
+                "Bridges",
+                false,
+                on -> settings.showLakeBridgesV4 = on)),
+            ToggleTree.Row.ofSwitch(3, new ToggleTree.Switch(
+                THIN_LAKE_BRIDGES,
+                "Thin shared-anchor bridges",
+                true,
+                on -> settings.shouldThinLakeBridgesV4 = on)),
             ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
                 LANDABLE_FRONTAGE,
                 "Landable frontage",
@@ -130,6 +147,13 @@ final class VoidV4Section extends PanelSection {
             "Lake coast reaches",
             ViewerSettings.LAKE_COAST_V4_DEFAULT,
             colour -> settings.lakeCoastV4Colour = colour,
+            refreshes::repaintMap));
+
+        controls.add(ColourRows.buildColour(
+            "lakeBridgesV4Colour",
+            "Lake bridges",
+            ViewerSettings.LAKE_BRIDGES_V4_DEFAULT,
+            colour -> settings.lakeBridgesV4Colour = colour,
             refreshes::repaintMap));
 
         controls.add(ColourRows.buildColour(

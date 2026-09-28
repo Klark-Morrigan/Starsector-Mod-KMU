@@ -5,10 +5,9 @@ import kmlib.math.geometry.PolygonRegions;
 import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.SectorFixture;
-import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.v4.Face;
 import kmu.maplayers.base.geometry.v4.PieceShaper;
-import kmu.maplayers.base.geometry.v4.VoidPartition;
+import kmu.maplayers.base.geometry.v4.SectorPartitions;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
@@ -19,6 +18,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
 import java.util.stream.Stream;
+
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.KNOBS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,9 +43,6 @@ class PieceRegionsIntegrationTest {
     private static final String SECTORS =
         "kmu.maplayers.base.geometry.v4.ui.PieceRegionsIntegrationTest#provideSectorNames";
 
-    private static final SectorGeometryParameters KNOBS =
-        SectorGeometryParameters.createDefaults();
-
     // Both passes on, as the window runs them: what is asserted is the sequence the viewer
     // actually draws through, not a quieter one chosen to make the assertion easier.
     private static final BorderSmoothingStyle SMOOTHING = new BorderSmoothingStyle(
@@ -63,12 +61,7 @@ class PieceRegionsIntegrationTest {
 
     private static List<Face> readPieces(String sectorName) {
 
-        var fixture = SectorFixture.loadSector(sectorName);
-
-        return VoidPartition.readVoidPartition(
-                fixture.buildCellEdgesBySystemKey(KNOBS),
-                fixture.getSites(),
-                KNOBS)
+        return SectorPartitions.readPartition(sectorName, SectorPartitions.NOTHING_LAID)
             .collectPieces();
     }
 

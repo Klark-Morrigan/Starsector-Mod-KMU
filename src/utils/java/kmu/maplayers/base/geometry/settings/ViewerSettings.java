@@ -116,6 +116,8 @@ public final class ViewerSettings {
 
     public static final Color LAKE_COAST_V4_DEFAULT = MapLook.LAKE_COAST_V4;
 
+    public static final Color LAKE_BRIDGES_V4_DEFAULT = MapLook.LAKE_BRIDGES_V4;
+
     public static final Color CONTINENT_COASTAL_VOID_DEFAULT = MapLook.CONTINENT_COASTAL_VOID;
 
     public static final Color SITE_COLOUR = MapLook.SITE;
@@ -200,19 +202,31 @@ public final class ViewerSettings {
     public boolean showVoidPiecesV4 = true;
 
     // Every stretch of v4's cell border facing void nothing has captured. A diagnostic of the
-    // pieces rather than a layer of them: nothing is laid from it yet, and it is drawn so that
-    // what a span may be anchored on can be looked at before any span is made to obey it. Off,
-    // like v3's, since it is read for a reason rather than looked at every time.
+    // pieces rather than a layer of them: nothing is laid from it, and it is drawn so that where
+    // a bridge may land can be looked at beside the bridges that did. Off, like v3's, since it
+    // is read for a reason rather than looked at every time.
     public boolean showLandableFrontageV4;
 
     // The lake coast: each lake's coast where it cuts across a bay, laid into v4's walk. The
     // coast is v3's, traced by v3; what this switches is whether its reaches divide v4's
-    // partition. Its own switch, apart from the spans that come after it, because a line laid
+    // partition. Its own switch, apart from the bridges that come after it, because a line laid
     // alone is a line whose effect on the partition can be measured alone.
     //
     // Off, so the window opens on the partition the cells alone leave and a reader turns the
     // first tier on to see what it changed.
     public boolean showLakeCoastV4;
+
+    // The lake bridges: the runs across each lake from one cell on its coast to another, laid
+    // into v4's walk. The bridges are found by v3's search under v3's bridge knobs, bar the
+    // thinning below; what this switches is whether they divide v4's partition. Off, for the
+    // coast's reason.
+    public boolean showLakeBridgesV4;
+
+    // Whether v4's lake bridges sharing an anchor are thinned: chains down to their end walls,
+    // fans down to one. v4's own rather than v3's shouldThinSpanFormations, because it is a rule
+    // of the tier laying the bridges, and turning it off in one construction to see its
+    // formations unthinned must not move what the other lays. On, as v3's is and the map lays.
+    public boolean shouldThinLakeBridgesV4 = true;
 
     // Which edges of v4's pieces take the border channel. A mode of the layer above rather than
     // a layer of its own: it is one division painted several ways, and the pieces do not change
@@ -433,6 +447,7 @@ public final class ViewerSettings {
     public Color landableFrontageV4Colour = LANDABLE_FRONTAGE_DEFAULT;
 
     public Color lakeCoastV4Colour = LAKE_COAST_V4_DEFAULT;
+    public Color lakeBridgesV4Colour = LAKE_BRIDGES_V4_DEFAULT;
 
     public Color droppedStretchColour = DROPPED_STRETCH_DEFAULT;
     public Color landableFrontageColour = LANDABLE_FRONTAGE_DEFAULT;
@@ -603,6 +618,16 @@ public final class ViewerSettings {
      */
     public boolean isLakeCoastV4Shown() {
         return showVoidV4 && showLakeCoastV4;
+    }
+
+    /**
+     * Whether v4's lake bridges are laid, which is its construction's master and its own
+     * switch, read where the walk is built for the reason {@link #isLakeCoastV4Shown} gives.
+     *
+     * @return true where both are on
+     */
+    public boolean isLakeBridgesV4Shown() {
+        return showVoidV4 && showLakeBridgesV4;
     }
 
     /**

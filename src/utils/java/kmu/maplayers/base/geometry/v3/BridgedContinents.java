@@ -130,6 +130,15 @@ public final class BridgedContinents {
     }
 
     /**
+     * The rules every span of this laying is offered and judged under.
+     *
+     * @return the bridge rules
+     */
+    public ContinentBridges.BridgeRules bridgeRules() {
+        return bridgeRules;
+    }
+
+    /**
      * Every line of the trace with its sharp joins taken off, which is what a drawing strokes.
      *
      * <p>Rounded once for the whole laying rather than at each drawing. A sector's coasts are

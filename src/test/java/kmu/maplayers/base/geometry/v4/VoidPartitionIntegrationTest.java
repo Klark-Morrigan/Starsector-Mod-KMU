@@ -6,7 +6,6 @@ import kmlib.math.geometry.PolygonRegions;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.SectorFixture;
-import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -14,8 +13,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
+
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.KNOBS;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.NOTHING_LAID;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.readCellEdges;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.readPartition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withinPercentage;
@@ -41,13 +44,6 @@ class VoidPartitionIntegrationTest {
     private static final String SECTORS =
         "kmu.maplayers.base.geometry.v4.VoidPartitionIntegrationTest#provideSectorNames";
 
-    // The cells' own knobs, taken from where they are declared rather than from v3's facade
-    // over them. That facade names the cell knobs and the coast rules together, which is the
-    // right shape for a report on v3's map and the wrong one here: what the void stands at is a
-    // fact about the cells, and v4 has no business reading anything of v3's to learn it.
-    private static final SectorGeometryParameters KNOBS =
-        SectorGeometryParameters.createDefaults();
-
     // How far, in percent, the areas may sit apart where they are meant to be the same number
     // computed two ways. The partition is exact in principle, so this is only what a shoelace
     // sum over some thousands of corners loses to rounding - measured at five parts in a
@@ -67,7 +63,7 @@ class VoidPartitionIntegrationTest {
             // The partition check. Everything inside the frame is either a cell or a piece of
             // void, so the two sets of areas add to the frame's - which they can only do if
             // every point is in exactly one of them.
-            var partition = readPartition(sector);
+            var partition = readPartition(sector, NOTHING_LAID);
             var covered = 0.0;
 
             for (var piece : partition.collectPieces()) {
@@ -87,31 +83,21 @@ class VoidPartitionIntegrationTest {
             // The piece the sweep cannot see and the one the map is mostly made of. It is the
             // only piece with anything cut out of it, because every group of cells sits inside
             // it and every pocket sits inside a group.
-            assertThat(readPartition(sector).collectPieces())
+            assertThat(readPartition(sector, NOTHING_LAID).collectPieces())
                 .filteredOn(piece -> !piece.holes().isEmpty())
                 .hasSize(1);
         }
     }
 
     @Nested
-    class CollectOutlines {
+    class CollectPieces {
 
         @ParameterizedTest
         @MethodSource(SECTORS)
-        void collectOutlinesGivesOneRingPerPiece(String sector) {
+        void everyOutlineHasEnoughVerticesToEncloseArea(String sector) {
 
-            var partition = readPartition(sector);
-
-            assertThat(partition.collectOutlines())
-                .hasSize(partition.countPieces());
-        }
-
-        @ParameterizedTest
-        @MethodSource(SECTORS)
-        void collectOutlinesGivesEveryRingEnoughVerticesToEncloseArea(String sector) {
-
-            assertThat(readPartition(sector).collectOutlines())
-                .allSatisfy(ring -> assertThat(ring.size())
+            assertThat(readPartition(sector, NOTHING_LAID).collectPieces())
+                .allSatisfy(piece -> assertThat(piece.boundary().size())
                     .isGreaterThanOrEqualTo(Limits.MIN_VERTICES_TO_ENCLOSE_AREA));
         }
 
@@ -119,16 +105,12 @@ class VoidPartitionIntegrationTest {
         // handed to the painting without asking which direction it came back in.
         @ParameterizedTest
         @MethodSource(SECTORS)
-        void collectOutlinesGivesEveryRingTheFillWinding(String sector) {
+        void everyOutlineHasTheFillWinding(String sector) {
 
-            assertThat(readPartition(sector).collectOutlines())
-                .allSatisfy(ring -> assertThat(PolygonRegions.computeSignedArea(ring))
+            assertThat(readPartition(sector, NOTHING_LAID).collectPieces())
+                .allSatisfy(piece -> assertThat(PolygonRegions.computeSignedArea(piece.boundary()))
                     .isPositive());
         }
-    }
-
-    @Nested
-    class CollectPieces {
 
         @ParameterizedTest
         @MethodSource(SECTORS)
@@ -146,7 +128,7 @@ class VoidPartitionIntegrationTest {
             var nearest = KNOBS.cellRadius() - slack;
             var furthest = KNOBS.cellRadius() + slack;
 
-            for (var piece : readPartition(sector).collectPieces()) {
+            for (var piece : readPartition(sector, NOTHING_LAID).collectPieces()) {
                 for (var ring : collectEveryRing(piece)) {
 
                     var labels = ring.edgeLabels();
@@ -173,7 +155,7 @@ class VoidPartitionIntegrationTest {
             // A pocket is closed by cells the whole way round. One with the frame in its
             // boundary would be a pocket that leaked out to the edge of the sector, which is
             // the sea by another name.
-            for (var piece : readPartition(sector).collectPieces()) {
+            for (var piece : readPartition(sector, NOTHING_LAID).collectPieces()) {
 
                 if (!piece.holes().isEmpty()) {
                     continue;
@@ -183,22 +165,6 @@ class VoidPartitionIntegrationTest {
                     .doesNotContain(VoidPartition.THE_FRAME);
             }
         }
-    }
-
-    private static VoidPartition readPartition(String sector) {
-
-        var fixture = SectorFixture.loadSector(sector);
-
-        return VoidPartition.readVoidPartition(
-            readCellEdges(sector), fixture.getSites(),
-            KNOBS);
-    }
-
-    private static Map<?, List<CellEdge>> readCellEdges(String sector) {
-
-        return SectorFixture
-            .loadSector(sector)
-            .buildCellEdgesBySystemKey(KNOBS);
     }
 
     // The whole framed area, taken as the sea's own outline: everything inside the frame,

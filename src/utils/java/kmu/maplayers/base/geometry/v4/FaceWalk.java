@@ -2,7 +2,6 @@ package kmu.maplayers.base.geometry.v4;
 
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonRegions;
-import kmlib.math.geometry.Segment;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Rings and lines in, the pieces they divide the plane into out.
+ * Lines in, the pieces they divide the plane into out.
  *
  * <p>The one construction v4 is built on. Where a traced outline says what one shape looks
  * like, a division says what every piece is at once - and because the pieces are read off the
@@ -22,12 +21,12 @@ import java.util.Set;
  * make when laying one. A line with a loose end simply has the same piece on both sides of it,
  * and comes back as a slit in that piece.
  *
- * <p><b>Every edge of every piece says which line it lies on.</b> The labels the rings and
- * walls arrive with travel through the cutting and the welding and come out on the faces, so a
- * piece can be read - this shore is that cell's, this side is that wall - and not merely drawn.
+ * <p><b>Every edge of every piece says which line it lies on.</b> The labels the lines arrive
+ * with travel through the cutting and the welding and come out on the faces, so a piece can be
+ * read - this shore is that cell's, this side is that wall - and not merely drawn.
  *
- * <p><b>Nothing of the map reaches in here.</b> No cell, no coast, no span: rings and lines
- * only, and a label is an int the walk carries without reading. What the pieces mean is read
+ * <p><b>Nothing of the map reaches in here.</b> No cell, no coast, no bridge: lines only, and
+ * a label is an int the walk carries without reading. What the pieces mean is read
  * off them afterwards, by whatever laid the lines.
  *
  * <p><b>A group of lines enclosed by another is cut out of it.</b> Groups that never touch are
@@ -57,49 +56,29 @@ public final class FaceWalk {
     }
 
     /**
-     * Divides the plane along every line given and hands back the pieces.
-     *
-     * @param rings         closed outlines, each edge saying which line it lies on; rings too
-     *                      short to enclose anything are ignored
-     * @param walls         lines with two loose ends, laid across whatever they fall on
-     * @param weldTolerance how far two reports of one corner may stand apart and still meet
-     * @return every piece, bounded ones and outer ones together, each telling which it is by
-     *         its own winding
-     */
-    public static List<Face> walkFaces(
-            List<LabelledRing> rings,
-            List<LabelledWall> walls,
-            double weldTolerance) {
-
-        return walkFaces(rings, walls, weldTolerance, List.of());
-    }
-
-    /**
      * Divides the plane along the base lines and everything laid onto them.
      *
      * <p>Two kinds of line in, because they are joined at two different resolutions: the base
      * is welded at the tolerance given, and what is laid is cut against the welded base and
      * joined at rounding. See the class note on why one weld over both is wrong.
      *
-     * @param rings         closed outlines of the base, each edge saying which line it lies on;
-     *                      rings too short to enclose anything are ignored
-     * @param walls         the base's loose lines, laid across whatever they fall on
+     * @param baseWalls     the base's lines, each saying which line it lies on; a closed
+     *                      outline is its sides laid one by one
      * @param weldTolerance how far two reports of one base corner may stand apart and still
      *                      meet
      * @param laidWalls     lines laid onto the base after it, each ending exactly where it
-     *                      says it does
+     *                      says it does; none, for the base alone
      * @return every piece, bounded ones and outer ones together, each telling which it is by
      *         its own winding
      */
     public static List<Face> walkFaces(
-            List<LabelledRing> rings,
-            List<LabelledWall> walls,
+            List<LabelledWall> baseWalls,
             double weldTolerance,
             List<LabelledWall> laidWalls) {
 
         var arrangement = layOntoWeldedBase(
             PlanarArrangement.weldArrangement(
-                SegmentCrossings.splitAtCrossings(collectLines(rings, walls)), weldTolerance),
+                SegmentCrossings.splitAtCrossings(baseWalls), weldTolerance),
             laidWalls);
 
         var closed = new ArrayList<LabelledRing>();
@@ -257,33 +236,6 @@ public final class FaceWalk {
         } while (!edge.equals(start));
 
         return LabelledRing.ofGatheredLabels(boundary, labels);
-    }
-
-    // Every line the division is cut along: each ring's edges under their own labels, plus the
-    // walls as they stand.
-    private static List<LabelledWall> collectLines(
-            List<LabelledRing> rings, List<LabelledWall> walls) {
-
-        var lines = new ArrayList<LabelledWall>(walls);
-
-        for (var ring : rings) {
-
-            var vertices = ring.vertices();
-
-            if (vertices.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
-                continue;
-            }
-
-            for (var index = 0; index < vertices.size(); index++) {
-
-                var from = vertices.get(index);
-                var to = vertices.get((index + 1) % vertices.size());
-
-                lines.add(new LabelledWall(
-                    new Segment(from[0], from[1], to[0], to[1]), ring.edgeLabels()[index]));
-            }
-        }
-        return lines;
     }
 
     // Below what area a piece is not a piece. A face narrower than the welding tolerance is

@@ -388,21 +388,33 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         repaintMap();
     }
 
-    // v4's own refresh. The two constructions share the fixture, the cell knobs and one traced
-    // coast, and nothing else - and the coast crosses as plain reaches, handed over here rather
-    // than reached for, so v4 stays a walk that knows nothing of who traced its lines.
+    // v4's own refresh. The two constructions share the fixture, the cell knobs, one traced
+    // coast and one bridge search, and nothing else - and both cross as plain gaps, handed over
+    // here rather than reached for, so v4 stays a walk that knows nothing of who found its lines.
     @Override
     public void refreshVoidV4() {
+
+        // Nothing to divide before the first build. The knobs apply their remembered values as
+        // the control column is built, and any of them may fire a refresh that lands here - but
+        // the cells are built once, after the last knob, and that build refreshes v4 itself.
+        if (geometry == null) {
+            return;
+        }
 
         // The cells' own edges, which is where the line between cell and void already stands.
         // Read off the geometry the rebuild just built rather than built again: the two would
         // be the same partition computed twice, and v4 drawing against its own copy is how the
         // two constructions come to disagree about where a cell ends.
+        //
+        // The bridges are the laying's own search under the window's bridge knobs, bar v4's own
+        // say on thinning: where the two constructions' thinning agrees v4 lays exactly the set
+        // v3 draws, and whichever of the two asks first is the only one that pays.
         voidPartition.refresh(
             geometry.cellEdgesByCellKey(),
             fixture,
             LakeReaches.collectLakeReaches(
-                continents.traceCoasts(), settings.parameters.borderInset()));
+                continents.traceCoasts(), settings.parameters.borderInset()),
+            () -> LakeBridges.collectLakeBridges(continents, settings.shouldThinLakeBridgesV4));
         repaintMap();
     }
 
@@ -411,21 +423,6 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         canvas.repaint();
     }
 
-    /**
-     * Every owner's cluster rings as the line the map draws, smoothed through the shipped
-     * pass.
-     *
-     * <p>Through {@link BorderSmoothing} rather than through the two primitives it is made
-     * of. Which passes run, and the order they run in, is that class's answer - sanding
-     * before rounding, because a needle whose own edges are shorter than the rounding steps
-     * back by survives rounding untouched - and a window that answered it again here would
-     * be drawing a border the mod does not.
-     *
-     * <p>Two things still differ from the map. The profile is this window's sliders rather
-     * than the player's theme, and the map resolves its loops either side of the smoothing
-     * where this does not - so a rounding sharp enough to push one arc through another shows
-     * here as a crossing the map would have cleaned up.
-     */
     /**
      * The sector as the window is currently drawing it, for anything that draws it a second
      * way.
@@ -444,6 +441,21 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             settings.resolvePocketShaping());
     }
 
+    /**
+     * Every owner's cluster rings as the line the map draws, smoothed through the shipped
+     * pass.
+     *
+     * <p>Through {@link BorderSmoothing} rather than through the two primitives it is made
+     * of. Which passes run, and the order they run in, is that class's answer - sanding
+     * before rounding, because a needle whose own edges are shorter than the rounding steps
+     * back by survives rounding untouched - and a window that answered it again here would
+     * be drawing a border the mod does not.
+     *
+     * <p>Two things still differ from the map. The profile is this window's sliders rather
+     * than the player's theme, and the map resolves its loops either side of the smoothing
+     * where this does not - so a rounding sharp enough to push one arc through another shows
+     * here as a crossing the map would have cleaned up.
+     */
     private Map<String, List<List<double[]>>> smoothClusterRings(SectorGeometry built) {
 
         var profile = settings.resolveBorderSmoothing();
@@ -743,6 +755,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             // The walls first, the frontage over them: the frontage is a diagnostic of what the
             // walls left open, and reads against the lines as much as against the fills.
             voidPartition.paintLakeCoast(g2);
+            voidPartition.paintLakeBridges(g2);
             voidPartition.paintLandableFrontage(g2);
             cells.paintSites(g2, fixture.getSites());
         }

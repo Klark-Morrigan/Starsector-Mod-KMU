@@ -79,6 +79,11 @@ public final class MapLook {
     // eye sorts them without reading.
     public static final Color LAKE_COAST_V4 = new Color(0xff, 0xa0, 0x30);
 
+    // The line v4's lake bridges lay: a run across a lake from one cell on its coast to another.
+    // Warm like the coast it stands on, so both read as v4's, and redder so a reader can tell
+    // which of the two closed a piece.
+    public static final Color LAKE_BRIDGES_V4 = new Color(0xff, 0x50, 0x40);
+
     // A bridge offered to a sector that already has continent coastlines on it, and kept
     // because it spans open sea rather than void a coast had already taken. Its own colour
     // rather than the coast's: a span and the line that judged it meet all over the map, and
