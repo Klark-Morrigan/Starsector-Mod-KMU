@@ -340,7 +340,7 @@ final class SidebarStylesTest {
             // faces land at 15 there, and only the atlas tells them apart.
             var face = SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).face();
 
-            assertThat(face.font())
+            assertThat(face.atlas())
                 .isEqualTo(StarsectorFont.VANILLA_ORBITRON_12_CONDENSED);
             assertThat(face.size())
                 .isEqualTo(16d);
@@ -440,7 +440,7 @@ final class SidebarStylesTest {
             // blurred imitation of the row beside it.
             var face = SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).face();
 
-            assertThat(face.font())
+            assertThat(face.atlas())
                 .isEqualTo(StarsectorFont.VANILLA_VICTOR_10);
             assertThat(face.size())
                 .isEqualTo(10d);
