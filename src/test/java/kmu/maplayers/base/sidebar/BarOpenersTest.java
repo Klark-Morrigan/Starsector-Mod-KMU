@@ -3,12 +3,9 @@ package kmu.maplayers.base.sidebar;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.widgets.tabs.BandButtonSpec;
 import kmlib.starsector.ui.widgets.tabs.style.TabBox;
-import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
-import kmlib.testfixtures.starsector.ui.font.LazyFontLineHeightReaderMock;
 
+import kmu.maplayers.base.sidebar.style.SidebarLookScope;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
-import kmu.settings.SidebarSettingsMock;
-import kmu.starsector.StarsectorUiColoursMock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,26 +31,17 @@ final class BarOpenersTest {
     private static final float HOST_TAB_HEIGHT = 18f;
     private static final float HOST_TAB_GAP = 1f;
 
-    private StarsectorUiColoursMock uiColoursMock;
-    private SidebarSettingsMock sidebarSettingsMock;
-
-    // The host row's face is read off the installed atlas, which no test JVM can load.
-    private LazyFontLineHeightReaderMock lineHeightsMock;
+    // The host row's style is composed from the live game, its face read off an installed atlas.
+    private SidebarLookScope lookScope;
 
     @BeforeEach
     void mockLiveColoursAndSettings() {
-
-        uiColoursMock = StarsectorUiColoursMock.install();
-        sidebarSettingsMock = SidebarSettingsMock.install();
-        lineHeightsMock = LazyFontLineHeightReaderMock.install(FaceLineHeightReaderFake.createVanillaLineHeights());
+        lookScope = SidebarLookScope.openOnVanillaAtlases();
     }
 
     @AfterEach
     void closeLiveColoursAndSettings() {
-
-        lineHeightsMock.close();
-        sidebarSettingsMock.close();
-        uiColoursMock.close();
+        lookScope.close();
     }
 
     @Nested

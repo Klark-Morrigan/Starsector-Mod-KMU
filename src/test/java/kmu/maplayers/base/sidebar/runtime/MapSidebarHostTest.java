@@ -8,12 +8,11 @@ import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
-import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
-import kmlib.testfixtures.starsector.ui.font.LazyFontLineHeightReaderMock;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayerScreenControls;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.sidebar.style.SidebarLookScope;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
 
@@ -190,27 +189,16 @@ final class MapSidebarHostTest {
         // Held rather than opened per case in a try-with-resources, because every case here needs the
         // same live colours: the look is composed from several of them at once and reads them all
         // whichever field the case then asserts on.
-        private StarsectorUiColoursMock uiColoursMock;
-        private SidebarSettingsMock sidebarSettingsMock;
-
-        // The tab face is read off the installed atlas, which no test JVM can load.
-        private LazyFontLineHeightReaderMock lineHeightsMock;
+        private SidebarLookScope lookScope;
 
         @BeforeEach
         void mockLiveColoursAndSettings() {
-
-            uiColoursMock = StarsectorUiColoursMock.install();
-            sidebarSettingsMock = SidebarSettingsMock.install();
-            lineHeightsMock = LazyFontLineHeightReaderMock.install(
-                FaceLineHeightReaderFake.createVanillaLineHeights());
+            lookScope = SidebarLookScope.openOnVanillaAtlases();
         }
 
         @AfterEach
         void closeLiveColoursAndSettings() {
-
-            lineHeightsMock.close();
-            sidebarSettingsMock.close();
-            uiColoursMock.close();
+            lookScope.close();
         }
 
         @Test

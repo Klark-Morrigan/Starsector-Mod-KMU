@@ -1,7 +1,6 @@
 package kmu.maplayers.base.tooltip.layout;
 
 import kmlib.starsector.ui.colour.StarsectorUiColour;
-import kmlib.starsector.ui.font.LazyFontLineHeightReader;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipStyle;
@@ -86,12 +85,12 @@ final class CellTooltipLook {
      */
     static CursorTooltipStyle buildStyle() {
 
-        var bodyFace = createNativeFace(BODY_FONT);
+        var bodyFace = TextFace.createInstalledNativeFace(BODY_FONT);
 
         return CursorTooltipStyle.createStyle(
                 TooltipStyle
                     .createStyle(
-                        TextStyle.createStyle(createNativeFace(HEADER_FONT)),
+                        TextStyle.createStyle(TextFace.createInstalledNativeFace(HEADER_FONT)),
                         TextStyle.createStyle(bodyFace))
                     .footnotedIn(TextStyle.createStyle(new TextFace(FOOTNOTE_FONT, bodyFace.size())))
                     .shrunkPerLevel(KmuMapTooltipSettings.getMapTooltipNestingLevelShrink())
@@ -102,12 +101,6 @@ final class CellTooltipLook {
                 StarsectorUiColour.VANILLA_PLAYER_BASE.resolve())
             .ruledBy(buildLeaderLineStyle())
             .redactedAt(KmuMapTooltipSettings.getMapTooltipRedactionDarkeningStrength());
-    }
-
-    // A face at the size the installed atlas draws 1:1 at, read off the live install. One spelling for
-    // the three faces the box takes it for, so no face is read one way and the others another.
-    private static TextFace createNativeFace(StarsectorFont font) {
-        return TextFace.createNativeFace(font, LazyFontLineHeightReader::readLineHeight);
     }
 
     // How heavily the line from a label across to its value draws. Layered over KMLib's own weights

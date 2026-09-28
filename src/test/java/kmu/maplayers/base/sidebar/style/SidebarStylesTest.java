@@ -11,7 +11,6 @@ import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
-import kmlib.testfixtures.starsector.ui.font.LazyFontLineHeightReaderMock;
 
 import kmu.settings.SidebarColourSchemeChoice;
 import kmu.settings.SidebarSettingsMock;
@@ -57,27 +56,22 @@ final class SidebarStylesTest {
     private static final double INSTALLED_CONDENSED_LINE_HEIGHT = 16d;
     private static final double INSTALLED_PIXEL_LINE_HEIGHT = 10d;
 
-    private StarsectorUiColoursMock uiColoursMock;
+    private SidebarLookScope lookScope;
     private SidebarSettingsMock sidebarSettingsMock;
-    private LazyFontLineHeightReaderMock lineHeightsMock;
 
     @BeforeEach
     void mockLiveColoursAndSettings() {
 
-        uiColoursMock = StarsectorUiColoursMock.install();
-        sidebarSettingsMock = SidebarSettingsMock.install();
-        lineHeightsMock = LazyFontLineHeightReaderMock.install(FaceLineHeightReaderFake
+        lookScope = SidebarLookScope.openOnInstalledAtlases(FaceLineHeightReaderFake
             .createVanillaLineHeights()
             .answeringLineHeight(StarsectorFont.VANILLA_ORBITRON_12_CONDENSED, INSTALLED_CONDENSED_LINE_HEIGHT)
             .answeringLineHeight(StarsectorFont.VANILLA_VICTOR_10, INSTALLED_PIXEL_LINE_HEIGHT));
+        sidebarSettingsMock = lookScope.getSidebarSettingsMock();
     }
 
     @AfterEach
     void closeLiveColoursAndSettings() {
-
-        lineHeightsMock.close();
-        sidebarSettingsMock.close();
-        uiColoursMock.close();
+        lookScope.close();
     }
 
     @Nested

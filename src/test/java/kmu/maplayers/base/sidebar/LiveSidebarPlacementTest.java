@@ -7,8 +7,6 @@ import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
-import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
-import kmlib.testfixtures.starsector.ui.font.LazyFontLineHeightReaderMock;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
@@ -21,11 +19,10 @@ import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.sidebar.style.SidebarLookScope;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 import kmu.settings.KmuMapControlSettings;
 import kmu.settings.KmuMapSidebarSettings;
-import kmu.settings.SidebarSettingsMock;
-import kmu.starsector.StarsectorUiColoursMock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -365,19 +362,14 @@ final class LiveSidebarPlacementTest {
     @Nested
     class ResolveOpenerSpec {
 
-        private StarsectorUiColoursMock uiColoursMock;
-        private SidebarSettingsMock sidebarSettingsMock;
-        private LazyFontLineHeightReaderMock lineHeightsMock;
+        private SidebarLookScope lookScope;
         private MockedStatic<KmuMapControlSettings> controlSettingsMock;
 
         @BeforeEach
         void mockLiveColoursAndSettings() {
-            // The first three are what the host row's own style is composed from, the opener wearing that
-            // style unchanged but for its box - its face read off an installed atlas no test JVM can load.
-            uiColoursMock = StarsectorUiColoursMock.install();
-            sidebarSettingsMock = SidebarSettingsMock.install();
-            lineHeightsMock = LazyFontLineHeightReaderMock.install(
-                FaceLineHeightReaderFake.createVanillaLineHeights());
+            // The host row's own style is composed from the live game, the opener wearing that style
+            // unchanged but for its box.
+            lookScope = SidebarLookScope.openOnVanillaAtlases();
 
             // The hatch, stood in at the state its row ships in rather than left to the mock's own
             // default: every case but one turns on the count being what answers, so the case that says
@@ -390,9 +382,7 @@ final class LiveSidebarPlacementTest {
         void closeLiveColoursAndSettings() {
 
             controlSettingsMock.close();
-            lineHeightsMock.close();
-            sidebarSettingsMock.close();
-            uiColoursMock.close();
+            lookScope.close();
         }
 
         @AfterEach

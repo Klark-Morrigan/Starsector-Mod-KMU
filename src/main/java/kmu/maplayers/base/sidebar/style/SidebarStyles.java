@@ -2,7 +2,6 @@ package kmu.maplayers.base.sidebar.style;
 
 import kmlib.starsector.ui.colour.AccentColours;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
-import kmlib.starsector.ui.font.LazyFontLineHeightReader;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.style.BoxColours;
@@ -316,7 +315,7 @@ public final class SidebarStyles {
             case RAISED_BUTTON -> RAISED_BUTTON_FONT;
         };
 
-        return TextFace.createNativeFace(font, LazyFontLineHeightReader::readLineHeight);
+        return TextFace.createInstalledNativeFace(font);
     }
 
     // How a row marks the key it answers to, which the chrome decides for the same reason it decides
