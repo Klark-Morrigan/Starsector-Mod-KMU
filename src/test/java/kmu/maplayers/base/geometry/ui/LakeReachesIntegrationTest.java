@@ -67,9 +67,9 @@ class LakeReachesIntegrationTest {
                 .isNotEmpty()
                 .allSatisfy(reach -> {
 
-                    assertThat(reach.fromCell())
-                        .isNotEqualTo(reach.toCell());
-                    assertThat(Points.computeDistance(reach.from(), reach.to()))
+                    assertThat(reach.fromSite())
+                        .isNotEqualTo(reach.toSite());
+                    assertThat(Points.computeDistance(reach.start(), reach.end()))
                         .isGreaterThanOrEqualTo(KNOBS.borderInset());
                 });
         }
@@ -118,7 +118,7 @@ class LakeReachesIntegrationTest {
 
             var sagitta = KNOBS.measureBoundSagitta();
 
-            assertThat(measureVoid(before) - measureVoid(readWithLakeCoast(sector)))
+            assertThat(PartitionAreas.measureVoid(before) - PartitionAreas.measureVoid(readWithLakeCoast(sector)))
                 .isBetween(0.0, SLIVERS_PER_REACH * reachCount * sagitta * sagitta);
         }
 
@@ -130,8 +130,8 @@ class LakeReachesIntegrationTest {
             var cellEdges = fixture.buildCellEdgesBySystemKey(KNOBS);
             var before = VoidPartition.readVoidPartition(cellEdges, fixture.getSites(), KNOBS);
 
-            assertThat(measureSea(readWithLakeCoast(sector)))
-                .isCloseTo(measureSea(before), withinPercentage(AREA_SHARE));
+            assertThat(PartitionAreas.measureSea(readWithLakeCoast(sector)))
+                .isCloseTo(PartitionAreas.measureSea(before), withinPercentage(AREA_SHARE));
         }
     }
 
@@ -158,27 +158,5 @@ class LakeReachesIntegrationTest {
             sites,
             KNOBS,
             laid.walls());
-    }
-
-    private static double measureVoid(VoidPartition partition) {
-
-        var area = 0.0;
-
-        for (var piece : partition.collectPieces()) {
-            area += piece.measureArea();
-        }
-        return area;
-    }
-
-    // The one piece with holes, which is the sea.
-    private static double measureSea(VoidPartition partition) {
-
-        for (var piece : partition.collectPieces()) {
-
-            if (!piece.holes().isEmpty()) {
-                return piece.measureArea();
-            }
-        }
-        throw new IllegalStateException("no sea to measure");
     }
 }

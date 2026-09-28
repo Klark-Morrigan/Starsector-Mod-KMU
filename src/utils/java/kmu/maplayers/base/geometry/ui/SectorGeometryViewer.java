@@ -388,21 +388,32 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         repaintMap();
     }
 
-    // v4's own refresh. The two constructions share the fixture, the cell knobs and one traced
-    // coast, and nothing else - and the coast crosses as plain reaches, handed over here rather
-    // than reached for, so v4 stays a walk that knows nothing of who traced its lines.
+    // v4's own refresh. The two constructions share the fixture, the cell knobs, one traced
+    // coast and one bridge search, and nothing else - and both cross as plain gaps, handed over
+    // here rather than reached for, so v4 stays a walk that knows nothing of who found its lines.
     @Override
     public void refreshVoidV4() {
+
+        // Nothing to divide before the first build. The knobs apply their remembered values as
+        // the control column is built, and any of them may fire a refresh that lands here - but
+        // the cells are built once, after the last knob, and that build refreshes v4 itself.
+        if (geometry == null) {
+            return;
+        }
 
         // The cells' own edges, which is where the line between cell and void already stands.
         // Read off the geometry the rebuild just built rather than built again: the two would
         // be the same partition computed twice, and v4 drawing against its own copy is how the
         // two constructions come to disagree about where a cell ends.
+        //
+        // The bridges are the laying's own, under the window's bridge knobs, so v4 lays exactly
+        // the set v3 draws, and whichever of the two asks first is the only one that pays.
         voidPartition.refresh(
             geometry.cellEdgesByCellKey(),
             fixture,
             LakeReaches.collectLakeReaches(
-                continents.traceCoasts(), settings.parameters.borderInset()));
+                continents.traceCoasts(), settings.parameters.borderInset()),
+            continents::layLakeSpans);
         repaintMap();
     }
 
@@ -743,6 +754,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             // The walls first, the frontage over them: the frontage is a diagnostic of what the
             // walls left open, and reads against the lines as much as against the fills.
             voidPartition.paintLakeCoast(g2);
+            voidPartition.paintLakeBridges(g2);
             voidPartition.paintLandableFrontage(g2);
             cells.paintSites(g2, fixture.getSites());
         }

@@ -28,7 +28,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | the cells' own frontier | `VoidPartition` | each cell's adjacency-tagged edges | the lines between cell and void, and a frame round the sector |
 | cut the base at crossings | `SegmentCrossings` | those lines | lines meeting only at their ends |
 | weld and order the base | `PlanarArrangement` | those lines, at the sagitta | a graph knowing the turn order at each vertex |
-| lay a tier's lines | `LakeCoast` | reaches as `ReachLine`, two points and two cells | walls, each end carried through the shore |
+| lay a tier's lines | `LakeCoast`, `LakeBridges`, through `CarriedLines` | lines as `CellGap`s, two points and two cells | walls, each end carried through the shore |
 | cut them into the base | `SegmentCrossings` | the welded base read back as lines, and the walls | lines meeting only at their ends |
 | weld and order again | `PlanarArrangement` | those lines, at rounding | the graph the faces are walked on |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
@@ -46,9 +46,15 @@ With nothing laid, the three rows about laid lines do nothing, and the walk runs
 `Face` is what comes out.
 
 Nothing here imports v3, and the layering gate holds it to that.
-The lake coast is v3's trace, and it crosses as `ReachLine`s through `LakeReaches` in the viewer's own package, which already depends on both:
-a version that imported the other would be a layer on top of it rather than a construction beside it,
+The lake coast is v3's trace and the lake bridges are v3's search,
+and both cross as `CellGap`s - the shared package's one value for a straight run between two cells -
+handed over by the viewer, which already depends on both.
+The coast's reaches are read off the trace by `LakeReaches` in the viewer's own package; the bridges need no reading, since v3 hands them over as gaps already.
+A version that imported the other would be a layer on top of it rather than a construction beside it,
 and the package both versions build on would depend on its own dependents.
+
+Every tier lays its lines through `CarriedLines`, which carries each end through the shore:
+what makes a line divide is one fact about the walk, so it is answered once rather than per tier.
 
 ## Why the cells are the input
 
@@ -67,7 +73,7 @@ A `Face` is the ring around one piece, what each of its edges lies on, and the r
 
 The labels are the part that makes a piece readable rather than merely drawable.
 An edge names the cell whose border it runs along, as that cell's index,
-or the line some tier laid, as a negative of that tier's own - the frame and the lake coast so far.
+or the line some tier laid, as a negative of that tier's own - the frame, the lake coast and the lake bridges so far.
 `EdgeLabels` holds the convention and lists the negatives in use; ask it whether an edge is a cell's rather than testing for the frame, which stopped being the only negative with the first tier.
 The frame's number is deliberately not the one KMLib's `VoronoiCellBuilder.BOUND_EDGE` uses:
 both reach a piece's labels and they say opposite things, so sharing a value would let a reader take the edge of the map for somebody's shore.
@@ -105,6 +111,7 @@ Nothing moves after it was cut, which is the invariant the cutting rests on.
 ## Frontage
 
 Frontage is every stretch of cell border facing void nothing has captured: where anything can land.
+A bridge lands nowhere else - and a stretch can be a single point, where a coast only touches a cell between two reaches.
 
 That is the whole of it.
 There is no measurement, because the question of HOW something lands - how far, from where, past what - belongs to whatever lays it, and each layer answers it for itself.

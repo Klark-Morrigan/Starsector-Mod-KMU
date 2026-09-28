@@ -3,20 +3,24 @@ package kmu.maplayers.base.geometry.v4.ui;
 import kmlib.math.geometry.RingRegion;
 
 import kmu.maplayers.base.geometry.CellEdge;
+import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
+import kmu.maplayers.base.geometry.v4.CarriedLines;
+import kmu.maplayers.base.geometry.v4.LabelledWall;
+import kmu.maplayers.base.geometry.v4.LakeBridges;
 import kmu.maplayers.base.geometry.v4.LakeCoast;
 import kmu.maplayers.base.geometry.v4.LandableFrontage;
-import kmu.maplayers.base.geometry.v4.ReachLine;
 import kmu.maplayers.base.geometry.v4.VoidPartition;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * What v4 has to show: the pieces of void, the lines each tier laid to divide them, and the
@@ -27,18 +31,22 @@ import java.util.Map;
  * not add a layer above the pieces, it divides them, so the fill redraws as the pieces those
  * lines left. That is what makes a tier checkable - the partition after it is the partition
  * before it with lines in, rather than a second reading laid on top. The lines themselves
- * arrive traced, as reaches, which is the point: the smoothing is the tracer's, and v4 only
- * decides where they go.
+ * arrive found - the coast traced, the bridges searched for - which is the point: the smoothing
+ * and the search are the other construction's, and v4 only decides where the lines go.
  *
  * <p>The frontage is drawn beside the pieces rather than under them, because it is a
- * diagnostic of them: nothing is laid from it yet, and it is on screen so that what a span may
- * be anchored on can be looked at before any span is made to obey it.
+ * diagnostic of them: it is on screen so that where a bridge may land can be looked at beside
+ * the bridges that did.
  *
  * <p>The void is read on each refresh rather than held from startup, for the reason every other
  * overlay reads its own: the reach and the flattening are knobs, and a copy taken when the
  * window opened would go on drawing the sector those knobs used to describe.
  */
 public final class VoidPartitionOverlay {
+
+    // What a tier switched off lays: no walls, and nothing to draw.
+    private static final CarriedLines.LaidLines NOTHING_LAID =
+        new CarriedLines.LaidLines(List.of(), List.of());
 
     private final ViewerSettings settings;
 
@@ -49,6 +57,8 @@ public final class VoidPartitionOverlay {
     private List<List<double[]>> landable = List.of();
 
     private List<List<double[]>> lakeCoastLines = List.of();
+
+    private List<List<double[]>> lakeBridgeLines = List.of();
 
     public VoidPartitionOverlay(ViewerSettings settings) {
         this.settings = settings;
@@ -61,21 +71,29 @@ public final class VoidPartitionOverlay {
      *                    between cell and void already stands; handed in rather than built
      *                    again, since the rebuild that calls this has just built them
      * @param fixture     the sector to read, for the sites the pieces are placed against
-     * @param lakeReaches the lakes' coast reaches, which are the lines this tier lays; read
-     *                    off the trace the rebuild that calls this made, so the two
+     * @param lakeReaches the lakes' coast reaches, which are the lines the lake coast lays;
+     *                    read off the trace the rebuild that calls this made, so the two
      *                    constructions are drawn from one coast
+     * @param lakeBridges the bridges across the lakes, asked for only while their switch is
+     *                    on: the search behind them runs on the first ask, and with the
+     *                    other construction's own bridges off nothing else asks
      */
     public void refresh(
             Map<?, List<CellEdge>> cellEdges,
             SectorFixture fixture,
-            List<ReachLine> lakeReaches) {
+            List<CellGap> lakeReaches,
+            Supplier<List<CellGap>> lakeBridges) {
 
         var sites = fixture.getSites();
-        var laid = settings.isLakeCoastV4Shown()
+        var coast = settings.isLakeCoastV4Shown()
             ? LakeCoast.layCoastWalls(lakeReaches, sites, settings.parameters)
-            : null;
+            : NOTHING_LAID;
+        var bridges = settings.isLakeBridgesV4Shown()
+            ? LakeBridges.layBridgeWalls(lakeBridges.get(), sites, settings.parameters)
+            : NOTHING_LAID;
 
-        lakeCoastLines = laid != null ? laid.reachLines() : List.of();
+        lakeCoastLines = coast.lines();
+        lakeBridgeLines = bridges.lines();
 
         // The walk is what the pieces and the frontage are read off, and nothing else needs
         // it - the laid lines are drawn from the tier, not from the walk. So with neither of
@@ -89,11 +107,12 @@ public final class VoidPartitionOverlay {
 
         // A tier switched off lays nothing, so the switch takes its lines out of the partition
         // rather than leaving them dividing pieces nobody can see.
+        var walls = new ArrayList<LabelledWall>(coast.walls());
+
+        walls.addAll(bridges.walls());
+
         var partition = VoidPartition.readVoidPartition(
-            cellEdges,
-            sites,
-            settings.parameters,
-            laid != null ? laid.walls() : List.of());
+            cellEdges, sites, settings.parameters, walls);
 
         // Each read only for the layer that draws it: the pieces are inset and smoothed, which
         // is the dearest pass here, and a window showing only the frontage has no use for it.
@@ -135,6 +154,19 @@ public final class VoidPartitionOverlay {
             return;
         }
         MapPainting.paintLineRuns(g2, lakeCoastLines, settings.lakeCoastV4Colour);
+    }
+
+    /**
+     * Draws the bridges laid across the lakes.
+     *
+     * @param g2 where to draw, in world space
+     */
+    public void paintLakeBridges(Graphics2D g2) {
+
+        if (!settings.isLakeBridgesV4Shown()) {
+            return;
+        }
+        MapPainting.paintLineRuns(g2, lakeBridgeLines, settings.lakeBridgesV4Colour);
     }
 
     /**

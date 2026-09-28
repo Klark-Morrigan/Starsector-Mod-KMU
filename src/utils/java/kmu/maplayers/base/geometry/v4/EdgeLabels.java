@@ -6,13 +6,14 @@ package kmu.maplayers.base.geometry.v4;
  * <p>One convention, said once. An edge of a piece lies either along a cell's border or along a
  * line some tier laid, and the label says which: a cell is its own index, so zero and up is a
  * cell and nothing else can be; every laid line takes a negative of its own, so a reader can
- * tell the edge of the sector from a coast from a span.
+ * tell the edge of the sector from a coast from a bridge.
  *
  * <p>The negatives in use, each declared where the thing it names is built:
  *
  * <ul>
  *   <li>{@link VoidPartition#THE_FRAME} - the edge of the sector, which is nobody's.</li>
  *   <li>{@link LakeCoast#THE_LAKE_COAST} - a reach of a lake's coast, cutting across a bay.</li>
+ *   <li>{@link LakeBridges#THE_LAKE_BRIDGES} - a bridge across a lake, cell to cell.</li>
  * </ul>
  *
  * <p>KMLib's {@code VoronoiCellBuilder.BOUND_EDGE} is another negative and deliberately not one
