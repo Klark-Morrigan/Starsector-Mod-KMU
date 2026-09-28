@@ -5,6 +5,8 @@ import com.fs.starfarer.api.campaign.CampaignTerrainPlugin;
 import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.testfixtures.starsector.compatibility.GameReachRecordFixture;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -490,6 +493,52 @@ class MapLayerTerrainInstallerTest {
 
             assertThatCode(removeOnNullSector::run)
                 .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    class CreateStarscapeTerrain {
+
+        private final GameReachRecordFixture reachRecord = new GameReachRecordFixture();
+
+        @Test
+        void answersTheTerrainItBuiltAndFilesNothing() {
+
+            var terrainMock = mock(CampaignTerrainAPI.class);
+
+            assertThat(MapLayerTerrainInstaller.createStarscapeTerrain(() -> terrainMock, reachRecord.getReporter()))
+                .isSameAs(terrainMock);
+            assertThat(reachRecord.hasReported())
+                .isFalse();
+        }
+
+        @Test
+        void filesATerrainClassThatNoLongerLinksAndPassesItOn() {
+            // A game release that changed the class the entity extends fails where the class loads,
+            // and the step's own guard is still what logs it.
+            var unlinkedTerrain = new NoSuchMethodError("CampaignTerrain.<init>");
+
+            assertThatThrownBy(() -> MapLayerTerrainInstaller.createStarscapeTerrain(
+                    () -> {
+                        throw unlinkedTerrain;
+                    },
+                    reachRecord.getReporter()))
+                .isSameAs(unlinkedTerrain);
+            assertThat(reachRecord.takeReportedFailure().cause())
+                .isSameAs(unlinkedTerrain);
+        }
+
+        @Test
+        void filesNothingForAFailureThatIsNotTheGames() {
+            // Anything else a build throws could be this mod's own, so it is left to the step's guard.
+            assertThatThrownBy(() -> MapLayerTerrainInstaller.createStarscapeTerrain(
+                    () -> {
+                        throw new IllegalStateException("A build of this mod's own that failed.");
+                    },
+                    reachRecord.getReporter()))
+                .isInstanceOf(IllegalStateException.class);
+            assertThat(reachRecord.hasReported())
+                .isFalse();
         }
     }
 

@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -72,14 +73,14 @@ final class MapSidebarHostTest {
             try (var mapViewMock = mockStatic(CampaignMapView.class)) {
 
                 mapViewMock
-                    .when(CampaignMapView::isSectorMapShowing)
+                    .when(() -> CampaignMapView.isSectorMapShowing(any()))
                     .thenReturn(true);
 
                 assertThat(createHostOnAnUnclaimedScreen().isOverlayShowing())
                     .isTrue();
 
                 mapViewMock.verify(
-                    CampaignMapView::isSectorMapWithStarscapeOff,
+                    () -> CampaignMapView.isSectorMapWithStarscapeOff(any()),
                     never());
             }
         }
@@ -89,7 +90,7 @@ final class MapSidebarHostTest {
             try (var mapViewMock = mockStatic(CampaignMapView.class)) {
 
                 mapViewMock
-                    .when(CampaignMapView::isSectorMapShowing)
+                    .when(() -> CampaignMapView.isSectorMapShowing(any()))
                     .thenReturn(false);
 
                 assertThat(createHostOnAnUnclaimedScreen().isOverlayShowing())
@@ -105,7 +106,7 @@ final class MapSidebarHostTest {
             try (var mapViewMock = mockStatic(CampaignMapView.class)) {
 
                 mapViewMock
-                    .when(CampaignMapView::isSectorMapShowing)
+                    .when(() -> CampaignMapView.isSectorMapShowing(any()))
                     .thenReturn(true);
 
                 assertThat(new MapSidebarHost(ScreenClaims.createScreenClaimedByAModal())
@@ -125,7 +126,7 @@ final class MapSidebarHostTest {
                 sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
 
                 mapViewMock
-                    .when(CampaignMapView::isSectorMapShowing)
+                    .when(() -> CampaignMapView.isSectorMapShowing(any()))
                     .thenReturn(true);
 
                 // A stored hide is only acted on where a control able to reverse it stands, so the case

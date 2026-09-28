@@ -2,6 +2,7 @@ package kmu.maplayers.base.chrome;
 
 import com.fs.starfarer.api.campaign.CoreUITabId;
 
+import kmlib.starsector.compatibility.GameReachReporter;
 import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterToggle;
 import kmlib.testfixtures.starsector.ui.coreui.CoreUiReachFailures;
@@ -588,7 +589,7 @@ final class MapLayerToggleUpkeepTest {
 
         when(toggleAttacherMock.attachToggleTo(any(), any()))
             .thenAnswer(attachment -> MapFilterToggle.appendToRow(
-                attachment.getArgument(0), BOX_LABEL, () -> { }));
+                attachment.getArgument(0), BOX_LABEL, () -> { }, GameReachReporter.UNREPORTED));
 
         return toggleAttacherMock;
     }

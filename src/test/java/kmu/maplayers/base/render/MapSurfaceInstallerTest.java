@@ -150,7 +150,7 @@ class MapSurfaceInstallerTest {
                 // The reseat is scoped to a Starscape map, so the placement is only read while one
                 // is up - which makes this the state the wiring can be observed in at all.
                 mapViewMock
-                    .when(CampaignMapView::resolveSectorMapState)
+                    .when(() -> CampaignMapView.resolveSectorMapState(any()))
                     .thenReturn(SectorMapState.SHOWING_IN_STARSCAPE_MODE);
 
                 MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
@@ -163,7 +163,7 @@ class MapSurfaceInstallerTest {
                 reseater.getValue().advance(ONE_FRAME);
 
                 layeringProbeMock
-                    .verify(() -> MapIconLayeringProbe.readLayeringOf(any()));
+                    .verify(() -> MapIconLayeringProbe.readLayeringOf(any(), any()));
             }
         }
 
@@ -194,7 +194,7 @@ class MapSurfaceInstallerTest {
                     .thenReturn(runningSectorMock);
 
                 mapViewMock
-                    .when(CampaignMapView::resolveSectorMapState)
+                    .when(() -> CampaignMapView.resolveSectorMapState(any()))
                     .thenReturn(SectorMapState.SHOWING_IN_STARSCAPE_MODE);
 
                 MapSurfaceInstaller.installStarscapeTerrainReseater(installedSectorMock);

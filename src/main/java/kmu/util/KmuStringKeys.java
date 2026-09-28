@@ -44,6 +44,70 @@ public final class KmuStringKeys {
     public static final String COMPATIBILITY_UNAFFECTED_LUNALIB_SETTINGS =
         "compatibility_unaffected_lunalib_settings";
 
+    /**
+     * What a session loses where the game stops letting the map layers read whether a map is up.
+     * "May not show", and on either map, because the sector map and the intel screen's are read
+     * apart and either can break alone.
+     */
+    public static final String COMPATIBILITY_LOST_MAP_VIEW = "compatibility_lost_map_view";
+
+    /** What a failed read of whether a map is up does not cost. */
+    public static final String COMPATIBILITY_UNAFFECTED_MAP_VIEW = "compatibility_unaffected_map_view";
+
+    /**
+     * What a session loses where the game's filter row stops taking the map layers' tick box, or its
+     * key. Says the layers stay shown, since a map with no box has no way to hide them.
+     */
+    public static final String COMPATIBILITY_LOST_FILTER_ROW_TOGGLE = "compatibility_lost_filter_row_toggle";
+
+    /** What a filter row that will not take the tick box does not cost. */
+    public static final String COMPATIBILITY_UNAFFECTED_FILTER_ROW_TOGGLE =
+        "compatibility_unaffected_filter_row_toggle";
+
+    /** What a session loses where the game's core screen stops taking the arranging dialog. */
+    public static final String COMPATIBILITY_LOST_ARRANGE_DIALOG = "compatibility_lost_arrange_dialog";
+
+    /** What a dialog that cannot be stood up does not cost: the arrangement already made. */
+    public static final String COMPATIBILITY_UNAFFECTED_ARRANGE_DIALOG = "compatibility_unaffected_arrange_dialog";
+
+    /**
+     * What a session loses where the game's own prompts and the codex can no longer be seen from the
+     * map layers: the sidebar and the hover box no longer stand aside for them.
+     */
+    public static final String COMPATIBILITY_LOST_SCREEN_COVERS = "compatibility_lost_screen_covers";
+
+    /** What an unreadable prompt or codex does not cost. */
+    public static final String COMPATIBILITY_UNAFFECTED_SCREEN_COVERS = "compatibility_unaffected_screen_covers";
+
+    /**
+     * What a session loses where the game's own map tooltip can no longer be found or repainted: two
+     * boxes at once, or the game's under the sidebar.
+     */
+    public static final String COMPATIBILITY_LOST_MAP_TOOLTIPS = "compatibility_lost_map_tooltips";
+
+    /** What a tooltip that cannot be found does not cost. */
+    public static final String COMPATIBILITY_UNAFFECTED_MAP_TOOLTIPS = "compatibility_unaffected_map_tooltips";
+
+    /**
+     * What a session loses where the order the map draws its icons in can no longer be read: the band
+     * meant to clear the nebulae is left under them.
+     */
+    public static final String COMPATIBILITY_LOST_STARSCAPE_RESEAT = "compatibility_lost_starscape_reseat";
+
+    /** What an unreadable icon order does not cost. */
+    public static final String COMPATIBILITY_UNAFFECTED_STARSCAPE_RESEAT =
+        "compatibility_unaffected_starscape_reseat";
+
+    /**
+     * What a session loses where the game's terrain class stops taking the map layers' Starscape
+     * terrain: nothing is drawn while the filter is on.
+     */
+    public static final String COMPATIBILITY_LOST_STARSCAPE_TERRAIN = "compatibility_lost_starscape_terrain";
+
+    /** What Starscape terrain that could not be installed does not cost. */
+    public static final String COMPATIBILITY_UNAFFECTED_STARSCAPE_TERRAIN =
+        "compatibility_unaffected_starscape_terrain";
+
     public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
     public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
     public static final String CONDITION_MANAGER_SUMMARY = "condition_manager_summary";

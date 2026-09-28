@@ -6,6 +6,7 @@ import kmlib.starsector.listeners.SectorListeners;
 import kmlib.starsector.scripts.SectorScripts;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
+import kmu.maplayers.base.compatibility.MapLayerGameReaches;
 import kmu.maplayers.base.hover.MapHoverExpirer;
 import kmu.maplayers.base.hover.MapHoverPermission;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -104,7 +105,7 @@ public final class MapHoverInstaller {
             sector,
             MapLayerCellTooltip.class,
             () -> new MapLayerCellTooltip(
-                new VanillaMapTooltipProbe(ShownMapSurface::resolveShownMapSurface),
+                new VanillaMapTooltipProbe(ShownMapSurface::resolveShownMapSurface, MapLayerGameReaches.MAP_TOOLTIPS),
                 MapHoverPermission.createForLiveScreen()));
     }
 

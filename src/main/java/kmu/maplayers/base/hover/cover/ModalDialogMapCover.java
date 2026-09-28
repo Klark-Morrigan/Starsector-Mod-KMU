@@ -2,6 +2,8 @@ package kmu.maplayers.base.hover.cover;
 
 import kmlib.starsector.ui.coreui.CoreUiDialogView;
 
+import kmu.maplayers.base.compatibility.MapLayerGameReaches;
+
 /**
  * The cover a modal raised over a core screen lays over the map - a confirmation prompt, a picker.
  * It takes every event outside its own box and dims the rest of the screen behind it, so while one
@@ -11,7 +13,7 @@ import kmlib.starsector.ui.coreui.CoreUiDialogView;
  * raised over the campaign and reported as such, and a console belongs to an optional mod, while
  * this is stood up inside the core UI by the screen the player is already looking at. Nothing the
  * campaign publishes reports it, which is why the reading is
- * {@link CoreUiDialogView#isModalDialogShowing()} rather than a flag.
+ * {@link CoreUiDialogView#isModalDialogShowing} rather than a flag.
  *
  * <p>Nor can the sidebar's cover stand in for it, though the panel does stand down under the same
  * modal: that is exactly what makes the sidebar go quiet on these frames, leaving the cells the
@@ -32,6 +34,6 @@ public final class ModalDialogMapCover extends FlagMapCover {
      * flags and below the covers that resolve a layout or walk down into a tab.
      */
     public ModalDialogMapCover() {
-        super(CoreUiDialogView::isModalDialogShowing);
+        super(() -> CoreUiDialogView.isModalDialogShowing(MapLayerGameReaches.SCREEN_COVERS));
     }
 }

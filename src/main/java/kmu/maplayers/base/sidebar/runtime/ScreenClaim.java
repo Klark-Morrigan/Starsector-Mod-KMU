@@ -6,6 +6,7 @@ import kmlib.starsector.ui.coreui.CoreUiDialogView;
 import kmlib.starsector.ui.coreui.OverlayPresence;
 
 import kmu.maplayers.base.chrome.arrange.MapLayerArrangementDialog;
+import kmu.maplayers.base.compatibility.MapLayerGameReaches;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -59,9 +60,9 @@ public final class ScreenClaim {
      */
     public static final ScreenClaim INSTANCE = new ScreenClaim(
         ConsoleCommandsOverlay.INSTANCE,
-        CodexView::isCodexShowing,
+        () -> CodexView.isCodexShowing(MapLayerGameReaches.SCREEN_COVERS),
         MapLayerArrangementDialog.INSTANCE::resolveDialogPresence,
-        CoreUiDialogView::resolveModalPresence);
+        () -> CoreUiDialogView.resolveModalPresence(MapLayerGameReaches.SCREEN_COVERS));
 
     // A claimant wholly in place, which is what anything that cannot report a fade of its own counts as.
     private static final float FULLY_CLAIMED = 1f;

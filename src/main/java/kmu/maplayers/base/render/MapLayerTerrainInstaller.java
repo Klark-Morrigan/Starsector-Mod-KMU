@@ -5,11 +5,17 @@ import com.fs.starfarer.api.campaign.CampaignTerrainAPI;
 import com.fs.starfarer.api.campaign.CampaignTerrainPlugin;
 import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.SectorEntityToken;
+
+import kmlib.starsector.compatibility.GameReachReporter;
+
+import kmu.maplayers.base.compatibility.MapLayerGameReaches;
 
 import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Puts the render surfaces' terrain entities into a loaded save and keeps exactly one of each there.
@@ -90,8 +96,9 @@ public final class MapLayerTerrainInstaller {
         installMapLayerTerrain(
             sector,
             STARSCAPE_TERRAIN,
-            hyperspace -> hyperspace.addEntity(
-                new SectorMapLayerStarscapeTerrain(SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE)));
+            hyperspace -> hyperspace.addEntity(createStarscapeTerrain(
+                () -> new SectorMapLayerStarscapeTerrain(SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE),
+                MapLayerGameReaches.STARSCAPE_TERRAIN)));
     }
 
     /**
@@ -114,8 +121,9 @@ public final class MapLayerTerrainInstaller {
         installMapLayerTerrain(
             sector,
             ABOVE_STARSCAPE_NEBULAE_TERRAIN,
-            hyperspace -> hyperspace.addEntity(new SectorMapLayerStarscapeTerrain(
-                SECTOR_MAP_LAYER_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE)));
+            hyperspace -> hyperspace.addEntity(createStarscapeTerrain(
+                () -> new SectorMapLayerStarscapeTerrain(SECTOR_MAP_LAYER_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE),
+                MapLayerGameReaches.STARSCAPE_TERRAIN)));
     }
 
     /**
@@ -145,6 +153,7 @@ public final class MapLayerTerrainInstaller {
         for (var terrain : hyperspace.getTerrainCopy()) {
 
             if (isMapLayerTerrain(terrain)) {
+
                 hyperspace.removeEntity(terrain);
                 LOG.debug("Removed map layer terrain " + terrain.getPlugin().getClass().getSimpleName());
             }
@@ -167,6 +176,7 @@ public final class MapLayerTerrainInstaller {
      * entity by its own choice rather than by this handing one out.
      */
     public static CampaignTerrainAPI findAboveStarscapeNebulaeTerrain(SectorAPI sector) {
+
         if (sector == null) {
             return null;
         }
@@ -174,6 +184,28 @@ public final class MapLayerTerrainInstaller {
         return hyperspace == null
             ? null
             : findMapLayerTerrain(hyperspace.getTerrainCopy(), ABOVE_STARSCAPE_NEBULAE_TERRAIN);
+    }
+
+    // Builds a Starscape entity, filing one the game's own terrain class no longer links against and
+    // then passing the failure on to the step's guard. The entity extends that class, so a game
+    // release that changed it fails here, where the class is first loaded - and a LinkageError is
+    // the one failure of the build that cannot be this mod's own, which is what makes it the game's
+    // to report.
+    static SectorEntityToken createStarscapeTerrain(
+            Supplier<? extends SectorEntityToken> buildTerrain,
+            GameReachReporter reporter) {
+
+        try {
+            return buildTerrain.get();
+
+        } catch (LinkageError linkageError) {
+
+            reporter.recordReachFailure(
+                "installing the map layers' Starscape terrain",
+                "CampaignTerrain, which that terrain extends",
+                linkageError);
+            throw linkageError;
+        }
     }
 
     // The terrain this location carries for the given variant, or null when it carries none.

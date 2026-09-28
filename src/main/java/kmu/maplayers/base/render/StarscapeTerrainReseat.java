@@ -8,6 +8,7 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 
+import kmu.maplayers.base.compatibility.MapLayerGameReaches;
 import kmu.maplayers.base.machinery.InstalledMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 
@@ -98,9 +99,9 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
         installedReseat.installOn(
             sector,
             () -> new MapIconReseater(
-                new MapPresence()::isStarscapeMapShowing,
+                new MapPresence(MapLayerGameReaches.STARSCAPE_RESEAT)::isStarscapeMapShowing,
                 findAboveNebulaeTerrain,
-                MapIconLayeringProbe::readLayeringOf));
+                entity -> MapIconLayeringProbe.readLayeringOf(entity, MapLayerGameReaches.STARSCAPE_RESEAT)));
     }
 
     /**

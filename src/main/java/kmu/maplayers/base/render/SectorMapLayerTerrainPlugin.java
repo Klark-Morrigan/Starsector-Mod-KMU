@@ -8,6 +8,7 @@ import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 
+import kmu.maplayers.base.compatibility.MapLayerGameReaches;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -68,7 +69,7 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     // which an instance field on a serialised plugin would not.
     // Whether a vanilla map host is on screen. One binding shared by the render constraint and the
     // warning below, so the two cannot disagree about what counts as a map being up.
-    private static final MapPresence MAP_PRESENCE = new MapPresence();
+    private static final MapPresence MAP_PRESENCE = new MapPresence(MapLayerGameReaches.MAP_VIEW);
 
     private static final ForeignMapPassWarning FOREIGN_PASS_WARNING = new ForeignMapPassWarning(
         MAP_PRESENCE::isAnyMapShowing,

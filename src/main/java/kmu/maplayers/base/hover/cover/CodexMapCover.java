@@ -2,6 +2,8 @@ package kmu.maplayers.base.hover.cover;
 
 import kmlib.starsector.ui.coreui.CodexView;
 
+import kmu.maplayers.base.compatibility.MapLayerGameReaches;
+
 /**
  * The cover the codex lays over the map: while it is up nothing the cursor rests on is the map.
  *
@@ -34,6 +36,6 @@ public final class CodexMapCover extends FlagMapCover {
      * it.
      */
     public CodexMapCover() {
-        super(CodexView::isCodexShowing);
+        super(() -> CodexView.isCodexShowing(MapLayerGameReaches.SCREEN_COVERS));
     }
 }
