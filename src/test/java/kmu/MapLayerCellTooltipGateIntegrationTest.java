@@ -11,6 +11,7 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.map.presence.SectorMapState;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
@@ -330,7 +331,7 @@ class MapLayerCellTooltipGateIntegrationTest {
             Runnable body) {
 
         try (var mapViewMock = mockStatic(CampaignMapView.class);
-             var globalMock = mockStatic(Global.class)) {
+             var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
             mapViewMock
                 .when(() -> CampaignMapView.resolveSectorMapState(any()))

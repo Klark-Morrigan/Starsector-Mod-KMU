@@ -234,7 +234,7 @@ final class FilterSelectionHealTest {
         void healStaleSelectionAgainstLiveSectorJudgesAgainstTheRunningSector() {
             // A sidebar click is handed no sector, so the running one is resolved at the entry and
             // is the one the view's blocs are read off.
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 stubRunningSector(globalMock);
@@ -263,7 +263,7 @@ final class FilterSelectionHealTest {
             // A settings change is what takes a bloc off the picker mid-game (a visibility override
             // switched off can leave a faction with no visible market), so what is pinned is that the
             // runnable handed to the settings seam is the heal itself and not some other reaction.
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
                 stubRunningSector(globalMock);
@@ -289,7 +289,7 @@ final class FilterSelectionHealTest {
         void installHealOnSettingsChangeResolvesTheSectorWhenTheChangeFires() {
             // The listener outlives any one save, so the sector it judges against is the one running
             // when a change fires rather than whichever was up when it was installed.
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
                 stubRunningSector(globalMock);
@@ -309,14 +309,12 @@ final class FilterSelectionHealTest {
         }
     }
 
-    // Answers the running game's sector with the case's own, and a logger for whatever class first
-    // touches Global inside the block.
+    // Answers the running game's sector with the case's own.
     private void stubRunningSector(MockedStatic<Global> globalMock) {
 
         globalMock
             .when(Global::getSector)
             .thenReturn(sectorMock);
-        StubbedGlobalLogger.answerLoggersOn(globalMock);
     }
 
     // Answers the case's view with a picker read listing the given blocs against the case's sector.

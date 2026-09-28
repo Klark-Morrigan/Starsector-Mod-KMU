@@ -303,14 +303,13 @@ final class PoliticalMapStalenessSourceTest {
             var installedSector = buildOneSystemSector();
             var polledSector = new AtomicReference<SectorAPI>();
 
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                     var snapshotMock = mockStatic(PoliticalMapSectorSnapshot.class)) {
 
                 globalMock
                     .when(Global::getSector)
                     .thenReturn(mock(SectorAPI.class));
-                StubbedGlobalLogger.answerLoggersOn(globalMock);
 
                 visibilityRulesMock
                     .when(MapVisibilityRules::readFromLunaSettings)
@@ -414,15 +413,13 @@ final class PoliticalMapStalenessSourceTest {
             int pollCount,
             SectorMapMachinery machinery) {
 
-        try (var globalMock = mockStatic(Global.class);
+        // Global answers the logger alone. The sector lookup is left unstubbed on purpose: a poll
+        // reads its machinery's sector, so a run that only passed because the running game
+        // answered with one would fail here rather than read as a case about routing.
+        try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                 var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                 var snapshotMock = mockStatic(PoliticalMapSectorSnapshot.class);
                 var alliancesMock = mockStatic(NexerelinAlliances.class)) {
-
-            // Only the logger. The sector lookup is left unstubbed on purpose: a poll reads its
-            // machinery's sector, so a run that only passed because the running game answered
-            // with one would fail here rather than read as a case about routing.
-            StubbedGlobalLogger.answerLoggersOn(globalMock);
 
             // The source reads the reveal toggles itself; stub them to the no-reveal view
             // so the scan and motion walks resolve the normal drawn set.

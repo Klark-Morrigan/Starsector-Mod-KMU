@@ -7,6 +7,7 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -136,11 +137,10 @@ class MapSurfaceInstallerTest {
             // mockStatic scope keeps a null logger for the rest of the JVM and faults every later
             // test that logs. Answering null for a null sector is its own contract, covered next door.
             MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(null);
-
             SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             try (var mapViewMock = mockStatic(CampaignMapView.class);
-                    var globalMock = mockStatic(Global.class);
+                    var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var layeringProbeMock = mockStatic(MapIconLayeringProbe.class)) {
 
                 globalMock
@@ -179,11 +179,10 @@ class MapSurfaceInstallerTest {
             // Loaded before Global is stood in for, so the installer's logger is resolved outside
             // the stubbed scope rather than left null for the rest of the JVM.
             MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(null);
-
             SectorMapMachineryIndex.installMachineryOn(installedSectorMock);
 
             try (var mapViewMock = mockStatic(CampaignMapView.class);
-                    var globalMock = mockStatic(Global.class);
+                    var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var terrainMock = mockStatic(MapLayerTerrainInstaller.class);
                     var layeringProbeMock = mockStatic(MapIconLayeringProbe.class)) {
 

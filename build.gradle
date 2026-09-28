@@ -183,6 +183,14 @@ enforceRestrictedCalls {
     restrictCall call: 'SectorMemoryAccess.readSectorMemory()',
         under: 'kmu.maplayers',
         toTypes: ['PersistedActiveLayerSelection']
+
+    // A stand-in for Global opened anywhere but KMLib's fixture that answers
+    // loggers: a class whose static logger is first resolved inside a bare one
+    // keeps its null for the rest of the JVM, failing a later suite on a line it
+    // never wrote. The fixture lives in KMLib, so no KMU type is allowed.
+    restrictCall call: 'mockStatic(Global.class',
+        under: 'kmu',
+        instead: 'StubbedGlobalLogger.openGlobalAnsweringLoggers()'
 }
 
 // On-demand source cleanup (`gradlew formatJava`). Mechanical fixes only - it

@@ -119,7 +119,7 @@ final class HoveredBoxTest {
             // together so neither pass can pair one frame's box with another frame's system.
             hoverTheSystem();
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -133,7 +133,7 @@ final class HoveredBoxTest {
         @Test
         void resolveHoveredBoxIsEmptyWhenNothingIsHovered() {
             // No cell under the cursor, so there is nothing a box could be about.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -152,7 +152,7 @@ final class HoveredBoxTest {
 
             hoverTheSystem();
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -168,7 +168,7 @@ final class HoveredBoxTest {
             // Both passes run for the whole campaign UI, so they can be asked before a game is loaded.
             hoverTheSystem();
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -199,7 +199,7 @@ final class HoveredBoxTest {
             MapHoverFixtures.hoverASystemIn(
                 SectorMapMachineryIndex.resolveMachineryFor(null), SYSTEM_ID);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -217,7 +217,7 @@ final class HoveredBoxTest {
             MapHoverFixtures.hoverASystemIn(
                 SectorMapMachineryIndex.resolveMachineryFor(sectorMock), DROPPED_SYSTEM_ID);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -290,7 +290,7 @@ final class HoveredBoxTest {
         @Test
         void resolveActiveTooltipAnswersTheActiveLayersInjectedTooltip() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 // No sector means no stored pick, so the registry resolves to the registered default.
                 globalMock
@@ -308,7 +308,7 @@ final class HoveredBoxTest {
             when(layerRendererMock.resolveHoverTooltip())
                 .thenReturn(Optional.empty());
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -341,7 +341,7 @@ final class HoveredBoxTest {
 
             MapLayerRosters.replaceRosterWith(silencedLayerMock, tooltipLayerMock);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -382,7 +382,7 @@ final class HoveredBoxTest {
 
             MapLayerRosters.replaceRosterWith(silentLayerMock);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -421,7 +421,7 @@ final class HoveredBoxTest {
             // asked before any composition root has run rather than dereference a null pick.
             MapLayerRosters.forgetEveryLayer();
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)

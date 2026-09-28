@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHoverPermissionFixture;
@@ -30,7 +31,6 @@ import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwit
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -172,7 +172,7 @@ final class MapLayerCellTooltipTest {
             var vanillaMapTooltipProbeMock = mock(VanillaMapTooltipProbe.class);
 
             runWithHoverTooltipSwitchOn(() -> {
-                try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                try (MockedStatic<Global> globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                     globalMock
                         .when(Global::getSector)
@@ -202,7 +202,7 @@ final class MapLayerCellTooltipTest {
                 .moveToLevel(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
 
             runWithHoverTooltipSwitchOn(() -> {
-                try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                try (MockedStatic<Global> globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                     globalMock
                         .when(Global::getSector)

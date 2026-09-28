@@ -87,7 +87,7 @@ final class MapLayersTest {
         @Test
         void selectPoliticalMapViewsPutsTheAlliancesViewBetweenFactionsAndClaimsWhenNexIsPresent() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, true);
 
@@ -109,7 +109,7 @@ final class MapLayersTest {
             // the system by decree - one hover answered two ways, a keystroke apart. Read off the
             // roster rather than off a list of views written here, so a view added tomorrow is held
             // to this without anyone remembering to name it.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, true);
 
@@ -131,7 +131,7 @@ final class MapLayersTest {
         @Test
         void selectPoliticalMapViewsIsFactionThenClaimsWhenNexIsAbsent() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, false);
 
@@ -153,7 +153,7 @@ final class MapLayersTest {
             // The heal is the layer's, so it is installed where the layer is made and over that layer's
             // registry: a settings change then clears a spotlight the political map's own picker no
             // longer offers, judged under the views that layer holds rather than anybody else's.
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var healMock = mockStatic(FilterSelectionHeal.class)) {
 
                 stubNexEnabled(globalMock, false);
@@ -176,7 +176,7 @@ final class MapLayersTest {
             //
             // Asserted through the registry rather than off a list here, since a set named twice is
             // a set that can be corrected in one of the two.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, false);
 
@@ -194,7 +194,7 @@ final class MapLayersTest {
             // files - two registrations here, and each layer's own answer to whether it offers itself.
             // So nothing but this fails if the calls are reordered or either answer is flipped, and
             // both are facts a player meets on the first sector map they open.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, false);
 
@@ -224,7 +224,7 @@ final class MapLayersTest {
             // observe that a source was registered is to read it, and reading it resolves the
             // holder that names a Nexerelin class the test classpath does not carry. A case
             // pinning that would be pinning the absence of a dependency.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, false);
 
@@ -249,9 +249,5 @@ final class MapLayersTest {
             .thenReturn(modManagerMock);
         when(modManagerMock.isModEnabled(NEXERELIN_MOD_ID))
             .thenReturn(isEnabled);
-
-        // The wiring this drives builds the arrangement store, whose logger is a static field taken
-        // from Global as its class loads: StubbedGlobalLogger says what an unanswered one costs.
-        StubbedGlobalLogger.answerLoggersOn(globalMock);
     }
 }
