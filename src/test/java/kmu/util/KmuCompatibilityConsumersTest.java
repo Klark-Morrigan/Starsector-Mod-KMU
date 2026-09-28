@@ -1,4 +1,4 @@
-package kmu.maplayers.base.compatibility;
+package kmu.util;
 
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 
@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins how a failed reach names KMU as the mod that lost something: under KMU's own ID, the feature
- * key it was given, and the two sentences its keys name rather than either in the other's slot.
+ * Pins how KMU names itself to the compatibility channel: under its own mod ID, the feature key it
+ * was given, and the sentence each key names rather than either in the other's slot.
  */
-final class MapLayerGameReachesTest {
+final class KmuCompatibilityConsumersTest {
 
     @AfterEach
     void clearSettings() {
@@ -24,11 +24,11 @@ final class MapLayerGameReachesTest {
     class DescribeConsumer {
 
         @Test
-        void namesKmuTheFeatureAndTheSentencesEachKeyHolds() {
+        void namesKmuTheFeatureAndTheSentenceEachKeyHolds() {
 
             StarsectorSettingsFake.installSettings((category, key) -> "the sentence for " + key);
 
-            var consumer = MapLayerGameReaches.describeConsumer("map-view", "lost_key", "unaffected_key");
+            var consumer = KmuCompatibilityConsumers.describeConsumer("map-view", "lost_key", "unaffected_key");
 
             assertThat(consumer.consumerKey())
                 .isEqualTo("kmu:map-view");

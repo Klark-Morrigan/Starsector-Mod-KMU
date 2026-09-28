@@ -10,7 +10,7 @@ import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterRows;
 import kmlib.starsector.ui.map.controls.MapFilterToggle;
 
-import kmu.maplayers.base.compatibility.MapLayerGameReaches;
+import kmu.maplayers.base.compatibility.MapLayerGameReach;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
@@ -116,7 +116,7 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
         this(
             KmuMapControlSettings::isMapFilterRowToggleEnabled,
             MapLayerScreens::resolveLivePicks,
-            () -> MapFilterRows.resolveShownMapFilterRow(MapLayerGameReaches.FILTER_ROW_TOGGLE),
+            () -> MapFilterRows.resolveShownMapFilterRow(MapLayerGameReach.FILTER_ROW_TOGGLE.getReporter()),
             CampaignScreenView::resolveShownCoreTab,
             new VanillaMapLayerToggleAttacher());
     }

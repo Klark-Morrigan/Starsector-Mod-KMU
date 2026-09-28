@@ -9,7 +9,7 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 
 import kmlib.starsector.compatibility.GameReachReporter;
 
-import kmu.maplayers.base.compatibility.MapLayerGameReaches;
+import kmu.maplayers.base.compatibility.MapLayerGameReach;
 
 import org.apache.log4j.Logger;
 
@@ -98,7 +98,7 @@ public final class MapLayerTerrainInstaller {
             STARSCAPE_TERRAIN,
             hyperspace -> hyperspace.addEntity(createStarscapeTerrain(
                 () -> new SectorMapLayerStarscapeTerrain(SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE),
-                MapLayerGameReaches.STARSCAPE_TERRAIN)));
+                MapLayerGameReach.STARSCAPE_TERRAIN.getReporter())));
     }
 
     /**
@@ -123,7 +123,7 @@ public final class MapLayerTerrainInstaller {
             ABOVE_STARSCAPE_NEBULAE_TERRAIN,
             hyperspace -> hyperspace.addEntity(createStarscapeTerrain(
                 () -> new SectorMapLayerStarscapeTerrain(SECTOR_MAP_LAYER_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE),
-                MapLayerGameReaches.STARSCAPE_TERRAIN)));
+                MapLayerGameReach.STARSCAPE_TERRAIN.getReporter())));
     }
 
     /**

@@ -5,10 +5,10 @@ import kmlib.settings.LabeledChoice;
 import kmlib.settings.LabeledChoices;
 import kmlib.settings.LunaLogLevelBinding;
 import kmlib.settings.LunaSettingsReader;
-import kmlib.starsector.compatibility.CompatibilityConsumer;
 import kmlib.starsector.compatibility.ModIntegration;
 
 import kmu.KmuMod;
+import kmu.util.KmuCompatibilityConsumers;
 import kmu.util.KmuStringKeys;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -129,11 +129,10 @@ public final class KmuLunaSettings {
     public static ModIntegration describeLunaLibIntegration() {
 
         return KmlibLunaSettings.describeLunaLibIntegration(
-            new CompatibilityConsumer(
-                MOD_ID,
+            KmuCompatibilityConsumers.describeConsumer(
                 LUNALIB_SETTINGS_FEATURE_KEY,
-                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_LOST_LUNALIB_SETTINGS),
-                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_UNAFFECTED_LUNALIB_SETTINGS)));
+                KmuStringKeys.COMPATIBILITY_LOST_LUNALIB_SETTINGS,
+                KmuStringKeys.COMPATIBILITY_UNAFFECTED_LUNALIB_SETTINGS));
     }
 
     /**

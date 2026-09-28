@@ -33,10 +33,12 @@ out of KMU's own strings.
 
 ## One reporter per loss
 
-[`MapLayerGameReaches`](MapLayerGameReaches.java) holds one reporter per thing a player loses,
-not one per reach:
+[`MapLayerGameReach`](MapLayerGameReach.java) has one constant per thing a player loses,
+not one per reach,
+each holding its feature key, both of its string keys and the reporter built from them -
+so a loss cannot be filed with another loss's sentence:
 
-| Reporter | What the player loses |
+| Constant | What the player loses |
 | --- | --- |
 | `MAP_VIEW` | the layers and the sidebar on the sector map or the intel screen's map |
 | `FILTER_ROW_TOGGLE` | the tick box on the filter row, or the key written on it |
@@ -51,6 +53,10 @@ the sector map's view state and the intel screen's panel both decide whether the
 and a reporter per reach would tell the player one loss twice.
 Each reporter files once for the session,
 its sentences read out of strings.json on that first failure alone.
+
+Every binding KMU takes names itself through one helper,
+[`KmuCompatibilityConsumers`](../../../util/KmuCompatibilityConsumers.java),
+so a reach into the game, a renderer's internals and LunaLib's settings all file under KMU alike.
 
 A reporter is handed to the probe at every call site that reads the game,
 so the probe files under KMU without knowing KMU exists.

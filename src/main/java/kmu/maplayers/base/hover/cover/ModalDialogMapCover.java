@@ -2,7 +2,7 @@ package kmu.maplayers.base.hover.cover;
 
 import kmlib.starsector.ui.coreui.CoreUiDialogView;
 
-import kmu.maplayers.base.compatibility.MapLayerGameReaches;
+import kmu.maplayers.base.compatibility.MapLayerGameReach;
 
 /**
  * The cover a modal raised over a core screen lays over the map - a confirmation prompt, a picker.
@@ -34,6 +34,6 @@ public final class ModalDialogMapCover extends FlagMapCover {
      * flags and below the covers that resolve a layout or walk down into a tab.
      */
     public ModalDialogMapCover() {
-        super(() -> CoreUiDialogView.isModalDialogShowing(MapLayerGameReaches.SCREEN_COVERS));
+        super(() -> CoreUiDialogView.isModalDialogShowing(MapLayerGameReach.SCREEN_COVERS.getReporter()));
     }
 }

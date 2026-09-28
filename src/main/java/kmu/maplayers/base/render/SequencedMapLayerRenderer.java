@@ -3,13 +3,11 @@ package kmu.maplayers.base.render;
 import com.fs.starfarer.api.Global;
 
 import kmlib.logging.ChangedLineTrace;
-import kmlib.starsector.compatibility.CompatibilityConsumer;
 import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 
-import kmu.KmuMod;
 import kmu.maplayers.base.hover.MapHoverCues;
 import kmu.maplayers.base.hover.MapHoverPermission;
 import kmu.maplayers.base.hover.MapHoverPublisher;
@@ -20,6 +18,7 @@ import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.settings.KmuLoggingSettings;
+import kmu.util.KmuCompatibilityConsumers;
 import kmu.util.KmuStringKeys;
 
 import org.apache.log4j.Logger;
@@ -354,11 +353,10 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
             // The binding is the library's and the consequence is KMU's: it knows which renderer
             // stopped holding and which member moved, and nothing about the overlay drawn over the
             // reading, so what a failed binding costs is said here and once.
-            ModelviewMatrixReaders.selectForActiveRenderer(new CompatibilityConsumer(
-                KmuMod.MOD_ID,
+            ModelviewMatrixReaders.selectForActiveRenderer(KmuCompatibilityConsumers.describeConsumer(
                 MAP_CURSOR_FEATURE_KEY,
-                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_LOST_MAP_CURSOR),
-                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_UNAFFECTED_MAP_CURSOR))),
+                KmuStringKeys.COMPATIBILITY_LOST_MAP_CURSOR,
+                KmuStringKeys.COMPATIBILITY_UNAFFECTED_MAP_CURSOR)),
             () -> soundPlayer.playCueIfPresent(MapHoverCues.composeCellArrivalCue()),
             // Taken from the shared permission rather than composed here, so this pass and the box
             // that reports what it finds answer from one reading: a hover resolved on a frame no box

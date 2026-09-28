@@ -348,7 +348,7 @@ and a player who ordered their bar once does not order it again per save.
   its modality and the box it stands in are [the map chrome README](base/chrome/README.md)'s.
 - **[Game reaches](base/compatibility/README.md)** -
   what the layers lose when a game release changes the code they reach into,
-  as one reporter per loss (`MapLayerGameReaches`),
+  as one reporter per loss (`MapLayerGameReach`),
   handed to every probe that reads the game's screens.
 - **[Installed machinery](base/machinery/README.md)** -
   one sector's map machinery as a thing a caller can hold,

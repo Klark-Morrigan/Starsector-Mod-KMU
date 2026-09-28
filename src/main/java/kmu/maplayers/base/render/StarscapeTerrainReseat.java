@@ -8,7 +8,7 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 
-import kmu.maplayers.base.compatibility.MapLayerGameReaches;
+import kmu.maplayers.base.compatibility.MapLayerGameReach;
 import kmu.maplayers.base.machinery.InstalledMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 
@@ -96,12 +96,14 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
         // Where the icon currently sits is KMLib's to read - it reads that itself rather than being
         // told, the widget's ordering being its own subject. Handed as the read rather than as a
         // reading of this entity, so the script asks it about whichever entity it is moving.
+        var reporter = MapLayerGameReach.STARSCAPE_RESEAT.getReporter();
+
         installedReseat.installOn(
             sector,
             () -> new MapIconReseater(
-                new MapPresence(MapLayerGameReaches.STARSCAPE_RESEAT)::isStarscapeMapShowing,
+                new MapPresence(reporter)::isStarscapeMapShowing,
                 findAboveNebulaeTerrain,
-                entity -> MapIconLayeringProbe.readLayeringOf(entity, MapLayerGameReaches.STARSCAPE_RESEAT)));
+                entity -> MapIconLayeringProbe.readLayeringOf(entity, reporter)));
     }
 
     /**

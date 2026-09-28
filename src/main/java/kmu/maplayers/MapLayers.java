@@ -3,7 +3,7 @@ package kmu.maplayers;
 import kmlib.starsector.settings.VanillaCommonDataStore;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 
-import kmu.maplayers.base.compatibility.MapLayerGameReaches;
+import kmu.maplayers.base.compatibility.MapLayerGameReach;
 import kmu.maplayers.base.layer.LiveMapLayerArrangement;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
@@ -78,7 +78,7 @@ public final class MapLayers {
         // Each screen keeps its own tab, so the overlay has to follow the tab of the screen being
         // looked at rather than one fixed screen's. This is the live binding that tells the two apart;
         // naming it here keeps the registry ignorant of any concrete screen.
-        MapLayerScreens.registerIntelScreen(new VanillaIntelScreenView(MapLayerGameReaches.MAP_VIEW));
+        MapLayerScreens.registerIntelScreen(new VanillaIntelScreenView(MapLayerGameReach.MAP_VIEW.getReporter()));
 
         // The spotlight is the other thing a settings change can invalidate, and it is the layer's:
         // healed under that layer's own views, so it is installed where the layer is made rather than
