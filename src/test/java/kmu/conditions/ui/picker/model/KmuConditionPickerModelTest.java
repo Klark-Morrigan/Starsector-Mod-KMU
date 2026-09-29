@@ -15,7 +15,7 @@ class KmuConditionPickerModelTest {
     class FindEntry {
 
         @Test
-        void findEntryReturnsPresentForMatchingId() {
+        void returnsPresentForMatchingId() {
             var hotEntry = buildEntry("hot", KmuConditionPickerEntryState.PRESENT);
             var model = buildModel(hotEntry);
 
@@ -23,7 +23,7 @@ class KmuConditionPickerModelTest {
         }
 
         @Test
-        void findEntryReturnsEmptyForNonMatchingId() {
+        void returnsEmptyForNonMatchingId() {
             var model = buildModel(buildEntry("hot", KmuConditionPickerEntryState.PRESENT));
 
             assertThat(model.findEntry("cold")).isEmpty();
@@ -34,7 +34,7 @@ class KmuConditionPickerModelTest {
     class GetVisibleCount {
 
         @Test
-        void getVisibleCountCountsPresentNonHiddenEntries() {
+        void countsPresentNonHiddenEntries() {
             var model = buildModel(
                     buildEntry("hot", KmuConditionPickerEntryState.PRESENT),
                     buildHiddenEntry("no_atmosphere"),
@@ -48,7 +48,7 @@ class KmuConditionPickerModelTest {
     class GetAvailableCount {
 
         @Test
-        void getAvailableCountCountsAbsentEntries() {
+        void countsAbsentEntries() {
             var model = buildModel(
                     buildEntry("hot", KmuConditionPickerEntryState.PRESENT),
                     buildEntry("cold", KmuConditionPickerEntryState.ABSENT),

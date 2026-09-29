@@ -22,7 +22,7 @@ final class MapLayerArrangementTest {
     class IsLayerHidden {
 
         @Test
-        void isLayerHiddenAnswersForAnIdTheArrangementNames() {
+        void answersForAnIdTheArrangementNames() {
 
             var arrangement = new MapLayerArrangement(List.of(), List.of("beta"));
 
@@ -31,7 +31,7 @@ final class MapLayerArrangementTest {
         }
 
         @Test
-        void isLayerHiddenAnswersNoForAnIdTheArrangementDoesNotName() {
+        void answersNoForAnIdTheArrangementDoesNotName() {
             // Hiding is stated rather than assumed: a layer the player has never touched is on the
             // bar, which is what an install with no arrangement at all has to read as.
             var arrangement = new MapLayerArrangement(List.of("beta"), List.of());
@@ -45,7 +45,7 @@ final class MapLayerArrangementTest {
     class Construction {
 
         @Test
-        void constructionCopiesTheOrderItWasBuiltFrom() {
+        void copiesTheOrderItWasBuiltFrom() {
 
             var editedOrder = new ArrayList<>(List.of("alpha", "beta"));
             var arrangement = new MapLayerArrangement(editedOrder, List.of());
@@ -57,7 +57,7 @@ final class MapLayerArrangementTest {
         }
 
         @Test
-        void constructionCopiesTheHidingItWasBuiltFrom() {
+        void copiesTheHidingItWasBuiltFrom() {
 
             var editedHiding = new ArrayList<>(List.of("alpha"));
             var arrangement = new MapLayerArrangement(List.of(), editedHiding);

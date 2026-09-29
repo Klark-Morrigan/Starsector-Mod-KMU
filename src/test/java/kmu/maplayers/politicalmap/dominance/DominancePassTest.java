@@ -133,7 +133,7 @@ class DominancePassTest {
     class ResolveDominantBlocId {
 
         @Test
-        void resolveDominantBlocIdNamesTheHeavierBloc() {
+        void namesTheHeavierBloc() {
 
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
@@ -151,7 +151,7 @@ class DominancePassTest {
         }
 
         @Test
-        void resolveDominantBlocIdPassesOverAHeavierNeutralBloc() {
+        void passesOverAHeavierNeutralBloc() {
             // The pass's own candidacy bar rides in with the ranking, so the neutral placeholder's
             // heavier footprint buys it nothing - the one rule every surface naming a winner shares.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
@@ -170,7 +170,7 @@ class DominancePassTest {
         }
 
         @Test
-        void resolveDominantBlocIdIsNullWhereNothingWasWeighed() {
+        void isNullWhereNothingWasWeighed() {
 
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var sector = buildSectorWith(

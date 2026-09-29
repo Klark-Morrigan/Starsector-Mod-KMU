@@ -22,21 +22,21 @@ final class EdgeInsetRuleTest {
     class ResolveInsetOf {
 
         @Test
-        void resolveInsetOfPullsInABorderEdgeUnderTheShippedRule() {
+        void pullsInABorderEdgeUnderTheShippedRule() {
 
             assertThat(EdgeInsetRule.AT_EVERY_BORDER.resolveInsetOf(true, DEPTH))
                 .isCloseTo(37.0, within(1e-9));
         }
 
         @Test
-        void resolveInsetOfLeavesAFusedEdgeOnItsLineUnderTheShippedRule() {
+        void leavesAFusedEdgeOnItsLineUnderTheShippedRule() {
 
             assertThat(EdgeInsetRule.AT_EVERY_BORDER.resolveInsetOf(false, DEPTH))
                 .isCloseTo(0.0, within(1e-9));
         }
 
         @Test
-        void resolveInsetOfPullsInNothingUnderNowhere() {
+        void pullsInNothingUnderNowhere() {
 
             assertThat(EdgeInsetRule.NOWHERE.resolveInsetOf(true, DEPTH))
                 .isCloseTo(0.0, within(1e-9));
@@ -45,7 +45,7 @@ final class EdgeInsetRuleTest {
         }
 
         @Test
-        void resolveInsetOfPullsInEveryEdgeUnderEverywhere() {
+        void pullsInEveryEdgeUnderEverywhere() {
 
             assertThat(EdgeInsetRule.EVERYWHERE.resolveInsetOf(true, DEPTH))
                 .isCloseTo(37.0, within(1e-9));
@@ -58,7 +58,7 @@ final class EdgeInsetRuleTest {
     class IsFusingSharedEdges {
 
         @Test
-        void isFusingSharedEdgesHoldsWhereASharedEdgeKeepsItsLine() {
+        void holdsWhereASharedEdgeKeepsItsLine() {
 
             assertThat(EdgeInsetRule.AT_EVERY_BORDER.isFusingSharedEdges())
                 .isTrue();
@@ -67,14 +67,14 @@ final class EdgeInsetRuleTest {
         }
 
         @Test
-        void isFusingSharedEdgesFailsWhereEvenASharedEdgePullsIn() {
+        void failsWhereEvenASharedEdgePullsIn() {
 
             assertThat(EdgeInsetRule.EVERYWHERE.isFusingSharedEdges())
                 .isFalse();
         }
 
         @Test
-        void isFusingSharedEdgesAgreesWithWhatTheRuleGivesASharedEdge() {
+        void agreesWithWhatTheRuleGivesASharedEdge() {
             // The two are one statement: a shared edge left at zero is a shared edge the two
             // bodies meet along, and one pulled back by anything is a channel between them.
             for (var rule : EdgeInsetRule.values()) {

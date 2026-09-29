@@ -89,7 +89,7 @@ final class MapLayerStandingsTest {
     class ApplyArrangementTo {
 
         @Test
-        void applyArrangementToStandsALayerOnTheBarUpOnTheLoadedSector() {
+        void standsALayerOnTheBarUpOnTheLoadedSector() {
 
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of());
@@ -101,7 +101,7 @@ final class MapLayerStandingsTest {
         }
 
         @Test
-        void applyArrangementToNeverStandsALayerHiddenInTheStoreUp() {
+        void neverStandsALayerHiddenInTheStoreUp() {
             // The whole point of the hidden set having teeth: a tab the player took off the bar in a
             // past session does not start listening again at the next load, having nowhere to be
             // looked at from.
@@ -115,7 +115,7 @@ final class MapLayerStandingsTest {
         }
 
         @Test
-        void applyArrangementToStandsALayerUpOnceForOneSector() {
+        void standsALayerUpOnceForOneSector() {
             // Asked twice over an unmoved bar - a settings change, a second load path - and the
             // second ask is worth nothing. Standing up what already stands is what would drop a
             // layer's caches and re-register its listeners for no reason the player could see.
@@ -130,7 +130,7 @@ final class MapLayerStandingsTest {
         }
 
         @Test
-        void applyArrangementToLeavesALayerThatStatesNoStandingPairAlone() {
+        void leavesALayerThatStatesNoStandingPairAlone() {
             // A layer with no sector wiring is simply always standing. There is no half to run in
             // either direction, and a walk that assumed one would take every layer after it in the
             // row down with the exception.
@@ -144,7 +144,7 @@ final class MapLayerStandingsTest {
         }
 
         @Test
-        void applyArrangementToLeavesASectorWithNothingInstalledAlone() {
+        void leavesASectorWithNothingInstalledAlone() {
             // The switch can be flipped with no game loaded, and a load with the overlay off installs
             // nothing. There is no sector to stand up on, and a standing recorded against the holder
             // every sector-less caller shares would be inherited by the next real one.
@@ -157,7 +157,7 @@ final class MapLayerStandingsTest {
         }
 
         @Test
-        void applyArrangementToStandsTheRestOfTheRowUpPastALayerThatThrows() {
+        void standsTheRestOfTheRowUpPastALayerThatThrows() {
             // An install carrying another mod's layer calls a stranger's code here, and a layer that
             // throws on the way up is not a reason for the tabs after it to go unwired.
             doThrow(new IllegalStateException("stand-up refused"))
@@ -178,7 +178,7 @@ final class MapLayerStandingsTest {
     class ApplyArrangementWhereverInstalled {
 
         @Test
-        void applyArrangementWhereverInstalledStandsAHiddenLayerDownOnEverySector() {
+        void standsAHiddenLayerDownOnEverySector() {
             // The bar is one preference for every campaign, so a tab taken off it stops costing
             // wherever the player goes rather than only on the sector they were looking at.
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
@@ -195,7 +195,7 @@ final class MapLayerStandingsTest {
         }
 
         @Test
-        void applyArrangementWhereverInstalledStandsALayerPutBackOnTheBarUpAgain() {
+        void standsALayerPutBackOnTheBarUpAgain() {
             // The way back has to work, the dialog being the only place a hidden tab returns from.
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of(WIRED_LAYER_ID));
@@ -209,7 +209,7 @@ final class MapLayerStandingsTest {
         }
 
         @Test
-        void applyArrangementWhereverInstalledStandsNothingUpOrDownForAReorder() {
+        void standsNothingUpOrDownForAReorder() {
             // A move writes the whole arrangement back, so the second walk sees the same hidden set
             // in a different order. Nothing has moved between shown and hidden, and a layer torn
             // down and rebuilt by a drag is the cost this diff exists to refuse.
@@ -234,7 +234,7 @@ final class MapLayerStandingsTest {
     class StandEveryLayerDownFrom {
 
         @Test
-        void standEveryLayerDownFromTakesAStandingLayerDownWhateverTheBarSays() {
+        void takesAStandingLayerDownWhateverTheBarSays() {
             // The switch that turns the map layers off decides nothing about the bar: it ends every
             // layer at once, and it is the path a player uninstalls the mod from a save through.
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
@@ -248,7 +248,7 @@ final class MapLayerStandingsTest {
         }
 
         @Test
-        void standEveryLayerDownFromLeavesALayerThatNeverStoodAlone() {
+        void leavesALayerThatNeverStoodAlone() {
             // Nothing was registered for a hidden layer, so there is nothing to take back - and a
             // stand-down aimed at it would have a layer's own idempotence carrying the mistake.
             MapLayerRosters.replaceRosterWith(wiredLayerMock);

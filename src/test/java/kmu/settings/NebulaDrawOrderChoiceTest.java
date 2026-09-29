@@ -15,7 +15,7 @@ final class NebulaDrawOrderChoiceTest {
     class GetLabel {
 
         @Test
-        void getLabelReturnsTheLunaLibOptionLabel() {
+        void returnsTheLunaLibOptionLabel() {
 
             assertThat(NebulaDrawOrderChoice.BELOW.getLabel())
                 .isEqualTo("Below");

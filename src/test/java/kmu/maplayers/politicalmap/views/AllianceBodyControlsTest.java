@@ -41,7 +41,7 @@ final class AllianceBodyControlsTest {
     class BuildControls {
 
         @Test
-        void buildControlsHandsTheNonAlliedSetCaptionAndPanelToTheSharedRecedeControl() {
+        void handsTheNonAlliedSetCaptionAndPanelToTheSharedRecedeControl() {
             try (MockedStatic<RecedeControl> controlMock = mockStatic(RecedeControl.class);
                     MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stringsMock.when(() -> KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))

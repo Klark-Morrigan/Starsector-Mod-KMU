@@ -87,7 +87,7 @@ final class HoverTooltipDetailLevelInputTest {
     class GetListenerInputPriority {
 
         @Test
-        void getListenerInputPriorityRunsBehindTheSidebarsOwnListener() {
+        void runsBehindTheSidebarsOwnListener() {
             // Ahead of the core screen, but not ahead of the sidebar: a key bound to a sidebar tab
             // must reach the tab rather than be eaten here.
             assertThat(input.getListenerInputPriority())
@@ -100,7 +100,7 @@ final class HoverTooltipDetailLevelInputTest {
     class ProcessCampaignInputPreCore {
 
         @Test
-        void processCampaignInputPreCoreMovesToTheLevelTheBoxNamedOnTheCycleKeyPress() {
+        void movesToTheLevelTheBoxNamedOnTheCycleKeyPress() {
 
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
@@ -115,7 +115,7 @@ final class HoverTooltipDetailLevelInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreAsksTheBoxAboutTheLevelThePressMovesOnFrom() {
+        void asksTheBoxAboutTheLevelThePressMovesOnFrom() {
             // The offer is a question about this press, so it is asked at the level on screen rather
             // than at the one the move is about to land on. Read the other way round the gate would
             // answer about a depth the player has not been shown - and from the box's deepest level
@@ -131,7 +131,7 @@ final class HoverTooltipDetailLevelInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreTakesTheBoxsDestinationRatherThanSteppingTheCycle() {
+        void takesTheBoxsDestinationRatherThanSteppingTheCycle() {
             // The cycle wraps at the deepest level the box itself holds anything at, which only the
             // box knows - so the press lands exactly where it said and not one constant further on.
             // Stepped here, a box whose account ends early would walk its player through tiers that
@@ -149,7 +149,7 @@ final class HoverTooltipDetailLevelInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreLeavesTheCycleKeyPressAloneWhileTooltipsAreSwitchedOff() {
+        void leavesTheCycleKeyPressAloneWhileTooltipsAreSwitchedOff() {
             // No box can be drawn behind this switch, so there is nothing for the key to switch and
             // the press must fall through to whatever else claims it.
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
@@ -164,7 +164,7 @@ final class HoverTooltipDetailLevelInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreLeavesTheCycleKeyPressAloneWhileNoMapIsOnScreen() {
+        void leavesTheCycleKeyPressAloneWhileNoMapIsOnScreen() {
             // This listener is called for the whole campaign UI, so without the map gate F1 would be
             // swallowed on every screen the player is on - the refit, the intel list, the market.
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
@@ -182,7 +182,7 @@ final class HoverTooltipDetailLevelInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreSkipsAnEventAlreadyClaimedUpstream() {
+        void skipsAnEventAlreadyClaimedUpstream() {
             // A sidebar tab bound to the same key acts first; taking the press again would advance
             // the level on a press that was meant for the tab.
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
@@ -197,7 +197,7 @@ final class HoverTooltipDetailLevelInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreLeavesEveryOtherKeyAlone() {
+        void leavesEveryOtherKeyAlone() {
             // The gate is open and a key is down, so only the keycode test stands between this press
             // and the level - which is every other binding the player has on the map.
             var eventMock = mockKeyDown(Keyboard.KEY_P);
@@ -212,7 +212,7 @@ final class HoverTooltipDetailLevelInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreClaimsTheCycleKeyPressBehindAnUnrelatedEvent() {
+        void claimsTheCycleKeyPressBehindAnUnrelatedEvent() {
             // Events arrive as a frame's worth at once, so an unrelated one earlier in the list must
             // not end the pass before the cycle key is reached.
             var unrelatedEventMock = mockKeyDown(Keyboard.KEY_P);
@@ -233,7 +233,7 @@ final class HoverTooltipDetailLevelInputTest {
     class ProcessCampaignInputPreFleetControl {
 
         @Test
-        void processCampaignInputPreFleetControlLeavesTheCycleKeyPressUntouched() {
+        void leavesTheCycleKeyPressUntouched() {
 
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
@@ -252,7 +252,7 @@ final class HoverTooltipDetailLevelInputTest {
     class ProcessCampaignInputPostCore {
 
         @Test
-        void processCampaignInputPostCoreLeavesTheCycleKeyPressUntouched() {
+        void leavesTheCycleKeyPressUntouched() {
             // The key is claimed pre-core, which is where consuming still stops the screen underneath
             // from seeing it.
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
@@ -330,7 +330,7 @@ final class HoverTooltipDetailLevelInputTest {
     class CycleKeyName {
 
         @Test
-        void cycleKeyNameNamesTheKeyThisListenerActuallyClaims() {
+        void namesTheKeyThisListenerActuallyClaims() {
             // A box tells the player which key expands it, and it is this listener that decides which
             // key that is - so the printed name is pinned to the press the listener acts on rather
             // than to a second spelling of it that could be left behind by a rebind.
@@ -346,14 +346,14 @@ final class HoverTooltipDetailLevelInputTest {
     class IsDetailLevelCycleKey {
 
         @Test
-        void isDetailLevelCycleKeyIsTrueForTheCycleKeyPressedDown() {
+        void isTrueForTheCycleKeyPressedDown() {
 
             assertThat(HoverTooltipDetailLevelInput.isDetailLevelCycleKey(mockKeyDown(Keyboard.KEY_F1)))
                 .isTrue();
         }
 
         @Test
-        void isDetailLevelCycleKeyIsFalseForTheKeyReleased() {
+        void isFalseForTheKeyReleased() {
             // The release arrives as its own event, so acting on both halves of one press would
             // advance the level twice and skip a depth the player never saw.
             var eventMock = mock(InputEventAPI.class);
@@ -366,13 +366,13 @@ final class HoverTooltipDetailLevelInputTest {
         }
 
         @Test
-        void isDetailLevelCycleKeyIsFalseForAnotherKey() {
+        void isFalseForAnotherKey() {
             assertThat(HoverTooltipDetailLevelInput.isDetailLevelCycleKey(mockKeyDown(Keyboard.KEY_P)))
                 .isFalse();
         }
 
         @Test
-        void isDetailLevelCycleKeyIsFalseForAPointerEvent() {
+        void isFalseForAPointerEvent() {
             // A mouse event carries a button in the same field a key event carries its keycode, so a
             // test that only read the value could match a button number onto the cycle key's keycode.
             var eventMock = mock(InputEventAPI.class);

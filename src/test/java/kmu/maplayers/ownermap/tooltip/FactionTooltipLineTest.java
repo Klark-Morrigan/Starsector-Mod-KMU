@@ -35,7 +35,7 @@ final class FactionTooltipLineTest {
     class BuildFactionLine {
 
         @Test
-        void buildFactionLineNamesTheFactionWithItsCrestAndValue() {
+        void namesTheFactionWithItsCrestAndValue() {
 
             var line = FactionTooltipLine.buildFactionLine(
                 buildSectorKnowingHegemony(),
@@ -50,7 +50,7 @@ final class FactionTooltipLineTest {
         }
 
         @Test
-        void buildFactionLineFallsBackToTheIdForAnUnknownFaction() {
+        void fallsBackToTheIdForAnUnknownFaction() {
             // A line naming one faction reads better as a bare ID than as a blank where the name
             // belongs, and a faction with no crest simply draws its name alone.
             var line = FactionTooltipLine.buildFactionLine(
@@ -69,7 +69,7 @@ final class FactionTooltipLineTest {
     class BuildCountedFactionLine {
 
         @Test
-        void buildCountedFactionLineStatesAWeighedFactionsCountInTheListsOwnShade() {
+        void statesAWeighedFactionsCountInTheListsOwnShade() {
             // A faction the mechanic weighed competed on its number, so the number reads as loudly as
             // every other score in the block.
             var line = FactionTooltipLine.buildCountedFactionLine(
@@ -91,7 +91,7 @@ final class FactionTooltipLineTest {
         }
 
         @Test
-        void buildCountedFactionLineQuietensTheNoughtOfAFactionNeverWeighed() {
+        void quietensTheNoughtOfAFactionNeverWeighed() {
             // The nought is the mechanic's statement about a faction it never reached. Drawn as loudly
             // as the scores around it, it would read as one competed for and lost.
             var line = FactionTooltipLine.buildCountedFactionLine(

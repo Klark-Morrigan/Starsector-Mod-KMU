@@ -48,28 +48,28 @@ final class FillSplitTest {
         private static final SystemKey SYSTEM = buildCellKey(SYSTEM_ID);
 
         @Test
-        void classifyFillStateReturnsSolidWhenTheSystemIsNeitherHatchedNorUnfilled() {
+        void returnsSolidWhenTheSystemIsNeitherHatchedNorUnfilled() {
 
             assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(), Set.of()))
                 .isEqualTo(FillState.SOLID);
         }
 
         @Test
-        void classifyFillStateReturnsHatchedWhenTheSystemIsHatched() {
+        void returnsHatchedWhenTheSystemIsHatched() {
 
             assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(SYSTEM), Set.of()))
                 .isEqualTo(FillState.HATCHED);
         }
 
         @Test
-        void classifyFillStateReturnsUnfilledWhenTheSystemIsUnfilled() {
+        void returnsUnfilledWhenTheSystemIsUnfilled() {
 
             assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(), Set.of(SYSTEM)))
                 .isEqualTo(FillState.UNFILLED);
         }
 
         @Test
-        void classifyFillStateFavoursUnfilledOverHatchedWhenTheSystemIsBoth() {
+        void favoursUnfilledOverHatchedWhenTheSystemIsBoth() {
             // A system drawn empty is empty whatever else the layer says about it, so unfilled
             // wins the tie.
             assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(SYSTEM), Set.of(SYSTEM)))
@@ -77,7 +77,7 @@ final class FillSplitTest {
         }
 
         @Test
-        void classifyFillStateReturnsSolidForACellWithNoStarOfItsOwn() {
+        void returnsSolidForACellWithNoStarOfItsOwn() {
             // A null system has no per-system fill state, so it fills solid with the rest of the
             // cluster rather than probing either exception set with a null key.
             assertThat(FillSplit.classifyFillState(null, Set.of(buildCellKey("other")), Set.of(buildCellKey("other"))))
@@ -85,7 +85,7 @@ final class FillSplitTest {
         }
 
         @Test
-        void classifyFillStateDrawsTwoSystemsSharingAnIdInTheirOwnStates() {
+        void drawsTwoSystemsSharingAnIdInTheirOwnStates() {
             // The sets name a system the way the members do, so a colliding pair can draw in two
             // different states - where a set keyed by ID could only have hatched both or neither.
             var hatched = new SystemKey(SYSTEM_ID, "", "8b3");
@@ -103,7 +103,7 @@ final class FillSplitTest {
     class SplitMembersByFillState {
 
         @Test
-        void splitMembersByFillStatePutsEachMemberSystemInItsOwnState() {
+        void putsEachMemberSystemInItsOwnState() {
 
             var split = splitFootprint();
 
@@ -116,7 +116,7 @@ final class FillSplitTest {
         }
 
         @Test
-        void splitMembersByFillStateKeepsAStarlessCellAmongTheCellsButNotTheSystems() {
+        void keepsAStarlessCellAmongTheCellsButNotTheSystems() {
             // A cell with no star of its own is still real area to trace a cluster from, so it joins
             // the solid state's cells - but it names no system, so nothing may key or mark it.
             var split = splitFootprint();
@@ -132,14 +132,14 @@ final class FillSplitTest {
     class HasNonSolidMembers {
 
         @Test
-        void hasNonSolidMembersIsTrueWhenTheFootprintHoldsAHatchedMember() {
+        void isTrueWhenTheFootprintHoldsAHatchedMember() {
 
             assertThat(splitFootprint().hasNonSolidMembers())
                 .isTrue();
         }
 
         @Test
-        void hasNonSolidMembersIsFalseWhenEveryMemberFillsSolid() {
+        void isFalseWhenEveryMemberFillsSolid() {
             // The fast path a cluster takes to fill as one area: nothing to split apart.
             var split = FillSplit.splitMembersByFillState(
                 buildGroupingOf(Map.of("cell-solid", SOLID_SYSTEM_ID)),
@@ -156,7 +156,7 @@ final class FillSplitTest {
     class ResolveCoincidentSystemKeysOf {
 
         @Test
-        void resolveCoincidentSystemKeysOfReturnsTheOtherTwoStatesSystems() {
+        void returnsTheOtherTwoStatesSystems() {
             // The solid fill must stop flush against both its hatched and its unfilled
             // neighbours, so both appear - the unfilled state included, though it paints nothing.
             assertThat(splitFootprint().resolveCoincidentSystemKeysOf(FillState.SOLID))
@@ -164,7 +164,7 @@ final class FillSplitTest {
         }
 
         @Test
-        void resolveCoincidentSystemKeysOfExcludesTheStatesOwnSystems() {
+        void excludesTheStatesOwnSystems() {
 
             assertThat(splitFootprint().resolveCoincidentSystemKeysOf(FillState.HATCHED))
                 .doesNotContain(HATCHED_SYSTEM);

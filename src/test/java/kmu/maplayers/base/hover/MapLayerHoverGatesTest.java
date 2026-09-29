@@ -16,7 +16,7 @@ final class MapLayerHoverGatesTest {
     class IsCursorReadNeeded {
 
         @Test
-        void isCursorReadNeededIsTrueForTheEffectsAlone() {
+        void isTrueForTheEffectsAlone() {
 
             var gatesFake = MapLayerHoverGatesFake.createSilent();
             gatesFake.setHoverEffectsOn(true);
@@ -26,7 +26,7 @@ final class MapLayerHoverGatesTest {
         }
 
         @Test
-        void isCursorReadNeededIsTrueForTheHoverBoxAlone() {
+        void isTrueForTheHoverBoxAlone() {
             // The reason the read is the union of the two: the box names what the read resolves,
             // so gating the read on the effects would switch the box off with them.
             var gatesFake = MapLayerHoverGatesFake.createSilent();
@@ -37,7 +37,7 @@ final class MapLayerHoverGatesTest {
         }
 
         @Test
-        void isCursorReadNeededIsFalseWithBothKindsOfFeedbackOff() {
+        void isFalseWithBothKindsOfFeedbackOff() {
             // Nothing is left to answer, so the map-matrix read and hit test behind the cursor are
             // skipped rather than resolved into a hover nothing draws.
             assertThat(MapLayerHoverGatesFake.createSilent().isCursorReadNeeded())

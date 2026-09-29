@@ -18,7 +18,7 @@ final class CellTooltipLabelFindingTest {
     class Constructor {
 
         @Test
-        void constructorKeepsThePositionsItWasGiven() {
+        void keepsThePositionsItWasGiven() {
 
             var labelFinding = new CellTooltipLabelFinding(0, 9);
 
@@ -29,7 +29,7 @@ final class CellTooltipLabelFindingTest {
         }
 
         @Test
-        void constructorRejectsAStretchStartingBeforeTheName() {
+        void rejectsAStretchStartingBeforeTheName() {
 
             assertThatThrownBy(() -> new CellTooltipLabelFinding(-1, 9))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -37,7 +37,7 @@ final class CellTooltipLabelFindingTest {
         }
 
         @Test
-        void constructorRejectsAStretchThatPicksOutNothing() {
+        void rejectsAStretchThatPicksOutNothing() {
             // A caller that found no finding states none at all rather than an empty range, which the
             // draw would split the label around and come out with the name it started with.
             assertThatThrownBy(() -> new CellTooltipLabelFinding(4, 4))
@@ -46,7 +46,7 @@ final class CellTooltipLabelFindingTest {
         }
 
         @Test
-        void constructorRejectsAStretchEndingBeforeItStarts() {
+        void rejectsAStretchEndingBeforeItStarts() {
 
             assertThatThrownBy(() -> new CellTooltipLabelFinding(9, 4))
                 .isInstanceOf(IllegalArgumentException.class)

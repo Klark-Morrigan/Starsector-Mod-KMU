@@ -29,7 +29,7 @@ final class HoverTooltipDetailLevelTest {
     class GetMaximumSubordination {
 
         @Test
-        void getMaximumSubordinationAdmitsOnlyTopLevelLinesAtTheFactionsLevel() {
+        void admitsOnlyTopLevelLinesAtTheFactionsLevel() {
             // Zero rather than "nothing": lines set in without being demoted - an alliance's member
             // factions - still carry subordination zero, which is how they survive this level.
             assertThat(HoverTooltipDetailLevel.FACTIONS.getMaximumSubordination())
@@ -37,21 +37,21 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void getMaximumSubordinationAdmitsTheMarketTierAtTheCompositionLevel() {
+        void admitsTheMarketTierAtTheCompositionLevel() {
 
             assertThat(HoverTooltipDetailLevel.SYSTEM_COMPOSITION.getMaximumSubordination())
                 .isEqualTo(1);
         }
 
         @Test
-        void getMaximumSubordinationAdmitsTheStatTierAtTheMarketStatsLevel() {
+        void admitsTheStatTierAtTheMarketStatsLevel() {
 
             assertThat(HoverTooltipDetailLevel.MARKET_STATS.getMaximumSubordination())
                 .isEqualTo(2);
         }
 
         @Test
-        void getMaximumSubordinationAdmitsThePatrolSplitAtThePatrolDetailsLevel() {
+        void admitsThePatrolSplitAtThePatrolDetailsLevel() {
 
             assertThat(HoverTooltipDetailLevel.PATROL_DETAILS.getMaximumSubordination())
                 .isEqualTo(3);
@@ -62,7 +62,7 @@ final class HoverTooltipDetailLevelTest {
     class IsAdmittingAccounts {
 
         @Test
-        void isAdmittingAccountsShowsNoAccountAtTheFactionsLevel() {
+        void showsNoAccountAtTheFactionsLevel() {
             // The level that names who holds the system and nothing under them, which is why a layer
             // may skip working an account out there at all.
             assertThat(HoverTooltipDetailLevel.FACTIONS.isAdmittingAccounts())
@@ -70,7 +70,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void isAdmittingAccountsShowsAnAccountFromTheCompositionLevelDown() {
+        void showsAnAccountFromTheCompositionLevelDown() {
             // An account is one step under the box's voice from a listed line, so every level past
             // the shallowest shows one - read off that step rather than off a level named here, or
             // this answer and the cut could come to describe different boxes.
@@ -87,7 +87,7 @@ final class HoverTooltipDetailLevelTest {
     class IsReadingAtLeast {
 
         @Test
-        void isReadingAtLeastReadsALevelAsDeepAsItself() {
+        void readsALevelAsDeepAsItself() {
             // The case both per-tier gates rest on: a tier is composed at the very level that names
             // it, so an answer that took "at least" as "deeper than" would drop every tier from the
             // level it exists to show.
@@ -97,7 +97,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void isReadingAtLeastReadsALevelDeeperThanTheOneAskedAbout() {
+        void readsALevelDeeperThanTheOneAskedAbout() {
 
             assertThat(HoverTooltipDetailLevel.PATROL_DETAILS
                     .isReadingAtLeast(HoverTooltipDetailLevel.SYSTEM_COMPOSITION))
@@ -105,7 +105,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void isReadingAtLeastDoesNotReadALevelShallowerThanTheOneAskedAbout() {
+        void doesNotReadALevelShallowerThanTheOneAskedAbout() {
 
             assertThat(HoverTooltipDetailLevel.SYSTEM_COMPOSITION
                     .isReadingAtLeast(HoverTooltipDetailLevel.PATROL_DETAILS))
@@ -117,7 +117,7 @@ final class HoverTooltipDetailLevelTest {
     class ResolveDrawnLevelWithin {
 
         @Test
-        void resolveDrawnLevelWithinDrawsAtTheLevelAskedForInsideTheBoxsBound() {
+        void drawsAtTheLevelAskedForInsideTheBoxsBound() {
             // The ordinary reading: the box holds everything asked of it, so what the player chose is
             // what is drawn.
             assertThat(HoverTooltipDetailLevel.SYSTEM_COMPOSITION
@@ -126,7 +126,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveDrawnLevelWithinDrawsAtTheBoundWhereTheLevelHasOutrunTheBox() {
+        void drawsAtTheBoundWhereTheLevelHasOutrunTheBox() {
             // The reading the offer turns on. The level is one shared fact carried across hovers, so a
             // box is met at depths it holds nothing at - and every one of them draws the box its own
             // bound cuts, which is why stepping between two of them shows the player nothing.
@@ -136,7 +136,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveDrawnLevelWithinDrawsAtTheBoundWhereTheTwoMeet() {
+        void drawsAtTheBoundWhereTheTwoMeet() {
             // The box read exactly as deep as it goes, which is neither cut nor short: the level and
             // the bound name the same depth.
             assertThat(HoverTooltipDetailLevel.MARKET_STATS
@@ -149,7 +149,7 @@ final class HoverTooltipDetailLevelTest {
     class ResolveNextLevelWithin {
 
         @Test
-        void resolveNextLevelWithinStepsFromFactionsToSystemComposition() {
+        void stepsFromFactionsToSystemComposition() {
 
             assertThat(HoverTooltipDetailLevel.FACTIONS
                     .resolveNextLevelWithin(HoverTooltipDetailLevel.PATROL_DETAILS))
@@ -157,7 +157,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveNextLevelWithinStepsFromSystemCompositionToMarketStats() {
+        void stepsFromSystemCompositionToMarketStats() {
 
             assertThat(HoverTooltipDetailLevel.SYSTEM_COMPOSITION
                     .resolveNextLevelWithin(HoverTooltipDetailLevel.PATROL_DETAILS))
@@ -165,7 +165,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveNextLevelWithinStepsFromMarketStatsToPatrolDetails() {
+        void stepsFromMarketStatsToPatrolDetails() {
 
             assertThat(HoverTooltipDetailLevel.MARKET_STATS
                     .resolveNextLevelWithin(HoverTooltipDetailLevel.PATROL_DETAILS))
@@ -173,7 +173,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveNextLevelWithinWrapsFromTheDeepestLevelTheBoxHolds() {
+        void wrapsFromTheDeepestLevelTheBoxHolds() {
             // The wrap is what makes every press act: once the box's own tree runs out the next press
             // collapses rather than dead-ending, so the key that led in also leads out.
             assertThat(HoverTooltipDetailLevel.PATROL_DETAILS
@@ -182,7 +182,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveNextLevelWithinWrapsAtABoundShortOfTheDeepestLevelDeclared() {
+        void wrapsAtABoundShortOfTheDeepestLevelDeclared() {
             // The whole point of the bound: a box whose account ends at the market stats - a claim,
             // which no patrol enters - collapses from there rather than being offered a patrol tier
             // that would redraw what is already on screen.
@@ -192,7 +192,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveNextLevelWithinWrapsFromPastTheBoundRatherThanSittingThere() {
+        void wrapsFromPastTheBoundRatherThanSittingThere() {
             // The level is one shared fact carried across layer switches, so a box can be reached at
             // a depth it holds nothing at. It collapses on the next press instead of stranding the
             // player at a level its own tree cannot act on.
@@ -202,7 +202,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveNextLevelWithinStaysPutForABoxHoldingNothingBelowTheShallowest() {
+        void staysPutForABoxHoldingNothingBelowTheShallowest() {
             // The one case where a press would change nothing: a box that lists nobody, read at the
             // level it opens on. There is no tier to open and nothing to collapse.
             assertThat(HoverTooltipDetailLevel.FACTIONS
@@ -225,7 +225,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveArrivalPhraseNamesWhatArrivingAtTheLevelDoes() {
+        void namesWhatArrivingAtTheLevelDoes() {
             // The hint states what the player would gain rather than which level they are at, so it
             // is read off the level being moved to - read off the one being left instead, a phrase
             // would name detail already on screen.
@@ -238,7 +238,7 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveArrivalPhraseNamesTheCollapseAtTheShallowestLevelAlone() {
+        void namesTheCollapseAtTheShallowestLevelAlone() {
             // The cycle wraps, so the shallowest level is only ever arrived at by collapsing - which
             // is why it is the phrase that level carries, and why no other level names one.
             assertThat(HoverTooltipDetailLevel.FACTIONS.resolveArrivalPhrase())

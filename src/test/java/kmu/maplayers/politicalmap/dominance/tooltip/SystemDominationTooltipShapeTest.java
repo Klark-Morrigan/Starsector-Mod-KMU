@@ -140,7 +140,7 @@ final class SystemDominationTooltipShapeTest {
     class ResolveDeepestHeldLevelFor {
 
         @Test
-        void resolveDeepestHeldLevelForOffersTheAccountBehindTheScoresRanked() {
+        void offersTheAccountBehindTheScoresRanked() {
             // What the key at the foot of the box would reach: as deep as the box's own account goes,
             // the deeper tiers accounting for the very scores the shallowest ranks by. How deep that
             // is comes from the box rather than from this shape, which knows only that there is
@@ -152,7 +152,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void resolveDeepestHeldLevelForOffersTheAccountBehindAStandingOverACollapsedSystem() {
+        void offersTheAccountBehindAStandingOverACollapsedSystem() {
             // The status line and the standings answer different questions of the one pass: a system
             // whose colonies have all collapsed is headed Decivilised and still ranks whoever holds
             // them, and those colonies are exactly what a deeper level opens up. Judged off the
@@ -166,7 +166,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void resolveDeepestHeldLevelForOffersNothingForASystemRankingNobody() {
+        void offersNothingForASystemRankingNobody() {
             // Nobody ranks, so there is no score for a deeper tier to account for and every level
             // would state the same banner - a key press the player could not see the result of. The
             // hint goes with it rather than advertising one.
@@ -175,7 +175,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void resolveDeepestHeldLevelForAgreesWithTheDepthThePaintReports() {
+        void agreesWithTheDepthThePaintReports() {
             // The invariant the two-path design rests on, and the one place this shape can break it:
             // the press ranks the system here while the paint takes the depth off the ranking it
             // already holds. Drifting, the hint would name a step the key does not take - or the key
@@ -187,7 +187,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void resolveDeepestHeldLevelForAgreesWithThePaintOverASystemRankingNobody() {
+        void agreesWithThePaintOverASystemRankingNobody() {
             // The same agreement at the other end, which is the half that would strand a player: a
             // system nobody ranks in must report the shallowest through both paths, or the key would
             // act over a box drawing no hint at all.
@@ -200,7 +200,7 @@ final class SystemDominationTooltipShapeTest {
     class ComposeBody {
 
         @Test
-        void composeBodyResolvesTheFactionsWithTheAccountTheBoxAsksFor() {
+        void resolvesTheFactionsWithTheAccountTheBoxAsksFor() {
             // The one thing a box adds to the shared resolution has to reach it: asked for and then
             // dropped, every box would draw the glance and the detail mode would show nothing new.
             buildTooltipAccountingThrough(new FactionAccountSourceFake())
@@ -211,7 +211,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyAsksTheBoxForNoAccountAtAllWhereTheLevelAdmitsNoLineOfOne() {
+        void asksTheBoxForNoAccountAtAllWhereTheLevelAdmitsNoLineOfOne() {
             // The cut alone would draw the same box, and that is the fault: an account is everything a
             // listed faction is subordinated over, so the shallowest level draws not one of its lines
             // - while the read behind it is the most expensive thing a hover makes. Asked for and then
@@ -225,7 +225,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyAsksTheBoxForTheAccountAtTheLevelItWillBeReadTo() {
+        void asksTheBoxForTheAccountAtTheLevelItWillBeReadTo() {
             // The level travels to the box rather than only gating the call, so an account carrying
             // tiers of its own stops where the cut would. Handed a fixed depth instead, the box would
             // work its deepest tiers out over every level that admits any account at all.
@@ -240,7 +240,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyReadsItsBlocksOnlyAsDeepAsTheLevelAsksFor() {
+        void readsItsBlocksOnlyAsDeepAsTheLevelAsksFor() {
             // The level has to reach the blocks rather than stopping at the box, which is the whole of
             // what a cut is: one listing, drawn as the group alone where the player asked who holds the
             // system and with the account beneath it where they asked what on. A body that named a
@@ -254,7 +254,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyRanksTheSystemUnderTheActiveViewsOwnGrouping() {
+        void ranksTheSystemUnderTheActiveViewsOwnGrouping() {
             // What keeps a box honest: it ranks through the same grouping the map painted its fills by,
             // so the two can never disagree about who holds the system. The pass is built from that
             // grouping and the groups named through the pass's own, so the one the view answered with
@@ -268,7 +268,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyNamesTheStrongestGroupAsHoldingTheSystemAndTheRestAsContestingIt() {
+        void namesTheStrongestGroupAsHoldingTheSystemAndTheRestAsContestingIt() {
             // The headings are what turn a ranked list into an answer: the map fills the system in
             // the leader's colour, so the box says outright that the leader holds it and the others are
             // merely present, rather than leaving that to be read off the row order.
@@ -285,7 +285,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyListsAGroupStandingWithTheLeaderUnderItsOwnHeading() {
+        void listsAGroupStandingWithTheLeaderUnderItsOwnHeading() {
             // The block the whole axis exists for: an ally holding markets beside the leader is not
             // fighting it for the system, and filed under the contested heading the box would say
             // two allies were at war over a system they jointly hold.
@@ -304,7 +304,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyKeepsAGroupAlliedWithARivalUnderTheContestedHeading() {
+        void keepsAGroupAlliedWithARivalUnderTheContestedHeading() {
             // Only the leader's own allies are lifted out. Two rivals standing together and not with
             // the leader are both fighting it for the system, which is the relation the box states.
             allianceSet = buildGroupOf(RIVAL_BLOC, ALLY_BLOC);
@@ -321,7 +321,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyOmitsTheAlliedHeadingWithNothingGroupingFactions() {
+        void omitsTheAlliedHeadingWithNothingGroupingFactions() {
             // The install without the mod that supplies alliances, where no two groups ever stand
             // together: every group below the leader contests the system exactly as it did before
             // the block existed, and the heading is dropped rather than left standing over nothing.
@@ -337,7 +337,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyListsTheLeaderOnceWhereItStandsInAnAlliance() {
+        void listsTheLeaderOnceWhereItStandsInAnAlliance() {
             // A leader in an alliance is not its own ally: routed on the bloc alone it would be
             // lifted into the allied block as well and read as two holders of one system.
             allianceSet = buildGroupOf(LEADER_BLOC, ALLY_BLOC);
@@ -351,7 +351,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyRoutesEachHoverAgainstTheAllianceSetAsItStandsThen() {
+        void routesEachHoverAgainstTheAllianceSetAsItStandsThen() {
             // Why the box holds the means of sampling a grouping rather than a grouping: it lives for
             // the whole session while alliances form and dissolve inside it, so one taken at
             // construction would go on filing a group under the alliance it left an hour ago. Posed
@@ -376,7 +376,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyKeepsAContestingGroupsOwnCrestAndScore() {
+        void keepsAContestingGroupsOwnCrestAndScore() {
             // A contesting group is a full standing, not a footnote to the leader's: it keeps the crest
             // and the number the map ranked it by, so the player can see how close the contest is.
             var rivalHeaderRow = 3;
@@ -394,7 +394,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyOmitsContestedWhenOneGroupHoldsTheSystemAlone() {
+        void omitsContestedWhenOneGroupHoldsTheSystemAlone() {
             // An uncontested system has to read as uncontested, and a heading standing over no groups
             // would read as a contest whose challengers failed to resolve.
             StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
@@ -404,7 +404,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyHoldsEachHeadingWithTheGroupsItNames() {
+        void holdsEachHeadingWithTheGroupsItNames() {
             // Each heading is a block with its own groups, so the box parts one block from the next and
             // nothing inside a block - a heading parted from its own entries would read as belonging to
             // the block above it.
@@ -426,7 +426,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyDrawsHeadingsAtTheContentEdgeInGold() {
+        void drawsHeadingsAtTheContentEdgeInGold() {
             // What the review found here: a heading laid inside the crest gutter starts where the group
             // labels below it start and so reads as indented under nothing, and drawn in their own
             // bright it is told apart from them only by lacking a crest.
@@ -446,7 +446,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyNamesWhatTheSystemIsBeforeWhoHoldsIt() {
+        void namesWhatTheSystemIsBeforeWhoHoldsIt() {
             // What the system is first, then the contest over it, so the standings read as a contest
             // over a known system rather than as the whole of what the box has to say.
             StandingsTooltipSeamsFake.stubStatusRow("Decivilised");
@@ -460,7 +460,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyFallsBackToTheSystemStatusWhenNothingRanks() {
+        void fallsBackToTheSystemStatusWhenNothingRanks() {
             // A system nobody holds is not nothing: the status line says why it holds no standing, so
             // the hover reads as landing on a real but uninhabited system. It is a block of its own,
             // since what the system is answers a different question from who contests it.
@@ -474,7 +474,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyJudgesTheSystemEmptyUnderTheRankingsOwnReveal() {
+        void judgesTheSystemEmptyUnderTheRankingsOwnReveal() {
             // The status has to admit exactly the colonies the standings were ranked through: judged
             // under the narrower filter, a system revealed only by the dev knob would be called
             // unpopulated directly above the rows scoring the faction holding it.
@@ -495,7 +495,7 @@ final class SystemDominationTooltipShapeTest {
         }
 
         @Test
-        void composeBodyShowsNothingWhenNothingRanksAndTheSystemHasNoStatusEither() {
+        void showsNothingWhenNothingRanksAndTheSystemHasNoStatusEither() {
             // Nothing ranked and nothing to say about the system, so the body stays empty and no box is
             // drawn - the one case where a hover over a real system shows nothing at all.
             assertThat(tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections())

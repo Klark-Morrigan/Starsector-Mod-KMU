@@ -11,7 +11,7 @@ class KmuConditionEditorOpenResultTest {
     class Opened {
 
         @Test
-        void openedResultIsOpenedWithNoMessage() {
+        void resultIsOpenedWithNoMessage() {
             var result = KmuConditionEditorOpenResult.opened();
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.OPENED);
@@ -24,7 +24,7 @@ class KmuConditionEditorOpenResultTest {
     class NoMarketContext {
 
         @Test
-        void noMarketContextResultIsNotOpened() {
+        void resultIsNotOpened() {
             var result = KmuConditionEditorOpenResult.noMarketContext();
 
             assertThat(result.getStatus()).isEqualTo(KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT);
@@ -37,7 +37,7 @@ class KmuConditionEditorOpenResultTest {
     class UnsupportedTarget {
 
         @Test
-        void unsupportedTargetUsesProvidedReason() {
+        void usesProvidedReason() {
             var result =
                     KmuConditionEditorOpenResult.unsupportedTarget("Station markets are not supported.");
 
@@ -51,7 +51,7 @@ class KmuConditionEditorOpenResultTest {
     class Failed {
 
         @Test
-        void failedResultExposesCauseAndIsNotOpened() {
+        void resultExposesCauseAndIsNotOpened() {
             var cause = new RuntimeException("something went wrong");
 
             var result =

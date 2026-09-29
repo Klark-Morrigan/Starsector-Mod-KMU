@@ -73,7 +73,7 @@ class StandingBlockRoutingTest {
     class RouteRankedStandings {
 
         @Test
-        void routeRankedStandingsNamesTheStrongestBlocInTheRunningAsHoldingTheSystem() {
+        void namesTheStrongestBlocInTheRunningAsHoldingTheSystem() {
 
             assertThat(routeWithoutAlliances(HOLDER_BLOC, RIVAL_BLOC)
                     .selectStandingsIn(StandingBlock.HOLDER))
@@ -81,7 +81,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsLeavesEveryOtherBlocInTheRunningContestingTheSystem() {
+        void leavesEveryOtherBlocInTheRunningContestingTheSystem() {
 
             assertThat(readListedBlocs(
                     routeWithoutAlliances(HOLDER_BLOC, RIVAL_BLOC),
@@ -90,7 +90,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsLiftsTheHoldersOwnAllyOutOfTheContestedBlock() {
+        void liftsTheHoldersOwnAllyOutOfTheContestedBlock() {
             // The split below the holder is the shared one, so a group is filed here by the rule the
             // band beneath the cell lays its runs at contested length by.
             var routing = StandingBlockRouting.routeRankedStandings(
@@ -108,7 +108,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsSetsABlocOutOfTheRunningAsideWhateverItOutranked() {
+        void setsABlocOutOfTheRunningAsideWhateverItOutranked() {
             // The bar is the outer axis: a placeholder owner ranking above everybody is still no
             // contender, so it lands in its own block rather than at the head of the contest.
             assertThat(routeWithoutAlliances(PLACEHOLDER_BLOC, HOLDER_BLOC)
@@ -117,7 +117,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsNamesTheStrongestContenderAsHoldingASystemAPlaceholderOutranks() {
+        void namesTheStrongestContenderAsHoldingASystemAPlaceholderOutranks() {
             // The reason the bar is taken before the holder is picked rather than after: dropping the
             // top-ranked group would have dropped the placeholder and left the real holder in the
             // pool the blocks below it are drawn from.
@@ -127,7 +127,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsLeavesNobodyHoldingASystemOnlyAPlaceholderStandsIn() {
+        void leavesNobodyHoldingASystemOnlyAPlaceholderStandsIn() {
             // The one place the box and the fill part company: the map still paints, borders and
             // labels the cell for the placeholder, while the box heads no block with it - and an
             // empty holder block is what drops that heading rather than leaving it over nothing.
@@ -141,7 +141,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsKeepsABlocOutOfTheRunningOutOfTheAlliedBlock() {
+        void keepsABlocOutOfTheRunningOutOfTheAlliedBlock() {
             // Standing with the holder is a question about the contest, which a barred bloc is
             // outside of - so no alliance set can lift it back in one axis further down.
             var routing = StandingBlockRouting.routeRankedStandings(
@@ -159,7 +159,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsPlacesEveryRankedGroupInExactlyOneBlock() {
+        void placesEveryRankedGroupInExactlyOneBlock() {
             // The invariant the axes have to leave intact between them: every ranked group is
             // placed, and only a bloc its members disagree about is placed twice. A group taken by
             // no block disappears from a box that ranked it, and one taken by two that nothing
@@ -185,7 +185,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsKeepsTheOrderTheGroupsRankedInInsideABlock() {
+        void keepsTheOrderTheGroupsRankedInInsideABlock() {
             // The groups arrive strongest first and a block reads in that order rather than in one
             // the partition invented, so the box lists them exactly as the fills rank them.
             assertThat(routeWithoutAlliances(
@@ -199,7 +199,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsLiftsABlocOnGoodTermsWithTheHolderOutOfTheContestedBlock() {
+        void liftsABlocOnGoodTermsWithTheHolderOutOfTheContestedBlock() {
             // The block the disposition axis exists for: a bloc the holder is on excellent terms
             // with has no quarrel over the system, and filed under the contested heading the box
             // would report a fight neither side is in.
@@ -216,7 +216,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsLeavesAnIndifferentBlocContestingTheSystem() {
+        void leavesAnIndifferentBlocContestingTheSystem() {
             // The scale's own zero is the cut: indifference is not goodwill, so a bloc at or below
             // neutral stays exactly where it was before the block existed.
             assertThat(readListedBlocs(
@@ -226,7 +226,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsKeepsTheHoldersAllyAlliedWhateverItsDisposition() {
+        void keepsTheHoldersAllyAlliedWhateverItsDisposition() {
             // Alliance is the outer axis and disposition never re-sorts what it took, so an ally on
             // excellent terms gains nothing by it - and an ally gone sour loses nothing either.
             var routing = StandingBlockRouting.routeRankedStandings(
@@ -244,7 +244,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsLiftsABlocOnGoodTermsWithEveryMemberOfAnAllianceHolder() {
+        void liftsABlocOnGoodTermsWithEveryMemberOfAnAllianceHolder() {
             // The alliances view's own shape, which no other case here poses: the holder is the
             // alliance bloc the fills were painted for, so the membership the rival is measured
             // against is read out of the fold rather than being the holder's own id.
@@ -270,7 +270,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsContestsABlocWhoseSourMemberHoldsNothingInTheSystem() {
+        void contestsABlocWhoseSourMemberHoldsNothingInTheSystem() {
             // Why the test is over the whole membership rather than over who happens to stand here:
             // read against the present member alone the bloc would come out friendly, and the same
             // two blocs would then read friendly over this system and contesting over the next on
@@ -295,7 +295,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsListsABlocThatIsNotOfOneMindUnderBothHeadings() {
+        void listsABlocThatIsNotOfOneMindUnderBothHeadings() {
             // A bloc half of which is warm and half sour is true of neither heading whole, so it is
             // listed under both rather than broken up into loose factions: the bloc stays one named
             // thing, and each of its rows holds only the members on that side.
@@ -309,7 +309,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsStatesHowMuchOfASplitBlocEachHeadingTook() {
+        void statesHowMuchOfASplitBlocEachHeadingTook() {
             // What keeps neither heading overreaching. The fraction is over the bloc's whole roster -
             // three members, of which one is warm - and not over the two standing here, which is what
             // makes one alliance read the same over every system it holds.
@@ -323,7 +323,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsListsOnlyThePresentMembersOfABlocThatIsNotOfOneMind() {
+        void listsOnlyThePresentMembersOfABlocThatIsNotOfOneMind() {
             // The two readings part exactly here: the fraction is over the whole membership, while
             // what is listed is who stands in the hovered system - the box having never listed
             // anybody else. So the rows and the fraction do not add up, and are not meant to.
@@ -337,7 +337,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsSplitsNeitherTheHoldingBlocNorAnAlliedOne() {
+        void splitsNeitherTheHoldingBlocNorAnAlliedOne() {
             // Both are placed by membership rather than by relation, so a bloc a rival stands warm
             // toward half of is not thereby split: its members are listed under it because they are
             // its members, and nothing about relations is asserted of them.
@@ -365,7 +365,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsStatesBothFractionReadingsOverTwoAlliancesAtOdds() {
+        void statesBothFractionReadingsOverTwoAlliancesAtOdds() {
             // The one shape where a row's own reading and its members' are both live: an alliance of
             // three against an alliance of three. The bloc's rows count its own membership - one
             // friendly, two not - while each member's counts how much of the holder it quarrels with,
@@ -389,7 +389,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsListsEachSideOfTwoAlliancesAtOddsUnderItsOwnHeading() {
+        void listsEachSideOfTwoAlliancesAtOddsUnderItsOwnHeading() {
 
             var routing = routeTwoAlliancesAtOdds();
 
@@ -401,7 +401,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsCountsTheHoldersMembersOnALoneFactionStandingAgainstABloc() {
+        void countsTheHoldersMembersOnALoneFactionStandingAgainstABloc() {
             // The reading a faction's row states rather than a bloc's: how much of the holder it
             // quarrels with. It is the only fraction a lone faction has to state, its own bloc being
             // one member that could count nothing but nought or the whole.
@@ -430,7 +430,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void routeRankedStandingsCountsEachMemberOfAnUnsplitBlocAgainstTheHolderSeparately() {
+        void countsEachMemberOfAnUnsplitBlocAgainstTheHolderSeparately() {
             // A bloc none of whose members is friendly is listed whole, and its row states nothing -
             // the heading took all of it. Its members still state their own counts, each quarrelling
             // with a different one of the holder's three, which is what shows a member's number is
@@ -474,7 +474,7 @@ class StandingBlockRoutingTest {
     class HasAnyStanding {
 
         @Test
-        void hasAnyStandingCountsAGroupInEveryBlockAlike() {
+        void countsAGroupInEveryBlockAlike() {
             // What the box asks to decide whether it has anything to list at all. A bloc out of the
             // running is still somebody standing in the system, so a system holding only the
             // placeholder is not an empty one.
@@ -483,7 +483,7 @@ class StandingBlockRoutingTest {
         }
 
         @Test
-        void hasAnyStandingAnswersNoForASystemTheRankingFoundNobodyIn() {
+        void answersNoForASystemTheRankingFoundNobodyIn() {
 
             assertThat(routeWithoutAlliances().hasAnyStanding())
                 .isFalse();

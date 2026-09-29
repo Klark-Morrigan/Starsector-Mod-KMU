@@ -53,7 +53,7 @@ final class CollapsibleSectionIntegrationTest {
     class BuildSection {
 
         @Test
-        void buildSectionGreysEverySwitchUnderASectionThatIsOff() {
+        void greysEverySwitchUnderASectionThatIsOff() {
 
             buildSwitchedOffSection();
 
@@ -63,7 +63,7 @@ final class CollapsibleSectionIntegrationTest {
         }
 
         @Test
-        void buildSectionLeavesTheFoldsUnderASectionThatIsOffLive() {
+        void leavesTheFoldsUnderASectionThatIsOffLive() {
 
             buildSwitchedOffSection();
 
@@ -77,7 +77,7 @@ final class CollapsibleSectionIntegrationTest {
         // opened and read. Started folded, so that what the click has to achieve is the thing
         // a reader wants - seeing a row that was not on screen.
         @Test
-        void buildSectionLetsAFoldOpenARowWhileTheSectionIsOff() {
+        void letsAFoldOpenARowWhileTheSectionIsOff() {
 
             SavedValues.findSavedValues().putBoolean(BRANCH_FOLD_KEY, false);
 
@@ -98,7 +98,7 @@ final class CollapsibleSectionIntegrationTest {
         // that can stop walking. So the ordinary case is pinned beside it: switching the
         // section back on has to reach every switch under it, fold or no fold.
         @Test
-        void buildSectionWakesEverySwitchWhenTheSectionIsSwitchedBackOn() {
+        void wakesEverySwitchWhenTheSectionIsSwitchedBackOn() {
 
             var section = buildSwitchedOffSection();
 

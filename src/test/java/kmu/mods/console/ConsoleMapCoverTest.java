@@ -21,7 +21,7 @@ final class ConsoleMapCoverTest {
     class IsCoveringCursor {
 
         @Test
-        void isCoveringCursorAnswersCoveredWhileAConsoleIsOpen() {
+        void answersCoveredWhileAConsoleIsOpen() {
             // Asserted with no cursor arranged at all, which is the point: this cover reads no
             // geometry, so a console covers the map wherever the pointer happens to be.
             var consolePresenceFake = new ConsoleOverlayPresenceFake();
@@ -35,7 +35,7 @@ final class ConsoleMapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersUncoveredWhileNoConsoleIs() {
+        void answersUncoveredWhileNoConsoleIs() {
             // Posed on an install without Console Commands, no scope reporting it enabled, so this
             // is the gate's fail-open answer rather than a closed console: the map hovers exactly as
             // it did before this cover existed.

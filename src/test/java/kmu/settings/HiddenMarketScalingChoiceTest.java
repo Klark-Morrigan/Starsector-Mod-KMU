@@ -15,7 +15,7 @@ final class HiddenMarketScalingChoiceTest {
     class GetLabel {
 
         @Test
-        void getLabelReturnsTheLunaLibOptionLabel() {
+        void returnsTheLunaLibOptionLabel() {
 
             assertThat(HiddenMarketScalingChoice.NORMAL.getLabel())
                 .isEqualTo("Normal");

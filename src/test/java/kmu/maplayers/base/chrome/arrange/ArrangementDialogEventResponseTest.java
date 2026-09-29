@@ -40,7 +40,7 @@ final class ArrangementDialogEventResponseTest {
     class ResolveResponseTo {
 
         @Test
-        void resolveResponseToLeavesAnEventTheDialogsOwnWidgetsTookAlone() {
+        void leavesAnEventTheDialogsOwnWidgetsTookAlone() {
             // Which is the whole of what protects them, the engine dispatching a panel's children
             // before its plugin: a press a control acted on arrives here already consumed.
             var eventMock = mock(InputEventAPI.class);
@@ -51,7 +51,7 @@ final class ArrangementDialogEventResponseTest {
         }
 
         @Test
-        void resolveResponseToMeasuresNothingOnAnEventSomethingElseConsumed() {
+        void measuresNothingOnAnEventSomethingElseConsumed() {
             // The accessors below the skip throw on a consumed event, so the skip standing ahead of
             // them is the difference between a rule and a crash out of an input pass.
             var eventMock = mock(InputEventAPI.class);
@@ -64,7 +64,7 @@ final class ArrangementDialogEventResponseTest {
         }
 
         @Test
-        void resolveResponseToClaimsAnEventNothingHasTaken() {
+        void claimsAnEventNothingHasTaken() {
             // Wherever it landed. Nothing under the dialog is dispatched to, the box included - what
             // stands in the box has already had its turn.
             var eventMock = mock(InputEventAPI.class);
@@ -74,7 +74,7 @@ final class ArrangementDialogEventResponseTest {
         }
 
         @Test
-        void resolveResponseToLeavesEveryEventAloneWhileTheDialogIsOnlyFadingOut() {
+        void leavesEveryEventAloneWhileTheDialogIsOnlyFadingOut() {
             // The box is still on screen and the game still dispatches to it, but the screen went back
             // to the player at the press - so an event a raised dialog claims is left alone here.
             var eventMock = mock(InputEventAPI.class);
@@ -84,7 +84,7 @@ final class ArrangementDialogEventResponseTest {
         }
 
         @Test
-        void resolveResponseToMeasuresNothingWhileTheDialogIsOnlyFadingOut() {
+        void measuresNothingWhileTheDialogIsOnlyFadingOut() {
             // Asked before the event is touched at all, so a dialog that has let go answers for a
             // whole frame's events without reading one of them.
             var eventMock = mock(InputEventAPI.class);
@@ -96,7 +96,7 @@ final class ArrangementDialogEventResponseTest {
         }
 
         @Test
-        void resolveResponseToDoesNotCloseOnEscapeWhileTheDialogIsOnlyFadingOut() {
+        void doesNotCloseOnEscapeWhileTheDialogIsOnlyFadingOut() {
             // Escape belongs to whatever has the screen now, and that is no longer this dialog: a
             // second press should reach the screen behind rather than close a box already closing.
             var eventMock = mock(InputEventAPI.class);
@@ -108,7 +108,7 @@ final class ArrangementDialogEventResponseTest {
         }
 
         @Test
-        void resolveResponseToClosesOnEscape() {
+        void closesOnEscape() {
 
             var eventMock = mock(InputEventAPI.class);
             when(eventMock.isKeyDownEvent()).thenReturn(true);
@@ -119,7 +119,7 @@ final class ArrangementDialogEventResponseTest {
         }
 
         @Test
-        void resolveResponseToDoesNotCloseOnAKeyThatIsNotEscape() {
+        void doesNotCloseOnAKeyThatIsNotEscape() {
             // Escape is the only key with a meaning of its own here; every other one is claimed like
             // any other event, so no key reaches the screen underneath.
             var eventMock = mock(InputEventAPI.class);

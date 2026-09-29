@@ -86,7 +86,7 @@ final class SpotlightPreviewHighlightRendererTest {
     class ResolvePreviewPaint {
 
         @Test
-        void resolvePreviewPaintLightsTheHoveredBlocsSystemsInThatBlocsOwnShade() {
+        void lightsTheHoveredBlocsSystemsInThatBlocsOwnShade() {
 
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
             hover(BLOC_ID);
@@ -101,7 +101,7 @@ final class SpotlightPreviewHighlightRendererTest {
         }
 
         @Test
-        void resolvePreviewPaintLightsNothingWhenThePointerIsOnNoRow() {
+        void lightsNothingWhenThePointerIsOnNoRow() {
             // The resting state of every frame the player is not on the picker, and so the answer
             // this has to reach without reading a theme or walking a sector.
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
@@ -114,7 +114,7 @@ final class SpotlightPreviewHighlightRendererTest {
         }
 
         @Test
-        void resolvePreviewPaintLightsNothingWhenTheHoveredBlocIsPresentNowhere() {
+        void lightsNothingWhenTheHoveredBlocIsPresentNowhere() {
             // A row is under the pointer and the tier paints, but the walk found that bloc in no
             // system - so there is nothing on the map the preview could trace.
             var view = stubViewFinding(BlocPresenceIndex.EMPTY);
@@ -128,7 +128,7 @@ final class SpotlightPreviewHighlightRendererTest {
         }
 
         @Test
-        void resolvePreviewPaintLightsNothingForAHoverReportedUnderAnotherViewsScope() {
+        void lightsNothingForAHoverReportedUnderAnotherViewsScope() {
             // The hover is read under the view the frame painted, not under whichever scope last
             // reported one. A bloc ID means what the view that surfaced it says it means, and the
             // systems behind it are that view's answer - so a preview crossing a view switch would
@@ -147,7 +147,7 @@ final class SpotlightPreviewHighlightRendererTest {
         }
 
         @Test
-        void resolvePreviewPaintLightsNothingForAHoverReportedByAnotherModsPicker() {
+        void lightsNothingForAHoverReportedByAnotherModsPicker() {
             // The view ID is opaque and shared by nobody's agreement, so a foreign layer whose own
             // picker lists a view under this one's name is a different list: its hovered row names a
             // bloc this view never surfaced, and lighting it would paint that mod's answer here.
@@ -167,7 +167,7 @@ final class SpotlightPreviewHighlightRendererTest {
         }
 
         @Test
-        void resolvePreviewPaintLightsNothingWhenTheHoveredBlocsColourFactionIsGone() {
+        void lightsNothingWhenTheHoveredBlocsColourFactionIsGone() {
             // The same answer the presence bands give such a bloc, and for the same reason: a bloc
             // the sector can no longer name has no shade, and lighting its cells in a stand-in one
             // would put colour on the map for something the map cannot name.
@@ -189,7 +189,7 @@ final class SpotlightPreviewHighlightRendererTest {
         }
 
         @Test
-        void resolvePreviewPaintLightsNothingWhenTheTierPointsAtNoShade() {
+        void lightsNothingWhenTheTierPointsAtNoShade() {
             // The player has set the preview to "No color", which is where this feature is switched
             // off - there being no gate of its own in front of it.
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));

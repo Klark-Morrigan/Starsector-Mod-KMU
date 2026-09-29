@@ -28,7 +28,7 @@ final class WindowLayoutTest {
     class BuildControlScroller {
 
         @Test
-        void buildControlScrollerRefusesAHorizontalBar() {
+        void refusesAHorizontalBar() {
 
             assertThat(WindowLayout.buildControlScroller(new JPanel())
                     .getHorizontalScrollBarPolicy())
@@ -36,7 +36,7 @@ final class WindowLayoutTest {
         }
 
         @Test
-        void buildControlScrollerFitsItsColumnToTheViewport() {
+        void fitsItsColumnToTheViewport() {
 
             var view = WindowLayout.buildControlScroller(new JPanel()).getViewport().getView();
 
@@ -49,7 +49,7 @@ final class WindowLayoutTest {
         // The other axis is what the column scrolls ON. Tracking that too would squash every
         // row into one screen, which is the failure this pairing is easy to make.
         @Test
-        void buildControlScrollerKeepsItsOwnHeight() {
+        void keepsItsOwnHeight() {
 
             var view = WindowLayout.buildControlScroller(new JPanel()).getViewport().getView();
 
@@ -58,7 +58,7 @@ final class WindowLayoutTest {
         }
 
         @Test
-        void buildControlScrollerHoldsTheColumnItWasGiven() {
+        void holdsTheColumnItWasGiven() {
 
             var column = new JPanel();
             var view = WindowLayout.buildControlScroller(column).getViewport().getView();

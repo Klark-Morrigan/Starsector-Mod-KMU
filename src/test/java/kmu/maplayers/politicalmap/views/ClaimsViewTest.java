@@ -88,7 +88,7 @@ final class ClaimsViewTest {
     class GetId {
 
         @Test
-        void getIdIsTheSaveStableClaimsId() {
+        void isTheSaveStableClaimsId() {
             assertThat(ClaimsView.INSTANCE.getId())
                 .isEqualTo("claims");
         }
@@ -98,7 +98,7 @@ final class ClaimsViewTest {
     class GetSegmentLabelKey {
 
         @Test
-        void getSegmentLabelKeyIsTheClaimsRadioLabel() {
+        void isTheClaimsRadioLabel() {
             assertThat(ClaimsView.INSTANCE.getSegmentLabelKey())
                 .isEqualTo(KmuStringKeys.POLITICAL_MAP_CTL_CLAIMS);
         }
@@ -108,7 +108,7 @@ final class ClaimsViewTest {
     class ResolveGrouping {
 
         @Test
-        void resolveGroupingReturnsTheIdentityGrouping() {
+        void returnsTheIdentityGrouping() {
             // Claims group strictly by claiming faction with no alliance rollup, so the pipeline
             // resolves plain faction holding.
             assertThat(ClaimsView.INSTANCE.resolveGrouping())
@@ -120,7 +120,7 @@ final class ClaimsViewTest {
     class ResolveContestGrouping {
 
         @Test
-        void resolveContestGroupingReadsTheLiveAllianceSet() {
+        void readsTheLiveAllianceSet() {
             // Who stands together in a contest is the live alliance set on every view of this
             // layer, whatever the view paints as one bloc: allies painted apart still read as allies.
             var allianceSet = HolderGroupingFixture.buildGroupOf("hegemony", "persean");
@@ -140,7 +140,7 @@ final class ClaimsViewTest {
     class ResolveHolderProvider {
 
         @Test
-        void resolveHolderProviderReturnsTheClaimsOnlyProvider() {
+        void returnsTheClaimsOnlyProvider() {
             // Holder is the claim mechanic itself, so the view supplies the claims-only provider
             // rather than inheriting the held-plus-claims default.
             assertThat(ClaimsView.INSTANCE.resolveHolderProvider())
@@ -152,7 +152,7 @@ final class ClaimsViewTest {
     class ResolveRibbonPlanner {
 
         @Test
-        void resolveRibbonPlannerCountsEveryCellFromTheClaimContest() {
+        void countsEveryCellFromTheClaimContest() {
             // Every cell here is painted by the claim mechanic, held systems included, so the band
             // is counted from the contest rather than by the dominance views' composition - which
             // would count a claimed system its claimant does not hold by the markets of whoever
@@ -182,7 +182,7 @@ final class ClaimsViewTest {
     class GetContentRevision {
 
         @Test
-        void getContentRevisionShiftsWhenTheAllianceRevisionMoves() {
+        void shiftsWhenTheAllianceRevisionMoves() {
             // The alliance set is this view's one live input: the fills stay per-claimant, but the
             // bands over them lay a contested run only against a bloc the claimant is not allied
             // with, so a membership change must shift the revision and repaint them.
@@ -196,7 +196,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void getContentRevisionIsInvariantAcrossAnUnrelatedSignal() {
+        void isInvariantAcrossAnUnrelatedSignal() {
             // Only the alliance set is folded in - the market-inferred claims repaint on the shared
             // economy revision, not here - so a signal this view renders nothing from, a geometry
             // rebuild here, leaves its contribution fixed.
@@ -214,7 +214,7 @@ final class ClaimsViewTest {
     class ShouldUseIndependentStyle {
 
         @Test
-        void shouldUseIndependentStyleIsTrueForIndependentSpace() {
+        void isTrueForIndependentSpace() {
             // Delegated to the faction view: an independent claimant recedes to the muted style like
             // independent territory.
             assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
@@ -225,7 +225,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void shouldUseIndependentStyleIsFalseForACoreFaction() {
+        void isFalseForACoreFaction() {
             // A held claimant faction paints in full faction style, exactly as the faction view draws
             // it.
             assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
@@ -236,7 +236,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void shouldUseIndependentStyleForwardsTheAdjustmentToTheFactionView() {
+        void forwardsTheAdjustmentToTheFactionView() {
             // The adjustment argument must reach the delegate: a core faction the recede has
             // desaturated takes the independent style, so passing a desaturating adjustment (rather
             // than NONE) flips the result - pinning that the arg is forwarded, not dropped.
@@ -252,7 +252,7 @@ final class ClaimsViewTest {
     class ResolveBlocStyleAdjustment {
 
         @Test
-        void resolveBlocStyleAdjustmentIsNoneForAnyBloc() {
+        void isNoneForAnyBloc() {
             // The claims view adjusts no bloc, delegating the faction view's decision that a claimant
             // and independent space alike draw exactly as classified.
             assertThat(ClaimsView.INSTANCE.resolveBlocStyleAdjustment(
@@ -272,7 +272,7 @@ final class ClaimsViewTest {
     class ResolveName {
 
         @Test
-        void resolveNameReadsTheClaimingFactionsOwnName() {
+        void readsTheClaimingFactionsOwnName() {
             // A claim bloc ID is a plain faction ID, so the label is that faction's display name in
             // the player's chosen form - resolved through the faction view.
             var sectorMock = mock(SectorAPI.class);
@@ -293,7 +293,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveNameForwardsTheShortFormatToTheFactionView() {
+        void forwardsTheShortFormatToTheFactionView() {
             // The name-format argument must reach the delegate too: Short reads the faction's short
             // name rather than its long title, so asserting the short name pins that the format is
             // forwarded rather than defaulted.
@@ -315,7 +315,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveNameIsNullWhenTheFactionDoesNotResolve() {
+        void isNullWhenTheFactionDoesNotResolve() {
 
             var sectorMock = mock(SectorAPI.class);
 
@@ -335,7 +335,7 @@ final class ClaimsViewTest {
     class ResolveHoverTooltip {
 
         @Test
-        void resolveHoverTooltipIsTheClaimBreakdownRatherThanTheDominationOne() {
+        void isTheClaimBreakdownRatherThanTheDominationOne() {
             // This layer paints by the claim mechanic, so its hover has to explain that contest: the
             // domination breakdown the other two views inject describes standings this view never
             // painted by, and would read as an account of a border it did not draw.
@@ -360,7 +360,7 @@ final class ClaimsViewTest {
             Set.of(RevelationGate.SPACE_DERELICTS, RevelationGate.HIDDEN_COLONIES));
 
         @Test
-        void resolveBlocPickerReadCarriesEachClaimantsCrestShortNameAndStats() {
+        void carriesEachClaimantsCrestShortNameAndStats() {
             // A claiming bloc becomes an option carrying its crest, short name, and the claim stats the
             // fold computed for it, so the option reads exactly as the picker row will draw and sort it.
             var sectorMock = mock(SectorAPI.class);
@@ -386,7 +386,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadOffersAClaimantHoldingNoColonyAnywhere() {
+        void offersAClaimantHoldingNoColonyAnywhere() {
             // The gate is claim presence, not market presence: a faction claiming territory while
             // holding nothing paints on this layer, so it must be spotlightable even at a market size
             // of zero.
@@ -408,7 +408,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadOffersABlocThatHoldsColoniesButClaimsNothing() {
+        void offersABlocThatHoldsColoniesButClaimsNothing() {
             // A faction the player can plainly see going unlisted reads as the map having forgotten
             // it, so a colony holder that claims nowhere is offered rather than dropped. What says
             // it paints nothing here is the row itself: it carries a claim count of zero, which is
@@ -434,7 +434,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadRecedesTheRowOfABlocThatClaimsNothing() {
+        void recedesTheRowOfABlocThatClaimsNothing() {
             // Listing the claimless is only legible because the row says which it is, so the option
             // the view builds must carry that state through to the picker rather than reading as an
             // ordinary claimant with a zero on it.
@@ -464,7 +464,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadKeepsTheBlocsInTheFoldsWalkOrder() {
+        void keepsTheBlocsInTheFoldsWalkOrder() {
             // The options come back in the order the sector walk surfaced them, which is the order
             // the sort then arranges from. An ordered stub with a claimless bloc in the middle is
             // what makes a reordering visible - the list must neither drop it nor sink it here, since
@@ -495,7 +495,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadOffersNoItemsWhenTheFoldSurfacesNothing() {
+        void offersNoItemsWhenTheFoldSurfacesNothing() {
             // A bloc that neither claims nor holds anything never reaches the fold, so a sector with
             // none of either offers no options - the picker draws no controls at all - and a stale
             // saved selection heals to none.
@@ -514,7 +514,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadOpensItsClaimReaderOverThePassItAggregatesThrough() {
+        void opensItsClaimReaderOverThePassItAggregatesThrough() {
             // The claim half of the picker reads through the same pass the market half does, so the
             // two metrics cost one walk of each system between them and describe the sector at one
             // moment. Opening the reader under a rule of its own would also let a bloc's claim count
@@ -559,7 +559,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadRanksItsBlocsByTheClaimVocabularyThenTheirStanding() {
+        void ranksItsBlocsByTheClaimVocabularyThenTheirStanding() {
             // The view answers the list and the modes together, so the numbers its blocs carry and the
             // metrics the sort selector offers can never drift apart - this layer is painted by the
             // claim mechanic, so claims is what the picker ranks by rather than domination. The
@@ -582,7 +582,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadReachesNoWeightingRuleOnItsLiveEntry() {
+        void reachesNoWeightingRuleOnItsLiveEntry() {
             // The live entry the sidebar and the stale-selection heal call, driven whole rather than
             // under stated knobs - which is the only way this can be asked at all. A weighting rule
             // is read from LunaLib, a class the test JVM cannot load, so a seam handing this layer
@@ -608,7 +608,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadCarriesTheClaimWalksPresenceBesideTheRows() {
+        void carriesTheClaimWalksPresenceBesideTheRows() {
             // The presence comes off the same walk the rows do, handed on rather than derived here.
             // That the walk's index is the claim arm's alone - a bloc's colonies being summed from
             // wherever they are, so a system it merely lives in is never named - is the aggregator's

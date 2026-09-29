@@ -21,7 +21,7 @@ final class HoverTooltipGatesTest {
     class CanAnyBoxDraw {
 
         @Test
-        void canAnyBoxDrawIsTrueWithTheSwitchOnAndAMapOnScreen() {
+        void isTrueWithTheSwitchOnAndAMapOnScreen() {
             HoverSwitchScopes.runWithHoverTooltipSwitchOn(() ->
                 assertThat(HoverTooltipGates.canAnyBoxDraw(
                         MapHoverPermissionFixture.buildPermissionOnAVanillaHost()))
@@ -29,7 +29,7 @@ final class HoverTooltipGatesTest {
         }
 
         @Test
-        void canAnyBoxDrawIsFalseWhileNoMapIsOnScreen() {
+        void isFalseWhileNoMapIsOnScreen() {
             // The listeners reading this are called for the whole campaign UI, so without the map
             // read a box would float over the refit screen and F1 would be swallowed there.
             HoverSwitchScopes.runWithHoverTooltipSwitchOn(() ->
@@ -39,7 +39,7 @@ final class HoverTooltipGatesTest {
         }
 
         @Test
-        void canAnyBoxDrawIsFalseWhileHoverTooltipsAreSwitchedOff() {
+        void isFalseWhileHoverTooltipsAreSwitchedOff() {
             HoverSwitchScopes.runWithHoverTooltipSwitchOff(() ->
                 assertThat(HoverTooltipGates.canAnyBoxDraw(
                         MapHoverPermissionFixture.buildPermissionOnAVanillaHost()))
@@ -47,7 +47,7 @@ final class HoverTooltipGatesTest {
         }
 
         @Test
-        void canAnyBoxDrawSkipsTheScreenReadsWhileHoverTooltipsAreSwitchedOff() {
+        void skipsTheScreenReadsWhileHoverTooltipsAreSwitchedOff() {
             // The order is the point: the screen reads walk the live widget tree every frame, and
             // there is nothing to ask them about once the player has switched the box off.
             var screenReadCount = new int[1];

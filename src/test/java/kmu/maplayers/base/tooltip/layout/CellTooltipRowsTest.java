@@ -97,7 +97,7 @@ final class CellTooltipRowsTest {
     class BuildSectionHeadingRow {
 
         @Test
-        void buildSectionHeadingRowNamesItsBlockInGoldAtTheContentEdge() {
+        void namesItsBlockInGoldAtTheContentEdge() {
             // Every line of the box opens at that edge, so the gold is what tells a heading from the
             // entries it names: in their own bright it would be told apart by lacking a mark alone.
             var row = CellTooltipRows.buildSectionHeadingRow("Contested by:");
@@ -109,7 +109,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildSectionHeadingRowCarriesNeitherMarkNorValue() {
+        void carriesNeitherMarkNorValue() {
             // A heading names a block rather than being one of the things in it, so it fills neither
             // column - and charging the value column for a number it will never carry would widen the
             // box around an empty slot.
@@ -126,7 +126,7 @@ final class CellTooltipRowsTest {
     class BuildListedRow {
 
         @Test
-        void buildListedRowOpensAMarkedLineOnThatMarkAndLeavesItsLeadingSlotUnfilled() {
+        void opensAMarkedLineOnThatMarkAndLeavesItsLeadingSlotUnfilled() {
             // The mark rides inside the label, so it lands where the line's own indent put it rather
             // than in a gutter shared with whatever the box lists at another level.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
@@ -148,7 +148,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowDrawsAMarkStandingInForTheNameInTheColourOfItsOwnTier() {
+        void drawsAMarkStandingInForTheNameInTheColourOfItsOwnTier() {
             // The colour is the tier's rather than one number written down somewhere, so a mark on a
             // line found beneath another follows that line down to its plainer shade instead of
             // staying at the brightness the level above speaks in.
@@ -161,7 +161,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowOpensAMarklessLineOnItsWords() {
+        void opensAMarklessLineOnItsWords() {
             // A caller resolving a mark the game simply does not have hands the absence straight over,
             // so the line is built from its words alone rather than from an image run with nothing to
             // load.
@@ -176,7 +176,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowStartsAMarkedAndAMarklessLineAtTheSameInset() {
+        void startsAMarkedAndAMarklessLineAtTheSameInset() {
             // The whole reason the mark left the leading column: two lines the block lists side by side
             // begin their labels at the same place whether either carries a mark, so a listing mixing
             // the two does not read as two staggered columns.
@@ -196,7 +196,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowOpensAMemberAtTheContentEdgeInsetByItsLevel() {
+        void opensAMemberAtTheContentEdgeInsetByItsLevel() {
             // A member opens at the same edge its entry does and is told from it by the indent alone,
             // so a breakdown steps in from where its parent started rather than from a gutter away.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
@@ -210,7 +210,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowContinuesIntoWhatTheLineCallsOut() {
+        void continuesIntoWhatTheLineCallsOut() {
             // Continuing a line does not promote it: a qualified entry is still an entry, which is what
             // keeps the tier a matter of how deep the line sits rather than a side effect of a second
             // run.
@@ -229,7 +229,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowLeavesAGildedLineReadingAsItsWholeName() {
+        void leavesAGildedLineReadingAsItsWholeName() {
             // How every box's own suite identifies a line, held against the one shape that splits a
             // name into runs: a fixture named for what it is answers the name it is plainly shown by,
             // and the status behind it is not swept in with it.
@@ -245,7 +245,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowIndentsWhatWasFoundUnderALineInThePlainColour() {
+        void indentsWhatWasFoundUnderALineInThePlainColour() {
 
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(CREST_MARK, "Ion Storm", "17"),
@@ -260,7 +260,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowStepsInAgainForEachLevelBelowTheFirst() {
+        void stepsInAgainForEachLevelBelowTheFirst() {
             // What lets a breakdown go as deep as its subject matter: the indent is charged per level,
             // so a line under a line under an entry is legibly inside both rather than sharing one
             // indent with the level above it.
@@ -275,7 +275,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowOpensAValueOnItsWorkingInTheQuietShade() {
+        void opensAValueOnItsWorkingInTheQuietShade() {
             // The split says which part of the value is the finding and which is the arithmetic
             // behind it; drawn in one shade the two read as a single number with a stray separator.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
@@ -291,7 +291,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowKeepsAWorkingQuietAgainstAMembersOwnColour() {
+        void keepsAWorkingQuietAgainstAMembersOwnColour() {
             // The working is quieter than whatever the line it opens speaks in, so the same split
             // reads the same way at a tier the box draws in the plain colour.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
@@ -307,7 +307,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowShowsANumberAloneAsOneRunWhereTheLineStatesNoWorking() {
+        void showsANumberAloneAsOneRunWhereTheLineStatesNoWorking() {
             // Which is almost every line in the box: a value of one run is what a stack of rows is
             // aligned by, and a run drawing nothing in front of it would be a gap held open for it.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
@@ -319,7 +319,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowChargesNoColumnForAnAbsentScoreBeneathALine() {
+        void chargesNoColumnForAnAbsentScoreBeneathALine() {
             // A line with nothing to count fills its value slot with a run that draws nothing, so the
             // value column collapses for it rather than the line claiming a width it cannot use.
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
@@ -331,7 +331,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowContinuesIntoWhatTheLineCallsOutAtItsOwnTier() {
+        void continuesIntoWhatTheLineCallsOutAtItsOwnTier() {
             // A status stated on a member reads exactly as one stated on the entry it belongs to, and
             // calling it out does not lift the member out of its indent - which is the whole reason
             // every tier qualifies through one rule rather than each spelling it out.
@@ -350,7 +350,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowQuietensTheNameOfAnAside() {
+        void quietensTheNameOfAnAside() {
             // An aside stating how a number above it was arrived at is not one of the things the block
             // lists, so it reads in the shade a value's working does - name and all - and only the
             // number it arrives at stays a finding.
@@ -370,7 +370,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowQuietensANumberAnAccountRecordedRatherThanOneTheLineAchieved() {
+        void quietensANumberAnAccountRecordedRatherThanOneTheLineAchieved() {
             // Only the number moves. The line is one of the things the block lists, so its name reads
             // as loudly as its neighbours' - while the nought beside it, drawn in their colour, would
             // invite a comparison with the very scores it took no part in.
@@ -387,7 +387,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowSpeaksInTheBoxsOwnVoiceForOneOfTheBlocksOwnLines() {
+        void speaksInTheBoxsOwnVoiceForOneOfTheBlocksOwnLines() {
 
             var row = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
                 CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200"),
@@ -398,7 +398,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowSetsAPeerInWithoutQuietingIt() {
+        void setsAPeerInWithoutQuietingIt() {
             // The distinction the level exists for, read off the drawn line: a faction inside the alliance
             // naming it is inset beneath it while still saying who holds the system, so it is stepped
             // in without being demoted.
@@ -413,7 +413,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildListedRowQuietensEachLevelOfAnAccount() {
+        void quietensEachLevelOfAnAccount() {
             // The other half: what a line breaks down into is the box explaining itself, and a factor's
             // own tiers explain that, so each step of the account reads one step quieter.
             var factor = (TooltipRow.TableRow) CellTooltipRows.buildListedRow(
@@ -434,7 +434,7 @@ final class CellTooltipRowsTest {
     class BuildQualifierSpan {
 
         @Test
-        void buildQualifierSpanReadsGold() {
+        void readsGold() {
             // The one decision the run exists for: a line that continues into it reads in two colours,
             // with what is being called out picked out from what is merely named.
             assertThat(CellTooltipRows.buildQualifierSpan("worsening").colour())
@@ -442,7 +442,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildQualifierSpanCarriesTheWordsAlone() {
+        void carriesTheWordsAlone() {
             // What parts the run from the line it continues is the run vocabulary's own space, spent
             // whichever way the label is laid, so a separator written in here would be the second one -
             // which is what drew a qualifier two spaces clear of the words it qualifies.
@@ -455,7 +455,7 @@ final class CellTooltipRowsTest {
     class BuildBannerRow {
 
         @Test
-        void buildBannerRowReadsInThePlainTextColour() {
+        void readsInThePlainTextColour() {
             // A banner states a fact rather than calling one out, so it is spoken plainly - what it may
             // call out is the qualifier it ends on, which reads gold.
             assertThat(readLabelTextRun(CellTooltipRows.buildBannerRow(null, "Unpopulated"), LABEL_RUN))
@@ -463,7 +463,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildBannerRowCarriesItsCrestAsARunOfTheLine() {
+        void carriesItsCrestAsARunOfTheLine() {
             // The crest rides inside the label, so the line centres crest and words together instead of
             // anchoring the image to a column a centred line has left - and it reads the same way the
             // listed lines below it do, which is the one rule the box has for images.
@@ -476,7 +476,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildBannerRowOpensAtItsWordsWithoutACrest() {
+        void opensAtItsWordsWithoutACrest() {
             // A caller resolving a crest that simply does not exist hands the absence straight over, so
             // the line is built from its words alone rather than from an image run with nothing to load.
             var row = CellTooltipRows.buildBannerRow(null, "Ion Storm");
@@ -486,7 +486,7 @@ final class CellTooltipRowsTest {
         }
 
         @Test
-        void buildBannerRowTakesTheSameQualifierEveryOtherLineDoes() {
+        void takesTheSameQualifierEveryOtherLineDoes() {
             // A banner calls something out in the shade every line calls things out in, so leaving the
             // table costs it none of the vocabulary the lines below it are written in.
             var row = CellTooltipRows

@@ -48,7 +48,7 @@ final class MarketFactorTextTest {
     class FormatStability {
 
         @Test
-        void formatStabilityStatesAWholeReadingWithoutAFraction() {
+        void statesAWholeReadingWithoutAFraction() {
             // Stability is the one number in the box a player also reads on the colony itself, so it
             // reads as they read it there.
             assertThat(MarketFactorText.formatStability(5.0))
@@ -56,7 +56,7 @@ final class MarketFactorTextTest {
         }
 
         @Test
-        void formatStabilityKeepsAFractionalReading() {
+        void keepsAFractionalReading() {
             // A modded or drifting stability lands off the whole numbers, and rounding it would put
             // the box's stated cause a step away from the cut it caused.
             assertThat(MarketFactorText.formatStability(4.5))
@@ -68,19 +68,19 @@ final class MarketFactorTextTest {
     class FormatBaseSize {
 
         @Test
-        void formatBaseSizeStatesTheSizeAndTheWeightItBecame() {
+        void statesTheSizeAndTheWeightItBecame() {
             assertThat(MarketFactorText.formatBaseSize(new BaseSizeFactor(5, 5.0, 5.0, 0.0), false))
                 .isEqualTo("5 :: 5,000");
         }
 
         @Test
-        void formatBaseSizeStatesTheCutLowStabilityTook() {
+        void statesTheCutLowStabilityTook() {
             assertThat(MarketFactorText.formatBaseSize(new BaseSizeFactor(5, 5.0, 4.5, 0.1), false))
                 .isEqualTo("5 :: 4,500 (-10%)");
         }
 
         @Test
-        void formatBaseSizeMarksARatingThatIsNotTheColonysOwnSize() {
+        void marksARatingThatIsNotTheColonysOwnSize() {
             // Under fixed hidden-market scaling the rating is a token rather than a size, and an
             // unmarked one reads as a size the colony does not have.
             assertThat(MarketFactorText.formatBaseSize(new BaseSizeFactor(7, 2.5, 2.5, 0.0), true))
@@ -92,7 +92,7 @@ final class MarketFactorTextTest {
     class FormatRawSizeWorking {
 
         @Test
-        void formatRawSizeWorkingStatesTheSizeTheColonyActuallyIs() {
+        void statesTheSizeTheColonyActuallyIs() {
             // The half a hidden colony's size line opens on, ending on the separator that parts it
             // from what the colony counted as instead.
             assertThat(MarketFactorText.formatRawSizeWorking(6))
@@ -100,7 +100,7 @@ final class MarketFactorTextTest {
         }
 
         @Test
-        void formatRawSizeWorkingOpensOnTheSameSeparatorARatedValueIsJoinedBy() {
+        void opensOnTheSameSeparatorARatedValueIsJoinedBy() {
             // One separator for both, so a value drawn in one shade and a value whose halves are
             // coloured apart cannot part company over what parts them.
             assertThat(MarketFactorText.formatBaseSize(new BaseSizeFactor(6, 1.0, 1.0, 0.0), true))
@@ -112,7 +112,7 @@ final class MarketFactorTextTest {
     class FormatStation {
 
         @Test
-        void formatStationStatesBothCutsInTheOrderTheyWereTaken() {
+        void statesBothCutsInTheOrderTheyWereTaken() {
             // The hidden-market rate is applied to the station weight and low stability to what
             // survived it, so stating them the other way round would describe different arithmetic.
             assertThat(MarketFactorText.formatStation(
@@ -121,7 +121,7 @@ final class MarketFactorTextTest {
         }
 
         @Test
-        void formatStationLeavesACutOfNothingUnsaid() {
+        void leavesACutOfNothingUnsaid() {
             // A colony held in the open forfeits nothing to the hidden rate, and a deduction of zero
             // printed anyway would read as a cut on every openly held stationed colony in the box.
             assertThat(MarketFactorText.formatStation(
@@ -134,7 +134,7 @@ final class MarketFactorTextTest {
     class FormatMilitaryStationName {
 
         @Test
-        void formatMilitaryStationNameKeepsTheStationsOwnNameAndSaysWhichOfTheTwoItIs() {
+        void keepsTheStationsOwnNameAndSaysWhichOfTheTwoItIs() {
             // The name is what ties the line to the map, so the clarifier is added to it rather than
             // replacing it - and it is parenthesised, being an aside rather than a further finding.
             assertThat(MarketFactorText.formatMilitaryStationName("Selkie Station"))
@@ -146,7 +146,7 @@ final class MarketFactorTextTest {
     class FormatPatrols {
 
         @Test
-        void formatPatrolsStatesWhatThePatrolsCameToAndTheCutTheyTook() {
+        void statesWhatThePatrolsCameToAndTheCutTheyTook() {
             assertThat(MarketFactorText.formatPatrols(new PatrolFactor(
                     new PatrolTierFactor(2, 0.25, 0.45),
                     new PatrolTierFactor(1, 0.5, 0.45),
@@ -156,7 +156,7 @@ final class MarketFactorTextTest {
         }
 
         @Test
-        void formatPatrolsStatesNoHeadcountAcrossTheTiers() {
+        void statesNoHeadcountAcrossTheTiers() {
             // The tiers count for different amounts, so a summed headcount beside the weight is a
             // number nothing follows from - and one a reader would try to divide the weight by. Three
             // patrols here, and no "3" anywhere on the line.
@@ -173,7 +173,7 @@ final class MarketFactorTextTest {
     class FormatPatrolTierWorking {
 
         @Test
-        void formatPatrolTierWorkingStatesWhatOnePatrolOfTheTierCountsFor() {
+        void statesWhatOnePatrolOfTheTierCountsFor() {
             // The rate ends on the separator parting it from the total, so the two halves drawn in
             // different shades still read as the one value they are.
             assertThat(MarketFactorText.formatPatrolTierWorking(new PatrolTierFactor(2, 0.25, 0.45)))
@@ -186,7 +186,7 @@ final class MarketFactorTextTest {
     class FormatPatrolTierTotal {
 
         @Test
-        void formatPatrolTierTotalStatesWhatTheTierBecameOnTheGrid() {
+        void statesWhatTheTierBecameOnTheGrid() {
             // The tier restates no cut: all three took the one the patrol line above states, and
             // repeating it per tier would read as three separate deductions.
             assertThat(MarketFactorText.formatPatrolTierTotal(new PatrolTierFactor(2, 0.25, 0.45)))

@@ -32,7 +32,7 @@ final class MapHoverGatesTest {
     class IsHoverEffectsEnabled {
 
         @Test
-        void isHoverEffectsEnabledIsTrueWithBothTiersOn() {
+        void isTrueWithBothTiersOn() {
 
             try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
@@ -48,7 +48,7 @@ final class MapHoverGatesTest {
         }
 
         @Test
-        void isHoverEffectsEnabledIsFalseWithTheHoveringMasterOff() {
+        void isFalseWithTheHoveringMasterOff() {
             // The master reaches past its own kind: with it off there is no cursor read to draw off.
             try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
@@ -65,7 +65,7 @@ final class MapHoverGatesTest {
         }
 
         @Test
-        void isHoverEffectsEnabledIsFalseWithTheGlobalEffectsSwitchOff() {
+        void isFalseWithTheGlobalEffectsSwitchOff() {
 
             try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
@@ -82,7 +82,7 @@ final class MapHoverGatesTest {
         }
 
         @Test
-        void isHoverEffectsEnabledIsUntouchedByTheGlobalTooltipSwitch() {
+        void isUntouchedByTheGlobalTooltipSwitch() {
             // The pair is a pair, not a chain: switching the box off leaves the halo and wash alone.
             try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
@@ -106,7 +106,7 @@ final class MapHoverGatesTest {
     class IsHoverTooltipEnabled {
 
         @Test
-        void isHoverTooltipEnabledIsTrueWithBothTiersOn() {
+        void isTrueWithBothTiersOn() {
 
             try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
@@ -123,7 +123,7 @@ final class MapHoverGatesTest {
         }
 
         @Test
-        void isHoverTooltipEnabledIsFalseWithTheHoveringMasterOff() {
+        void isFalseWithTheHoveringMasterOff() {
 
             try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
@@ -140,7 +140,7 @@ final class MapHoverGatesTest {
         }
 
         @Test
-        void isHoverTooltipEnabledIsFalseWithTheGlobalTooltipSwitchOff() {
+        void isFalseWithTheGlobalTooltipSwitchOff() {
 
             try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
@@ -157,7 +157,7 @@ final class MapHoverGatesTest {
         }
 
         @Test
-        void isHoverTooltipEnabledIsUntouchedByTheGlobalEffectsSwitch() {
+        void isUntouchedByTheGlobalEffectsSwitch() {
             // The other half of the pair: a player who wants the standings box without the map
             // lighting up under the cursor keeps the box.
             try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
@@ -182,7 +182,7 @@ final class MapHoverGatesTest {
     class IsCursorLocatableOn {
 
         @Test
-        void isCursorLocatableOnIsTrueOnAVanillaHostWithNeitherPermissionGiven() {
+        void isTrueOnAVanillaHostWithNeitherPermissionGiven() {
             // Neither permission is the vanilla hosts, so with both withheld the hosts have to
             // answer on their own or the map would stop hovering on the screen it belongs to.
             runWithMouseoverPermissions(false, false, () ->
@@ -191,7 +191,7 @@ final class MapHoverGatesTest {
         }
 
         @Test
-        void isCursorLocatableOnIsFalseOffTheVanillaHostsWithNeitherPermissionGiven() {
+        void isFalseOffTheVanillaHostsWithNeitherPermissionGiven() {
             // The other half of that: with both withheld, a foreign surface drawing with no map
             // open resolves a confident wrong answer, so the pass is not read at all.
             runWithMouseoverPermissions(false, false, () ->
@@ -200,7 +200,7 @@ final class MapHoverGatesTest {
         }
 
         @Test
-        void isCursorLocatableOnIsTrueAnywhereWithTheGlobalPermissionGiven() {
+        void isTrueAnywhereWithTheGlobalPermissionGiven() {
             // Every pass there is, which is what the switch says: no map on screen and no game
             // space either - some other screen, with a mod's surface drawing over it.
             runWithMouseoverPermissions(true, false, () ->
@@ -209,7 +209,7 @@ final class MapHoverGatesTest {
         }
 
         @Test
-        void isCursorLocatableOnIsTrueInGameSpaceWithTheGameSpacePermissionGiven() {
+        void isTrueInGameSpaceWithTheGameSpacePermissionGiven() {
             // The frames a docked minimap is the only map on: no screen open, nothing drawn over
             // the campaign.
             runWithMouseoverPermissions(false, true, () ->
@@ -218,7 +218,7 @@ final class MapHoverGatesTest {
         }
 
         @Test
-        void isCursorLocatableOnIsFalseOutsideGameSpaceWithOnlyTheGameSpacePermissionGiven() {
+        void isFalseOutsideGameSpaceWithOnlyTheGameSpacePermissionGiven() {
             // What makes the narrower permission narrower, and what closes the docked minimap
             // without naming a mod: a panel is parked on exactly the conditions that end game
             // space, so the frames it is parked on are frames this permission never reaches.

@@ -27,7 +27,7 @@ final class MapHoverExpirerTest {
     class Advance {
 
         @Test
-        void advanceParksAHoverNoPassRepublished() {
+        void parksAHoverNoPassRepublished() {
             // The frame window, driven from outside the map passes: two frames with no publication
             // between them is a hover nobody is resolving any more.
             var state = new MapHoverState();
@@ -44,7 +44,7 @@ final class MapHoverExpirerTest {
         }
 
         @Test
-        void advanceKeepsAHoverThePassesGoOnPublishing() {
+        void keepsAHoverThePassesGoOnPublishing() {
             // A map still drawing publishes every frame, so this never takes a live hover away.
             var state = new MapHoverState();
             var hover = new MapHover(buildCellKey("system"), List.of(buildCellKey("system")));
@@ -65,7 +65,7 @@ final class MapHoverExpirerTest {
     class IsDone {
 
         @Test
-        void isDoneIsFalseSoTheTickRunsForTheSession() {
+        void isFalseSoTheTickRunsForTheSession() {
 
             assertThat(new MapHoverExpirer(new MapHoverState()).isDone())
                 .isFalse();
@@ -76,7 +76,7 @@ final class MapHoverExpirerTest {
     class RunWhilePaused {
 
         @Test
-        void runWhilePausedIsTrueSoAHoverIsLetGoOfUnderAnOpenScreen() {
+        void isTrueSoAHoverIsLetGoOfUnderAnOpenScreen() {
             // The map screen, a dialog and the pause menu all pause the campaign, and a hover left
             // standing under one of them is what this is here to release.
             assertThat(new MapHoverExpirer(new MapHoverState()).runWhilePaused())

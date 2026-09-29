@@ -49,7 +49,7 @@ final class RenderStyleReaderTest {
     class ReadFactionStyle {
 
         @Test
-        void readFactionStyleThreadsEachFactionSettingIntoItsMatchingSlot() {
+        void threadsEachFactionSettingIntoItsMatchingSlot() {
 
             try (var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
@@ -101,7 +101,7 @@ final class RenderStyleReaderTest {
     class ReadIndependentStyle {
 
         @Test
-        void readIndependentStyleThreadsEachIndependentSettingIntoItsMatchingSlot() {
+        void threadsEachIndependentSettingIntoItsMatchingSlot() {
 
             try (var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
@@ -153,7 +153,7 @@ final class RenderStyleReaderTest {
     class ReadDecivilisedStyle {
 
         @Test
-        void readDecivilisedStyleDrawsTheFillAndOutlineInTheNeutralColour() {
+        void drawsTheFillAndOutlineInTheNeutralColour() {
 
             try (var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
@@ -187,7 +187,7 @@ final class RenderStyleReaderTest {
         }
 
         @Test
-        void readDecivilisedStyleLeavesTheFillUndrawnAtZeroOpacity() {
+        void leavesTheFillUndrawnAtZeroOpacity() {
 
             try (var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
@@ -217,7 +217,7 @@ final class RenderStyleReaderTest {
     class ReadUninhabitedStyle {
 
         @Test
-        void readUninhabitedStyleDrawsTheOutlineInTheNeutralColourWhenTheSidebarToggleIsOn() {
+        void drawsTheOutlineInTheNeutralColourWhenTheSidebarToggleIsOn() {
             // The on/off arrives from the rebuild's own sampling of the sidebar preference rather
             // than from a settings field, so this category is settled by the argument and the two
             // stubbed knobs together and neither can satisfy the assertion alone.
@@ -246,7 +246,7 @@ final class RenderStyleReaderTest {
         }
 
         @Test
-        void readUninhabitedStyleHidesTheOutlineButKeepsItsGeometryWhenTheSidebarToggleIsOff() {
+        void hidesTheOutlineButKeepsItsGeometryWhenTheSidebarToggleIsOff() {
 
             try (var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
@@ -293,7 +293,7 @@ final class RenderStyleReaderTest {
         private static final double PREVIEW_WASH_OPACITY = 0.45;
 
         @Test
-        void readGlobalStyleGathersEverySectorWideKnobIntoOneTier() {
+        void gathersEverySectorWideKnobIntoOneTier() {
 
             try (var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
                     var highlightSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class);
@@ -393,7 +393,7 @@ final class RenderStyleReaderTest {
         // above, because the mapping is the whole of what this reads: a stroke that came back
         // aliased whatever the player set would pass every other assertion in this class.
         @Test
-        void readGlobalStyleStrokesTheHatchSmoothedWhenTheSmoothingKnobIsOn() {
+        void strokesTheHatchSmoothedWhenTheSmoothingKnobIsOn() {
             // The tier gathers three sections, so the two this case says nothing about are still
             // opened: a settings read outside a mock has no LunaLib to answer it.
             try (var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
@@ -425,7 +425,7 @@ final class RenderStyleReaderTest {
         private static final double CHAMFER_ANGLE = 0.4;
 
         @Test
-        void readBorderSmoothingStyleLandsEachKnobInTheSubRecordOfThePassThatReadsIt() {
+        void landsEachKnobInTheSubRecordOfThePassThatReadsIt() {
 
             try (var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class)) {
 
@@ -493,7 +493,7 @@ final class RenderStyleReaderTest {
         private static final double WASH_OUTLINE_WIDTH = 3.5;
 
         @Test
-        void readHoverHighlightStyleThreadsEachHoverSettingIntoItsMatchingSlot() {
+        void threadsEachHoverSettingIntoItsMatchingSlot() {
 
             try (var highlightSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
 
@@ -559,7 +559,7 @@ final class RenderStyleReaderTest {
         private static final double WASH_OPACITY = 0.45;
 
         @Test
-        void readPreviewHighlightStyleThreadsEachPreviewSettingIntoItsMatchingSlot() {
+        void threadsEachPreviewSettingIntoItsMatchingSlot() {
 
             try (var highlightSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
 
@@ -584,7 +584,7 @@ final class RenderStyleReaderTest {
         // own constants: a value the player cannot move is one a test has to pin, or a
         // future edit to it passes unnoticed.
         @Test
-        void readPreviewHighlightStyleTracesLitRegionsAtItsOwnFixedWeights() {
+        void tracesLitRegionsAtItsOwnFixedWeights() {
 
             try (var highlightSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
 
@@ -600,7 +600,7 @@ final class RenderStyleReaderTest {
         // The halo the tier declines. Its own case rather than an assertion beside the weights,
         // since "draws no halo" is a decision about the tier rather than a weight it carries.
         @Test
-        void readPreviewHighlightStyleCarriesNoHalo() {
+        void carriesNoHalo() {
 
             try (var highlightSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
 
@@ -616,7 +616,7 @@ final class RenderStyleReaderTest {
     class ReadRenderStyle {
 
         @Test
-        void readRenderStyleCarriesTheGlobalTierAndAllFourCategories() {
+        void carriesTheGlobalTierAndAllFourCategories() {
 
             try (var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class);
                     var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);

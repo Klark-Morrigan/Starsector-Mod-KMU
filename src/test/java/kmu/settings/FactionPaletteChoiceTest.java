@@ -15,7 +15,7 @@ final class FactionPaletteChoiceTest {
     class GetLabel {
 
         @Test
-        void getLabelReturnsTheLunaLibOptionLabel() {
+        void returnsTheLunaLibOptionLabel() {
 
             assertThat(FactionPaletteChoice.PRIMARY.getLabel())
                 .isEqualTo("Primary faction color");

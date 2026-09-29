@@ -51,7 +51,7 @@ final class SystemOwnerTest {
     class ResolveForBloc {
 
         @Test
-        void resolveForBlocPairsAFactionBlocWithItsOwnAuthoredShades() {
+        void pairsAFactionBlocWithItsOwnAuthoredShades() {
 
             var sector = buildSectorResolving(
                 SectorOwnershipFixtures.buildFaction("hegemony", SectorOwnershipFixtures.HEGEMONY_BRIGHT));
@@ -64,7 +64,7 @@ final class SystemOwnerTest {
         }
 
         @Test
-        void resolveForBlocColoursAGroupByItsLeadingMemberWhileKeepingTheGroupsId() {
+        void coloursAGroupByItsLeadingMemberWhileKeepingTheGroupsId() {
             // The group's ID is no faction, so the palette is looked up through the leading member;
             // the holder still carries the group's ID, which is what the cells cluster by.
             var sector = buildSectorResolving(
@@ -78,7 +78,7 @@ final class SystemOwnerTest {
         }
 
         @Test
-        void resolveForBlocReturnsNullWhenNoColourFactionIsPresent() {
+        void returnsNullWhenNoColourFactionIsPresent() {
             // A faction a mod removed mid-save leaves a bloc with no palette to paint in, so the
             // system drops as unowned rather than drawing in colours nobody authored.
             var sectorMock = mock(SectorAPI.class);
@@ -92,7 +92,7 @@ final class SystemOwnerTest {
     class MapFactionIdBySystemKey {
 
         @Test
-        void mapFactionIdBySystemKeyKeepsEachSystemsBlocIdInTheOrderHandedOver() {
+        void keepsEachSystemsBlocIdInTheOrderHandedOver() {
             // The geometry fuses on these IDs and walks them in order, so the order is part of the
             // answer rather than an accident of the map type.
             assertThat(SystemOwner.mapFactionIdBySystemKey(buildOwnerBySystemKey()))
@@ -102,7 +102,7 @@ final class SystemOwnerTest {
         }
 
         @Test
-        void mapFactionIdBySystemKeyAnswersNothingForNoOwnedSystem() {
+        void answersNothingForNoOwnedSystem() {
 
             assertThat(SystemOwner.mapFactionIdBySystemKey(Map.of()))
                 .isEmpty();
@@ -113,7 +113,7 @@ final class SystemOwnerTest {
     class MapCellGrouping {
 
         @Test
-        void mapCellGroupingOwnsACellByTheSystemItDrawsAs() {
+        void ownsACellByTheSystemItDrawsAs() {
             // A pocket cell has no star of its own; it is owned through the system it draws as, so
             // it clusters with that system's holder.
             var cellGrouping = SystemOwner.mapCellGrouping(
@@ -127,7 +127,7 @@ final class SystemOwnerTest {
         }
 
         @Test
-        void mapCellGroupingLeavesACellUnownedWhenItsSystemHasNoHolder() {
+        void leavesACellUnownedWhenItsSystemHasNoHolder() {
 
             var cellGrouping = SystemOwner.mapCellGrouping(
                 Map.of(POCKET_CELL_KEY, CORVUS_KEY),
@@ -142,7 +142,7 @@ final class SystemOwnerTest {
     class ResolvePalette {
 
         @Test
-        void resolvePaletteKeepsTheBrightShadePrimaryAndTheDarkSecondary() {
+        void keepsTheBrightShadePrimaryAndTheDarkSecondary() {
 
             var owner = new SystemOwner("hegemony", Color.RED, Color.BLUE);
 

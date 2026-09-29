@@ -251,7 +251,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesSkipsAStaleSystemThatSeedsNoCell() {
+        void skipsAStaleSystemThatSeedsNoCell() {
             // A resize changes holding over cells already drawn; it never admits a
             // system to the map, so one with no cell has nothing to re-shape and must not
             // reach the re-derive at all.
@@ -268,7 +268,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRedrawsNothingWhenNoFactMoved() {
+        void redrawsNothingWhenNoFactMoved() {
             // The common resize: a colony grows, its faction still wins, and what stands there is
             // what stood there - so the batch disturbed nothing and no cell or cluster group is built
             // again. The marked system's band is re-baked all the same, which the case below
@@ -285,7 +285,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRebakesTheBandOfAMarkedSystemThatDidNotFlip() {
+        void rebakesTheBandOfAMarkedSystemThatDidNotFlip() {
             // What marks a system is a colony appearing, growing, or changing hands - which is
             // exactly what changes how many colonies a band counts. So a marked system owes a
             // re-baked band even on the frame where nothing about its fill moved, and waiting for
@@ -318,7 +318,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRebakesABandClearOfTheNamesAlreadyPlaced() {
+        void rebakesABandClearOfTheNamesAlreadyPlaced() {
             // A band is laid around the cluster names, so a re-bake has to read the placements the
             // map is drawing rather than lay a band as though there were none. This name lies
             // across the whole marked cell, which leaves its ring with nowhere to put one - a
@@ -352,7 +352,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRebakesABandAroundTheWordsWhereTheClearanceReadsThem() {
+        void rebakesABandAroundTheWordsWhereTheClearanceReadsThem() {
             // The same name over the same cell, read by the words it draws rather than by the box
             // its placement reserved. The two readings disagree about this cell outright - the
             // fitted box covers it whole, while the words land elsewhere entirely - so a band comes
@@ -401,7 +401,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesReservesNoRoomForANameWhileTheNamesAreSwitchedOff() {
+        void reservesNoRoomForANameWhileTheNamesAreSwitchedOff() {
             // The same name across the same cell, with the names switched off: nothing is drawn
             // for the band to be interrupted by, so it takes the whole ring. The placements are
             // still standing - they are built for the anchor overlay too - which is why the room
@@ -430,7 +430,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesReservesNoRoomForANameWhileTheBandsIgnoreTheNames() {
+        void reservesNoRoomForANameWhileTheBandsIgnoreTheNames() {
             // The same name across the same cell, drawn this time, with the player having asked
             // that the bands not give way to it: the band takes the whole ring and the word draws
             // across it. The pair with the case above is the point - the two reasons a band has
@@ -466,7 +466,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRedrawsOnlyItsOwnCellWhenOnlyInhabitationMoved() {
+        void redrawsOnlyItsOwnCellWhenOnlyInhabitationMoved() {
             // A restyled system - one that just became settled, or that the pick just colonised -
             // is redrawn through the same primitive a flip's cells are, and nothing beyond it: a
             // cell's shape is settled by which of its edges are same-owner seams, and neither fact
@@ -498,7 +498,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesBandsASystemThatJustBecameSettled() {
+        void bandsASystemThatJustBecameSettled() {
             // The band needs no wiring of its own: a marked system is re-baked either way, and
             // what decides whether it gets a band is the very set the fold has just written. Left
             // out of that set, the cell reaches the band pass as empty space and nothing is laid.
@@ -519,7 +519,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesOpensOnePassHoweverManySystemsAreMarked() {
+        void opensOnePassHoweverManySystemsAreMarked() {
             // The whole batch is answered off one reading of the sector: a pass per marked system
             // would pay a settings read and a walk of that system's colonies for each of the
             // questions asked about it, which is what this path exists to avoid.
@@ -541,7 +541,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesReadsTheSectorItWasHandedRatherThanTheRunningOne() {
+        void readsTheSectorItWasHandedRatherThanTheRunningOne() {
             // This fold is reached through static entry points handed the standing map's four
             // halves, so a pass opened over the running game would be right only while the
             // sector its caller holds cells for and the sector loaded are the same one. Posed with
@@ -571,7 +571,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesBakesTheBandsOffTheBatchesOwnReadingOfTheSector() {
+        void bakesTheBandsOffTheBatchesOwnReadingOfTheSector() {
             // A last stage handed a bare sector would open a second reading of it - for a sector
             // that cannot have moved since the re-derive read it a moment earlier. So the count is
             // taken at the one entry a reading is opened through, and one opening is what says the
@@ -601,7 +601,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRedrawsOnlyTheMarkedOneOfTwoSystemsSharingAnId() {
+        void redrawsOnlyTheMarkedOneOfTwoSystemsSharingAnId() {
             // The board marks a system by key, and two systems the sector lists under one ID each
             // seed a cell of their own - so a mark on the twin re-derives the twin and redraws its
             // cell alone, leaving the other standing on the reading it already has. A mark by ID
@@ -653,7 +653,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesReshapesTheFlippedSystemAndItsNeighbour() {
+        void reshapesTheFlippedSystemAndItsNeighbour() {
             // The neighbour's own holder did not move, but the edge it shares with the
             // flipped system just turned from a same-faction seam into a cluster border,
             // so it has to be re-shaped too or the border draws down one side only.
@@ -682,7 +682,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRebuildsTheLosingAndGainingFactionsClusters() {
+        void rebuildsTheLosingAndGainingFactionsClusters() {
             // Both sides of the transfer change shape - one loses the cell, the other gains
             // it - and no third faction's rings trace a cell that moved, so exactly these
             // two rebuild.
@@ -714,7 +714,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesLeavesTheBandOfACellNoMovedNameReaches() {
+        void leavesTheBandOfACellNoMovedNameReaches() {
             // The flip re-fits the names, and the re-fit moved none of them - so a cell the flip
             // never touched is laid out against exactly the names it was laid out against before,
             // and re-baking it would spend a carve, a count and a stroke to arrive at what it is
@@ -738,7 +738,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRebakesTheBandOfACellAMovedNameReaches() {
+        void rebakesTheBandOfACellAMovedNameReaches() {
             // A re-fitted name is placed wherever its new cluster is roomiest, which can be a cell
             // the flip never went near, and a band laid around where that name stood is not laid
             // around it any more. The fit says which names it moved, so that cell is named rather
@@ -771,7 +771,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRebakesTheBandOfAMarkedSystemWhileAnotherFlips() {
+        void rebakesTheBandOfAMarkedSystemWhileAnotherFlips() {
             // The third reason a cell owes a band, and the one the other two hide: a colony
             // appeared somewhere that did not change hands, in the same batch as a flip
             // elsewhere. That system is neither re-shaped nor reached by a name, so a bake taking
@@ -851,7 +851,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRefitsAgainstTheCallersGeometry() {
+        void refitsAgainstTheCallersGeometry() {
             // The caller's own cells-and-revision pair goes out as it came in, because this path
             // re-shapes cells within a partition it never recut - so the fit ran against the very
             // geometry the caller named, and a re-fit reported against any other one would offer
@@ -876,7 +876,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesRefitsIntoTheCallersOwnStandingPair() {
+        void refitsIntoTheCallersOwnStandingPair() {
             // The re-fit here is partial for the same reason a full rebuild's is: a flip
             // re-partitions the clusters it touches and leaves the rest alone, so what the
             // standing placements were fitted under has to reach the fit or every cluster is
@@ -903,7 +903,7 @@ public final class IncrementalOwnerRefreshTest {
         }
 
         @Test
-        void applyStaleOwnerUpdatesLeavesTheStandingPairAloneWhenTheHolderDidNotChange() {
+        void leavesTheStandingPairAloneWhenTheHolderDidNotChange() {
             // A resize that leaves the winner alone leaves the placements alone: nothing was
             // re-fitted, so the standing placements and the rules recorded for them still describe
             // each other and neither half may move.

@@ -49,7 +49,7 @@ final class CellPresenceRibbonRendererTest {
     class RenderOnMap {
 
         @Test
-        void renderOnMapReadsNoBandsWhenNoCellCarriesOne() {
+        void readsNoBandsWhenNoCellCarriesOne() {
 
             var ribbonsFake = new RibbonsFake(List.of());
 
@@ -62,7 +62,7 @@ final class CellPresenceRibbonRendererTest {
         }
 
         @Test
-        void renderOnMapReadsNoBandsWhenTheOverlayIsFullyFadedOut() {
+        void readsNoBandsWhenTheOverlayIsFullyFadedOut() {
 
             // A cell that does carry a band, so only the fade can be what stops it: at the ends of
             // the map's zoom fade every run would emit at zero effective alpha.
@@ -77,7 +77,7 @@ final class CellPresenceRibbonRendererTest {
         }
 
         @Test
-        void renderOnMapEmitsTheBandsHoweverFarTheMapIsZoomedOut() {
+        void emitsTheBandsHoweverFarTheMapIsZoomedOut() {
 
             // The pass is watched at the GL entry point rather than at the band list, since the
             // walk behind it is what needs a context: reaching the entry point at all is the whole

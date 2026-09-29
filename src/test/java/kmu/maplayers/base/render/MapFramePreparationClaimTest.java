@@ -28,7 +28,7 @@ final class MapFramePreparationClaimTest {
     class ClaimPreparation {
 
         @Test
-        void claimPreparationGrantsEveryClaimBeforeAnyFrameBoundaryIsSeen() {
+        void grantsEveryClaimBeforeAnyFrameBoundaryIsSeen() {
             // The state the surfaces run in until the listener is registered, and the state a load
             // that failed to register it leaves behind. Preparing twice is the tolerable fault here;
             // preparing never would leave the map painting whatever the last prepared frame built.
@@ -41,7 +41,7 @@ final class MapFramePreparationClaimTest {
         }
 
         @Test
-        void claimPreparationGrantsTheFirstSurfaceToReachAFrame() {
+        void grantsTheFirstSurfaceToReachAFrame() {
 
             var claim = new MapFramePreparationClaim();
 
@@ -52,7 +52,7 @@ final class MapFramePreparationClaimTest {
         }
 
         @Test
-        void claimPreparationRefusesEverySurfaceAfterTheFirstInOneFrame() {
+        void refusesEverySurfaceAfterTheFirstInOneFrame() {
             // The whole point: two surfaces painting the lower band of one frame prepare it once
             // between them, rather than each stepping the cursor's arrival latch for the same frame.
             var claim = new MapFramePreparationClaim();
@@ -67,7 +67,7 @@ final class MapFramePreparationClaimTest {
         }
 
         @Test
-        void claimPreparationStaysRefusedThroughTheRenderPassesAboveTheUi() {
+        void staysRefusedThroughTheRenderPassesAboveTheUi() {
             // Which pass is read as the boundary is the whole of what makes this land before the map
             // rather than after it. Both passes above the UI run once the map has already drawn, so
             // releasing the preparation from either would hand it to the next frame's surfaces - the
@@ -84,7 +84,7 @@ final class MapFramePreparationClaimTest {
         }
 
         @Test
-        void claimPreparationGrantsAgainOnceTheNextFrameOpens() {
+        void grantsAgainOnceTheNextFrameOpens() {
             // A claim is spent by the frame it was taken for and no longer, or the overlay would be
             // prepared once and then never again.
             var claim = new MapFramePreparationClaim();
@@ -102,7 +102,7 @@ final class MapFramePreparationClaimTest {
     class DisposeMachinery {
 
         @Test
-        void disposeMachineryGrantsEveryClaimAgain() {
+        void grantsEveryClaimAgain() {
             // A released machinery leaves nothing to open another frame, so the claim has to
             // forget that boundaries were ever seen - otherwise a surface still holding it would be
             // refused every preparation from the frame it was released mid-way through onwards.
@@ -123,7 +123,7 @@ final class MapFramePreparationClaimTest {
     class ResolveClaimIn {
 
         @Test
-        void resolveClaimInGivesOneSectorsSurfacesOneClaimBetweenThem() {
+        void givesOneSectorsSurfacesOneClaimBetweenThem() {
             // The counting only works if every surface over a map asks the same claim: two claims
             // over one sector would each grant its own first asker, which is the duplicated
             // preparation the type exists to stop.
@@ -134,7 +134,7 @@ final class MapFramePreparationClaimTest {
         }
 
         @Test
-        void resolveClaimInGivesEachSectorAClaimOfItsOwn() {
+        void givesEachSectorAClaimOfItsOwn() {
             // Two sectors drawing in one frame each owe their own draw lists a preparation, so one
             // sector taking its frame's must leave the other's standing.
             var machinery = new SectorMapMachinery(null);

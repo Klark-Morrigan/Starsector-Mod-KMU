@@ -51,7 +51,7 @@ final class BlocSortModeComposerTest {
     class AssembleComparator {
 
         @Test
-        void assembleComparatorRanksByThePrimaryMetricHighToLow() {
+        void ranksByThePrimaryMetricHighToLow() {
 
             var low = buildStandInBloc("low", "Low", 1, 0);
             var high = buildStandInBloc("high", "High", 9, 0);
@@ -61,7 +61,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void assembleComparatorBreaksAPrimaryTieDownTheCanonicalChain() {
+        void breaksAPrimaryTieDownTheCanonicalChain() {
 
             // Level on severity, so the tie falls to volatility next in the chain: the higher one leads
             // even though the key being sorted is severity.
@@ -73,7 +73,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void assembleComparatorPromotesThePrimaryMetricAheadOfTheCanonicalChain() {
+        void promotesThePrimaryMetricAheadOfTheCanonicalChain() {
 
             // Under volatility, the less severe but more volatile bloc leads: the primary key is
             // promoted ahead of severity, which sits first in the chain and would otherwise win.
@@ -85,7 +85,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void assembleComparatorRanksByNameWhenNoMetricIsNamed() {
+        void ranksByNameWhenNoMetricIsNamed() {
 
             var zeta = buildStandInBloc("z", "Zeta", 0, 0);
             var alpha = buildStandInBloc("a", "Alpha", 0, 0);
@@ -95,7 +95,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void assembleComparatorBreaksANameTieDownTheWholeChain() {
+        void breaksANameTieDownTheWholeChain() {
 
             // Two blocs share a name, so a by-name ranking falls through to the numeric chain and the
             // more severe one leads.
@@ -107,7 +107,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void assembleComparatorBreaksAChainLevelPairByName() {
+        void breaksAChainLevelPairByName() {
 
             // Level on every number, so a numeric ranking falls to the name, which reads A-to-Z behind
             // the chain whichever number led it.
@@ -119,7 +119,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void assembleComparatorFlipsThePrimaryKeyWhenTheDirectionIsTheOpposite() {
+        void flipsThePrimaryKeyWhenTheDirectionIsTheOpposite() {
 
             // Ascending reverses the primary metric, so the less severe bloc leads while the key is
             // still severity - only its direction changed.
@@ -131,7 +131,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void assembleComparatorKeepsTheCanonicalChainWhenThePrimaryFlips() {
+        void keepsTheCanonicalChainWhenThePrimaryFlips() {
 
             // With the primary key ascending, a tie on it still breaks down the chain the same way:
             // level on severity, the higher volatility leads regardless of direction.
@@ -147,7 +147,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void assembleComparatorFlipsTheNameKeyWhenTheDirectionIsDescending() {
+        void flipsTheNameKeyWhenTheDirectionIsDescending() {
 
             // A by-name ranking's natural order is ascending, so descending reverses it to Z-to-A.
             var zeta = buildStandInBloc("z", "Zeta", 0, 0);
@@ -158,7 +158,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void assembleComparatorFallsBackToAStableByIdOrderWhenEveryKeyIsLevel() {
+        void fallsBackToAStableByIdOrderWhenEveryKeyIsLevel() {
 
             // Same name and identical numbers, so every visible key is level; the by-id key gives a
             // total order so the pair holds a fixed position rather than reshuffling frame to frame.
@@ -170,7 +170,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void assembleComparatorSortsAnUnlabelledBlocWithTheBlanks() {
+        void sortsAnUnlabelledBlocWithTheBlanks() {
 
             // A bloc no name resolved for sorts as though its label were empty rather than throwing
             // when the ranking reaches the name.
@@ -186,7 +186,7 @@ final class BlocSortModeComposerTest {
     class AppendSharedTail {
 
         @Test
-        void appendSharedTailBreaksAPairTheCallersOwnOrderLeftLevelByName() {
+        void breaksAPairTheCallersOwnOrderLeftLevelByName() {
 
             // The caller's order separates nothing, so what arranges the pair is the tail alone: the
             // label, A-to-Z.
@@ -198,7 +198,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void appendSharedTailBreaksAPairTheNameLeavesLevelById() {
+        void breaksAPairTheNameLeavesLevelById() {
 
             // Level under the caller's order and sharing a label, so only the by-id key behind the name
             // separates them - which is what keeps such a pair from reshuffling frame to frame.
@@ -210,7 +210,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void appendSharedTailLeavesTheCallersOwnOrderLeading() {
+        void leavesTheCallersOwnOrderLeading() {
 
             // The caller's order decides the pair, so the tail never reaches the name - the bloc that
             // would lead A-to-Z comes second.
@@ -229,7 +229,7 @@ final class BlocSortModeComposerTest {
     class ResolveDefaultDirection {
 
         @Test
-        void resolveDefaultDirectionIsDescendingForAMetric() {
+        void isDescendingForAMetric() {
 
             // A number leads with the bigger bloc, so its natural order runs high-to-low.
             assertThat(BlocSortModeComposer.resolveDefaultDirection(SEVERITY))
@@ -237,7 +237,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void resolveDefaultDirectionIsAscendingWhenNoMetricIsNamed() {
+        void isAscendingWhenNoMetricIsNamed() {
 
             // A name reads A-to-Z, so its natural order runs ascending.
             assertThat(BlocSortModeComposer.resolveDefaultDirection(NO_METRIC))
@@ -249,7 +249,7 @@ final class BlocSortModeComposerTest {
     class ResolveMetricRuns {
 
         @Test
-        void resolveMetricRunsIsTheMetricAsOneRowColouredRun() {
+        void isTheMetricAsOneRowColouredRun() {
 
             // One run, in the tone the picker offered: a plain number carries no colour of its own, so
             // the value matches the name beside it.
@@ -261,7 +261,7 @@ final class BlocSortModeComposerTest {
         }
 
         @Test
-        void resolveMetricRunsIsNoRunsWhenNoMetricIsNamed() {
+        void isNoRunsWhenNoMetricIsNamed() {
 
             // A by-name ranking has no number to show, so the row's value column stays unfilled.
             assertThat(BlocSortModeComposer.resolveMetricRuns(

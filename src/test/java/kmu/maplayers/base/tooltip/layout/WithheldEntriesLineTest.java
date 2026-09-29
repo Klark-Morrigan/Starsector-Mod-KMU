@@ -39,7 +39,7 @@ final class WithheldEntriesLineTest {
     class BuildLine {
 
         @Test
-        void buildLineNamesHowManyEntriesItStandsFor() {
+        void namesHowManyEntriesItStandsFor() {
 
             var line = WithheldEntriesLine.buildLine(List.of(
                 createCountedEntry("Chicomoztoc", 4000),
@@ -50,7 +50,7 @@ final class WithheldEntriesLineTest {
         }
 
         @Test
-        void buildLineStatesWhatTheEntriesItStandsForCameTo() {
+        void statesWhatTheEntriesItStandsForCameTo() {
             // The figure the visible rows would otherwise leave unaccounted for. Summed off the very
             // lines that were dropped, so the row closes the arithmetic the list opened.
             var line = WithheldEntriesLine.buildLine(List.of(
@@ -64,7 +64,7 @@ final class WithheldEntriesLineTest {
         }
 
         @Test
-        void buildLineCountsOnlyTheEntriesLineAndNotWhatHangsBeneathIt() {
+        void countsOnlyTheEntriesLineAndNotWhatHangsBeneathIt() {
             // A listed thing's number is already the sum of its own account, so counting both would
             // state the same weight twice - and the row would report more withheld than the list holds.
             var line = WithheldEntriesLine.buildLine(List.of(
@@ -76,7 +76,7 @@ final class WithheldEntriesLineTest {
         }
 
         @Test
-        void buildLineStatesNoNumberWhereNothingItStandsForCarriedOne() {
+        void statesNoNumberWhereNothingItStandsForCarriedOne() {
             // A run of statuses or rates adds up to nothing anybody worked out, so the row says how
             // many were left out and stops there rather than showing a total nobody summed.
             var line = WithheldEntriesLine.buildLine(List.of(
@@ -90,7 +90,7 @@ final class WithheldEntriesLineTest {
         }
 
         @Test
-        void buildLinePassesOverANumberNothingEarned() {
+        void passesOverANumberNothingEarned() {
             // A nought an account recorded for a colony it never weighed is that account's statement
             // rather than a figure the colony competed with, so it is no part of any sum. A run of
             // those is stood for by its count alone.
@@ -103,7 +103,7 @@ final class WithheldEntriesLineTest {
         }
 
         @Test
-        void buildLineReadsAsANoteAboutTheListRatherThanOneOfTheThingsInIt() {
+        void readsAsANoteAboutTheListRatherThanOneOfTheThingsInIt() {
             // It is a statement about the listing, so its name takes the quiet shade the box states
             // its own arithmetic in - loud, it would read as one more of the things being listed.
             var line = WithheldEntriesLine.buildLine(List.of(createCountedEntry("Kazeron", 320)));
@@ -113,7 +113,7 @@ final class WithheldEntriesLineTest {
         }
 
         @Test
-        void buildLineCarriesNoMarkOfItsOwn() {
+        void carriesNoMarkOfItsOwn() {
             // There is no one thing for a mark to be a picture of: the row stands for several.
             var line = WithheldEntriesLine.buildLine(List.of(createCountedEntry("Kazeron", 320)));
 

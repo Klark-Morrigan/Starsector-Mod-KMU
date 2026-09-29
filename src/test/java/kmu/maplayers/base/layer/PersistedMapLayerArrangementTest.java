@@ -38,14 +38,14 @@ final class PersistedMapLayerArrangementTest {
     class ReadArrangement {
 
         @Test
-        void readArrangementAnswersUnarrangedWithNoStoredFile() {
+        void answersUnarrangedWithNoStoredFile() {
             // The fresh install, and every install whose player has never opened the dialog.
             assertThat(arrangementSelection.readArrangement())
                 .isEqualTo(MapLayerArrangement.UNARRANGED);
         }
 
         @Test
-        void readArrangementAnswersTheStoredOrderAndHiding() throws JSONException {
+        void answersTheStoredOrderAndHiding() throws JSONException {
 
             storeArrangementFile(
                 new JSONArray(List.of("gamma", "alpha")),
@@ -58,7 +58,7 @@ final class PersistedMapLayerArrangementTest {
         }
 
         @Test
-        void readArrangementAnswersAnEmptyListForAFieldTheFileOmits() throws JSONException {
+        void answersAnEmptyListForAFieldTheFileOmits() throws JSONException {
             // A file written by a build that stored only one of the two lists. Missing is not
             // malformed: what it does say is honoured, and the absent half reads as nothing stated.
             var storedFile = new JSONObject();
@@ -71,7 +71,7 @@ final class PersistedMapLayerArrangementTest {
         }
 
         @Test
-        void readArrangementAnswersUnarrangedForAFieldThatIsNotAList() throws JSONException {
+        void answersUnarrangedForAFieldThatIsNotAList() throws JSONException {
 
             var storedFile = new JSONObject();
             storedFile.put(ORDERED_IDS_FIELD, "gamma");
@@ -84,7 +84,7 @@ final class PersistedMapLayerArrangementTest {
         }
 
         @Test
-        void readArrangementAnswersUnarrangedForAnEntryThatIsNotAnId() throws JSONException {
+        void answersUnarrangedForAnEntryThatIsNotAnId() throws JSONException {
             // The whole list is given up rather than the entry alone, so the player is shown the
             // unarranged row instead of a partly-honoured order they never asked for.
             storeArrangementFile(
@@ -96,7 +96,7 @@ final class PersistedMapLayerArrangementTest {
         }
 
         @Test
-        void readArrangementAnswersUnarrangedWhereTheFileWillNotOpen() throws JSONException {
+        void answersUnarrangedWhereTheFileWillNotOpen() throws JSONException {
 
             storeArrangementFile(
                 new JSONArray(List.of("gamma")),
@@ -113,7 +113,7 @@ final class PersistedMapLayerArrangementTest {
     class RecordArrangement {
 
         @Test
-        void recordArrangementWritesBothListsUnderTheArrangementsOwnFileName() {
+        void writesBothListsUnderTheArrangementsOwnFileName() {
 
             arrangementSelection.recordArrangement(new MapLayerArrangement(
                 List.of("gamma", "alpha"),
@@ -128,7 +128,7 @@ final class PersistedMapLayerArrangementTest {
         }
 
         @Test
-        void recordArrangementStoresWhatTheNextReadAnswersWith() {
+        void storesWhatTheNextReadAnswersWith() {
             // The round trip is the property that matters: an arrangement written under one shape
             // and read under another would pass two assertions that agree with each other and fail
             // the player across a restart.

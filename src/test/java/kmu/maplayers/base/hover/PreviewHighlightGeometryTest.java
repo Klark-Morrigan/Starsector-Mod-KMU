@@ -40,7 +40,7 @@ final class PreviewHighlightGeometryTest {
     class ResolveHighlightFor {
 
         @Test
-        void resolveHighlightForJoinsTwoCellsOfOneClusterIntoOneOutline() {
+        void joinsTwoCellsOfOneClusterIntoOneOutline() {
             // The same loop instance for both cells is what says they fused into one cluster on the
             // map, so the wash drops the edge they share rather than drawing a seam the map is not
             // drawing either.
@@ -60,7 +60,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForKeepsTwoCellsOfDifferentClustersApart() {
+        void keepsTwoCellsOfDifferentClustersApart() {
             // The same two abutting cells, now enclosed by different frontiers: one lit set
             // reaching into two rival clusters, with the map drawing a border between them - so
             // the wash must not paint over it.
@@ -78,7 +78,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForNeverJoinsACellNoFrontierEncloses() {
+        void neverJoinsACellNoFrontierEncloses() {
             // A cell that fuses into no cluster is nobody's neighbour: it has no loop identity to
             // share, so it stays its own region even against a cell it abuts.
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
@@ -93,7 +93,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForLeavesAHoleWhereLitCellsWallInAnUnlitOne() {
+        void leavesAHoleWhereLitCellsWallInAnUnlitOne() {
             // The eight cells around one the set does not reach, all in one cluster: they wash as a
             // single region with a hole in it, so the halo traces the ring's outer edge and the
             // edge of the hole - and nothing of the seams between the eight. Filling the hole would
@@ -122,7 +122,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForBloomsTheJoinedOutlineRatherThanTheFrontier() {
+        void bloomsTheJoinedOutlineRatherThanTheFrontier() {
             // The halo says how far the lit set reaches, not who holds the cells under it - so it
             // strokes what the wash traced and never the cluster's own border.
             var frontier = buildSquareRun(0, 0, 200);
@@ -139,7 +139,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForSkipsCellsTheLayerPaintedNothingFor() {
+        void skipsCellsTheLayerPaintedNothingFor() {
             // A set can name a cell the map is not drawing - one filtered out of the frame it is
             // read against - and that is a cell to pass over, not an empty shape to light.
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
@@ -154,7 +154,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForLightsNothingUpWhenNoPreviewedCellIsDrawn() {
+        void lightsNothingUpWhenNoPreviewedCellIsDrawn() {
 
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
                 new HoverHighlightSourceFake(Map.of(), Map.of()),
@@ -166,7 +166,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForLightsNothingUpWhenNothingIsPreviewed() {
+        void lightsNothingUpWhenNothingIsPreviewed() {
             // The pointer on no row at all reaches this as a null key, which answers nothing rather
             // than throwing at the top of a render pass.
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
@@ -179,7 +179,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForReusesTheAnswerItAlreadyResolved() {
+        void reusesTheAnswerItAlreadyResolved() {
             // The whole point of the memo: this runs every frame the pointer rests on one row, and
             // re-tessellating a set of cells sixty times a second for an answer that cannot have
             // changed is what would make the preview stick.
@@ -196,7 +196,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForResolvesAgainWhenARebuildReplacesOneExtent() {
+        void resolvesAgainWhenARebuildReplacesOneExtent() {
             // An incremental re-shape replaces the cell's extent and its cluster's loops; the
             // retained answer describes geometry the map no longer paints.
             var geometry = new PreviewHighlightGeometry();
@@ -220,7 +220,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForResolvesAgainWhenTheBordersAreRetraced() {
+        void resolvesAgainWhenTheBordersAreRetraced() {
             // The cells kept their shapes and the map re-traced its borders around them, which is
             // what a neighbouring change does: the loops the cells were grouped by are gone, so the
             // grouping has to be settled again even though nothing the wash covers moved.
@@ -246,7 +246,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForResolvesAgainWhenTheSetReachesOneMoreDrawnCell() {
+        void resolvesAgainWhenTheSetReachesOneMoreDrawnCell() {
             // The same set read against a frame drawing one more of its cells - a filter widening,
             // or a cell the map had nothing to paint for. The retained answer lights fewer cells
             // than the set now reaches, so it cannot stand.
@@ -269,7 +269,7 @@ final class PreviewHighlightGeometryTest {
         }
 
         @Test
-        void resolveHighlightForResolvesAgainForAnotherPreviewedSet() {
+        void resolvesAgainForAnotherPreviewedSet() {
             // The key is the memo's first test, so the pointer crossing to another row resolves
             // afresh even where the two sets happen to be drawn from the same geometry.
             var sourceFake = readSourceOf(Map.of(

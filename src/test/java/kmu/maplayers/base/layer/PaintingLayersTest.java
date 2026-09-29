@@ -22,7 +22,7 @@ final class PaintingLayersTest {
     class CountPaintingLayers {
 
         @Test
-        void countPaintingLayersCountsEveryLayerThatDraws() {
+        void countsEveryLayerThatDraws() {
 
             var layers = List.of(mock(MapLayer.class), mock(MapLayer.class));
 
@@ -31,7 +31,7 @@ final class PaintingLayersTest {
         }
 
         @Test
-        void countPaintingLayersLeavesTheEmptyViewOutOfTheCount() {
+        void leavesTheEmptyViewOutOfTheCount() {
             // The reading the opener's gate turns on: a row of the empty view and one layer is a row of
             // one layer, since moving a tab past a tab that draws nothing changes nothing on the map.
             var layers = List.of(NoLayer.INSTANCE, mock(MapLayer.class));
@@ -41,14 +41,14 @@ final class PaintingLayersTest {
         }
 
         @Test
-        void countPaintingLayersCountsNothingForTheEmptyViewAlone() {
+        void countsNothingForTheEmptyViewAlone() {
 
             assertThat(PaintingLayers.countPaintingLayers(List.of(NoLayer.INSTANCE)))
                 .isZero();
         }
 
         @Test
-        void countPaintingLayersCountsNothingForARowWithNoLayersInIt() {
+        void countsNothingForARowWithNoLayersInIt() {
             // The reading a process that has registered nothing gives, which is a real state: the roster
             // is empty until a composition root registers its first layer.
             assertThat(PaintingLayers.countPaintingLayers(List.of()))
@@ -60,14 +60,14 @@ final class PaintingLayersTest {
     class IsLayerPainting {
 
         @Test
-        void isLayerPaintingAnswersNoForTheEmptyView() {
+        void answersNoForTheEmptyView() {
 
             assertThat(PaintingLayers.isLayerPainting(NoLayer.INSTANCE))
                 .isFalse();
         }
 
         @Test
-        void isLayerPaintingAnswersYesForEveryOtherLayer() {
+        void answersYesForEveryOtherLayer() {
             // Nothing on the seam declares whether a layer draws - a renderer is asked for per sector -
             // so the empty view is the exception and every other registered layer is taken as painting.
             assertThat(PaintingLayers.isLayerPainting(mock(MapLayer.class)))

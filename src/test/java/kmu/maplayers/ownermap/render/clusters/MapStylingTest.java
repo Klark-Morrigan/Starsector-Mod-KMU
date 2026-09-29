@@ -23,7 +23,7 @@ final class MapStylingTest {
     class ReadNeutralColour {
 
         @Test
-        void readNeutralColourAnswersTheShadeTheNeutralPairHolds() {
+        void answersTheShadeTheNeutralPairHolds() {
             // A factionless cell names no faction, so its pair holds one shade twice and the
             // colour is whichever slot you look at.
             var styling = new MapStyling(
@@ -37,7 +37,7 @@ final class MapStylingTest {
         }
 
         @Test
-        void readNeutralColourReadsTheNeutralPairRatherThanEitherSpotlightPalette() {
+        void readsTheNeutralPairRatherThanEitherSpotlightPalette() {
             // The three palettes sit in adjacent same-typed slots, so a colour read from the wrong
             // one would still compile and still answer a Color. Only distinct shades catch it.
             var styling = new MapStyling(
@@ -56,7 +56,7 @@ final class MapStylingTest {
     class CreateEmpty {
 
         @Test
-        void createEmptyCarriesNoThemeAtAll() {
+        void carriesNoThemeAtAll() {
             // The honest record of the failure: no theme was resolved, and the render path skips
             // an empty overlay before it would read one.
             assertThat(MapStyling.createEmpty().renderStyle())
@@ -64,7 +64,7 @@ final class MapStylingTest {
         }
 
         @Test
-        void createEmptyFillsEveryPaletteSlotSoNoneIsNull() {
+        void fillsEveryPaletteSlotSoNoneIsNull() {
 
             var styling = MapStyling.createEmpty();
 
@@ -79,7 +79,7 @@ final class MapStylingTest {
         }
 
         @Test
-        void createEmptyHoldsOneNeutralShadeInEverySlotOfEveryPalette() {
+        void holdsOneNeutralShadeInEverySlotOfEveryPalette() {
             // Every slot the same stand-in, so nothing in the placeholder reads as a choice
             // somebody made - and the colour read off the neutral pair answers that same shade.
             var styling = MapStyling.createEmpty();

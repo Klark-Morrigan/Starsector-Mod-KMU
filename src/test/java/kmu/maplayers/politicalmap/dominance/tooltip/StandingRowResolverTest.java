@@ -77,7 +77,7 @@ final class StandingRowResolverTest {
     class ResolveRows {
 
         @Test
-        void resolveRowsResolvesAFactionStandingToItsLongNameCrestAndScore() {
+        void resolvesAFactionStandingToItsLongNameCrestAndScore() {
 
             var sectorMock = buildEmptySector();
 
@@ -102,7 +102,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsGroupsTheThousandsOfALargeScore() {
+        void groupsTheThousandsOfALargeScore() {
             // The number reaches the box as the words it draws, so the grouping is settled here rather
             // than left to whichever body happens to list the entry.
             var sectorMock = buildEmptySector();
@@ -125,7 +125,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsCollapsesABlankCrestToANullPathKeepingNameAndScore() {
+        void collapsesABlankCrestToANullPathKeepingNameAndScore() {
             // A faction with an empty crest string still resolves - the line just carries a null crest
             // path and the render layer shows the name and score alone, rather than a broken sprite.
             var sectorMock = buildEmptySector();
@@ -147,7 +147,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsResolvesAnAllianceToItsNameAndOrderedMemberLines() {
+        void resolvesAnAllianceToItsNameAndOrderedMemberLines() {
 
             var sectorMock = buildEmptySector();
 
@@ -184,7 +184,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsLeavesAnAllianceCrestlessWhileMembersStayCrested() {
+        void leavesAnAllianceCrestlessWhileMembersStayCrested() {
             // The lead (colour) faction has no authored crest, so the bloc's sprite is absent - but a
             // non-lead member with its own crest keeps it, since a bloc's missing crest never reaches
             // down into the member lines.
@@ -216,7 +216,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsStatesABlocsOwnFractionOnItsRow() {
+        void statesABlocsOwnFractionOnItsRow() {
             // A bloc listed under a heading true of part of it says how much of itself that is,
             // counted over its own membership - so neither of the two headings it may appear under
             // overreaches.
@@ -243,7 +243,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsStatesAMembersOwnFractionOnItsNestedRow() {
+        void statesAMembersOwnFractionOnItsNestedRow() {
             // The two readings meet in one tree: the bloc's row counts its own membership while a
             // member's counts how much of the holder that faction is at odds with, so the numbers
             // beneath a row are not parts of the one above it.
@@ -273,7 +273,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsStatesTheFactionsOwnFractionOnALoneFactionGroupsRow() {
+        void statesTheFactionsOwnFractionOnALoneFactionGroupsRow() {
             // A lone-faction group is that faction under another name, so its row states the
             // faction's reading rather than the bloc-of-one's - which could only ever count the one
             // member out of one and state nothing whichever way it fell.
@@ -296,7 +296,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsStatesNoFractionAtEitherEndOfItsRange() {
+        void statesNoFractionAtEitherEndOfItsRange() {
             // Both ends say exactly what the heading above already said, so a row states a count only
             // where it is genuinely split - a bloc all of which the heading took draws nothing, and
             // neither does a member at odds with nobody.
@@ -323,7 +323,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsKeepsAnUnweighedFactionsNoughtQuietOnAQualifiedRow() {
+        void keepsAnUnweighedFactionsNoughtQuietOnAQualifiedRow() {
             // A group a block qualified is the standing the pass produced and not a new one, so a
             // faction the pass weighed nothing for still carries the box's nought rather than one it
             // looks to have competed with.
@@ -346,7 +346,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsIsEmptyForEmptyStandings() {
+        void isEmptyForEmptyStandings() {
             // An uninhabited system ranks no groups, so the tooltip has nothing to list.
             assertThat(StandingRowResolver.resolveRows(
                     buildEmptySector(),
@@ -357,7 +357,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsPreservesTheRankedOrderAcrossGroups() {
+        void preservesTheRankedOrderAcrossGroups() {
             // The resolver renders groups in the order the ranking handed them over rather than
             // re-sorting, so the tooltip draws top-to-bottom exactly as the standings ranked.
             var sectorMock = buildEmptySector();
@@ -384,7 +384,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsFallsBackToTheIdWhenAFactionDoesNotResolve() {
+        void fallsBackToTheIdWhenAFactionDoesNotResolve() {
             // A footprint ID the sector no longer knows still ranks, so the line shows the bare ID
             // rather than a nameless line - a tooltip draws one faction per line and cannot fall back
             // to the stand-in band the picker uses for a null name. Its crest resolves absent.
@@ -404,7 +404,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsGroupsASingleMemberAllianceRatherThanCollapsingIt() {
+        void groupsASingleMemberAllianceRatherThanCollapsingIt() {
             // The regression this guards: keying on the member count instead of the group's kind would
             // silently flatten a one-member alliance into a lone faction, so the same bloc would read
             // as two different things depending on how many members it happens to hold.
@@ -437,7 +437,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsGathersAllianceMembersAsPeersRatherThanAsItsAccount() {
+        void gathersAllianceMembersAsPeersRatherThanAsItsAccount() {
             // The regression this guards: subordinating the members would demote everything hung below
             // them a level, so an allied faction's colonies would draw a size smaller than an unallied
             // faction's in the same list - a difference the alliance has nothing to do with.
@@ -463,7 +463,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsHangsEachAllianceMembersOwnAccountBeneathIt() {
+        void hangsEachAllianceMembersOwnAccountBeneathIt() {
             // The regression this guards: pairing accounts with lines outside the resolver means
             // walking two lists at the same index, and one off-by-one lists a faction's colonies under
             // an ally's name - which a player reads as a fact about the sector rather than as a bug.
@@ -488,7 +488,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsSubordinatesAnAccountBeneathTheFactionItExplains() {
+        void subordinatesAnAccountBeneathTheFactionItExplains() {
             // The two relations meeting on one line: the bloc gathers its members as peers, and each
             // member subordinates the account of its own score. Read as one relation, the colonies
             // would sit at the members' own level and stop reading as the reason for their numbers.
@@ -512,7 +512,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsHangsALoneFactionsAccountBeneathItsGroupLine() {
+        void hangsALoneFactionsAccountBeneathItsGroupLine() {
             // A lone-faction group is that faction under another name, so there is no member line
             // beneath to carry its account: dropping the member without moving the account up would
             // leave the faction view with a box that can explain nothing.
@@ -540,7 +540,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsDrawsAPresenceOnlyFactionsNoughtQuiet() {
+        void drawsAPresenceOnlyFactionsNoughtQuiet() {
             // The nought is what the pass recorded for a faction it weighed nothing for, not a
             // weight the faction competed with - so only the number quietens, the faction being
             // named as loudly as the holders around it.
@@ -568,7 +568,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsDrawsAWeighedNoughtAsAScoreLikeAnyOther() {
+        void drawsAWeighedNoughtAsAScoreLikeAnyOther() {
             // A colony weighed and found to be worth nothing is a number the arithmetic arrived at,
             // so it reads as loudly as a large one - which is the whole of what parts the two kinds
             // of nought.
@@ -590,7 +590,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsDrawsAnUnweighedBlocsAggregateQuietOverItsMembers() {
+        void drawsAnUnweighedBlocsAggregateQuietOverItsMembers() {
             // A bloc present through unregistered colonies alone: the aggregate is a nought nobody
             // worked out, so the bloc's own line quietens with the member lines beneath it rather
             // than reading as a sum competed for.
@@ -616,7 +616,7 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsDrawsABlocsAggregateLoudWhereOneMemberWasWeighed() {
+        void drawsABlocsAggregateLoudWhereOneMemberWasWeighed() {
             // One weighed member makes the aggregate a sum somebody worked out, so the bloc's line
             // stays a finding however many of its allies are merely present - and the ally's own
             // line still quietens beneath it.

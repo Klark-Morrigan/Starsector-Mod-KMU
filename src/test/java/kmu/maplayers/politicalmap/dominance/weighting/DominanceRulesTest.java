@@ -22,7 +22,7 @@ class DominanceRulesTest {
     class ReadFromLunaSettings {
 
         @Test
-        void readFromLunaSettingsLandsEachNumberAndTheScalingChoiceInItsOwnField() {
+        void landsEachNumberAndTheScalingChoiceInItsOwnField() {
 
             try (var settingsMock = mockStatic(KmuPoliticalMapDominanceSettings.class)) {
 
@@ -79,7 +79,7 @@ class DominanceRulesTest {
         }
 
         @Test
-        void readFromLunaSettingsLandsTheStabilitySwitchInTheMasterToggleAlone() {
+        void landsTheStabilitySwitchInTheMasterToggleAlone() {
             // The three switches share a type, so each is turned on by itself: a pair swapped in
             // the constructor calls would then show its one true value in the wrong place.
             var rules = readRulesWithOnlySwitchOn(
@@ -94,7 +94,7 @@ class DominanceRulesTest {
         }
 
         @Test
-        void readFromLunaSettingsLandsTheStationSwitchInTheStationFactorAlone() {
+        void landsTheStationSwitchInTheStationFactorAlone() {
 
             var rules = readRulesWithOnlySwitchOn(
                 KmuPoliticalMapDominanceSettings::shouldWeighDominanceByStation);
@@ -108,7 +108,7 @@ class DominanceRulesTest {
         }
 
         @Test
-        void readFromLunaSettingsLandsThePatrolSwitchInThePatrolFactorAlone() {
+        void landsThePatrolSwitchInThePatrolFactorAlone() {
 
             var rules = readRulesWithOnlySwitchOn(
                 KmuPoliticalMapDominanceSettings::shouldWeighDominanceByPatrols);

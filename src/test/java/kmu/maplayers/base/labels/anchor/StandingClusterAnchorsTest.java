@@ -33,7 +33,7 @@ final class StandingClusterAnchorsTest {
     class GetAnchors {
 
         @Test
-        void getAnchorsStartsEmptyWithNothingRecordedAgainstIt() {
+        void startsEmptyWithNothingRecordedAgainstIt() {
             // The reading a session starts at and a discard returns to: no placements, and no
             // claim about what any were fitted under. It is what makes a first rebuild total,
             // since nothing can match a fingerprint that is not there.
@@ -46,7 +46,7 @@ final class StandingClusterAnchorsTest {
         }
 
         @Test
-        void getAnchorsRefusesEditsThroughTheListItHandsBack() {
+        void refusesEditsThroughTheListItHandsBack() {
             // The pair moves through replaceAnchors alone. A caller that could append to the
             // list it was handed would leave a placement standing under a label that never
             // described it - the one state the whole carry-over assumes cannot happen.
@@ -61,7 +61,7 @@ final class StandingClusterAnchorsTest {
     class ReplaceAnchors {
 
         @Test
-        void replaceAnchorsTakesThePlacementsAndTheirRulesTogether() {
+        void takesThePlacementsAndTheirRulesTogether() {
 
             var standingAnchors = new StandingClusterAnchors();
 
@@ -74,7 +74,7 @@ final class StandingClusterAnchorsTest {
         }
 
         @Test
-        void replaceAnchorsDropsThePreviousPassRatherThanAddingToIt() {
+        void dropsThePreviousPassRatherThanAddingToIt() {
             // A pass states the whole of what stands, so the placements it did not produce are
             // gone: a rebuild that fitted one cluster where two stood must not leave the second
             // one's box on the map under this pass's label.
@@ -90,7 +90,7 @@ final class StandingClusterAnchorsTest {
         }
 
         @Test
-        void replaceAnchorsCopiesThePassesListSoALaterChangeCannotMoveWhatStands() {
+        void copiesThePassesListSoALaterChangeCannotMoveWhatStands() {
             // The list a fit hands over is the fit's own working collection. Holding it by
             // reference would let whatever produced it keep editing what the map draws, and
             // under a label that stopped describing it at the moment of the edit.
@@ -112,7 +112,7 @@ final class StandingClusterAnchorsTest {
     class DiscardAnchors {
 
         @Test
-        void discardAnchorsDropsThePlacementsAndTheirRulesTogether() {
+        void dropsThePlacementsAndTheirRulesTogether() {
             // Called when the sector behind the placements is gone. Leaving the rules standing
             // would let the next sector's first rebuild match this one's fingerprint and carry
             // over placements fitted inside a partition that no longer exists.

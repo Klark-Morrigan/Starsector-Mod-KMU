@@ -46,7 +46,7 @@ final class SidebarPalettesTest {
     class ResolveAccentColours {
 
         @Test
-        void resolveAccentColoursTakesTheEnginesButtonRolesForTheUiPaletteChoice() {
+        void takesTheEnginesButtonRolesForTheUiPaletteChoice() {
             // The scheme the panel ships on: the dark fill a vanilla button rests and frames in, the
             // button text every vanilla button and tab label is written in, and the near-white tooltip
             // title above it - the same three roles the engine builds its own controls from. None moves
@@ -62,7 +62,7 @@ final class SidebarPalettesTest {
         }
 
         @Test
-        void resolveAccentColoursTakesTheNeutralGreysForTheChromeGreyChoice() {
+        void takesTheNeutralGreysForTheChromeGreyChoice() {
             // No accent hue at all: the frame grey the engine draws its own panels in, stepping up to
             // the lighter body-text grey for a tick. Its dark step is that same grey sunk toward black,
             // this being the one scheme with no engine shade to take - the fixed palette's dark role is
@@ -82,7 +82,7 @@ final class SidebarPalettesTest {
         }
 
         @Test
-        void resolveAccentColoursTakesThePlayerTrioForThePlayerFactionChoice() {
+        void takesThePlayerTrioForThePlayerFactionChoice() {
             // What the panel wore before the scheme was a choice, kept as a taste - and the one scheme
             // whose three steps the faction supplies itself, dark included.
             var accents = SidebarPalettes.resolveAccentColours(
@@ -97,7 +97,7 @@ final class SidebarPalettesTest {
         }
 
         @Test
-        void resolveAccentColoursLeavesEverySchemesDarkStepBelowItsOwnBase() {
+        void leavesEverySchemesDarkStepBelowItsOwnBase() {
             // The other half of the ordering below: a dark step that did not sit under its base would
             // stop a frame receding behind the controls it encloses, which is the whole of what that
             // step is for. Read on green for the same reason the bright case is.
@@ -112,7 +112,7 @@ final class SidebarPalettesTest {
         }
 
         @Test
-        void resolveAccentColoursLeavesEverySchemesBrightStepAboveItsOwnBase() {
+        void leavesEverySchemesBrightStepAboveItsOwnBase() {
             // The pair has to stay a pair whichever scheme is picked: a bright step that did not stand
             // above its base would leave a checkbox's tick indistinguishable from the chrome it is drawn
             // on. Green is the channel every one of these shades carries most of, so it is the one that
@@ -132,14 +132,14 @@ final class SidebarPalettesTest {
     class ResolveNotchColours {
 
         @Test
-        void resolveNotchColoursTakesTheVanillaHighlightForTheGoldChoice() {
+        void takesTheVanillaHighlightForTheGoldChoice() {
             var colours = SidebarPalettes.resolveNotchColours(
                     NotchChevronColourChoice.GOLD, ACCENT, BRIGHT_ACCENT);
             assertThat(colours.chevron()).isEqualTo(StarsectorUiColoursMock.HIGHLIGHT_GOLD);
         }
 
         @Test
-        void resolveNotchColoursHoldsTheGoldAcrossRestAndHover() {
+        void holdsTheGoldAcrossRestAndHover() {
             // Gold has no brighter sibling to step to, so the notch's own accent wash answers the
             // pointer and the glyph keeps its colour.
             var colours = SidebarPalettes.resolveNotchColours(
@@ -148,7 +148,7 @@ final class SidebarPalettesTest {
         }
 
         @Test
-        void resolveNotchColoursTakesThePanelAccentsForThePanelAccentChoice() {
+        void takesThePanelAccentsForThePanelAccentChoice() {
             var colours = SidebarPalettes.resolveNotchColours(
                     NotchChevronColourChoice.PANEL_ACCENT, ACCENT, BRIGHT_ACCENT);
             assertThat(colours.chevron()).isEqualTo(ACCENT);

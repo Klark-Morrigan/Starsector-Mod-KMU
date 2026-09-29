@@ -48,7 +48,7 @@ final class BarOpenersTest {
     class BuildOpenerSpec {
 
         @Test
-        void buildOpenerSpecLightsNoCellOfItsOwn() {
+        void lightsNoCellOfItsOwn() {
             // A tabs control's lit cell is inert, so a button that was ever the lit one would stop
             // answering presses - and it is also what the mark's shade is resolved against, so a button
             // reading as selected would wear the row's shown look with nothing to be showing.
@@ -57,7 +57,7 @@ final class BarOpenersTest {
         }
 
         @Test
-        void buildOpenerSpecLettersNothingOnTheButton() {
+        void lettersNothingOnTheButton() {
             // The picture is the whole of it: the bar the button arranges is right beside it, so a word
             // would only repeat what the mark says, and it would need a bundle entry to say so in every
             // language the game ships in.
@@ -66,7 +66,7 @@ final class BarOpenersTest {
         }
 
         @Test
-        void buildOpenerSpecStatesNoTintOfItsOwnForTheMark() {
+        void statesNoTintOfItsOwnForTheMark() {
             // Load-bearing rather than incidental: the mark fills the button, so it is what has to answer
             // the pointer, and the shade it travels to is the row's own. A colour named here would be
             // multiplied into that shade, leaving a mark the strip could not light through.
@@ -75,14 +75,14 @@ final class BarOpenersTest {
         }
 
         @Test
-        void buildOpenerSpecCarriesTheMarkItIsPressedFor() {
+        void carriesTheMarkItIsPressedFor() {
 
             assertThat(buildOpener().icon().spritePath())
                 .isEqualTo("graphics/factions/storage.png");
         }
 
         @Test
-        void buildOpenerSpecSquaresTheBoxForAnAssetThatWillNotResolve() {
+        void squaresTheBoxForAnAssetThatWillNotResolve() {
             // A pressable control one tab-height square with nothing drawn in it, where a zero width would
             // be a control that had silently left the bar.
             assertThat(buildOpener().style().tabBox().width())

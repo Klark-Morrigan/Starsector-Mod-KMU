@@ -56,7 +56,7 @@ final class BlocStandingReaderTest {
     class ReadBlocStanding {
 
         @Test
-        void readBlocStandingFoldsALoneFactionToARangeWhoseEndsCoincide() {
+        void foldsALoneFactionToARangeWhoseEndsCoincide() {
 
             var relationSourceFake = new PlayerRelationSourceFake(
                 null,
@@ -71,7 +71,7 @@ final class BlocStandingReaderTest {
         }
 
         @Test
-        void readBlocStandingFoldsAGroupsMembersToTheTwoEndsTheyHold() {
+        void foldsAGroupsMembersToTheTwoEndsTheyHold() {
 
             var relationSourceFake = new PlayerRelationSourceFake(
                 null,
@@ -84,7 +84,7 @@ final class BlocStandingReaderTest {
         }
 
         @Test
-        void readBlocStandingMeasuresTheMembersThatAnsweredWhenOneCannotBeLookedUp() {
+        void measuresTheMembersThatAnsweredWhenOneCannotBeLookedUp() {
 
             // Tritachyon is absent from the sector, so the range is the one member that answered
             // rather than one end dragged to the scale's centre by a faction nothing is known about.
@@ -99,7 +99,7 @@ final class BlocStandingReaderTest {
         }
 
         @Test
-        void readBlocStandingReportsABlocNoMemberAnsweredForAsUnreadable() {
+        void reportsABlocNoMemberAnsweredForAsUnreadable() {
 
             var relationSourceFake = new PlayerRelationSourceFake(null, Map.of());
             var reader = new BlocStandingReader(PACT_GROUPING, relationSourceFake);
@@ -109,7 +109,7 @@ final class BlocStandingReaderTest {
         }
 
         @Test
-        void readBlocStandingReportsABlocWithNoIdAsUnreadable() {
+        void reportsABlocWithNoIdAsUnreadable() {
 
             // The player faction is established here, so the case also pins that a bloc nothing
             // named is not matched against the player's own bloc by two absent IDs agreeing.
@@ -121,7 +121,7 @@ final class BlocStandingReaderTest {
         }
 
         @Test
-        void readBlocStandingRecognisesThePlayersOwnFactionAsTheirBloc() {
+        void recognisesThePlayersOwnFactionAsTheirBloc() {
 
             var relationSourceFake = new PlayerRelationSourceFake(
                 "player",
@@ -136,7 +136,7 @@ final class BlocStandingReaderTest {
         }
 
         @Test
-        void readBlocStandingRecognisesTheGroupThePlayersFactionFoldsInto() {
+        void recognisesTheGroupThePlayersFactionFoldsInto() {
 
             var relationSourceFake = new PlayerRelationSourceFake(
                 "player",
@@ -151,7 +151,7 @@ final class BlocStandingReaderTest {
         }
 
         @Test
-        void readBlocStandingMeasuresThePlayersFactionBeforeAnIdentityIsEstablished() {
+        void measuresThePlayersFactionBeforeAnIdentityIsEstablished() {
 
             var relationSourceFake = new PlayerRelationSourceFake(
                 null,
@@ -170,7 +170,7 @@ final class BlocStandingReaderTest {
     class CreateForSector {
 
         @Test
-        void createForSectorReadsAMembersStandingFromTheHandedInSector() {
+        void readsAMembersStandingFromTheHandedInSector() {
 
             var relationshipMock = mock(RelationshipAPI.class);
 

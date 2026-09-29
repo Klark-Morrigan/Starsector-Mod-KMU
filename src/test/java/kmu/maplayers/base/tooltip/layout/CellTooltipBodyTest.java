@@ -80,7 +80,7 @@ final class CellTooltipBodyTest {
     class AppendSection {
 
         @Test
-        void appendSectionPutsTheHeadingAboveTheBlocksOwnEntriesInOrder() {
+        void putsTheHeadingAboveTheBlocksOwnEntriesInOrder() {
 
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
 
@@ -93,7 +93,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionHoldsTheHeadingAndItsEntriesAsOneBlock() {
+        void holdsTheHeadingAndItsEntriesAsOneBlock() {
             // The heading belongs with what it names: parted from its own entries it would read as a
             // line of the block above, which is the only thing that could tell a reader whose heading
             // it is.
@@ -110,7 +110,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionLeavesTheBodyUntouchedForABlockWithNothingToList() {
+        void leavesTheBodyUntouchedForABlockWithNothingToList() {
             // The rule the whole class exists for: a heading over nothing tells the player a block
             // failed to fill, when in truth there was nothing to put in it.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -123,7 +123,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionAddsItsBlockBeneathWhateverTheBodyAlreadyHolds() {
+        void addsItsBlockBeneathWhateverTheBodyAlreadyHolds() {
             // Blocks read in the order they are appended, which is what leaves a body's running order
             // stated by its own calls rather than by a rule inside this one.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -136,7 +136,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionLaysTheHeadingAtTheBoxsContentEdgeInGold() {
+        void laysTheHeadingAtTheBoxsContentEdgeInGold() {
             // A heading opens where every other line of the box does, so what stops it reading as one of
             // the entries it names is the gold it speaks in and the two columns it leaves empty.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -156,7 +156,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionLaysAnEntryFlushWithItsMarkAndItsValueCalledOut() {
+        void laysAnEntryFlushWithItsMarkAndItsValueCalledOut() {
             // An entry is one of the things being listed, so it opens flush rather than inset under the
             // heading that names it, its mark rides at the head of its own label, and its number reads in
             // the called-out shade like every value in the box.
@@ -182,7 +182,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionInsetsWhatAnEntryIsMadeUpOfBeneathIt() {
+        void insetsWhatAnEntryIsMadeUpOfBeneathIt() {
             // The tiers the box has, read off the indent and the plainer colour rather than off any
             // label saying which is which - and the entries themselves stay flush, so a block of them
             // does not read as a list nested under its own heading.
@@ -210,7 +210,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionReadsEachBreakdownUnderTheThingItBreaksDown() {
+        void readsEachBreakdownUnderTheThingItBreaksDown() {
             // Depth-first is what makes a listing readable: a market's own factors follow that market
             // rather than being gathered after every market in the block, so the reader never has to
             // carry which line a run of factors belongs to.
@@ -237,7 +237,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionStepsInAgainForEachLevelOfABreakdown() {
+        void stepsInAgainForEachLevelOfABreakdown() {
             // The whole point of the entry being a tree: a listing goes as deep as its subject matter,
             // and each level is legibly inside the one above rather than sharing its indent.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -262,7 +262,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionSetsAGatheredPeerInWithoutQuietingIt() {
+        void setsAGatheredPeerInWithoutQuietingIt() {
             // An alliance and the factions inside it are one answer at two granularities, so the members
             // read inset beneath it while still speaking as loudly - nothing has been broken down yet.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -282,7 +282,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionQuietensWhatAnEntryBreaksDownInto() {
+        void quietensWhatAnEntryBreaksDownInto() {
             // The other relation, through the same walk: a market beneath the faction holding it is the
             // box accounting for that faction's line rather than restating it.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -298,7 +298,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionPutsAGatheredLinesAccountWhereAnUngatheredOnesLands() {
+        void putsAGatheredLinesAccountWhereAnUngatheredOnesLands() {
             // The consistency the whole split exists for: a market under a faction inside an alliance
             // and a market under a lone faction are the same kind of statement, so they read at the
             // same volume however many levels of grouping stand above them.
@@ -341,7 +341,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionLeavesTheLeadingSlotUnfilledForAnEntryCarryingNoMark() {
+        void leavesTheLeadingSlotUnfilledForAnEntryCarryingNoMark() {
             // A list of things that carry no mark - industries, conditions, hazards - lays through the
             // same construct: no line of the box fills its leading slot, so the box reserves no column
             // for one whatever a block happens to list.
@@ -356,7 +356,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionOpensABlockListingNothingMarkedAtTheContentEdge() {
+        void opensABlockListingNothingMarkedAtTheContentEdge() {
             // A block listing nothing marked opens flush under its own heading rather than behind a
             // gutter none of its lines could fill - a claim of "None" would otherwise read as indented
             // under the very heading naming it.
@@ -371,7 +371,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionKeepsEveryLineAtTheContentEdgeWhenABreakdownCarriesAMark() {
+        void keepsEveryLineAtTheContentEdgeWhenABreakdownCarriesAMark() {
             // A mark found deep in a listing moves no line: it rides in the label of the line carrying
             // it, so the markless lines above it are not pushed past a gutter they could not fill.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -387,7 +387,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionStartsAMarkedAndAMarklessEntryAtTheSameInset() {
+        void startsAMarkedAndAMarklessEntryAtTheSameInset() {
             // The other half of the same rule: two entries of one block begin their labels at the same
             // place whether either carries a mark, so a block mixing the two reads as one column rather
             // than as two staggered ones.
@@ -411,7 +411,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionChargesNoValueColumnForAnEntryCountedInNothing() {
+        void chargesNoValueColumnForAnEntryCountedInNothing() {
             // A line with nothing to count fills its value slot with a run that draws nothing, so the
             // column collapses for it rather than the line claiming a width it cannot use.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -425,7 +425,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionNestsEachEntryAsABlockUnderTheHeading() {
+        void nestsEachEntryAsABlockUnderTheHeading() {
             // What the box spaces by. Laid as one flat run, an entry that broke down into an account of
             // its own could not be set apart from the next entry at its tier - the widget would have no
             // way to tell the last line of one from the first line of another.
@@ -442,7 +442,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionNestsWhatAnEntryBreaksDownIntoBeneathThatEntry() {
+        void nestsWhatAnEntryBreaksDownIntoBeneathThatEntry() {
             // The nesting goes as deep as the listing does, so a colony's terms are part of the colony
             // and not of the faction above it - which is what stops a parting landing inside a
             // breakdown.
@@ -472,7 +472,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionKeepsAGatheredPeerAtTheShallowestLevel() {
+        void keepsAGatheredPeerAtTheShallowestLevel() {
             // The cut the whole level reads for: an alliance and the factions inside it are one answer
             // at two granularities, so the shallowest level - the one that exists to state who holds the
             // system - shows both. Dropping them would leave the alliances view stating nothing.
@@ -488,7 +488,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionDropsWhatAnEntryBreaksDownIntoAtTheShallowestLevel() {
+        void dropsWhatAnEntryBreaksDownIntoAtTheShallowestLevel() {
             // The other relation at the same indent, cut the other way: the markets a faction holds the
             // system with are the account of its line, which is what the next level up buys.
             var body = CellTooltipBody.openBody(FACTIONS);
@@ -503,7 +503,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionAdmitsOneMoreTierPerLevel() {
+        void admitsOneMoreTierPerLevel() {
             // What the levels are: one tree read to four depths, each level adding the tier beneath the
             // one before it. Asserted over the one listing, so a level that admitted the wrong tier
             // fails here rather than agreeing with a listing shaped to suit it.
@@ -523,7 +523,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendSectionKeepsABlockWhoseEntriesAreAllTheLevelAdmits() {
+        void keepsABlockWhoseEntriesAreAllTheLevelAdmits() {
             // A cut reaches only what an entry carries, never the entries themselves - so a block still
             // opens with its heading at every level rather than being emptied into nothing by a shallow
             // one, which is what would leave the box silent about a system it does hold findings on.
@@ -543,7 +543,7 @@ final class CellTooltipBodyTest {
     class AppendBannerSection {
 
         @Test
-        void appendBannerSectionGivesTheLineABlockOfItsOwn() {
+        void givesTheLineABlockOfItsOwn() {
             // A banner speaks for the system rather than opening a list, so it is parted from whatever
             // follows instead of being read as that block's first entry.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -558,7 +558,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendBannerSectionLeavesTheBodyUntouchedWhenThereIsNothingToState() {
+        void leavesTheBodyUntouchedWhenThereIsNothingToState() {
             // The absence rule the helper exists to hold: a system with nothing to state gets no empty
             // block, which would part the body around a gap holding no line.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -570,7 +570,7 @@ final class CellTooltipBodyTest {
         }
 
         @Test
-        void appendBannerSectionAddsItsBlockBeneathWhateverTheBodyAlreadyHolds() {
+        void addsItsBlockBeneathWhateverTheBodyAlreadyHolds() {
 
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
 

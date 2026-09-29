@@ -139,7 +139,7 @@ final class OwnerMapBuilderTest {
     class ResolveHolding {
 
         @Test
-        void resolveHoldingReadsTheSectorThroughTheHandedPassForEveryReaderBeneathIt() {
+        void readsTheSectorThroughTheHandedPassForEveryReaderBeneathIt() {
             // A resolve reads who holds what and then asks where the spotlit bloc lives outside it.
             // Both walk every system, so a pass apiece is a second traversal of the sector for
             // colonies the first one has already read - and, less visibly, a second reading of a
@@ -170,7 +170,7 @@ final class OwnerMapBuilderTest {
         }
 
         @Test
-        void resolveHoldingNamesWhatTheHoldingResolveFound() {
+        void namesWhatTheHoldingResolveFound() {
             // The counts the resolve found, reported where the profiler sees them. They ride on
             // the call rather than as counters: none is a volume of work its duration divides
             // by, and the row is read against what the readers beneath it walked.
@@ -188,7 +188,7 @@ final class OwnerMapBuilderTest {
         }
 
         @Test
-        void resolveHoldingNamesWhatEachSystemScanSelected() {
+        void namesWhatEachSystemScanSelected() {
             // Both scans report identically, which is what one shared helper is for: two spellings
             // would be two chances for one of them to state its cost differently from the other.
             var viewFake = new OwnerPaintedViewFake(
@@ -207,7 +207,7 @@ final class OwnerMapBuilderTest {
         }
 
         @Test
-        void resolveHoldingIsMeasuredOnARowOfItsOwnAboveItsThreeScans() {
+        void isMeasuredOnARowOfItsOwnAboveItsThreeScans() {
             // A rebuild that kept the standing holding shows as missing this row, which is a
             // plainer reading than three scan rows that each happened to cost nothing.
             var viewFake = new OwnerPaintedViewFake(
@@ -232,7 +232,7 @@ final class OwnerMapBuilderTest {
     class BuildClusters {
 
         @Test
-        void buildClustersBuildsFromTheHandedHoldingWithoutReadingTheSectorAgain() {
+        void buildsFromTheHandedHoldingWithoutReadingTheSectorAgain() {
             // The whole point of resolving apart from building: a rebuild a style pick owes is
             // handed the holding the last one read, and must paint from it rather than walk the
             // economy for an answer it already holds.
@@ -264,7 +264,7 @@ final class OwnerMapBuilderTest {
         }
 
         @Test
-        void buildClustersCopiesTheHandedHoldingRatherThanAdoptingIt() {
+        void copiesTheHandedHoldingRatherThanAdoptingIt() {
             // The clusters are folded into by the incremental refresh, and a holding handed to a
             // later rebuild has to still say what it said - so what the build holds is its own.
             var viewFake = new OwnerPaintedViewFake(
@@ -289,7 +289,7 @@ final class OwnerMapBuilderTest {
         }
 
         @Test
-        void buildClustersCountsTheCellsItShaped() {
+        void countsTheCellsItShaped() {
             // The number the shaping stage's duration is read against. Nothing is shaped over an
             // empty geometry, which is what the zero states - the counter is on the row either way,
             // so a reader can tell a stage that shaped nothing from one that never ran.
@@ -308,7 +308,7 @@ final class OwnerMapBuilderTest {
         }
 
         @Test
-        void buildClustersResolvesUnderTheHandedPassesGroupingRatherThanTheViewsOwn() {
+        void resolvesUnderTheHandedPassesGroupingRatherThanTheViewsOwn() {
             // The grouping the build retains has to be the one its holding was resolved under, or
             // an incremental re-shape would classify a cell against blocs the fills never drew.
             // Taking it off the pass is what makes that so: the view is asked for a grouping only

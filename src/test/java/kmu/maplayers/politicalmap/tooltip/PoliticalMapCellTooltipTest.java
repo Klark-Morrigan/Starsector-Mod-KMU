@@ -87,7 +87,7 @@ public final class PoliticalMapCellTooltipTest {
     class VanillaClaimBreakdownReaderBinding {
 
         @Test
-        void vanillaClaimBreakdownReaderBindingIsTheOneEveryViewsBoxRunsOn() {
+        void isTheOneEveryViewsBoxRunsOn() {
             // The regression this guards: a view minting a reader of its own reads the same mechanic
             // through a second computation, which nothing on screen would show the player disagreeing.
             assertThat(SystemDominationTooltip.createPaintedBy(HolderGrouping::identity).claimBreakdownReader)
@@ -103,7 +103,7 @@ public final class PoliticalMapCellTooltipTest {
 
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(StandingsBoxProvider.class)
-        void buildTitleRowsHeadsTheBoxWithTheFactionHoldingTheSystemByDecree(
+        void headsTheBoxWithTheFactionHoldingTheSystemByDecree(
                 String viewName,
                 Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
 
@@ -126,7 +126,7 @@ public final class PoliticalMapCellTooltipTest {
 
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(ClaimBoxProvider.class)
-        void buildTitleRowsHeadsTheBoxWithTheSystemNameAloneWhereTheBodyStatesTheDecree(
+        void headsTheBoxWithTheSystemNameAloneWhereTheBodyStatesTheDecree(
                 String viewName,
                 Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
 
@@ -142,7 +142,7 @@ public final class PoliticalMapCellTooltipTest {
 
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(EveryPoliticalMapBoxProvider.class)
-        void buildTitleRowsHeadsTheBoxWithTheSystemNameAloneForASystemUnderNoDecree(
+        void headsTheBoxWithTheSystemNameAloneForASystemUnderNoDecree(
                 String viewName,
                 Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
 
@@ -155,7 +155,7 @@ public final class PoliticalMapCellTooltipTest {
 
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(EveryPoliticalMapBoxProvider.class)
-        void buildTitleRowsAsksOnlyForTheDecreeRatherThanScoringEveryMarket(
+        void asksOnlyForTheDecreeRatherThanScoringEveryMarket(
                 String viewName,
                 Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
 

@@ -57,7 +57,7 @@ final class ArrangementRowWidgetsTest {
     class AddRowLabel {
 
         @Test
-        void addRowLabelMutesARowWhoseTabIsOffTheBar() {
+        void mutesARowWhoseTabIsOffTheBar() {
 
             var labelElementMock = mock(TooltipMakerAPI.class);
             ParagraphLabelMock.mockLabelOn(labelElementMock);
@@ -71,7 +71,7 @@ final class ArrangementRowWidgetsTest {
         }
 
         @Test
-        void addRowLabelDrawsARowWhoseTabIsOnTheBarInTheOrdinaryShade() {
+        void drawsARowWhoseTabIsOnTheBarInTheOrdinaryShade() {
 
             var labelElementMock = mock(TooltipMakerAPI.class);
             ParagraphLabelMock.mockLabelOn(labelElementMock);
@@ -85,7 +85,7 @@ final class ArrangementRowWidgetsTest {
         }
 
         @Test
-        void addRowLabelDrawsTheLastRowLeftOnTheBarUnmuted() {
+        void drawsTheLastRowLeftOnTheBarUnmuted() {
             // The one row where refused and off the bar come apart. Its box cannot be pressed, and it
             // is nonetheless the tab the player is looking at - so a rule reading the editor's refusal
             // instead of the row's own state would grey out the only tab still showing.
@@ -112,7 +112,7 @@ final class ArrangementRowWidgetsTest {
     class AddShownBox {
 
         @Test
-        void addShownBoxCarriesNoWord() {
+        void carriesNoWord() {
             // The line over the column already says what the box does, so a word in the box would be
             // that sentence repeated once per row.
             var controlsElementMock = mock(TooltipMakerAPI.class);
@@ -132,7 +132,7 @@ final class ArrangementRowWidgetsTest {
         }
 
         @Test
-        void addShownBoxStandsSquareAtTheRowsControlHeight() {
+        void standsSquareAtTheRowsControlHeight() {
             // With the word gone the box has nothing to be wide for, and a box wider than it is tall
             // would read as a button whose label failed to load.
             var controlsElementMock = mock(TooltipMakerAPI.class);
@@ -156,7 +156,7 @@ final class ArrangementRowWidgetsTest {
     class AddRowTo {
 
         @Test
-        void addRowToDisablesUpOnTheLeadingRowAndLeavesDownPressable() {
+        void disablesUpOnTheLeadingRowAndLeavesDownPressable() {
             // The wiring from the editor's three answers to the three controls, which nothing else
             // pins: transpose the two move predicates and the buttons still build, still press, and
             // disable at the wrong ends of the column.
@@ -170,7 +170,7 @@ final class ArrangementRowWidgetsTest {
         }
 
         @Test
-        void addRowToDisablesDownOnTheLastRowAndLeavesUpPressable() {
+        void disablesDownOnTheLastRowAndLeavesUpPressable() {
 
             var editor = buildThreeRowEditor();
             var row = editor.getRows().get(2);
@@ -182,7 +182,7 @@ final class ArrangementRowWidgetsTest {
         }
 
         @Test
-        void addRowToLeavesBothMoveButtonsPressableOnARowWithNeighboursEitherSide() {
+        void leavesBothMoveButtonsPressableOnARowWithNeighboursEitherSide() {
 
             var editor = buildThreeRowEditor();
             var row = editor.getRows().get(1);
@@ -194,7 +194,7 @@ final class ArrangementRowWidgetsTest {
         }
 
         @Test
-        void addRowToTicksTheBoxOfARowWhoseTabIsOnTheBar() {
+        void ticksTheBoxOfARowWhoseTabIsOnTheBar() {
 
             var editor = buildThreeRowEditor();
             var row = editor.getRows().get(0);
@@ -205,7 +205,7 @@ final class ArrangementRowWidgetsTest {
         }
 
         @Test
-        void addRowToRefusesTheBoxOfTheLastRowStillOnTheBar() {
+        void refusesTheBoxOfTheLastRowStillOnTheBar() {
             // Taking it off would leave a bar with no tabs, and this dialog is opened from that bar -
             // so the box is built unpressable rather than the press being refused after the click.
             var editor = buildEditorWithOnlyAlphaOnTheBar();

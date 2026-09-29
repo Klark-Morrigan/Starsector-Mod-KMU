@@ -121,7 +121,7 @@ final class BaseSidebarHostTest {
     class HandleKeyPress {
 
         @Test
-        void handleKeyPressJumpsToTheLayerBoundToThePressedKey() {
+        void jumpsToTheLayerBoundToThePressedKey() {
 
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
@@ -138,7 +138,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void handleKeyPressLeavesAKeyBoundToNoLayerUntouched() {
+        void leavesAKeyBoundToNoLayerUntouched() {
 
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
@@ -154,7 +154,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void handleKeyPressSkipsALayerWhoseShortcutThePlayerCleared() {
+        void skipsALayerWhoseShortcutThePlayerCleared() {
             // A cleared binding answers 0 (LWJGL's KEY_NONE), so a stray zero-valued press must match no
             // layer rather than falling onto the first cleared one.
             var layerSelectionMock = mock(ActiveLayerSelection.class);
@@ -174,7 +174,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void handleKeyPressFollowsTheKeycodeTheLayerAnswersOnThisPress() {
+        void followsTheKeycodeTheLayerAnswersOnThisPress() {
             // The claim is rebuilt from the layers' answers at every press, so a rebind between two presses
             // lands on the second one. A host that took a layer's key once - at registration, or into a
             // field - would go on answering to the key the player has already moved off.
@@ -194,7 +194,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void handleKeyPressBlinksTheTabOfTheLayerItJumpedTo() {
+        void blinksTheTabOfTheLayerItJumpedTo() {
             // The only thing that tells the player a shortcut landed: a keyboard switch puts nothing under
             // the pointer, so an unblinked tab would read as a key the panel ignored. Blinking the wrong tab
             // would be worse than none, marking a switch that did not happen.
@@ -212,7 +212,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void handleKeyPressBlinksNoTabForAKeyBoundToNoLayer() {
+        void blinksNoTabForAKeyBoundToNoLayer() {
             // Nothing switched, so nothing may be marked - a blink here would confirm a press the panel in
             // fact let through to the screen underneath.
             var host = createHost(mock(ActiveLayerSelection.class));
@@ -229,7 +229,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void handleKeyPressBlinksTheTabTheStripLitForTheLayerItJumpedTo() {
+        void blinksTheTabTheStripLitForTheLayerItJumpedTo() {
             // The row the key walks and the row the strip draws are one read, so a tab this screen is
             // not offered is walked past here too. Two lists would agree on the layer and disagree on
             // its place in the row - marking the tab one along from the one the player is looking at,
@@ -259,7 +259,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void handleKeyPressBlinksTheTabTheArrangementMovedTheLayerTo() {
+        void blinksTheTabTheArrangementMovedTheLayerTo() {
             // The same one read, read from the other side: the strip draws the player's own order, so a
             // key walk over registration order would mark the tab their arrangement moved the layer off
             // - a blink on the layer they did not switch to, for a switch that did happen.
@@ -284,7 +284,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void handleKeyPressWritesOnlyTheHostsOwnPick() {
+        void writesOnlyTheHostsOwnPick() {
             // Each screen keeps its own tab, so a shortcut pressed on one screen must not move the other's.
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var otherScreenSelectionMock = mock(ActiveLayerSelection.class);
@@ -307,7 +307,7 @@ final class BaseSidebarHostTest {
     class IsOverlayShowing {
 
         @Test
-        void isOverlayShowingIsFalseWhileTheHostsOwnScreenIsClaimed() {
+        void isFalseWhileTheHostsOwnScreenIsClaimed() {
             // The whole point of the gate: the panel draws after the entire core UI, so whatever claimed
             // the screen is drawn under it while the panel's own hotkeys and hit-testing go on taking the
             // input that thing was raised to receive. Which claimant it is does not reach the gate.
@@ -318,7 +318,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsTrueOnAShowingScreenNothingHasClaimed() {
+        void isTrueOnAShowingScreenNothingHasClaimed() {
             // The claim is the only thing added to the screen read, so an unclaimed screen has to leave the
             // panel exactly where it was - a gate stuck shut would take the sidebar off every screen.
             var host = createHostOnAShowingScreen(ScreenClaims.createUnclaimedScreen());
@@ -328,7 +328,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseOffTheHostsScreenWithNothingClaimingIt() {
+        void isFalseOffTheHostsScreenWithNothingClaimingIt() {
 
             var host = createHost(mock(ActiveLayerSelection.class));
 
@@ -337,7 +337,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseFromTheFirstFrameOfAClaimStillFadingIn() {
+        void isFalseFromTheFirstFrameOfAClaimStillFadingIn() {
             // Where the gate and the fade below deliberately part: input has to go the instant a
             // claimant appears, so the crisp read cannot wait for the fade to climb. A gate derived
             // from the fade would leave the panel routing for every frame the modal was arriving.
@@ -348,7 +348,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseWhileThisScreensLayersAreSwitchedOff() {
+        void isFalseWhileThisScreensLayersAreSwitchedOff() {
             // The panel is part of what the layers put on a screen, so it goes with the rest of that
             // footprint rather than standing on over an emptied map.
             var host = createHostWithVisibility(mockVisibility(false, FULLY_HIDDEN));
@@ -358,7 +358,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseFromTheFirstFrameOfAHideRampStillRunning() {
+        void isFalseFromTheFirstFrameOfAHideRampStillRunning() {
             // Where the gate and the fade part company again: a panel switched off must stop taking clicks
             // on the frame the player switched it off, whatever of it is still dissolving. A gate derived
             // from the ramp would go on routing for every frame of the hide. What is still painted over
@@ -370,7 +370,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsTrueFromTheFirstFrameOfARevealRampStillRunning() {
+        void isTrueFromTheFirstFrameOfARevealRampStillRunning() {
             // The way back, and the same rule: the pick is what the gate reads, so a panel switched on
             // takes the pointer at once rather than waiting out the frames it spends thinning back in.
             var host = createHostWithVisibility(mockVisibility(true, 0.1f));
@@ -380,7 +380,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingLeavesTheScreenUnreadWhileItIsClaimed() {
+        void leavesTheScreenUnreadWhileItIsClaimed() {
             // A screen read walks live widgets, so the claim is asked first and the walk skipped while the
             // panel is standing down anyway.
             var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModal());
@@ -396,7 +396,7 @@ final class BaseSidebarHostTest {
     class ResolveOverlayFade {
 
         @Test
-        void resolveOverlayFadeIsFullOnAShowingScreenNothingHasClaimed() {
+        void isFullOnAShowingScreenNothingHasClaimed() {
 
             var host = createHostOnAShowingScreen(ScreenClaims.createUnclaimedScreen());
 
@@ -405,7 +405,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void resolveOverlayFadeLeavesWhatAClaimHasNotTakenYet() {
+        void leavesWhatAClaimHasNotTakenYet() {
             // The point of the pair: a modal four tenths of the way in leaves the panel painting at
             // six, so it thins against a backdrop deepening at the same rate rather than cutting out.
             var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModalAt(0.4f));
@@ -415,7 +415,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void resolveOverlayFadeStillPaintsFullyOnTheFirstFrameOfAClaim() {
+        void stillPaintsFullyOnTheFirstFrameOfAClaim() {
             // The same frame the gate above already refuses. The panel is whole here and the modal
             // has drawn nothing yet, which is what makes the two answers differ rather than one of
             // them being wrong.
@@ -426,7 +426,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void resolveOverlayFadeIsNothingUnderAClaimFullyInPlace() {
+        void isNothingUnderAClaimFullyInPlace() {
 
             var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModal());
 
@@ -435,7 +435,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void resolveOverlayFadeIsNothingOffTheHostsScreen() {
+        void isNothingOffTheHostsScreen() {
             // No screen, no panel, and no fade to run: a host whose screen is down paints nothing at
             // once rather than dissolving out of a frame it was never in.
             var host = createHost(mock(ActiveLayerSelection.class));
@@ -445,7 +445,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void resolveOverlayFadeLeavesTheScreenUnreadUnderAFullClaim() {
+        void leavesTheScreenUnreadUnderAFullClaim() {
             // The gate's short-circuit, kept: a fully claimed screen paints nothing whichever screen
             // it is, so the widget walk is skipped here exactly as it is there.
             var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModal());
@@ -457,7 +457,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void resolveOverlayFadeRidesTheLayersOwnRampDown() {
+        void ridesTheLayersOwnRampDown() {
             // The panel dissolves with the overlay it drives rather than cutting away from over it, which
             // is the whole reason the pick is read here as a fraction and not as the gate's boolean.
             var host = createHostWithVisibility(mockVisibility(false, 0.4f));
@@ -467,7 +467,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void resolveOverlayFadeRidesTheLayersOwnRampBackIn() {
+        void ridesTheLayersOwnRampBackIn() {
             // The reveal, which is the reading a caller is likeliest to optimise away: the crisp pick
             // already says "shown", so a fade read gated behind it would answer 1 here and snap the panel
             // on while the overlay under it was still arriving - with every hide case above still green.
@@ -478,7 +478,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void resolveOverlayFadeIsNothingOnceTheLayersHaveGoneFromTheScreen() {
+        void isNothingOnceTheLayersHaveGoneFromTheScreen() {
 
             var host = createHostWithVisibility(mockVisibility(false, FULLY_HIDDEN));
 
@@ -487,7 +487,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void resolveOverlayFadeComposesTheClaimsDissolveWithTheLayersOwn() {
+        void composesTheClaimsDissolveWithTheLayersOwn() {
             // Two independent dissolves multiply rather than one winning: a modal raised over a panel
             // already thinning darkens over what is left of it, and neither has to know the other is
             // running. Whichever were taken alone, the panel would stand too solid under the other.
@@ -501,7 +501,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void resolveOverlayFadeLeavesTheScreenUnreadOnceTheLayersHaveGone() {
+        void leavesTheScreenUnreadOnceTheLayersHaveGone() {
             // The same short-circuit the claim gets, for the same reason: a panel with nothing left to
             // paint costs no widget walk whichever screen it is on.
             var host = createHostWithVisibility(mockVisibility(false, FULLY_HIDDEN));
@@ -517,7 +517,7 @@ final class BaseSidebarHostTest {
     class DescribeViewState {
 
         @Test
-        void describeViewStateNamesTheHostsScreenAloneWhileTheLayersAreShown() {
+        void namesTheHostsScreenAloneWhileTheLayersAreShown() {
             // The line a player normally reads: the show-or-hide prefix is worth saying only when it is
             // the reason the panel is missing.
             var host = createHostWithVisibility(mockVisibility(true, FULLY_SHOWN));
@@ -527,7 +527,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void describeViewStateNamesASettledHiddenScreen() {
+        void namesASettledHiddenScreen() {
             // What "the sidebar is gone" has to be diagnosable as without a second question to the player.
             var host = createHostWithVisibility(mockVisibility(false, FULLY_HIDDEN));
 
@@ -536,7 +536,7 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void describeViewStateNamesARampStillRunningApartFromTheSettledState() {
+        void namesARampStillRunningApartFromTheSettledState() {
             // Different bug reports: a panel that stays away was switched off, one caught part-way was on
             // its way out when the line was written. One wording for both would lose that.
             var host = createHostWithVisibility(mockVisibility(false, 0.4f));

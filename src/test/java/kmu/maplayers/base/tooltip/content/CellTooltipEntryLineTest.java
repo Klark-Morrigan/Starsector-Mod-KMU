@@ -65,7 +65,7 @@ final class CellTooltipEntryLineTest {
     class CreateLine {
 
         @Test
-        void createLineCarriesItsMarkNameAndValueCallingNothingOut() {
+        void carriesItsMarkNameAndValueCallingNothingOut() {
 
             var line = CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200");
 
@@ -87,7 +87,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void createLineTakesAnAbsentMarkAsItStands() {
+        void takesAnAbsentMarkAsItStands() {
             // A caller resolving a mark that simply does not exist hands the absence straight over, so
             // a list of things carrying none is this same shape rather than a second one.
             var line = CellTooltipEntryLine.createLine(NO_MARK, "Independent", CellTooltipEntryLine.NO_SCORE);
@@ -97,7 +97,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void createLineRefusesALineWithNoName() {
+        void refusesALineWithNoName() {
             // Neither said nor withheld is not an absence the label can draw: a line is called
             // something, or its name is kept back and its shape stands where the name would.
             assertThatThrownBy(() -> CellTooltipEntryLine.createLine(CREST_MARK, NO_NAME, "1,200"))
@@ -105,7 +105,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void createLineRefusesALineWithNoValue() {
+        void refusesALineWithNoValue() {
             // A line carrying no number states the value that means so, which the column collapses for -
             // an absence would reach the layout as a null instead.
             assertThatThrownBy(() -> CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", null))
@@ -117,7 +117,7 @@ final class CellTooltipEntryLineTest {
     class CreateCountedLine {
 
         @Test
-        void createCountedLineWordsTheNumberItWasHandedAndHoldsOntoIt() {
+        void wordsTheNumberItWasHandedAndHoldsOntoIt() {
             // The whole point of the shape: the line shows the figure and carries it, so a row standing
             // in for lines the box could not draw can add them up and word the total the same way.
             var line = CellTooltipEntryLine.createCountedLine(CREST_MARK, "The Hegemony", 23600);
@@ -129,7 +129,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void createCountedLineCallsNothingOutAndShowsItsNumberAlone() {
+        void callsNothingOutAndShowsItsNumberAlone() {
             // The plainest line there is, arrived at from the number rather than from words for it:
             // everything a line may go on to say is layered onto it afterwards, as on any other.
             assertThat(CellTooltipEntryLine.createCountedLine(CREST_MARK, "The Hegemony", 1200))
@@ -150,7 +150,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void createCountedLineKeepsItsNumberThroughARefinementLaidOnIt() {
+        void keepsItsNumberThroughARefinementLaidOnIt() {
             // A line refined into an aside, a quiet value, or a qualified one is the same line and the
             // same figure - a refinement that dropped the count would leave the row standing in for it
             // silently short.
@@ -166,7 +166,7 @@ final class CellTooltipEntryLineTest {
     class FormatCountedValue {
 
         @Test
-        void formatCountedValueWordsANumberTheWayACountedLineStatesItsOwn() {
+        void wordsANumberTheWayACountedLineStatesItsOwn() {
             // What a stand-in row words its total through, so a total cannot come out spelled unlike
             // the figures it was summed from.
             assertThat(CellTooltipEntryLine.formatCountedValue(4320))
@@ -178,7 +178,7 @@ final class CellTooltipEntryLineTest {
     class CreateRedactedLine {
 
         @Test
-        void createRedactedLineCarriesTheShapeOfItsNameInPlaceOfIt() {
+        void carriesTheShapeOfItsNameInPlaceOfIt() {
 
             var line = CellTooltipEntryLine.createRedactedLine(CREST_MARK, WITHHELD_NAME, "820");
 
@@ -200,7 +200,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void createRedactedLineLeavesTheNameOffTheLineEntirely() {
+        void leavesTheNameOffTheLineEntirely() {
             // The point of the shape rather than a consequence of it: the factory is never handed the
             // name, so no part of the line holds text a later change could be tempted to draw.
             assertThat(CellTooltipEntryLine
@@ -210,7 +210,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void createRedactedLineHoldsTheShapeApartFromTheListItWasDerivedFrom() {
+        void holdsTheShapeApartFromTheListItWasDerivedFrom() {
             // A caller deriving the lengths from a list it goes on using cannot reshape a name the box
             // has already stated.
             var derivedLengths = new ArrayList<>(List.of(7, 4));
@@ -223,7 +223,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void createRedactedLineRefusesALineNamedAndWithheldAtOnce() {
+        void refusesALineNamedAndWithheldAtOnce() {
             // Two accounts of what the line is called, and the label draws one: held together, the same
             // line would come out named on one surface and blocked out on another.
             assertThatThrownBy(() -> new CellTooltipEntryLine(
@@ -243,7 +243,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void createRedactedLineRefusesALineWithNoValue() {
+        void refusesALineWithNoValue() {
             // Withholding the name changes nothing about the value column: a line carrying no number
             // states the value that means so rather than reaching the layout as a null.
             assertThatThrownBy(() ->
@@ -256,7 +256,7 @@ final class CellTooltipEntryLineTest {
     class CreateRedactedCountedLine {
 
         @Test
-        void createRedactedCountedLineKeepsBackTheNameAndNotTheFigure() {
+        void keepsBackTheNameAndNotTheFigure() {
             // What a withheld line withholds is the name. Its number is one of the block's own, so it
             // is stated and counted like any other - a listing cut short still adds up.
             var line = CellTooltipEntryLine.createRedactedCountedLine(CREST_MARK, WITHHELD_NAME, 820);
@@ -276,14 +276,14 @@ final class CellTooltipEntryLineTest {
     class HasMark {
 
         @Test
-        void hasMarkReturnsTrueForALineLeadingWithOne() {
+        void returnsTrueForALineLeadingWithOne() {
 
             assertThat(CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200").hasMark())
                 .isTrue();
         }
 
         @Test
-        void hasMarkReturnsFalseForALineCarryingNone() {
+        void returnsFalseForALineCarryingNone() {
             // The judgement whatever reads a listing for its marks and whatever lays it out afterwards
             // both go through, so neither can reserve a column for a mark the other cannot show.
             assertThat(CellTooltipEntryLine
@@ -297,7 +297,7 @@ final class CellTooltipEntryLineTest {
     class HasRedactedName {
 
         @Test
-        void hasRedactedNameReturnsTrueForALineKeepingItsNameBack() {
+        void returnsTrueForALineKeepingItsNameBack() {
 
             assertThat(CellTooltipEntryLine
                     .createRedactedLine(CREST_MARK, WITHHELD_NAME, "820")
@@ -306,7 +306,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void hasRedactedNameReturnsFalseForALineSayingWhatItIsCalled() {
+        void returnsFalseForALineSayingWhatItIsCalled() {
             // The one judgement every surface goes through, so a line that says its name cannot be
             // drawn as though something had been kept back from it.
             assertThat(CellTooltipEntryLine
@@ -320,7 +320,7 @@ final class CellTooltipEntryLineTest {
     class QualifiedWith {
 
         @Test
-        void qualifiedWithCallsAStatusOutLeavingTheRestOfTheLineAsItWas() {
+        void callsAStatusOutLeavingTheRestOfTheLineAsItWas() {
 
             var line = CellTooltipEntryLine
                 .createLine(CREST_MARK, "The Hegemony", "1,200")
@@ -344,7 +344,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void qualifiedWithKeepsANameTheLineWithholds() {
+        void keepsANameTheLineWithholds() {
             // A refinement restates the one part it is about and carries the rest across, so a status
             // layered onto a redacted line cannot quietly restore the name it was keeping back.
             var line = CellTooltipEntryLine
@@ -358,7 +358,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void qualifiedWithLeavesTheLineItWasBuiltFromUnqualified() {
+        void leavesTheLineItWasBuiltFromUnqualified() {
             // A refinement returns a new value, so a caller qualifying one line of a resolved list
             // cannot reach into the line another caller is still holding.
             var plainLine = CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200");
@@ -373,7 +373,7 @@ final class CellTooltipEntryLineTest {
     class CallsOutInLabel {
 
         @Test
-        void callsOutInLabelPicksTheStretchOutLeavingTheRestOfTheLineAsItWas() {
+        void picksTheStretchOutLeavingTheRestOfTheLineAsItWas() {
 
             var line = CellTooltipEntryLine
                 .createLine(NO_MARK, "Abandoned Station", "0")
@@ -397,7 +397,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void callsOutInLabelKeepsAStatusTheLineAlreadyCallsOutAfterItsName() {
+        void keepsAStatusTheLineAlreadyCallsOutAfterItsName() {
             // The two are the same finding drawn in two places rather than one displacing the other, so
             // a colony saying what it is in its name and undiscovered besides states both.
             var line = CellTooltipEntryLine
@@ -412,7 +412,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void callsOutInLabelRefusesAStretchRunningPastTheName() {
+        void refusesAStretchRunningPastTheName() {
             // Checked where the resolver that found the stretch is still on the stack: a range past the
             // end of the label otherwise surfaces inside the draw that splits it, well past the point
             // that could say which line was meant.
@@ -423,7 +423,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void callsOutInLabelRefusesALineWhoseNameIsWithheld() {
+        void refusesALineWhoseNameIsWithheld() {
             // There is no name to pick a stretch out of, and the blocks drawn in its place stand for
             // words rather than spelling them - so a range into one could only gild whatever happened
             // to be that far along.
@@ -434,7 +434,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void callsOutInLabelLeavesTheLineItWasBuiltFromSayingNothingInItsName() {
+        void leavesTheLineItWasBuiltFromSayingNothingInItsName() {
             // A refinement returns a new value, so a caller gilding one line of a resolved list cannot
             // reach into the line another caller is still holding.
             var plainLine = CellTooltipEntryLine.createLine(NO_MARK, "Abandoned Station", "0");
@@ -449,7 +449,7 @@ final class CellTooltipEntryLineTest {
     class NotedWith {
 
         @Test
-        void notedWithRemarksOnTheLineLeavingTheRestOfItAsItWas() {
+        void remarksOnTheLineLeavingTheRestOfItAsItWas() {
 
             var line = CellTooltipEntryLine
                 .createLine(CREST_MARK, "Sentinel Gantries", "0")
@@ -473,7 +473,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void notedWithKeepsAStatusTheLineAlreadyCallsOut() {
+        void keepsAStatusTheLineAlreadyCallsOut() {
             // The two runs answer different questions - what the box has found about the thing on
             // the line, and how current the box's account of it is - so a line carrying both keeps
             // both rather than the later refinement dropping the first.
@@ -487,7 +487,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void notedWithLeavesTheLineItWasBuiltFromRemarkingNothing() {
+        void leavesTheLineItWasBuiltFromRemarkingNothing() {
             // A refinement returns a new value, so a caller remarking on one line of a resolved
             // list cannot reach into the line another caller is still holding.
             var plainLine = CellTooltipEntryLine.createLine(CREST_MARK, "Sentinel Gantries", "0");
@@ -502,7 +502,7 @@ final class CellTooltipEntryLineTest {
     class IndexedAt {
 
         @Test
-        void indexedAtStatesThePlaceLeavingTheRestOfTheLineAsItWas() {
+        void statesThePlaceLeavingTheRestOfTheLineAsItWas() {
 
             var line = CellTooltipEntryLine
                 .createLine(CREST_MARK, "The Hegemony", "1,200")
@@ -526,7 +526,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void indexedAtKeepsAStatusTheLineAlreadyCallsOut() {
+        void keepsAStatusTheLineAlreadyCallsOut() {
             // The two runs answer different questions - which one this is, and what is true of it -
             // so a line stating both keeps both rather than the later refinement dropping the first.
             var line = CellTooltipEntryLine
@@ -541,7 +541,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void indexedAtLeavesTheLineItWasBuiltFromUnplaced() {
+        void leavesTheLineItWasBuiltFromUnplaced() {
             // A refinement returns a new value, so a caller numbering one line of a resolved list
             // cannot reach into the line another caller is still holding.
             var plainLine = CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200");
@@ -556,7 +556,7 @@ final class CellTooltipEntryLineTest {
     class StatesUncountedValue {
 
         @Test
-        void statesUncountedValueQuietensTheNumberWithoutQuietingTheLine() {
+        void quietensTheNumberWithoutQuietingTheLine() {
             // The narrower of the two quiet readings, and the difference they exist for: this line is
             // one of the things the block lists, so it stays named as loudly as its neighbours and
             // only the number an account recorded for it quietens.
@@ -571,7 +571,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void statesUncountedValueLeavesTheLineItWasBuiltFromAFinding() {
+        void leavesTheLineItWasBuiltFromAFinding() {
             // A refinement returns a new value, so a caller quietening one number of a resolved list
             // cannot reach into the line another caller is still holding.
             var plainLine = CellTooltipEntryLine.createLine(NO_MARK, "Culann", "6");
@@ -586,7 +586,7 @@ final class CellTooltipEntryLineTest {
     class ReadsAsAside {
 
         @Test
-        void readsAsAsideMarksTheLineAsTheArithmeticBehindANumberRatherThanAFinding() {
+        void marksTheLineAsTheArithmeticBehindANumberRatherThanAFinding() {
 
             var line = CellTooltipEntryLine
                 .createLine(NO_MARK, "Same-faction market bonus", "+2")
@@ -597,7 +597,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void readsAsAsideLeavesEveryOtherPartOfTheLineAsItWas() {
+        void leavesEveryOtherPartOfTheLineAsItWas() {
             // The refinement says how the line reads, not what it states, so a line that already
             // carries a working and a place keeps both.
             var line = CellTooltipEntryLine
@@ -615,7 +615,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void readsAsAsideLeavesTheLineItWasBuiltFromAFinding() {
+        void leavesTheLineItWasBuiltFromAFinding() {
             // A refinement returns a new value, so a caller quietening one line of a resolved list
             // cannot reach into the line another caller is still holding.
             var plainLine = CellTooltipEntryLine.createLine(NO_MARK, "Culann", "6");
@@ -630,7 +630,7 @@ final class CellTooltipEntryLineTest {
     class DerivesValueFrom {
 
         @Test
-        void derivesValueFromStatesTheWorkingLeavingTheRestOfTheLineAsItWas() {
+        void statesTheWorkingLeavingTheRestOfTheLineAsItWas() {
 
             var line = CellTooltipEntryLine
                 .createLine(NO_MARK, "Small: 2", "500")
@@ -654,7 +654,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void derivesValueFromKeepsAStatusTheLineAlreadyCallsOut() {
+        void keepsAStatusTheLineAlreadyCallsOut() {
             // The working and the qualifier are stated at opposite ends of the line, so a line can
             // carry both - and a refinement that dropped one would silently lose it.
             var line = CellTooltipEntryLine
@@ -667,7 +667,7 @@ final class CellTooltipEntryLineTest {
         }
 
         @Test
-        void derivesValueFromLeavesTheLineItWasBuiltFromShowingItsNumberAlone() {
+        void leavesTheLineItWasBuiltFromShowingItsNumberAlone() {
 
             var plainLine = CellTooltipEntryLine.createLine(NO_MARK, "Small: 2", "500");
             plainLine.derivesValueFrom("0.25 /");

@@ -55,7 +55,7 @@ final class SharedBlocSortModesTest {
     class DeclareMarketSizeMode {
 
         @Test
-        void declareMarketSizeModeCarriesTheFrozenKeyUnderEveryVocabulary() {
+        void carriesTheFrozenKeyUnderEveryVocabulary() {
 
             // Pinned as a literal, and as one literal: both vocabularies stored this spelling while
             // each declared the mode separately, so a change here resets every save that stored the
@@ -67,7 +67,7 @@ final class SharedBlocSortModesTest {
         }
 
         @Test
-        void declareMarketSizeModeDrawsTheWholeSectorSizeAsOneRowColouredRun() {
+        void drawsTheWholeSectorSizeAsOneRowColouredRun() {
 
             // The same reading off either record: one run, in the tone the picker offered, since a
             // colony size carries no colour of its own.
@@ -83,7 +83,7 @@ final class SharedBlocSortModesTest {
         }
 
         @Test
-        void declareMarketSizeModeRunsHighToLowUnderEveryVocabulary() {
+        void runsHighToLowUnderEveryVocabulary() {
 
             // A number leads with the bigger bloc, so the size runs high-to-low wherever it is offered.
             assertThat(PAINTING_BINDING.defaultDirection())
@@ -93,7 +93,7 @@ final class SharedBlocSortModesTest {
         }
 
         @Test
-        void declareMarketSizeModeRanksTheBiggerBlocFirst() {
+        void ranksTheBiggerBlocFirst() {
 
             assertThat(listIdsInModeOrder(
                     PAINTING_BINDING,
@@ -109,7 +109,7 @@ final class SharedBlocSortModesTest {
         }
 
         @Test
-        void declareMarketSizeModeBreaksASizeTieDownTheAskingVocabularysOwnChain() {
+        void breaksASizeTieDownTheAskingVocabularysOwnChain() {
 
             // Each pair is level on the size, so which bloc leads names the number the supplied chain
             // reaches next - and the two bindings reach different ones, which is what asking for the

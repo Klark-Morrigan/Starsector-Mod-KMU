@@ -115,7 +115,7 @@ final class MarkedSystemRederiveTest {
         }
 
         @Test
-        void rederiveMarkedSystemsRecordsTheNewHolderWhenASystemChangesHands() {
+        void recordsTheNewHolderWhenASystemChangesHands() {
 
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
@@ -128,7 +128,7 @@ final class MarkedSystemRederiveTest {
         }
 
         @Test
-        void rederiveMarkedSystemsDisturbsBothSidesAndTheRingOfAFlip() {
+        void disturbsBothSidesAndTheRingOfAFlip() {
             // Both outlines moved and every neighbour's shared edge changed class, so the batch
             // owes the ring a re-shape and both sides a cluster group rebuild. Recorded together
             // because half of that is a border drawn down one side only.
@@ -145,7 +145,7 @@ final class MarkedSystemRederiveTest {
         }
 
         @Test
-        void rederiveMarkedSystemsDropsTheHolderOfASystemThatLostItsLastColony() {
+        void dropsTheHolderOfASystemThatLostItsLastColony() {
             // Decivilised or bombed out: the entry goes rather than being left pointing at the
             // faction that lost it, since every reader takes an absent entry for "nobody holds
             // this".
@@ -160,7 +160,7 @@ final class MarkedSystemRederiveTest {
         }
 
         @Test
-        void rederiveMarkedSystemsDisturbsNothingWhenNoFactMoved() {
+        void disturbsNothingWhenNoFactMoved() {
             // The common resize: a colony grew, its faction still wins, nothing about what stands
             // there changed. Every fill and border is identical, so a disturbance recorded here
             // would spend a frame redrawing the map it already had.
@@ -177,7 +177,7 @@ final class MarkedSystemRederiveTest {
         }
 
         @Test
-        void rederiveMarkedSystemsAddsASystemTakingItsFirstColonyToTheInhabitedSet() {
+        void addsASystemTakingItsFirstColonyToTheInhabitedSet() {
             // A haven appearing where nothing stood, on a layer whose holding cannot account for
             // whoever built it: no holder moves, so this set is the only record of the change and
             // the cell over it the only surface that can report one.
@@ -197,7 +197,7 @@ final class MarkedSystemRederiveTest {
         }
 
         @Test
-        void rederiveMarkedSystemsRemovesASystemLosingItsLastColonyFromTheInhabitedSet() {
+        void removesASystemLosingItsLastColonyFromTheInhabitedSet() {
 
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(),
@@ -215,7 +215,7 @@ final class MarkedSystemRederiveTest {
         }
 
         @Test
-        void rederiveMarkedSystemsRebuildsNoClusterGroupWhenOnlyInhabitationMoved() {
+        void rebuildsNoClusterGroupWhenOnlyInhabitationMoved() {
             // Inhabitation moves no seam - a cell's shape is settled by which of its edges are
             // same-owner seams - so the neighbour keeps the shape it has and no bloc's outline is
             // retraced. This is what makes the redraw cheap enough to run on a colony event.
@@ -235,7 +235,7 @@ final class MarkedSystemRederiveTest {
         }
 
         @Test
-        void rederiveMarkedSystemsRecordsThePickArrivingInAnUnheldSystem() {
+        void recordsThePickArrivingInAnUnheldSystem() {
             // The third fact, which goes stale exactly as the other two do: a cell restyled against
             // the standing presence set would sink the pick's brand new colony under the recede
             // meant for everything the pick is not.
@@ -257,7 +257,7 @@ final class MarkedSystemRederiveTest {
         }
 
         @Test
-        void rederiveMarkedSystemsDropsThePickPresenceOfASystemItNowHolds() {
+        void dropsThePickPresenceOfASystemItNowHolds() {
             // Presence is what spares a cell nobody holds, so a system the batch has just given to
             // the pick leaves the set rather than being carried in it under a holder that draws it
             // anyway - which is the set a full rebuild would have resolved, asked only of the

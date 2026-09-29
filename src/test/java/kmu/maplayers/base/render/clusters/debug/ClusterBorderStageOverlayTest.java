@@ -21,7 +21,7 @@ final class ClusterBorderStageOverlayTest {
     class IsEmpty {
 
         @Test
-        void isEmptyReportsEmptyWhenNoStageHasALoop() {
+        void reportsEmptyWhenNoStageHasALoop() {
             var overlay = new ClusterBorderStageOverlay(
                 List.of(),
                 List.of(),
@@ -32,7 +32,7 @@ final class ClusterBorderStageOverlayTest {
         }
 
         @Test
-        void isEmptyReportsNotEmptyForTheBaseStageAlone() {
+        void reportsNotEmptyForTheBaseStageAlone() {
             // Both gates off is the ordinary reading, not a degenerate one: the base stage is the
             // only one every cluster always has, so an overlay skipped in this state would draw
             // nothing whenever the player turns both smoothing passes off.
@@ -46,7 +46,7 @@ final class ClusterBorderStageOverlayTest {
         }
 
         @Test
-        void isEmptyReportsNotEmptyForTheDespikedStageAlone() {
+        void reportsNotEmptyForTheDespikedStageAlone() {
             var overlay = new ClusterBorderStageOverlay(
                 List.of(),
                 ONE_LOOP,
@@ -57,7 +57,7 @@ final class ClusterBorderStageOverlayTest {
         }
 
         @Test
-        void isEmptyReportsNotEmptyForTheRoundedStageAlone() {
+        void reportsNotEmptyForTheRoundedStageAlone() {
             var overlay = new ClusterBorderStageOverlay(
                 List.of(),
                 List.of(),

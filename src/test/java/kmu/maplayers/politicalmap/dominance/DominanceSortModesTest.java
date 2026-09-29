@@ -31,7 +31,7 @@ final class DominanceSortModesTest {
     class Modes {
 
         @Test
-        void modesListsEveryModeInSelectorDisplayOrder() {
+        void listsEveryModeInSelectorDisplayOrder() {
 
             // This list is the order the sort selector stacks its rows top to bottom, so it is a drawn
             // arrangement rather than an implementation detail: name first, then the numeric metrics.
@@ -56,7 +56,7 @@ final class DominanceSortModesTest {
         }
 
         @Test
-        void modesFallsBackToDominationAsTheDefault() {
+        void fallsBackToDominationAsTheDefault() {
 
             // Domination is what these layers are painted by, so a fresh save and any unrecognised
             // stored key open on the ranking that matches what the map shows.
@@ -69,7 +69,7 @@ final class DominanceSortModesTest {
     class PersistenceKey {
 
         @Test
-        void persistenceKeyIsTheFrozenKeyForEachMode() {
+        void isTheFrozenKeyForEachMode() {
 
             // Pinned as literals: renaming a key silently resets every save that stored that mode back
             // to the default, so a change must break this test before it ships.
@@ -90,7 +90,7 @@ final class DominanceSortModesTest {
     class ResolveTrailingRuns {
 
         @Test
-        void resolveTrailingRunsIsTheModesMetricAsOneRowColouredRunForANumericMode() {
+        void isTheModesMetricAsOneRowColouredRunForANumericMode() {
 
             var bloc = buildBloc(
                 "hegemony",
@@ -110,7 +110,7 @@ final class DominanceSortModesTest {
         }
 
         @Test
-        void resolveTrailingRunsIsNoRunsUnderTheNameMode() {
+        void isNoRunsUnderTheNameMode() {
 
             // The name mode ranks on the label, so there is no number to show and the row's value
             // column stays unfilled.
@@ -128,7 +128,7 @@ final class DominanceSortModesTest {
     class DefaultDirection {
 
         @Test
-        void defaultDirectionIsDescendingForANumericMode() {
+        void isDescendingForANumericMode() {
 
             // A numeric mode leads with the bigger bloc, so its natural order runs high-to-low.
             assertThat(DominanceSortModes.DOMINATION.defaultDirection())
@@ -138,7 +138,7 @@ final class DominanceSortModesTest {
         }
 
         @Test
-        void defaultDirectionIsAscendingForTheNameMode() {
+        void isAscendingForTheNameMode() {
 
             // The name mode reads A-to-Z, so its natural order runs ascending.
             assertThat(DominanceSortModes.NAME.defaultDirection())
@@ -150,7 +150,7 @@ final class DominanceSortModesTest {
     class Comparator {
 
         @Test
-        void comparatorRanksANumericModeByItsOwnMetric() {
+        void ranksANumericModeByItsOwnMetric() {
 
             var low = buildBloc(
                 "low",
@@ -166,7 +166,7 @@ final class DominanceSortModesTest {
         }
 
         @Test
-        void comparatorBreaksTiesDownTheCanonicalChainInOrder() {
+        void breaksTiesDownTheCanonicalChainInOrder() {
 
             // The order this vocabulary declares behind its numbers: domination, then presence, then
             // score, then market size. Each pair below is level on every metric ahead of the one it

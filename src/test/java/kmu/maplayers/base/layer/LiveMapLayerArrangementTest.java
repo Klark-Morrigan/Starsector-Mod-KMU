@@ -33,7 +33,7 @@ final class LiveMapLayerArrangementTest {
     class ResolveArrangement {
 
         @Test
-        void resolveArrangementAnswersUnarrangedWithNoStoreBound() {
+        void answersUnarrangedWithNoStoreBound() {
             // The reading before any composition root has run, and the one an install that names no
             // store keeps: the row is exactly what registration built.
             assertThat(LiveMapLayerArrangement.resolveArrangement())
@@ -41,7 +41,7 @@ final class LiveMapLayerArrangementTest {
         }
 
         @Test
-        void resolveArrangementAnswersWhatTheBoundStoreReads() {
+        void answersWhatTheBoundStoreReads() {
 
             MapLayerArrangements.arrangeBarWith(List.of("gamma"), List.of("beta"));
 
@@ -50,7 +50,7 @@ final class LiveMapLayerArrangementTest {
         }
 
         @Test
-        void resolveArrangementAsksTheBoundStoreOnEveryRead() {
+        void asksTheBoundStoreOnEveryRead() {
             // Nothing is settled here. An arrangement made mid-session moves the bar on the next frame
             // because the store is asked again, and holding one here would instead pin the row to
             // whatever it said the first time anything drew.

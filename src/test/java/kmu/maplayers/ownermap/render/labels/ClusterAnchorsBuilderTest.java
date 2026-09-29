@@ -295,7 +295,7 @@ final class ClusterAnchorsBuilderTest {
     class RebuildClusterAnchors {
 
         @Test
-        void rebuildClusterAnchorsFitsOneLabelPerContiguousCluster() {
+        void fitsOneLabelPerContiguousCluster() {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
@@ -315,7 +315,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsCountsThePlacementsItFitted() {
+        void countsThePlacementsItFitted() {
             // The number the fit's duration is read against - it is the rebuild's largest cost,
             // and what it cost per placement is the reading a sweep is tuned by. What it swept to
             // get there rides on the call's name instead, none of it being a volume of work.
@@ -341,7 +341,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsDrawsEachClusterInItsOwnBlocsShade() {
+        void drawsEachClusterInItsOwnBlocsShade() {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
@@ -364,7 +364,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsRecedesANonSpotlitBlocToThePassDesaturationPalette() {
+        void recedesANonSpotlitBlocToThePassDesaturationPalette() {
             // Under a filter every bloc but the spotlit one recedes, and its label has to recede
             // with its fill: the shared palette this pass recoloured that fill to is the one the
             // name draws in, so the two cannot drift apart while a spotlight is up.
@@ -385,7 +385,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsFitsLabelsForTheOverlayWhenNamesAreOff() {
+        void fitsLabelsForTheOverlayWhenNamesAreOff() {
             // The debug anchor overlay draws the same placements the names hang off, so it has to
             // be able to hold the search open on its own - otherwise the diagnostic shows nothing
             // exactly when the player turned the names off to look at it.
@@ -403,7 +403,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsFitsNothingWhenNamesAndTheOverlayAreBothOff() {
+        void fitsNothingWhenNamesAndTheOverlayAreBothOff() {
             // Neither consumer is looking, so the sector's whole cluster search is skipped rather
             // than run for placements nothing will draw.
             useNameFormat(FactionNameFormatChoice.NONE);
@@ -419,7 +419,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsDropsStandingLabelsEvenWhenItFitsNone() {
+        void dropsStandingLabelsEvenWhenItFitsNone() {
             // The list is the overlay's own, so the gate has to empty it rather than leave it
             // alone: switching the names off has to take the fitted labels off the map, not
             // freeze the last pass's on it.
@@ -437,7 +437,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsRecordsTheTuningAndGeometryItFittedUnder() {
+        void recordsTheTuningAndGeometryItFittedUnder() {
             // The placements it leaves behind are only reusable if something states the rules
             // they were sized under, and only this rebuild read them - so the pair it leaves
             // has to name the tuning it fitted with and the geometry it fitted against, not
@@ -453,7 +453,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsCarriesStandingPlacementsItFittedUnderTheSameRules() {
+        void carriesStandingPlacementsItFittedUnderTheSameRules() {
             // The rebuild is the only place that knows both what it is about to fit under and
             // what the pair in front of it was fitted under, so it is where the carry-over is
             // decided. Run twice over an unchanged sector, with its own previous answer standing
@@ -490,7 +490,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsRefitsEveryClusterWhenTheRulesItFittedUnderMoved() {
+        void refitsEveryClusterWhenTheRulesItFittedUnderMoved() {
             // The keep-out sites every box is trimmed clear of are the whole sector's, so a
             // recut of the cells moves fits no membership change would touch - and no cluster's
             // identity can see that. The fingerprint is what catches it, and it drops the whole
@@ -521,7 +521,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsLabelsTheListTheSkippedFitEmpties() {
+        void labelsTheListTheSkippedFitEmpties() {
             // The gate empties the list rather than leaving it alone, so the list it leaves
             // needs labelling exactly as a fitted one does: an unlabelled list is
             // indistinguishable from one made under rules that still hold. The two move
@@ -543,7 +543,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsReportsNothingDisturbedWhenEveryPlacementCarriedOver() {
+        void reportsNothingDisturbedWhenEveryPlacementCarriedOver() {
             // The rebuild that changes nothing, which is most of them: every cluster still names
             // the same members and keeps the placement it had, so anything laid around those
             // names may stand. Reported off the same pass that decided the carry-over, so the two
@@ -572,7 +572,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsReportsTheRoomGivenUpByTheFitItSkipped() {
+        void reportsTheRoomGivenUpByTheFitItSkipped() {
             // Switching the names off empties the standing list, which is as much a change to
             // what a map has room for as a re-fit is: the ring those words covered is free now,
             // and whatever kept clear of them has to be told.
@@ -596,7 +596,7 @@ final class ClusterAnchorsBuilderTest {
     class RebuildClusterAnchorsFromSector {
 
         @Test
-        void rebuildClusterAnchorsFromSectorFitsLabelsToTheSectorsOwnHolders() {
+        void fitsLabelsToTheSectorsOwnHolders() {
             // The border-tracing diagnostic builds no draw lists to borrow a holder map from, so
             // this path resolves one itself - under the view's own grouping, so the labels key off
             // the same snapshot their names and colours are classified against.
@@ -631,7 +631,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsFromSectorRecedesNothingWhileABlocIsSpotlitElsewhere() {
+        void recedesNothingWhileABlocIsSpotlitElsewhere() {
             // This path paints real holders across the whole sector, so the spotlight
             // standing in the picks it is handed has to be dropped before it styles anything.
             // Carried through, every bloc but the spotlit one would recede and the labels would
@@ -655,7 +655,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsFromSectorFitsLabelsThoughTheNameFormatDrawsNone() {
+        void fitsLabelsThoughTheNameFormatDrawsNone() {
             // This path exists for the overlay, so the name format has no say over it: the
             // diagnostic still draws its dots for a player reading the map by colour alone.
             useNameFormat(FactionNameFormatChoice.NONE);
@@ -675,7 +675,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsFromSectorRecordsWhatItFittedUnder() {
+        void recordsWhatItFittedUnder() {
             // This path delegates the fit, so it must hand its own caller's pair down rather
             // than fitting into something of its own: the caller of the debug view is left
             // holding the same labelled placements the production caller is.
@@ -695,7 +695,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsFromSectorCarriesStandingPlacementsThroughToTheSharedFit() {
+        void carriesStandingPlacementsThroughToTheSharedFit() {
             // This path delegates the fit, so it has to hand the caller's pair down whole.
             // Dropping the standing half on the way would leave the diagnostic view re-searching
             // every cluster on every rebuild while the production view reuses - a difference
@@ -735,7 +735,7 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
-        void rebuildClusterAnchorsFromSectorSkipsTheEconomyScanWhileTheOverlayIsOff() {
+        void skipsTheEconomyScanWhileTheOverlayIsOff() {
             // Resolving holders walks the whole economy, so the toggle gates the read itself and
             // not just the drawing - the cost is only paid while someone is looking at the
             // overlay. The standing labels still go, as on every other path.

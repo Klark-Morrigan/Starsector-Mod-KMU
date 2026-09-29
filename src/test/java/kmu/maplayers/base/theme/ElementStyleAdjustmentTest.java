@@ -16,7 +16,7 @@ class ElementStyleAdjustmentTest {
     class MergeRecede {
 
         @Test
-        void mergeRecedeTakesTheStrongerMuteOfTheTwo() {
+        void takesTheStrongerMuteOfTheTwo() {
             // The smaller opacity multiplier is the stronger mute, so an element dims to whichever
             // recede dims it most rather than to the product of both.
             var muted = new ElementStyleAdjustment(0.3, false);
@@ -27,7 +27,7 @@ class ElementStyleAdjustmentTest {
         }
 
         @Test
-        void mergeRecedeDesaturatesWhenEitherRecedeDesaturates() {
+        void desaturatesWhenEitherRecedeDesaturates() {
             // Desaturate is the OR of the two, so an element either recede desaturates ends up
             // desaturated even when the other leaves its palette alone.
             var desaturating = new ElementStyleAdjustment(1.0, true);
@@ -37,7 +37,7 @@ class ElementStyleAdjustmentTest {
         }
 
         @Test
-        void mergeRecedeLeavesADesaturateNeitherSideSets() {
+        void leavesADesaturateNeitherSideSets() {
             var opaque = new ElementStyleAdjustment(0.5, false);
 
             assertThat(opaque.mergeRecede(new ElementStyleAdjustment(0.8, false)).shouldDesaturate())
@@ -45,7 +45,7 @@ class ElementStyleAdjustmentTest {
         }
 
         @Test
-        void mergeRecedeWithNoneReturnsTheOtherRecede() {
+        void withNoneReturnsTheOtherRecede() {
             // Folding the identity in leaves a recede unchanged, so an element nothing else adjusts
             // takes the one recede that does reach it whole.
             var recede = new ElementStyleAdjustment(0.3, true);
@@ -55,7 +55,7 @@ class ElementStyleAdjustmentTest {
         }
 
         @Test
-        void mergeRecedeIsIdempotentWhenAppliedTwice() {
+        void isIdempotentWhenAppliedTwice() {
             // Folding the same recede in a second time changes nothing, which is what keeps an
             // element two reasons both recede from muting twice.
             var recede = new ElementStyleAdjustment(0.4, true);

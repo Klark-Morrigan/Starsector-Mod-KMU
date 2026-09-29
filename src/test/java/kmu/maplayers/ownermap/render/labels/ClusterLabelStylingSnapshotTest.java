@@ -41,7 +41,7 @@ final class ClusterLabelStylingSnapshotTest {
     class ResolveFrom {
 
         @Test
-        void resolveFromCarriesTheClustersOwnHoldersAndDesaturationPalette() {
+        void carriesTheClustersOwnHoldersAndDesaturationPalette() {
 
             var holderBySystemKey = Map.of(
                 buildCellKey("corvus"),
@@ -71,7 +71,7 @@ final class ClusterLabelStylingSnapshotTest {
         }
 
         @Test
-        void resolveFromCarriesTheViewGroupingAndSampledPicksWhole() {
+        void carriesTheViewGroupingAndSampledPicksWhole() {
             // Taken as the two retained records rather than unpacked and recombined, so the view a
             // label is named under, the filter it recedes by and the format it is spelled in cannot
             // come from two passes.
@@ -92,7 +92,7 @@ final class ClusterLabelStylingSnapshotTest {
         }
 
         @Test
-        void resolveFromCarriesAnUnfilteredPassAsUnfiltered() {
+        void carriesAnUnfilteredPassAsUnfiltered() {
             // A pass with no spotlight still answers the filter question, so the label rebuild
             // reads "nothing recedes" off the snapshot rather than off a null it must interpret.
             var styling = ClusterLabelStylingSnapshot.resolveFrom(

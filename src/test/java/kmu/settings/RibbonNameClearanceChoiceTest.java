@@ -15,7 +15,7 @@ final class RibbonNameClearanceChoiceTest {
     class GetLabel {
 
         @Test
-        void getLabelReturnsTheLunaLibOptionLabel() {
+        void returnsTheLunaLibOptionLabel() {
 
             assertThat(RibbonNameClearanceChoice.FITTED_BOX.getLabel())
                 .isEqualTo("The name's fitted box");

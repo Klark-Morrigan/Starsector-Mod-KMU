@@ -60,7 +60,7 @@ final class ClaimAugmentedHolderProviderTest {
     class ResolveHolder {
 
         @Test
-        void resolveHolderFoldsClaimedUnheldSystemsInAsUnfilledOffFilter() {
+        void foldsClaimedUnheldSystemsInAsUnfilledOffFilter() {
 
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
@@ -103,7 +103,7 @@ final class ClaimAugmentedHolderProviderTest {
         }
 
         @Test
-        void resolveHolderKeepsAHeldSystemsSolidHolderWhenItIsAlsoClaimed() {
+        void keepsAHeldSystemsSolidHolderWhenItIsAlsoClaimed() {
 
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
@@ -141,7 +141,7 @@ final class ClaimAugmentedHolderProviderTest {
         }
 
         @Test
-        void resolveHolderRekeysTheSpotlitBlocsOwnClaimOntoItsSpotlightHolderUnderFilter() {
+        void rekeysTheSpotlitBlocsOwnClaimOntoItsSpotlightHolderUnderFilter() {
 
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
@@ -195,7 +195,7 @@ final class ClaimAugmentedHolderProviderTest {
         }
 
         @Test
-        void resolveHolderKeepsARivalBlocsClaimUnderItsOwnKeyUnderFilter() {
+        void keepsARivalBlocsClaimUnderItsOwnKeyUnderFilter() {
 
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
@@ -235,7 +235,7 @@ final class ClaimAugmentedHolderProviderTest {
         }
 
         @Test
-        void resolveHolderOpensItsClaimReaderOverTheSameWalkTheHeldHalfRead() {
+        void opensItsClaimReaderOverTheSameWalkTheHeldHalfRead() {
             // The two halves each read every system, so a claim reader with a walk of its own
             // would traverse the sector a second time for colonies the held half has just been
             // handed. Opening it over the pass is what makes one rebuild cost one walk.
@@ -269,7 +269,7 @@ final class ClaimAugmentedHolderProviderTest {
         }
 
         @Test
-        void resolveHolderOpensItsClaimReaderUnderThePassesOwnVisibilityRule() {
+        void opensItsClaimReaderUnderThePassesOwnVisibilityRule() {
             // The claim half has to be shown the sector the held half was. A reader opened under
             // a rule of its own would fold in claims resolved against colonies the held fills
             // beside them were never given.

@@ -68,7 +68,7 @@ final class ColumnSelectionTest {
     class GetColumnCountKey {
 
         @Test
-        void getColumnCountKeyReturnsTheStoredKey() {
+        void returnsTheStoredKey() {
 
             sectorMemoryFake.storeValue(KEY, CHOICE_KEY);
 
@@ -77,7 +77,7 @@ final class ColumnSelectionTest {
         }
 
         @Test
-        void getColumnCountKeyReadsEachScreensOwnCount() {
+        void readsEachScreensOwnCount() {
             // Per-screen isolation: the two panels are two widths the player laid the list out inside,
             // so a count picked on one is invisible to the other rather than re-wrapping both.
             sectorMemoryFake.storeValue(KEY, CHOICE_KEY);
@@ -90,7 +90,7 @@ final class ColumnSelectionTest {
         }
 
         @Test
-        void getColumnCountKeyReadsEachModsOwnCount() {
+        void readsEachModsOwnCount() {
             // Per-namespace isolation, which this store had none of: a count is deliberately one
             // screen's whatever list asked for it, so without the namespace a second mod's picker read
             // and re-wrapped this mod's list.
@@ -104,7 +104,7 @@ final class ColumnSelectionTest {
         }
 
         @Test
-        void getColumnCountKeyIsNullWhenNoCountIsStored() {
+        void isNullWhenNoCountIsStored() {
             // A save that never picked a count holds no key, which the column choice resolves to its
             // single-column default.
             assertThat(ColumnSelection.getColumnCountKey(SLOT))
@@ -112,7 +112,7 @@ final class ColumnSelectionTest {
         }
 
         @Test
-        void getColumnCountKeyIsNullBeforeTheSectorExists() {
+        void isNullBeforeTheSectorExists() {
             // No sector means no save to read, so nothing can have been picked yet.
             sectorMemoryFake.removeSector();
 
@@ -125,7 +125,7 @@ final class ColumnSelectionTest {
     class SelectColumnCount {
 
         @Test
-        void selectColumnCountPersistsTheKey() {
+        void persistsTheKey() {
 
             ColumnSelection.selectColumnCount(SLOT, CHOICE_KEY);
 
@@ -134,7 +134,7 @@ final class ColumnSelectionTest {
         }
 
         @Test
-        void selectColumnCountLeavesAnotherScreensCountUntouched() {
+        void leavesAnotherScreensCountUntouched() {
             // Per-screen isolation on the write side: a pick made on one panel writes that panel's slot
             // alone, so the other keeps the count it was last laid out in.
             ColumnSelection.selectColumnCount(SLOT, CHOICE_KEY);
@@ -144,7 +144,7 @@ final class ColumnSelectionTest {
         }
 
         @Test
-        void selectColumnCountLeavesAnotherModsCountUntouched() {
+        void leavesAnotherModsCountUntouched() {
             // Per-namespace isolation on the write side: a count picked in one mod's picker leaves
             // every other mod's list laid out as its own player left it.
             ColumnSelection.selectColumnCount(SLOT, CHOICE_KEY);
@@ -154,7 +154,7 @@ final class ColumnSelectionTest {
         }
 
         @Test
-        void selectColumnCountNoOpsBeforeTheSectorExists() {
+        void noOpsBeforeTheSectorExists() {
             // No sector means no save to write into, so the pick is silently dropped rather than
             // dereferencing a null sector.
             sectorMemoryFake.removeSector();

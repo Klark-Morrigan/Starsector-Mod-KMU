@@ -44,7 +44,7 @@ final class MapLayerArrangementDialogTest {
     class IsDialogRaised {
 
         @Test
-        void isDialogRaisedIsFalseWithNothingHavingOpenedIt() {
+        void isFalseWithNothingHavingOpenedIt() {
 
             assertThat(dialog.isDialogRaised())
                 .isFalse();
@@ -55,7 +55,7 @@ final class MapLayerArrangementDialogTest {
     class ResolveDialogPresence {
 
         @Test
-        void resolveDialogPresenceIsNoneWithNothingHavingOpenedIt() {
+        void isNoneWithNothingHavingOpenedIt() {
             // Both halves at rest: a fraction left standing from nowhere would thin the sidebar over a
             // box that is not there.
             assertThat(dialog.resolveDialogPresence())
@@ -67,7 +67,7 @@ final class MapLayerArrangementDialogTest {
     class OpenDialog {
 
         @Test
-        void openDialogStandsNothingUpWithNoStoreToRecordTo() {
+        void standsNothingUpWithNoStoreToRecordTo() {
             // Refused before anything is built, which is what keeps it testable at all: a dialog that
             // stood a panel up first and then found nowhere to write would need a running game to say so.
             dialog.openDialog();
@@ -81,7 +81,7 @@ final class MapLayerArrangementDialogTest {
     class CloseDialog {
 
         @Test
-        void closeDialogDoesNothingWithTheDialogAlreadyDown() {
+        void doesNothingWithTheDialogAlreadyDown() {
             // Every way the dialog can end says the same thing, so closing one that is already closed
             // has to be the ordinary case rather than a throw out of a render pass.
             assertThatCode(dialog::closeDialog)

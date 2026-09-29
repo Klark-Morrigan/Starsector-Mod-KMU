@@ -73,7 +73,7 @@ final class ListedClaimMarketsTest {
     class IsFactionNamingMarket {
 
         @Test
-        void isFactionNamingMarketNamesAFactionOverAMarketTheContestWeighed() {
+        void namesAFactionOverAMarketTheContestWeighed() {
             // The mechanic weighed the colony and could have handed it the system, so the faction is
             // part of what decided the contest whether or not anybody has been there.
             var market = ClaimMarketFixture
@@ -87,7 +87,7 @@ final class ListedClaimMarketsTest {
         }
 
         @Test
-        void isFactionNamingMarketNamesAFactionOverAColonyThePlayerKnowsOf() {
+        void namesAFactionOverAColonyThePlayerKnowsOf() {
             // The colony is on the map in its faction's colours, so naming the faction tells the player
             // nothing they cannot already see.
             var market = ClaimMarketFixture
@@ -102,7 +102,7 @@ final class ListedClaimMarketsTest {
         }
 
         @Test
-        void isFactionNamingMarketLeavesOutAFactionCountedOnlyAsItsOwnSibling() {
+        void leavesOutAFactionCountedOnlyAsItsOwnSibling() {
             // Where the two rules part company, and the reason they are two. A concealed colony nobody
             // has found earns a row under a faction already on the box, the sibling term having paid
             // for it - but it puts no faction there itself: a faction present through such colonies
@@ -120,7 +120,7 @@ final class ListedClaimMarketsTest {
         }
 
         @Test
-        void isFactionNamingMarketNamesAFactionOverTheWithheldShapeUnderTheDevReveal() {
+        void namesAFactionOverTheWithheldShapeUnderTheDevReveal() {
 
             var market = ClaimMarketFixture
                 .startMarket(COLONY)
@@ -138,7 +138,7 @@ final class ListedClaimMarketsTest {
     class IsListedMarket {
 
         @Test
-        void isListedMarketListsAMarketTheContestWeighedThoughItsColonyIsUndiscovered() {
+        void listsAMarketTheContestWeighedThoughItsColonyIsUndiscovered() {
             // The weight is on screen already - the claim, the faction's score, the difference
             // between this market's total and the terms beneath it - so the row is what accounts
             // for it.
@@ -153,7 +153,7 @@ final class ListedClaimMarketsTest {
         }
 
         @Test
-        void isListedMarketListsAMarketThePlayerKnowsOfThoughTheContestPassedItOver() {
+        void listsAMarketThePlayerKnowsOfThoughTheContestPassedItOver() {
             // A concealed colony somebody has seen standing there is on the map in its faction's
             // colours, so naming it tells the player nothing they cannot already see - and the row
             // is what says the contest counted it for nothing.
@@ -169,7 +169,7 @@ final class ListedClaimMarketsTest {
         }
 
         @Test
-        void isListedMarketListsAConcealedMarketTheSiblingTermCountsThoughNobodyKnowsOfIt() {
+        void listsAConcealedMarketTheSiblingTermCountsThoughNobodyKnowsOfIt() {
             // The concealed market's one reach into the contest: the sibling count walks the economy's
             // listing and counts it there, so its faction's block is paid a point for a market the block
             // would otherwise not show - a count of three standing over two rows.
@@ -185,7 +185,7 @@ final class ListedClaimMarketsTest {
         }
 
         @Test
-        void isListedMarketWithholdsAConcealedMarketUnderAnAccountThatStatesNoCount() {
+        void withholdsAConcealedMarketUnderAnAccountThatStatesNoCount() {
             // The same market under the other kind of account. A presence-only standing scores a named
             // nought with no terms beneath it, so the count that pays for this colony is nowhere on
             // screen - and a row nothing shown needs is disclosure rather than accounting.
@@ -201,7 +201,7 @@ final class ListedClaimMarketsTest {
         }
 
         @Test
-        void isListedMarketListsTheWithheldShapeUnderTheDevReveal() {
+        void listsTheWithheldShapeUnderTheDevReveal() {
             // The reveal is the state a player has asked to be shown everything in, so the one
             // market both grounds turn away is stated like any other.
             var market = ClaimMarketFixture
@@ -216,7 +216,7 @@ final class ListedClaimMarketsTest {
         }
 
         @Test
-        void isListedMarketListsAMarketOffTheEconomysListingThePlayerKnowsOf() {
+        void listsAMarketOffTheEconomysListingThePlayerKnowsOf() {
             // The second of the two admissions that suppress scoring, asserted apart from
             // concealment because the rule reads the pair through one question and a case posing
             // only the concealed shape would not notice the other going unasked.
@@ -232,7 +232,7 @@ final class ListedClaimMarketsTest {
         }
 
         @Test
-        void isListedMarketWithholdsAMarketOffTheEconomysListingNobodyHasDiscovered() {
+        void withholdsAMarketOffTheEconomysListingNobodyHasDiscovered() {
             // The same pairing on the other admission: the walk never reached it, so nothing on
             // screen is short of it, and the player has not found it either.
             var market = ClaimMarketFixture

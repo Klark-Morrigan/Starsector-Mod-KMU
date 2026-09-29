@@ -17,7 +17,7 @@ final class DominanceStatsTest {
     class AddSystem {
 
         @Test
-        void addSystemAddsPresenceScoreAndSizeButNotDominationForANonWinner() {
+        void addsPresenceScoreAndSizeButNotDominationForANonWinner() {
             // A bloc merely holding a market in a system it does not win takes a presence and its
             // weight and size, but no domination - the count that separates "holds" from "wins".
             assertThat(DominanceStats.EMPTY.addSystem(false, 5000, 5))
@@ -25,14 +25,14 @@ final class DominanceStatsTest {
         }
 
         @Test
-        void addSystemCountsDominationWhenTheBlocWinsTheSystem() {
+        void countsDominationWhenTheBlocWinsTheSystem() {
             // Winning the system adds a domination on top of the presence, weight, and size.
             assertThat(DominanceStats.EMPTY.addSystem(true, 5000, 5))
                 .isEqualTo(new DominanceStats(1, 1, 5000, 5));
         }
 
         @Test
-        void addSystemAccumulatesAcrossSuccessiveSystems() {
+        void accumulatesAcrossSuccessiveSystems() {
             // Two systems fold in one after another: a dominated system and a merely-held one leave
             // one domination, two presences, and the summed weight and size.
             assertThat(DominanceStats.EMPTY.addSystem(true, 5000, 5).addSystem(false, 3000, 3))
@@ -44,7 +44,7 @@ final class DominanceStatsTest {
     class IsPaintingNothing {
 
         @Test
-        void isPaintingNothingIsTrueForABlocOfNoWeight() {
+        void isTrueForABlocOfNoWeight() {
             // A bloc present through colonies the contest never weighed folds in at a score of
             // nought, so no cell is coloured for it anywhere and its row reads back.
             assertThat(new DominanceStats(0, 3, 0, 12).isPaintingNothing())
@@ -52,7 +52,7 @@ final class DominanceStatsTest {
         }
 
         @Test
-        void isPaintingNothingIsFalseForABlocCarryingAnyWeight() {
+        void isFalseForABlocCarryingAnyWeight() {
             // Any weight at all put the bloc into the contest the fills are the outcome of, so the
             // row has something to show.
             assertThat(new DominanceStats(0, 1, 1, 3).isPaintingNothing())
@@ -60,7 +60,7 @@ final class DominanceStatsTest {
         }
 
         @Test
-        void isPaintingNothingReadsTheWeightAloneAndNotTheDominationCount() {
+        void readsTheWeightAloneAndNotTheDominationCount() {
             // The rule is the metric the layer paints by. A bloc that competes everywhere and wins
             // nowhere still reads at full strength, while a bloc holding sizeable but unweighed
             // colonies reads back however many systems it is present in.

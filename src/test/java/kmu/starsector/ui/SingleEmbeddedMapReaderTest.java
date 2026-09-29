@@ -29,7 +29,7 @@ final class SingleEmbeddedMapReaderTest {
     class ResolveSingleEmbeddedMap {
 
         @Test
-        void resolveSingleEmbeddedMapAnswersTheOneSurfaceOnScreen() {
+        void answersTheOneSurfaceOnScreen() {
             var embeddedMap = createEmbeddedMap();
 
             assertThat(new SingleEmbeddedMapReader(() -> List.of(embeddedMap))
@@ -38,7 +38,7 @@ final class SingleEmbeddedMapReaderTest {
         }
 
         @Test
-        void resolveSingleEmbeddedMapAnswersNothingWithNoneFound() {
+        void answersNothingWithNoneFound() {
             // The walk ran before the panel was built, or the reach into the tree broke. Both mean
             // there is nothing on screen either rule has been given leave to act on.
             assertThat(new SingleEmbeddedMapReader(List::of).resolveSingleEmbeddedMap())
@@ -46,7 +46,7 @@ final class SingleEmbeddedMapReaderTest {
         }
 
         @Test
-        void resolveSingleEmbeddedMapAnswersNothingWithMoreThanOneFound() {
+        void answersNothingWithMoreThanOneFound() {
             // The precondition both rules rest on, for their own reasons: the frame carries one
             // transform, and the mode that permits acting names a mod the widgets cannot be matched
             // against.

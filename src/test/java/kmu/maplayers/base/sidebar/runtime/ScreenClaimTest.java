@@ -36,14 +36,14 @@ class ScreenClaimTest {
     class IsScreenClaimed {
 
         @Test
-        void isScreenClaimedIsFalseWithNoConsoleCodexOrModalUp() {
+        void isFalseWithNoConsoleCodexOrModalUp() {
 
             assertThat(ScreenClaims.createUnclaimedScreen().isScreenClaimed())
                 .isFalse();
         }
 
         @Test
-        void isScreenClaimedIsTrueWhileTheCodexIsUp() {
+        void isTrueWhileTheCodexIsUp() {
             // Its own read rather than a case of the modal beside it: the codex is raised outside the
             // core UI, so the modal read answers no on exactly the frames this one has to answer yes.
             assertThat(ScreenClaims.createScreenClaimedByTheCodex().isScreenClaimed())
@@ -51,7 +51,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void isScreenClaimedIsTrueWhileAConsoleIsUp() {
+        void isTrueWhileAConsoleIsUp() {
 
             var consolePresenceFake = new ConsoleOverlayPresenceFake();
             var claim = ScreenClaims
@@ -65,7 +65,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void isScreenClaimedIsTrueWhileAModalIsUpWithNoConsole() {
+        void isTrueWhileAModalIsUpWithNoConsole() {
             // The half added here, and the one that has to answer on its own: the console read is silent on
             // an install without that mod, which is most of them.
             assertThat(ScreenClaims.createScreenClaimedByAModal().isScreenClaimed())
@@ -73,7 +73,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void isScreenClaimedIsTrueForAModalStillFadingIn() {
+        void isTrueForAModalStillFadingIn() {
             // The half that must not follow the fade: a modal takes every event outside its box from
             // the frame it is raised, when its brightness is still nothing. Read off the strength
             // below, the panel would go on routing clicks into a dialog already eating them.
@@ -82,7 +82,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void isScreenClaimedIsTrueWhileTheArrangementDialogIsUp() {
+        void isTrueWhileTheArrangementDialogIsUp() {
             // Its own read rather than a case of the modal beside it, and this is the one that would go
             // unnoticed: this mod's dialog descends from nothing of the game's, so the modal walk finds
             // no dialog on exactly the frames one is standing over the panel.
@@ -91,7 +91,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void isScreenClaimedIsTrueForTheArrangementDialogStillFadingIn() {
+        void isTrueForTheArrangementDialogStillFadingIn() {
             // Raised is the half input reads, and it is true from the frame the dialog opens, when
             // its paint is still at nothing.
             assertThat(ScreenClaims.createScreenClaimedByTheArrangementDialogAt(true, 0f).isScreenClaimed())
@@ -99,7 +99,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void isScreenClaimedIsFalseForTheArrangementDialogOnlyFadingOut() {
+        void isFalseForTheArrangementDialogOnlyFadingOut() {
             // The one claimant that lets go before its fade has run: dismissed on the press, it claims
             // nothing over its own dissolving box, and neither may the panel on its behalf.
             assertThat(ScreenClaims.createScreenClaimedByTheArrangementDialogAt(false, 0.5f).isScreenClaimed())
@@ -107,7 +107,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void isScreenClaimedLeavesTheModalReadUntakenWhileAConsoleIsUp() {
+        void leavesTheModalReadUntakenWhileAConsoleIsUp() {
             // The modal read walks the core UI's children; the console read is a field. Asked in the other
             // order the walk is paid for on every frame, whatever else is on screen.
             var consolePresenceFake = new ConsoleOverlayPresenceFake();
@@ -134,7 +134,7 @@ class ScreenClaimTest {
     class ResolveClaimStrength {
 
         @Test
-        void resolveClaimStrengthFollowsAModalThroughItsOwnFade() {
+        void followsAModalThroughItsOwnFade() {
             // The whole reason this sits beside the crisp read: the modal darkens the screen by this
             // same curve, so a panel painted at what is left of it thins as the backdrop deepens.
             assertThat(ScreenClaims.createScreenClaimedByAModalAt(0.4f).resolveClaimStrength())
@@ -142,14 +142,14 @@ class ScreenClaimTest {
         }
 
         @Test
-        void resolveClaimStrengthIsNothingOnAnUnclaimedScreen() {
+        void isNothingOnAnUnclaimedScreen() {
 
             assertThat(ScreenClaims.createUnclaimedScreen().resolveClaimStrength())
                 .isCloseTo(0f, within(TOLERANCE));
         }
 
         @Test
-        void resolveClaimStrengthIsFullForAConsoleThatReportsNoFade() {
+        void isFullForAConsoleThatReportsNoFade() {
             // A claimant that snaps is one the panel should snap with. Inventing a fade for the
             // console would leave the panel half dissolved against something that never moved.
             var consolePresenceFake = new ConsoleOverlayPresenceFake();
@@ -164,7 +164,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void resolveClaimStrengthFollowsTheArrangementDialogThroughItsOwnFade() {
+        void followsTheArrangementDialogThroughItsOwnFade() {
             // The dialog fades at the pace of the game's own prompts, so the panel rides it exactly as
             // it rides a modal's - answered full here, the sidebar would snap where a prompt beside it
             // dissolves.
@@ -173,7 +173,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void resolveClaimStrengthFollowsTheArrangementDialogOutPastThePress() {
+        void followsTheArrangementDialogOutPastThePress() {
             // Raised has gone false on the press, and the paint has not: the panel keeps thinning with
             // a box still on screen rather than coming back under it.
             assertThat(ScreenClaims.createScreenClaimedByTheArrangementDialogAt(false, 0.4f).resolveClaimStrength())
@@ -181,7 +181,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void resolveClaimStrengthTakesTheDeeperOfTheArrangementDialogAndAModal() {
+        void takesTheDeeperOfTheArrangementDialogAndAModal() {
             // A prompt raised over the dialog is darker than either alone, so the panel is at least as
             // far gone as the further of the two.
             var claim = new ScreenClaim(
@@ -195,7 +195,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void resolveClaimStrengthLeavesTheModalReadUntakenWithTheArrangementDialogFullyUp() {
+        void leavesTheModalReadUntakenWithTheArrangementDialogFullyUp() {
             // A dialog wholly in place has taken everything the walk could add, so the walk is skipped
             // on the frames it is standing.
             var modalReadCount = new AtomicInteger();
@@ -215,7 +215,7 @@ class ScreenClaimTest {
         }
 
         @Test
-        void resolveClaimStrengthIsFullForTheCodexWhoseFadeIsNotFollowed() {
+        void isFullForTheCodexWhoseFadeIsNotFollowed() {
             // Read at full strength like the console, but on a different footing: the codex does fade
             // in, over a few tenths of a second and on a panel the reading never reaches. Pinned so a
             // later attempt to ride that fade is a deliberate change rather than a plausible tidy-up.

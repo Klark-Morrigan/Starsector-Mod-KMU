@@ -22,21 +22,21 @@ final class MapLayerArrangementRowTest {
     class ToggleHidden {
 
         @Test
-        void toggleHiddenTakesAShownRowsTabOffTheBar() {
+        void takesAShownRowsTabOffTheBar() {
 
             assertThat(SHOWN_ROW.toggleHidden())
                 .isEqualTo(new MapLayerArrangementRow("alpha", "Alpha", true));
         }
 
         @Test
-        void toggleHiddenPutsAHiddenRowsTabBackOnTheBar() {
+        void putsAHiddenRowsTabBackOnTheBar() {
 
             assertThat(SHOWN_ROW.toggleHidden().toggleHidden())
                 .isEqualTo(SHOWN_ROW);
         }
 
         @Test
-        void toggleHiddenLeavesTheRowItWasCalledOnAlone() {
+        void leavesTheRowItWasCalledOnAlone() {
             // A record, so the toggle answers with a new row - and the one the caller is still holding
             // is the one it was showing.
             SHOWN_ROW.toggleHidden();

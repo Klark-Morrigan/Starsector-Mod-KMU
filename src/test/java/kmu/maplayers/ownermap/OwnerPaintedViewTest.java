@@ -78,7 +78,7 @@ final class OwnerPaintedViewTest {
     class BuildBlocPickerRead {
 
         @Test
-        void buildBlocPickerReadDropsEveryBlocTheViewsGateRejects() {
+        void dropsEveryBlocTheViewsGateRejects() {
             // The gate is the one thing a view varies, so a false test drops the bloc outright rather
             // than listing it un-spotlightable.
             var sectorMock = mock(SectorAPI.class);
@@ -102,7 +102,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadOffersEveryWalkedBlocUnderTheDefaultGate() {
+        void offersEveryWalkedBlocUnderTheDefaultGate() {
             // The base case a view inherits when its walk surfaces only blocs it paints, so such a
             // view declares no gate at all rather than restating an always-true one.
             var sectorMock = mock(SectorAPI.class);
@@ -123,7 +123,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadKeepsTheStatsWalkOrder() {
+        void keepsTheStatsWalkOrder() {
             // The picker sorts the list itself, but the un-sorted order is the economy walk's and is
             // carried through unchanged, so a caller reading it before a sort sees one stable order.
             var sectorMock = mock(SectorAPI.class);
@@ -144,7 +144,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadCrestsABlocFromItsColourFaction() {
+        void crestsABlocFromItsColourFaction() {
             // A group paints in its lead member's palette, so the row draws that member's crest.
             // Identity grouping returns the bloc itself, which is why one lookup serves both views.
             var sectorMock = mock(SectorAPI.class);
@@ -171,7 +171,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadKeepsABlocWhoseCrestDoesNotResolve() {
+        void keepsABlocWhoseCrestDoesNotResolve() {
             // A bloc with no authored crest (or no faction behind its colour ID) still paints
             // its cells, so it stays on offer and the row simply draws its name alone.
             var sectorMock = mock(SectorAPI.class);
@@ -192,7 +192,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadOffersTheHandedVocabularyAheadOfTheStandingMode() {
+        void offersTheHandedVocabularyAheadOfTheStandingMode() {
             // The rows and the modes are bundled here rather than by each view, so a view states its
             // vocabulary once and cannot end up handing its rows on beside another layer's. The
             // standing mode joins it here for the opposite reason: it reads one fact off the sector
@@ -210,7 +210,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadKeepsTheHandedVocabularysOwnFallbackMode() {
+        void keepsTheHandedVocabularysOwnFallbackMode() {
             // Appending a mode must not move what a fresh save opens on: the standing is a criterion
             // the player picks, while the fallback stays the number the layer is painted by.
             var viewFake = new OwnerPaintedViewFake(Map.of());
@@ -225,7 +225,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadComposesAVocabularyAStoredStandingKeyResolvesAgainst() {
+        void composesAVocabularyAStoredStandingKeyResolvesAgainst() {
             // A stored key is resolved against the vocabulary the picker carries, so a mode appended
             // outside that set would leave a save that stored the standing ranking silently reopening
             // on the layer's default.
@@ -243,7 +243,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadBindsTheStandingModeToTheHandedSectorAndGrouping() {
+        void bindsTheStandingModeToTheHandedSectorAndGrouping() {
             // The appended mode is only right if it reads the very sector and grouping this read was
             // folded under - bound to anything else it would rank a bloc by a membership the map
             // never painted. A group whose two members disagree is what shows the binding: the
@@ -282,7 +282,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadOffersNoStandingModeWithoutASectorToReadOneFrom() {
+        void offersNoStandingModeWithoutASectorToReadOneFrom() {
             // A read over no sector lists nothing and has no relations behind it, so the vocabulary
             // stands as its layer declared it rather than offering a ranking with nothing to rank by.
             var viewFake = new OwnerPaintedViewFake(Map.of());
@@ -297,7 +297,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadCarriesTheWalksPresencePastTheGate() {
+        void carriesTheWalksPresencePastTheGate() {
             // The presence is the whole walk's, so a bloc the gate dropped keeps its systems. Pinned
             // here rather than on a view because it is the assembly that decides: trimming the index
             // to the offered rows would cost a pass to remove entries no lookup can reach.
@@ -325,7 +325,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void buildBlocPickerReadCarriesAPayloadNoViewDeclares() {
+        void carriesAPayloadNoViewDeclares() {
             // The assembly is what every layer's picker shares, so it must build an option over
             // metrics it has never heard of - a layer painted by some other mechanic ranks by its own
             // numbers. Run against a payload no view declares, sharing with the fake metrics
@@ -352,7 +352,7 @@ final class OwnerPaintedViewTest {
     class ResolveBlocPickerRead {
 
         @Test
-        void resolveBlocPickerReadDefaultsToTheEmptyPickerSoASpotlightIsOptedInto() {
+        void defaultsToTheEmptyPickerSoASpotlightIsOptedInto() {
             // The base case is "no spotlight", so a view with nothing to list inherits a whole
             // answer rather than overriding with two arguments it would ignore. Pinned on the
             // fake rather than on the one view that currently relies on it, since what is under
@@ -364,7 +364,7 @@ final class OwnerPaintedViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadDefaultsToNoPresenceSoALookupAnswersRatherThanFaults() {
+        void defaultsToNoPresenceSoALookupAnswersRatherThanFaults() {
             // The other half of the default read. A view offering no rows can still be asked where a
             // bloc is - the ask reaches the seam before any row does - so the default has to answer
             // an empty set rather than leave a null for the lookup to fall over on.
@@ -413,7 +413,7 @@ final class OwnerPaintedViewTest {
     class ResolveViewRecedeAdjustment {
 
         @Test
-        void resolveViewRecedeAdjustmentRecedesNothingForAViewWithNoBackdropOfItsOwn() {
+        void recedesNothingForAViewWithNoBackdropOfItsOwn() {
             // The answer every view inherits: most recede nothing of their own accord, so the bake's
             // view recede is the identity unless a view states a backdrop of its own.
             var viewFake = new OwnerPaintedViewFake(Map.of());

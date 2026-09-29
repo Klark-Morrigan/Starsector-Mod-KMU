@@ -22,7 +22,7 @@ final class CellTooltipEntryTest {
     class CreateEntry {
 
         @Test
-        void createEntryHoldsTheLineItIsBuiltFromMadeUpOfNothing() {
+        void holdsTheLineItIsBuiltFromMadeUpOfNothing() {
             // What a block of plain lines is made of, which is most of them: a caller listing flat
             // content never states an emptiness it has nothing to say about.
             var line = createLine("The Hegemony");
@@ -37,7 +37,7 @@ final class CellTooltipEntryTest {
         }
 
         @Test
-        void createEntryRefusesAnEntryWithNoLineOfItsOwn() {
+        void refusesAnEntryWithNoLineOfItsOwn() {
             assertThatThrownBy(() -> CellTooltipEntry.createEntry(null))
                 .isInstanceOf(NullPointerException.class);
         }
@@ -47,7 +47,7 @@ final class CellTooltipEntryTest {
     class Nesting {
 
         @Test
-        void nestingKeepsWhatTheEntryIsMadeUpOfInTheOrderItIsRead() {
+        void keepsWhatTheEntryIsMadeUpOfInTheOrderItIsRead() {
 
             var entry = CellTooltipEntry
                 .createEntry(createLine("Rebel Pact"))
@@ -58,7 +58,7 @@ final class CellTooltipEntryTest {
         }
 
         @Test
-        void nestingKeepsWhatItsOwnChildrenAreMadeUpOf() {
+        void keepsWhatItsOwnChildrenAreMadeUpOf() {
             // The reason an entry is made up of entries rather than of lines: a breakdown that goes
             // three levels is stated one level per call, and no level is flattened away on the way up.
             var patrols = CellTooltipEntry
@@ -74,7 +74,7 @@ final class CellTooltipEntryTest {
         }
 
         @Test
-        void nestingCopiesWhatItIsBuiltFrom() {
+        void copiesWhatItIsBuiltFrom() {
             // A resolver ordinarily hands over the very list it built the children in, so an entry that
             // held it would go on changing after the block was handed it - and the box would be laid
             // out against something other than what it was given.
@@ -92,7 +92,7 @@ final class CellTooltipEntryTest {
         }
 
         @Test
-        void nestingStatesThatWhatItCarriesIsTheLinesAccount() {
+        void statesThatWhatItCarriesIsTheLinesAccount() {
             // The half of the distinction that demotes: what a market breaks down into is the box
             // explaining itself, so it reads a step quieter than the finding it explains.
             var entry = CellTooltipEntry
@@ -104,7 +104,7 @@ final class CellTooltipEntryTest {
         }
 
         @Test
-        void nestingCarriesNoRelationWhereItCarriesNothing() {
+        void carriesNoRelationWhereItCarriesNothing() {
             // A relation describing no children says nothing, and an entry answering an unasked
             // question compares unequal to the same entry built the other way - which would make a
             // resolver's choice of call visible in a listing that shows no difference.
@@ -123,7 +123,7 @@ final class CellTooltipEntryTest {
     class Grouping {
 
         @Test
-        void groupingKeepsWhatTheEntryGathersInTheOrderItIsRead() {
+        void keepsWhatTheEntryGathersInTheOrderItIsRead() {
 
             var entry = CellTooltipEntry
                 .createEntry(createLine("Rebel Pact"))
@@ -134,7 +134,7 @@ final class CellTooltipEntryTest {
         }
 
         @Test
-        void groupingStatesThatWhatItCarriesAreTheLinesPeers() {
+        void statesThatWhatItCarriesAreTheLinesPeers() {
             // The half of the distinction that does not demote: naming an alliance and naming the factions
             // in it are one answer at two granularities, so nothing has been broken down yet.
             var entry = CellTooltipEntry
@@ -146,7 +146,7 @@ final class CellTooltipEntryTest {
         }
 
         @Test
-        void groupingCopiesWhatItIsBuiltFrom() {
+        void copiesWhatItIsBuiltFrom() {
             // The same guarantee nesting gives, stated of the other relation: a resolver hands over the
             // very list it gathered the members in, and a block laid out against a list still changing
             // draws something other than what it was given.

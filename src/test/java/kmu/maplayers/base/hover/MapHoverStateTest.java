@@ -27,7 +27,7 @@ final class MapHoverStateTest {
     class GetHover {
 
         @Test
-        void getHoverStartsAtNone() {
+        void startsAtNone() {
 
             assertThat(new MapHoverState().getHover())
                 .isSameAs(MapHover.NONE);
@@ -38,7 +38,7 @@ final class MapHoverStateTest {
     class PublishHover {
 
         @Test
-        void publishHoverIsWhatTheNextReadSees() {
+        void isWhatTheNextReadSees() {
 
             var state = new MapHoverState();
             var hover = new MapHover(buildCellKey("system"), List.of(buildCellKey("system")));
@@ -50,7 +50,7 @@ final class MapHoverStateTest {
         }
 
         @Test
-        void publishHoverReplacesTheStandingHover() {
+        void replacesTheStandingHover() {
 
             var state = new MapHoverState();
 
@@ -69,7 +69,7 @@ final class MapHoverStateTest {
     class ClearHover {
 
         @Test
-        void clearHoverParksThePublishedHover() {
+        void parksThePublishedHover() {
 
             var state = new MapHoverState();
 
@@ -87,7 +87,7 @@ final class MapHoverStateTest {
     class ExpireHoverIfNoPassPublished {
 
         @Test
-        void expireHoverIfNoPassPublishedKeepsAHoverAPassJustPublished() {
+        void keepsAHoverAPassJustPublished() {
             // The grace this is stated over: a hover published during the frame just closed is the
             // map's current answer, and the box that reports it has yet to draw.
             var state = new MapHoverState();
@@ -101,7 +101,7 @@ final class MapHoverStateTest {
         }
 
         @Test
-        void expireHoverIfNoPassPublishedParksAHoverNoPassRepublished() {
+        void parksAHoverNoPassRepublished() {
             // The fault this exists for: with no map on screen, no pass runs to park anything, so
             // the last cell any map resolved would be named anywhere the pointer went.
             var state = new MapHoverState();
@@ -115,7 +115,7 @@ final class MapHoverStateTest {
         }
 
         @Test
-        void expireHoverIfNoPassPublishedKeepsAHoverThePassesGoOnPublishing() {
+        void keepsAHoverThePassesGoOnPublishing() {
             // A map that is still drawing publishes every frame, so the window reopens with each of
             // them and the hover under a resting pointer never blinks.
             var state = new MapHoverState();
@@ -132,7 +132,7 @@ final class MapHoverStateTest {
         }
 
         @Test
-        void expireHoverIfNoPassPublishedTreatsAParkAsNoPublication() {
+        void treatsAParkAsNoPublication() {
             // A pass that parked resolved nothing, so it holds no window open. Costless either way -
             // the hover it would expire is the one that pass already parked.
             var state = new MapHoverState();

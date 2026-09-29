@@ -193,7 +193,7 @@ class KnownMarketFootprintsIntegrationTest {
     class ReadByFaction {
 
         @Test
-        void readByFactionWeighsAKnownMarketUnderItsFaction() {
+        void weighsAKnownMarketUnderItsFaction() {
             // At full stability a market is worth its whole size on the weight grid:
             // size 5 -> 5 grid units.
             var sector = buildSectorWith("owned-system", buildVisibleMarket(buildFaction("hegemony"), 5));
@@ -209,7 +209,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionCountsEachHeldColonyAndSumsTheirWeights() {
+        void countsEachHeldColonyAndSumsTheirWeights() {
             // Two colonies of one faction standing on two places: the weights sum (5 + 3 -> 8 grid
             // units) and the count reaches 2. The count is what the weights cannot be divided back
             // into - one size-8 colony and two smaller ones can weigh the same without being the
@@ -232,7 +232,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionBanksOneColonyOnceWhenTwoMarketsShareItsEntity() {
+        void banksOneColonyOnceWhenTwoMarketsShareItsEntity() {
             // A mod that supersedes a market by adding its own beside vanilla's leaves two
             // markets on one station. Summing both would read the owner as holding 3 + 5;
             // only the larger stands for the place, so the weight is size 5 -> 5 grid units.
@@ -258,7 +258,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionKeepsBothOwnersWhenTheirMarketsShareOneEntity() {
+        void keepsBothOwnersWhenTheirMarketsShareOneEntity() {
             // Resolving per place alone would drop whichever owner lost the size contest,
             // erasing a faction's only foothold in the system rather than deduplicating it.
             var hegemonyMarket = buildVisibleMarket(buildFaction("hegemony"), 3);
@@ -281,7 +281,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionScalesColonySizeByStabilityAtFullPenalty() {
+        void scalesColonySizeByStabilityAtFullPenalty() {
             // The colony penalty defaults to a full collapse, so a size-4 market at
             // stability 5 contributes half its size.
             var sector = buildSectorWith(
@@ -298,7 +298,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionIgnoresStabilityWhenTheMasterIsOff() {
+        void ignoresStabilityWhenTheMasterIsOff() {
             // With the master toggle off, a destabilised market folds in at its full
             // size regardless of any penalty - the raw-size dominance the toggle
             // opts back into.
@@ -316,7 +316,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionZeroStabilityAtFullPenaltyMarksPresenceAtNoWeight() {
+        void zeroStabilityAtFullPenaltyMarksPresenceAtNoWeight() {
             // At a full colony penalty a colony at 0 stability is worth nothing to
             // dominance, but it is still a known colony: the faction keeps its
             // footprint entry, so presence (and painting an unopposed system) holds.
@@ -336,7 +336,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionKeepsPartOfColonyWeightAtZeroStabilityUnderAPartialPenalty() {
+        void keepsPartOfColonyWeightAtZeroStabilityUnderAPartialPenalty() {
             // A half colony penalty leaves half the colony's weight at 0 stability: a
             // size-4 market -> 4 * (1 - 0.5) = 2 grid units.
             var sector = buildSectorWith(
@@ -353,7 +353,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionClampsStabilityIntoTheVanillaBand() {
+        void clampsStabilityIntoTheVanillaBand() {
             // A modded market can report stability above 10; the fraction clamps to
             // full so a market never outweighs its own size.
             var sector = buildSectorWith(
@@ -370,7 +370,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionSkipsConditionOnlyMarket() {
+        void skipsConditionOnlyMarket() {
             // A bare rock's condition-only placeholder is no colony, so it folds into
             // no footprint.
             var sector = buildSectorWith(
@@ -385,7 +385,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionCountsHiddenMarketAtItsFixedWeightByDefault() {
+        void countsHiddenMarketAtItsFixedWeightByDefault() {
             // A hidden market folds in at its fixed token weight of 1 rather than its
             // real size 5, so it flags presence without skewing dominance.
             var sector = buildSectorWith("hidden-system", buildHiddenMarket(buildFaction("hegemony"), 5));
@@ -399,7 +399,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionScalesTheFixedHiddenMarketTokenByStability() {
+        void scalesTheFixedHiddenMarketTokenByStability() {
             // The fixed token is a size rating like any other, so the colony penalty
             // scales it too: a destabilised hidden market marks less presence.
             var sector = buildSectorWith(
@@ -416,7 +416,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionCountsHiddenMarketByRealSizeUnderNormalScaling() {
+        void countsHiddenMarketByRealSizeUnderNormalScaling() {
             // Under Normal scaling a hidden market counts by its real size like any
             // colony: size 5 -> 5 grid units.
             var sector = buildSectorWith("hidden-system", buildHiddenMarket(buildFaction("hegemony"), 5));
@@ -430,7 +430,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionUsesTheConfiguredFixedHiddenMarketWeight() {
+        void usesTheConfiguredFixedHiddenMarketWeight() {
             // The fixed hidden-market weight sets the token size a hidden market folds in
             // at: at weight 2 a hidden market of any real size -> 2 grid units.
             var sector = buildSectorWith("hidden-system", buildHiddenMarket(buildFaction("hegemony"), 5));
@@ -444,7 +444,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionScalesTheFixedHiddenMarketTokenByTheColonyWeight() {
+        void scalesTheFixedHiddenMarketTokenByTheColonyWeight() {
             // The colony-size weight scales a hidden market's fixed token of 1 the same
             // way as any base size: at weight 2, 2 grid units.
             var sector = buildSectorWith(
@@ -461,7 +461,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionExcludesUndiscoveredStation() {
+        void excludesUndiscoveredStation() {
             // An undiscovered hidden market on a still-discoverable entity fails
             // the known-market gate, so it folds into no footprint.
             var sector = buildSectorWith(
@@ -476,7 +476,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionIncludesAnUndiscoveredStationWhenIncludingUndiscoveredMarkets() {
+        void includesAnUndiscoveredStationWhenIncludingUndiscoveredMarkets() {
             // The show-undiscovered-markets dev reveal drops the known-to-player gate, so an
             // undiscovered hidden market folds in at its fixed token size of 1 rather
             // than being skipped as it is under the normal filter.
@@ -496,7 +496,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionLeavesAnUndiscoveredColonyOutOfTheCountBesideAKnownOne() {
+        void leavesAnUndiscoveredColonyOutOfTheCountBesideAKnownOne() {
             // The count passes the known-to-player filter exactly as the weights do: beside a
             // discovered colony the undiscovered station lifts neither, so the faction reads as
             // holding one place worth 5 grid units. The exclusion cases above cannot show this -
@@ -519,7 +519,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionCountsAnUndiscoveredColonyBesideAKnownOneUnderTheDevReveal() {
+        void countsAnUndiscoveredColonyBesideAKnownOneUnderTheDevReveal() {
             // The dev reveal drops that filter for the count as well: the same two colonies read
             // as two holdings, the hidden one at its fixed token weight (5 + 1 grid units), so the
             // count always describes exactly the set of colonies the pass admitted.
@@ -541,7 +541,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionAddsTheStationWeightForAnAttachedStation() {
+        void addsTheStationWeightForAnAttachedStation() {
             // A stationed size-5 market at full stability is worth the station weight
             // more than its size alone: (5 + 1) grid units.
             var sector = buildSectorWith("stationed-system", buildStationedMarket(buildFaction("hegemony"), 5));
@@ -555,7 +555,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionKeepsHalfTheStationBonusAtZeroStabilityByDefault() {
+        void keepsHalfTheStationBonusAtZeroStabilityByDefault() {
             // Isolating the station factor (colony weight zeroed), the station bonus
             // keeps half its worth at 0 stability under its default half penalty:
             // 1 * (1 - 0.5) -> half a grid unit.
@@ -573,7 +573,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionAddsTheStationBonusWithoutStabilityWeighting() {
+        void addsTheStationBonusWithoutStabilityWeighting() {
             // With the master toggle off but station weighting on, the market folds in
             // at its full size plus the flat station weight: (4 + 1) grid units.
             var sector = buildSectorWith("stationed-system", buildStationedMarket(buildFaction("hegemony"), 4));
@@ -587,7 +587,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionDropsTheStationBonusWhenStationWeightingIsOff() {
+        void dropsTheStationBonusWhenStationWeightingIsOff() {
             // A stationed market read under a station-off weighting is worth exactly its
             // size, matching an unstationed colony - the bonus is gone.
             var sector = buildSectorWith("stationed-system", buildStationedMarket(buildFaction("hegemony"), 5));
@@ -601,7 +601,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionGivesAHiddenStationedMarketTheStationPointAtTheHiddenRate() {
+        void givesAHiddenStationedMarketTheStationPointAtTheHiddenRate() {
             // A hidden stationed market gets the station weight times the hidden rate on
             // its token rating of 1, at full stability: (1 + 0.5) size points.
             var sector = buildSectorWith(
@@ -618,7 +618,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionIgnoresAStationTaggedNoOrbitalStation() {
+        void ignoresAStationTaggedNoOrbitalStation() {
             // A "station"-tagged connected entity opted out via NO_ORBITAL_STATION is not
             // a market's orbital station, so it earns no bonus: size 5 alone.
             var sector = buildSectorWith(
@@ -635,7 +635,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionIgnoresAStationTaggedEntityRaisingNoStationFleet() {
+        void ignoresAStationTaggedEntityRaisingNoStationFleet() {
             // A market sited on a station is connected to its own primary entity, which is
             // "station"-tagged for what the place is. Without the fleet an orbital-station
             // industry raises it defends nothing, so the market is worth its size alone
@@ -654,7 +654,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionSkipsTheStationScanWhenTheStationWeightIsZero() {
+        void skipsTheStationScanWhenTheStationWeightIsZero() {
             // A zero station weight can add nothing, so the connected-entity station scan
             // is skipped and the stationed market folds in at its size alone.
             var market = buildStationedMarket(buildFaction("hegemony"), 5);
@@ -676,7 +676,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionScalesTheStationBonusByTheStationWeight() {
+        void scalesTheStationBonusByTheStationWeight() {
             // The station weight sets how many size points a station is worth: at weight
             // 2 a stationed size-4 market folds in at 4 + 2 -> 6 grid units.
             var sector = buildSectorWith(
@@ -697,7 +697,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionScalesVisibleMarketSizeByTheColonyWeight() {
+        void scalesVisibleMarketSizeByTheColonyWeight() {
             // The colony-size weight multiplies a visible market's raw size before the
             // station and patrol bonuses: size 4 at weight 2 -> 8 grid units.
             var sector = buildSectorWith("weighted-system", buildVisibleMarket(buildFaction("hegemony"), 4));
@@ -711,7 +711,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionAppliesTheColonyWeightToSizeButNotTheStationPoint() {
+        void appliesTheColonyWeightToSizeButNotTheStationPoint() {
             // The weight multiplies base size only; the station point is added after,
             // unweighted: (4 * 2) + 1 -> 9 grid units, not (4 + 1) * 2.
             var sector = buildSectorWith(
@@ -732,7 +732,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionSkipsTheStabilityScalingWhenEveryFactorIsZero() {
+        void skipsTheStabilityScalingWhenEveryFactorIsZero() {
             // A zero colony-size weight with no station or patrol bonus zeroes every
             // factor before stability, so the scaling is skipped and the one stability
             // read is the one the breakdown records; the market still folds into the
@@ -754,7 +754,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionAddsPatrolStrengthWhenPatrolWeightingIsOn() {
+        void addsPatrolStrengthWhenPatrolWeightingIsOn() {
             // With patrols on, a colony's small/medium/large counts each fold in at their
             // tier weight: 2 small * 0.25 + 1 medium * 0.5 -> 1 size point on top of the
             // size-3 colony -> 4 grid units at full stability.
@@ -772,7 +772,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionWeighsPatrolTiersByTheirOwnWeights() {
+        void weighsPatrolTiersByTheirOwnWeights() {
             // Isolating the patrol factor (colony weight zeroed, master off), two large
             // patrols at the default large weight of 1 -> 2 size points.
             var sector = buildSectorWith(
@@ -793,7 +793,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionCutsPatrolStrengthByThePatrolPenaltyAtZeroStability() {
+        void cutsPatrolStrengthByThePatrolPenaltyAtZeroStability() {
             // Isolating the patrol factor, a medium patrol worth 0.5 at 0 stability keeps
             // half its worth under the default half patrol penalty: 2 * 0.5 * 0.5 -> half
             // a grid unit.
@@ -811,7 +811,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionKeepsPatrolStrengthFullWhenTheStabilityMasterIsOff() {
+        void keepsPatrolStrengthFullWhenTheStabilityMasterIsOff() {
             // The same colony with the master toggle off keeps its full patrol worth at
             // 0 stability: 2 * 0.5 -> 1 grid unit.
             var sector = buildSectorWith(
@@ -832,7 +832,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionDoesNotReadPatrolStatsWhenPatrolWeightingIsOff() {
+        void doesNotReadPatrolStatsWhenPatrolWeightingIsOff() {
             // With patrols off the economy patrol read is skipped, so the market's stats
             // are never touched and it folds in at its size alone.
             var market = buildVisibleMarket(buildFaction("hegemony"), 5);
@@ -850,7 +850,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readByFactionSkipsPatrolStrengthForAMarketWithoutThePatrolFlag() {
+        void skipsPatrolStrengthForAMarketWithoutThePatrolFlag() {
             // The patrol-count stats are also written by hidden raider and pather bases
             // that set no $patrol flag; without a functional patrol HQ the patrols
             // contribute no dominance, so a size-3 colony folds in at its size alone.
@@ -881,7 +881,7 @@ class KnownMarketFootprintsIntegrationTest {
         private static final int FORTRESS_WEIGHT = 7 * DOMINANCE_WEIGHT_SCALE / 2;
 
         @Test
-        void readBreakdownByFactionListsOneColonyOnceWhenTwoMarketsShareItsEntity() {
+        void listsOneColonyOnceWhenTwoMarketsShareItsEntity() {
             // The detail box hangs a line under the faction per breakdown, so a place carrying
             // two market objects would be read out to the player as two colonies at one
             // station - the same duplicate the summed weight hides, here with a name on it.
@@ -904,7 +904,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionSumsAMarketsPartsIntoTheWeightTheFootprintFolds() {
+        void sumsAMarketsPartsIntoTheWeightTheFootprintFolds() {
             // The scalar weight is the sum over the breakdown, so the parts the tooltip
             // explains and the total the map paints by are one arithmetic, not two.
             var sector = buildFortifiedColonySector();
@@ -931,7 +931,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionNamesTheMarketEachSetOfPartsBelongsTo() {
+        void namesTheMarketEachSetOfPartsBelongsTo() {
             // The tooltip lists a bloc's markets by name, so the breakdown carries the
             // colony's own name rather than leaving the caller to re-read the economy.
             var sector = buildFortifiedColonySector();
@@ -944,7 +944,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionRecordsThatAColonySitsOnAStation() {
+        void recordsThatAColonySitsOnAStation() {
             // A colony with no planet under it is one, and the box naming its defending station needs
             // to know: only there can the colony and that station arrive under the same name.
             var sector = buildFortifiedColonySector();
@@ -954,7 +954,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionRecordsThatAColonySitsOnAPlanet() {
+        void recordsThatAColonySitsOnAPlanet() {
             // The economy answers a planet entity for a planet colony, which is also what the
             // dominance tie-break reads - so the two cannot part company over what a colony sits on.
             var sector = buildPlanetColonySector();
@@ -964,7 +964,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesTheBaseSizePartOfAMarket() {
+        void carriesTheBaseSizePartOfAMarket() {
             // The base-size part states the rating that entered the weight, what it was
             // worth after the stability cut, and how much of it that cut took.
             var sector = buildFortifiedColonySector();
@@ -981,7 +981,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesTheStationPartOfAMarket() {
+        void carriesTheStationPartOfAMarket() {
             // The station part names the station that earned it, so the line the tooltip
             // draws points at something the player can find on the map.
             var sector = buildFortifiedColonySector();
@@ -1002,7 +1002,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesEachPatrolTierOfAMarket() {
+        void carriesEachPatrolTierOfAMarket() {
             // Every tier is stated on its own - its headcount, what one patrol of it is
             // worth, and what it folded in at - so the patrol worth is explicable
             // rather than a single opaque number.
@@ -1024,7 +1024,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionRatesAHiddenMarketAtItsFixedToken() {
+        void ratesAHiddenMarketAtItsFixedToken() {
             // A hidden market's real size and the token it counts as part company under
             // Fixed scaling, so the breakdown carries both - the pair that explains why a
             // large secret base weighs almost nothing.
@@ -1045,7 +1045,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCutsAHiddenMarketsStationByTheHiddenRate() {
+        void cutsAHiddenMarketsStationByTheHiddenRate() {
             // The hidden-market rate is stated as the share it removes, matching the way
             // the stability cut reads, so both of the station's cuts read one way round.
             var sector = buildSectorWith(
@@ -1066,7 +1066,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesNoStationPartForAMarketWithoutAStation() {
+        void carriesNoStationPartForAMarketWithoutAStation() {
             // An absent part means the factor never ran, which is a different answer from
             // a factor that ran and contributed nothing.
             var sector = buildSectorWith(
@@ -1080,7 +1080,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesNoStationPartForAStationSitedMarket() {
+        void carriesNoStationPartForAStationSitedMarket() {
             // The box must not label a station-sited market with itself: the tagged entity
             // it is built on raises no fleet, so the factor never ran and there is no
             // station line to print.
@@ -1095,7 +1095,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesNoStationPartWhenStationWeightingIsOff() {
+        void carriesNoStationPartWhenStationWeightingIsOff() {
             // The player has the factor switched off, so no station moved this market's
             // number even though it owns one.
             var sector = buildSectorWith(
@@ -1109,7 +1109,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesNoPatrolPartForAMarketWithoutThePatrolFlag() {
+        void carriesNoPatrolPartForAMarketWithoutThePatrolFlag() {
             // A raider base writes the patrol-tier stats without a functional patrol HQ, so
             // the factor never runs for it and the breakdown says so.
             var sector = buildSectorWith(
@@ -1125,7 +1125,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionGroupsEachFactionsMarketsUnderItsOwnId() {
+        void groupsEachFactionsMarketsUnderItsOwnId() {
             // The tooltip lists a bloc's markets beneath it, so the read hands back each
             // faction's markets rather than one flat list.
             var sector = buildSectorWith(
@@ -1150,7 +1150,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionSkipsAMarketTheColonyFilterExcludes() {
+        void skipsAMarketTheColonyFilterExcludes() {
             // The parts are read over exactly the markets the totals are folded from, so a
             // bare rock's placeholder is absent from both.
             var sector = buildSectorWith(
@@ -1165,7 +1165,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionExplainsAnUndiscoveredMarketUnderTheDevReveal() {
+        void explainsAnUndiscoveredMarketUnderTheDevReveal() {
             // The reveal drops the known-to-player gate for the parts exactly as it does for
             // the totals, so a revealed colony the box paints is a colony the box can explain.
             var sector = buildSectorWith(
@@ -1188,7 +1188,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCutsNothingFromAMarketWhoseFactorsHoldNothing() {
+        void cutsNothingFromAMarketWhoseFactorsHoldNothing() {
             // With every factor zeroed there is nothing for stability to scale, so the parts
             // report the nothing they hold and no penalty against it - while still recording
             // the stability itself, which the box states as a fact about the colony rather
@@ -1214,7 +1214,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesTheColonysOwnStabilityReading() {
+        void carriesTheColonysOwnStabilityReading() {
             // Every penalty in the breakdown is derived from this one reading, so it travels
             // with them: a box showing three cuts and no cause explains nothing.
             var sector = buildSectorWith(
@@ -1228,7 +1228,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionReportsNoPenaltyWhenTheStabilityMasterIsOff() {
+        void reportsNoPenaltyWhenTheStabilityMasterIsOff() {
             // With the master toggle off a collapsed colony keeps every factor whole, so the
             // parts must report nothing taken rather than the penalty that was not applied.
             var sector = buildSectorWith(
@@ -1252,7 +1252,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesTheGlyphTheMapMarksTheColonyWith() {
+        void carriesTheGlyphTheMapMarksTheColonyWith() {
             // The box leads a colony's line with the map's own glyph, and reads it off the breakdown
             // rather than looking the market up a second time - so the icon drawn can only belong to
             // the colony whose weight is stated beside it. The colour travels with the path because
@@ -1271,7 +1271,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesNoGlyphForAColonyTheMapMarksWithNone() {
+        void carriesNoGlyphForAColonyTheMapMarksWithNone() {
             // An entity with no icon spec at all reaches the box as an absence rather than as a path
             // to a sprite that does not exist, which is what lets the line open on its name.
             var sector = buildSectorWith(
@@ -1283,7 +1283,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesTheGlyphTheMapMarksTheStationWith() {
+        void carriesTheGlyphTheMapMarksTheStationWith() {
             // The station line leads with its own glyph, read where the scan answered the token
             // rather than looked up again beside the name, so the icon drawn can only belong to the
             // very station whose bonus is stated by it. The colony is marked too and marked
@@ -1313,7 +1313,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readBreakdownByFactionCarriesNoGlyphForAStationTheMapMarksWithNone() {
+        void carriesNoGlyphForAStationTheMapMarksWithNone() {
             // A station with no icon spec at all reaches the box as an absence rather than as a path
             // to a sprite that does not exist, which is what lets its line open on its name.
             var sector = buildSectorWith(
@@ -1382,7 +1382,7 @@ class KnownMarketFootprintsIntegrationTest {
     class ReadUnweighedColoniesByFaction {
 
         @Test
-        void readUnweighedColoniesByFactionNamesTheColonyTheEconomyDoesNotList() {
+        void namesTheColonyTheEconomyDoesNotList() {
             // Vanilla builds Galatia Academy as a real market on a real station and never registers
             // it, so the weighed walk cannot see it and a box reading that walk alone reports the
             // station the player is looking at as nobody's.
@@ -1405,7 +1405,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionRecordsThatAColonyConcealsItself() {
+        void recordsThatAColonyConcealsItself() {
             // Concealed and unregistered at once is Galatia's shape and Daybreak's, and the account
             // has to say which of the two facts it is calling out. Read here rather than at the box,
             // because the box meets such a colony as a row and never as a market.
@@ -1424,7 +1424,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionRecordsAnOpenColonyAsConcealingNothing() {
+        void recordsAnOpenColonyAsConcealingNothing() {
             // The other half of the pair, so the flag is read from the market rather than standing
             // at whatever a record's default happens to be.
             var independent = buildFaction("independent");
@@ -1442,7 +1442,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionCarriesTheGlyphTheMapMarksTheColonyWith() {
+        void carriesTheGlyphTheMapMarksTheColonyWith() {
             // No score above accounts for such a colony, so the map's glyph is the only trace of it
             // the player has beside the name - which makes it the line least able to spare the mark.
             var academy = withMapIcon(
@@ -1467,7 +1467,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionKeepsAFactionsColoniesInEntityOrder() {
+        void keepsAFactionsColoniesInEntityOrder() {
             // The widened read answers in the system's own entity order and this carries it through
             // rather than imposing one of its own - a caller wanting a ranking sorts, and cannot
             // sort back to an order that was never there. Named against the alphabet on purpose, so
@@ -1491,7 +1491,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionRefusesAMarketThatIsNoColony() {
+        void refusesAMarketThatIsNoColony() {
             // The same filter both walks read: an uninhabited planet's condition-only placeholder is
             // nobody's holding, and one reaching the box would name a colony that does not exist.
             var sector = buildSectorWith("empty-system");
@@ -1509,7 +1509,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionWithholdsAnUndiscoveredColonyUntilTheRevealIsOn() {
+        void withholdsAnUndiscoveredColonyUntilTheRevealIsOn() {
             // Discovery decides what the box may name, exactly as it does for a weighed colony:
             // undiscovered it is withheld, and the dev reveal states it like anything else.
             var sector = buildSectorWith("hidden-system");
@@ -1531,7 +1531,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionNamesOnePlaceOnceWhenTwoMarketsShareIt() {
+        void namesOnePlaceOnceWhenTwoMarketsShareIt() {
             // A mod that supersedes a market by adding its own beside vanilla's leaves two market
             // objects on one station. The box hangs a line per colony, so counted twice the place
             // would be read out to the player as two separate holdings at one station.
@@ -1557,7 +1557,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionCarriesTheColonysOwnId() {
+        void carriesTheColonysOwnId() {
             // The identity a box matches this line against anything else it knows about the same
             // colony - how current its news of it is, say. A display name cannot serve: vanilla
             // names a station colony and its defending station alike.
@@ -1578,7 +1578,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionLeavesTheWeighedFootprintsWhereTheyWere() {
+        void leavesTheWeighedFootprintsWhereTheyWere() {
             // The whole point of the second walk: an unlisted colony reaches the account and not the
             // pass. Admitted to the weight it would fold in at a nominal size nobody worked out - it
             // has no industries, no conditions and no computed stability - and could hand the system
@@ -1607,7 +1607,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionLeavesAFactionHoldingOnlyOneOutOfThePassEntirely() {
+        void leavesAFactionHoldingOnlyOneOutOfThePassEntirely() {
             // A faction whose only colony here is unlisted takes no contribution, and that is
             // deliberate: a weight synthesised for it is a weight nobody worked out, and it could
             // move a fill. Naming the faction is a listing's job, answered off who is present
@@ -1628,7 +1628,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionYieldsNothingForASystemTheEconomyListsWhole() {
+        void yieldsNothingForASystemTheEconomyListsWhole() {
             // The ordinary system: every colony present is one the weighed walk already accounts
             // for, so the widened read adds nothing and the box reads exactly as it did.
             var listedColony = withName(
@@ -1645,7 +1645,7 @@ class KnownMarketFootprintsIntegrationTest {
         }
 
         @Test
-        void readUnweighedColoniesByFactionTakesExactlyWhatTheWeighedReadLeaves() {
+        void takesExactlyWhatTheWeighedReadLeaves() {
             // The two reads divide one set on one fact rather than seeking their markets by two
             // walks of their own. Stated head-on because it is what the division buys: a colony
             // cannot be admitted by both and counted twice, nor refused by both and vanish from a

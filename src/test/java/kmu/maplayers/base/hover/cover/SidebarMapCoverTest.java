@@ -25,13 +25,13 @@ final class SidebarMapCoverTest {
     class IsCoveringCursor {
 
         @Test
-        void isCoveringCursorAnswersCoveredWhileASidebarIsUnderThePointer() {
+        void answersCoveredWhileASidebarIsUnderThePointer() {
             assertThat(buildCoverOverSidebarAt(true).isCoveringCursor())
                 .isTrue();
         }
 
         @Test
-        void isCoveringCursorAnswersUncoveredWhileNoSidebarIsUnderThePointer() {
+        void answersUncoveredWhileNoSidebarIsUnderThePointer() {
             // The ordinary case: a panel drawn somewhere on screen covers only where it is drawn,
             // so the rest of the map hovers as it did before this cover existed.
             assertThat(buildCoverOverSidebarAt(false).isCoveringCursor())
@@ -39,7 +39,7 @@ final class SidebarMapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAsksTheRosterAboutTheCursorsOwnPosition() {
+        void asksTheRosterAboutTheCursorsOwnPosition() {
 
             var cursorFake = new CursorPositionFake();
 

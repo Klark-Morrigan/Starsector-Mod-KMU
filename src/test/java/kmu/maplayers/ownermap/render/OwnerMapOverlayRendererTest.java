@@ -88,7 +88,7 @@ final class OwnerMapOverlayRendererTest {
     class RenderBand {
 
         @Test
-        void renderBandEmitsTheClustersForTheBandBeneathTheNebulae() {
+        void emitsTheClustersForTheBandBeneathTheNebulae() {
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
                     var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
@@ -120,7 +120,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandEmitsTheFillsBeforeTheBordersInTheBandBeneathTheNebulae() {
+        void emitsTheFillsBeforeTheBordersInTheBandBeneathTheNebulae() {
             // The order is the whole reason the framework's two entries can be reached separately,
             // and it is not recoverable from the frame: a fill drawn over its own border leaves a
             // blank cell, and every other assertion in this class passes with the two swapped.
@@ -147,7 +147,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandEmitsThePresenceBandsAndTheFactionNamesForTheBandAboveTheNebulae() {
+        void emitsThePresenceBandsAndTheFactionNamesForTheBandAboveTheNebulae() {
             // The two sub-layers that are read rather than merely seen, and the reason the band
             // exists: text stops being readable under the fog well before a fill stops reading as
             // cluster group, and a band that says how a system is split fails the same way.
@@ -180,7 +180,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandEmitsTheHoverHighlightAndTheAnchorsForTheBandBeneathTheNebulae() {
+        void emitsTheHoverHighlightAndTheAnchorsForTheBandBeneathTheNebulae() {
             // Driven with both switches on, which is what makes this a statement about bands rather
             // than about toggles: with them off, a sub-layer moved to the wrong band still emits
             // nothing and every assertion in the two tests above goes on passing.
@@ -208,7 +208,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandLightsTheCellItsOwnHoverHolderNames() {
+        void lightsTheCellItsOwnHoverHolderNames() {
             // The highlight brightens a cell the cache's draw lists cut, so the hover it traces has
             // to be the one the pass over those very lists published. Read off whichever sector was
             // running instead, this would wash a cell the sector it is compositing never drew -
@@ -237,7 +237,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandLeavesTheHoverHighlightAndTheAnchorsOutOfTheBandAboveTheNebulae() {
+        void leavesTheHoverHighlightAndTheAnchorsOutOfTheBandAboveTheNebulae() {
             // The half of the pinning that catches a sub-layer promoted by accident: both switches
             // are on, so anything reached here is reached because of the band it was asked for.
             try (var hoverRendererConstructionMock = mockConstruction(HoverHighlightRenderer.class);
@@ -266,7 +266,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandEmitsThePickerPreviewForTheBandBeneathTheNebulae() {
+        void emitsThePickerPreviewForTheBandBeneathTheNebulae() {
             // The preview brightens the fills for a whole bloc, so it rides with them for the
             // reason the cursor's highlight does: left beneath while the fills went above, it
             // would be painted over and light nothing.
@@ -291,7 +291,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandLeavesThePickerPreviewOutOfTheBandAboveTheNebulae() {
+        void leavesThePickerPreviewOutOfTheBandAboveTheNebulae() {
             // The other half of that pinning: the preview reaches the upper band only if it were
             // promoted out of the fills it brightens, which no frame's own output would show.
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
@@ -310,7 +310,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandEmitsTheDebugBorderStageForTheBandBeneathTheNebulae() {
+        void emitsTheDebugBorderStageForTheBandBeneathTheNebulae() {
             // The debug overlay replaces the clusters rather than layering over them, so it sits
             // in the band they would have occupied - a swap inside one band, not a band of its own.
             try (var borderStageRendererMock = mockStatic(ClusterBorderStageRenderer.class);
@@ -338,7 +338,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandEmitsNoPresenceBandsUnderTheDebugOverlayInTheBandAboveTheNebulae() {
+        void emitsNoPresenceBandsUnderTheDebugOverlayInTheBandAboveTheNebulae() {
             // The bands are baked into the clusters, and a debug frame built the border-stage
             // overlay instead of them - so there is nothing to paint them from, and asking would
             // reach through a frame this cache never built. The names are unaffected, being held
@@ -365,7 +365,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandEmitsTheClustersAboveTheNebulaeWhereTheFillsWereRaised() {
+        void emitsTheClustersAboveTheNebulaeWhereTheFillsWereRaised() {
             // The whole of what the setting buys, and the half that cannot be read off the shipped
             // split: the geometry drawn clear of the fog rather than through it. The borders come
             // with the fills whatever the borders row says, which is the layout's rule showing here
@@ -392,7 +392,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandLeavesTheClustersOutOfTheBandBeneathTheNebulaeWhereTheFillsWereRaised() {
+        void leavesTheClustersOutOfTheBandBeneathTheNebulaeWhereTheFillsWereRaised() {
             // The other half of a move: a sub-layer that arrived in its new band while still being
             // emitted in the old one is drawn twice, which on a translucent fill reads as one
             // painted at twice the opacity the player set.
@@ -416,7 +416,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandEmitsTheBordersAloneInTheBandTheyWereRaisedTo() {
+        void emitsTheBordersAloneInTheBandTheyWereRaisedTo() {
             // The pairing the layout does offer, and the one the compositor could most easily fail
             // to honour by treating the geometry as a single sub-layer: borders lifted clear of a
             // fill left in the fog.
@@ -444,7 +444,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandEmitsThePresenceBandsAndTheFactionNamesBeneathTheNebulaeWhereLowered() {
+        void emitsThePresenceBandsAndTheFactionNamesBeneathTheNebulaeWhereLowered() {
             // The two readouts moved the other way. They are the sub-layers a player is most likely
             // to move - the fog is the reason they were placed above in the first place - so a
             // routing fault here is one the shipped split would never show.
@@ -473,7 +473,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandCarriesTheHoverHighlightAndTheAnchorsWithTheRaisedFills() {
+        void carriesTheHoverHighlightAndTheAnchorsWithTheRaisedFills() {
             // Neither has a setting of its own, and neither survives being left behind: a halo under
             // the fill it brightens lights nothing, and anchors mark placements on a base view that
             // is no longer beneath them. Both switches are open, so what is observed is the band
@@ -503,7 +503,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandCarriesTheDebugBorderStageWithTheRaisedFills() {
+        void carriesTheDebugBorderStageWithTheRaisedFills() {
             // The tracing overlay replaces fills and borders in one pass, so it has no split of its
             // own to honour and follows the view it stands in for. Left on the fills' shipped band
             // while the fills rose, a debug frame would paint on the far side of the fog from every
@@ -533,7 +533,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandLeavesTheHoverHighlightAndTheAnchorsOutOfTheBandTheRaisedFillsLeft() {
+        void leavesTheHoverHighlightAndTheAnchorsOutOfTheBandTheRaisedFillsLeft() {
             // A rider gated on its own band as well as on the fills' would emit in both, which the
             // test above cannot see: it observes the band the pair arrived in and says nothing about
             // the one they came from. Twice-drawn hover feedback is a wash at twice its opacity.
@@ -565,7 +565,7 @@ final class OwnerMapOverlayRendererTest {
         }
 
         @Test
-        void renderBandLeavesThePresenceBandsAndTheFactionNamesOutOfTheBandTheyWereLoweredFrom() {
+        void leavesThePresenceBandsAndTheFactionNamesOutOfTheBandTheyWereLoweredFrom() {
             // The same absence for the two readouts, which the shipped split pins only the other way
             // round. A band left emitting on its old side as well as its new one is drawn twice over
             // the same cell, and the presence bands are translucent.

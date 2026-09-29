@@ -27,7 +27,7 @@ final class CellTooltipQualifierTest {
     class StateFinding {
 
         @Test
-        void stateFindingIntroducesTheFindingWithNothing() {
+        void introducesTheFindingWithNothing() {
             // The plain status the great majority of lines carry: one finding and no sentence around
             // it, which is what keeps it a single run.
             var qualifier = CellTooltipQualifier.stateFinding("undiscovered");
@@ -41,7 +41,7 @@ final class CellTooltipQualifierTest {
         }
 
         @Test
-        void stateFindingLeavesTheFindingInTheBoxsHighlight() {
+        void leavesTheFindingInTheBoxsHighlight() {
             // The shared look is the default: a status states a colour of its own only where it is
             // given one, so every layer that does not ask calls its findings out alike.
             assertThat(CellTooltipQualifier.stateFinding("undiscovered").hasOwnFindingColour())
@@ -49,7 +49,7 @@ final class CellTooltipQualifierTest {
         }
 
         @Test
-        void stateFindingRefusesAStatusWithNoWordsInIt() {
+        void refusesAStatusWithNoWordsInIt() {
             // Checked where the caller that composed it is still on the stack. A blank finding would
             // otherwise surface as a line ending on a word and a picture introducing nothing, well
             // past the point that could say which line was meant - and a line calling nothing out
@@ -63,7 +63,7 @@ final class CellTooltipQualifierTest {
     class IntroduceFinding {
 
         @Test
-        void introduceFindingCarriesTheWordAndMarkBesideTheFinding() {
+        void carriesTheWordAndMarkBesideTheFinding() {
 
             var qualifier = CellTooltipQualifier.introduceFinding("of", CREST_MARK, "Allied Powers");
 
@@ -76,7 +76,7 @@ final class CellTooltipQualifierTest {
         }
 
         @Test
-        void introduceFindingClosesTheStatusOnTheFinding() {
+        void closesTheStatusOnTheFinding() {
             // A name says for itself what kind of thing it is, so nothing follows it - which is what
             // keeps the closing word to the one case that needs it.
             assertThat(CellTooltipQualifier
@@ -86,7 +86,7 @@ final class CellTooltipQualifierTest {
         }
 
         @Test
-        void introduceFindingStatesNoMarkWhereTheGameSuppliedNoTexture() {
+        void statesNoMarkWhereTheGameSuppliedNoTexture() {
             // A subject the game gives no crest for still states which one it is, on the same absence
             // rule every marked line holds to: the picture is dropped rather than drawn as an image
             // run with nothing to load.
@@ -101,7 +101,7 @@ final class CellTooltipQualifierTest {
     class EncloseFinding {
 
         @Test
-        void encloseFindingCarriesAWordEitherSideOfTheFinding() {
+        void carriesAWordEitherSideOfTheFinding() {
             // What a finding that cannot say for itself what it names needs: initials say nothing
             // about what kind of thing they stand for, so the box says it after them.
             var qualifier = CellTooltipQualifier.encloseFinding(
@@ -123,7 +123,7 @@ final class CellTooltipQualifierTest {
     class DrawsFindingIn {
 
         @Test
-        void drawsFindingInCarriesTheColourBesideTheFinding() {
+        void carriesTheColourBesideTheFinding() {
 
             assertThat(CellTooltipQualifier
                     .stateFinding("hostile")
@@ -133,7 +133,7 @@ final class CellTooltipQualifierTest {
         }
 
         @Test
-        void drawsFindingInKeepsEveryOtherPartOfTheStatus() {
+        void keepsEveryOtherPartOfTheStatus() {
             // One exception laid over any shape of status, so an introduced or enclosed finding
             // whose colour is the fact keeps the sentence around it exactly as it was composed.
             var qualifier = CellTooltipQualifier
@@ -150,7 +150,7 @@ final class CellTooltipQualifierTest {
         }
 
         @Test
-        void drawsFindingInRefusesANullColour() {
+        void refusesANullColour() {
             // A finding reading in the box's highlight states that by never being given a colour;
             // a null handed in here would be that same default reached by a call claiming otherwise.
             var qualifier = CellTooltipQualifier.stateFinding("hostile");

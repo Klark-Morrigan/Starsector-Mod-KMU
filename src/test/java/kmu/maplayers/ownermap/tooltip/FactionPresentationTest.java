@@ -23,7 +23,7 @@ final class FactionPresentationTest {
     class ResolvePresentation {
 
         @Test
-        void resolvePresentationNamesTheFactionByItsLongTitleAndCrest() {
+        void namesTheFactionByItsLongTitleAndCrest() {
 
             var presentation =
                 FactionPresentation.resolvePresentation(buildSectorKnowingHegemony(), HEGEMONY);
@@ -33,7 +33,7 @@ final class FactionPresentationTest {
         }
 
         @Test
-        void resolvePresentationFallsBackToTheIdForAnUnknownFaction() {
+        void fallsBackToTheIdForAnUnknownFaction() {
             // A breakdown naming a faction the sector has lost still has to name something, and the
             // ID is the only thing left that identifies it.
             var presentation =
@@ -44,7 +44,7 @@ final class FactionPresentationTest {
         }
 
         @Test
-        void resolvePresentationCarriesNoCrestForAFactionWithoutOne() {
+        void carriesNoCrestForAFactionWithoutOne() {
             // A faction with nothing authored presents by name alone rather than by a path that
             // would fail to load wherever the line is drawn.
             var sectorMock = buildEmptySector();

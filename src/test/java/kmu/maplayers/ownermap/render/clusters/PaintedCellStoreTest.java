@@ -41,7 +41,7 @@ final class PaintedCellStoreTest {
     class PutPaintedCell {
 
         @Test
-        void putPaintedCellRecordsTheDrawRecordAndItsShapeUnderTheSameSystem() {
+        void recordsTheDrawRecordAndItsShapeUnderTheSameSystem() {
 
             var store = new PaintedCellStore();
             var paintedCell = buildPaintedCellOn(buildSquareRing());
@@ -60,7 +60,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void putPaintedCellReplacesBothHalvesWhenACellIsReshaped() {
+        void replacesBothHalvesWhenACellIsReshaped() {
             // The drift the paired write exists to prevent: a re-shaped cell must not keep
             // answering the cursor with the extent it had before it was re-shaped.
             var store = new PaintedCellStore();
@@ -77,7 +77,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void putPaintedCellDropsTheBandLaidInsideTheShapeItReplaces() {
+        void dropsTheBandLaidInsideTheShapeItReplaces() {
             // A band is triangles fitted to one particular ring, so a re-shaped cell keeping its
             // band would draw the last shape's stripe inside this shape's cell. The band pass
             // lays a fresh one afterwards; what must not survive is the old one.
@@ -93,7 +93,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void putPaintedCellDropsTheBandPathTracedInsideTheShapeItReplaces() {
+        void dropsTheBandPathTracedInsideTheShapeItReplaces() {
             // The diagnostic goes with the band for the same reason the band goes: a path traced
             // in the last shape drawn over this one would report the overlay's own staleness as
             // the cell's geometry, which is the one thing a diagnostic must not do.
@@ -109,7 +109,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void putPaintedCellDropsTheRingTracedInsideTheShapeItReplaces() {
+        void dropsTheRingTracedInsideTheShapeItReplaces() {
             // The whole of what makes the traced ring safe to keep. It is held under no key and no
             // revision, so a cell served a ring traced inside the shape it used to have would lay
             // its band round a cell that is no longer there - and this write is what rules that
@@ -130,7 +130,7 @@ final class PaintedCellStoreTest {
     class RemovePaintedCell {
 
         @Test
-        void removePaintedCellDropsTheDrawRecordAndItsShapeTogether() {
+        void dropsTheDrawRecordAndItsShapeTogether() {
             // A cell that draws nothing can be hovered no more than it can be seen, so the
             // shape must go with the draw record rather than linger as a phantom hit cluster.
             var store = new PaintedCellStore();
@@ -145,7 +145,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void removePaintedCellLeavesEveryOtherCellStanding() {
+        void leavesEveryOtherCellStanding() {
 
             var store = new PaintedCellStore();
 
@@ -160,7 +160,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void removePaintedCellDropsThePresenceBandWithTheCell() {
+        void dropsThePresenceBandWithTheCell() {
             // A band is drawn inside a cell, so a cell that stops drawing takes its band with it -
             // otherwise a dropped cell keeps painting a floating stripe of triangles.
             var store = new PaintedCellStore();
@@ -174,7 +174,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void removePaintedCellDropsTheBandPathWithTheCell() {
+        void dropsTheBandPathWithTheCell() {
             // A path is a ring around a cell, so a cell that stops drawing leaves the overlay
             // marking out a shape nothing paints any more.
             var store = new PaintedCellStore();
@@ -188,7 +188,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void removePaintedCellDropsTheTracedRingWithTheCell() {
+        void dropsTheTracedRingWithTheCell() {
             // A cell that stops drawing has no shape for a ring to have been traced inside, so the
             // ring goes with it - a cell drawn again later is cut afresh and is owed a fresh walk.
             var store = new PaintedCellStore();
@@ -206,7 +206,7 @@ final class PaintedCellStoreTest {
     class PutCellRibbon {
 
         @Test
-        void putCellRibbonRecordsABandUnderTheCellThatDrawsIt() {
+        void recordsABandUnderTheCellThatDrawsIt() {
 
             var store = new PaintedCellStore();
             var ribbon = buildAnyRibbon();
@@ -220,7 +220,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void putCellRibbonKeepsABandlessCellOutOfTheBandMap() {
+        void keepsABandlessCellOutOfTheBandMap() {
             // Most of the sector draws no band, so the map is kept sparse rather than parallel to
             // the cells: the render pass walks the cells that draw one and no others.
             var store = new PaintedCellStore();
@@ -232,7 +232,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void putCellRibbonClearsAStandingBandWhenTheCellStopsDrawingOne() {
+        void clearsAStandingBandWhenTheCellStopsDrawingOne() {
             // The re-bake that finds nothing left to report - a rival's last colony in the system
             // has gone. Without the clear, the cell would keep drawing the band it no longer earns.
             var store = new PaintedCellStore();
@@ -249,7 +249,7 @@ final class PaintedCellStoreTest {
     class PutCellRibbonPath {
 
         @Test
-        void putCellRibbonPathRecordsAPathUnderTheCellItWasTracedIn() {
+        void recordsAPathUnderTheCellItWasTracedIn() {
 
             var store = new PaintedCellStore();
             var ribbonPath = buildAnyRibbonPath();
@@ -263,7 +263,7 @@ final class PaintedCellStoreTest {
         }
 
         @Test
-        void putCellRibbonPathClearsAStandingPathWhenTheOverlayIsSwitchedOff() {
+        void clearsAStandingPathWhenTheOverlayIsSwitchedOff() {
             // The bake hands over nothing for every cell while the overlay is off, and that is
             // the whole of how it is switched off: nothing else clears what an earlier pass laid,
             // so a path surviving here would leave the map ringed with a diagnostic the player

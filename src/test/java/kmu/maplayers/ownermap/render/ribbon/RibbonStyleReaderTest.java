@@ -38,7 +38,7 @@ final class RibbonStyleReaderTest {
     class ReadRibbonStyle {
 
         @Test
-        void readRibbonStyleThreadsEachBandSettingIntoItsMatchingSize() {
+        void threadsEachBandSettingIntoItsMatchingSize() {
             try (var settingsMock = mockStatic(KmuOwnerMapRibbonSettings.class)) {
 
                 stubBandSettings(settingsMock);
@@ -59,7 +59,7 @@ final class RibbonStyleReaderTest {
         }
 
         @Test
-        void readRibbonStyleKeepsTheMitreLimitAuthored() {
+        void keepsTheMitreLimitAuthored() {
             try (var settingsMock = mockStatic(KmuOwnerMapRibbonSettings.class)) {
 
                 stubBandSettings(settingsMock);

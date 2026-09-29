@@ -29,7 +29,7 @@ final class ClusterBorderStageRendererTest {
     class ListStageStrokesBottomToTop {
 
         @Test
-        void listStageStrokesBottomToTopOrdersTheStagesBaseDespikedRounded() {
+        void ordersTheStagesBaseDespikedRounded() {
             var strokes = ClusterBorderStageRenderer.listStageStrokesBottomToTop(buildOverlay());
 
             // Drawn in list order, so this is the stacking: the raw trace at the bottom and what
@@ -41,7 +41,7 @@ final class ClusterBorderStageRendererTest {
         }
 
         @Test
-        void listStageStrokesBottomToTopGradesTheStagesDiscardedIntermediateAccepted() {
+        void gradesTheStagesDiscardedIntermediateAccepted() {
             var strokes = ClusterBorderStageRenderer.listStageStrokesBottomToTop(buildOverlay());
 
             // The shared ramp, not colours of this overlay's own choosing: red always means
@@ -55,7 +55,7 @@ final class ClusterBorderStageRendererTest {
         }
 
         @Test
-        void listStageStrokesBottomToTopTapersTheWidthsSoEachStageRingsOutFromUnderTheNext() {
+        void tapersTheWidthsSoEachStageRingsOutFromUnderTheNext() {
             var strokes = ClusterBorderStageRenderer.listStageStrokesBottomToTop(buildOverlay());
 
             // Strictly decreasing, checked as a relation rather than against three literals: what
@@ -68,7 +68,7 @@ final class ClusterBorderStageRendererTest {
         }
 
         @Test
-        void listStageStrokesBottomToTopKeepsAGatedOffStageInPlaceAsAnEmptyStroke() {
+        void keepsAGatedOffStageInPlaceAsAnEmptyStroke() {
             // Sanding off: the despiked stage is empty, and it still occupies its own slot. Were
             // it dropped, the rounded stage would inherit the despiked stage's colour and width
             // and the overlay would claim the sanding pass ran.

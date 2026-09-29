@@ -47,7 +47,7 @@ final class ClusterRendererTest {
     class RenderFillsOnMap {
 
         @Test
-        void renderFillsOnMapReadsNoDrawListsWhenThereIsNothingToPaint() {
+        void readsNoDrawListsWhenThereIsNothingToPaint() {
             var drawListsFake = new ClusterDrawListsFake(true);
 
             ClusterRenderer.renderFillsOnMap(drawListsFake, PAINTING_FRAME);
@@ -57,7 +57,7 @@ final class ClusterRendererTest {
         }
 
         @Test
-        void renderFillsOnMapReadsNoDrawListsWhenTheOverlayIsFullyFadedOut() {
+        void readsNoDrawListsWhenTheOverlayIsFullyFadedOut() {
             // Non-empty, so only the fade can be what stops it: at the ends of the map's zoom fade
             // every run would emit at zero effective alpha, paying the whole pass for nothing.
             var drawListsFake = new ClusterDrawListsFake(false);
@@ -73,7 +73,7 @@ final class ClusterRendererTest {
     class RenderBordersOnMap {
 
         @Test
-        void renderBordersOnMapReadsNoDrawListsWhenThereIsNothingToPaint() {
+        void readsNoDrawListsWhenThereIsNothingToPaint() {
             var drawListsFake = new ClusterDrawListsFake(true);
 
             ClusterRenderer.renderBordersOnMap(drawListsFake, PAINTING_FRAME);
@@ -83,7 +83,7 @@ final class ClusterRendererTest {
         }
 
         @Test
-        void renderBordersOnMapReadsNoDrawListsWhenTheOverlayIsFullyFadedOut() {
+        void readsNoDrawListsWhenTheOverlayIsFullyFadedOut() {
             // Non-empty, so only the fade can be what stops it: at the ends of the map's zoom fade
             // every run would emit at zero effective alpha, paying the whole pass for nothing.
             var drawListsFake = new ClusterDrawListsFake(false);

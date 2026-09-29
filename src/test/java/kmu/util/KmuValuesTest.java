@@ -18,17 +18,17 @@ class KmuValuesTest {
     class NormaliseText {
 
         @Test
-        void normaliseTextReturnsNullForNull() {
+        void returnsNullForNull() {
             assertThat(normaliseText(null)).isNull();
         }
 
         @Test
-        void normaliseTextReturnsNullForBlank() {
+        void returnsNullForBlank() {
             assertThat(normaliseText("   ")).isNull();
         }
 
         @Test
-        void normaliseTextTrimsWhitespace() {
+        void trimsWhitespace() {
             assertThat(normaliseText("  hello  ")).isEqualTo("hello");
         }
     }
@@ -37,12 +37,12 @@ class KmuValuesTest {
     class ConvertToOptionalText {
 
         @Test
-        void convertToOptionalTextReturnsEmptyForBlank() {
+        void returnsEmptyForBlank() {
             assertThat(convertToOptionalText("  ")).isEmpty();
         }
 
         @Test
-        void convertToOptionalTextReturnsPresentForNonBlank() {
+        void returnsPresentForNonBlank() {
             assertThat(convertToOptionalText("hello")).contains("hello");
         }
     }
@@ -51,17 +51,17 @@ class KmuValuesTest {
     class GetTextOrEmpty {
 
         @Test
-        void getTextOrEmptyReturnsEmptyStringForNull() {
+        void returnsEmptyStringForNull() {
             assertThat(getTextOrEmpty(null)).isEqualTo("");
         }
 
         @Test
-        void getTextOrEmptyReturnsEmptyStringForBlank() {
+        void returnsEmptyStringForBlank() {
             assertThat(getTextOrEmpty("  ")).isEqualTo("");
         }
 
         @Test
-        void getTextOrEmptyReturnsTrimmedText() {
+        void returnsTrimmedText() {
             assertThat(getTextOrEmpty("  hello  ")).isEqualTo("hello");
         }
     }
@@ -70,17 +70,17 @@ class KmuValuesTest {
     class HasText {
 
         @Test
-        void hasTextReturnsFalseForNull() {
+        void returnsFalseForNull() {
             assertThat(hasText(null)).isFalse();
         }
 
         @Test
-        void hasTextReturnsFalseForBlank() {
+        void returnsFalseForBlank() {
             assertThat(hasText("  ")).isFalse();
         }
 
         @Test
-        void hasTextReturnsTrueForNonBlank() {
+        void returnsTrueForNonBlank() {
             assertThat(hasText("hello")).isTrue();
         }
     }
@@ -89,20 +89,20 @@ class KmuValuesTest {
     class RequireNonBlankText {
 
         @Test
-        void requireNonBlankTextThrowsForNull() {
+        void throwsForNull() {
             assertThatThrownBy(() -> requireNonBlankText(null, "field"))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("field");
         }
 
         @Test
-        void requireNonBlankTextThrowsForBlank() {
+        void throwsForBlank() {
             assertThatThrownBy(() -> requireNonBlankText("  ", "field"))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
-        void requireNonBlankTextReturnsValueWhenPresent() {
+        void returnsValueWhenPresent() {
             assertThat(requireNonBlankText("hello", "field")).isEqualTo("hello");
         }
     }

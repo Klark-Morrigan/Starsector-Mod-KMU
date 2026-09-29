@@ -56,7 +56,7 @@ final class OwnerMapClustersTest {
     class CreateEmpty {
 
         @Test
-        void createEmptyYieldsAnEmptyNoOpFallback() {
+        void yieldsAnEmptyNoOpFallback() {
 
             // A stand-in view so this model test names no concrete view: the clusters only carry
             // the view for the incremental re-shape to read back, so any OwnerPaintedView serves.
@@ -92,7 +92,7 @@ final class OwnerMapClustersTest {
     class IsEmpty {
 
         @Test
-        void isEmptyIsTrueWhenBothDrawListsAreEmpty() {
+        void isTrueWhenBothDrawListsAreEmpty() {
 
             var clusters = buildDrawablesWith(Map.of(), Map.of());
 
@@ -101,7 +101,7 @@ final class OwnerMapClustersTest {
         }
 
         @Test
-        void isEmptyIsFalseWhenAStyledCellIsPresent() {
+        void isFalseWhenAStyledCellIsPresent() {
 
             var clusters = buildDrawablesWith(Map.of(SYSTEM_CELL, buildAnyStyledCell()), Map.of());
 
@@ -110,7 +110,7 @@ final class OwnerMapClustersTest {
         }
 
         @Test
-        void isEmptyIsFalseWhenAClusterGroupIsPresent() {
+        void isFalseWhenAClusterGroupIsPresent() {
 
             var clusters = buildDrawablesWith(Map.of(), Map.of("faction", buildAnyStyledClusterGroup()));
 
@@ -123,7 +123,7 @@ final class OwnerMapClustersTest {
     class SatisfiesClusterDrawLists {
 
         @Test
-        void satisfiesClusterDrawListsWithTheDrawListsAndTierTheBuildItselfHolds() {
+        void withTheDrawListsAndTierTheBuildItselfHolds() {
 
             var styledCell = buildAnyStyledCell();
             var styledClusterGroup = buildAnyStyledClusterGroup();
@@ -170,7 +170,7 @@ final class OwnerMapClustersTest {
     class PutStyledClusterGroup {
 
         @Test
-        void putStyledClusterGroupRecordsTheBlocsGroupUnderItsHolder() {
+        void recordsTheBlocsGroupUnderItsHolder() {
 
             var clusterGroup = buildAnyStyledClusterGroup();
             var clusters = buildDrawablesWith(Map.of(), Map.of());
@@ -182,7 +182,7 @@ final class OwnerMapClustersTest {
         }
 
         @Test
-        void putStyledClusterGroupDropsABlocWhoseGroupBakesNothing() {
+        void dropsABlocWhoseGroupBakesNothing() {
             // A bloc that lost its last cell hands over no group; an entry left standing for it
             // would go on painting the fill and border it no longer has.
             var clusters = buildDrawablesWith(Map.of(), Map.of("hegemony", buildAnyStyledClusterGroup()));
@@ -198,7 +198,7 @@ final class OwnerMapClustersTest {
     class ListCandidateBorderLoopsOf {
 
         @Test
-        void listCandidateBorderLoopsOfGathersEveryLoopOfEveryBodyOuterRingsAndEnclavesAlike() {
+        void gathersEveryLoopOfEveryBodyOuterRingsAndEnclavesAlike() {
 
             var homeOuter = new float[] {0, 0};
             var homeEnclave = new float[] {1, 1};
@@ -216,7 +216,7 @@ final class OwnerMapClustersTest {
         }
 
         @Test
-        void listCandidateBorderLoopsOfReturnsNothingForABlocThatIsNotOnTheMap() {
+        void returnsNothingForABlocThatIsNotOnTheMap() {
 
             var clusters = buildDrawablesWith(Map.of(), Map.of());
 
@@ -225,7 +225,7 @@ final class OwnerMapClustersTest {
         }
 
         @Test
-        void listCandidateBorderLoopsOfKeepsTheSameListWhileTheBlocsBodiesStand() {
+        void keepsTheSameListWhileTheBlocsBodiesStand() {
 
             var clusters = buildDrawablesWith(Map.of(), Map.of(
                 "hegemony",
@@ -241,7 +241,7 @@ final class OwnerMapClustersTest {
         }
 
         @Test
-        void listCandidateBorderLoopsOfRecomputesWhenARefreshReplacesTheBlocsBodies() {
+        void recomputesWhenARefreshReplacesTheBlocsBodies() {
 
             var rebuiltLoop = new float[] {9, 9};
             var clusters = buildDrawablesWith(Map.of(), Map.of(
@@ -267,7 +267,7 @@ final class OwnerMapClustersTest {
     class Getters {
 
         @Test
-        void gettersHandBackTheTwoSnapshotsHandedIn() {
+        void handBackTheTwoSnapshotsHandedIn() {
 
             var occupancy = SystemOccupancy.createEmpty();
             var buildInputs = OwnerMapBuildInputs.createEmpty(mock(OwnerPaintedView.class));
@@ -295,7 +295,7 @@ final class OwnerMapClustersTest {
     class ReindexClusters {
 
         @Test
-        void reindexClustersResolvesASystemToItsWholeContiguousClusterGroup() {
+        void resolvesASystemToItsWholeContiguousClusterGroup() {
 
             var clusters = buildOwnedBy(Map.of("A", "F", "B", "F"));
 
@@ -308,7 +308,7 @@ final class OwnerMapClustersTest {
         }
 
         @Test
-        void reindexClustersExcludesADifferentlyOwnedNeighbour() {
+        void excludesADifferentlyOwnedNeighbour() {
 
             var clusters = buildOwnedBy(Map.of("A", "F", "B", "RIVAL"));
 
@@ -321,7 +321,7 @@ final class OwnerMapClustersTest {
         }
 
         @Test
-        void reindexClustersSeversOneClusterGroupInTwoWhenTheBridgeSystemFlips() {
+        void seversOneClusterGroupInTwoWhenTheBridgeSystemFlips() {
             // Why the index is re-derived rather than patched: B is the only thing joining A to
             // C, so B changing hands splits one cluster group into two pockets - a change no edit of
             // the standing index would find, since neither A nor C was itself touched.
@@ -346,7 +346,7 @@ final class OwnerMapClustersTest {
         }
 
         @Test
-        void reindexClustersBridgesTwoClustersIntoOneWhenTheGapSystemIsGained() {
+        void bridgesTwoClustersIntoOneWhenTheGapSystemIsGained() {
             // The mirror of the sever: B joining F merges what were two lone pockets.
             var edges = Map.of(
                 "A", List.of(buildEdgeTo("B")),
@@ -363,7 +363,7 @@ final class OwnerMapClustersTest {
         }
 
         @Test
-        void reindexClustersCarriesNoClusterForAnUnownedSystem() {
+        void carriesNoClusterForAnUnownedSystem() {
 
             var clusters = buildOwnedBy(Map.of("A", "F"));
 

@@ -45,7 +45,7 @@ final class MapPalettesTest {
     class PickPaletteColour {
 
         @Test
-        void pickPaletteColourReturnsThePrimaryShadeForAPrimaryChoice() {
+        void returnsThePrimaryShadeForAPrimaryChoice() {
 
             assertThat(MapPalettes.pickPaletteColour(
                     FactionPaletteSlot.PRIMARY,
@@ -54,7 +54,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void pickPaletteColourReturnsTheSecondaryShadeForASecondaryChoice() {
+        void returnsTheSecondaryShadeForASecondaryChoice() {
 
             assertThat(MapPalettes.pickPaletteColour(
                     FactionPaletteSlot.SECONDARY,
@@ -63,7 +63,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void pickPaletteColourReturnsNullForAnAbsentSelection() {
+        void returnsNullForAnAbsentSelection() {
             // No selection at all is how a style says "paints nothing" - what the player's
             // "No color" choice resolves to - so the render layer skips that element.
             assertThat(MapPalettes.pickPaletteColour(null, PALETTE))
@@ -71,7 +71,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void pickPaletteColourReturnsNullForAnotherLayersSelection() {
+        void returnsNullForAnotherLayersSelection() {
             // The selection interface is open, so a second map layer's own pick can reach
             // here. It resolves to no shade rather than to a wrong one or a class cast:
             // these two shades are the owner map's, and nothing else indexes them.
@@ -86,7 +86,7 @@ final class MapPalettesTest {
     class ResolveNeutralPalette {
 
         @Test
-        void resolveNeutralPaletteFillsBothSlotsWithTheOneColour() {
+        void fillsBothSlotsWithTheOneColour() {
             // An ownerless cell has no palette to pick a slot from, so both slots answer the
             // same colour and whichever slot an element names paints neutral.
             var neutral = MapPalettes.resolveNeutralPalette(Color.GRAY);
@@ -108,7 +108,7 @@ final class MapPalettesTest {
             new SystemOwner("hegemony", PRIMARY, SECONDARY);
 
         @Test
-        void pickHolderPaletteColourReturnsTheHoldersShadeForTheChoice() {
+        void returnsTheHoldersShadeForTheChoice() {
 
             assertThat(MapPalettes.pickHolderPaletteColour(
                     FactionPaletteSlot.PRIMARY,
@@ -124,7 +124,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void pickHolderPaletteColourFallsBackToTheNeutralShadeForAnUnownedCell() {
+        void fallsBackToTheNeutralShadeForAnUnownedCell() {
             // A factionless system has no palette, so both shades resolve neutral - the same
             // substitution its own cell outline draws under.
             assertThat(MapPalettes.pickHolderPaletteColour(
@@ -141,7 +141,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void pickHolderPaletteColourReturnsNullForNoColourWhoeverHoldsTheCell() {
+        void returnsNullForNoColourWhoeverHoldsTheCell() {
 
             assertThat(MapPalettes.pickHolderPaletteColour(
                     null,
@@ -173,7 +173,7 @@ final class MapPalettesTest {
             new FactionPalette(Color.GRAY, Color.GRAY);
 
         @Test
-        void resolveEffectivePaletteKeepsTheHoldersOwnShadesWhenTheAdjustmentDoesNotDesaturate() {
+        void keepsTheHoldersOwnShadesWhenTheAdjustmentDoesNotDesaturate() {
 
             var palette = MapPalettes.resolveEffectivePalette(
                 new ElementStyleAdjustment(0.5, false),
@@ -187,7 +187,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void resolveEffectivePaletteSwapsAnHoldersShadesForThePassPaletteWhenItDesaturates() {
+        void swapsAnHoldersShadesForThePassPaletteWhenItDesaturates() {
             // Muting is orthogonal: the multiplier scales opacity elsewhere and never touches
             // which two shades are painted.
             var palette = MapPalettes.resolveEffectivePalette(
@@ -200,7 +200,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void resolveEffectivePaletteSwapsUnownedNeutralShadesForThePassPaletteWhenItDesaturates() {
+        void swapsUnownedNeutralShadesForThePassPaletteWhenItDesaturates() {
             // A cell with no holder recolours by the same rule: a receding decivilised cell leaves
             // its neutral pair for the desaturation palette rather than staying neutral.
             var palette = MapPalettes.resolveEffectivePalette(
@@ -213,7 +213,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void resolveEffectivePaletteKeepsUnownedNeutralShadesForTheNoneAdjustment() {
+        void keepsUnownedNeutralShadesForTheNoneAdjustment() {
 
             var palette = MapPalettes.resolveEffectivePalette(
                 ElementStyleAdjustment.NONE,
@@ -234,7 +234,7 @@ final class MapPalettesTest {
         private static final float KEEP_FACTOR = (float) (1.0 - DARKENING_STRENGTH);
 
         @Test
-        void resolveDesaturationPaletteDarkensTheIndependentFactionsOwnShades() {
+        void darkensTheIndependentFactionsOwnShades() {
 
             var independentMock = mock(FactionAPI.class);
 
@@ -259,7 +259,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void resolveDesaturationPaletteLeavesTheIndependentShadesUntouchedAtZeroStrength() {
+        void leavesTheIndependentShadesUntouchedAtZeroStrength() {
 
             var independentMock = mock(FactionAPI.class);
 
@@ -290,7 +290,7 @@ final class MapPalettesTest {
         private static final Color NEUTRAL_GREY = new Color(128, 128, 128);
 
         @Test
-        void resolvePresencePaletteLiftsTheNeutralTowardWhiteInBothSlots() {
+        void liftsTheNeutralTowardWhiteInBothSlots() {
             // 128 + (255 - 128) * 0.2 = 153.4, rounded to 153 on every channel: still a grey, a
             // fifth of the way to white. Both slots hold it, as the plain neutral palette does,
             // so whichever slot an element names it paints the lifted shade.
@@ -303,7 +303,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void resolvePresencePaletteLeavesTheNeutralUntouchedAtZeroStrength() {
+        void leavesTheNeutralUntouchedAtZeroStrength() {
             // A strength of 0 is the plain neutral palette, so switching the lift off returns a
             // spared cell to painting exactly as an unspared one does.
             var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 0.0);
@@ -313,7 +313,7 @@ final class MapPalettesTest {
         }
 
         @Test
-        void resolvePresencePaletteReachesWhiteAtFullStrength() {
+        void reachesWhiteAtFullStrength() {
 
             var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 1.0);
 

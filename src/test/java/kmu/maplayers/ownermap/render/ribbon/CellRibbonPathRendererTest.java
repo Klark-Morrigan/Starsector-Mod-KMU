@@ -32,7 +32,7 @@ final class CellRibbonPathRendererTest {
     class RenderOnMap {
 
         @Test
-        void renderOnMapReadsNoPathsWhenTheOverlayIsOff() {
+        void readsNoPathsWhenTheOverlayIsOff() {
 
             var ribbonPathsFake = new RibbonPathsFake(List.of());
 
@@ -45,7 +45,7 @@ final class CellRibbonPathRendererTest {
         }
 
         @Test
-        void renderOnMapReadsNoPathsWhenTheOverlayIsFullyFadedOut() {
+        void readsNoPathsWhenTheOverlayIsFullyFadedOut() {
 
             // A cell that does carry a path, so only the fade can be what stops it.
             var ribbonPathsFake = new RibbonPathsFake(List.of(

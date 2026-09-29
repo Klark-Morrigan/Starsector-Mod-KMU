@@ -51,7 +51,7 @@ final class ClaimStatsAggregatorIntegrationTest {
     class AggregateClaimStats {
 
         @Test
-        void aggregateClaimStatsCountsOneClaimPerClaimedSystem() {
+        void countsOneClaimPerClaimedSystem() {
             // Claims accumulate across systems rather than overwriting: a faction claiming two
             // systems reads as two claims on one entry, which is the count the layer paints.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
@@ -71,7 +71,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsSumsColoniesFromSystemsTheBlocDoesNotClaim() {
+        void sumsColoniesFromSystemsTheBlocDoesNotClaim() {
             // Market size is whole-sector, not claim-scoped: a faction claiming one system and
             // holding its colonies in two others totals all three colonies. Claim-scoped size would
             // read zero here, since a claimant usually does not hold what it claims.
@@ -91,7 +91,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsOffersAClaimantHoldingNoColonyAnywhere() {
+        void offersAClaimantHoldingNoColonyAnywhere() {
             // A faction that claims territory but holds no market in the sector reads as claims with
             // a zero market size - normal rather than a defect, since it still paints on this layer
             // and so is still worth spotlighting.
@@ -109,7 +109,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsIncludesAColonyHolderThatClaimsNothing() {
+        void includesAColonyHolderThatClaimsNothing() {
             // The fold applies no gate of its own: a faction holding colonies but claiming nothing
             // still gets an entry, at zero claims. Dropping it is the claims view's call, since it is
             // the view that knows a claimless bloc paints nothing on its layer.
@@ -130,7 +130,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsFoldsAnAlliancesMembersIntoOneBloc() {
+        void foldsAnAlliancesMembersIntoOneBloc() {
             // Both metrics fold through the pass's grouping, so an alliance's one entry carries a
             // member's claim beside another member's colonies - never the members surfacing apart.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
@@ -156,7 +156,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsIsEmptyForASectorWithNoClaimsAndNoColonies() {
+        void isEmptyForASectorWithNoClaimsAndNoColonies() {
             // An unclaimed, uncolonised system contributes nothing at all - no zero-valued entry -
             // so a bloc absent from the map is absent from the picker rather than listed at nothing.
             var sectorMock = buildSectorWithSystems(List.of(), listSystemMarkets("empty-system"));
@@ -169,7 +169,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsCountsClaimsWhenTheSectorHasNoEconomy() {
+        void countsClaimsWhenTheSectorHasNoEconomy() {
             // Claims come from the port rather than the economy, so a sector whose economy is not up
             // yet still yields the layer's primary metric; only market size is left at zero.
             var sectorMock = buildEconomylessSectorWithSystem("claimed-system");
@@ -183,7 +183,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsIsEmptyForNullSector() {
+        void isEmptyForNullSector() {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(null),
                         new ClaimReaderFake())
@@ -192,7 +192,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsListsABlocLivingOnAnOffEconomyColonyAlone() {
+        void listsABlocLivingOnAnOffEconomyColonyAlone() {
             // The row the picker had no way to offer: a faction whose one station the economy never
             // registered lives in the sector, so the map draws it a run and the box names it - and
             // until the fold read habitation it had no entry here to be listed by.
@@ -213,7 +213,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsSumsBothKindsOfColonyIntoOneSize() {
+        void sumsBothKindsOfColonyIntoOneSize() {
             // A bloc holding one of each reads one combined size rather than the listed half alone.
             // The metric answers how much colony the bloc lives on, so what the economy happens to
             // register is no part of the question.
@@ -236,7 +236,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsLeavesOutABlocHoldingOnlyADerelict() {
+        void leavesOutABlocHoldingOnlyADerelict() {
             // The line habitation draws that the listing does not. A derelict's owner is named in a box
             // and lives nowhere, and a spotlight lights territory - so offering the row would offer
             // a pick that lights nothing anywhere, which is not what a greyed row means.
@@ -256,7 +256,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsIndexesOnlyTheSystemsABlocClaims() {
+        void indexesOnlyTheSystemsABlocClaims() {
             // The claim-bound rule, posed where the two arms disagree: a bloc claiming two systems
             // and living in three others names the two alone. Letting habitation contribute would
             // name systems this layer draws the bloc nothing in, and light them under the pointer.
@@ -283,7 +283,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsIndexesAsManySystemsAsItCountsClaims() {
+        void indexesAsManySystemsAsItCountsClaims() {
             // The invariant the index is built for, over a sector where the two blocs differ: two
             // claims against two named systems, one against one. Counting and naming come off the
             // one claimant read, so a reading where they disagree is a reading where the lit cells
@@ -319,7 +319,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsIndexesAClaimWhenTheSectorHasNoEconomy() {
+        void indexesAClaimWhenTheSectorHasNoEconomy() {
             // The index inherits what makes the claim count stand alone: the claimant comes from the
             // port, so a sector caught mid-load still names the system. The dominance walk answers
             // nothing at all here, which is exactly why this index cannot be taken off that one.
@@ -337,7 +337,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsIndexesAnAlliancesMembersClaimsUnderTheAlliance() {
+        void indexesAnAlliancesMembersClaimsUnderTheAlliance() {
             // The index folds through the pass's grouping exactly as the count does, so an alliance
             // row lights both members' claimed systems rather than the one member the ID names.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
@@ -366,7 +366,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
-        void aggregateClaimStatsIndexesNothingForAColonyHolderThatClaimsNothing() {
+        void indexesNothingForAColonyHolderThatClaimsNothing() {
             // The mirror of the claim-bound rule at its edge: a bloc listed for its colonies alone
             // is a row the picker offers with nothing for a preview to light, so it must answer
             // empty rather than the systems it lives in.

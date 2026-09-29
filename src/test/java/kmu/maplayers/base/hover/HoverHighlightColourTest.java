@@ -38,7 +38,7 @@ final class HoverHighlightColourTest {
     class ResolveColourFor {
 
         @Test
-        void resolveColourForAnswersTheLayersShadeForTheHoveredCell() {
+        void answersTheLayersShadeForTheHoveredCell() {
 
             var sourceMock = mock(HoverHighlightSource.class);
             var selectionMock = mock(ElementPaintSelection.class);
@@ -56,7 +56,7 @@ final class HoverHighlightColourTest {
         }
 
         @Test
-        void resolveColourForIsNullWhenNothingIsHovered() {
+        void isNullWhenNothingIsHovered() {
             // A parked hover - which is also how a switched-off highlight reads - names no cell, so
             // there is nothing to ask the layer about and the pass is skipped.
             var sourceMock = mock(HoverHighlightSource.class);
@@ -73,7 +73,7 @@ final class HoverHighlightColourTest {
         }
 
         @Test
-        void resolveColourForIsNullWhenTheSelectionPaintsNothing() {
+        void isNullWhenTheSelectionPaintsNothing() {
             // The layer answers nothing for a selection that paints nothing, and that answer is
             // carried through rather than substituted for, so the pass skips on it too.
             var sourceMock = mock(HoverHighlightSource.class);

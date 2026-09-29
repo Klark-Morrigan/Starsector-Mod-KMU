@@ -305,7 +305,7 @@ final class LunaSettingsCsvIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(ChoiceBackedRadioFieldsProvider.class)
-        void radioOptionLabelsAllResolveToTheirChoiceEnum(String fieldId, LabeledChoice[] choices) {
+        void allResolveToTheirChoiceEnum(String fieldId, LabeledChoice[] choices) {
 
             var expectedLabels = Arrays.stream(choices).map(LabeledChoice::getLabel).toList();
 
@@ -319,7 +319,7 @@ final class LunaSettingsCsvIntegrationTest {
         // the other check needs would only be an argument nothing reads.
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(ChoiceBackedRadioFieldIdsProvider.class)
-        void radioOptionLabelsIncludeTheRowsOwnDefault(String fieldId) {
+        void includeTheRowsOwnDefault(String fieldId) {
 
             assertThat(SETTINGS_TABLE.readOptions(fieldId))
                 .contains(SETTINGS_TABLE.readDefaultValue(fieldId, RADIO_FIELD_TYPE));
@@ -331,7 +331,7 @@ final class LunaSettingsCsvIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(ChoiceBackedRadioDefaultsProvider.class)
-        void radioFallbackDefaultsNameTheirRowsOwnDefault(
+        void nameTheirRowsOwnDefault(
                 String fieldId,
                 String defaultConstant,
                 LabeledChoice[] choices) {
@@ -498,7 +498,7 @@ final class LunaSettingsCsvIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(NumericFieldDefaultsProvider.class)
-        void numericFallbackDefaultsMatchTheirRowsOwnDefault(String fieldId, String fieldType) {
+        void matchTheirRowsOwnDefault(String fieldId, String fieldType) {
 
             var defaultConstant = SETTINGS_SOURCES.findNumericFallbackConstant(fieldId);
 
@@ -521,7 +521,7 @@ final class LunaSettingsCsvIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(ClampedFieldBoundsProvider.class)
-        void numericFieldBoundsMatchTheClampTheirGetterApplies(
+        void matchTheClampTheirGetterApplies(
                 String fieldId,
                 String fieldType,
                 String minimumConstant,
@@ -555,7 +555,7 @@ final class LunaSettingsCsvIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(BooleanFieldIdsProvider.class)
-        void booleanFallbackDefaultsMatchTheirRowsOwnDefault(String fieldId) {
+        void matchTheirRowsOwnDefault(String fieldId) {
 
             var defaultConstant = SETTINGS_SOURCES.findBooleanFallbackConstant(fieldId);
 

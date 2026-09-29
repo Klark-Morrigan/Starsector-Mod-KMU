@@ -19,7 +19,7 @@ final class BlocPresenceIndexBuilderTest {
     class RecordPresence {
 
         @Test
-        void recordPresenceKeepsABlocsSystemsInTheOrderTheyWereMet() {
+        void keepsABlocsSystemsInTheOrderTheyWereMet() {
             // Walk order, so a lit set is assembled the same way twice over one sector.
             var builder = new BlocPresenceIndexBuilder();
 
@@ -32,7 +32,7 @@ final class BlocPresenceIndexBuilderTest {
         }
 
         @Test
-        void recordPresenceLeavesOneEntryForAPairRecordedTwice() {
+        void leavesOneEntryForAPairRecordedTwice() {
             // An arm that meets a bloc more than once in a system - two colonies of one faction -
             // records the pair twice, and the system must still be one lit cell rather than two.
             var builder = new BlocPresenceIndexBuilder();
@@ -45,7 +45,7 @@ final class BlocPresenceIndexBuilderTest {
         }
 
         @Test
-        void recordPresenceKeepsOneBlocsSystemsOutOfAnothers() {
+        void keepsOneBlocsSystemsOutOfAnothers() {
             // The whole point of the keying: hovering one row lights that bloc's systems and no
             // neighbour's, however interleaved the walk met them.
             var builder = new BlocPresenceIndexBuilder();
@@ -68,7 +68,7 @@ final class BlocPresenceIndexBuilderTest {
     class BuildIndex {
 
         @Test
-        void buildIndexAnswersAnEmptyIndexForAWalkThatRecordedNothing() {
+        void answersAnEmptyIndexForAWalkThatRecordedNothing() {
             // A sector nobody is present in yields an index that answers empty rather than null, so
             // the caller needs no guard between an empty walk and a lookup.
             assertThat(new BlocPresenceIndexBuilder().buildIndex().systemKeysByBlocId())
@@ -76,7 +76,7 @@ final class BlocPresenceIndexBuilderTest {
         }
 
         @Test
-        void buildIndexKeepsTheBlocsInTheOrderTheyWereFirstMet() {
+        void keepsTheBlocsInTheOrderTheyWereFirstMet() {
             // Walk order at the outer level too, and taken from where a bloc was first met rather
             // than last, so a bloc met again does not jump the list.
             var builder = new BlocPresenceIndexBuilder();
@@ -90,7 +90,7 @@ final class BlocPresenceIndexBuilderTest {
         }
 
         @Test
-        void buildIndexAnswersAnIndexLaterRecordingCannotMove() {
+        void answersAnIndexLaterRecordingCannotMove() {
             // The handover the whole split rests on: the walk goes on holding the builder, and the
             // index it already gave out is read back per hover until the next rebuild replaces it.
             var builder = new BlocPresenceIndexBuilder();

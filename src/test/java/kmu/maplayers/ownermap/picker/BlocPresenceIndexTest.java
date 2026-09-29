@@ -25,7 +25,7 @@ final class BlocPresenceIndexTest {
     class ReadPresentSystemKeys {
 
         @Test
-        void readPresentSystemKeysAnswersTheSystemsABlocLivesIn() {
+        void answersTheSystemsABlocLivesIn() {
             // The lookup the hover takes: one bloc's own systems, in the order they were recorded.
             var index = new BlocPresenceIndex(Map.of(
                 "hegemony", new LinkedHashSet<>(Set.of(buildCellKey("system-a")))));
@@ -35,7 +35,7 @@ final class BlocPresenceIndexTest {
         }
 
         @Test
-        void readPresentSystemKeysAnswersEmptyForABlocTheWalkNeverSurfaced() {
+        void answersEmptyForABlocTheWalkNeverSurfaced() {
             // A bloc living nowhere is absent from the index rather than present with nothing, and
             // the lookup answers for it without the caller testing membership first - which is what
             // lets a render pass ask about whichever bloc the pointer is on.
@@ -44,7 +44,7 @@ final class BlocPresenceIndexTest {
         }
 
         @Test
-        void readPresentSystemKeysAnswersEmptyForNoBlocAtAll() {
+        void answersEmptyForNoBlocAtAll() {
             // The pointer resting on no row at all reaches the lookup as a null ID, so it answers
             // the same nothing rather than throwing at the top of a render pass.
             assertThat(BlocPresenceIndex.EMPTY.readPresentSystemKeys(null))
@@ -56,7 +56,7 @@ final class BlocPresenceIndexTest {
     class SystemKeysByBlocId {
 
         @Test
-        void systemKeysByBlocIdKeepsTheOrderItWasBuiltIn() {
+        void keepsTheOrderItWasBuiltIn() {
             // Walk order at both levels, so two reads of one sector answer alike and a lit set is
             // assembled in a stable order.
             var systemKeysByBlocId = new LinkedHashMap<String, Set<SystemKey>>();
@@ -69,7 +69,7 @@ final class BlocPresenceIndexTest {
         }
 
         @Test
-        void systemKeysByBlocIdIgnoresLaterWritesToTheMapItWasBuiltFrom() {
+        void ignoresLaterWritesToTheMapItWasBuiltFrom() {
             // The walk hands over the map it accumulated into and goes on holding it, so an index
             // that did not copy would keep changing after the rebuild that sealed it.
             var systemKeysByBlocId = new LinkedHashMap<String, Set<SystemKey>>();

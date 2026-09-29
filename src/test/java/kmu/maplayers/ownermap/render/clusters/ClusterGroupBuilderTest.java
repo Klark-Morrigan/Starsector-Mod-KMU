@@ -151,7 +151,7 @@ final class ClusterGroupBuilderTest {
     class BuildClusterGroup {
 
         @Test
-        void buildClusterGroupReadsItsFirstMembersPaletteUnderThatMembersOwnKey() {
+        void readsItsFirstMembersPaletteUnderThatMembersOwnKey() {
             // The members and the holding share one address, so a body whose member shares a
             // vanilla ID with another system paints from its own holder - where a lookup by ID
             // alone could only have named whichever of the pair the map happened to hold.
@@ -175,7 +175,7 @@ final class ClusterGroupBuilderTest {
         }
 
         @Test
-        void buildClusterGroupTracesTwoTouchingSystemsAsOneFrontier() {
+        void tracesTwoTouchingSystemsAsOneFrontier() {
 
             var clusterGroup = buildClusterGroupOf(
                 buildClustersStyledBy(buildDrawnStyle()),
@@ -198,7 +198,7 @@ final class ClusterGroupBuilderTest {
         }
 
         @Test
-        void buildClusterGroupTracesDisjointHoldingsAsAClusterApiece() {
+        void tracesDisjointHoldingsAsAClusterApiece() {
 
             var clusterGroup = buildClusterGroupOf(
                 buildClustersStyledBy(buildDrawnStyle()),
@@ -220,7 +220,7 @@ final class ClusterGroupBuilderTest {
         }
 
         @Test
-        void buildClusterGroupTracesAnEnclosedRivalAsAnEnclaveOfTheOneBody() {
+        void tracesAnEnclosedRivalAsAnEnclaveOfTheOneBody() {
 
             var clusterGroup = buildClusterGroupOf(
                 buildClustersStyledBy(buildDrawnStyle(), listGridHolders()),
@@ -244,7 +244,7 @@ final class ClusterGroupBuilderTest {
         }
 
         @Test
-        void buildClusterGroupPaintsEachSlotFromItsOwnPaletteChoiceAndOpacity() {
+        void paintsEachSlotFromItsOwnPaletteChoiceAndOpacity() {
 
             var clusterGroup = buildClusterGroupOf(
                 buildClustersStyledBy(buildDrawnStyle()),
@@ -266,7 +266,7 @@ final class ClusterGroupBuilderTest {
         }
 
         @Test
-        void buildClusterGroupBakesNoBorderRunsForANoColourBorder() {
+        void bakesNoBorderRunsForANoColourBorder() {
 
             var clusterGroup = buildClusterGroupOf(
                 buildClustersStyledBy(buildFillOnlyStyle()),
@@ -288,7 +288,7 @@ final class ClusterGroupBuilderTest {
         }
 
         @Test
-        void buildClusterGroupBakesNothingWhenNeitherFillNorBorderDrawsAColour() {
+        void bakesNothingWhenNeitherFillNorBorderDrawsAColour() {
 
             var clusterGroup = buildClusterGroupOf(
                 buildClustersStyledBy(buildNoColourStyle()),
@@ -303,7 +303,7 @@ final class ClusterGroupBuilderTest {
         }
 
         @Test
-        void buildClusterGroupBakesNothingForMembersThatYieldNoBorderableGeometry() {
+        void bakesNothingForMembersThatYieldNoBorderableGeometry() {
 
             var geometryCacheMock = mock(CellGeometryCache.class);
 
@@ -332,7 +332,7 @@ final class ClusterGroupBuilderTest {
     class BuildAllClusterGroups {
 
         @Test
-        void buildAllClusterGroupsKeysEachBlocsClusterGroupByItsGroupingKey() {
+        void keysEachBlocsClusterGroupByItsGroupingKey() {
 
             var clusters = buildClustersStyledBy(buildDrawnStyle(), Map.of(
                 HELD_SYSTEM,
@@ -356,7 +356,7 @@ final class ClusterGroupBuilderTest {
         }
 
         @Test
-        void buildAllClusterGroupsSkipsABlocThatBakesNothing() {
+        void skipsABlocThatBakesNothing() {
 
             var clusters = buildClustersStyledBy(buildDrawnStyle(), Map.of(
                 HELD_SYSTEM,

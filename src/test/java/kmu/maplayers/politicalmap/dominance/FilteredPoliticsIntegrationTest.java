@@ -365,7 +365,7 @@ class FilteredPoliticsIntegrationTest {
         }
 
         @Test
-        void resolveFilteredHolderLeavesNoSystemUnfilledEvenWhereTheSpotlitBlocIsContested() {
+        void leavesNoSystemUnfilledEvenWhereTheSpotlitBlocIsContested() {
             // The filter hatches a contested cell rather than blanking it, so the one resolution the
             // render pass reads carries no unfilled system even beside a hatched one.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);

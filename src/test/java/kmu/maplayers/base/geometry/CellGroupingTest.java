@@ -28,7 +28,7 @@ final class CellGroupingTest {
     class ResolveDrawnSystemKeyOf {
 
         @Test
-        void resolveDrawnSystemKeyOfReturnsTheStarACellDrawsAs() {
+        void returnsTheStarACellDrawsAs() {
             // An absorbed wedge draws as system A's star, not as its own cell - which is exactly
             // what the two-map indirection exists to express.
             var grouping = new CellGrouping(
@@ -40,7 +40,7 @@ final class CellGroupingTest {
         }
 
         @Test
-        void resolveDrawnSystemKeyOfReturnsNullForACellWithNoSystem() {
+        void returnsNullForACellWithNoSystem() {
             // A shard of a dead star's leftover space is absent from the draws-as map, so it
             // has no star of its own.
             var grouping = new CellGrouping(
@@ -56,7 +56,7 @@ final class CellGroupingTest {
     class ResolveGroupKeyOf {
 
         @Test
-        void resolveGroupKeyOfReturnsTheKeyOfTheStarACellDrawsAs() {
+        void returnsTheKeyOfTheStarACellDrawsAs() {
             // The wedge takes A's key through the two lookups, so it paints as A's
             // rather than as unowned.
             var grouping = new CellGrouping(
@@ -68,7 +68,7 @@ final class CellGroupingTest {
         }
 
         @Test
-        void resolveGroupKeyOfReturnsNullWhenTheCellHasNoSystem() {
+        void returnsNullWhenTheCellHasNoSystem() {
             // No star to look a key up through, so a shard is unowned whatever the key map says.
             var grouping = new CellGrouping(
                 buildDrawnSystemKeys(Map.of("A", "A")),
@@ -79,7 +79,7 @@ final class CellGroupingTest {
         }
 
         @Test
-        void resolveGroupKeyOfReturnsNullWhenTheDrawnSystemIsUnowned() {
+        void returnsNullWhenTheDrawnSystemIsUnowned() {
             // The cell draws as a real star, but that star holds no market, so it is unowned.
             var grouping = new CellGrouping(buildDrawnSystemKeys(Map.of("A", "A")), Map.of());
 
@@ -92,7 +92,7 @@ final class CellGroupingTest {
     class GroupCellKeysByOwner {
 
         @Test
-        void groupCellKeysByOwnerBucketsEachCellUnderTheKeyOfTheStarItDrawsAs() {
+        void bucketsEachCellUnderTheKeyOfTheStarItDrawsAs() {
             // Two cells drawing as the same system - a star and its absorbed wedge - both land
             // under that key, as two distinct cells a border is later traced from.
             var grouping = new CellGrouping(
@@ -108,7 +108,7 @@ final class CellGroupingTest {
         }
 
         @Test
-        void groupCellKeysByOwnerOmitsCellsWithNoResolvedKey() {
+        void omitsCellsWithNoResolvedKey() {
             // A shard (no star) and a cell drawing as an unowned star both resolve no key, so
             // neither joins any bucket - they stay unowned, grouped under nobody.
             var grouping = new CellGrouping(
@@ -124,7 +124,7 @@ final class CellGroupingTest {
         }
 
         @Test
-        void groupCellKeysByOwnerIsEmptyWhenNothingIsGrouped() {
+        void isEmptyWhenNothingIsGrouped() {
 
             var grouping = new CellGrouping(buildDrawnSystemKeys(Map.of("A", "A")), Map.of());
 

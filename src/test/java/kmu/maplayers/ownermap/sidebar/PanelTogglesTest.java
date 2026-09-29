@@ -33,7 +33,7 @@ final class PanelTogglesTest {
     class FlipToggle {
 
         @Test
-        void flipToggleTurnsOffAPreferenceThatIsOnThere() {
+        void turnsOffAPreferenceThatIsOnThere() {
 
             when(outlineMock.isOutlineDrawn(BUILT_SCREEN))
                 .thenReturn(true);
@@ -47,7 +47,7 @@ final class PanelTogglesTest {
         }
 
         @Test
-        void flipToggleTurnsOnAPreferenceThatIsOffThere() {
+        void turnsOnAPreferenceThatIsOffThere() {
 
             when(outlineMock.isOutlineDrawn(BUILT_SCREEN))
                 .thenReturn(false);

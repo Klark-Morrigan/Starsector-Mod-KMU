@@ -32,7 +32,7 @@ final class HatchBuildDiagnosticsTest {
     class DescribeHatchSpecification {
 
         @Test
-        void describeHatchSpecificationNamesEverySettingTheCutIsMadeUnder() {
+        void namesEverySettingTheCutIsMadeUnder() {
             // A capture is attributed to the settings that produced it, so both halves of the
             // style are named: the layout that was baked and the stroke read per frame. The stroke
             // prints as itself rather than as fields picked out here, which is what keeps a kind
@@ -50,7 +50,7 @@ final class HatchBuildDiagnosticsTest {
     class DescribeHatchJoins {
 
         @Test
-        void describeHatchJoinsCarriesOnlyWhatVariesPerBody() {
+        void carriesOnlyWhatVariesPerBody() {
             // Every reading here differs body to body, and none of them restates the tolerance
             // they were measured against - the heading already gave it, once. Nor the segment
             // count or the duration, which the call carries as a count and a span of its own.
@@ -67,7 +67,7 @@ final class HatchBuildDiagnosticsTest {
     class ReportHatchRun {
 
         @Test
-        void reportHatchRunCountsStrokesRatherThanTheFloatsPackingThem() {
+        void countsStrokesRatherThanTheFloatsPackingThem() {
             // Eight floats pack two segments, so a row counting the array's own length reads 8.
             var profiler = new RecordingProfiler();
             var hatchRun = new HatchRun(

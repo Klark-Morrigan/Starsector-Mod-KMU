@@ -54,7 +54,7 @@ final class MapLayerArrangementDialogBodyTest {
     class FillHeader {
 
         @Test
-        void fillHeaderNamesTheBoxInTheFaceTheGameHeadsItsOwnWith() {
+        void namesTheBoxInTheFaceTheGameHeadsItsOwnWith() {
 
             var headerMock = mock(TooltipMakerAPI.class);
             ParagraphLabelMock.mockLabelOn(headerMock);
@@ -68,7 +68,7 @@ final class MapLayerArrangementDialogBodyTest {
         }
 
         @Test
-        void fillHeaderPartsTheHintFromTheHeadingByAStatedGap() {
+        void partsTheHintFromTheHeadingByAStatedGap() {
 
             var headerMock = mock(TooltipMakerAPI.class);
             ParagraphLabelMock.mockLabelOn(headerMock);
@@ -84,7 +84,7 @@ final class MapLayerArrangementDialogBodyTest {
         }
 
         @Test
-        void fillHeaderPicksOutOnlyTheWordsThatNameAControl() {
+        void picksOutOnlyTheWordsThatNameAControl() {
 
             var headerMock = mock(TooltipMakerAPI.class);
             var labelMock = ParagraphLabelMock.mockLabelOn(headerMock);
@@ -109,7 +109,7 @@ final class MapLayerArrangementDialogBodyTest {
     class FillFooter {
 
         @Test
-        void fillFooterNamesWhatThePlayerIsLeavingWith() {
+        void namesWhatThePlayerIsLeavingWith() {
 
             var footerMock = mock(TooltipMakerAPI.class);
 

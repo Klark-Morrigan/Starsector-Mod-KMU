@@ -53,14 +53,14 @@ final class ScreenMemoryScopeTest {
     class ResolveKeyFor {
 
         @Test
-        void resolveKeyForAppendsTheScreensSegmentAfterThePreferencesOwnKey() {
+        void appendsTheScreensSegmentAfterThePreferencesOwnKey() {
 
             assertThat(MAP_SCOPE.resolveKeyFor(PREFERENCE_KEY))
                 .isEqualTo("$kmu_political_name_format_map");
         }
 
         @Test
-        void resolveKeyForGivesTheTwoScreensSeparateSlotsForOnePreference() {
+        void givesTheTwoScreensSeparateSlotsForOnePreference() {
             // The whole of what the type is for: one preference, one base key, two saves.
             assertThat(INTEL_SCOPE.resolveKeyFor(PREFERENCE_KEY))
                 .isEqualTo("$kmu_political_name_format_intel");

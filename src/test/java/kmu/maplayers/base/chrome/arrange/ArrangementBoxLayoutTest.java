@@ -28,7 +28,7 @@ final class ArrangementBoxLayoutTest {
     class ResolveBoxHeight {
 
         @Test
-        void resolveBoxHeightGrowsByOneRowHeightPerRow() {
+        void growsByOneRowHeightPerRow() {
 
             var oneRowHeight = ArrangementBoxLayout.resolveBoxHeight(1);
             var twoRowHeight = ArrangementBoxLayout.resolveBoxHeight(2);
@@ -38,7 +38,7 @@ final class ArrangementBoxLayoutTest {
         }
 
         @Test
-        void resolveBoxHeightHoldsTheHeadTheColumnAndTheFootWithAPadAtEitherEnd() {
+        void holdsTheHeadTheColumnAndTheFootWithAPadAtEitherEnd() {
             // An empty column, so what is left is the furniture: 12 of pad twice, an 84-tall head and
             // a 34-tall foot.
             assertThat(ArrangementBoxLayout.resolveBoxHeight(0))
@@ -50,7 +50,7 @@ final class ArrangementBoxLayoutTest {
     class ResolveRowTop {
 
         @Test
-        void resolveRowTopStartsTheColumnWhereTheHeadEnds() {
+        void startsTheColumnWhereTheHeadEnds() {
             // The head stands 12 down from the box's top and is 84 tall, so the leading row butts
             // against it rather than against a gap nothing states.
             assertThat(ArrangementBoxLayout.resolveRowTop(0))
@@ -58,7 +58,7 @@ final class ArrangementBoxLayoutTest {
         }
 
         @Test
-        void resolveRowTopSetsEachRowOneRowHeightBelowTheOneAboveIt() {
+        void setsEachRowOneRowHeightBelowTheOneAboveIt() {
 
             assertThat(ArrangementBoxLayout.resolveRowTop(3) - ArrangementBoxLayout.resolveRowTop(2))
                 .isEqualTo(28f);
@@ -69,7 +69,7 @@ final class ArrangementBoxLayoutTest {
     class ResolveHeaderWidth {
 
         @Test
-        void resolveHeaderWidthLeavesAPadAtEitherSideOfTheBox() {
+        void leavesAPadAtEitherSideOfTheBox() {
 
             assertThat(ArrangementBoxLayout.BOX_WIDTH - ArrangementBoxLayout.resolveHeaderWidth())
                 .isEqualTo(24f);
@@ -80,7 +80,7 @@ final class ArrangementBoxLayoutTest {
     class ResolveLeadingElementLeft {
 
         @Test
-        void resolveLeadingElementLeftDrawsAnElementsContentsAPadInFromTheBoxsLeftEdge() {
+        void drawsAnElementsContentsAPadInFromTheBoxsLeftEdge() {
             // The element goes 7 in and draws 5 further in again, so what the player reads starts at
             // the pad rather than past it.
             assertThat(resolveDrawnLeft(ArrangementBoxLayout.resolveLeadingElementLeft()))
@@ -92,7 +92,7 @@ final class ArrangementBoxLayoutTest {
     class ResolveTrailingElementLeft {
 
         @Test
-        void resolveTrailingElementLeftEndsItsContentsAtThePadALeadingElementsBeginAt() {
+        void endsItsContentsAtThePadALeadingElementsBeginAt() {
             // The one thing this step is for: both edges land on the one pad, at any width, so a
             // widening control moves the element rather than the gap around the box's contents.
             var leadingLeftInset = resolveDrawnLeft(ArrangementBoxLayout.resolveLeadingElementLeft());
@@ -108,7 +108,7 @@ final class ArrangementBoxLayoutTest {
     class ResolveElementWidth {
 
         @Test
-        void resolveElementWidthHoldsItsContentsInsideTheElementsOwnEdges() {
+        void holdsItsContentsInsideTheElementsOwnEdges() {
             // 140 of controls, which the engine draws 5 in: an element built at the bare 140 ends five
             // units short of what it is holding.
             assertThat(ArrangementBoxLayout.resolveElementWidth(ArrangementBoxLayout.CONTROLS_WIDTH))
@@ -116,7 +116,7 @@ final class ArrangementBoxLayoutTest {
         }
 
         @Test
-        void resolveElementWidthLeavesTheContentsEndingWhereTheyWerePlacedTo() {
+        void leavesTheContentsEndingWhereTheyWerePlacedTo() {
             // The width is room, not position: a trailing element widened for the inset still ends its
             // contents a pad in from the box's right edge.
             var elementLeft = ArrangementBoxLayout.resolveTrailingElementLeft(60f);
@@ -132,7 +132,7 @@ final class ArrangementBoxLayoutTest {
     class ResolveControlsElementLeft {
 
         @Test
-        void resolveControlsElementLeftStandsTheControlsAChannelBeyondTheLabelColumn() {
+        void standsTheControlsAChannelBeyondTheLabelColumn() {
             // The name is drawn at 12 across a 200-wide column, so an 8-unit channel puts the first
             // control at 220.
             assertThat(resolveDrawnLeft(ArrangementBoxLayout.resolveControlsElementLeft()))
@@ -140,7 +140,7 @@ final class ArrangementBoxLayoutTest {
         }
 
         @Test
-        void resolveControlsElementLeftLeavesTheDrawnControlsEndingAPadInFromTheBoxEdge() {
+        void leavesTheDrawnControlsEndingAPadInFromTheBoxEdge() {
 
             var controlsRightEdge = resolveDrawnLeft(ArrangementBoxLayout.resolveControlsElementLeft())
                 + ArrangementBoxLayout.CONTROLS_WIDTH;
@@ -154,7 +154,7 @@ final class ArrangementBoxLayoutTest {
     class ResolveFooterLeft {
 
         @Test
-        void resolveFooterLeftStandsTheWayOutAPadInFromTheBoxsRightEdge() {
+        void standsTheWayOutAPadInFromTheBoxsRightEdge() {
 
             var footerRightEdge = resolveDrawnLeft(ArrangementBoxLayout.resolveFooterLeft())
                 + ArrangementBoxLayout.APPLY_BUTTON_WIDTH;
@@ -168,14 +168,14 @@ final class ArrangementBoxLayoutTest {
     class ResolveFooterTop {
 
         @Test
-        void resolveFooterTopStandsTheFootAtTheBottomOfTheBoxTheColumnMakes() {
+        void standsTheFootAtTheBottomOfTheBoxTheColumnMakes() {
             // Three rows make a 226-tall box, and the 34-tall foot reaches its lower edge.
             assertThat(ArrangementBoxLayout.resolveFooterTop(3))
                 .isEqualTo(192f);
         }
 
         @Test
-        void resolveFooterTopLeavesThePadBetweenTheLastRowAndTheFoot() {
+        void leavesThePadBetweenTheLastRowAndTheFoot() {
             // The pad at the box's bottom is what parts the column from the way out, the foot itself
             // reaching the box's lower edge.
             var lastRowBottom =

@@ -88,7 +88,7 @@ final class FilterSelectionTest {
     class GetSelectedIdOf {
 
         @Test
-        void getSelectedIdOfReturnsTheStoredId() {
+        void returnsTheStoredId() {
 
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
 
@@ -97,14 +97,14 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void getSelectedIdOfIsNullWhenNoIdIsStored() {
+        void isNullWhenNoIdIsStored() {
             // A slot that never picked an ID holds no key, which is the un-filtered state.
             assertThat(FilterSelection.getSelectedIdOf(SLOT))
                 .isNull();
         }
 
         @Test
-        void getSelectedIdOfDoesNotCrossReadAnotherScopesSelection() {
+        void doesNotCrossReadAnotherScopesSelection() {
             // Per-scope isolation: a selection stored under one scope is invisible to another, so
             // switching scopes never inherits the previous scope's choice.
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
@@ -114,7 +114,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void getSelectedIdOfDoesNotCrossReadAnotherModsSelection() {
+        void doesNotCrossReadAnotherModsSelection() {
             // Per-namespace isolation: two mods whose pickers happen to list under the same scope
             // string on the same panel still read their own picks, where before the namespace both
             // read one.
@@ -125,7 +125,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void getSelectedIdOfReadsEachScreensOwnSelection() {
+        void readsEachScreensOwnSelection() {
             // Per-screen isolation under one scope ID: a bloc spotlighted on one panel and a different
             // one on the other read back as each panel left them.
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
@@ -138,7 +138,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void getSelectedIdOfIsNullBeforeTheSectorExists() {
+        void isNullBeforeTheSectorExists() {
             // No sector means no save to read, so nothing can have been picked yet.
             sectorMemoryFake.removeSector();
 
@@ -151,7 +151,7 @@ final class FilterSelectionTest {
     class SelectId {
 
         @Test
-        void selectIdPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
+        void persistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
 
             FilterSelection.selectId(SLOT, SELECTED_ID, board);
 
@@ -165,7 +165,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void selectIdWritesTheSlotItWasPickedOnAlone() {
+        void writesTheSlotItWasPickedOnAlone() {
             // Every axis on the write side: a spotlight picked on one panel's list leaves the same list
             // on the other panel, every other list on this one, and another mod's list of the same
             // name, exactly as they were.
@@ -180,7 +180,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void selectIdNoOpsBeforeTheSectorExists() {
+        void noOpsBeforeTheSectorExists() {
             // No sector means no save to write into and nothing painting, so the write and the
             // refresh are both skipped rather than bumping a revision no layer would read.
             sectorMemoryFake.removeSector();
@@ -196,7 +196,7 @@ final class FilterSelectionTest {
     class ClearSelection {
 
         @Test
-        void clearSelectionDropsTheStoredIdAndRaisesOnTheBoardItWasHanded() {
+        void dropsTheStoredIdAndRaisesOnTheBoardItWasHanded() {
 
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
 
@@ -209,7 +209,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void clearSelectionNoOpsWhenNoIdIsStored() {
+        void noOpsWhenNoIdIsStored() {
             // Nothing to unset and nothing to repaint when the filter was already off, so a clear on
             // an un-filtered slot bumps no revision.
             FilterSelection.clearSelection(SLOT, board);
@@ -219,7 +219,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void clearSelectionLeavesAnotherSlotsSelectionUntouched() {
+        void leavesAnotherSlotsSelectionUntouched() {
             // Isolation on the clear side: clearing a slot with no selection of its own drops nothing,
             // in particular not the neighbouring slots' IDs, and bumps no revision while they hold one.
             sectorMemoryFake.storeValue(OTHER_SCREEN_KEY, SELECTED_ID);
@@ -236,7 +236,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void clearSelectionNoOpsBeforeTheSectorExists() {
+        void noOpsBeforeTheSectorExists() {
 
             sectorMemoryFake.removeSector();
 
@@ -251,7 +251,7 @@ final class FilterSelectionTest {
     class HealStaleSelection {
 
         @Test
-        void healStaleSelectionClearsAnIdThatIsNoLongerSelectable() {
+        void clearsAnIdThatIsNoLongerSelectable() {
             // A slot whose stored selection stopped being on offer between sessions holds a dangling
             // ID; the heal drops it so the filter falls back to none.
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
@@ -263,7 +263,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void healStaleSelectionKeepsAnIdThatIsStillSelectable() {
+        void keepsAnIdThatIsStillSelectable() {
             // A still-valid pick survives untouched, so the slot keeps filtering to the ID the player
             // last chose.
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
@@ -275,7 +275,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void healStaleSelectionClearsOnlyTheSlotItWasNamedFor() {
+        void clearsOnlyTheSlotItWasNamedFor() {
             // The heal is per slot, so a caller owing every screen runs it once each: healing one
             // leaves the other's stored ID standing until its own call comes.
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
@@ -290,7 +290,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void healStaleSelectionNoOpsWhenNoIdIsStored() {
+        void noOpsWhenNoIdIsStored() {
             // Nothing to validate when the filter was off, so the selectable check is never consulted
             // and the save is left as it is.
             FilterSelection.healStaleSelection(
@@ -304,7 +304,7 @@ final class FilterSelectionTest {
         }
 
         @Test
-        void healStaleSelectionNoOpsBeforeTheSectorExists() {
+        void noOpsBeforeTheSectorExists() {
 
             sectorMemoryFake.removeSector();
 

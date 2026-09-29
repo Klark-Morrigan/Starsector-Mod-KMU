@@ -29,7 +29,7 @@ final class RankedBlocTest {
     class ItemId {
 
         @Test
-        void itemIdIsTheBlocId() {
+        void isTheBlocId() {
             // The ID is the one value the seam renames, and it must stay the bloc ID the filter stores.
             assertThat(HEGEMONY.itemId())
                 .isEqualTo("hegemony");
@@ -40,7 +40,7 @@ final class RankedBlocTest {
     class DisplayName {
 
         @Test
-        void displayNameIsTheIdentitysLabel() {
+        void isTheIdentitysLabel() {
 
             assertThat(HEGEMONY.displayName())
                 .isEqualTo("Hegemony");
@@ -51,7 +51,7 @@ final class RankedBlocTest {
     class CrestSpritePath {
 
         @Test
-        void crestSpritePathIsTheIdentitysCrest() {
+        void isTheIdentitysCrest() {
 
             assertThat(HEGEMONY.crestSpritePath())
                 .isEqualTo("crest_heg");
@@ -62,7 +62,7 @@ final class RankedBlocTest {
     class IsDimmed {
 
         @Test
-        void isDimmedIsAnsweredByTheMetricsRatherThanTheIdentity() {
+        void isAnsweredByTheMetricsRatherThanTheIdentity() {
             // The one seam value the identity cannot answer: two blocs sharing a name and a crest
             // differ on it purely by what their numbers say. Run over metrics stating a painting
             // rule they fail (nothing to lead with, so the row reads back), since a payload that
@@ -76,7 +76,7 @@ final class RankedBlocTest {
         }
 
         @Test
-        void isDimmedFollowsThePayloadBackToFullStrength() {
+        void followsThePayloadBackToFullStrength() {
             // The same identity reads at full strength once its metrics say so, so the answer tracks
             // the payload rather than anything the row draws.
             var painting = new RankedBloc<>(
@@ -88,7 +88,7 @@ final class RankedBlocTest {
         }
 
         @Test
-        void isDimmedIsFalseForMetricsThatStateNoPaintingRule() {
+        void isFalseForMetricsThatStateNoPaintingRule() {
             // A picker whose rows are not painters is never asked, so its rows draw plain rather
             // than inheriting an answer to a question its payload cannot be asked. Run over a
             // payload that states no painting rule at all, since a painting one would pass here

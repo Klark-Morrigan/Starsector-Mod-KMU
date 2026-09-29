@@ -32,7 +32,7 @@ final class MapHoverPermissionTest {
     class IsCursorLocatable {
 
         @Test
-        void isCursorLocatableIsTrueOnAVanillaHostWithNoPermissionGranted() {
+        void isTrueOnAVanillaHostWithNoPermissionGranted() {
             // The map read reaching the rule's own map disjunct, which answers with no permission
             // granted at all - so a swap that fed it the game-space read would be false here.
             HoverSwitchScopes.runWithHoverTooltipSwitchOn(() ->
@@ -41,7 +41,7 @@ final class MapHoverPermissionTest {
         }
 
         @Test
-        void isCursorLocatableIsTrueInGameSpaceWithTheGameSpacePermissionGranted() {
+        void isTrueInGameSpaceWithTheGameSpacePermissionGranted() {
             // The game-space read reaching the disjunct the permission guards. The other half of the
             // swap: fed the map read, this would be false.
             HoverSwitchScopes.runWithHoverTooltipSwitchOnInGameSpace(() ->
@@ -50,7 +50,7 @@ final class MapHoverPermissionTest {
         }
 
         @Test
-        void isCursorLocatableIsFalseInGameSpaceWithoutThatPermission() {
+        void isFalseInGameSpaceWithoutThatPermission() {
             // Game space alone is not a frame the cursor can be located on - the permission is what
             // admits it, and withholding it leaves the vanilla hosts answering alone.
             HoverSwitchScopes.runWithHoverTooltipSwitchOn(() ->
@@ -59,7 +59,7 @@ final class MapHoverPermissionTest {
         }
 
         @Test
-        void isCursorLocatableIsFalseWithNoMapAndNoGameSpace() {
+        void isFalseWithNoMapAndNoGameSpace() {
             // Some other screen with neither read open, which is most of the frames this is asked on.
             HoverSwitchScopes.runWithHoverTooltipSwitchOnInGameSpace(() ->
                 assertThat(buildPermission(NO_MAP_SHOWING, NOT_IN_GAME_SPACE).isCursorLocatable())

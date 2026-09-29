@@ -34,7 +34,7 @@ final class NoLayerTest {
     class ResolveTabLabelText {
 
         @Test
-        void resolveTabLabelTextLettersTheTabFromTheEmptyViewsOwnKey() {
+        void lettersTheTabFromTheEmptyViewsOwnKey() {
 
             try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
@@ -52,7 +52,7 @@ final class NoLayerTest {
     class GetBodyControls {
 
         @Test
-        void getBodyControlsOpensNoPanelForTheScreenThatAsked() {
+        void opensNoPanelForTheScreenThatAsked() {
             // The empty view's whole contract is to draw nothing, so its tab opens nothing either - on
             // whichever screen's panel it is selected. Nothing here stores a preference, which is why the
             // screen goes unread rather than partitioning anything.
@@ -65,7 +65,7 @@ final class NoLayerTest {
     class ResolveShortcutKeycode {
 
         @Test
-        void resolveShortcutKeycodeReadsTheEmptyViewsOwnRebindingField() {
+        void readsTheEmptyViewsOwnRebindingField() {
             // Which row the rebind lands in is the layer's own fact now, so a wrong ID here silently
             // ignores the player's rebind while every framework test stays green.
             try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
@@ -80,7 +80,7 @@ final class NoLayerTest {
         }
 
         @Test
-        void resolveShortcutKeycodeLeavesTheTabUnboundWhenTheSettingsRowAnswersNoKey() {
+        void leavesTheTabUnboundWhenTheSettingsRowAnswersNoKey() {
             // No key of this layer's own stands behind the row: a settings read answering nothing leaves
             // the tab unbound, which the bar draws no hint for and matches no press against. A fallback
             // keycode here would be a second answer to what the shipped table already decides, and would

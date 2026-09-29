@@ -149,7 +149,7 @@ final class SequencedMapLayerRendererTest {
     class PrepareFrame {
 
         @Test
-        void prepareFrameStandsDownWhileNothingIsSelected() {
+        void standsDownWhileNothingIsSelected() {
             // The tab is open with nothing selected. Standing down on that one read is what keeps a
             // dark overlay near-free per frame: nothing downstream is consulted, not even the hover
             // switch that gates the cheapest of the work below it.
@@ -164,7 +164,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void prepareFrameParksTheHoverWhileNothingIsSelected() {
+        void parksTheHoverWhileNothingIsSelected() {
             // A stood-down frame reads no cursor, so a cell lit by the last painted frame would
             // otherwise stand until something is selected again - and light the moment it is.
             hoverState.publishHover(HOVERED_CELL);
@@ -177,7 +177,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void prepareFrameAnnouncesTheMomentTheFrameBeforeSettledOn() {
+        void announcesTheMomentTheFrameBeforeSettledOn() {
             // Where the tick comes from, and the reason it comes from here: the frame's passes each
             // read through their own transform and the last of them wins, so the moment can only be
             // answered once they are all in - which the next frame's single preparation is.
@@ -192,7 +192,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void prepareFrameAnnouncesNothingBeforeAnyPassHasReadTheCursor() {
+        void announcesNothingBeforeAnyPassHasReadTheCursor() {
             // The first preparation of a session runs before any pass ever has, so there is no read
             // to answer for - and none to build one for either, the read needing a running map.
             buildRenderer(NOT_COVERING_THE_MAP).prepareFrame(FACTOR);
@@ -201,7 +201,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void prepareFrameStepsTheArrivalOnceAcrossAFramePaintedInTwoPasses() {
+        void stepsTheArrivalOnceAcrossAFramePaintedInTwoPasses() {
             // Two surfaces paint one frame, so two passes read the cursor - and the moment is still
             // the frame's, stepped by the one preparation that follows them.
             var renderer = buildRenderer(NOT_COVERING_THE_MAP);
@@ -216,7 +216,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void prepareFrameAsksTheCoversOnceForAFramePaintedInTwoPasses() {
+        void asksTheCoversOnceForAFramePaintedInTwoPasses() {
             // The last cover walks the live widget tree, so the question is the frame's: two passes
             // reading the cursor ask a flag the preparation set, not the covers again.
             var renderer = buildRenderer(NOT_COVERING_THE_MAP);
@@ -230,7 +230,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void prepareFrameRefreshesTheCacheUnderTheSubjectAndScopeOfOneReadOfTheShowingScreen() {
+        void refreshesTheCacheUnderTheSubjectAndScopeOfOneReadOfTheShowingScreen() {
             // The frame's whole per-screen contract in one case: the subject it paints is found for
             // the screen showing, and the refresh is handed that same screen's scope. Both are
             // per-screen picks, so a frame resolving the screen twice could paint one panel's subject
@@ -245,7 +245,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void prepareFrameMeasuresTheCacheRefreshInsideThisLayersRowOfItsOwnBeat() {
+        void measuresTheCacheRefreshInsideThisLayersRowOfItsOwnBeat() {
             // The whole shape of a prepared frame's capture: the beat is a root of this sector, the
             // layer's row is what the beat opens around the work, and the refresh sits inside it.
             buildRenderer(NOT_COVERING_THE_MAP).prepareFrame(FACTOR);
@@ -261,7 +261,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void prepareFrameStandingDownMeasuresItsBeatAndNothingBeneathIt() {
+        void standingDownMeasuresItsBeatAndNothingBeneathIt() {
             // A frame with nothing selected still costs the read that found that out, so the beat is
             // opened around it - but no layer ran, and a row for one that did not would report a
             // cost against work that never happened.
@@ -283,7 +283,7 @@ final class SequencedMapLayerRendererTest {
 
         @ParameterizedTest
         @EnumSource(MapOverlayBand.class)
-        void renderOnMapStandsDownWhileNothingIsSelected(MapOverlayBand band) {
+        void standsDownWhileNothingIsSelected(MapOverlayBand band) {
             // Every band asks the same question and gets the same answer. Driven per band because
             // each is a separate pass from a separate surface, so a band that read the subject
             // differently would paint on a frame the others left alone.
@@ -299,7 +299,7 @@ final class SequencedMapLayerRendererTest {
 
         @ParameterizedTest
         @EnumSource(MapOverlayBand.class)
-        void renderOnMapHandsThePassesFrameAndBandToTheCompositor(MapOverlayBand band) {
+        void handsThePassesFrameAndBandToTheCompositor(MapOverlayBand band) {
             // The engine's two loose values reach the layer as one frame, beside the band this pass
             // paints - the compositor is what decides which sub-layers that band holds.
             buildRenderer(NOT_COVERING_THE_MAP).renderOnMap(FACTOR, ALPHA_MULT, band);
@@ -310,7 +310,7 @@ final class SequencedMapLayerRendererTest {
 
         @ParameterizedTest
         @EnumSource(MapOverlayBand.class)
-        void renderOnMapMeasuresEachBandAsASeparateRootOfThisSector(MapOverlayBand band) {
+        void measuresEachBandAsASeparateRootOfThisSector(MapOverlayBand band) {
             // Each band is a pass of its own, so each gets a root of its own, with the layer's row
             // inside it around the compositor.
             buildRenderer(NOT_COVERING_THE_MAP).renderOnMap(FACTOR, ALPHA_MULT, band);
@@ -328,7 +328,7 @@ final class SequencedMapLayerRendererTest {
     class ResolveHoverTooltip {
 
         @Test
-        void resolveHoverTooltipAnswersTheLayersBoxForTheSubjectPainting() {
+        void answersTheLayersBoxForTheSubjectPainting() {
             // What is painting decides what there is to say about a cell, so the box handed to the
             // framework is the one the layer resolves under the subject its read found.
             var tooltipMock = mock(MapHoverTooltip.class);
@@ -340,7 +340,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void resolveHoverTooltipIsEmptyWhileThisLayersTooltipSwitchIsOff() {
+        void isEmptyWhileThisLayersTooltipSwitchIsOff() {
             // The layer withholds its box by offering none, which is how one layer's box goes dark
             // while every other layer's stays up. The switch answers before the subject is read, so
             // a layer that would have built a box never does the work.
@@ -359,7 +359,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void resolveHoverTooltipIsEmptyWhileNothingIsSelected() {
+        void isEmptyWhileNothingIsSelected() {
             // Nothing is painted, so there is nothing for a hover to describe either.
             subjectOnShowingScreen = null;
             tooltipRead = subject -> Optional.of(mock(MapHoverTooltip.class));
@@ -369,7 +369,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void resolveHoverTooltipMeasuresThisLayersRowInsideItsBeatThoughTheLayerOpensNothing() {
+        void measuresThisLayersRowInsideItsBeatThoughTheLayerOpensNothing() {
             // The row is opened around the layer's box rather than by it, which is what gives a
             // layer that measures nothing of its own a row all the same.
             buildRenderer(NOT_COVERING_THE_MAP).resolveHoverTooltip();
@@ -383,7 +383,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void resolveHoverTooltipMeasuresItsBeatBesideThePreparationsRatherThanInsideIt() {
+        void measuresItsBeatBesideThePreparationsRatherThanInsideIt() {
             // Two beats of one frame are two roots, in the order they ran. A beat opened as a child
             // would report the box as part of what the preparation cost.
             var renderer = buildRenderer(NOT_COVERING_THE_MAP);
@@ -401,7 +401,7 @@ final class SequencedMapLayerRendererTest {
     class DecideWhetherTheHoverIsWantedThisFrame {
 
         @Test
-        void decideWhetherTheHoverIsWantedThisFrameParksTheHoverWhileTheMapIsCovered() {
+        void parksTheHoverWhileTheMapIsCovered() {
             // A covered cursor is not hovering the cells beneath it, so the hover is parked rather
             // than left standing. Without it the map went on lighting cells and floating boxes
             // behind an open console.
@@ -415,7 +415,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void decideWhetherTheHoverIsWantedThisFrameParksTheHoverWhileEveryHoverSwitchIsOff() {
+        void parksTheHoverWhileEveryHoverSwitchIsOff() {
             // With both kinds of feedback switched off there is nothing that wants the answer, and
             // the frame's passes read no cursor at all.
             hoverState.publishHover(HOVERED_CELL);
@@ -430,7 +430,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void decideWhetherTheHoverIsWantedThisFrameAsksNoCoverWhileEveryHoverSwitchIsOff() {
+        void asksNoCoverWhileEveryHoverSwitchIsOff() {
             // The covers are the dear half, so a player who wants no feedback at all must not pay
             // for a walk that could only refine an answer nobody asked for.
             hoverGatesFake.setHoverEffectsOn(false);
@@ -448,7 +448,7 @@ final class SequencedMapLayerRendererTest {
     class PublishHoverForPass {
 
         @Test
-        void publishHoverForPassReadsTheCursorAgainstTheCachesTargetsOnceTheFrameWantsAHover() {
+        void readsTheCursorAgainstTheCachesTargetsOnceTheFrameWantsAHover() {
             // The pass's whole remaining job: hand the layer's current shapes and this pass's own
             // zoom to the read.
             var targetsMock = mock(MapHoverTargets.class);
@@ -466,7 +466,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void publishHoverForPassReadsTheCursorOnEveryPassThroughThatPassesOwnZoom() {
+        void readsTheCursorOnEveryPassThroughThatPassesOwnZoom() {
             // Each pass binds its own transform, so each reads - the last of them owning the answer,
             // which is the publisher's to keep.
             var renderer = buildRenderer(NOT_COVERING_THE_MAP);
@@ -482,7 +482,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void publishHoverForPassBuildsTheReadAgainstItsOwnHoverHolder() {
+        void buildsTheReadAgainstItsOwnHoverHolder() {
             // Handed any other sector's holder, a cursor read taken over this sector's cells would
             // light a cell on another sector's map - and this is the only place that pairing is made.
             var renderer = buildRenderer(NOT_COVERING_THE_MAP);
@@ -495,7 +495,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void publishHoverForPassAnnouncesNoArrival() {
+        void announcesNoArrival() {
             // The moment belongs to the frame, not to a pass. A pass answering one would sound the
             // crossing between two transforms' answers every frame a foreign map draws beside the
             // real one.
@@ -509,7 +509,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void publishHoverForPassReadsNothingWhileTheFrameWantsNoHover() {
+        void readsNothingWhileTheFrameWantsNoHover() {
             // The frame's decision is what the passes stand down on, so the read - and with it the
             // publisher and the renderer binding it holds - is never reached at all.
             buildRenderer(NOT_COVERING_THE_MAP)
@@ -519,7 +519,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void publishHoverForPassReadsNothingOnAFrameThatStoodDown() {
+        void readsNothingOnAFrameThatStoodDown() {
             // A frame with nothing selected parks its passes along with the hover, or a deselected
             // layer would still pay for a matrix read per pass.
             var renderer = buildRenderer(NOT_COVERING_THE_MAP);
@@ -534,7 +534,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void publishHoverForPassMeasuresThisLayersRowInsideItsOwnBeat() {
+        void measuresThisLayersRowInsideItsOwnBeat() {
             // The read is per pass, so its beat is too - a frame painted by several surfaces then
             // reports the reads it actually made rather than one of them.
             var renderer = buildRenderer(NOT_COVERING_THE_MAP);
@@ -551,7 +551,7 @@ final class SequencedMapLayerRendererTest {
         }
 
         @Test
-        void publishHoverForPassStandingDownMeasuresItsBeatAndNothingBeneathIt() {
+        void standingDownMeasuresItsBeatAndNothingBeneathIt() {
             // A pass of a frame that wants no hover still costs the gate that stood it down, and
             // several passes stand down per frame - so the beat says how much a switched-off hover
             // is costing, and opens no row for a read that never ran.
@@ -571,7 +571,7 @@ final class SequencedMapLayerRendererTest {
     class DisposeMachinery {
 
         @Test
-        void disposeMachineryReleasesTheLayersCache() {
+        void releasesTheLayersCache() {
             // The draw lists behind a painting layer can own GL buffers, and the cache is the one
             // part that knows which - so the release is handed to it rather than decided here.
             buildRenderer(NOT_COVERING_THE_MAP).disposeMachinery();

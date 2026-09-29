@@ -25,28 +25,28 @@ final class SurveyLevelChoiceTest {
     class ResolveSurveyLevel {
 
         @Test
-        void resolveSurveyLevelMapsNotSurveyedToNone() {
+        void mapsNotSurveyedToNone() {
 
             assertThat(SurveyLevelChoice.NOT_SURVEYED.resolveSurveyLevel())
                 .isEqualTo(SurveyLevel.NONE);
         }
 
         @Test
-        void resolveSurveyLevelMapsSeenToSeen() {
+        void mapsSeenToSeen() {
 
             assertThat(SurveyLevelChoice.SEEN.resolveSurveyLevel())
                 .isEqualTo(SurveyLevel.SEEN);
         }
 
         @Test
-        void resolveSurveyLevelMapsPreliminaryToPreliminary() {
+        void mapsPreliminaryToPreliminary() {
 
             assertThat(SurveyLevelChoice.PRELIMINARY.resolveSurveyLevel())
                 .isEqualTo(SurveyLevel.PRELIMINARY);
         }
 
         @Test
-        void resolveSurveyLevelMapsFullToFull() {
+        void mapsFullToFull() {
 
             assertThat(SurveyLevelChoice.FULL.resolveSurveyLevel())
                 .isEqualTo(SurveyLevel.FULL);
@@ -57,7 +57,7 @@ final class SurveyLevelChoiceTest {
     class GetLabel {
 
         @Test
-        void getLabelReadsTheWordingTheSettingsScreenStores() {
+        void readsTheWordingTheSettingsScreenStores() {
             // The stored key wearing a caption's costume. Held here as well as against the CSV
             // because a label edited on one side alone is a player's pick that silently stops
             // resolving.

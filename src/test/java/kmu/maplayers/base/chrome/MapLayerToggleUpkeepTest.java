@@ -95,7 +95,7 @@ final class MapLayerToggleUpkeepTest {
     class Advance {
 
         @Test
-        void advancePutsAControlOnTheRowOnScreen() {
+        void putsAControlOnTheRowOnScreen() {
 
             var shownRow = ShownFilterRows.createRowWithRoomToSpare();
             var screenPicks = buildScreenPicks();
@@ -113,7 +113,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceLeavesTheControlAloneWhileItStandsOnTheRowOnScreen() {
+        void leavesTheControlAloneWhileItStandsOnTheRowOnScreen() {
 
             var shownRow = ShownFilterRows.createRowWithRoomToSpare();
             var screenPicks = buildScreenPicks();
@@ -131,7 +131,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advancePutsAFreshControlUpOnceTheScreenRebuildsItsRow() {
+        void putsAFreshControlUpOnceTheScreenRebuildsItsRow() {
 
             var firstRow = ShownFilterRows.createRowWithRoomToSpare();
             var rebuiltRow = ShownFilterRows.createRowWithRoomToSpare();
@@ -155,7 +155,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceRemembersEachScreensBoxSeparately() {
+        void remembersEachScreensBoxSeparately() {
 
             var mapRow = ShownFilterRows.createRowWithRoomToSpare();
             var intelRow = ShownFilterRows.createRowWithRoomToSpare();
@@ -186,7 +186,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceWritesNothingWhileTheSwitchIsClosed() {
+        void writesNothingWhileTheSwitchIsClosed() {
 
             var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
 
@@ -202,7 +202,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceWritesNothingWhileNoMapIsOnScreen() {
+        void writesNothingWhileNoMapIsOnScreen() {
 
             var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
 
@@ -219,7 +219,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceReachesForNoRowOnAScreenThatCarriesNone() {
+        void reachesForNoRowOnAScreenThatCarriesNone() {
 
             var rowReadCount = new AtomicInteger();
 
@@ -245,7 +245,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceStopsReachingIntoAScreenThatThrewUntilAnotherIsOpened() {
+        void stopsReachingIntoAScreenThatThrewUntilAnotherIsOpened() {
 
             var rowReadCount = new AtomicInteger();
             var shownCoreTab = new AtomicReference<>(CoreUITabId.MAP);
@@ -282,7 +282,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceTriesAgainOnTheNextFrameAfterARowRefusesTheControl() {
+        void triesAgainOnTheNextFrameAfterARowRefusesTheControl() {
 
             var shownRow = ShownFilterRows.createRowWithRoomToSpare();
             var toggleAttacherMock = buildRefusingAttacherMock();
@@ -302,7 +302,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceOpensTheBoxShowingWhatTheScreenHolds() {
+        void opensTheBoxShowingWhatTheScreenHolds() {
 
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
             var shownRow = ShownFilterRows.createRowOver(rowFake);
@@ -321,7 +321,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceKeepsTheBoxShowingAPickThatMovedUnderIt() {
+        void keepsTheBoxShowingAPickThatMovedUnderIt() {
 
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
             var shownRow = ShownFilterRows.createRowOver(rowFake);
@@ -343,7 +343,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceActsOnAStoredHideOnceAControlIsStanding() {
+        void actsOnAStoredHideOnceAControlIsStanding() {
 
             var screenPicks = buildScreenPicksOverAHiddenSave();
 
@@ -361,7 +361,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceLeavesAStoredHideUnactedOnAfterARowRefusesAControl() {
+        void leavesAStoredHideUnactedOnAfterARowRefusesAControl() {
 
             var screenPicks = buildScreenPicksOverAHiddenSave();
 
@@ -381,7 +381,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceStopsActingOnAStoredHideOnceTheSwitchIsClosed() {
+        void stopsActingOnAStoredHideOnceTheSwitchIsClosed() {
 
             var screenPicks = buildScreenPicksOverAHiddenSave();
             var isSwitchOpen = new AtomicBoolean(true);
@@ -405,7 +405,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceActsOnAStoredHideAgainOnceTheSwitchIsReopenedOverTheStandingRow() {
+        void actsOnAStoredHideAgainOnceTheSwitchIsReopenedOverTheStandingRow() {
 
             var shownRow = ShownFilterRows.createRowWithRoomToSpare();
             var screenPicks = buildScreenPicksOverAHiddenSave();
@@ -429,7 +429,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceSwallowsAFailedReadAndPutsTheControlUpOnTheNextScreen() {
+        void swallowsAFailedReadAndPutsTheControlUpOnTheNextScreen() {
 
             var shownRow = ShownFilterRows.createRowWithRoomToSpare();
             var shownCoreTab = new AtomicReference<>(CoreUITabId.MAP);
@@ -466,7 +466,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceContainsTheGamesOwnFailureComingBackChecked() {
+        void containsTheGamesOwnFailureComingBackChecked() {
 
             var upkeep = new MapLayerToggleUpkeep(
                 SWITCH_OPEN,
@@ -480,7 +480,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceContainsAMemberThatNoLongerLinks() {
+        void containsAMemberThatNoLongerLinks() {
 
             var upkeep = new MapLayerToggleUpkeep(
                 SWITCH_OPEN,
@@ -498,7 +498,7 @@ final class MapLayerToggleUpkeepTest {
     class IsDone {
 
         @Test
-        void isDoneIsFalseSoThePassRunsForTheSession() {
+        void isFalseSoThePassRunsForTheSession() {
             // The row is rebuilt for as long as the player keeps opening map screens, so a pass that
             // ended would leave every screen opened after it bare.
             assertThat(new MapLayerToggleUpkeep().isDone())
@@ -510,7 +510,7 @@ final class MapLayerToggleUpkeepTest {
     class RunWhilePaused {
 
         @Test
-        void runWhilePausedIsTrueSoTheControlReachesTheScreensThatCarryARow() {
+        void isTrueSoTheControlReachesTheScreensThatCarryARow() {
             // Every screen carrying a filter row pauses the campaign, so a pass that stood down
             // while paused would run on none of the frames it exists for.
             assertThat(new MapLayerToggleUpkeep().runWhilePaused())

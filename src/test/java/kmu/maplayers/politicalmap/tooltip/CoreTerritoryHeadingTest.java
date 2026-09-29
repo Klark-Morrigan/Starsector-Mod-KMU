@@ -76,20 +76,20 @@ final class CoreTerritoryHeadingTest {
     class ResolveHeadingRows {
 
         @Test
-        void resolveHeadingRowsIsEmptyWithoutACoreFaction() {
+        void isEmptyWithoutACoreFaction() {
             assertThat(resolveHeadingUnder(null, BODY_IS_SILENT_ON_THE_DECREE))
                 .isEmpty();
         }
 
         @Test
-        void resolveHeadingRowsIsEmptyForABlankCoreFaction() {
+        void isEmptyForABlankCoreFaction() {
             // A memory flag written empty is no decree, so it must not draw a nameless core line.
             assertThat(resolveHeadingUnder(" ", BODY_IS_SILENT_ON_THE_DECREE))
                 .isEmpty();
         }
 
         @Test
-        void resolveHeadingRowsIsEmptyWhenTheBodyAlreadyStatesTheDecree() {
+        void isEmptyWhenTheBodyAlreadyStatesTheDecree() {
             // The decree is real here - what makes the heading wrong is the box about to say it again a
             // few lines down, which reads as two findings rather than one fact.
             assertThat(resolveHeadingUnder(CORE_FACTION, BODY_STATES_THE_DECREE))
@@ -97,7 +97,7 @@ final class CoreTerritoryHeadingTest {
         }
 
         @Test
-        void resolveHeadingRowsNamesTheCoreFaction() {
+        void namesTheCoreFaction() {
 
             var rows = resolveHegemonyHeading();
 
@@ -106,7 +106,7 @@ final class CoreTerritoryHeadingTest {
         }
 
         @Test
-        void resolveHeadingRowsLeadsWithTheCrestAsARunOfTheLine() {
+        void leadsWithTheCrestAsARunOfTheLine() {
             // The crest sits inside the label rather than in the gutter the entries below align to, so
             // it centres with the words it belongs to instead of anchoring to a column.
             var rows = resolveHegemonyHeading();
@@ -116,7 +116,7 @@ final class CoreTerritoryHeadingTest {
         }
 
         @Test
-        void resolveHeadingRowsMarksTheCoreStatusInTheHighlightColour() {
+        void marksTheCoreStatusInTheHighlightColour() {
             // The status is the point of the line, so it is picked out beside the plainly-coloured
             // faction name rather than blending into it - one line read in two colours.
             var rows = resolveHegemonyHeading();
@@ -126,7 +126,7 @@ final class CoreTerritoryHeadingTest {
         }
 
         @Test
-        void resolveHeadingRowsCentresTheLineRatherThanLayingItInTheColumns() {
+        void centresTheLineRatherThanLayingItInTheColumns() {
             // A decree settles the whole system, so the line speaks for the box and is set across it -
             // which is what a centred row is, and what carrying no crest gutter and no value column
             // makes it. Asserted as the kind of row it is, since that is the whole of the decision.
@@ -139,7 +139,7 @@ final class CoreTerritoryHeadingTest {
         }
 
         @Test
-        void resolveHeadingRowsFallsBackToTheIdForAnUnknownFaction() {
+        void fallsBackToTheIdForAnUnknownFaction() {
 
             var rows = resolveGhostFactionHeading();
 
@@ -148,7 +148,7 @@ final class CoreTerritoryHeadingTest {
         }
 
         @Test
-        void resolveHeadingRowsOpensAtItsNameWhenTheFactionHasNoCrest() {
+        void opensAtItsNameWhenTheFactionHasNoCrest() {
             // A faction the game gives no crest yields no path, so the line is built from its words
             // alone rather than from an image run with nothing to load.
             var rows = resolveGhostFactionHeading();

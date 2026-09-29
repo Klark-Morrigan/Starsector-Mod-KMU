@@ -130,7 +130,7 @@ final class ListPickerBinderTest {
     class BuildPicker {
 
         @Test
-        void buildPickerLightsTheRowTheSlotsStoredIdNames() {
+        void lightsTheRowTheSlotsStoredIdNames() {
             // The ID the picker lights comes from this slot, which is the read half of the
             // binding - a picker handed nothing would light no row whatever the save holds.
             try (var stringsMock = mockStatic(KmuStringKeys.class);
@@ -151,7 +151,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerCaptionsTheColumnsSelectorFromThisModsStrings() {
+        void captionsTheColumnsSelectorFromThisModsStrings() {
             // The picker takes its caption as drawn text, so resolving it out of this mod's table is
             // the binder's - a caller left to pass it would be naming a string key the picker has no
             // business knowing.
@@ -168,7 +168,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerWritesAnItemPickIntoTheSlot() {
+        void writesAnItemPickIntoTheSlot() {
             try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
@@ -183,7 +183,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerWritesAnItemPickUnderTheSlotItWasBuiltFor() {
+        void writesAnItemPickUnderTheSlotItWasBuiltFor() {
             // The slot is captured at the build, so a picker stood on one panel files its pick there
             // whatever screen is up when the click is handled.
             try (var stringsMock = mockStatic(KmuStringKeys.class);
@@ -208,7 +208,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerClearsTheSlotOnARePick() {
+        void clearsTheSlotOnARePick() {
             // The picker reports a clear rather than a pick when the lit row is re-clicked, and the
             // clear lands on this slot alone.
             try (var stringsMock = mockStatic(KmuStringKeys.class);
@@ -229,7 +229,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerRecordsAHoveredRowInTheSlotsScopesHoverSlot() {
+        void recordsAHoveredRowInTheSlotsScopesHoverSlot() {
             // The pointer's row reaches the sector's own slot, which is what a layer previews the
             // spotlight from. Written into the scope the picks use, so a layer cannot end up
             // previewing one scope's row while filtering by another's.
@@ -247,7 +247,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerClearsTheHoverSlotWhenThePointerLeavesTheList() {
+        void clearsTheHoverSlotWhenThePointerLeavesTheList() {
             // The leave is the one reading a stream never says out loud, so it arrives as a report
             // of its own - swallowed here, a layer would go on previewing the last row the pointer
             // crossed while the pointer is somewhere else entirely.
@@ -267,7 +267,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerRoutesAColumnsPickToTheColumnBinder() {
+        void routesAColumnsPickToTheColumnBinder() {
             // The other two picks are handed to the binders that already own those slots. Asserted
             // at the binder rather than at the sector-memory key behind it: what this class decides
             // is which binder a report goes to, and the binder's own suite pins the write.
@@ -288,7 +288,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerReadsTheColumnCountUnderTheScreenHalfOfTheSlotItWritesOneTo() {
+        void readsTheColumnCountUnderTheScreenHalfOfTheSlotItWritesOneTo() {
             // The read half of the column tie, and the one address a caller used to supply: read at
             // the screen half of this slot, which is exactly where a pick above is written back, so
             // the count a list lays out under and the count a click stores cannot name two screens
@@ -307,7 +307,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerWrapsTheListAcrossTheStoredColumnCount() {
+        void wrapsTheListAcrossTheStoredColumnCount() {
             // What that read is for: the stored count reaches the list rather than a default, so a
             // player who wrapped this panel's list finds it wrapped on the next body build.
             try (var stringsMock = mockStatic(KmuStringKeys.class);
@@ -322,7 +322,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerRoutesASortPickToTheSortBinder() {
+        void routesASortPickToTheSortBinder() {
             try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
                 stubLabels(stringsMock);
@@ -338,7 +338,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerRanksTheListByTheVocabularyTheCallersPickerCarries() {
+        void ranksTheListByTheVocabularyTheCallersPickerCarries() {
             // The read half of the same tie: the stored sort is resolved against the vocabulary
             // that arrived bundled with the items, not against one this class names, which is what
             // lets two layers holding different vocabularies share the one binder. Read under the
@@ -355,7 +355,7 @@ final class ListPickerBinderTest {
         }
 
         @Test
-        void buildPickerContributesNothingForAnOfferNothingPickerWithoutReadingItsVocabulary() {
+        void contributesNothingForAnOfferNothingPickerWithoutReadingItsVocabulary() {
             // An empty picker carries no fallback mode, so the item list has to be found empty
             // before any stored sort is resolved - resolving first would land on nothing. Both
             // halves are asserted, since returning no controls while still reading the vocabulary

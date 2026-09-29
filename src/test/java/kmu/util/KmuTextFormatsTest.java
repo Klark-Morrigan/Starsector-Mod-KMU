@@ -15,25 +15,25 @@ class KmuTextFormatsTest {
     class JoinWithParenthetical {
 
         @Test
-        void joinWithParentheticalReturnsBothWhenPresent() {
+        void returnsBothWhenPresent() {
             assertThat(joinWithParenthetical(Optional.of("main"), Optional.of("note")))
                     .contains("main (note)");
         }
 
         @Test
-        void joinWithParentheticalReturnsMainWhenParentheticalAbsent() {
+        void returnsMainWhenParentheticalAbsent() {
             assertThat(joinWithParenthetical(Optional.of("main"), Optional.empty()))
                     .contains("main");
         }
 
         @Test
-        void joinWithParentheticalReturnsParentheticalWhenMainAbsent() {
+        void returnsParentheticalWhenMainAbsent() {
             assertThat(joinWithParenthetical(Optional.empty(), Optional.of("note")))
                     .contains("note");
         }
 
         @Test
-        void joinWithParentheticalReturnsEmptyWhenBothAbsent() {
+        void returnsEmptyWhenBothAbsent() {
             assertThat(joinWithParenthetical(Optional.empty(), Optional.empty()))
                     .isEmpty();
         }

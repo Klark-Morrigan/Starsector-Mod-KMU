@@ -260,7 +260,7 @@ final class ClusterAnchorPlacementTest {
             SINGLE_SYSTEM_GROUPING);
 
         @Test
-        void computeClusterAnchorsClipsTheAcceptedLineInsideTheClusterBorder() {
+        void clipsTheAcceptedLineInsideTheClusterBorder() {
             // No icon keep-out and no end margin, so the winning horizontal line is the
             // full interior span: it reaches the inset border rings (x 150..1850) - past
             // the sites, but never out of the border.
@@ -284,7 +284,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsRelocatesToAParallelOffsetToClearAnIconOnTheCentreLine() {
+        void relocatesToAParallelOffsetToClearAnIconOnTheCentreLine() {
             // A 150-unit keep-out around the sites at y=500 blocks the centre line but
             // clears the parallel offsets at y=325 and y=675 (175 away). Rather than
             // shrink the centred line to a stub between the icons, the search slides the
@@ -316,7 +316,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsPullsEachEndInwardByTheEndInset() {
+        void pullsEachEndInwardByTheEndInset() {
             // The 100-unit end inset pulls the winning horizontal span (x 150..1850) in
             // from both ends, leaving the border gap a name needs on each side.
             var anchors = computeAnchors(
@@ -335,7 +335,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsKeepsAGenuinelyTallThinClusterVertical() {
+        void keepsAGenuinelyTallThinClusterVertical() {
             // The column is only 200 units wide once inset, so every slanted candidate is
             // width-limited to a short chord and only the vertical line runs the full
             // 1700-unit height. Even with the penalty docking the vertical line by half,
@@ -360,7 +360,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsFlipsAWideVerticalCloudHorizontalUnderThePenalty() {
+        void flipsAWideVerticalCloudHorizontalUnderThePenalty() {
             // The cluster is square, so its horizontal and vertical chords are the same
             // 1700 units even though the site cloud is strung vertically. The penalty
             // docks the vertical line by half and leaves the horizontal one whole, so the
@@ -383,7 +383,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsPicksTheLongestCandidateWhenThePenaltyIsZero() {
+        void picksTheLongestCandidateWhenThePenaltyIsZero() {
             // With the penalty off the search reduces to the pure longest line. In the
             // square cluster that is a diagonal through the centre (1700 / sin 60 ~ 1963),
             // longer than either axis-aligned 1700 chord, so a slanted line wins.
@@ -412,7 +412,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsPlacesTheAnchorDotAtTheAcceptedLineMidpoint() {
+        void placesTheAnchorDotAtTheAcceptedLineMidpoint() {
             // The centred horizontal winner spans x 150..1850 at y 500, so its midpoint -
             // the dot and the label's hang-point - is (1000, 500).
             var anchors = computeAnchors(
@@ -435,7 +435,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsFindsALineDeepInAConcaveClusterWhoseCentroidIsOutside() {
+        void findsALineDeepInAConcaveClusterWhoseCentroidIsOutside() {
             // The boot's site centroid falls in the concave notch, outside the border, so
             // a line through it would clip only the 700-unit left arm. The offset sweep
             // instead reaches the bottom arm and returns a chord nearly three cells long -
@@ -459,7 +459,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsFitsASingleSystemClusterALineAlongItsCellShape() {
+        void fitsASingleSystemClusterALineAlongItsCellShape() {
             // One site has no spread of its own, so its cell's own 2000x1000 shape feeds a
             // horizontal principal-axis candidate; the search lands the full interior span
             // (x 150..1850) - a single-system cluster still carries a real line.
@@ -486,7 +486,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCollapsesToTheSiteCentroidDotWhenNoLineFits() {
+        void collapsesToTheSiteCentroidDotWhenNoLineFits() {
             // A 1000-unit end inset asks for 2000 units of margin from a 1700-unit longest
             // chord: no candidate survives, so the anchor is just the dot at the site
             // centroid (1000, 500) - no lines, no name, no font. With the diagnostic
@@ -511,7 +511,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsReportsTheBestRejectedCandidateWhenTheSearchCollapses() {
+        void reportsTheBestRejectedCandidateWhenTheSearchCollapses() {
             // Same no-room collapse, but with the rejected-axis toggle on: the best
             // candidate the search had - the full pre-inset clear span (x 150..1850) -
             // comes back for the red line, showing how close the cluster came.
@@ -547,7 +547,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsReportsTheUnbiasedLineWhenThePenaltyMovesThePick() {
+        void reportsTheUnbiasedLineWhenThePenaltyMovesThePick() {
             // In the square cluster the penalty accepts the horizontal 1700 line while the
             // pure longest line is the ~1963 diagonal. With the unbiased toggle on, that
             // diagonal rides along for the yellow comparison.
@@ -586,7 +586,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsOmitsTheUnbiasedLineWhenThePenaltyDoesNotMoveThePick() {
+        void omitsTheUnbiasedLineWhenThePenaltyDoesNotMoveThePick() {
             // In the tall thin column the longest line is also the accepted one (vertical
             // wins on length even penalised), so the pure-longest line coincides with the
             // accepted line and no separate yellow line is built.
@@ -608,7 +608,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCollapsesToTheDotWhenNoBorderRingTraces() {
+        void collapsesToTheDotWhenNoBorderRingTraces() {
             // Members with no cell edges yield no border ring to clip against, so there is
             // nothing to prove a line interior - the dot at the site centroid only.
             var anchors = computeAnchors(
@@ -627,7 +627,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsResolvesTheNameEstimatorByTheClustersGroupingKey() {
+        void resolvesTheNameEstimatorByTheClustersGroupingKey() {
             // The injected estimator is what the fit sizes against and what wraps the
             // label's lines, so the resolver must be asked with the key the cluster's
             // members carry - the search's only handle on which name this box is for.
@@ -646,7 +646,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCarriesTheInjectedColourForTheClustersGroupingKey() {
+        void carriesTheInjectedColourForTheClustersGroupingKey() {
             // The shade a name and its dot draw in is resolved outside the search and looked
             // up by the same key the name is: the search only carries it onto the anchor, so
             // it never has to know what makes one cluster's colour differ from another's.
@@ -667,7 +667,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsNamesTheClusterEachAnchorWasFittedTo() {
+        void namesTheClusterEachAnchorWasFittedTo() {
             // The anchors are all a rebuild inherits, so a placement that could not say
             // which cluster it was made for could never be matched against a later
             // rebuild's clusters - the owner its name and shade came from, and the members
@@ -682,7 +682,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsReadsTheOwnerOfAMemberUnderItsOwnKey() {
+        void readsTheOwnerOfAMemberUnderItsOwnKey() {
             // The members and the owner map share one address, so a cluster whose member shares a
             // vanilla ID with another system takes its own owner - where a lookup by ID alone
             // could only have named whichever of the pair the map happened to hold.
@@ -709,7 +709,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsNamesEachClusterOfASweepAfterItsOwnMembers() {
+        void namesEachClusterOfASweepAfterItsOwnMembers() {
             // The same two cells split between two owners, so the sweep fits two clusters in
             // one call. An identity resolved once for the whole call - or left over from the
             // cluster before - would have both anchors claiming the same owner or the same
@@ -728,7 +728,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsNamesTheClusterWhenNoLineFits() {
+        void namesTheClusterWhenNoLineFits() {
             // The no-room collapse mints its own anchor. An unnamed dot would have to be
             // re-fitted every rebuild, and re-proving that a cluster still has no room is
             // the one search there is least point repeating.
@@ -744,7 +744,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsNamesTheClusterWhenNoBorderRingTraces() {
+        void namesTheClusterWhenNoBorderRingTraces() {
             // The third and last way an anchor is minted: the dead end where no border
             // traces at all. It names its cluster like the other two, so no path out of
             // the search produces a placement that cannot be recognised.
@@ -760,7 +760,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCarriesAStandingPlacementRatherThanSearchingItsClusterAgain() {
+        void carriesAStandingPlacementRatherThanSearchingItsClusterAgain() {
             // The saving the partial re-fit exists for. A cluster a standing placement already
             // names costs no candidates and no band fits at all - a search that happened to
             // land in the same place would still have spent both, so the counts are what says
@@ -780,7 +780,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsTakesTheFreshShadeOntoACarriedPlacement() {
+        void takesTheFreshShadeOntoACarriedPlacement() {
             // An owner that only changed appearance - the recede a filter switch applies to every
             // owner but the spotlit one - keeps its geometry and takes the shade this pass
             // resolved. Colour is no input to the fit, so it is the one component a carried
@@ -800,7 +800,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCarriesAPlacementWhoseNameStillWrapsTheSameWay() {
+        void carriesAPlacementWhoseNameStillWrapsTheSameWay() {
             // The positive half of the wrap guard, run against a name with real lines rather
             // than the stand-in: an unchanged name resolves to the lines the box was measured
             // for, so the guard lets the placement through rather than making every named
@@ -819,7 +819,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsRefitsARenamedClusterRatherThanCarryingItsOldBox() {
+        void refitsARenamedClusterRatherThanCarryingItsOldBox() {
             // Same owner, same members, different name: the identity matches, so nothing but
             // the wrap can catch this. The box was sized against the name it was measured
             // with, so carrying it would draw the new name in a box cut for the old one.
@@ -837,7 +837,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsRefitsAClusterThatSplitInTwo() {
+        void refitsAClusterThatSplitInTwo() {
             // The fused pair's placement names both members, so neither half of the split
             // matches it and both are searched afresh. Nothing here had to notice the split:
             // the member set did, which is what makes the hazard structural rather than a
@@ -860,7 +860,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsRefitsAClusterThatMergedIntoOne() {
+        void refitsAClusterThatMergedIntoOne() {
             // The other direction: two standing placements, each naming one cell, and a cluster
             // that now spans both. A merged cluster's member set matches neither, so the pair
             // it came from cannot be carried onto it - a box fitted inside one cell would sit
@@ -882,7 +882,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsRefitsWhenTheNameCanNoLongerFillTheCarriedLineCount() {
+        void refitsWhenTheNameCanNoLongerFillTheCarriedLineCount() {
             // A stand-in has no text, so it wraps to nothing at every line count - and so does a
             // real name at a line count it has too few words to fill. Comparing the wraps alone
             // reads the two alike, which would carry a two-line stand-in box onto a name that
@@ -925,7 +925,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsRefitsACollapsedPlacementRatherThanCarryingIt() {
+        void refitsACollapsedPlacementRatherThanCarryingIt() {
             // A collapse fitted no box, so it recorded no measured name for the wrap guard to
             // read - and a name that has since grown shorter is exactly the case where a
             // cluster that had no room now has some. Re-proving it is cheap; assuming it is
@@ -950,7 +950,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsSkipsAClusterWhoseSitesAreAllMissing() {
+        void skipsAClusterWhoseSitesAreAllMissing() {
             // A cluster whose members have no site (none in the site map) has no point
             // cloud to fit, so it contributes no anchor rather than an empty fit.
             var anchors = computeAnchors(
@@ -962,7 +962,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCountsTheCandidatesAsTheResolvedFanCrossedWithTheOffsets() {
+        void countsTheCandidatesAsTheResolvedFanCrossedWithTheOffsets() {
             // The reported candidates must be what the sweep visited, not the fan width it
             // was tuned with: a 3-wide fan resolves to 5 directions once the cluster's own
             // axis and the preferred slant join it, and each is swept at all 4 offsets.
@@ -977,7 +977,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCountsNothingForAClusterItSkipped() {
+        void countsNothingForAClusterItSkipped() {
             // A skipped cluster costs nothing, so it must not carry a share of the tuning's
             // product either - the counts are what the sweep spent, not what it was sized for.
             var fit = ClusterAnchorPlacement.computeClusterAnchors(
@@ -991,7 +991,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCountsManyBandFitsPerCandidate() {
+        void countsManyBandFitsPerCandidate() {
             // Each candidate is sized by repeated band fits - a minimum-font probe, the
             // font-height search's steps, and the accepted span's read-back - so the band
             // fits outnumber the candidates. This is the level the fit's duration tracks,
@@ -1007,7 +1007,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCapsTheBandGirthSoTheWholeBandStaysInsideTheBorder() {
+        void capsTheBandGirthSoTheWholeBandStaysInsideTheBorder() {
             // A slab cluster 700 tall once inset (y 150..850). A fat name (aspect 1) wants
             // all the girth it can get, but the band cannot exceed the 700 the border
             // allows, so the fit caps the girth at the cluster rather than overrun it - and
@@ -1051,7 +1051,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsSizesTheBandToTheFontToleranceItsTuningCarries() {
+        void sizesTheBandToTheFontToleranceItsTuningCarries() {
             // The same girth-capped slab, fitted twice under tunings that differ in nothing
             // but how finely the font search runs. At the fine tolerance the fit resolves
             // the ~700 of girth the border allows; a tolerance of 1000 over the 100..2000
@@ -1093,7 +1093,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsStacksASquareClusterNameIntoTwoLines() {
+        void stacksASquareClusterNameIntoTwoLines() {
             // In a square cluster (inset 1700 on a side) a name six times as long as it is
             // tall cannot run big on one line - the side caps a single line's font. Stacking
             // it into two lines halves the length each line needs and spends the square's
@@ -1122,7 +1122,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCarriesTheWinningWrapAndItsFontHeight() {
+        void carriesTheWinningWrapAndItsFontHeight() {
             // The same two-line winner fitted against a fake with real lines: the anchor
             // carries the estimator's wrap at the winning line count and the per-line
             // font height behind the band - girth = fontHeight * (1 + spacing) for two
@@ -1155,7 +1155,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsKeepsANameOnOneLineWhenTheLineCapIsOne() {
+        void keepsANameOnOneLineWhenTheLineCapIsOne() {
             // The same square that would prefer two lines is held to one when the line cap
             // is one, so the name stays a single line at the smaller font the cap forces -
             // the knob that lets a caller forbid stacking.
@@ -1181,7 +1181,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsCollapsesToTheDotWhenTheMinimumBandCannotFit() {
+        void collapsesToTheDotWhenTheMinimumBandCannotFit() {
             // A minimum font taller than the 1700 the square holds cannot sit anywhere
             // - no placement can prove even the thinnest required band interior - so the fit
             // collapses to the site-centroid dot, the same fallback a no-room line takes.
@@ -1454,7 +1454,7 @@ final class ClusterAnchorPlacementTest {
     class CountCandidateDirections {
 
         @Test
-        void countCandidateDirectionsAddsTheFansTwoFixedExtrasToTheConfiguredWidth() {
+        void addsTheFansTwoFixedExtrasToTheConfiguredWidth() {
             // The configured width reads as the swept count and is not it: every fan also
             // carries the cluster's own principal axis and the preferred slant. Resolving
             // the two apart is what lets a report show them as swept-over-configured
@@ -1464,7 +1464,7 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void countCandidateDirectionsStillCountsTheExtrasForAFanOfNoWidth() {
+        void stillCountsTheExtrasForAFanOfNoWidth() {
             // A zero-width fan is not a zero-candidate sweep - the two extras are added
             // unconditionally, so the axis and the slant are still swept.
             assertThat(ClusterAnchorPlacement.countCandidateDirections(0))

@@ -78,7 +78,7 @@ final class CellTooltipLabelsTest {
     class ResolveLabelRuns {
 
         @Test
-        void resolveLabelRunsSaysAPlainNameInOneRunOfTheColourItWasHanded() {
+        void saysAPlainNameInOneRunOfTheColourItWasHanded() {
 
             assertThat(CellTooltipLabels.resolveLabelRuns(
                     CellTooltipEntryLine.createLine(NO_MARK, "Jangala", "4,000"),
@@ -87,7 +87,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsOpensAMarkedLineOnItsMark() {
+        void opensAMarkedLineOnItsMark() {
             // The mark rides inside the label so it lands where the line's own indent put it, and the
             // name follows as the next run of the same sentence - a word space clear of the image.
             assertThat(CellTooltipLabels.resolveLabelRuns(
@@ -99,7 +99,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsDrawsAMarkStandingInForTheNameInThatNamesColour() {
+        void drawsAMarkStandingInForTheNameInThatNamesColour() {
             // An asset coloured to carry across the sector map arrives here brighter than the words
             // and the numbers around it, so a glyph that is only a shorthand for the name takes the
             // name's own colour and the pair reads as one thing.
@@ -112,7 +112,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsDrawsAMarkOfItsOwnAsItsAssetAuthoredIt() {
+        void drawsAMarkOfItsOwnAsItsAssetAuthoredIt() {
             // A crest is a picture of a thing rather than a shorthand for it, and its colours are in
             // its own pixels - multiplied by the line's shade it would come out a tinted smudge.
             assertThat(CellTooltipLabels.resolveLabelRuns(
@@ -122,7 +122,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsBlocksOutAWithheldNameInTheColourItWasHanded() {
+        void blocksOutAWithheldNameInTheColourItWasHanded() {
             // The redaction stands exactly where the name would, in the shade the name would have read
             // in - a line of the list with one part blocked out rather than a shape of its own.
             assertThat(CellTooltipLabels.resolveLabelRuns(
@@ -132,7 +132,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsOpensAWithheldLineOnItsMark() {
+        void opensAWithheldLineOnItsMark() {
             // A redacted line opens on an image run like every other line, so it is not set apart by
             // being shorter as well as blocked out - and the glyph reads in the line's own colour,
             // standing in for the name beside it as any other shorthand would.
@@ -145,7 +145,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsRunsAWithheldNamesPlaceAndStatusOnAfterIt() {
+        void runsAWithheldNamesPlaceAndStatusOnAfterIt() {
             // Everything the line runs on into is laid exactly as it is on a line that says its name:
             // the redaction takes the whole of the name's place and none of the runs after it move.
             assertThat(CellTooltipLabels.resolveLabelRuns(
@@ -161,7 +161,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsQuietensTheNameOfAnAside() {
+        void quietensTheNameOfAnAside() {
             // An aside stating how a number above it was arrived at is not one of the things the block
             // lists, so its name reads in the shade a value's working does whatever colour it was
             // handed - and its mark follows the name down with it.
@@ -176,7 +176,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsGildsTheStretchOfANameThatIsAFinding() {
+        void gildsTheStretchOfANameThatIsAFinding() {
             // The word is stated where the reader is already looking rather than repeated at the end
             // of the line, and in the same gold a status after the name reads in - it is the same
             // finding, drawn somewhere else.
@@ -191,7 +191,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsDrawsAGildedNameAsItsAuthorSpelledIt() {
+        void drawsAGildedNameAsItsAuthorSpelledIt() {
             // The reason every stretch past the first joins the one before it: a label spaces its
             // runs, so a name split anywhere its own spacing does not already part would be drawn
             // with a space the place is not called by.
@@ -206,7 +206,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsPicksAFindingOutOfTheMiddleOfAName() {
+        void picksAFindingOutOfTheMiddleOfAName() {
             // The fullest a name is drawn as: what stands before the word, the word, and what follows
             // - the two plain stretches in the colour the label was handed, so only the finding is
             // picked out.
@@ -222,7 +222,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsGildsTheWholeOfANameThatSaysNothingElse() {
+        void gildsTheWholeOfANameThatSaysNothingElse() {
             // Nothing stands either side of the word, so the label is the one run it always was rather
             // than one opening or closing on a stretch that says nothing.
             assertThat(CellTooltipLabels.resolveLabelRuns(
@@ -234,7 +234,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsKeepsAGildedNameInTheColourItWasHanded() {
+        void keepsAGildedNameInTheColourItWasHanded() {
             // Only the finding is gold. What surrounds it takes whatever shade the line speaks in, so
             // a gilded name on a member reads as a member with a word picked out.
             assertThat(CellTooltipLabels.resolveLabelRuns(
@@ -248,7 +248,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsRunsAPlaceOnAfterTheNameInTheQuietShade() {
+        void runsAPlaceOnAfterTheNameInTheQuietShade() {
             // A place identifies the line rather than saying something about it, so it is drawn in the
             // shade the working behind a value is - not the gold a finding reads in - and sits with the
             // name it belongs to rather than at the end of the line.
@@ -263,7 +263,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsPicksAPlaceOutOnceItDecidedSomething() {
+        void picksAPlaceOutOnceItDecidedSomething() {
             // The moment the number stops being a label: two lines equal on everything else are parted
             // by it alone, so it reads in vanilla's own positive or negative shade rather than leaving
             // the reader to work out that the smaller number wins.
@@ -283,7 +283,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsRunsWhatTheLineRemarksInTheQuietShade() {
+        void runsWhatTheLineRemarksInTheQuietShade() {
             // A remark is what the box says about its own account of the line rather than something it
             // has found, so it takes the shade a value's working does. In the qualifier's gold a reader
             // would weigh it against the numbers on the line.
@@ -298,7 +298,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsReadsThePlaceTheStatusAndTheRemarkInThatOrder() {
+        void readsThePlaceTheStatusAndTheRemarkInThatOrder() {
             // Three runs answering three questions, in the order a reader meets them: which one this
             // is, what the box has found about it, and how current the account of it is. The remark
             // closes the label because it is the only run not about the thing on the line - set ahead
@@ -318,7 +318,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsRunsAMarkedLinesPlaceAndStatusOnPastItsMark() {
+        void runsAMarkedLinesPlaceAndStatusOnPastItsMark() {
             // The fullest label the vocabulary can build, and the one place the mark's cost to every
             // run after it is legible: name, place and status each sit a run further along than they
             // would on the same line unmarked, in that order, and the mark still opens the label.
@@ -336,7 +336,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsReadsAnIntroducedStatusAsItsWordItsMarkThenItsFinding() {
+        void readsAnIntroducedStatusAsItsWordItsMarkThenItsFinding() {
             // A status naming the thing the line belongs to comes to three runs in the order a reader
             // meets them, and only the last is gold: the box's joining word and the picture beside it
             // are the sentence around the finding rather than findings themselves, so a reader
@@ -357,7 +357,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsClosesAnEnclosedStatusOnTheWordSayingWhatItNames() {
+        void closesAnEnclosedStatusOnTheWordSayingWhatItNames() {
             // The fullest status the vocabulary builds, for a finding that cannot say for itself
             // what kind of thing it is: the closing word takes the same quiet shade the opening one
             // does, both being the box's own words rather than anything it found.
@@ -379,7 +379,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsDrawsAColouredFindingInItsOwnColour() {
+        void drawsAColouredFindingInItsOwnColour() {
             // A finding whose colour is the fact - a relation level here - read in the colour the
             // status states rather than the box's gold, which would state the level and contradict
             // it in the same line.
@@ -396,7 +396,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsColoursTheStatusFindingAloneAndNothingElseOnTheLine() {
+        void coloursTheStatusFindingAloneAndNothingElseOnTheLine() {
             // The colour belongs to the one finding the status states: the words around it stay the
             // box's quiet connective, and a finding picked out of the line's own name is a different
             // finding and keeps the shared gold.
@@ -417,7 +417,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsAddsNoRunForWhateverTheLineLeavesUnsaid() {
+        void addsNoRunForWhateverTheLineLeavesUnsaid() {
             // The three absences together, and the reason they matter: a run drawing nothing would
             // still be a run the box measures and parts from its neighbour, so a plain line has to
             // come to the single run its name is.
@@ -428,7 +428,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsStandsAStatusClearOfAGildedName() {
+        void standsAStatusClearOfAGildedName() {
             // Two findings about two different subjects, in the one shade the box reserves for
             // findings: what the place is, said in its name, and that the player has not found it,
             // said after it. The status is a word of its own rather than joining the name it follows.
@@ -445,7 +445,7 @@ final class CellTooltipLabelsTest {
         }
 
         @Test
-        void resolveLabelRunsStandsAGildedNameClearOfTheMarkItFollows() {
+        void standsAGildedNameClearOfTheMarkItFollows() {
             // The one case the two joining rules are told apart by: the stretches of a name butt
             // against each other, while the name as a whole is a word of the sentence and keeps its
             // space from the image before it. Joined onto its own mark, the name would draw against

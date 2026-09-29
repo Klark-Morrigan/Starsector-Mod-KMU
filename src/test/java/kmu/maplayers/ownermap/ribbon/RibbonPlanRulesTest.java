@@ -24,7 +24,7 @@ final class RibbonPlanRulesTest {
     class ResolveUncontestedLengths {
 
         @Test
-        void resolveUncontestedLengthsShortensTheMarketRunOfItsOwnAuthoredPair() {
+        void shortensTheMarketRunOfItsOwnAuthoredPair() {
 
             var lengths = new RibbonPlanRules(AUTHORED_LENGTHS, new UncontestedRibbonRuns(true))
                 .resolveUncontestedLengths();
@@ -34,7 +34,7 @@ final class RibbonPlanRulesTest {
         }
 
         @Test
-        void resolveUncontestedLengthsAnswersItsOwnAuthoredPairWhereNothingIsShortened() {
+        void answersItsOwnAuthoredPairWhereNothingIsShortened() {
 
             var lengths = new RibbonPlanRules(AUTHORED_LENGTHS, new UncontestedRibbonRuns(false))
                 .resolveUncontestedLengths();

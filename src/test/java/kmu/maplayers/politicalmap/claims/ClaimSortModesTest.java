@@ -31,7 +31,7 @@ final class ClaimSortModesTest {
     class Modes {
 
         @Test
-        void modesListsEveryModeInSelectorDisplayOrder() {
+        void listsEveryModeInSelectorDisplayOrder() {
 
             // This list is the order the sort selector stacks its rows top to bottom, so it is a drawn
             // arrangement rather than an implementation detail: name first, then the two numeric
@@ -53,7 +53,7 @@ final class ClaimSortModesTest {
         }
 
         @Test
-        void modesFallsBackToClaimsAsTheDefault() {
+        void fallsBackToClaimsAsTheDefault() {
 
             // Claims is the metric this layer is actually painted by, so a fresh save and any
             // unrecognised stored key open on the ranking that matches what the map shows - rather
@@ -67,7 +67,7 @@ final class ClaimSortModesTest {
     class PersistenceKey {
 
         @Test
-        void persistenceKeyIsTheFrozenKeyForEachMode() {
+        void isTheFrozenKeyForEachMode() {
 
             // Pinned as literals: renaming a key silently resets every save that stored that mode back
             // to the default, so a change must break this test before it ships.
@@ -84,7 +84,7 @@ final class ClaimSortModesTest {
     class ResolveTrailingRuns {
 
         @Test
-        void resolveTrailingRunsIsTheModesMetricAsOneRowColouredRunForANumericMode() {
+        void isTheModesMetricAsOneRowColouredRunForANumericMode() {
 
             var bloc = buildBloc("hegemony", "Hegemony", new ClaimStats(4, 26));
 
@@ -97,7 +97,7 @@ final class ClaimSortModesTest {
         }
 
         @Test
-        void resolveTrailingRunsIsNoRunsUnderTheNameMode() {
+        void isNoRunsUnderTheNameMode() {
 
             // The name mode ranks on the label, so there is no number to show and the row's value
             // column stays unfilled.
@@ -112,7 +112,7 @@ final class ClaimSortModesTest {
     class DefaultDirection {
 
         @Test
-        void defaultDirectionIsDescendingForANumericMode() {
+        void isDescendingForANumericMode() {
 
             // A numeric mode leads with the bigger claimant, so its natural order runs high-to-low.
             assertThat(ClaimSortModes.CLAIMS.defaultDirection())
@@ -122,7 +122,7 @@ final class ClaimSortModesTest {
         }
 
         @Test
-        void defaultDirectionIsAscendingForTheNameMode() {
+        void isAscendingForTheNameMode() {
 
             // The name mode reads A-to-Z, so its natural order runs ascending.
             assertThat(ClaimSortModes.NAME.defaultDirection())
@@ -134,7 +134,7 @@ final class ClaimSortModesTest {
     class Comparator {
 
         @Test
-        void comparatorRanksANumericModeByItsOwnMetric() {
+        void ranksANumericModeByItsOwnMetric() {
 
             var low = buildBloc("low", "Low", new ClaimStats(1, 0));
             var high = buildBloc("high", "High", new ClaimStats(9, 0));
@@ -144,7 +144,7 @@ final class ClaimSortModesTest {
         }
 
         @Test
-        void comparatorBreaksTiesDownTheCanonicalChainInOrder() {
+        void breaksTiesDownTheCanonicalChainInOrder() {
 
             // The order this vocabulary declares behind its numbers: claims, then market size. The pair
             // is level on claims, so which bloc leads names the number the chain reaches next.
@@ -156,7 +156,7 @@ final class ClaimSortModesTest {
         }
 
         @Test
-        void comparatorSinksTheClaimlessBlocsBelowEveryClaimantUnderTheDefaultMode() {
+        void sinksTheClaimlessBlocsBelowEveryClaimantUnderTheDefaultMode() {
             // The list holds colony holders that claim nowhere, so where they land is what keeps it
             // readable: under the mode the view opens on they form a tail beneath every claimant, and
             // the list still opens on what the layer actually paints. A big holder claiming nothing is
@@ -169,7 +169,7 @@ final class ClaimSortModesTest {
         }
 
         @Test
-        void comparatorInterleavesTheClaimlessBlocsUnderTheNameMode() {
+        void interleavesTheClaimlessBlocsUnderTheNameMode() {
             // Alphabetical means alphabetical: sorting by name mixes the claimless rows in among the
             // claimants rather than keeping the tail the claims mode groups them into.
             var claimant = buildBloc("b", "Beta", new ClaimStats(4, 0));

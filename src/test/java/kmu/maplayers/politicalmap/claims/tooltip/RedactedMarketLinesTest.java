@@ -50,7 +50,7 @@ final class RedactedMarketLinesTest {
     class IsRedactedMarket {
 
         @Test
-        void isRedactedMarketWithholdsTheNameOfAWeighedMarketThePlayerDoesNotKnow() {
+        void withholdsTheNameOfAWeighedMarketThePlayerDoesNotKnow() {
             // Both halves for it at once: the contest weighed the market, so the row has to be there
             // for the numbers on screen to add up, and nobody has found the colony, so the name is not
             // the box's to state.
@@ -60,7 +60,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void isRedactedMarketNamesAWeighedMarketThePlayerKnowsOf() {
+        void namesAWeighedMarketThePlayerKnowsOf() {
             // Nothing to withhold. The colony is one the player can already see on the map, so blocking
             // its name out would keep back what the map is showing.
             assertThat(RedactedMarketLines.isRedactedMarket(
@@ -69,7 +69,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void isRedactedMarketNamesAMarketTheContestPassedOverThatThePlayerKnowsOf() {
+        void namesAMarketTheContestPassedOverThatThePlayerKnowsOf() {
             // A concealed colony somebody has seen standing there. The contest never weighed it, so the
             // row accounts for nothing - it is listed because the player knows of it, and is named for
             // the same reason.
@@ -79,7 +79,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void isRedactedMarketWithholdsTheNameOfASiblingCountedMarketThePlayerDoesNotKnow() {
+        void withholdsTheNameOfASiblingCountedMarketThePlayerDoesNotKnow() {
             // A concealed colony nobody has found, which the sibling term counts all the same - so its
             // faction's block is paid a point the block's own rows have to account for. The row is
             // there for that count to add up, and the name is no more the box's to state than a
@@ -90,7 +90,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void isRedactedMarketWithholdsTheNameOfAnUnlistedMarketThePlayerDoesNotKnow() {
+        void withholdsTheNameOfAnUnlistedMarketThePlayerDoesNotKnow() {
             // The shape that never reaches a row at all: off the economy's books and unknown, so the
             // listing rule drops it before this one is asked. Answered on knowledge alone regardless,
             // because restating the listing rule's own question here is what would let the two drift
@@ -105,7 +105,7 @@ final class RedactedMarketLinesTest {
     class CreateRedactedLine {
 
         @Test
-        void createRedactedLineStandsWordBlocksInForTheName() {
+        void standsWordBlocksInForTheName() {
             // The shape says how many words there were and how long each ran, and nothing about which
             // letters. The name itself never reaches the line, so there is nothing on it a later change
             // could draw.
@@ -114,7 +114,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void createRedactedLineStatesNoNameBesideTheBlocks() {
+        void statesNoNameBesideTheBlocks() {
             // The exclusive half of the line's own rule, asserted here because this is the caller that
             // has the name in hand and is meant to drop it.
             var line = buildRedactedLine();
@@ -126,7 +126,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void createRedactedLineOpensOnTheStandInGlyph() {
+        void opensOnTheStandInGlyph() {
             // Every other market line opens on an image run, so a line opening on its name would be set
             // apart twice over by the one fact about it. The map's own glyph cannot serve - it says
             // what sort of place the colony is, which is exactly what the line withholds.
@@ -135,7 +135,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void createRedactedLineDrawsTheStandInGlyphInTheLinesOwnColour() {
+        void drawsTheStandInGlyphInTheLinesOwnColour() {
             // The glyph is a shorthand for the name beside it rather than a picture of anything, so it
             // reads with the line like every other market glyph.
             assertThat(buildRedactedLine().mark().isInLineColour())
@@ -143,7 +143,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void createRedactedLineIgnoresTheGlyphTheMapMarksTheColonyBy() {
+        void ignoresTheGlyphTheMapMarksTheColonyBy() {
             // Posed on a colony the map does mark, since dropping an authored glyph is a decision
             // rather than an absence: carried through, it would say what sort of place the row declines
             // to name.
@@ -164,7 +164,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void createRedactedLineCarriesTheNumberTheAccountHandsIt() {
+        void carriesTheNumberTheAccountHandsIt() {
             // What a row may state is the account's answer rather than this rule's, so the value
             // arrives already decided and is laid in the same column as every other line's.
             assertThat(buildRedactedLine().valueText())
@@ -172,7 +172,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void createRedactedLineCarriesAnEmptyColumnWhereTheAccountStatesNoNumber() {
+        void carriesAnEmptyColumnWhereTheAccountStatesNoNumber() {
             // The ordinary reading: the column collapses rather than showing a figure for a place the
             // player has not found.
             assertThat(RedactedMarketLines
@@ -182,7 +182,7 @@ final class RedactedMarketLinesTest {
         }
 
         @Test
-        void createRedactedLineRefusesAMarketWithNoNameToWithhold() {
+        void refusesAMarketWithNoNameToWithhold() {
             // Blocked out to nothing, such a market would draw as a glyph over blank space and read as
             // a name the box lost. The named line refuses the same market at its own construction, so
             // neither shape quietly stands in for a colony nothing named.

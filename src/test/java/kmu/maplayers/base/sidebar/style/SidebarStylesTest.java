@@ -78,7 +78,7 @@ final class SidebarStylesTest {
     class BuildAccentFramedStyle {
 
         @Test
-        void buildAccentFramedStyleFillsTheBoxBlackAndFramesItInItsOwnAccent() {
+        void fillsTheBoxBlackAndFramesItInItsOwnAccent() {
             // The body stays neutral so only the header, the accents, and the notch carry colour; the
             // frame takes the accent because a panel floating free on the map has no chrome to match.
             var boxColours = buildAccentFramedStyle().boxColours();
@@ -90,7 +90,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildAccentFramedStyleTakesTheChosenSchemesPairForItsControls() {
+        void takesTheChosenSchemesPairForItsControls() {
             // Both steps of the one accent, and in that order - the brighter shade is what a tick has to
             // read against, so a pair handed over crossed would tick in the colour it sits on.
             var accentColours = buildAccentFramedStyle().accentColours();
@@ -102,7 +102,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildAccentFramedStyleMovesItsFrameAndItsControlsTogetherWhenTheSchemeChanges() {
+        void movesItsFrameAndItsControlsTogetherWhenTheSchemeChanges() {
             // The frame is a separate knob from the controls, which is exactly how the two could come to
             // answer different palettes: this pins that the accent-framed look spends one resolved pair
             // on both, so a scheme change cannot leave a panel ruled in one palette and framed in another.
@@ -119,7 +119,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildAccentFramedStyleWashesAHoveredControlInTheSchemesOwnBase() {
+        void washesAHoveredControlInTheSchemesOwnBase() {
             // The lift the pointer adds is more of what the control already wears, so it comes off the
             // same resolved set: a wash resolved apart from the accents is a shade the panel names
             // nowhere else, and it would show only under a pointer nothing in this file otherwise puts
@@ -129,7 +129,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildAccentFramedStyleMovesItsHoverWashWithTheSchemeToo() {
+        void movesItsHoverWashWithTheSchemeToo() {
             // The hover wash is a third reader of the one scheme choice, beside the frame and the
             // controls. Left on a shade resolved once, it would go on washing in the old palette after a
             // scheme change - a panel lit in one colour and ruled in another, visible only on hover.
@@ -140,7 +140,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildAccentFramedStyleAnswersEveryControlMomentWithTheEnginesOwnSoundsAtThePlayersLevels() {
+        void answersEveryControlMomentWithTheEnginesOwnSoundsAtThePlayersLevels() {
             // Spelt out rather than compared against what the factory beside it returns, so this pins
             // both that the sidebar wears the vanilla roles and that the look is composed with the
             // player's own balance - a look built from the library's defaults would sound the same on a
@@ -160,7 +160,7 @@ final class SidebarStylesTest {
     class BuildSidebarSoundScheme {
 
         @Test
-        void buildSidebarSoundSchemeReachesEachKindOfThingAtItsOwnSettingsLevel() {
+        void reachesEachKindOfThingAtItsOwnSettingsLevel() {
             // The three levels are one balance, and what makes it right is the ratio between them - so
             // what is pinned is that each kind resolves the level set for it and not another's. Two of
             // the three ship at the same number, which is exactly why the stubbed levels differ: a pair
@@ -179,7 +179,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildSidebarSoundSchemeConfirmsAPressAtTheEnginesOwnLevel() {
+        void confirmsAPressAtTheEnginesOwnLevel() {
             // The one moment with no slider behind it: a press is a single act the player asked for, so
             // the case for quietening it never arises and it keeps vanilla's balance whatever the
             // arrival levels are set to.
@@ -188,7 +188,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildSidebarSoundSchemeScrollsItsListAtItsOwnSettingsLevel() {
+        void scrollsItsListAtItsOwnSettingsLevel() {
             // The wheel's level is its own slider and not part of the arrival balance: the player turned
             // the wheel once however far the list travelled, where the arrival levels answer to how many
             // things one sweep of the pointer crosses. Its number differs from all three of those, so a
@@ -200,7 +200,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildSidebarSoundSchemeNamesNoScrollCueAtAllWhenItsLevelIsSilenced() {
+        void namesNoScrollCueAtAllWhenItsLevelIsSilenced() {
             // Silence stated by naming no cue rather than by playing one at nothing, the rule the arrivals
             // beside it answer to - and read off the slider alone, this moment having one level of its own
             // rather than a balance to weigh.
@@ -211,7 +211,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildSidebarSoundSchemeNamesNoArrivalRoleAtAllWhenEveryLevelIsSilenced() {
+        void namesNoArrivalRoleAtAllWhenEveryLevelIsSilenced() {
             // A player who has pulled the whole balance down has asked for a panel that is quiet under
             // the pointer, and a look states that by naming no role - a cue at zero is still a sound
             // played, which reads as wiring that half worked rather than as a panel deliberately quiet.
@@ -223,7 +223,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildSidebarSoundSchemeStillSoundsWhileAnyOneLevelIsAudible() {
+        void stillSoundsWhileAnyOneLevelIsAudible() {
             // The other side of the rule above, and the reason silence is read off the whole balance:
             // one role covers every arrival, so a look silenced because one slider reached the bottom
             // would take the two still set with it.
@@ -239,7 +239,7 @@ final class SidebarStylesTest {
     class BuildChromeFramedStyle {
 
         @Test
-        void buildChromeFramedStyleFramesTheBoxInTheSchemesDarkStep() {
+        void framesTheBoxInTheSchemesDarkStep() {
             // The frame abuts another screen's own frames, and those are drawn in the dark member of the
             // three-colour set the engine builds a control from - so this framing takes the dark step
             // where the other takes the base. The whole visible point of the frame being its own knob.
@@ -248,7 +248,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildChromeFramedStyleStillTakesTheChosenSchemesPairForItsControls() {
+        void stillTakesTheChosenSchemesPairForItsControls() {
             // Only the frame answers to what the panel abuts. The controls take the scheme's pair
             // wherever the panel is drawn, so a screen choosing its frame must not quietly repaint its
             // checkboxes.
@@ -261,7 +261,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildChromeFramedStyleStillWashesAHoveredControlInTheSchemesOwnBase() {
+        void stillWashesAHoveredControlInTheSchemesOwnBase() {
             // The wash follows the controls rather than the frame, for the reason the accents do: what a
             // panel abuts decides how it is framed and nothing about how its own controls answer a pointer.
             assertThat(buildChromeFramedStyle().controlHoverWash().colour())
@@ -269,7 +269,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildChromeFramedStyleMovesItsFrameWithTheSchemeOneStepBelowItsControls() {
+        void movesItsFrameWithTheSchemeOneStepBelowItsControls() {
             // The mirror of the accent-framed case, and the one that makes the frame worth being its own
             // knob: the two framings part by which step of the scheme they take, never by which palette,
             // so a scheme change moves the frame and the controls together and leaves them one step
@@ -286,7 +286,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildChromeFramedStyleFillsTheBoxBlackLikeEveryOtherScreens() {
+        void fillsTheBoxBlackLikeEveryOtherScreens() {
             // The backdrop is not a per-screen choice: a translucent-black pane is what lets the map show
             // through under either host, so the two looks part at the frame and nowhere else.
             assertThat(buildChromeFramedStyle().boxColours().fill())
@@ -298,7 +298,7 @@ final class SidebarStylesTest {
     class BuildStripTabStyle {
 
         @Test
-        void buildStripTabStyleStandsTheBandAtTheHeightItsHostAsksFor() {
+        void standsTheBandAtTheHeightItsHostAsksFor() {
             // The one dimension the two screens set apart, each matching the weight of the chrome beside
             // it - so it has to arrive from the host rather than being the factory's own.
             assertThat(SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).headerBandHeight())
@@ -306,7 +306,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildStripTabStyleWearsTheSeamlessStripWithItsKeyUnderlined() {
+        void wearsTheSeamlessStripWithItsKeyUnderlined() {
             // The sector map's pair. The two travel together because the underline is that chrome's own
             // convention: a strip whose key was left bare would mismatch the vanilla tabs above it.
             var tabStyle = SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT);
@@ -318,7 +318,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildStripTabStyleRulesTheRowInTheChosenSchemesAccent() {
+        void rulesTheRowInTheChosenSchemesAccent() {
             // The third of the panel's colour reads, and the one furthest from the other two - it rides
             // in the tab style rather than the widget style - so it is the one that could quietly keep
             // answering a palette of its own while the frame and the controls moved.
@@ -327,7 +327,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildStripTabStyleLettersTheRowInTheMapsOwnCondensedOrbitronAtItsNativeSize() {
+        void lettersTheRowInTheMapsOwnCondensedOrbitronAtItsNativeSize() {
             // The face the vanilla tabs a strip sits beneath are actually set in, at the size its
             // installed atlas draws at. Pinned because the strip was lettered in the title orbitron on the
             // belief that vanilla used it here, and the size alone cannot catch that on vanilla: both
@@ -341,7 +341,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildStripTabStyleStandsItsTabsInTheSectorMapsOwnBox() {
+        void standsItsTabsInTheSectorMapsOwnBox() {
             // The engine's own map tabs (com.fs.starfarer.coreui.A.G): a 130 x 18 box parted from its
             // neighbour by a pixel. Literal values rather than a reference to the constants that produced
             // them, so a box re-dimensioned in passing fails here instead of agreeing with itself.
@@ -350,7 +350,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildStripTabStyleLeavesItsLabelsUnringed() {
+        void leavesItsLabelsUnringed() {
             // The ring answers to what the text stands over, not to what it is lettered in: this row's
             // tabs are opaque surfaces of their own, so its labels already have a fill of known shade
             // behind them and a ring would only muddy them. Both chromes letter in hard-edged atlases,
@@ -364,13 +364,13 @@ final class SidebarStylesTest {
     class BuildRaisedButtonTabStyle {
 
         @Test
-        void buildRaisedButtonTabStyleStandsTheBandAtTheHeightItsHostAsksFor() {
+        void standsTheBandAtTheHeightItsHostAsksFor() {
             assertThat(SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).headerBandHeight())
                 .isEqualTo(HEADER_BAND_HEIGHT);
         }
 
         @Test
-        void buildRaisedButtonTabStyleLeavesItsTabsSnappedToTheirLabels() {
+        void leavesItsTabsSnappedToTheirLabels() {
             // The paired claim to the strip's fixed box: this chrome lays its buttons inside the tabs the
             // layout measured and takes its own channel from within them, so a fixed box reaching it would
             // resize a row that already had its geometry settled.
@@ -379,7 +379,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildRaisedButtonTabStyleWearsTheButtonsWithItsKeyLeftBare() {
+        void wearsTheButtonsWithItsKeyLeftBare() {
             // The intel screen's pair, and the reason the two are chosen in one place: its map toggles
             // stand as buttons and light their key by colour alone, so a button row that underlined its
             // key would mismatch the very row it was drawn to match.
@@ -392,7 +392,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildRaisedButtonTabStyleRulesTheRowInTheChosenSchemesDarkStep() {
+        void rulesTheRowInTheChosenSchemesDarkStep() {
             // Where the strip's rule is the scheme's base, a button's is its dark step: the engine frames
             // and fills its own buttons from the dark member of the accent it builds them with. The two
             // chromes sharing one palette - which they did while this chrome was built to a description of
@@ -403,7 +403,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildRaisedButtonTabStyleLabelsTheShownButtonInTheSchemesBrightStep() {
+        void labelsTheShownButtonInTheSchemesBrightStep() {
             // The third of the accent's three steps, so this pins that the whole set reaches the row: a
             // button is built from all three and the palette would take the wrong one silently.
             assertThat(SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).palette()
@@ -412,7 +412,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildRaisedButtonTabStyleMovesItsWholeRowWhenTheSchemeChanges() {
+        void movesItsWholeRowWhenTheSchemeChanges() {
             // The row answers the one scheme the rest of the panel does, at every step it reads - so a
             // player pointing the sidebar elsewhere cannot leave its buttons outlined in one palette and
             // labelled from another.
@@ -427,7 +427,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildRaisedButtonTabStyleLettersTheRowInVanillasPixelFaceAtItsAtlasSize() {
+        void lettersTheRowInVanillasPixelFaceAtItsAtlasSize() {
             // The face the intel screen's own map toggles are lettered in, and at the size its installed
             // atlas draws 1:1 at - the line height that atlas states, whatever its name carries. A pixel
             // face is crisp at one size only, so a row copying those buttons at any other would read as a
@@ -441,7 +441,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildRaisedButtonTabStyleRingsItsPixelFaceInBlack() {
+        void ringsItsPixelFaceInBlack() {
             // The pair the face comes in: this chrome is lettered in a hard-edged bitmap face standing
             // over whatever the visor is showing, so its strokes need an edge of their own. A row taking
             // the face without the ring reads thin against a nebula.
@@ -469,7 +469,7 @@ final class SidebarStylesTest {
         private static final float WIDE_ICON_ASPECT = 1.5f;
 
         @Test
-        void buildBandButtonTabStyleSizesTheBoxToTheImageOverTheTabHeight() {
+        void sizesTheBoxToTheImageOverTheTabHeight() {
             // The whole of what this factory decides. The image is shrunk to the height the tabs stand at
             // and the box follows the width that leaves it, so the control ends where its picture does.
             assertThat(buildBandButtonStyle().tabBox().width())
@@ -477,7 +477,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildBandButtonTabStyleKeepsTheRowsOwnHeightAndChannel() {
+        void keepsTheRowsOwnHeightAndChannel() {
             // Everything about the box except its width is the row's, so the button sits level with the
             // tabs and is parted from them exactly as they are parted from each other.
             var tabBox = buildBandButtonStyle().tabBox();
@@ -489,7 +489,7 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildBandButtonTabStyleWearsTheHostsOwnChromeAndFace() {
+        void wearsTheHostsOwnChromeAndFace() {
             // It is a button standing in a row of tabs, not furniture from another screen: it takes the
             // strip's chrome on the map and the button row's on the visor, because it takes whatever the
             // host handed in. Drawing it in a chrome of its own is what made it read as the intel screen's.
@@ -505,13 +505,13 @@ final class SidebarStylesTest {
         }
 
         @Test
-        void buildBandButtonTabStyleStandsInTheHostsOwnBand() {
+        void standsInTheHostsOwnBand() {
             assertThat(buildBandButtonStyle().headerBandHeight())
                 .isEqualTo(HEADER_BAND_HEIGHT);
         }
 
         @Test
-        void buildBandButtonTabStyleSizesASquareImageToTheTabHeightBothWays() {
+        void sizesASquareImageToTheTabHeightBothWays() {
             // The fallback shape a caller answers for an asset it could not measure, pinned here so that
             // fallback lands on a button the player can still press rather than one of no width.
             assertThat(SidebarStyles.buildBandButtonTabStyle(buildStripHostStyle(), 1f).tabBox().width())

@@ -46,14 +46,14 @@ final class MapLayerStoreNamespaceTest {
     class ResolveNamespacedKey {
 
         @Test
-        void resolveNamespacedKeyLeadsTheStoresOwnKeyWithTheModsPrefix() {
+        void leadsTheStoresOwnKeyWithTheModsPrefix() {
 
             assertThat(NAMESPACE.resolveNamespacedKey(STORE_KEY))
                 .isEqualTo("$amod_map_sort_mode_");
         }
 
         @Test
-        void resolveNamespacedKeyGivesTwoModsSeparateKeysForOneStore() {
+        void givesTwoModsSeparateKeysForOneStore() {
             // The whole of what the type is for: one store, one key of its own, two mods' saves.
             assertThat(OTHER_NAMESPACE.resolveNamespacedKey(STORE_KEY))
                 .isEqualTo("$bmod_map_sort_mode_");
@@ -63,7 +63,7 @@ final class MapLayerStoreNamespaceTest {
         }
 
         @Test
-        void resolveNamespacedKeyAppendsNoSeparatorOfItsOwn() {
+        void appendsNoSeparatorOfItsOwn() {
             // The prefix carries its own, so what a namespace composes is exactly what the holding mod
             // already ships - a separator added here would move every frozen key one character.
             assertThat(new MapLayerStoreNamespace("$amod_map").resolveNamespacedKey(STORE_KEY))

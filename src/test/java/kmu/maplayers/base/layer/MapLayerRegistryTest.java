@@ -127,7 +127,7 @@ final class MapLayerRegistryTest {
     class GetLayers {
 
         @Test
-        void getLayersReturnsTheRegisteredLayersInOrder() {
+        void returnsTheRegisteredLayersInOrder() {
 
             assertThat(MapLayerRegistry.getLayers())
                 .containsExactly(firstLayerMock, secondLayerMock);
@@ -138,7 +138,7 @@ final class MapLayerRegistryTest {
     class RegisterLayer {
 
         @Test
-        void registerLayerAppendsToTheRightHandEndOfTheRow() {
+        void appendsToTheRightHandEndOfTheRow() {
             // Registration order is row order, and it is all the order there is: nothing on a layer
             // states where it belongs, so a layer arriving later lands to the right of everything
             // already there.
@@ -151,7 +151,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void registerLayerReachesARosterThatHasAlreadyBeenRead() {
+        void reachesARosterThatHasAlreadyBeenRead() {
             // The constraint the whole additive form is shaped by: a mod that depends on this one
             // loads after it, so its layer registers after the bar has been drawn from the roster at
             // least once. A registry that settled its row on first read would leave that mod's tab
@@ -168,7 +168,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void registerLayerPutsALayerSharingAnIdInThePlaceOfTheOneItReplaces() {
+        void putsALayerSharingAnIdInThePlaceOfTheOneItReplaces() {
             // Two mods shipping one ID will happen, and both tabs would read and write the one stored
             // pick that names it. Arbitrated, the row holds one tab that the save agrees with; left
             // alone, it would hold two the save cannot tell apart.
@@ -181,7 +181,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void registerLayerLeavesTheRowAloneWhenOneLayerRegistersTwice() {
+        void leavesTheRowAloneWhenOneLayerRegistersTwice() {
             // Not every second registration is a clash: a mod wiring from two lifecycle hooks, or a
             // composition root run again, re-registers what is already standing. The row it was
             // already in is the row it stays in.
@@ -192,7 +192,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void registerLayerReportsNothingWhenOneLayerRegistersTwice() {
+        void reportsNothingWhenOneLayerRegistersTwice() {
             // The arbitration line names the two sides of a clash, so writing one for a layer giving
             // way to itself would report a conflict between a mod and itself - and it would be
             // written on every load of any mod that registers more than once.
@@ -201,7 +201,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void registerLayerReportsTheTwoLayersThatShareAnId() {
+        void reportsTheTwoLayersThatShareAnId() {
             // The arbitration is silent to the player, so the log is the only place a mod author
             // finds out why their tab is not the one on the bar - which makes the line naming both
             // sides the whole of what the outcome is worth.
@@ -221,14 +221,14 @@ final class MapLayerRegistryTest {
     class ResolveLayerById {
 
         @Test
-        void resolveLayerByIdAnswersTheLayerRegisteredUnderIt() {
+        void answersTheLayerRegisteredUnderIt() {
 
             assertThat(MapLayerRegistry.resolveLayerById("first"))
                 .isSameAs(firstLayerMock);
         }
 
         @Test
-        void resolveLayerByIdIsNullForAnIdNothingRegistered() {
+        void isNullForAnIdNothingRegistered() {
             // What a save holds after the mod that shipped that layer is uninstalled, which is why
             // the answer is an absence to fall back from rather than a fault.
             assertThat(MapLayerRegistry.resolveLayerById("removed_long_ago"))
@@ -240,7 +240,7 @@ final class MapLayerRegistryTest {
     class GetDefaultLayer {
 
         @Test
-        void getDefaultLayerAnswersTheOfferingLayerRatherThanTheLeadingOne() {
+        void answersTheOfferingLayerRatherThanTheLeadingOne() {
             // The two facts the old single call spelled separately, now one: the row leads with a
             // layer that declines, and the pick is the one that offered.
             assertThat(MapLayerRegistry.getDefaultLayer())
@@ -248,7 +248,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void getDefaultLayerAnswersTheEarlierOfTwoLayersOffering() {
+        void answersTheEarlierOfTwoLayersOffering() {
             // Which is what makes load order settle the pick without any mod stating a rank: a
             // foreign layer offering itself arrives after the host's and loses by arriving later.
             when(firstLayerMock.isOfferedAsDefaultPick())
@@ -259,7 +259,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void getDefaultLayerFallsBackToTheLeadingLayerWhereNobodyOffers() {
+        void fallsBackToTheLeadingLayerWhereNobodyOffers() {
             // A roster of layers that all decline is a roster nobody arranged - foreign layers alone,
             // say. Answering nothing there would leave a bar of tabs with none of them lit and a map
             // that paints nothing to explain it.
@@ -270,7 +270,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void getDefaultLayerIsNullBeforeAnyLayerIsRegistered() {
+        void isNullBeforeAnyLayerIsRegistered() {
 
             MapLayerRosters.forgetEveryLayer();
 
@@ -283,7 +283,7 @@ final class MapLayerRegistryTest {
     class GetDrawnLayer {
 
         @Test
-        void getDrawnLayerAnswersFromTheShowingScreensPick() {
+        void answersFromTheShowingScreensPick() {
 
             storeADifferentPickOnEachScreen();
             intelScreenFake.setIntelTabOpen(true);
@@ -293,7 +293,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void getDrawnLayerIsNullOnceTheShowingScreensLayersHaveFadedOff() {
+        void isNullOnceTheShowingScreensLayersHaveFadedOff() {
             // The one read hiding hangs off: every pass driven by the drawn layer already draws nothing
             // for a null, so this takes the overlay, the labels and the hover box off together.
             hideTheMapScreensLayers();
@@ -303,7 +303,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void getDrawnLayerAnswersThePickWhileOnlyTheOtherScreensLayersAreHidden() {
+        void answersThePickWhileOnlyTheOtherScreensLayersAreHidden() {
             // The per-screen half of the same gate: the intel screen hidden must leave the sector map
             // painting its own pick, which is the whole reason the two picks are kept apart.
             storeADifferentPickOnEachScreen();
@@ -315,7 +315,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void getDrawnLayerAnswersAShownScreenWithoutReadingTheHidePace() {
+        void answersAShownScreenWithoutReadingTheHidePace() {
             // A screen with its layers on is answered off the stored pick alone. Worth pinning rather
             // than left as an accident of the order two conditions are written in: the fade is derived
             // from a clock and a settings read, and asking for it on every frame the layers are simply
@@ -328,7 +328,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void getDrawnLayerIsNullBeforeAnyLayerIsRegistered() {
+        void isNullBeforeAnyLayerIsRegistered() {
             // The map surface can be asked for a frame before the composition root has run, so the
             // registry has to answer "no pick" rather than leave a caller to find out by throwing.
             MapLayerRosters.forgetEveryLayer();
@@ -354,7 +354,7 @@ final class MapLayerRegistryTest {
     class IsDrawnLayer {
 
         @Test
-        void isDrawnLayerIsTrueOnlyForTheResolvedDrawnLayer() {
+        void isTrueOnlyForTheResolvedDrawnLayer() {
 
             sectorMemoryFake.removeSector();
 
@@ -365,7 +365,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void isDrawnLayerAnswersFromTheIntelPickWhileTheIntelScreenIsUp() {
+        void answersFromTheIntelPickWhileTheIntelScreenIsUp() {
             // The bug this guards: each screen keeps its own tab, so an overlay reading one fixed
             // screen's pick painted the sector map's choice onto the intel screen - No Layer on the
             // intel tab could not turn it off there.
@@ -379,7 +379,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void isDrawnLayerAnswersFromTheMapPickWhileTheIntelScreenIsNotUp() {
+        void answersFromTheMapPickWhileTheIntelScreenIsNotUp() {
 
             storeADifferentPickOnEachScreen();
             intelScreenFake.setIntelTabOpen(false);
@@ -391,7 +391,7 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void isDrawnLayerIsFalseForEveryLayerOnceTheScreensLayersHaveFadedOff() {
+        void isFalseForEveryLayerOnceTheScreensLayersHaveFadedOff() {
             // A hidden screen has no layer in play at all, which is what stands each layer's own state
             // down without a read of its own - the default pick included, since it is the one a layer
             // would otherwise go on thinking it held.
@@ -408,7 +408,7 @@ final class MapLayerRegistryTest {
     class IsDrawnLayerOn {
 
         @Test
-        void isDrawnLayerOnAnswersTheScreenHandedInRatherThanTheShowingOne() {
+        void answersTheScreenHandedInRatherThanTheShowingOne() {
             // The gate a layer's own state reads, for a caller that already knows which panel it is
             // answering for - posed the same way as the read beneath it, with the visor up.
             storeADifferentPickOnEachScreen();

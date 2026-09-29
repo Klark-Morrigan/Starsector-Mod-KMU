@@ -19,7 +19,7 @@ final class TooltipFactionNamesTest {
     class ResolveLongName {
 
         @Test
-        void resolveLongNameReadsTheFactionsLongTitle() {
+        void readsTheFactionsLongTitle() {
             var factionMock = mock(FactionAPI.class);
             when(factionMock.getDisplayNameLong()).thenReturn("The Hegemony");
 
@@ -28,7 +28,7 @@ final class TooltipFactionNamesTest {
         }
 
         @Test
-        void resolveLongNameFallsBackToTheIdForAnUnresolvableFaction() {
+        void fallsBackToTheIdForAnUnresolvableFaction() {
             assertThat(TooltipFactionNames.resolveLongName(null, "hegemony")).isEqualTo("hegemony");
         }
     }

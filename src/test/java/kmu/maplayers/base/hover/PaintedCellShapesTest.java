@@ -37,7 +37,7 @@ final class PaintedCellShapesTest {
     class ResolvePaintedExtentOf {
 
         @Test
-        void resolvePaintedExtentOfReturnsTheFramesOwnShapeForADrawnCell() {
+        void returnsTheFramesOwnShapeForADrawnCell() {
             var shapesFake = new PaintedCellShapesFake(Map.of(DRAWN_CELL_KEY, CELL_POLYGON));
 
             assertThat(shapesFake.resolvePaintedExtentOf(DRAWN_CELL_KEY))
@@ -45,7 +45,7 @@ final class PaintedCellShapesTest {
         }
 
         @Test
-        void resolvePaintedExtentOfReturnsNothingForACellTheBuildDropped() {
+        void returnsNothingForACellTheBuildDropped() {
             // A cell that puts no ink on the map is absent from the shapes rather than present
             // with an empty one; folding the two here is what spares every reader the distinction.
             var shapesFake = new PaintedCellShapesFake(Map.of(DRAWN_CELL_KEY, CELL_POLYGON));

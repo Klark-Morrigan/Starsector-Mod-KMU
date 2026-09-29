@@ -64,7 +64,7 @@ final class CellTooltipFooterTest {
     class ResolveOfferedLevel {
 
         @Test
-        void resolveOfferedLevelStepsOneLevelDeeperInsideTheBound() {
+        void stepsOneLevelDeeperInsideTheBound() {
             // The ordinary press: the box holds more than is being drawn, so the next level opens a
             // tier of it.
             assertThat(CellTooltipFooter.resolveOfferedLevel(FACTIONS, PATROL_DETAILS))
@@ -72,7 +72,7 @@ final class CellTooltipFooterTest {
         }
 
         @Test
-        void resolveOfferedLevelCollapsesAtTheBoxsOwnBound() {
+        void collapsesAtTheBoxsOwnBound() {
             // The wrap is the box's rather than the cycle's last constant. A box whose account ends at
             // the market stats - a claim, which no patrol enters - would otherwise be offered a patrol
             // tier that redraws exactly what is on screen.
@@ -81,7 +81,7 @@ final class CellTooltipFooterTest {
         }
 
         @Test
-        void resolveOfferedLevelCollapsesABoxReadPastItsBound() {
+        void collapsesABoxReadPastItsBound() {
             // The level is one shared fact carried across hovers, so a box is met deeper than it goes.
             // This one is still drawn cut - it holds the composition tier the collapse takes away - so
             // the press shows the player something.
@@ -90,7 +90,7 @@ final class CellTooltipFooterTest {
         }
 
         @Test
-        void resolveOfferedLevelOffersNothingWhereTheBoxHoldsNothingDeeper() {
+        void offersNothingWhereTheBoxHoldsNothingDeeper() {
             // A box that lists nobody, read at the level it opens on: no tier to open and nothing to
             // collapse.
             assertThat(CellTooltipFooter.resolveOfferedLevel(FACTIONS, FACTIONS))
@@ -98,7 +98,7 @@ final class CellTooltipFooterTest {
         }
 
         @Test
-        void resolveOfferedLevelOffersNothingWhereTheLevelHasOutrunTheBox() {
+        void offersNothingWhereTheLevelHasOutrunTheBox() {
             // The same box met at a depth reached over some other system. Every level draws it the same,
             // so a collapse offered here would name a press that redraws what is on screen - and the key
             // it advertised would reset a shared level over a box that showed no sign of it.
@@ -111,7 +111,7 @@ final class CellTooltipFooterTest {
     class BuildSection {
 
         @Test
-        void buildSectionNamesTheStepTheNextPressTakes() {
+        void namesTheStepTheNextPressTakes() {
             // What the hint has to say to be worth a line: which key, and what the player would gain -
             // the key picked out and the words about it quiet, which is how the game states its own.
             assertThat(readFooterRuns(FACTIONS, PATROL_DETAILS, NOTHING_WITHHELD))
@@ -121,7 +121,7 @@ final class CellTooltipFooterTest {
         }
 
         @Test
-        void buildSectionNamesTheCollapseOnceTheBoxsTreeRunsOut() {
+        void namesTheCollapseOnceTheBoxsTreeRunsOut() {
             // The one press that takes detail away rather than adding it, worded by the level being
             // arrived at like every other step.
             assertThat(readFooterRuns(MARKET_STATS, MARKET_STATS, NOTHING_WITHHELD))
@@ -131,7 +131,7 @@ final class CellTooltipFooterTest {
         }
 
         @Test
-        void buildSectionStatesWhatTheBoxHadNoRoomToShowAfterTheOffer() {
+        void statesWhatTheBoxHadNoRoomToShowAfterTheOffer() {
             // Two things about the box on one line, in the order they are read: what a press would do,
             // then what this box is keeping back. The figure runs last because it speaks about the box's
             // own account rather than about the press.
@@ -143,7 +143,7 @@ final class CellTooltipFooterTest {
         }
 
         @Test
-        void buildSectionStatesWithheldContentWithoutAnOffer() {
+        void statesWithheldContentWithoutAnOffer() {
             // A box cut for room that has nothing deeper to offer - which every level reaches, the
             // offer being withheld at all of them. The line is the same line short its first two runs
             // rather than a shape of its own, and the key is not named, nothing being claimed for it.
@@ -152,7 +152,7 @@ final class CellTooltipFooterTest {
         }
 
         @Test
-        void buildSectionDrawsNoLineWithNothingToOfferAndNothingWithheld() {
+        void drawsNoLineWithNothingToOfferAndNothingWithheld() {
             // Neither half applies, so there is no line - the hint is about the box rather than about
             // the system, and a box says nothing about itself when there is nothing to say.
             assertThat(CellTooltipFooter.buildSection(PATROL_DETAILS, FACTIONS, NOTHING_WITHHELD))

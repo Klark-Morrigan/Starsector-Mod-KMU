@@ -41,7 +41,7 @@ final class OwnerStyleResolverTest {
     class ResolveFilterAdjustment {
 
         @Test
-        void resolveFilterAdjustmentLeavesTheSpotlightedBlocUntouched() {
+        void leavesTheSpotlightedBlocUntouched() {
             // The spotlighted bloc draws at full strength however the recede is set, so it stands
             // out against the muted background - neither the view's own adjustment nor the shared
             // recede touches it.
@@ -53,7 +53,7 @@ final class OwnerStyleResolverTest {
         }
 
         @Test
-        void resolveFilterAdjustmentRecedesEveryOtherBlocByTheSharedRecede() {
+        void recedesEveryOtherBlocByTheSharedRecede() {
             // A non-spotlighted bloc the view does not adjust takes the pass's shared recede whole,
             // so the sector fades to a muted background the spotlight reads against.
             var recede = new ElementStyleAdjustment(0.3, true);
@@ -66,7 +66,7 @@ final class OwnerStyleResolverTest {
         }
 
         @Test
-        void resolveFilterAdjustmentUnionsTheViewRecedeWithTheSharedRecede() {
+        void unionsTheViewRecedeWithTheSharedRecede() {
             // A bloc the view already recedes of its own accord and the filter also recedes takes
             // the union - strongest mute, either desaturate - applied once,
             // so it never mutes twice by compounding the two multipliers.
@@ -82,7 +82,7 @@ final class OwnerStyleResolverTest {
     class ResolveBlocStyleDecision {
 
         @Test
-        void resolveBlocStyleDecisionKeepsTheViewsIndependentStyleForANonSpotlitBlocUnderFilter() {
+        void keepsTheViewsIndependentStyleForANonSpotlitBlocUnderFilter() {
             // The single decision the fills and the labels both read, so pinning it here pins both.
             // Under a filter only the ADJUSTMENT is filter-driven; the base-style decision stays the
             // view's, so independent-held space keeps its independent style rather than snapping to
@@ -99,7 +99,7 @@ final class OwnerStyleResolverTest {
         }
 
         @Test
-        void resolveBlocStyleDecisionUnionsTheViewRecedeWithTheSharedRecedeUnderFilter() {
+        void unionsTheViewRecedeWithTheSharedRecedeUnderFilter() {
             // A non-spotlit bloc the view already recedes of its own accord and the filter recedes
             // too takes the union - strongest mute, either desaturate -
             // once, so a receded name still cannot drift from its receded fill and neither mutes
@@ -119,7 +119,7 @@ final class OwnerStyleResolverTest {
         }
 
         @Test
-        void resolveBlocStyleDecisionOffersTheUnionedRecedeToTheViewsStyleTestUnderFilter() {
+        void offersTheUnionedRecedeToTheViewsStyleTestUnderFilter() {
             // The style test sees the union the bloc actually paints under, not the view's own recede
             // alone, so a view keying its bundle off desaturation cannot disagree with the palette -
             // which resolves from this same adjustment. Here only the shared recede desaturates: the
@@ -141,7 +141,7 @@ final class OwnerStyleResolverTest {
         }
 
         @Test
-        void resolveBlocStyleDecisionOffersTheUntouchedAdjustmentToTheViewsStyleTestOffFilter() {
+        void offersTheUntouchedAdjustmentToTheViewsStyleTestOffFilter() {
             // Off filter the view's own adjustment is what the bloc paints under, so that is what its
             // style test reads - the same "bundle and palette agree" rule, with nothing to union in.
             var adjustment = new ElementStyleAdjustment(0.5, true);
@@ -161,7 +161,7 @@ final class OwnerStyleResolverTest {
         }
 
         @Test
-        void resolveBlocStyleDecisionDelegatesToTheViewOffFilter() {
+        void delegatesToTheViewOffFilter() {
             // Off filter the decision is the active view's own call, unchanged: its independent-
             // recede test and its per-bloc adjustment, so a normal pass styles exactly as before.
             var adjustment = new ElementStyleAdjustment(0.5, true);

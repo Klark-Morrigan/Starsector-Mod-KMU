@@ -88,7 +88,7 @@ final class SystemColonyReadingTest {
     class ReadColoniesIn {
 
         @Test
-        void readColoniesInReadsNoWorldAtAllAsTheOrdinaryColonyInPlainSight() {
+        void readsNoWorldAtAllAsTheOrdinaryColonyInPlainSight() {
             // A box with no system to read still draws its rows, so the reading answers rather than
             // refuses: nothing is qualified and nothing is dated.
             var reading = SystemColonyReading.readColoniesIn(null, null, null, null);
@@ -104,7 +104,7 @@ final class SystemColonyReadingTest {
         }
 
         @Test
-        void readColoniesInFoldsTheLandmarksOfTheWalkItWasHandedRatherThanNone() {
+        void foldsTheLandmarksOfTheWalkItWasHandedRatherThanNone() {
             // The factory's four folds are one reading, and only this case says the landmark fold is
             // among them: every other suite hands a reading built from its parts, so the line that
             // folds this one off the walk could be dropped for the empty answer and nothing else
@@ -133,7 +133,7 @@ final class SystemColonyReadingTest {
     class ReadKindOf {
 
         @Test
-        void readKindOfAnswersFromTheKindsItWasGatheredWith() {
+        void answersFromTheKindsItWasGatheredWith() {
 
             var reading = new SystemColonyReading(
                 new ColonyKindLookup(Map.of(DERELICT_ID, ColonyKind.SPACE_DERELICT)),
@@ -146,7 +146,7 @@ final class SystemColonyReadingTest {
         }
 
         @Test
-        void readKindOfReadsAnUngatheredHalfAsTheOrdinaryColony() {
+        void readsAnUngatheredHalfAsTheOrdinaryColony() {
             // Part of a reading is still a reading. The kind errs towards the settled place
             // everywhere else it is resolved, so an absent lookup errs the same way rather than
             // differently.
@@ -161,7 +161,7 @@ final class SystemColonyReadingTest {
     class IsDiscoveredColony {
 
         @Test
-        void isDiscoveredColonyAnswersFromTheDiscoveriesItWasGatheredWith() {
+        void answersFromTheDiscoveriesItWasGatheredWith() {
 
             var reading = new SystemColonyReading(
                 ColonyKindLookup.NONE,
@@ -174,7 +174,7 @@ final class SystemColonyReadingTest {
         }
 
         @Test
-        void isDiscoveredColonyReadsAnUngatheredHalfAsFound() {
+        void readsAnUngatheredHalfAsFound() {
             // The direction that states no finding: a box cannot call a colony undiscovered on the
             // strength of a fold nobody made.
             var reading = new SystemColonyReading(null, null, null, null);
@@ -188,7 +188,7 @@ final class SystemColonyReadingTest {
     class IsOpenlyKnownColony {
 
         @Test
-        void isOpenlyKnownColonyAnswersFromTheLandmarksItWasGatheredWith() {
+        void answersFromTheLandmarksItWasGatheredWith() {
 
             var reading = new SystemColonyReading(
                 ColonyKindLookup.NONE,
@@ -201,7 +201,7 @@ final class SystemColonyReadingTest {
         }
 
         @Test
-        void isOpenlyKnownColonyReadsAnUngatheredHalfAsASecret() {
+        void readsAnUngatheredHalfAsASecret() {
             // The direction that states no finding: a box cannot excuse a concealment on the
             // strength of a fold nobody made.
             var reading = new SystemColonyReading(null, null, null, null);
@@ -215,7 +215,7 @@ final class SystemColonyReadingTest {
     class ReadConcealmentOf {
 
         @Test
-        void readConcealmentOfGathersItsOwnTwoAnswersAndTheOneHandedIn() {
+        void gathersItsOwnTwoAnswersAndTheOneHandedIn() {
             // The three facts in the order the value names them, so a transposition here would be a
             // failing assertion rather than a line calling out the wrong word.
             var reading = new SystemColonyReading(
@@ -229,7 +229,7 @@ final class SystemColonyReadingTest {
         }
 
         @Test
-        void readConcealmentOfCarriesTheConcealmentItIsHandedRatherThanAnyOfItsOwn() {
+        void carriesTheConcealmentItIsHandedRatherThanAnyOfItsOwn() {
             // The one fact no reading of a system can answer: it travels on the account's own
             // breakdown, so a colony this reading knows nothing else about still states it.
             var reading = new SystemColonyReading(null, null, null, null);
@@ -243,7 +243,7 @@ final class SystemColonyReadingTest {
     class ReadQualifierFacts {
 
         @Test
-        void readQualifierFactsGathersWhatItReadsBesideTheFactsHandedIn() {
+        void gathersWhatItReadsBesideTheFactsHandedIn() {
             // The four facts in the order the value names them - the kind and the concealment
             // answered off this reading, the rest carried as handed - so a transposition here is a
             // failing assertion rather than a line calling out the wrong word.
@@ -262,7 +262,7 @@ final class SystemColonyReadingTest {
         }
 
         @Test
-        void readQualifierFactsStatesTheKindItIsHandedRatherThanTheOneItReads() {
+        void statesTheKindItIsHandedRatherThanTheOneItReads() {
             // An account that met the colony through its own selection already holds its kind, and
             // the kind stated has to be about the colony the line names rather than whatever this
             // reading gathered under the same ID.
@@ -292,7 +292,7 @@ final class SystemColonyReadingTest {
     class DescribeColony {
 
         @Test
-        void describeColonyLeavesALineAloneWhereNothingIsDue() {
+        void leavesALineAloneWhereNothingIsDue() {
 
             var reading = new SystemColonyReading(
                 ColonyKindLookup.NONE,
@@ -305,7 +305,7 @@ final class SystemColonyReadingTest {
         }
 
         @Test
-        void describeColonyLaysBothTheFindingAndTheRemarkOnTheOneLine() {
+        void laysBothTheFindingAndTheRemarkOnTheOneLine() {
             // The whole of what the seam exists for. An account reaching the two apart is one that
             // can lay a finding and forget the date, and a line missing its date reads exactly like
             // a colony somebody is standing over - so the pair is asserted together.

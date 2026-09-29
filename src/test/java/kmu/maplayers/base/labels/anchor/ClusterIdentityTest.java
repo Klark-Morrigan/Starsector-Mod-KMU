@@ -27,7 +27,7 @@ final class ClusterIdentityTest {
     class Constructor {
 
         @Test
-        void constructorIgnoresTheOrderTheMembersArrivedIn() {
+        void ignoresTheOrderTheMembersArrivedIn() {
             // Which order a cluster's members were walked in is an accident of the
             // traversal, so an identity built from either order names the same cluster.
             var walkedOneWay = new ClusterIdentity(
@@ -45,7 +45,7 @@ final class ClusterIdentityTest {
         }
 
         @Test
-        void constructorCopiesTheMembersSoALaterChangeCannotMoveTheIdentity() {
+        void copiesTheMembersSoALaterChangeCannotMoveTheIdentity() {
             // An identity is used as a map key: a member set that shifted underneath would
             // quietly lose whatever was filed under it rather than fail, so the members are
             // copied out of the caller's collection.
@@ -63,7 +63,7 @@ final class ClusterIdentityTest {
     class Equality {
 
         @Test
-        void equalitySeparatesAClusterFromOneItSplitInto() {
+        void separatesAClusterFromOneItSplitInto() {
             // A split leaves member sets that match nothing, which is what makes the two
             // halves re-fit without anyone having to spot the split.
             var whole = new ClusterIdentity(
@@ -76,7 +76,7 @@ final class ClusterIdentityTest {
         }
 
         @Test
-        void equalitySeparatesAClusterFromOneItMergedInto() {
+        void separatesAClusterFromOneItMergedInto() {
             // The mirror case: a merged cluster has gained a member, so it matches neither
             // of the clusters it swallowed.
             var beforeMerge = new ClusterIdentity(
@@ -92,7 +92,7 @@ final class ClusterIdentityTest {
         }
 
         @Test
-        void equalitySeparatesTheSameSystemsUnderDifferentOwners() {
+        void separatesTheSameSystemsUnderDifferentOwners() {
             // The same systems held by someone else is a different cluster - the name and
             // the shade a placement was fitted for both come off the owner.
             var heldByOne = new ClusterIdentity(

@@ -84,7 +84,7 @@ final class CellTooltipBlocksTest {
     class ReadSections {
 
         @Test
-        void readSectionsDrawsEveryEntryTheLayerListed() {
+        void drawsEveryEntryTheLayerListed() {
             // The ordinary read, and what nearly every box gets: nothing is stood for, so no row about
             // the box's own account appears among the things it lists.
             var blocks = buildBlocks(PATROL_DETAILS, "Chicomoztoc", "Kazeron", "Sindria");
@@ -98,7 +98,7 @@ final class CellTooltipBlocksTest {
     class ReadBodyWithin {
 
         @Test
-        void readBodyWithinDropsTheTailOfAListingItCannotDrawWhole() {
+        void dropsTheTailOfAListingItCannotDrawWhole() {
             // The tail is the low-scoring end, every listing in the box being ranked - so what a reader
             // came for survives and what goes is what they would have read last.
             var body = buildBlocks(PATROL_DETAILS, "Chicomoztoc", "Kazeron", "Sindria")
@@ -109,7 +109,7 @@ final class CellTooltipBlocksTest {
         }
 
         @Test
-        void readBodyWithinKeepsTheFirstEntryOfAListingHoweverLittleRoomThereIs() {
+        void keepsTheFirstEntryOfAListingHoweverLittleRoomThereIs() {
             // Below one entry a heading stands over nothing, which reads as a block whose contents
             // failed to resolve - a different and untrue statement from "there was no room".
             var body = buildBlocks(PATROL_DETAILS, "Chicomoztoc", "Kazeron", "Sindria")
@@ -120,7 +120,7 @@ final class CellTooltipBlocksTest {
         }
 
         @Test
-        void readBodyWithinStatesWhatTheEntriesItDroppedCameTo() {
+        void statesWhatTheEntriesItDroppedCameTo() {
             // The row closes the arithmetic the listing opened: the figure is the sum of exactly the
             // entries standing behind it, so the visible rows and this one still account for the
             // number the box states above them.
@@ -132,7 +132,7 @@ final class CellTooltipBlocksTest {
         }
 
         @Test
-        void readBodyWithinCountsEveryEntryItLeftOutAcrossTheBody() {
+        void countsEveryEntryItLeftOutAcrossTheBody() {
             // One figure for the whole box, which is what the line at its foot states - so a reader
             // can tell a short list from a cut one wherever the cut happened to land.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -150,7 +150,7 @@ final class CellTooltipBlocksTest {
         }
 
         @Test
-        void readBodyWithinWithholdsNothingWhereTheBodyFitsAsItIs() {
+        void withholdsNothingWhereTheBodyFitsAsItIs() {
             // A box that was never the problem must not grow a row about its own account.
             var body = buildBlocks(PATROL_DETAILS, "Chicomoztoc", "Kazeron")
                 .readBodyWithin(ROOM_FOR_TWO);
@@ -162,7 +162,7 @@ final class CellTooltipBlocksTest {
         }
 
         @Test
-        void readBodyWithinSpendsTheAllowanceAtEveryDepth() {
+        void spendsTheAllowanceAtEveryDepth() {
             // A box runs long by depth as much as by breadth - a colony under each faction, a term
             // under each colony - so the same number takes the tail off whichever listings are long,
             // wherever they sit.
@@ -179,7 +179,7 @@ final class CellTooltipBlocksTest {
         }
 
         @Test
-        void readBodyWithinLaysTheStandingInRowWhereTheEntriesItStandsForWouldHaveBeen() {
+        void laysTheStandingInRowWhereTheEntriesItStandsForWouldHaveBeen() {
             // It closes their listing, so it reads as the last of them rather than as a line the box
             // states in its own voice - which at the wrong depth is exactly how it would read.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -201,7 +201,7 @@ final class CellTooltipBlocksTest {
         }
 
         @Test
-        void readBodyWithinLeavesATierTheLevelDeclinesUnmentioned() {
+        void leavesATierTheLevelDeclinesUnmentioned() {
             // The two cuts answer different questions. What the level leaves out is the player's own
             // standing choice and the hint at the foot already offers it back; what the room leaves out
             // is the box's doing and is stated. A tier the level declined must not be reported as
@@ -222,7 +222,7 @@ final class CellTooltipBlocksTest {
         }
 
         @Test
-        void readBodyWithinDrawsTheBlocksTheBodyHeldWhenItWasReadRatherThanWhatItHoldsNow() {
+        void drawsTheBlocksTheBodyHeldWhenItWasReadRatherThanWhatItHoldsNow() {
             // A layer composes into a body it goes on using - the same instance serves every hover -
             // so a value that kept the body's own list would reshape a box already measured and drawn.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -242,7 +242,7 @@ final class CellTooltipBlocksTest {
     class CountLongestListing {
 
         @Test
-        void countLongestListingAnswersTheLongestListingAtAnyDepth() {
+        void answersTheLongestListingAtAnyDepth() {
             // What bounds the search for an allowance: above this, no listing has a tail to take off,
             // so a larger allowance draws the very body an unbounded one does.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
@@ -258,7 +258,7 @@ final class CellTooltipBlocksTest {
         }
 
         @Test
-        void countLongestListingPassesOverATierTheLevelDeclines() {
+        void passesOverATierTheLevelDeclines() {
             // A tier that is never drawn cannot make the box tall, so its length has no say in how far
             // the allowance has to come down.
             var body = CellTooltipBody.openBody(FACTIONS);
@@ -274,7 +274,7 @@ final class CellTooltipBlocksTest {
         }
 
         @Test
-        void countLongestListingAnswersNothingForABodyThatListsNothing() {
+        void answersNothingForABodyThatListsNothing() {
             // A body of banners alone has no tail to take off however little room the box has.
             var body = CellTooltipBody.openBody(PATROL_DETAILS);
 

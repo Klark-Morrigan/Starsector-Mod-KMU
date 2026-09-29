@@ -13,7 +13,7 @@ class KmuTooltipSectionStyleTest {
     class Muted {
 
         @Test
-        void mutedStyleUsesFrozenPlayerBlueBannerAndGrayBodyText() {
+        void styleUsesFrozenPlayerBlueBannerAndGrayBodyText() {
             assertThat(KmuTooltipSectionStyle.MUTED.titleRawColour())
                     .isEqualTo(StarsectorUiColour.LIGHT_BLUE);
             assertThat(KmuTooltipSectionStyle.MUTED.backgroundRawColour())
@@ -27,7 +27,7 @@ class KmuTooltipSectionStyleTest {
     class Warning {
 
         @Test
-        void warningStyleUsesWarningBannerAndNormalBodyText() {
+        void styleUsesWarningBannerAndNormalBodyText() {
             assertThat(KmuTooltipSectionStyle.WARNING.titleRawColour())
                     .isEqualTo(StarsectorUiColour.ORANGE);
             assertThat(KmuTooltipSectionStyle.WARNING.backgroundRawColour())

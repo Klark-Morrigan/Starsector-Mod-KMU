@@ -22,7 +22,7 @@ final class HoverTooltipDetailLevelStateTest {
     class GetLevel {
 
         @Test
-        void getLevelStartsAtFactions() {
+        void startsAtFactions() {
 
             assertThat(new HoverTooltipDetailLevelState().getLevel())
                 .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
@@ -33,7 +33,7 @@ final class HoverTooltipDetailLevelStateTest {
     class MoveToLevel {
 
         @Test
-        void moveToLevelIsWhatTheNextReadSees() {
+        void isWhatTheNextReadSees() {
 
             var state = new HoverTooltipDetailLevelState();
             state.moveToLevel(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
@@ -43,7 +43,7 @@ final class HoverTooltipDetailLevelStateTest {
         }
 
         @Test
-        void moveToLevelTakesTheLevelItIsGivenRatherThanSteppingTheCycle() {
+        void takesTheLevelItIsGivenRatherThanSteppingTheCycle() {
             // Where a press lands turns on how deep the box under the cursor goes, which this holder
             // cannot read. Stepping here it would walk a shallow box's player through tiers that
             // redraw the same thing, so it is told the destination and does no arithmetic of its own.
@@ -61,7 +61,7 @@ final class HoverTooltipDetailLevelStateTest {
     class DiscardLevelFromPreviousSave {
 
         @Test
-        void discardLevelFromPreviousSaveDropsBackToFactions() {
+        void dropsBackToFactions() {
 
             var state = new HoverTooltipDetailLevelState();
 
@@ -73,7 +73,7 @@ final class HoverTooltipDetailLevelStateTest {
         }
 
         @Test
-        void discardLevelFromPreviousSaveLeavesFactionsAlone() {
+        void leavesFactionsAlone() {
 
             var state = new HoverTooltipDetailLevelState();
 
@@ -88,7 +88,7 @@ final class HoverTooltipDetailLevelStateTest {
     class GetInstance {
 
         @Test
-        void getInstanceIsOneSharedHolder() {
+        void isOneSharedHolder() {
 
             assertThat(HoverTooltipDetailLevelState.getInstance())
                 .isSameAs(HoverTooltipDetailLevelState.getInstance());

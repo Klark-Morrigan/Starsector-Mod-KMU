@@ -20,7 +20,7 @@ final class HeldPointerMapCoverTest {
     class IsCoveringCursor {
 
         @Test
-        void isCoveringCursorAnswersCoveredWhileTheLeftButtonIsHeld() {
+        void answersCoveredWhileTheLeftButtonIsHeld() {
             // The frame the marker menu stands on: the map opened it under the pointer, and it
             // consumes the input the hover never sees.
             var pointerButtonHoldFake = new PointerButtonHoldFake();
@@ -32,7 +32,7 @@ final class HeldPointerMapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersUncoveredOnceTheLeftButtonIsReleased() {
+        void answersUncoveredOnceTheLeftButtonIsReleased() {
             // The release is what ends the menu, so it has to end the cover too - a cover outliving
             // the hold would leave the map quiet with nothing over it.
             var pointerButtonHoldFake = new PointerButtonHoldFake();
@@ -45,7 +45,7 @@ final class HeldPointerMapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersUncoveredWhileNoButtonHasBeenTouched() {
+        void answersUncoveredWhileNoButtonHasBeenTouched() {
             // The ordinary frame, and the one the whole hover exists for: a pointer resting on the
             // map with nothing pressed is pointing at what is under it.
             assertThat(new HeldPointerMapCover(new PointerButtonHoldFake()).isCoveringCursor())

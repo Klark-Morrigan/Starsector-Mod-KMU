@@ -178,7 +178,7 @@ final class ClaimScoreRowResolverTest {
     class ResolveMarketRows {
 
         @Test
-        void resolveMarketRowsLeadsWithTheFactionsStrongestMarketAndCallsTheHolderOut() {
+        void leadsWithTheFactionsStrongestMarketAndCallsTheHolderOut() {
             // The faction's number above is this one market's score, so the reader following it
             // downward has to be told which of the markets listed here it came out of - and kept from
             // reading the number as the total of the list.
@@ -191,7 +191,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesWhereTheEconomyListsEachMarket() {
+        void statesWhereTheEconomyListsEachMarket() {
             // The whole of the answer to what the scores cannot settle: a tie falls to whichever
             // market the economy reached first, and nothing else in the box says which that was.
             var rows = resolveContestedRows(buildStandingOverOneSibling());
@@ -203,7 +203,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeadsAMarketWithTheGlyphTheMapMarksItBy() {
+        void leadsAMarketWithTheGlyphTheMapMarksItBy() {
             // The reader has a list of names and a map, and the glyph is the one thing the two share
             // at a glance.
             var rows = resolveContestedRows(buildStanding(
@@ -215,7 +215,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeadsAMarketTheMechanicPassedOverWithItsGlyphToo() {
+        void leadsAMarketTheMechanicPassedOverWithItsGlyphToo() {
             // The nought is the whole of what the contest says about such a market, and identifying it
             // is not the contest speaking - a colony the player can see on the map has to be findable
             // from the list whether or not anything weighed it.
@@ -241,7 +241,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsDrawsAMarketsGlyphInTheMarketNamesOwnColour() {
+        void drawsAMarketsGlyphInTheMarketNamesOwnColour() {
             // The map's shades are authored to tell one world from another against black, and carried
             // into the box unchanged they arrive brighter than the numbers the account is about - a
             // column of coloured glyphs reads as the finding when what it is is a bullet point.
@@ -254,7 +254,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsOpensAMarketOnItsNameWhereTheMapMarksItWithNoGlyph() {
+        void opensAMarketOnItsNameWhereTheMapMarksItWithNoGlyph() {
             // An entity carrying no authored icon hands the absence straight over, so the line is
             // built from its words rather than from an image run with nothing to load.
             var rows = resolveContestedRows(buildStanding(
@@ -266,7 +266,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsMarksNoLineBeneathAMarket() {
+        void marksNoLineBeneathAMarket() {
             // A size or a garrison bonus is a term of arithmetic with nothing on the map to point at,
             // so a glyph there would be standing in for a number.
             var rows = resolveContestedRows(buildStanding(
@@ -279,7 +279,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsMarksTheTieBreakerAsWonAndTheMarketsItBeatAsLost() {
+        void marksTheTieBreakerAsWonAndTheMarketsItBeatAsLost() {
             // The moment the place stops being a label: two markets equal on everything else are
             // parted by it alone, so the earlier-listed one reads as having won the tie and the rest
             // as having lost it, rather than leaving the reader to work out that the smaller wins.
@@ -302,7 +302,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsMarksTheClaimantAsHavingWonATieAgainstARivalFaction() {
+        void marksTheClaimantAsHavingWonATieAgainstARivalFaction() {
             // The comparison that actually settles the system, and the one a per-faction reading
             // cannot see at all: two factions' strongest markets on the same score are parted by the
             // listing alone, so the claimant's reads as having won and the rival's as having lost.
@@ -333,7 +333,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeavesAClaimantThatOutScoredEveryRivalUnmarked() {
+        void leavesAClaimantThatOutScoredEveryRivalUnmarked() {
             // Winning outright is not winning a tie. The listing decided nothing there, and a mark
             // would offer the reader a tie-break to look for that never took place.
             var claimant = buildStanding(buildStrongestMarket(NO_SIBLING_MARKETS), List.of());
@@ -351,7 +351,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeavesATieWithANonTerritorialFactionUnmarked() {
+        void leavesATieWithANonTerritorialFactionUnmarked() {
             // A non-territorial faction's score can never take the lead, so the claimant did not
             // out-list it - there was no rival in that tie to out-list. Marking the pair would
             // invent a contest the mechanic skipped.
@@ -386,7 +386,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsJudgesNoClaimantTieOverASystemHeldByDecree() {
+        void judgesNoClaimantTieOverASystemHeldByDecree() {
             // The decree settled the system, so the listing settled nothing between the two equal
             // standings beneath it - and a mark would credit the order with an outcome it never had.
             var claimant = buildStanding(buildStrongestMarket(NO_SIBLING_MARKETS), List.of());
@@ -404,7 +404,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeavesAPlaceThatDecidedNothingUnmarked() {
+        void leavesAPlaceThatDecidedNothingUnmarked() {
             // Markets on different scores are told apart by the scores, so their places settled
             // nothing and a marked one would claim an outcome the numbers already gave. Asserted on
             // the markets alone: the presence line below them sits in no listing at all, which is a
@@ -418,7 +418,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsAHiddenMarketAtNought() {
+        void listsAHiddenMarketAtNought() {
             // The mechanic skips it before scoring, so it brought nothing to the contest however
             // large it is - and it is listed all the same, being one of the markets the presence
             // term counts, which a reader checking that count has to be able to see.
@@ -441,7 +441,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRanksAHiddenMarketBelowEveryMarketThatCompeted() {
+        void ranksAHiddenMarketBelowEveryMarketThatCompeted() {
             // The regression the contest score exists to rule out: read at the score it would have
             // carried, a large hidden base sorts above the market that actually took the system, and
             // the list stops reading in the order the mechanic settles it.
@@ -460,7 +460,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsBreaksAHiddenMarketDownIntoNothing() {
+        void breaksAHiddenMarketDownIntoNothing() {
             // Nothing was computed for it: its size and its garrison never entered any sum, so terms
             // beneath it would invite a reader to add up to a number its line does not carry.
             var rows = resolveContestedRows(buildStanding(
@@ -473,7 +473,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeavesATieWithAHiddenMarketUnjudged() {
+        void leavesATieWithAHiddenMarketUnjudged() {
             // A hidden market never competes - the mechanic skips it before scoring - so a standing
             // tied only with one won nothing, and marking it would assert a contest that did not
             // happen.
@@ -487,7 +487,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsAMarketTheEconomyDoesNotListAtNought() {
+        void listsAMarketTheEconomyDoesNotListAtNought() {
             // Vanilla leaves a real market on a real station unregistered, so the mechanic's walk
             // never reaches it. Listed at nought states both true things at once - the station is
             // there, in a faction's colours, and it took no part.
@@ -510,7 +510,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsBreaksAMarketTheEconomyDoesNotListDownIntoNothing() {
+        void breaksAMarketTheEconomyDoesNotListDownIntoNothing() {
             // Nothing was computed for it, so terms beneath it would invite a reader to add up to a
             // number its own line deliberately does not carry.
             var rows = resolveContestedRows(buildStanding(
@@ -525,7 +525,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsWithholdsThePresenceTermOverAListHoldingAnUncountedMarket() {
+        void withholdsThePresenceTermOverAListHoldingAnUncountedMarket() {
             // The count is the mechanic's, and the mechanic never saw the off-economy market. Printed
             // beneath a list carrying it, the term would read as short by exactly that market - a
             // count the reader can see is contradicted, which is the one way it may not part company
@@ -541,7 +541,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesTheSiblingBonusAsWorkingOverThePointsItCameTo() {
+        void statesTheSiblingBonusAsWorkingOverThePointsItCameTo() {
             // The line is not one of the faction's holdings but the arithmetic of a term all of them
             // share, so it reads as quietly as any other working and only the points stay a finding.
             var rows = resolveContestedRows(buildStanding(
@@ -559,7 +559,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesNoListingPlaceOnATermLine() {
+        void statesNoListingPlaceOnATermLine() {
             // A term is arithmetic, not a market, so it sits in no listing and has no place to
             // state - and the presence line below the markets is the faction's rather than one of
             // them, so it has none either.
@@ -574,7 +574,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeavesAnUnlistedMarketUnknownToThePlayerOffTheList() {
+        void leavesAnUnlistedMarketUnknownToThePlayerOffTheList() {
             // Both exclusions against it at once: the economy never listed it, so the mechanic's walk
             // reached it for neither a score nor the sibling count and no number on screen needs it to
             // add up, and the player has not found it, so there is nothing they could already know. A
@@ -591,7 +591,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsBlocksOutAConcealedMarketTheSiblingCountPaidFor() {
+        void blocksOutAConcealedMarketTheSiblingCountPaidFor() {
             // The count is the row's warrant. The faction was paid a point for this colony, so the
             // block states three markets while its own rows would show two - and a count contradicted
             // by the list beneath it is the one thing the account must not do. The name is what the
@@ -615,7 +615,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsABlockedOutConcealedMarketUndiscoveredWhereItsEntityIsToo() {
+        void callsABlockedOutConcealedMarketUndiscoveredWhereItsEntityIsToo() {
             // The displacement the qualifier makes, on a row that now exists to carry it: a concealed
             // colony on an entity nobody has found is undiscovered first and concealed second, since a
             // reader who has not found the place has no use for being told what is hidden on it.
@@ -639,7 +639,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesTheQuietNoughtOfABlockedOutMarketTheContestPassedOver() {
+        void statesTheQuietNoughtOfABlockedOutMarketTheContestPassedOver() {
             // The nought is the contest's own statement that the colony counted for nothing, which is
             // no part of what the row withholds - and an empty column beside a blocked-out name would
             // read as a figure kept back rather than as one there was never any of.
@@ -655,7 +655,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsAMarketTheContestWeighedThoughItsColonyIsUndiscovered() {
+        void listsAMarketTheContestWeighedThoughItsColonyIsUndiscovered() {
             // The market's weight is already in the numbers on screen - the faction's score, and the
             // presence its siblings were each given - so the row is what makes them accountable. It is
             // the name alone that is kept back, the row standing in its place.
@@ -668,7 +668,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStillCallsAMarketItWillNotNameUndiscovered() {
+        void stillCallsAMarketItWillNotNameUndiscovered() {
             // The whole shape of the row at once, which is the only reading that pins the word and the
             // blocked-out name as one answer: what the fog takes is the colony's identity, not the fact
             // that the box could not find it - so the finding is stated as loudly as on any other line.
@@ -681,7 +681,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesWhereTheEconomyListsAnUndiscoveredMarket() {
+        void statesWhereTheEconomyListsAnUndiscoveredMarket() {
             // The place identifies the market rather than describing the colony, so it survives the
             // withholding of the name.
             var rows = resolveRowsOverAnUndiscoveredMarket();
@@ -691,7 +691,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsMarksATieAnUndiscoveredMarketWonOrLost() {
+        void marksATieAnUndiscoveredMarketWonOrLost() {
             // The reason the place has to survive: a tie is settled by the listing alone, and no other
             // number on screen accounts for it - so a blocked-out row that lost one says so, or the
             // reader is left with two equal scores and no explanation of which took the system.
@@ -713,7 +713,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesNoScoreForAnUndiscoveredMarketBesidesTheStanding() {
+        void statesNoScoreForAnUndiscoveredMarketBesidesTheStanding() {
             // The column stands empty rather than carrying the figure. The row is still ranked on the
             // real score - between the two markets it falls between here - so the lines either side of
             // it bound what it came to: the box declines to state the number, and does not go on to
@@ -734,7 +734,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsBreaksAnUndiscoveredMarketDownIntoNothing() {
+        void breaksAnUndiscoveredMarketDownIntoNothing() {
             // A size and a garrison are the colony itself described term by term, which is the account
             // the row exists not to give. Unlike a market the mechanic passed over, the terms were
             // computed here - they are being withheld rather than absent.
@@ -745,7 +745,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesTheScoreOfAnUndiscoveredMarketAFactionStandsOn() {
+        void statesTheScoreOfAnUndiscoveredMarketAFactionStandsOn() {
             // The one figure a blocked-out row carries, because the faction's own line above already
             // states it: withheld here it would hide nothing, while leaving the block's arithmetic
             // unaccountable.
@@ -758,7 +758,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsOutAnUndiscoveredMarketThatTookTheSystem() {
+        void callsOutAnUndiscoveredMarketThatTookTheSystem() {
             // The two findings a blocked-out row can carry at once, and the shape the fog makes
             // reachable: a faction can take a system on a colony nobody has found, and the map is
             // already painting that system in its colours - so the claim is stated on the very line
@@ -772,7 +772,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesThePresenceTermOverAListSomethingWasKeptFrom() {
+        void statesThePresenceTermOverAListSomethingWasKeptFrom() {
             // The count runs ahead of the shortened list, which is what the reader is owed rather
             // than what must be kept from them: the market on screen carries a score its own terms
             // fall short of, so the difference is already stated and the term is the only thing that
@@ -789,7 +789,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsTheStandingMarketOnAnUndiscoveredColony() {
+        void listsTheStandingMarketOnAnUndiscoveredColony() {
             // The mechanic weighs colonies nobody has reached, so the very market a faction stands on
             // can be one the player has not found - and it is the market the faction's own line states
             // the score of. Left off, that number would head an account with nothing in it that comes
@@ -806,7 +806,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsEveryMarketUnderTheDevReveal() {
+        void listsEveryMarketUnderTheDevReveal() {
             // The reveal is the state a player has asked to be shown everything in, so even the one
             // market no number on screen needs - off the economy's books and undiscovered at once -
             // takes its place in the account, and takes it under its own name.
@@ -834,7 +834,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsOutAnUndiscoveredMarket() {
+        void callsOutAnUndiscoveredMarket() {
             // Posed in play, that being where such a market is now listed: the contest weighed it.
             // The word comes off the box's own walk of the system rather than off the contest - no
             // claim row carries the entity's flag, which is nowhere in the arithmetic.
@@ -856,7 +856,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsOutNoMarketBesidesTheFactionsStrongest() {
+        void callsOutNoMarketBesidesTheFactionsStrongest() {
             // A second marked line would say one system has two holders, which is exactly what a
             // contest cannot produce.
             var rows = resolveContestedRows(buildStandingOverOneSibling());
@@ -866,7 +866,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsADecivilisedWorldOutBesideItsNought() {
+        void callsADecivilisedWorldOutBesideItsNought() {
             // The one thing this box says about a colony the mechanic passed over, and the pair is
             // what makes it necessary: a decivilised world and a concealed base both arrive at
             // nought, and only the world is a fact about the sector rather than about the contest.
@@ -884,7 +884,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsAnOrdinaryOffEconomyColonyUnlisted() {
+        void callsAnOrdinaryOffEconomyColonyUnlisted() {
             // The same line for a colony that is merely unregistered: nothing about the place is a
             // finding, so what is left is why the contest never met it.
             var rows = resolveContestedRows(buildStanding(
@@ -899,7 +899,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsOutNoMarketOfAFactionThatTookNothing() {
+        void callsOutNoMarketOfAFactionThatTookNothing() {
             // Every faction is represented by its strongest market, but only one of those won
             // anything. A rival's is called out nowhere, since the line would credit it with an
             // outcome it did not produce.
@@ -918,7 +918,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsOutNoMarketOfASystemHeldByDecree() {
+        void callsOutNoMarketOfASystemHeldByDecree() {
             // A decree settles the system before a market is weighed, so no market's score decided
             // anything and none is called out for it - the claimant's least of all.
             var standing = buildStandingOverOneSibling();
@@ -936,7 +936,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStillLeadsWithTheStrongestMarketOfAFactionThatTookNothing() {
+        void stillLeadsWithTheStrongestMarketOfAFactionThatTookNothing() {
             // Only the call-out goes. The markets are still read strongest first, since that is the
             // order a contest is read in whether or not this faction won it.
             var standing = buildStandingOverOneSibling();
@@ -954,7 +954,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRanksTheRemainingMarketsStrongestFirst() {
+        void ranksTheRemainingMarketsStrongestFirst() {
             // The markets read strongest first for the same reason the factions above them do: the
             // account of a standing opens on what came nearest to being it.
             var rows = resolveContestedRows(buildStanding(
@@ -968,7 +968,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsBreaksATieOnTheOrderTheMechanicItselfSettlesIt() {
+        void breaksATieOnTheOrderTheMechanicItselfSettlesIt() {
             // Two markets of a faction can score exactly the same, and the contest parts them by the
             // earlier place in the economy's listing - so the list reads in the order the mechanic
             // would settle it rather than in one the box invented.
@@ -983,7 +983,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesTheMarketsWholeScoreBesideIt() {
+        void statesTheMarketsWholeScoreBesideIt() {
             // The market's line carries the number the contest weighed it at - presence included, since
             // that is what the faction's line above and the map's own fill were settled by.
             var rows = resolveContestedRows(buildStanding(
@@ -995,7 +995,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsOpensAMarketOnTheSizeItsScoreStartsFrom() {
+        void opensAMarketOnTheSizeItsScoreStartsFrom() {
             // The size is the term the sum starts from, so it heads the terms and is stated even where
             // it is the whole of the score - a market listing no term at all would read as a number
             // with no account behind it.
@@ -1010,7 +1010,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsWorksOutNoTermWhereTheLevelStopsAtTheMarkets() {
+        void worksOutNoTermWhereTheLevelStopsAtTheMarkets() {
             // The market is listed and its terms are not worked out at all. Left to the cut, every
             // market of every faction present would have its arithmetic worded and then dropped over
             // a hover that asked only which colonies a faction claims the system with.
@@ -1042,7 +1042,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsClosesTheListWithThePresenceEveryOneOfTheMarketsEarned() {
+        void closesTheListWithThePresenceEveryOneOfTheMarketsEarned() {
             // The term belongs to the faction rather than to any one of its markets - the mechanic
             // gives all of them the same points for each other - so it is stated once, beneath the
             // very markets whose number the reader is meant to check the count against.
@@ -1055,7 +1055,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsKeepsThePresenceTermOffEachMarketsOwnAccount() {
+        void keepsThePresenceTermOffEachMarketsOwnAccount() {
             // Repeated under every market the one term would read as several separate findings, and
             // there would be nothing beside any of them to check the count against.
             var rows = resolveContestedRows(buildStanding(
@@ -1067,7 +1067,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesNoPresenceTermForAFactionHoldingTheSystemWithOneMarket() {
+        void statesNoPresenceTermForAFactionHoldingTheSystemWithOneMarket() {
             // The term never arose, and a line reading "1 x 0 = 0" would invite the reader to look
             // for a market that is not there.
             var rows = resolveContestedRows(buildStanding(
@@ -1079,7 +1079,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesTheGarrisonTermOnlyForAMilitaryMarket() {
+        void statesTheGarrisonTermOnlyForAMilitaryMarket() {
             // The bonus is a flat constant a garrison earns, so an absent one is a market that is no
             // garrison rather than a garrison worth nothing - two different markets a "+0" would
             // print alike.
@@ -1107,7 +1107,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsAPresenceOnlyFactionsColoniesAtNoughtInListingOrder() {
+        void listsAPresenceOnlyFactionsColoniesAtNoughtInListingOrder() {
             // A faction the contest never weighed has no score to rank its colonies by, so the
             // account reads in the order the system's listing reaches them - the one order the walk
             // ever imposed - and every line carries the nought the contest weighed it at.
@@ -1122,7 +1122,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsNamesNoColonyOfAPresenceOnlyFactionAsTheHolder() {
+        void namesNoColonyOfAPresenceOnlyFactionAsTheHolder() {
             // Nothing behind such a standing took the system: it scores nought, and the lead changes
             // only on a score strictly greater than nought. A call-out here would name a holder the
             // contest never produced.
@@ -1138,7 +1138,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsAColonyTheSectorOpenlyPointsAtUnlistedRatherThanHidden() {
+        void callsAColonyTheSectorOpenlyPointsAtUnlistedRatherThanHidden() {
             // Galatia Academy: concealed, unregistered, and a place the tutorial sends the player
             // to. What is left once the concealment is excused is the fallback, which is the
             // separation the word was wanted for - the box says the economy does not carry the
@@ -1152,7 +1152,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsAColonyOfTheSameShapeNobodyVouchesForHidden() {
+        void callsAColonyOfTheSameShapeNobodyVouchesForHidden() {
             // The other half of that pair, differing in nothing the breakdown carries: a concealed
             // colony the economy also drops goes on reading as concealed, which is the case the
             // excusing must not reach.
@@ -1164,7 +1164,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsClosesAPresenceOnlyAccountWithNoPresenceTerm() {
+        void closesAPresenceOnlyAccountWithNoPresenceTerm() {
             // The term is arithmetic of a score, and no score was computed for this faction at all -
             // so a line stating one would account for a sum that never happened. The colonies carry
             // sibling counts all the same, being what the mechanic recorded on the way past them.
@@ -1177,7 +1177,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsBreaksAPresenceOnlyFactionsColonyDownIntoNothing() {
+        void breaksAPresenceOnlyFactionsColonyDownIntoNothing() {
             // Nothing was computed for it, so there are no terms to state - the same sentence a
             // weighed faction's passed-over market speaks, and for the same reason.
             var rows = resolvePresenceOnlyRows(
@@ -1188,7 +1188,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsWithholdsAPresenceOnlyFactionsUnknownColony() {
+        void withholdsAPresenceOnlyFactionsUnknownColony() {
             // The sibling count is what earns a concealed colony a row, and this kind of account states
             // none: a faction the contest never weighed scores a named nought with no terms beneath it,
             // so nothing on screen is short of the colony and a row would only disclose it.
@@ -1210,7 +1210,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsATermsOwnAccountNoDeeper() {
+        void listsATermsOwnAccountNoDeeper() {
             // The claim score is one addition deep. A term breaking down further would be inventing an
             // arithmetic the mechanic does not have.
             var rows = resolveContestedRows(buildStanding(
@@ -1222,7 +1222,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRemarksHowOldTheNewsOfAConcealedColonyIs() {
+        void remarksHowOldTheNewsOfAConcealedColonyIs() {
             // The kind the remark matters most for: a base held in concealment is on the list on
             // the strength of somebody having seen it, and the nought beside it says nothing else.
             var standing = buildPresenceOnlyStanding(
@@ -1241,7 +1241,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRemarksHowOldTheNewsOfAnOffEconomyColonyIs() {
+        void remarksHowOldTheNewsOfAnOffEconomyColonyIs() {
             // The other shape the contest never weighed, answering on the same terms: the mechanic's
             // walk never reached it, so when it was last seen is all the account has left to add.
             var standing = buildPresenceOnlyStanding(
@@ -1260,7 +1260,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRemarksHowOldTheNewsOfAWeighedColonyIs() {
+        void remarksHowOldTheNewsOfAWeighedColonyIs() {
             // How current the box's news of a colony is has nothing to do with whether the mechanic
             // weighed it, so a scored market carries the remark on the very same terms.
             var standing = buildStanding(buildStrongestMarket(NO_SIBLING_MARKETS), List.of());
@@ -1278,7 +1278,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRemarksNothingBeneathARemarkedColony() {
+        void remarksNothingBeneathARemarkedColony() {
             // A size or a garrison is arithmetic over the market's own line, so a date there would
             // answer for the line above it twice.
             var standing = buildStanding(buildFullyScoredMarket(), List.of());
@@ -1296,7 +1296,7 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRemarksNothingOnAColonyBeingLookedAtNow() {
+        void remarksNothingOnAColonyBeingLookedAtNow() {
             // The ordinary case: in sight, the name stands alone.
             var rows = resolveContestedRows(buildStanding(
                 buildStrongestMarket(NO_SIBLING_MARKETS),

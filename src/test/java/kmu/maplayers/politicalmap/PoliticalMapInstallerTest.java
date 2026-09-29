@@ -70,7 +70,7 @@ class PoliticalMapInstallerTest {
         }
 
         @Test
-        void installMapLayerSectorWatcherClearsOnlyThisLayersOwnWatcherClass() {
+        void clearsOnlyThisLayersOwnWatcherClass() {
             // The engine clears transient scripts by exact class, so clearing under the framework's
             // shared watcher class would take every other layer's poll down with this one's.
             var sectorMock = mock(SectorAPI.class);

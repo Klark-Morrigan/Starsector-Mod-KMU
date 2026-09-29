@@ -98,7 +98,7 @@ final class LiveSidebarPlacementTest {
     class ComputeIntelPadding {
 
         @Test
-        void computeIntelPaddingHangsTheBoxFromTheVisorTopPushedDownByTheTopPadding() {
+        void hangsTheBoxFromTheVisorTopPushedDownByTheTopPadding() {
             // Visor top edge = 650; screen 1200 tall; the box top sits 40px below the visor top, so its
             // distance from the screen top is (1200 - 650) + 40 = 590.
             var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 40);
@@ -108,7 +108,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void computeIntelPaddingHangsTheBoxAtTheVisorTopWhenTheTopPaddingIsZero() {
+        void hangsTheBoxAtTheVisorTopWhenTheTopPaddingIsZero() {
 
             var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 0);
 
@@ -117,7 +117,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void computeIntelPaddingSitsFlushAgainstTheVisorLeftEdgeAndGrowsRightward() {
+        void sitsFlushAgainstTheVisorLeftEdgeAndGrowsRightward() {
 
             var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 40);
 
@@ -128,7 +128,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void computeIntelPaddingCapsTheBodyToTheVisorBottom() {
+        void capsTheBodyToTheVisorBottom() {
 
             var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 40);
 
@@ -141,7 +141,7 @@ final class LiveSidebarPlacementTest {
     class ResolveTabLabels {
 
         @Test
-        void resolveTabLabelsLettersEachTabFromItsOwnLayersAnswer() {
+        void lettersEachTabFromItsOwnLayersAnswer() {
             // The inversion this pins: the bar draws what the layer hands back and resolves no key of its
             // own, which is what lets a layer from another mod letter its tab out of a bundle KMU has no
             // reader for. Two layers, so a bar reading one fixed source would show one of them twice.
@@ -158,7 +158,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveTabLabelsKeepsATabForALayerAnsweringABlankLabel() {
+        void keepsATabForALayerAnsweringABlankLabel() {
             // A layer whose text resolves to nothing - a missing bundle entry, or a player-set name
             // cleared - keeps its place in the row. Dropping it would take the tab away with it, leaving
             // the player no way back to a layer they can still be holding as their pick.
@@ -175,7 +175,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveTabLabelsLettersNothingForALayerAnsweringNoLabelAtAll() {
+        void lettersNothingForALayerAnsweringNoLabelAtAll() {
             // A layer answering null rather than blank, which an arbitrary mod's layer can. The row refuses
             // a null label outright, so an ungated read would cost the player the whole tab strip over one
             // layer's missing answer instead of costing that layer its letters.
@@ -196,7 +196,7 @@ final class LiveSidebarPlacementTest {
     class ResolveTabShortcuts {
 
         @Test
-        void resolveTabShortcutsHintsEachTabWithTheKeyItsOwnLayerAnswersTo() {
+        void hintsEachTabWithTheKeyItsOwnLayerAnswersTo() {
             // The inversion this pins: the bar prints the key the layer hands back and reads no settings
             // field of its own, which is what lets a layer from another mod bind its tab in a settings file
             // KMU has no reader for. Two layers, so a bar reading one fixed source would hint one of them
@@ -214,7 +214,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveTabShortcutsHintsNoKeyForALayerThePlayerLeftUnbound() {
+        void hintsNoKeyForALayerThePlayerLeftUnbound() {
             // A cleared binding is a key the tab must stop advertising: LWJGL still names 0 "NONE", so an
             // ungated read would print a key the player cannot press. The entry stays, since the control
             // pairs hints to labels by index.
@@ -231,7 +231,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveTabShortcutsHintsNoKeyForACodeLwjglCannotName() {
+        void hintsNoKeyForACodeLwjglCannotName() {
             // A real keycode LWJGL holds no name for. The tab keeps its label and simply says nothing about
             // what presses it, rather than printing a blank bracket beside the name.
             var unnamedLayerMock = mock(MapLayer.class);
@@ -244,7 +244,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveTabShortcutsHintsNoKeyForACodePastTheKeyboard() {
+        void hintsNoKeyForACodePastTheKeyboard() {
             // The bound test earns its place here: the keycode is now an arbitrary mod's number and LWJGL
             // indexes its name table by it unchecked, so without the gate one layer answering nonsense
             // would take the whole tab row down instead of costing itself a hint.
@@ -262,7 +262,7 @@ final class LiveSidebarPlacementTest {
     class BuildTabsSpec {
 
         @Test
-        void buildTabsSpecLightsTheTabOfTheScreensOwnActiveLayer() {
+        void lightsTheTabOfTheScreensOwnActiveLayer() {
 
             var layers = List.of(buildLayerMock("No Layer"), buildLayerMock("Political Map"));
 
@@ -278,7 +278,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void buildTabsSpecLightsNoTabForAnActiveLayerTheRegistryNoLongerHolds() {
+        void lightsNoTabForAnActiveLayerTheRegistryNoLongerHolds() {
             // A pick can outlive its layer: the mod that registered it leaves the load order while the
             // screen is still holding it. The row then lights nothing rather than lighting a tab that
             // stands for something else, and NO_SELECTION is what says so.
@@ -296,7 +296,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void buildTabsSpecSelectsTheLayerAtTheClickedTab() {
+        void selectsTheLayerAtTheClickedTab() {
             // The switch rides on the control's own action, so the tab that was drawn at an index and the
             // layer a click on it selects are the same registry row - no separate tab callback to fall out
             // of step with the row.
@@ -311,7 +311,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void buildTabsSpecPairsEveryLabelWithAShortcutSlot() {
+        void pairsEveryLabelWithAShortcutSlot() {
             // The control reads the two lists by index, so a row whose hints ran shorter than its labels
             // would hand a tab someone else's key - or none where one was bound.
             var layers = List.of(
@@ -331,7 +331,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void buildTabsSpecStandsTheRowUpAroundALayerAnsweringNoLabel() {
+        void standsTheRowUpAroundALayerAnsweringNoLabel() {
             // The end of the same path: the strip refuses a null label, so an unsettled answer from one
             // layer would throw here rather than in the read that produced it. The row stands, and the
             // layer that said nothing simply has nothing lettered on its tab.
@@ -394,7 +394,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveOpenerSpecStandsTheOpenerWhereTwoLayersPaint() {
+        void standsTheOpenerWhereTwoLayersPaint() {
             // The install a foreign mod's layer makes, and the only one in which arranging the bar can
             // change what the map shows.
             registerTwoLayersThatPaintBesideTheEmptyView();
@@ -404,7 +404,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveOpenerSpecDropsTheOpenerWhereOneLayerPaintsBesideTheEmptyView() {
+        void dropsTheOpenerWhereOneLayerPaintsBesideTheEmptyView() {
             // KMU's own install. A door onto an empty room is worse than no door: one row to move with
             // nowhere to move it that changes which layer paints, and a hide the last-tab guard refuses.
             registerOneLayerThatPaintsBesideTheEmptyView();
@@ -414,7 +414,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveOpenerSpecDropsTheOpenerWhereTheEmptyViewStandsAlone() {
+        void dropsTheOpenerWhereTheEmptyViewStandsAlone() {
             // The empty view is not counted, so a roster of it alone is a roster of nothing to arrange
             // rather than a row of one.
             MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE);
@@ -424,7 +424,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveOpenerSpecKeepsTheOpenerWhereThePlayerHasHiddenTheSecondLayer() {
+        void keepsTheOpenerWhereThePlayerHasHiddenTheSecondLayer() {
             // The count is the roster's and never the offered row's: this button is the only way a
             // hidden tab comes back, so an opener that left once the row got short would strand the
             // arrangement that shortened it.
@@ -437,7 +437,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveOpenerSpecStandsTheOpenerOnTheDevHatchOverARosterThatWouldDropIt() {
+        void standsTheOpenerOnTheDevHatchOverARosterThatWouldDropIt() {
             // The hatch is how the box is reached at all on an install carrying one layer, which is
             // every install until a second one ships - so it has to beat the count rather than be
             // read beside it.
@@ -450,7 +450,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void resolveOpenerSpecAsksForTheOpenerUnchangedWhereItStands() {
+        void asksForTheOpenerUnchangedWhereItStands() {
             // Nothing about the control moves with the gate: the band is handed the same mark and the
             // same box it always was, so what changes is only whether it is handed one at all.
             registerTwoLayersThatPaintBesideTheEmptyView();
@@ -519,7 +519,7 @@ final class LiveSidebarPlacementTest {
     class BuildBodyControls {
 
         @Test
-        void buildBodyControlsOpensTheBodyUnderThePanelsOwnScreen() {
+        void opensTheBodyUnderThePanelsOwnScreen() {
             // Every control the body opens writes the preference of the screen its panel draws for, so the
             // screen the body is built under is the one the panel carries.
             var panelScope = ScreenMemoryScopes.createStandInScreen();
@@ -532,7 +532,7 @@ final class LiveSidebarPlacementTest {
         }
 
         @Test
-        void buildBodyControlsAsksNoScreenOfItsOwn() {
+        void asksNoScreenOfItsOwn() {
             // The live screen goes unread, which is the half a passing scope cannot show: a layout that
             // resolved one here would answer the panel's own question a second time, and the two part
             // company whenever one host lays its body out while the other screen is up - filing that
@@ -563,7 +563,7 @@ final class LiveSidebarPlacementTest {
     class ResolveMapPlacement {
 
         @Test
-        void resolveMapPlacementDrawsNothingWhenTheTabFontCannotLoad() {
+        void drawsNothingWhenTheTabFontCannotLoad() {
             // The layout snaps every tab to its own measured label, so a face that will not load leaves
             // the panel unmeasurable rather than merely unstyled. Answering null is what lets the caller
             // draw nothing and consume nothing that frame, instead of laying a row out at no width and

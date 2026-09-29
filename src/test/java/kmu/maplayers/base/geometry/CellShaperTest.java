@@ -39,7 +39,7 @@ final class CellShaperTest {
     class ShapeCells {
 
         @Test
-        void shapeCellsLeavesASameKeySharedEdgeOnTheRawLineAsASeam() {
+        void leavesASameKeySharedEdgeOnTheRawLineAsASeam() {
             // Cell "a" is the unit square; its right edge (x = 10) is shared with a
             // same-owner "b", the other three are frontiers. Only the shared edge
             // stays a seam (not a boundary), on the raw x = 10 line, so a
@@ -60,7 +60,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsTruncatesASeamEndWithinThePaddedBorder() {
+        void truncatesASeamEndWithinThePaddedBorder() {
             // The kept seam no longer reaches the raw corners (y = 0 and y = 10): the
             // pulled-in top and bottom borders cut it back to the 2..8 inset band, so
             // the seam's ends stay within the padding rather than poking out to the
@@ -80,7 +80,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsInsetsASharedEdgeBetweenDifferentKeys() {
+        void insetsASharedEdgeBetweenDifferentKeys() {
             // With a rival across the right edge, nothing merges: every edge is a
             // boundary and the fill pulls in to x <= 8, leaving the border channel.
             var shaped = buildShape(
@@ -96,7 +96,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsMakesEveryEdgeOfAnUnownedCellABoundary() {
+        void makesEveryEdgeOfAnUnownedCellABoundary() {
             // "a" is absent from the grouping-key map (unowned): it fuses with no one, so
             // every edge - even the one shared with a grouped "b" - is a boundary.
             var shaped = buildShape(
@@ -110,7 +110,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsMakesAFrontierEdgeABoundary() {
+        void makesAFrontierEdgeABoundary() {
             // A lone owned cell touches no neighbour, so every edge is a frontier
             // into empty space - all boundaries, none merged.
             var shaped = buildShape(
@@ -124,7 +124,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsKeepsTwoSameKeyNeighboursMeetingOnTheSharedLine() {
+        void keepsTwoSameKeyNeighboursMeetingOnTheSharedLine() {
             // Left square "a" and right square "b" share the x = 10 line and are both
             // Hegemony. Each keeps that edge as a seam on x = 10, so their fills meet
             // there with no channel between them.
@@ -140,7 +140,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsInsetsAnOpenFrontierEdgeByThePlainChannelFromEitherSide() {
+        void insetsAnOpenFrontierEdgeByThePlainChannelFromEitherSide() {
             // An open frontier - one side grouped, the other not - takes the same uniform
             // channel every other boundary does, from whichever side shapes it. Unowned
             // "a" facing grouped "b" stops at x = 98, and grouped "a" facing unowned "b"
@@ -169,7 +169,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsLeavesEveryEdgeOnItsTrueLineUnderNowhere() {
+        void leavesEveryEdgeOnItsTrueLineUnderNowhere() {
             // The unit square shaped with nothing inset comes back as the unit square: the
             // fill spans the raw 0..10 rather than the 2..8 the channel would leave, and no
             // edge is flagged as lying on an offset line.
@@ -189,7 +189,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsGivesTheSameShapeUnderNowhereWhoeverOwnsTheNeighbour() {
+        void givesTheSameShapeUnderNowhereWhoeverOwnsTheNeighbour() {
             // What an edge faces decides the inset and nothing else, so with the inset off
             // the two owner maps that disagree about every edge still shape one square. This
             // is the partition the channel is later cut into.
@@ -214,7 +214,7 @@ final class CellShaperTest {
         }
 
         @Test
-        void shapeCellsPullsInEvenASameOwnerSeamUnderEverywhere() {
+        void pullsInEvenASameOwnerSeamUnderEverywhere() {
             // The one edge the shipped rule leaves on its line - a same-owner seam - pulls in
             // like the rest, so the fill stops at x = 8 and two same-owner neighbours that
             // would have fused are left a channel apart.

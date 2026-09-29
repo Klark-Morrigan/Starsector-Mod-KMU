@@ -70,7 +70,7 @@ final class BlocMetricSortModeTest {
     class PersistenceKey {
 
         @Test
-        void persistenceKeyIsTheKeyTheModeWasDeclaredUnder() {
+        void isTheKeyTheModeWasDeclaredUnder() {
 
             // Each mode carries its own key rather than one the vocabulary or the shape supplies, which
             // is what lets a save name the mode it stored.
@@ -87,7 +87,7 @@ final class BlocMetricSortModeTest {
     class ResolveTrailingRuns {
 
         @Test
-        void resolveTrailingRunsReadsTheModesOwnMetricOffTheSameBloc() {
+        void readsTheModesOwnMetricOffTheSameBloc() {
 
             // One bloc, two modes: each draws the number it was declared over, so the value follows the
             // mode rather than the payload's first number or the chain's leading one.
@@ -100,7 +100,7 @@ final class BlocMetricSortModeTest {
         }
 
         @Test
-        void resolveTrailingRunsIsNoRunsWhenTheModeNamesNoMetric() {
+        void isNoRunsWhenTheModeNamesNoMetric() {
 
             // A by-name ranking has no number to show, so the row's value column stays unfilled.
             assertThat(BY_NAME.resolveTrailingRuns(buildStandInBloc("hazard", "Hazard", 7, 2), ROW_COLOUR))
@@ -112,7 +112,7 @@ final class BlocMetricSortModeTest {
     class DefaultDirection {
 
         @Test
-        void defaultDirectionFollowsWhetherTheModeNamesAMetric() {
+        void followsWhetherTheModeNamesAMetric() {
 
             // A number leads with the bigger bloc; a name reads A-to-Z. Both follow from the metric the
             // mode was declared over, not from anything else it was handed.
@@ -127,7 +127,7 @@ final class BlocMetricSortModeTest {
     class Comparator {
 
         @Test
-        void comparatorLeadsWithTheModesOwnMetric() {
+        void leadsWithTheModesOwnMetric() {
 
             // The same pair under two modes over the same chain: the severe bloc leads one ranking and
             // the volatile bloc leads the other, so the primary key is the mode's metric rather than
@@ -142,7 +142,7 @@ final class BlocMetricSortModeTest {
         }
 
         @Test
-        void comparatorLeadsWithTheLabelWhenTheModeNamesNoMetric() {
+        void leadsWithTheLabelWhenTheModeNamesNoMetric() {
 
             // The more severe bloc would lead either numeric ranking, so a by-name ranking putting
             // Alpha first says the label led rather than a number.

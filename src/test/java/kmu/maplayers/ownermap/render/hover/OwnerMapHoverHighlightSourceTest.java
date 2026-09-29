@@ -40,7 +40,7 @@ final class OwnerMapHoverHighlightSourceTest {
     class ResolveCandidateFrontierLoopsOf {
 
         @Test
-        void resolveCandidateFrontierLoopsOfReturnsTheHoldersOwnBorderLoops() {
+        void returnsTheHoldersOwnBorderLoops() {
             // Every loop the holder traced is a candidate; which of them encloses this cell is
             // the highlight's own geometric question, not one answered here.
             var loops = List.of(
@@ -56,7 +56,7 @@ final class OwnerMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveCandidateFrontierLoopsOfAnswersTheHoveredSystemOfAPairSharingAnId() {
+        void answersTheHoveredSystemOfAPairSharingAnId() {
             // The cursor and the holding share one address, so hovering one of two systems that
             // answer to "A" haloes that system's own holder - where a lookup by ID alone would
             // have handed back the other's frontier.
@@ -75,7 +75,7 @@ final class OwnerMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveCandidateFrontierLoopsOfReturnsNothingForAFactionlessCell() {
+        void returnsNothingForAFactionlessCell() {
             // A decivilised or uninhabited cell fuses into no cluster group, so it has no frontier
             // to offer at all.
             var source = readSourceOf(buildClustersWith(
@@ -88,7 +88,7 @@ final class OwnerMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveCandidateFrontierLoopsOfReturnsNothingWhenTheHolderBakedNoBorder() {
+        void returnsNothingWhenTheHolderBakedNoBorder() {
             // The holder's border is "No color", so its cluster group carries no loops - an owned cell
             // that still has nothing to halo.
             var source = readSourceOf(buildClustersWith(
@@ -101,7 +101,7 @@ final class OwnerMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveCandidateFrontierLoopsOfReturnsTheSameListWhileTheBuildStands() {
+        void returnsTheSameListWhileTheBuildStands() {
             // The highlight memoises on this instance, so handing back a fresh copy per call
             // would re-trace the loops every frame the cursor rests on one cell.
             var source = readSourceOf(buildClustersWith(
@@ -118,7 +118,7 @@ final class OwnerMapHoverHighlightSourceTest {
     class ResolveHighlightColourOf {
 
         @Test
-        void resolveHighlightColourOfPaintsAnOwnedCellInItsHoldersShade() {
+        void paintsAnOwnedCellInItsHoldersShade() {
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
@@ -129,7 +129,7 @@ final class OwnerMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveHighlightColourOfPaintsAFactionlessCellInTheNeutralShade() {
+        void paintsAFactionlessCellInTheNeutralShade() {
             // An unowned cell has no palette of its own, so the highlight says so in the same
             // neutral the cell's own outline draws in.
             var source = readSourceOf(buildClustersWith(
@@ -142,7 +142,7 @@ final class OwnerMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveHighlightColourOfReturnsNothingForANoColourChoice() {
+        void returnsNothingForANoColourChoice() {
             // The theme points the highlight at no shade at all, which the render pass reads as
             // "skip the whole thing".
             var source = readSourceOf(buildClustersWith(
@@ -159,7 +159,7 @@ final class OwnerMapHoverHighlightSourceTest {
     class GetFillPolygonByCellKey {
 
         @Test
-        void getFillPolygonByCellKeyHandsOverTheFramesOwnShapes() {
+        void handsOverTheFramesOwnShapes() {
             // Passed through rather than rebuilt, which is what makes the halo trace the shape
             // the cursor was hit-tested against - the cursor read takes these same shapes off
             // the same clusters. Reading one cell out of them is the framework's own,

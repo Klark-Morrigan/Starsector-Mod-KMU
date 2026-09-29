@@ -37,7 +37,7 @@ final class SectorClaimsIntegrationTest {
     class ResolveClaimingHolderBySystemKey {
 
         @Test
-        void resolveClaimingHolderBySystemKeyReturnsEmptyWhenThePassHasNoSector() {
+        void returnsEmptyWhenThePassHasNoSector() {
             var claimReaderFake = new ClaimReaderFake();
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
@@ -45,7 +45,7 @@ final class SectorClaimsIntegrationTest {
         }
 
         @Test
-        void resolveClaimingHolderBySystemKeyOmitsSystemsWithNoClaim() {
+        void omitsSystemsWithNoClaim() {
             // A system the port reports no claimant for is absent from the map, exactly as an
             // uninhabited system is absent from the held-dominance pass.
             var sectorMock = buildSectorWithSystems(
@@ -57,7 +57,7 @@ final class SectorClaimsIntegrationTest {
         }
 
         @Test
-        void resolveClaimingHolderBySystemKeyColoursAClaimedSystemInItsClaimantsPalette() {
+        void coloursAClaimedSystemInItsClaimantsPalette() {
             // Under identity the claimant's bloc is itself, so the claimed system resolves to the
             // claiming faction's own key and authored shades - the same holder a held system of that
             // faction would carry, so the two fuse into one territory downstream.
@@ -73,7 +73,7 @@ final class SectorClaimsIntegrationTest {
         }
 
         @Test
-        void resolveClaimingHolderBySystemKeyRollsAnAlliedClaimantIntoItsAllianceBloc() {
+        void rollsAnAlliedClaimantIntoItsAllianceBloc() {
             // The alliances grouping folds the claiming faction into its alliance bloc, and the
             // bloc paints in its colour faction's palette - so an allied claimant's claim lands
             // under the alliance key and colour with no claim-specific rollup of its own.
@@ -93,7 +93,7 @@ final class SectorClaimsIntegrationTest {
         }
 
         @Test
-        void resolveClaimingHolderBySystemKeyDropsAClaimWhoseColourFactionDoesNotResolve() {
+        void dropsAClaimWhoseColourFactionDoesNotResolve() {
             // A claimant the sector cannot resolve to a faction (its palette gone) yields a null
             // holder, which is dropped rather than painting a colourless cluster - mirroring how an
             // unresolved held holder drops its system.

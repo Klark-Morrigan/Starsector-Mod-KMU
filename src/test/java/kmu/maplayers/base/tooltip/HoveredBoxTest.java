@@ -114,7 +114,7 @@ final class HoveredBoxTest {
     class ResolveHoveredBox {
 
         @Test
-        void resolveHoveredBoxBindsTheInjectedBoxToWhatTheCursorIsOver() {
+        void bindsTheInjectedBoxToWhatTheCursorIsOver() {
             // What both passes are after: the box, and the two things it would be drawn for. Bound
             // together so neither pass can pair one frame's box with another frame's system.
             hoverTheSystem();
@@ -131,7 +131,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveHoveredBoxIsEmptyWhenNothingIsHovered() {
+        void isEmptyWhenNothingIsHovered() {
             // No cell under the cursor, so there is nothing a box could be about.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -145,7 +145,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveHoveredBoxIsEmptyWhenTheActiveLayerInjectsNoBox() {
+        void isEmptyWhenTheActiveLayerInjectsNoBox() {
             // The claims view's shape: the layer paints, and simply has nothing to say about a cell.
             when(layerRendererMock.resolveHoverTooltip())
                 .thenReturn(Optional.empty());
@@ -164,7 +164,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveHoveredBoxIsEmptyWithoutALiveSector() {
+        void isEmptyWithoutALiveSector() {
             // Both passes run for the whole campaign UI, so they can be asked before a game is loaded.
             hoverTheSystem();
 
@@ -180,7 +180,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveHoveredBoxIsEmptyForARunningSectorNothingIsInstalledOn() {
+        void isEmptyForARunningSectorNothingIsInstalledOn() {
             // The one case that can tell where the box gets its sector, and so the only thing
             // holding the box to the machinery it read the hover from. Everywhere else the two
             // agree by construction: an installed sector is the running one, so a box that read the
@@ -211,7 +211,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveHoveredBoxIsEmptyWhenTheHoveredIdNoLongerNamesASystem() {
+        void isEmptyWhenTheHoveredIdNoLongerNamesASystem() {
             // A system dropped between the hover being published and this frame reading it. Tolerated
             // rather than dereferenced, since the hover is a value the map pass left behind.
             MapHoverFixtures.hoverASystemIn(
@@ -233,7 +233,7 @@ final class HoveredBoxTest {
     class ResolveNextLevel {
 
         @Test
-        void resolveNextLevelAsksTheBoxAboutTheSystemItWouldDrawFor() {
+        void asksTheBoxAboutTheSystemItWouldDrawFor() {
             // Asked of the box rather than worked out off the level alone, and about this system
             // rather than in general - which is what lets a box open up on one cell and offer
             // nothing on the next.
@@ -246,7 +246,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveNextLevelAsksTheBoxAboutTheLevelItWouldBeDrawnAt() {
+        void asksTheBoxAboutTheLevelItWouldBeDrawnAt() {
             // The press moves on from the level being drawn, so that level travels to the box rather
             // than being left out: read against another, the key could be claimed on a frame whose
             // box offered nothing.
@@ -259,7 +259,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveNextLevelIsEmptyForABoxWithNothingMoreToState() {
+        void isEmptyForABoxWithNothingMoreToState() {
 
             when(tooltipMock.resolveNextLevelFor(any(), any(), any()))
                 .thenReturn(Optional.empty());
@@ -270,7 +270,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveNextLevelIsEmptyForABoxTakingNoPartInTheDetailCycle() {
+        void isEmptyForABoxTakingNoPartInTheDetailCycle() {
             // The interface default, read at the level whose press acts over any box that draws a
             // hint: a tooltip that offers no detail draws none, so the key must fall through to
             // vanilla rather than being swallowed over a box that told the player nothing. Pinned on
@@ -288,7 +288,7 @@ final class HoveredBoxTest {
     class ResolveActiveTooltip {
 
         @Test
-        void resolveActiveTooltipAnswersTheActiveLayersInjectedTooltip() {
+        void answersTheActiveLayersInjectedTooltip() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -303,7 +303,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveActiveTooltipIsEmptyWhenTheActiveLayerInjectsNone() {
+        void isEmptyWhenTheActiveLayerInjectsNone() {
             // The claims view's shape: the layer paints, and simply has nothing to say about one cell.
             when(layerRendererMock.resolveHoverTooltip())
                 .thenReturn(Optional.empty());
@@ -320,7 +320,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveActiveTooltipAnswersTheActivePicksBoxWhileAnotherLayerWithholdsIts() {
+        void answersTheActivePicksBoxWhileAnotherLayerWithholdsIts() {
             // The per-layer half of the hover switching: a layer whose own tooltip switch is off
             // offers no box, and that says nothing about the layer beside it - which is the case a
             // single shared switch could not express. The chain does not know the difference between a
@@ -372,7 +372,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveActiveTooltipIsEmptyWhenTheActiveLayerHasNoRenderer() {
+        void isEmptyWhenTheActiveLayerHasNoRenderer() {
             // The "show nothing" tab's shape: a registered layer that supplies no renderer, which must
             // stay an ordinary layer here rather than a named special case.
             var silentLayerMock = mock(MapLayer.class);
@@ -394,7 +394,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveActiveTooltipIsEmptyTheMomentTheScreensLayersAreSwitchedOff() {
+        void isEmptyTheMomentTheScreensLayersAreSwitchedOff() {
             // The box takes the crisp pick rather than the dissolve the overlay rides out: it reports
             // what the cursor is over, and has nothing to report about layers the player has just
             // switched off. Posed with a renderer still standing behind the pick, so what is pinned is
@@ -416,7 +416,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveActiveTooltipIsEmptyWithoutAnActiveLayer() {
+        void isEmptyWithoutAnActiveLayer() {
             // The pre-registration frame: both passes are installed on game load, so the chain can be
             // asked before any composition root has run rather than dereference a null pick.
             MapLayerRosters.forgetEveryLayer();
@@ -437,7 +437,7 @@ final class HoveredBoxTest {
     class ShouldDrawTooltipFor {
 
         @Test
-        void shouldDrawTooltipForIsTrueForAHoveredCell() {
+        void isTrueForAHoveredCell() {
 
             var hover = new MapHover(buildCellKey(SYSTEM_ID), List.of(buildCellKey(SYSTEM_ID)));
 
@@ -446,7 +446,7 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void shouldDrawTooltipForIsFalseWhenNothingIsHovered() {
+        void isFalseWhenNothingIsHovered() {
             assertThat(HoveredBox.shouldDrawTooltipFor(MapHover.NONE))
                 .isFalse();
         }

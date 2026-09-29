@@ -36,14 +36,14 @@ final class ArrangementDialogFadeTest {
     class IsDialogRaised {
 
         @Test
-        void isDialogRaisedIsFalseAtRest() {
+        void isFalseAtRest() {
 
             assertThat(new ArrangementDialogFade().isDialogRaised())
                 .isFalse();
         }
 
         @Test
-        void isDialogRaisedIsTrueOnTheFrameTheDialogIsRaisedBeforeItsRiseHasBegun() {
+        void isTrueOnTheFrameTheDialogIsRaisedBeforeItsRiseHasBegun() {
             // Input goes the instant the dialog appears, while the paint is still at nothing.
             var fade = new ArrangementDialogFade();
 
@@ -54,7 +54,7 @@ final class ArrangementDialogFadeTest {
         }
 
         @Test
-        void isDialogRaisedIsFalseOnThePressWhileThePaintStillStands() {
+        void isFalseOnThePressWhileThePaintStillStands() {
             // The split itself: dismissed for input at once, with the box still fully painted.
             var fade = createFullyRaisedFade();
 
@@ -71,7 +71,7 @@ final class ArrangementDialogFadeTest {
     class AdvanceFade {
 
         @Test
-        void advanceFadeReachesFullyUpAfterThePromptsOwnRise() {
+        void reachesFullyUpAfterThePromptsOwnRise() {
 
             var fade = new ArrangementDialogFade();
             fade.raiseDialog();
@@ -83,7 +83,7 @@ final class ArrangementDialogFadeTest {
         }
 
         @Test
-        void advanceFadeIsStillRisingAFrameIn() {
+        void isStillRisingAFrameIn() {
             // The rise is a travel rather than a switch: one frame in, the box is part way and not whole.
             var fade = new ArrangementDialogFade();
             fade.raiseDialog();
@@ -96,7 +96,7 @@ final class ArrangementDialogFadeTest {
         }
 
         @Test
-        void advanceFadeReachesDownAfterThePromptsOwnFall() {
+        void reachesDownAfterThePromptsOwnFall() {
 
             var fade = createFullyRaisedFade();
             fade.dismissDialog();
@@ -108,7 +108,7 @@ final class ArrangementDialogFadeTest {
         }
 
         @Test
-        void advanceFadeComesUpFromWhereTheFallStoodOnAReopen() {
+        void comesUpFromWhereTheFallStoodOnAReopen() {
             // Retargeted rather than replayed: a dialog reopened mid-fall neither drops to nothing and
             // starts over nor jumps to whole, it turns round where it stands.
             var fade = createFullyRaisedFade();
@@ -129,14 +129,14 @@ final class ArrangementDialogFadeTest {
     class ResolveFadeFraction {
 
         @Test
-        void resolveFadeFractionIsNothingAtRest() {
+        void isNothingAtRest() {
 
             assertThat(new ArrangementDialogFade().resolveFadeFraction())
                 .isCloseTo(0f, within(TOLERANCE));
         }
 
         @Test
-        void resolveFadeFractionIsNothingOnTheFrameTheDialogIsRaised() {
+        void isNothingOnTheFrameTheDialogIsRaised() {
             // A first open comes up from nothing: raising moves input, not the paint.
             var fade = new ArrangementDialogFade();
 
@@ -151,14 +151,14 @@ final class ArrangementDialogFadeTest {
     class IsSettledDown {
 
         @Test
-        void isSettledDownIsTrueAtRest() {
+        void isTrueAtRest() {
 
             assertThat(new ArrangementDialogFade().isSettledDown())
                 .isTrue();
         }
 
         @Test
-        void isSettledDownIsFalseForARaisedDialogWhosePaintHasNotBegun() {
+        void isFalseForARaisedDialogWhosePaintHasNotBegun() {
             // Down and at nothing is not settled while the dialog is up: the panel a caller would take
             // off is the one about to rise.
             var fade = new ArrangementDialogFade();
@@ -170,7 +170,7 @@ final class ArrangementDialogFadeTest {
         }
 
         @Test
-        void isSettledDownIsFalseWhileTheFallIsStillRunning() {
+        void isFalseWhileTheFallIsStillRunning() {
 
             var fade = createFullyRaisedFade();
             fade.dismissDialog();
@@ -181,7 +181,7 @@ final class ArrangementDialogFadeTest {
         }
 
         @Test
-        void isSettledDownIsTrueOnceTheFallHasRunOut() {
+        void isTrueOnceTheFallHasRunOut() {
             // Which is when the panel comes off the screen: at the end of the fall, not at the press.
             var fade = createFullyRaisedFade();
             fade.dismissDialog();
@@ -196,7 +196,7 @@ final class ArrangementDialogFadeTest {
     class DropFade {
 
         @Test
-        void dropFadeTakesARaisedDialogDownAndItsPaintWithItInOneStep() {
+        void takesARaisedDialogDownAndItsPaintWithItInOneStep() {
 
             var fade = createFullyRaisedFade();
 

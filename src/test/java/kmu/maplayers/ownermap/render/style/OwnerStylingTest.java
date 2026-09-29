@@ -36,7 +36,7 @@ final class OwnerStylingTest {
     class ResolveFrom {
 
         @Test
-        void resolveFromPaintsFromTheFactionBundleWhenTheBlocDoesNotRecede() {
+        void paintsFromTheFactionBundleWhenTheBlocDoesNotRecede() {
 
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
@@ -47,7 +47,7 @@ final class OwnerStylingTest {
         }
 
         @Test
-        void resolveFromCarriesTheDecisionsAdjustmentThrough() {
+        void carriesTheDecisionsAdjustmentThrough() {
 
             var adjustment = new ElementStyleAdjustment(0.5, true);
             var styling = OwnerStyling.resolveFrom(
@@ -59,7 +59,7 @@ final class OwnerStylingTest {
         }
 
         @Test
-        void resolveFromKeepsTheIndependentFillOpacityWhenTheBlocRecedesInFullColour() {
+        void keepsTheIndependentFillOpacityWhenTheBlocRecedesInFullColour() {
             // In full colour the independent bundle keeps its own lighter fill, so independent
             // space still recedes behind a faction's fill.
             var styling = OwnerStyling.resolveFrom(
@@ -71,7 +71,7 @@ final class OwnerStylingTest {
         }
 
         @Test
-        void resolveFromHoldsADesaturatedBlocAtTheFactionFillOpacity() {
+        void holdsADesaturatedBlocAtTheFactionFillOpacity() {
             // A desaturated fill holds the one faction fill opacity, so the whole desaturated
             // surface reads uniform rather than splitting into two weights of grey.
             var styling = OwnerStyling.resolveFrom(
@@ -83,7 +83,7 @@ final class OwnerStylingTest {
         }
 
         @Test
-        void resolveFromKeepsTheIndependentFillColourWhenDesaturated() {
+        void keepsTheIndependentFillColourWhenDesaturated() {
             // Only the opacity crosses over: which palette slot the fill names is still the
             // independent bundle's own choice.
             var styling = OwnerStyling.resolveFrom(
@@ -97,7 +97,7 @@ final class OwnerStylingTest {
         }
 
         @Test
-        void resolveFromKeepsTheRestOfTheIndependentBundleWhenDesaturated() {
+        void keepsTheRestOfTheIndependentBundleWhenDesaturated() {
             // The borders and widths distinguish independent cells without breaking the fill's
             // uniformity, so they survive the crossover untouched.
             var styling = OwnerStyling.resolveFrom(

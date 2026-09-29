@@ -25,7 +25,7 @@ final class MapLayerRendererTest {
     class ResolveHoverTooltip {
 
         @Test
-        void resolveHoverTooltipIsEmptyForARendererThatOnlyPaints() {
+        void isEmptyForARendererThatOnlyPaints() {
             assertThat(paintOnlyRenderer.resolveHoverTooltip()).isEmpty();
         }
     }
@@ -34,7 +34,7 @@ final class MapLayerRendererTest {
     class PrepareFrame {
 
         @Test
-        void prepareFrameDoesNothingForARendererThatOnlyPaints() {
+        void doesNothingForARendererThatOnlyPaints() {
             // Called once per frame on every renderer, so a layer with nothing to refresh must be
             // able to leave it alone rather than implement an empty method to be skipped.
             assertThatCode(() -> paintOnlyRenderer.prepareFrame(FACTOR))
@@ -46,7 +46,7 @@ final class MapLayerRendererTest {
     class PublishHoverForPass {
 
         @Test
-        void publishHoverForPassDoesNothingForARendererThatOnlyPaints() {
+        void doesNothingForARendererThatOnlyPaints() {
             // Called on every pass of every renderer, so a layer that has nothing to say about the
             // cursor must be able to leave it alone - the read behind it is a matrix readback, and
             // paying for one per pass on a layer with no hover would be the whole cost for nothing.

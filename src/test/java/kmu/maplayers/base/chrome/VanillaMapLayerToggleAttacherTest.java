@@ -56,7 +56,7 @@ final class VanillaMapLayerToggleAttacherTest {
     class AttachToggleTo {
 
         @Test
-        void attachToggleToHandsBackTheBoxNowStandingOnTheRow() {
+        void handsBackTheBoxNowStandingOnTheRow() {
 
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
             var shownRow = ShownFilterRows.createRowOver(rowFake);
@@ -74,7 +74,7 @@ final class VanillaMapLayerToggleAttacherTest {
         }
 
         @Test
-        void attachToggleToMovesTheScreensPickToWhatTheBoxShowsWhenItIsClicked() {
+        void movesTheScreensPickToWhatTheBoxShowsWhenItIsClicked() {
 
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
             var visibilityMock = mock(MapLayerVisibility.class);
@@ -91,7 +91,7 @@ final class VanillaMapLayerToggleAttacherTest {
         }
 
         @Test
-        void attachToggleToGivesTheBoxTheKeyThePlayerHasBound() {
+        void givesTheBoxTheKeyThePlayerHasBound() {
 
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
 
@@ -103,7 +103,7 @@ final class VanillaMapLayerToggleAttacherTest {
         }
 
         @Test
-        void attachToggleToGivesTheNextBoxTheKeyThePlayerReboundToSince() {
+        void givesTheNextBoxTheKeyThePlayerReboundToSince() {
 
             var boundKey = new AtomicInteger(FIRST_BOUND_KEY);
             var attacher = createAttacherReading(boundKey::get);
@@ -125,7 +125,7 @@ final class VanillaMapLayerToggleAttacherTest {
         }
 
         @Test
-        void attachToggleToGivesTheBoxTheHoverItsNeighboursCarry() {
+        void givesTheBoxTheHoverItsNeighboursCarry() {
 
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
             var elementMock = mock(TooltipMakerAPI.class);
@@ -149,7 +149,7 @@ final class VanillaMapLayerToggleAttacherTest {
         }
 
         @Test
-        void attachToggleToWritesNothingToARowWithNoRoomLeft() {
+        void writesNothingToARowWithNoRoomLeft() {
 
             var rowFake = ShownFilterRows.createFullRowFake();
             var visibilityMock = mock(MapLayerVisibility.class);

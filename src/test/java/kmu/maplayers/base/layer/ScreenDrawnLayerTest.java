@@ -45,7 +45,7 @@ final class ScreenDrawnLayerTest {
     class ResolveDrawnLayer {
 
         @Test
-        void resolveDrawnLayerAnswersThePickWhileTheScreenIsShown() {
+        void answersThePickWhileTheScreenIsShown() {
 
             showTheScreenOn(drawingLayerMock);
 
@@ -54,7 +54,7 @@ final class ScreenDrawnLayerTest {
         }
 
         @Test
-        void resolveDrawnLayerAnswersAShownScreenWithoutReadingTheDissolve() {
+        void answersAShownScreenWithoutReadingTheDissolve() {
             // Worth pinning rather than left as an accident of the order two conditions are written in:
             // the fade is derived from a clock with a settings read behind it, and this sits on the map's
             // hottest path, so a screen that is simply on must not pay for it.
@@ -70,7 +70,7 @@ final class ScreenDrawnLayerTest {
         }
 
         @Test
-        void resolveDrawnLayerKeepsDrawingThePictureThePickHasMovedOffOfWhileItDissolves() {
+        void keepsDrawingThePictureThePickHasMovedOffOfWhileItDissolves() {
             // The case the memory exists for. Taking the last painting tab off the bar switches the
             // screen off and lands the pick on the empty view together, so a dissolve reading the live
             // pick would have nothing to dissolve on the frame it began - the map cutting away while the
@@ -88,7 +88,7 @@ final class ScreenDrawnLayerTest {
         }
 
         @Test
-        void resolveDrawnLayerKeepsThePictureThatWasLeavingWhenAnotherTabIsPickedMidDissolve() {
+        void keepsThePictureThatWasLeavingWhenAnotherTabIsPickedMidDissolve() {
             // The same memory answering the other way a pick moves under a dissolve: a tab switched by
             // key while the screen is on its way off. What leaves the screen is what was on it, not
             // whatever has been picked since - a layer that was never drawn cannot be seen to go.
@@ -105,7 +105,7 @@ final class ScreenDrawnLayerTest {
         }
 
         @Test
-        void resolveDrawnLayerIsNothingOnceTheDissolveIsOver() {
+        void isNothingOnceTheDissolveIsOver() {
             // The end every dissolve reaches, and the one read that takes the overlay, the labels and the
             // hover box off the screen together.
             showTheScreenOn(drawingLayerMock);
@@ -121,7 +121,7 @@ final class ScreenDrawnLayerTest {
         }
 
         @Test
-        void resolveDrawnLayerDropsThePictureItHeldOnceTheDissolveIsOver() {
+        void dropsThePictureItHeldOnceTheDissolveIsOver() {
             // Released rather than kept: a screen switched on again catches its pick on the next frame,
             // so a picture held past the end of its own dissolve is a layer nothing is drawing that the
             // next dissolve would show in place of the one that was really there.
@@ -143,7 +143,7 @@ final class ScreenDrawnLayerTest {
         }
 
         @Test
-        void resolveDrawnLayerIsNothingForAScreenSwitchedOffBeforeItEverDrew() {
+        void isNothingForAScreenSwitchedOffBeforeItEverDrew() {
             // Nothing was on the screen, so nothing dissolves off it. The honest answer rather than a
             // guess at the pick: every control that can switch a screen off stands on that screen, so a
             // switch-off in play always has drawn frames behind it and this is a state a session does
@@ -158,7 +158,7 @@ final class ScreenDrawnLayerTest {
         }
 
         @Test
-        void resolveDrawnLayerFollowsThePickAgainOnceTheScreenComesBack() {
+        void followsThePickAgainOnceTheScreenComesBack() {
             // The way back up the ramp: a screen coming on draws its pick from the first frame, so the
             // memory must give way to the pick rather than the picture it was holding.
             showTheScreenOn(drawingLayerMock);
@@ -178,7 +178,7 @@ final class ScreenDrawnLayerTest {
     class ForgetDrawnLayer {
 
         @Test
-        void forgetDrawnLayerLeavesTheReadingAScreenThatHasNeverDrawnGives() {
+        void leavesTheReadingAScreenThatHasNeverDrawnGives() {
 
             showTheScreenOn(drawingLayerMock);
             drawnLayer.resolveDrawnLayer();

@@ -45,7 +45,7 @@ final class FactionTooltipBannerTest {
     class BuildFactionBanner {
 
         @Test
-        void buildFactionBannerCarriesTheCrestAndTheNameAsOneSentence() {
+        void carriesTheCrestAndTheNameAsOneSentence() {
             // The crest rides inside the label, so a verdict about the system centres as one line
             // instead of anchoring its image to a column a centred line has left - and it opens on that
             // image exactly as the listed lines below it do.
@@ -58,7 +58,7 @@ final class FactionTooltipBannerTest {
         }
 
         @Test
-        void buildFactionBannerFallsBackToTheIdForAnUnknownFaction() {
+        void fallsBackToTheIdForAnUnknownFaction() {
 
             var row = FactionTooltipBanner.buildFactionBanner(buildEmptySector(), "ghost_faction");
 

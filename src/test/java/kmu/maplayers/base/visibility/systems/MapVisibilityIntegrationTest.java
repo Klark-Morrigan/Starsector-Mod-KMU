@@ -100,7 +100,7 @@ class MapVisibilityIntegrationTest {
     class IsDrawn {
 
         @Test
-        void isDrawnIsTrueForReachableSystem() {
+        void isTrueForReachableSystem() {
 
             var system = buildReachableSystem("a");
 
@@ -109,7 +109,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsTrueForUnreachableSystemHoldingAColony() {
+        void isTrueForUnreachableSystemHoldingAColony() {
             // No jump point, so unreachable by the access rule, but a discovered
             // colony makes it inhabited and admits it to the map.
             var system = buildUnreachableSystem("a");
@@ -121,7 +121,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsTrueForUnreachableSystemWithARevealedDecivilisedPlanet() {
+        void isTrueForUnreachableSystemWithARevealedDecivilisedPlanet() {
 
             var system = buildUnreachableSystemWithDecivilisedPlanet("a");
 
@@ -130,7 +130,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsFalseForUnreachableUninhabitedSystem() {
+        void isFalseForUnreachableUninhabitedSystem() {
 
             var system = buildUnreachableSystem("a");
 
@@ -139,7 +139,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsFalseForReachableSystemWhoseStarIsHiddenOnMap() {
+        void isFalseForReachableSystemWhoseStarIsHiddenOnMap() {
             // Reachable by a jump point, but the vanilla map hides its star (an
             // abyssal rogue object), so reachability alone does not admit it. No gate stands in
             // it: a lit one is its own reason to draw, which is the case below.
@@ -150,7 +150,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsFalseForAStarHiddenSystemHoldingOnlyAnAbandonedStation() {
+        void isFalseForAStarHiddenSystemHoldingOnlyAnAbandonedStation() {
             // Membership is where reading habitation is visible rather than merely tidy. The
             // vanilla map draws no star for this system, so inhabitation was its only route on,
             // and a derelict is not inhabitation - a system hidden by its own design stops being
@@ -165,7 +165,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsTrueForAnEmptyStarHiddenSystemALitGateLeadsTo() {
+        void isTrueForAnEmptyStarHiddenSystemALitGateLeadsTo() {
             // Lighting a gate joins it to the network every other gate lists, so the player is
             // shown this system from wherever they are standing. The vanilla draw check asks only
             // whether something is painted where it sits and answers no, which is why the gate has
@@ -178,7 +178,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsFalseForAnEmptyStarHiddenSystemWhoseGateIsDark() {
+        void isFalseForAnEmptyStarHiddenSystemWhoseGateIsDark() {
             // The other half: an unlit gate joins no network and is listed by nobody, so it says
             // nothing about the system to a player standing anywhere else - and the system stays
             // where the draw check left it.
@@ -189,7 +189,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsTrueForASystemWithNoVisibleStarAnInstalledRouteReaches() {
+        void isTrueForASystemWithNoVisibleStarAnInstalledRouteReaches() {
             // The shape a mod-made destination arrives in: no jump point, no star the vanilla map
             // draws, and nobody living there - a mod carries fleets in by an entity of its own and
             // marks the spot itself. Neither vanilla read can see any of that, so the route is the
@@ -206,7 +206,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsFalseForASystemWithNoVisibleStarNoInstalledRouteReaches() {
+        void isFalseForASystemWithNoVisibleStarNoInstalledRouteReaches() {
             // A route is asked per system, so one installed for somewhere else leaves this system
             // exactly where it found it - the widening above is the mod's answer about this place,
             // not a standing yes for every place on an install carrying the mod.
@@ -222,7 +222,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsTrueForReachableNebulaWithNoVisibleStar() {
+        void isTrueForReachableNebulaWithNoVisibleStar() {
             // A nebula has no star anchor, so it is never in the visible-star
             // index; the vanilla map draws it as a cloud, so the rule must admit it
             // on the access path without an inhabitation.
@@ -233,7 +233,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsTrueForUninhabitedSystemWhenForcedOntoMap() {
+        void isTrueForUninhabitedSystemWhenForcedOntoMap() {
             // The force override admits a system the normal rule omits - unreachable and
             // uninhabited - so the full partition can be inspected.
             var system = buildUnreachableSystem("a");
@@ -248,7 +248,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isDrawnIsFalseForUninhabitedSystemWhenNotForced() {
+        void isFalseForUninhabitedSystemWhenNotForced() {
             // Without the force override the same unreachable, uninhabited system
             // stays off, so the reveal is what admits it, not the fixture.
             var system = buildUnreachableSystem("a");
@@ -267,7 +267,7 @@ class MapVisibilityIntegrationTest {
     class IsSystemInhabited {
 
         @Test
-        void isSystemInhabitedIsTrueWhenADiscoveredColonyExists() {
+        void isTrueWhenADiscoveredColonyExists() {
 
             var system = buildUnreachableSystem("a");
 
@@ -276,7 +276,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isSystemInhabitedIsTrueWhenARevealedDecivilisedPlanetExists() {
+        void isTrueWhenARevealedDecivilisedPlanetExists() {
 
             var system = buildUnreachableSystemWithDecivilisedPlanet("a");
 
@@ -285,7 +285,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isSystemInhabitedIsFalseWhenNeitherColonyNorDecivilisedWorldExists() {
+        void isFalseWhenNeitherColonyNorDecivilisedWorldExists() {
 
             var system = buildUnreachableSystem("a");
 
@@ -294,7 +294,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isSystemInhabitedIsFalseForAnUndiscoveredColonyByDefault() {
+        void isFalseForAnUndiscoveredColonyByDefault() {
             // An undiscovered colony fails the normal known-to-player gate, so the system
             // reads as uninhabited until the reveal is on.
             var system = buildUnreachableSystem("a");
@@ -306,7 +306,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isSystemInhabitedIsTrueForAColonyTheEconomyDoesNotList() {
+        void isTrueForAColonyTheEconomyDoesNotList() {
             // Galatia Academy's shape: a real colony on a real station vanilla never registers.
             // Reading the economy's listing alone would leave such a system classified as empty
             // backdrop while every box drawn over it names the faction holding it.
@@ -317,7 +317,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isSystemInhabitedIsFalseForASystemHoldingOnlyAnAbandonedStation() {
+        void isFalseForASystemHoldingOnlyAnAbandonedStation() {
             // Nobody has ever been aboard a derelict, so a system with one in it and nothing
             // else is empty space with a wreck in it. The fog admits it - it is un-hidden and
             // its entity is found - which is what makes this the habitation read's own case rather
@@ -332,7 +332,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isSystemInhabitedIsTrueOnceAColonyStandsBesideTheAbandonedStation() {
+        void isTrueOnceAColonyStandsBesideTheAbandonedStation() {
             // The same system after somebody settles it. The derelict is staged unchanged, so what
             // turned the answer is the colony rather than anything the derelict stopped being.
             var system = buildUnreachableSystem("a");
@@ -345,7 +345,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isSystemInhabitedIsTrueForAnUndiscoveredColonyWhenTheyAreIncluded() {
+        void isTrueForAnUndiscoveredColonyWhenTheyAreIncluded() {
             // The widening folds the undiscovered colony in, so the system counts as
             // inhabited and earns a cell.
             var system = buildUnreachableSystem("a");

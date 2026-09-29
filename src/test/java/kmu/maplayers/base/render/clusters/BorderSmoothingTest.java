@@ -128,7 +128,7 @@ class BorderSmoothingTest {
     class SmoothBorderLoops {
 
         @Test
-        void smoothBorderLoopsReturnsTheLoopsUntouchedWhenBothGatesAreOff() {
+        void returnsTheLoopsUntouchedWhenBothGatesAreOff() {
             var loops = List.of(NEEDLED);
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, BOTH_GATES_OFF);
 
@@ -139,7 +139,7 @@ class BorderSmoothingTest {
         }
 
         @Test
-        void smoothBorderLoopsRunsOnlyTheSandingPassWhenOnlyThatGateIsOn() {
+        void runsOnlyTheSandingPassWhenOnlyThatGateIsOn() {
             var loops = List.of(NEEDLED);
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, SANDING_ONLY);
 
@@ -152,7 +152,7 @@ class BorderSmoothingTest {
         }
 
         @Test
-        void smoothBorderLoopsRunsOnlyTheRoundingPassWhenOnlyThatGateIsOn() {
+        void runsOnlyTheRoundingPassWhenOnlyThatGateIsOn() {
             var loops = List.of(SQUARE);
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, ROUNDING_ONLY);
 
@@ -163,7 +163,7 @@ class BorderSmoothingTest {
         }
 
         @Test
-        void smoothBorderLoopsSandsBeforeItRoundsWhenBothGatesAreOn() {
+        void sandsBeforeItRoundsWhenBothGatesAreOn() {
             var loops = List.of(NEEDLED);
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, BOTH_GATES_ON);
 
@@ -201,7 +201,7 @@ class BorderSmoothingTest {
         private static final double SAME_POINT = 1e-6;
 
         @Test
-        void resolveSmoothedBorderLoopsDropsTheReversedHalfOfACrossing() {
+        void dropsTheReversedHalfOfACrossing() {
             var loops = BorderSmoothing.resolveSmoothedBorderLoops(
                 List.of(BOW_TIE), BOTH_GATES_OFF);
 
@@ -217,7 +217,7 @@ class BorderSmoothingTest {
         }
 
         @Test
-        void resolveSmoothedBorderLoopsWindsALoneRingToFillWhicheverWayItArrived() {
+        void windsALoneRingToFillWhicheverWayItArrived() {
             var loops = BorderSmoothing.resolveSmoothedBorderLoops(
                 List.of(FOLDED_OVER), BOTH_GATES_OFF);
 
@@ -234,7 +234,7 @@ class BorderSmoothingTest {
         }
 
         @Test
-        void resolveSmoothedBorderLoopsLeavesACleanLoopWithItsOwnCorners() {
+        void leavesACleanLoopWithItsOwnCorners() {
             var loops = BorderSmoothing.resolveSmoothedBorderLoops(
                 List.of(SQUARE), BOTH_GATES_OFF);
 
@@ -248,7 +248,7 @@ class BorderSmoothingTest {
         }
 
         @Test
-        void resolveSmoothedBorderLoopsSmoothsBetweenTheTwoResolves() {
+        void smoothsBetweenTheTwoResolves() {
             var loops = BorderSmoothing.resolveSmoothedBorderLoops(
                 List.of(SQUARE), ROUNDING_ONLY);
 
@@ -280,7 +280,7 @@ class BorderSmoothingTest {
     class SandBorderSpikes {
 
         @Test
-        void sandBorderSpikesSplicesOutTheNeedleApex() {
+        void splicesOutTheNeedleApex() {
             var sanded = BorderSmoothing.sandBorderSpikes(List.of(NEEDLED), SANDING_SHAPE);
 
             assertThat(sanded.get(0)).noneMatch(vertex -> vertex[1] > 100);
@@ -288,7 +288,7 @@ class BorderSmoothingTest {
         }
 
         @Test
-        void sandBorderSpikesSandsEveryLoopRatherThanOnlyTheFirst() {
+        void sandsEveryLoopRatherThanOnlyTheFirst() {
             var sanded = BorderSmoothing.sandBorderSpikes(
                 List.of(NEEDLED, NEEDLED),
                 SANDING_SHAPE);
@@ -302,7 +302,7 @@ class BorderSmoothingTest {
     class RoundBorderCorners {
 
         @Test
-        void roundBorderCornersReplacesEachSharpCornerWithAnArc() {
+        void replacesEachSharpCornerWithAnArc() {
             var rounded = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_SHAPE);
 
             // Every corner becomes several vertices, so the ring grows; and no original corner
@@ -312,7 +312,7 @@ class BorderSmoothingTest {
         }
 
         @Test
-        void roundBorderCornersRoundsEveryLoopRatherThanOnlyTheFirst() {
+        void roundsEveryLoopRatherThanOnlyTheFirst() {
             var rounded = BorderSmoothing.roundBorderCorners(
                 List.of(SQUARE, SQUARE),
                 ROUNDING_SHAPE);
@@ -323,7 +323,7 @@ class BorderSmoothingTest {
         }
 
         @Test
-        void roundBorderCornersWorksToTheProfileItIsGivenRatherThanOneFixedShape() {
+        void worksToTheProfileItIsGivenRatherThanOneFixedShape() {
             var narrow = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_SHAPE);
             var wide = BorderSmoothing.roundBorderCorners(
                 List.of(SQUARE),
@@ -343,7 +343,7 @@ class BorderSmoothingTest {
     class RoundLoopCorners {
 
         @Test
-        void roundLoopCornersMatchesWhatTheSameLoopGetsInsideASetOfLoops() {
+        void matchesWhatTheSameLoopGetsInsideASetOfLoops() {
             var alone = BorderSmoothing.roundLoopCorners(SQUARE, ROUNDING_SHAPE);
             var withinLoops = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_SHAPE);
 

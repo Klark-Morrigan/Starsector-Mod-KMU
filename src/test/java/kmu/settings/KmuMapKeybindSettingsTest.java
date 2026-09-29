@@ -35,7 +35,7 @@ final class KmuMapKeybindSettingsTest {
     class GetMapLayerShortcut {
 
         @Test
-        void getMapLayerShortcutAnswersTheRowTheCallerNames() {
+        void answersTheRowTheCallerNames() {
 
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
@@ -49,7 +49,7 @@ final class KmuMapKeybindSettingsTest {
         }
 
         @Test
-        void getMapLayerShortcutIsUnboundWhenTheRowCannotBeRead() {
+        void isUnboundWhenTheRowCannotBeRead() {
             // The rule this reader exists to hold: the fallback it hands the settings substrate is "no
             // key". A keycode there instead would bind a key the shipped table never chose, and would go
             // on doing so with nothing on screen or in the settings dialog to say where it came from.
@@ -72,7 +72,7 @@ final class KmuMapKeybindSettingsTest {
     class GetMapFilterRowToggleShortcut {
 
         @Test
-        void getMapFilterRowToggleShortcutAnswersItsOwnRow() {
+        void answersItsOwnRow() {
             // Its ID is the reader's own rather than a caller's, this box being KMU's chrome with no
             // layer behind it - so a typo here is invisible until a player finds the key does nothing.
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {

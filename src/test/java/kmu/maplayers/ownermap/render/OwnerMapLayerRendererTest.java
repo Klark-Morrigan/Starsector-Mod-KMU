@@ -45,7 +45,7 @@ final class OwnerMapLayerRendererTest {
     class CreateForLiveScreen {
 
         @Test
-        void createForLiveScreenStandsEveryBeatDownOnADeselectedView() {
+        void standsEveryBeatDownOnADeselectedView() {
             // The tab is open with every view deselected, which the registry answers as no view. The
             // registry being the frame's stand-down read is what keeps a dark overlay near-free: no
             // beat consults the layer's switches, since nothing below the read is reached.
@@ -64,7 +64,7 @@ final class OwnerMapLayerRendererTest {
         }
 
         @Test
-        void createForLiveScreenAnswersTheActiveViewsTooltip() {
+        void answersTheActiveViewsTooltip() {
             // Which view is up decides what there is to say about a system, so the box handed to the
             // framework is whichever the active view injects - never a fixed one for the layer.
             var tooltipMock = mock(MapHoverTooltip.class);
@@ -80,7 +80,7 @@ final class OwnerMapLayerRendererTest {
         }
 
         @Test
-        void createForLiveScreenAnswersNoTooltipOnADeselectedView() {
+        void answersNoTooltipOnADeselectedView() {
             // Nothing is painted, so there is nothing for a hover to describe either.
             when(viewRegistryMock.resolveActiveViewOn(any()))
                 .thenReturn(null);
@@ -90,7 +90,7 @@ final class OwnerMapLayerRendererTest {
         }
 
         @Test
-        void createForLiveScreenYieldsARendererReleasableBeforeAnySectorHasBeenDrawn() {
+        void yieldsARendererReleasableBeforeAnySectorHasBeenDrawn() {
             // Reached for a sector installed on with the map never opened, when the cache has
             // nothing built to release.
             var renderer = buildRenderer(MapLayerHoverGatesFake.createAnswering());

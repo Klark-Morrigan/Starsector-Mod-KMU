@@ -187,7 +187,7 @@ final class DebugBorderTracingBuilderTest {
     class BuildDebugDrawables {
 
         @Test
-        void buildDebugDrawablesCapturesOneFusedBaseLoopWithBothSmoothingGatesOff() {
+        void capturesOneFusedBaseLoopWithBothSmoothingGatesOff() {
             stubHolders(Map.of(
                 HELD_SYSTEM,
                 HEGEMONY_OWNER,
@@ -211,7 +211,7 @@ final class DebugBorderTracingBuilderTest {
         }
 
         @Test
-        void buildDebugDrawablesCapturesTheDespikedStageOnlyWhenSandingIsGatedOn() {
+        void capturesTheDespikedStageOnlyWhenSandingIsGatedOn() {
             stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(buildSandingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
@@ -227,7 +227,7 @@ final class DebugBorderTracingBuilderTest {
         }
 
         @Test
-        void buildDebugDrawablesRoundsTheBaseDirectlyWhenSandingIsGatedOff() {
+        void roundsTheBaseDirectlyWhenSandingIsGatedOff() {
             stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(buildRoundingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
@@ -242,7 +242,7 @@ final class DebugBorderTracingBuilderTest {
         }
 
         @Test
-        void buildDebugDrawablesOutlinesOnlyTheFactionlessCategoryWhoseOutlineIsSwitchedOn() {
+        void outlinesOnlyTheFactionlessCategoryWhoseOutlineIsSwitchedOn() {
             stubInhabitedSystems(DECIVILISED_SYSTEM);
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
@@ -257,7 +257,7 @@ final class DebugBorderTracingBuilderTest {
         }
 
         @Test
-        void buildDebugDrawablesOutlinesNoFactionlessCellWhenNeitherCategoryDraws() {
+        void outlinesNoFactionlessCellWhenNeitherCategoryDraws() {
             stubInhabitedSystems(DECIVILISED_SYSTEM);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
@@ -268,7 +268,7 @@ final class DebugBorderTracingBuilderTest {
         }
 
         @Test
-        void buildDebugDrawablesLeavesAnOwnedCellToTheClusterPassRatherThanOutliningItTwice() {
+        void leavesAnOwnedCellToTheClusterPassRatherThanOutliningItTwice() {
             stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
@@ -282,7 +282,7 @@ final class DebugBorderTracingBuilderTest {
         }
 
         @Test
-        void buildDebugDrawablesCapturesNothingForAClusterThatTracesNoRing() {
+        void capturesNothingForAClusterThatTracesNoRing() {
             stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             var geometryCacheMock = mock(CellGeometryCache.class);
 
@@ -301,7 +301,7 @@ final class DebugBorderTracingBuilderTest {
         }
 
         @Test
-        void buildDebugDrawablesOutlinesNoFactionlessCellThatTheBorderChannelSwallows() {
+        void outlinesNoFactionlessCellThatTheBorderChannelSwallows() {
             stubInhabitedSystems(TINY_SYSTEM);
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
@@ -315,7 +315,7 @@ final class DebugBorderTracingBuilderTest {
         }
 
         @Test
-        void buildDebugDrawablesReadsTheThemeUnderTheOutlinePickItWasHanded() {
+        void readsTheThemeUnderTheOutlinePickItWasHanded() {
             // The one pick from the rebuild's sampling that reaches this builder. The overlay
             // exists to show the cells the production draw would show, so the theme it indexes
             // categories into has to be read under the same outline answer the fills were - read
@@ -334,7 +334,7 @@ final class DebugBorderTracingBuilderTest {
         }
 
         @Test
-        void buildDebugDrawablesGivesAFactionlessOutlineNoDespikedStageEvenWithSandingOn() {
+        void givesAFactionlessOutlineNoDespikedStageEvenWithSandingOn() {
             stubInhabitedSystems(DECIVILISED_SYSTEM);
             stubTheme(buildBothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 

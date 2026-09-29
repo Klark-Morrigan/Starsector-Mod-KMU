@@ -65,7 +65,7 @@ class PoliticalMapSectorSnapshotTest {
     class Scan {
 
         @Test
-        void scanReturnsEmptySnapshotForNullSector() {
+        void returnsEmptySnapshotForNullSector() {
 
             var snapshot = scanUnderStabilityWeighting(null);
 

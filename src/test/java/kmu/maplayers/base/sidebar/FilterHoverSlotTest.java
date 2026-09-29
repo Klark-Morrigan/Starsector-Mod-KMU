@@ -44,7 +44,7 @@ final class FilterHoverSlotTest {
     class ResolveHoverSlotIn {
 
         @Test
-        void resolveHoverSlotInAnswersOneSlotPerMachinery() {
+        void answersOneSlotPerMachinery() {
             // The picker reporting a hover and the pass drawing from it resolve separately, so both
             // asks under one sector must land on the same slot or the preview reads nothing.
             var machinery = new SectorMapMachinery(null);
@@ -57,7 +57,7 @@ final class FilterHoverSlotTest {
         }
 
         @Test
-        void resolveHoverSlotInDoesNotShareASlotBetweenMachinery() {
+        void doesNotShareASlotBetweenMachinery() {
             // A hovered ID comes from one sector's own list, so reading it under another sector
             // would light a set that sector never produced.
             var machinery = new SectorMapMachinery(null);
@@ -72,7 +72,7 @@ final class FilterHoverSlotTest {
         }
 
         @Test
-        void resolveHoverSlotInAnswersAFreshSlotAfterTheMachineryIsDisposed() {
+        void answersAFreshSlotAfterTheMachineryIsDisposed() {
             // A load disposes the machinery, which is what stands in for a discard of this slot's
             // own - the sector after it begins resting rather than on the previous sector's row.
             var machinery = new SectorMapMachinery(null);
@@ -90,7 +90,7 @@ final class FilterHoverSlotTest {
     class GetHoveredIdOf {
 
         @Test
-        void getHoveredIdOfReturnsTheRecordedId() {
+        void returnsTheRecordedId() {
 
             var slot = new FilterHoverSlot();
 
@@ -101,14 +101,14 @@ final class FilterHoverSlotTest {
         }
 
         @Test
-        void getHoveredIdOfIsNullWhenNoHoverIsRecorded() {
+        void isNullWhenNoHoverIsRecorded() {
             // A scope the pointer never rested in holds nothing, which is the no-preview state.
             assertThat(new FilterHoverSlot().getHoveredIdOf(PICKER_SCOPE))
                 .isNull();
         }
 
         @Test
-        void getHoveredIdOfDoesNotCrossReadAnotherScopesHover() {
+        void doesNotCrossReadAnotherScopesHover() {
             // Per-scope isolation: a hover under one view is meaningless under another, so it must
             // not be readable there.
             var slot = new FilterHoverSlot();
@@ -120,7 +120,7 @@ final class FilterHoverSlotTest {
         }
 
         @Test
-        void getHoveredIdOfDoesNotCrossReadAnotherModsHover() {
+        void doesNotCrossReadAnotherModsHover() {
             // The scope ID is opaque and every mod picks its own, so two pickers listing under one
             // name are two lists: previewing the other's row would light systems this layer's walk
             // never offered.
@@ -137,7 +137,7 @@ final class FilterHoverSlotTest {
     class RecordHoveredId {
 
         @Test
-        void recordHoveredIdReplacesThePreviousHover() {
+        void replacesThePreviousHover() {
             // The pointer rests on one row at a time, so a move down the list overwrites rather
             // than accumulating.
             var slot = new FilterHoverSlot();
@@ -150,7 +150,7 @@ final class FilterHoverSlotTest {
         }
 
         @Test
-        void recordHoveredIdClearsTheScopeWhenTheIdIsNull() {
+        void clearsTheScopeWhenTheIdIsNull() {
             // A hover channel reports the leave as a null ID, which must rest the scope outright.
             var slot = new FilterHoverSlot();
 
@@ -166,7 +166,7 @@ final class FilterHoverSlotTest {
     class ClearHoveredId {
 
         @Test
-        void clearHoveredIdDropsTheRecordedId() {
+        void dropsTheRecordedId() {
 
             var slot = new FilterHoverSlot();
 
@@ -178,7 +178,7 @@ final class FilterHoverSlotTest {
         }
 
         @Test
-        void clearHoveredIdNoOpsOnAnAlreadyClearScope() {
+        void noOpsOnAnAlreadyClearScope() {
             // A panel standing down clears without knowing whether a hover was ever reported, so a
             // clear on a resting scope must simply leave it resting.
             var slot = new FilterHoverSlot();
@@ -190,7 +190,7 @@ final class FilterHoverSlotTest {
         }
 
         @Test
-        void clearHoveredIdLeavesAnotherScopesHoverUntouched() {
+        void leavesAnotherScopesHoverUntouched() {
 
             var slot = new FilterHoverSlot();
 
@@ -202,7 +202,7 @@ final class FilterHoverSlotTest {
         }
 
         @Test
-        void clearHoveredIdLeavesAnotherModsHoverUntouched() {
+        void leavesAnotherModsHoverUntouched() {
             // A panel standing down clears its own lists, and a mod's stand-down must not rest the
             // row another mod's pointer is still on.
             var slot = new FilterHoverSlot();
@@ -219,7 +219,7 @@ final class FilterHoverSlotTest {
     class DisposeMachinery {
 
         @Test
-        void disposeMachineryDropsEveryScopesHover() {
+        void dropsEveryScopesHover() {
             // What a caller holding a slot resolved before the disposal reads back: nothing, rather
             // than the hover the gone sector's pointer was last on.
             var slot = new FilterHoverSlot();

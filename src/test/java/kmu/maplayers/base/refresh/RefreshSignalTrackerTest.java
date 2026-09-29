@@ -24,7 +24,7 @@ class RefreshSignalTrackerTest {
     class DescribeRaisesSinceTheLastReading {
 
         @Test
-        void describeRaisesSinceTheLastReadingNamesATracedSignalRaisedSinceConstruction() {
+        void namesATracedSignalRaisedSinceConstruction() {
 
             var tracker = buildTrackerOf(MapLayerCommonRefreshSignal.FILTER);
 
@@ -35,7 +35,7 @@ class RefreshSignalTrackerTest {
         }
 
         @Test
-        void describeRaisesSinceTheLastReadingNamesNothingWhileNoTracedSignalMoves() {
+        void namesNothingWhileNoTracedSignalMoves() {
 
             var tracker = buildTrackerOf(MapLayerCommonRefreshSignal.FILTER);
 
@@ -44,7 +44,7 @@ class RefreshSignalTrackerTest {
         }
 
         @Test
-        void describeRaisesSinceTheLastReadingAdvancesSoOneRaiseIsNamedOnce() {
+        void advancesSoOneRaiseIsNamedOnce() {
             // The reading advances on the ask, so a caller writing this onto the line of each pass
             // reports a flip against the pass that followed it rather than against every pass after.
             var tracker = buildTrackerOf(MapLayerCommonRefreshSignal.FILTER);
@@ -57,7 +57,7 @@ class RefreshSignalTrackerTest {
         }
 
         @Test
-        void describeRaisesSinceTheLastReadingNamesNoSignalItDoesNotTrace() {
+        void namesNoSignalItDoesNotTrace() {
             // A tracer names what it chose to trace: a consumer folding a signal into its own
             // staleness has already accounted for it, and naming it here would report it twice.
             var tracker = buildTrackerOf(MapLayerCommonRefreshSignal.FILTER);
@@ -69,7 +69,7 @@ class RefreshSignalTrackerTest {
         }
 
         @Test
-        void describeRaisesSinceTheLastReadingIgnoresRaisesMadeBeforeItWasBuilt() {
+        void ignoresRaisesMadeBeforeItWasBuilt() {
             // A board outlives any one consumer and may already carry raises from a load, so
             // reporting those would name flips that happened before this tracker existed.
             board.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
@@ -80,7 +80,7 @@ class RefreshSignalTrackerTest {
         }
 
         @Test
-        void describeRaisesSinceTheLastReadingNamesEveryRaisedSignalInTheOrderItTracesThem() {
+        void namesEveryRaisedSignalInTheOrderItTracesThem() {
 
             var tracker = buildTrackerOf(
                 MapLayerCommonRefreshSignal.FILTER,

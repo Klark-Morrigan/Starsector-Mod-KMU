@@ -17,7 +17,7 @@ final class ClaimStatsTest {
     class AddClaim {
 
         @Test
-        void addClaimCountsTheClaimAndLeavesMarketSizeAlone() {
+        void countsTheClaimAndLeavesMarketSizeAlone() {
             // A claimed system adds a claim only - market size is summed over the systems the bloc
             // holds colonies in, which this fold knows nothing about.
             assertThat(ClaimStats.EMPTY.addClaim())
@@ -25,7 +25,7 @@ final class ClaimStatsTest {
         }
 
         @Test
-        void addClaimAccumulatesAcrossSuccessiveSystems() {
+        void accumulatesAcrossSuccessiveSystems() {
             // Two claimed systems fold in one after another, leaving two claims.
             assertThat(ClaimStats.EMPTY.addClaim().addClaim())
                 .isEqualTo(new ClaimStats(2, 0));
@@ -36,7 +36,7 @@ final class ClaimStatsTest {
     class AddMarketSize {
 
         @Test
-        void addMarketSizeSumsTheSizeAndLeavesTheClaimCountAlone() {
+        void sumsTheSizeAndLeavesTheClaimCountAlone() {
             // A system the bloc holds a colony in but does not claim adds size without a claim - the
             // ordinary case, since a claimant usually does not hold what it claims.
             assertThat(ClaimStats.EMPTY.addMarketSize(5))
@@ -44,14 +44,14 @@ final class ClaimStatsTest {
         }
 
         @Test
-        void addMarketSizeAccumulatesAcrossSuccessiveSystems() {
+        void accumulatesAcrossSuccessiveSystems() {
             // Colonies in two systems sum into one whole-sector total.
             assertThat(ClaimStats.EMPTY.addMarketSize(5).addMarketSize(3))
                 .isEqualTo(new ClaimStats(0, 8));
         }
 
         @Test
-        void addMarketSizeCombinesWithAClaimOnTheSameBloc()  {
+        void combinesWithAClaimOnTheSameBloc()  {
             // The two folds compose in either order on one bloc: a claim in one system and a colony
             // in another leave both metrics set.
             assertThat(ClaimStats.EMPTY.addClaim().addMarketSize(4))
@@ -63,7 +63,7 @@ final class ClaimStatsTest {
     class IsPaintingNothing {
 
         @Test
-        void isPaintingNothingIsTrueForABlocThatClaimsNothing() {
+        void isTrueForABlocThatClaimsNothing() {
             // A colony holder that claims nowhere is listed but paints nothing on this layer, so its
             // row reads back rather than sitting at full strength beside the claimants.
             assertThat(new ClaimStats(0, 40).isPaintingNothing())
@@ -71,14 +71,14 @@ final class ClaimStatsTest {
         }
 
         @Test
-        void isPaintingNothingIsFalseForABlocThatClaimsAnything() {
+        void isFalseForABlocThatClaimsAnything() {
             // One claim is enough: the layer paints it, so the row has something to show.
             assertThat(new ClaimStats(1, 40).isPaintingNothing())
                 .isFalse();
         }
 
         @Test
-        void isPaintingNothingReadsTheClaimCountAloneAndNotTheMarketSize() {
+        void readsTheClaimCountAloneAndNotTheMarketSize() {
             // The rule is the metric the layer paints by, not how big the bloc is: a claimant that
             // holds no colony anywhere still reads at full strength, and a large holder that claims
             // nowhere still reads back.

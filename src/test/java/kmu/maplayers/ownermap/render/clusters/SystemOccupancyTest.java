@@ -51,7 +51,7 @@ final class SystemOccupancyTest {
     class CreateCopyOf {
 
         @Test
-        void createCopyOfReadsBackEveryFactItWasGiven() {
+        void readsBackEveryFactItWasGiven() {
 
             var occupancy = SystemOccupancy.createCopyOf(
                 Map.of(HELD_SYSTEM, HEGEMONY),
@@ -67,7 +67,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void createCopyOfFoldsIntoCollectionsTheCallerHandedOverImmutable() {
+        void foldsIntoCollectionsTheCallerHandedOverImmutable() {
             // The case the type exists for: every one of the three reads a pass makes is free to
             // answer with an immutable collection, and the presence read does exactly that off
             // filter. Copying here is what keeps that from becoming a throw at the first colony
@@ -85,7 +85,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void createCopyOfLeavesTheCallersOwnCollectionsAlone() {
+        void leavesTheCallersOwnCollectionsAlone() {
             // The mirror of the copy: a build that goes on reading what it handed over must not
             // see a later fold in it, or the pass's own record of what it resolved would drift as
             // the map is refreshed.
@@ -108,7 +108,7 @@ final class SystemOccupancyTest {
     class CreateEmpty {
 
         @Test
-        void createEmptyHoldsNothingAndStillFolds() {
+        void holdsNothingAndStillFolds() {
             // What a build that never ran carries. It has to be foldable rather than inert: the
             // placeholder is replaced by a real build before anything reads it, but a refresh
             // reaching it first must write rather than throw.
@@ -130,7 +130,7 @@ final class SystemOccupancyTest {
     class GetHolderBySystemKey {
 
         @Test
-        void getHolderBySystemKeyRefusesAWriteThroughTheView() {
+        void refusesAWriteThroughTheView() {
             // Every reader is answered through this, and one of them putting a holder in would be
             // a holder change no disturbance was recorded for - a cell drawn from a fact the batch
             // never noticed had moved.
@@ -141,7 +141,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void getHolderBySystemKeyShowsWhatALaterFoldWrote() {
+        void showsWhatALaterFoldWrote() {
             // The view is over the live map rather than a snapshot of it, so a reader holding one
             // across a refresh sees what the refresh wrote.
             var occupancy = SystemOccupancy.createEmpty();
@@ -158,7 +158,7 @@ final class SystemOccupancyTest {
     class ReadHolderOf {
 
         @Test
-        void readHolderOfAnswersTheHolderOfOneSystem() {
+        void answersTheHolderOfOneSystem() {
 
             var occupancy = SystemOccupancy.createCopyOf(
                 Map.of(HELD_SYSTEM, HEGEMONY),
@@ -170,7 +170,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void readHolderOfAnswersNothingForASystemNobodyHolds() {
+        void answersNothingForASystemNobodyHolds() {
             // An absent entry is what "nobody holds this" is, so the narrow read says the same
             // thing a lookup in the map would - every caller branches on the null.
             assertThat(SystemOccupancy.createEmpty().readHolderOf(HELD_SYSTEM))
@@ -178,7 +178,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void readHolderOfTellsApartTwoSystemsSharingAnId() {
+        void tellsApartTwoSystemsSharingAnId() {
             // The narrow read is addressed the way the map is, so the arms that separate a
             // colliding pair still separate it - a read that had narrowed to the ID would answer
             // whichever of them came first.
@@ -196,7 +196,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void readHolderOfShowsWhatALaterFoldWrote() {
+        void showsWhatALaterFoldWrote() {
             // Off the holding itself rather than through the view, so a caller asking after a
             // refresh reads what the refresh recorded rather than what the build resolved.
             var occupancy = SystemOccupancy.createEmpty();
@@ -212,7 +212,7 @@ final class SystemOccupancyTest {
     class GetInhabitedSystemKeys {
 
         @Test
-        void getInhabitedSystemKeysRefusesAWriteThroughTheView() {
+        void refusesAWriteThroughTheView() {
 
             var occupancy = SystemOccupancy.createEmpty();
 
@@ -225,7 +225,7 @@ final class SystemOccupancyTest {
     class GetSpotlitPresenceSystemKeys {
 
         @Test
-        void getSpotlitPresenceSystemKeysRefusesAWriteThroughTheView() {
+        void refusesAWriteThroughTheView() {
 
             var occupancy = SystemOccupancy.createEmpty();
 
@@ -238,7 +238,7 @@ final class SystemOccupancyTest {
     class RecordHolderOf {
 
         @Test
-        void recordHolderOfReplacesTheStandingHolder() {
+        void replacesTheStandingHolder() {
 
             var occupancy = SystemOccupancy.createCopyOf(
                 Map.of(HELD_SYSTEM, HEGEMONY),
@@ -252,7 +252,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void recordHolderOfDropsTheEntryWhenNobodyHoldsItNow() {
+        void dropsTheEntryWhenNobodyHoldsItNow() {
             // A decivilised or bombed-out system: the entry goes rather than being left pointing
             // at the faction that lost it, since every reader takes an absent entry for "nobody
             // holds this".
@@ -268,7 +268,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void recordHolderOfHoldsTwoSystemsSharingAnIdUnderDifferentBlocs() {
+        void holdsTwoSystemsSharingAnIdUnderDifferentBlocs() {
             // The collision the holding is keyed by SystemKey to survive: each of the pair keeps
             // its own holder, where a map keyed by ID held one entry and drew the second system in
             // the first's colours.
@@ -288,7 +288,7 @@ final class SystemOccupancyTest {
     class FoldInhabitationOf {
 
         @Test
-        void foldInhabitationOfReportsASystemTakingItsFirstColony() {
+        void reportsASystemTakingItsFirstColony() {
 
             var occupancy = SystemOccupancy.createEmpty();
 
@@ -299,7 +299,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void foldInhabitationOfReportsASystemLosingItsLastColony() {
+        void reportsASystemLosingItsLastColony() {
 
             var occupancy = SystemOccupancy.createCopyOf(
                 Map.of(),
@@ -313,7 +313,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void foldInhabitationOfReportsNothingForASystemThatWasAlreadySettled() {
+        void reportsNothingForASystemThatWasAlreadySettled() {
             // The common resize: a colony grew. Reporting a change here would redraw a cell that
             // draws exactly as it did, on every colony event in the sector.
             var occupancy = SystemOccupancy.createCopyOf(
@@ -326,7 +326,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void foldInhabitationOfReportsNothingForASystemThatWasAlreadyEmpty() {
+        void reportsNothingForASystemThatWasAlreadyEmpty() {
 
             var occupancy = SystemOccupancy.createEmpty();
 
@@ -339,7 +339,7 @@ final class SystemOccupancyTest {
     class FoldSpotlitPresenceOf {
 
         @Test
-        void foldSpotlitPresenceOfReportsThePickArrivingInASystem() {
+        void reportsThePickArrivingInASystem() {
 
             var occupancy = SystemOccupancy.createEmpty();
 
@@ -350,7 +350,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void foldSpotlitPresenceOfReportsThePickLeavingASystem() {
+        void reportsThePickLeavingASystem() {
 
             var occupancy = SystemOccupancy.createCopyOf(
                 Map.of(),
@@ -364,7 +364,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void foldSpotlitPresenceOfReportsNothingWhereThePickWasAlreadyLiving() {
+        void reportsNothingWhereThePickWasAlreadyLiving() {
 
             var occupancy = SystemOccupancy.createCopyOf(
                 Map.of(),
@@ -376,7 +376,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void foldSpotlitPresenceOfMovesOnlyTheSystemOfAPairSharingAnId() {
+        void movesOnlyTheSystemOfAPairSharingAnId() {
             // The pair the address exists to tell apart, asked of the fold: the pick arriving in
             // one of them leaves the other where it was, where a set keyed by ID would have
             // spared both cells the recede at once.
@@ -390,7 +390,7 @@ final class SystemOccupancyTest {
         }
 
         @Test
-        void foldSpotlitPresenceOfLeavesInhabitationAlone() {
+        void leavesInhabitationAlone() {
             // The two folds run over the same system keys and answer the same shape of question, so
             // a set named wrong in one of them would read as correct at every other assertion here.
             var occupancy = SystemOccupancy.createEmpty();

@@ -43,7 +43,7 @@ final class PersistedSidebarFoldTest {
     class IsRailDocked {
 
         @Test
-        void isRailDockedFallsBackToTheOpeningDefaultWhenTheSaveHoldsNoFold() {
+        void fallsBackToTheOpeningDefaultWhenTheSaveHoldsNoFold() {
 
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
@@ -64,7 +64,7 @@ final class PersistedSidebarFoldTest {
         }
 
         @Test
-        void isRailDockedReadsTheStoredFoldOverTheOpeningDefault() {
+        void readsTheStoredFoldOverTheOpeningDefault() {
 
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
@@ -85,7 +85,7 @@ final class PersistedSidebarFoldTest {
         }
 
         @Test
-        void isRailDockedFallsBackToTheOpeningDefaultBeforeTheSectorExists() {
+        void fallsBackToTheOpeningDefaultBeforeTheSectorExists() {
 
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
@@ -103,7 +103,7 @@ final class PersistedSidebarFoldTest {
     class RecordFold {
 
         @Test
-        void recordFoldStoresAFoldThatDiffersFromTheOneInTheSave() {
+        void storesAFoldThatDiffersFromTheOneInTheSave() {
 
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
@@ -126,7 +126,7 @@ final class PersistedSidebarFoldTest {
         }
 
         @Test
-        void recordFoldWritesNothingWhenTheSaveAlreadyReadsThatWay() {
+        void writesNothingWhenTheSaveAlreadyReadsThatWay() {
             // The panel offers its settled fold every frame it draws; only a real change may reach the save.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
@@ -149,7 +149,7 @@ final class PersistedSidebarFoldTest {
         }
 
         @Test
-        void recordFoldLeavesAnUntouchedSaveUnwrittenWhileThePanelSitsAtItsDefault() {
+        void leavesAnUntouchedSaveUnwrittenWhileThePanelSitsAtItsDefault() {
             // A save that has never stored a fold reads as the default, so a panel resting there writes
             // nothing and the key appears only once the player actually moves the panel.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
@@ -171,7 +171,7 @@ final class PersistedSidebarFoldTest {
         }
 
         @Test
-        void recordFoldRetriesAfterAWriteThatCouldNotLand() {
+        void retriesAfterAWriteThatCouldNotLand() {
             // Before the sector exists the write is dropped. Nothing is remembered as written, so the next
             // offer stores it rather than believing the choice already reached the save.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
@@ -201,7 +201,7 @@ final class PersistedSidebarFoldTest {
         }
 
         @Test
-        void recordFoldFollowsTheSaveRatherThanAFoldRememberedFromAPreviousOne() {
+        void followsTheSaveRatherThanAFoldRememberedFromAPreviousOne() {
             // One host serves every save loaded in a run. The comparison is against sector memory, so a
             // fold written in one save cannot suppress the same fold being written into the next.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {

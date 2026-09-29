@@ -83,7 +83,7 @@ final class CellTooltipContentFitTest {
     class FitToHeight {
 
         @Test
-        void fitToHeightHandsBackABoxThatFitsExactlyAsItWasComposed() {
+        void handsBackABoxThatFitsExactlyAsItWasComposed() {
             // Nearly every box. The compression inverts how a listing reads and the cut takes content
             // away, so a box that was never the problem must pay for neither.
             var fittedBox = fitWithin(ROOM_FOR_THE_WHOLE_BOX);
@@ -95,7 +95,7 @@ final class CellTooltipContentFitTest {
         }
 
         @Test
-        void fitToHeightGivesUpSizeBeforeItGivesUpContent() {
+        void givesUpSizeBeforeItGivesUpContent() {
             // The order that matters: a box that can be brought inside its room by drawing smaller
             // keeps every line it was asked for, and the reader loses nothing but size.
             var fittedBox = fitWithin(ROOM_FOR_A_COMPRESSED_BOX);
@@ -107,7 +107,7 @@ final class CellTooltipContentFitTest {
         }
 
         @Test
-        void fitToHeightBringsACompressibleBoxInsideTheRoomItHas() {
+        void bringsACompressibleBoxInsideTheRoomItHas() {
             // What the compression is for: the box the reader is handed actually fits the screen.
             var fittedBox = fitWithin(ROOM_FOR_A_COMPRESSED_BOX);
 
@@ -116,7 +116,7 @@ final class CellTooltipContentFitTest {
         }
 
         @Test
-        void fitToHeightGivesUpContentWhereNoAmountOfSizeWillDo() {
+        void givesUpContentWhereNoAmountOfSizeWillDo() {
             // Past the floor the compression stops at there is nothing left to give up but content -
             // and a box drawn overflowing would lose the same lines with nothing on screen saying so.
             var fittedBox = fitWithin(ROOM_FOR_ALMOST_NOTHING);
@@ -126,7 +126,7 @@ final class CellTooltipContentFitTest {
         }
 
         @Test
-        void fitToHeightBringsACutBoxInsideTheRoomItHas() {
+        void bringsACutBoxInsideTheRoomItHas() {
             // The point of cutting at all: what the reader is handed fits, and what it left out is
             // stated on the rows standing for it rather than run off the edge of the screen.
             var fittedBox = fitWithin(ROOM_FOR_ALMOST_NOTHING);
@@ -136,7 +136,7 @@ final class CellTooltipContentFitTest {
         }
 
         @Test
-        void fitToHeightKeepsMoreThanTheLeastItCouldWhereTheRoomAllows() {
+        void keepsMoreThanTheLeastItCouldWhereTheRoomAllows() {
             // Every entry dropped is something the player asked to see, so the search answers with the
             // largest listing that fits rather than with the first one that does - a box cut to one
             // entry per listing where two would have fitted is answering a question it was not asked.

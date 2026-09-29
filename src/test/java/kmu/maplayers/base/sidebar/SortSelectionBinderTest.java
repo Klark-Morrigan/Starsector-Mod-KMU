@@ -42,7 +42,7 @@ final class SortSelectionBinderTest {
     class ResolveStoredSort {
 
         @Test
-        void resolveStoredSortPassesTheSlotsStoredKeysToTheModel() {
+        void passesTheSlotsStoredKeysToTheModel() {
 
             try (var selectionMock = mockStatic(SortSelection.class)) {
 
@@ -63,7 +63,7 @@ final class SortSelectionBinderTest {
     class StoreSort {
 
         @Test
-        void storeSortWritesBothOfThePickedSortsKeysUnderTheSlot() {
+        void writesBothOfThePickedSortsKeysUnderTheSlot() {
             // Both halves are written whichever one a click moved, so the save never holds this
             // pick's direction beside an earlier pick's mode, and both land in the one slot so a pick
             // made on one panel never reorders the other's list.

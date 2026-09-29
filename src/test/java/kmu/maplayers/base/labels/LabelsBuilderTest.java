@@ -111,7 +111,7 @@ final class LabelsBuilderTest {
     class PlanLabels {
 
         @Test
-        void planLabelsPlansOneLineWithItsTextColourAndFontHeight() {
+        void plansOneLineWithItsTextColourAndFontHeight() {
             var anchors = List.of(buildAcceptedAnchor(
                 List.of("Persean League"),
                 100f,
@@ -128,7 +128,7 @@ final class LabelsBuilderTest {
         }
 
         @Test
-        void planLabelsHangsASingleLineAtTheAnchorPoint() {
+        void hangsASingleLineAtTheAnchorPoint() {
             // One line has no stack to spread: its centre is the block centre, the anchor.
             var anchors = List.of(buildAcceptedAnchor(
                 List.of("Persean League"),
@@ -143,7 +143,7 @@ final class LabelsBuilderTest {
         }
 
         @Test
-        void planLabelsStacksTwoLinesAcrossAHorizontalAxisFirstLineOnTop() {
+        void stacksTwoLinesAcrossAHorizontalAxisFirstLineOnTop() {
             // A horizontal axis stacks straight up the y axis: line centres half a step
             // (font height times spacing) above and below the anchor, first line on the
             // upper side so the block reads top-down.
@@ -167,7 +167,7 @@ final class LabelsBuilderTest {
         }
 
         @Test
-        void planLabelsStacksAlongTheSlantedAxisPerpendicular() {
+        void stacksAlongTheSlantedAxisPerpendicular() {
             // A 45-degree axis: the stack runs along its "up" perpendicular
             // (-sin45, cos45), so each line centre is offset half a step along it.
             var anchors = List.of(buildAcceptedAnchor(
@@ -188,7 +188,7 @@ final class LabelsBuilderTest {
         }
 
         @Test
-        void planLabelsTakesTheSlantFromTheAcceptedAxis() {
+        void takesTheSlantFromTheAcceptedAxis() {
             // A line rising 45 degrees to the right: the label leans at +45.
             var anchors = List.of(buildAcceptedAnchor(
                 List.of("Persean League"),
@@ -202,7 +202,7 @@ final class LabelsBuilderTest {
         }
 
         @Test
-        void planLabelsFoldsALeftPointingAxisUprightSoTheNameIsNotUpsideDown() {
+        void foldsALeftPointingAxisUprightSoTheNameIsNotUpsideDown() {
             // The accepted axis points into the left half-plane (end left of start). Left
             // as is it would render the name upside down (~180 degrees); folded upright it
             // reads left-to-right at the same shallow lean (here dead level, 0) - and the
@@ -220,7 +220,7 @@ final class LabelsBuilderTest {
         }
 
         @Test
-        void planLabelsFillsTheFittedBandExactly() {
+        void fillsTheFittedBandExactly() {
             // The invariant the whole stack exists to hold: the outermost line centres, plus
             // half a line height at each end, span exactly the band the fit reserved. Checked
             // on three lines, where a wrong step compounds rather than cancelling.
@@ -238,7 +238,7 @@ final class LabelsBuilderTest {
         }
 
         @Test
-        void planLabelsTakesTheStepFromTheBandNotTheSpacingSetting() {
+        void takesTheStepFromTheBandNotTheSpacingSetting() {
             // The band is what the fit reserved, so a cluster fitted at a wider spacing stacks
             // wider - with no spacing read here to tell it so. Fitted at double the ordinary
             // spacing, the step doubles with it.
@@ -258,7 +258,7 @@ final class LabelsBuilderTest {
         }
 
         @Test
-        void planLabelsSkipsACollapsedPlacementWithNoAcceptedAxis() {
+        void skipsACollapsedPlacementWithNoAcceptedAxis() {
             // A cluster whose search collapsed to the dot carries no accepted line, so it
             // gets no name rather than an empty box.
             var anchors = List.of(buildCollapsedAnchor(100f, 200f));
@@ -267,7 +267,7 @@ final class LabelsBuilderTest {
         }
 
         @Test
-        void planLabelsSkipsAClusterWithNoWrappedName() {
+        void skipsAClusterWithNoWrappedName() {
             // An accepted box whose fit ran on the aspect stand-in (font or faction name
             // unresolved) carries no lines, so no label is planned for it - the debug band
             // is that cluster's only footprint.

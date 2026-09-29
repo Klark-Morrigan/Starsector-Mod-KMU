@@ -90,7 +90,7 @@ final class SystemStatusRowTest {
     class ResolveStatusRow {
 
         @Test
-        void resolveStatusRowIsEmptyForAPopulatedSystem() {
+        void isEmptyForAPopulatedSystem() {
 
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system, buildColony());
@@ -100,7 +100,7 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowNamesAnEmptySystemUnpopulated() {
+        void namesAnEmptySystemUnpopulated() {
 
             var system = buildSystemWithPlanets();
             var row = resolveStatusRowIn(buildSectorHoldingMarkets(system), system, BASE_FOG);
@@ -110,7 +110,7 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowNamesASystemHoldingARevealedDecivilisedWorld() {
+        void namesASystemHoldingARevealedDecivilisedWorld() {
 
             // The world is a colony the set holds and nobody is living on, so it reaches this line
             // through habitation like any other - and what it changes is which status the player is
@@ -126,7 +126,7 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowIsEmptyForALivingColonyBesideADecivilisedWorld() {
+        void isEmptyForALivingColonyBesideADecivilisedWorld() {
             // A collapsed world never heads a system somebody still lives in. Habitation admits
             // both, so the
             // line has to part them by kind rather than by the projection's emptiness - and the box
@@ -142,7 +142,7 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowSetsTheStatusAcrossTheBoxAsWordsAlone() {
+        void setsTheStatusAcrossTheBoxAsWordsAlone() {
             // Centred and crestless: the status holds over everything the box goes on to say, so it
             // speaks for the box rather than aligning to the crest gutter and value column the entries
             // below it share. Being a centred line is what makes it carry no such columns at all.
@@ -155,7 +155,7 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowTreatsAFoundConcealedBaseAsPopulatingTheSystem() {
+        void treatsAFoundConcealedBaseAsPopulatingTheSystem() {
             // Raiding a base never un-hides its market, and the system plainly holds people either
             // way - emptiness is about what the player has seen, not about what is publicly listed.
             var system = buildSystemWithPlanets();
@@ -166,7 +166,7 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowCallsASystemEmptyWhereItsOnlyColonyIsUndiscoveredHoweverPubliclyListed() {
+        void callsASystemEmptyWhereItsOnlyColonyIsUndiscoveredHoweverPubliclyListed() {
             // The pair above and this one are the two halves hiddenness and discovery come apart
             // on, and the fog reads only the second: a raided base stays concealed and counts,
             // while a colony the game lists publicly does not until its entity is found. The cell
@@ -182,7 +182,7 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowCountsAColonyTheEconomyDoesNotList() {
+        void countsAColonyTheEconomyDoesNotList() {
             // Galatia Academy's shape: a real colony on a real station that vanilla never
             // registers. Reading the economy's listing alone would call such a system empty while
             // both breakdown boxes below the line name the faction holding it.
@@ -194,7 +194,7 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowCallsASystemHoldingOnlyADerelictUnpopulated() {
+        void callsASystemHoldingOnlyADerelictUnpopulated() {
             // The line asks about habitation, not about what may be named. The derelict passes the
             // fog
             // outright - un-hidden, on a found entity - so the listing beneath this row goes on
@@ -216,7 +216,7 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowIsEmptyForAColonyStandingBesideADerelict() {
+        void isEmptyForAColonyStandingBesideADerelict() {
             // The same derelict with somebody settled beside it. The row reads populated on the
             // colony's account while the box beneath names both, so the derelict is neither
             // counted as habitation nor withheld from the listing.
@@ -230,7 +230,7 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowCountsAnUndiscoveredColonyUnderTheReveal() {
+        void countsAnUndiscoveredColonyUnderTheReveal() {
             // The same system reads populated or empty purely on the reveal, so a body showing all
             // factions never contradicts itself with an "Unpopulated" line above the factions it lists.
             var system = buildSystemWithPlanets();

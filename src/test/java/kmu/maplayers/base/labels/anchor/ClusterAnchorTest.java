@@ -29,7 +29,7 @@ final class ClusterAnchorTest {
     class MapAnchorsByIdentity {
 
         @Test
-        void mapAnchorsByIdentityFilesEachPlacementUnderTheClusterItNames() {
+        void filesEachPlacementUnderTheClusterItNames() {
 
             var hegemonyAnchor = buildAnchorOf(HEGEMONY);
             var tritachyonAnchor = buildAnchorOf(TRITACHYON);
@@ -44,7 +44,7 @@ final class ClusterAnchorTest {
         }
 
         @Test
-        void mapAnchorsByIdentityFilesNothingForAPassThatFittedNoPlacement() {
+        void filesNothingForAPassThatFittedNoPlacement() {
             // The session's first rebuild, and every one taken while the names and the overlay are
             // both off: nothing stands to be looked up, which is a filing rather than a refusal.
             assertThat(ClusterAnchor.mapAnchorsByIdentity(List.of()))

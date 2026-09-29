@@ -256,7 +256,7 @@ final class IncrementalOwnerRefreshIntegrationTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldWhenASystemTakesItsFirstColony() {
+        void drawsWhatARebuildWouldWhenASystemTakesItsFirstColony() {
             // The system no holder ever accounted for: nobody held it before and somebody holds it
             // now, so the cell goes from empty backdrop to a bloc's territory and owes a band it
             // never had.
@@ -268,7 +268,7 @@ final class IncrementalOwnerRefreshIntegrationTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldWhenASystemLosesItsLastColony() {
+        void drawsWhatARebuildWouldWhenASystemLosesItsLastColony() {
             // The other end of the same move: the holder entry goes, the system leaves the
             // inhabited set, and the cell falls back to the empty backdrop - a different category,
             // a different paint, and no band at all.
@@ -280,7 +280,7 @@ final class IncrementalOwnerRefreshIntegrationTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldWhenASystemChangesHands() {
+        void drawsWhatARebuildWouldWhenASystemChangesHands() {
             // The flip, which is the one move that reaches past the marked system's own cell: the
             // edge it shares with the core turns from a same-bloc seam into a national border, and
             // the edge it shares with the dying system turns the other way.
@@ -292,7 +292,7 @@ final class IncrementalOwnerRefreshIntegrationTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldWhenARivalArrivesInAHeldSystem() {
+        void drawsWhatARebuildWouldWhenARivalArrivesInAHeldSystem() {
             // The band's own case, and the arm no switch can reach: the holder is unmoved and the
             // fill says exactly what it said before, while the band goes from one bloc's tally to
             // a contest. Nothing but the band reports it, so a batch that re-derived the holder
@@ -308,7 +308,7 @@ final class IncrementalOwnerRefreshIntegrationTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldWhenAColonyGrowsAndNothingMoves() {
+        void drawsWhatARebuildWouldWhenAColonyGrowsAndNothingMoves() {
             // The commonest event of all - a colony resize that leaves the same winner, the same
             // settlement and the same count - so the map must come back exactly as it was. It is
             // not a no-op path: the marked system's band is re-baked whatever happened, and this
@@ -321,7 +321,7 @@ final class IncrementalOwnerRefreshIntegrationTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldAtEveryStepOfASystemsLife() {
+        void drawsWhatARebuildWouldAtEveryStepOfASystemsLife() {
             // One map carried through a system's whole life, compared against a rebuild at every
             // step of it - which is the arrangement production actually runs: the cache holds one
             // map for the session and folds batch after batch into it, where every case above
@@ -363,7 +363,7 @@ final class IncrementalOwnerRefreshIntegrationTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldAtEveryStepOfAMiddleSystemsFlips() {
+        void drawsWhatARebuildWouldAtEveryStepOfAMiddleSystemsFlips() {
             // The same walk over a system with neighbours on both sides, which is what the
             // frontier's own life cannot reach: every step here re-shapes a ring rather than one
             // cell, re-indexes the clusters, and rebuilds two blocs' territories - and does it to
@@ -403,7 +403,7 @@ final class IncrementalOwnerRefreshIntegrationTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesDrawsWhatARebuildWouldWhenOneBatchMovesAllThree() {
+        void drawsWhatARebuildWouldWhenOneBatchMovesAllThree() {
             // All three moves in one drain, which is what a fleet action or an economy tick
             // actually delivers. The flip's re-shape ring reaches a system whose own colonies
             // moved in the same batch, so the two redraws have to compose rather than each

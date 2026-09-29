@@ -92,7 +92,7 @@ final class RecedeControlTest {
     class BuildControls {
 
         @Test
-        void buildControlsHeadsWithTheCallerCaptionLabel() {
+        void headsWithTheCallerCaptionLabel() {
             try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
@@ -108,7 +108,7 @@ final class RecedeControlTest {
         }
 
         @Test
-        void buildControlsPlacesMuteThenDesaturateCheckboxes() {
+        void placesMuteThenDesaturateCheckboxes() {
             // The two toggles read left-to-right: Mute before Desaturate, both checkboxes, so the
             // control reads "<caption> [ ] Muted [ ] Desaturated".
             try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
@@ -125,7 +125,7 @@ final class RecedeControlTest {
         }
 
         @Test
-        void buildControlsLightsTheMuteCheckboxWhenTheBackdropIsMuted() {
+        void lightsTheMuteCheckboxWhenTheBackdropIsMuted() {
             // The checkbox reflects the passed set's live toggle, so a set that muted its receded
             // backdrop shows the box ticked (its one cell, index 0, lit) on the next rebuild.
             try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
@@ -138,7 +138,7 @@ final class RecedeControlTest {
         }
 
         @Test
-        void buildControlsLeavesTheMuteCheckboxOffWhenTheBackdropIsNotMuted() {
+        void leavesTheMuteCheckboxOffWhenTheBackdropIsNotMuted() {
             try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
@@ -150,7 +150,7 @@ final class RecedeControlTest {
         }
 
         @Test
-        void buildControlsLightsTheDesaturateCheckboxWhenTheBackdropIsDesaturated() {
+        void lightsTheDesaturateCheckboxWhenTheBackdropIsDesaturated() {
             try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
@@ -162,7 +162,7 @@ final class RecedeControlTest {
         }
 
         @Test
-        void buildControlsLeavesTheDesaturateCheckboxOffWhenTheBackdropIsNotDesaturated() {
+        void leavesTheDesaturateCheckboxOffWhenTheBackdropIsNotDesaturated() {
             try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);

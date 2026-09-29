@@ -32,7 +32,7 @@ final class PoliticalMapStandingTest {
     class StandLayerUpOn {
 
         @Test
-        void standLayerUpOnInstallsThePoliticalMapOnThatSector() {
+        void installsThePoliticalMapOnThatSector() {
 
             try (var installerMock = mockStatic(PoliticalMapInstaller.class)) {
 
@@ -47,7 +47,7 @@ final class PoliticalMapStandingTest {
     class StandLayerDownFrom {
 
         @Test
-        void standLayerDownFromClearsThePoliticalMapFromThatSector() {
+        void clearsThePoliticalMapFromThatSector() {
 
             try (var installerMock = mockStatic(PoliticalMapInstaller.class)) {
 

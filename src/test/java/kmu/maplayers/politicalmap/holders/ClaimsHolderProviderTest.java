@@ -58,7 +58,7 @@ final class ClaimsHolderProviderTest {
     class ResolveHolder {
 
         @Test
-        void resolveHolderPaintsEveryClaimSolidWithNoFillExceptions() {
+        void paintsEveryClaimSolidWithNoFillExceptions() {
 
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
@@ -89,7 +89,7 @@ final class ClaimsHolderProviderTest {
         }
 
         @Test
-        void resolveHolderRekeysTheSpotlitBlocsOwnClaimsAndRecedesTheRest() {
+        void rekeysTheSpotlitBlocsOwnClaimsAndRecedesTheRest() {
 
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
@@ -139,7 +139,7 @@ final class ClaimsHolderProviderTest {
         }
 
         @Test
-        void resolveHolderRecedesTheWholeSectorForAPickThatClaimsNothing() {
+        void recedesTheWholeSectorForAPickThatClaimsNothing() {
             // The picker offers every bloc that claims or holds something, so a colony holder that
             // claims nowhere is pickable. Receding the whole sector is then the answer rather than a
             // degenerate case - it is what "this faction claims nothing" looks like - and nothing here
@@ -179,7 +179,7 @@ final class ClaimsHolderProviderTest {
         }
 
         @Test
-        void resolveHolderOpensItsClaimReaderOverThePassesOwnWalk() {
+        void opensItsClaimReaderOverThePassesOwnWalk() {
             // A reader is only as current as the colonies behind it, so this provider holds the
             // means of opening one rather than a reader: the one it uses is opened over the pass
             // being resolved and discarded with it, which is also what shares that pass's walk of
@@ -208,7 +208,7 @@ final class ClaimsHolderProviderTest {
         }
 
         @Test
-        void resolveHolderOpensItsClaimReaderUnderThePassesOwnVisibilityRule() {
+        void opensItsClaimReaderUnderThePassesOwnVisibilityRule() {
             // A reader states no rule of its own, so what its breakdowns report the player may be
             // told is whatever rule the pass was resolved under. One invented where the reader is
             // opened would let a claim account name colonies the map around it is holding back.

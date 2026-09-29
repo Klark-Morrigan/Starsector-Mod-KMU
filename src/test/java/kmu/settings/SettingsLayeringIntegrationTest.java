@@ -41,7 +41,7 @@ final class SettingsLayeringIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(FeatureSettingsClassesProvider.class)
-        void mapLayerFrameworkSourcesNameNoFeatureSettingsClass(String featureSettingsClass) {
+        void nameNoFeatureSettingsClass(String featureSettingsClass) {
             assertThat(findFrameworkSourcesNaming(featureSettingsClass))
                 .as(
                     "%s is one feature's settings; the map-layer framework reads only its own"

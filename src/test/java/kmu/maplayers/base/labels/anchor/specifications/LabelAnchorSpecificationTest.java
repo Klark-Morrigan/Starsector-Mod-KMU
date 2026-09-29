@@ -80,7 +80,7 @@ class LabelAnchorSpecificationTest {
     class ReadFromLunaSettings {
 
         @Test
-        void readFromLunaSettingsResolvesTheEndInsetMultipleAgainstTheBorderChannel() {
+        void resolvesTheEndInsetMultipleAgainstTheBorderChannel() {
             try (MockedStatic<KmuMapLabelSettings> settingsMock = mockStatic(KmuMapLabelSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
@@ -94,7 +94,7 @@ class LabelAnchorSpecificationTest {
         }
 
         @Test
-        void readFromLunaSettingsPutsEachSearchKnobOnTheSearchRecord() {
+        void putsEachSearchKnobOnTheSearchRecord() {
             try (MockedStatic<KmuMapLabelSettings> settingsMock = mockStatic(KmuMapLabelSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
@@ -108,7 +108,7 @@ class LabelAnchorSpecificationTest {
         }
 
         @Test
-        void readFromLunaSettingsPutsEachMeasurementKnobOnTheBandFitRecord() {
+        void putsEachMeasurementKnobOnTheBandFitRecord() {
             try (MockedStatic<KmuMapLabelSettings> settingsMock = mockStatic(KmuMapLabelSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
@@ -126,7 +126,7 @@ class LabelAnchorSpecificationTest {
         }
 
         @Test
-        void readFromLunaSettingsHoldsAStoredFontToleranceOfZeroToTheFloor() {
+        void holdsAStoredFontToleranceOfZeroToTheFloor() {
             try (MockedStatic<KmuMapLabelSettings> settingsMock = mockStatic(KmuMapLabelSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
@@ -146,7 +146,7 @@ class LabelAnchorSpecificationTest {
         }
 
         @Test
-        void readFromLunaSettingsHoldsAStoredFontToleranceThatIsNotANumberToTheFloor() {
+        void holdsAStoredFontToleranceThatIsNotANumberToTheFloor() {
             try (MockedStatic<KmuMapLabelSettings> settingsMock = mockStatic(KmuMapLabelSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
@@ -164,7 +164,7 @@ class LabelAnchorSpecificationTest {
         }
 
         @Test
-        void readFromLunaSettingsTakesItsBorderTraceFromTheDrawnBorderSettings() {
+        void takesItsBorderTraceFromTheDrawnBorderSettings() {
             try (MockedStatic<KmuMapLabelSettings> settingsMock = mockStatic(KmuMapLabelSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
@@ -182,7 +182,7 @@ class LabelAnchorSpecificationTest {
         }
 
         @Test
-        void readFromLunaSettingsPutsEachLeanKnobOnTheScoringRecord() {
+        void putsEachLeanKnobOnTheScoringRecord() {
             try (MockedStatic<KmuMapLabelSettings> settingsMock = mockStatic(KmuMapLabelSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
@@ -198,7 +198,7 @@ class LabelAnchorSpecificationTest {
         }
 
         @Test
-        void readFromLunaSettingsCarriesTheTwoDiagnosticTogglesSeparately() {
+        void carriesTheTwoDiagnosticTogglesSeparately() {
             try (MockedStatic<KmuMapLabelSettings> settingsMock = mockStatic(KmuMapLabelSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 
@@ -214,7 +214,7 @@ class LabelAnchorSpecificationTest {
         }
 
         @Test
-        void readFromLunaSettingsPutsEachNameKnobOnTheNameFitRecord() {
+        void putsEachNameKnobOnTheNameFitRecord() {
             try (MockedStatic<KmuMapLabelSettings> settingsMock = mockStatic(KmuMapLabelSettings.class)) {
                 stubEveryAnchorSetting(settingsMock);
 

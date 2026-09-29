@@ -36,7 +36,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
     class IsCoveringCursor {
 
         @Test
-        void isCoveringCursorAnswersUncoveredInsideTheMinimapBox() {
+        void answersUncoveredInsideTheMinimapBox() {
             // What the mode is for: a pointer resting on the minimap the player docked is pointing
             // at a map, so the cell under it is theirs to be told about.
             var cursorFake = new CursorPositionFake();
@@ -51,7 +51,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersCoveredOutsideTheMinimapBox() {
+        void answersCoveredOutsideTheMinimapBox() {
             // The confinement, and the leak it closes: the map geometry underneath resolves a system
             // for every pixel on screen, so without this the whole campaign view would answer.
             var cursorFake = new CursorPositionFake();
@@ -66,7 +66,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersCoveredWithTheMinimapParkedOffScreen() {
+        void answersCoveredWithTheMinimapParkedOffScreen() {
             // A parked panel is off screen rather than absent, and its pass goes on running. Nothing
             // extra reads that state: the live box is simply somewhere no cursor can be.
             var cursorFake = new CursorPositionFake();
@@ -81,7 +81,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersUncoveredWhileTheModeIsNotEngaged() {
+        void answersUncoveredWhileTheModeIsNotEngaged() {
             // Inert without the mode, whatever else is true. Asked before anything is read, so an
             // install with no minimap pays one boolean.
             var cursorFake = new CursorPositionFake();
@@ -97,7 +97,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersUncoveredWhileAVanillaMapIsShowing() {
+        void answersUncoveredWhileAVanillaMapIsShowing() {
             // The non-interference guarantee. The cursor is nowhere near the minimap's box, and the
             // frame belongs to a vanilla host, so this cover has nothing to say about it.
             var cursorFake = new CursorPositionFake();
@@ -112,7 +112,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersCoveredWithNoSingleEmbeddedMapOnScreen() {
+        void answersCoveredWithNoSingleEmbeddedMapOnScreen() {
             // Failing closed. The shared reading answers nothing when the walk came back empty - the
             // reach broke, or the panel is not built yet - and when it found more than one surface,
             // which is the confinement's precondition: the frame carries one transform, so a hover
@@ -131,7 +131,7 @@ final class RandomAssortmentOfThingsMinimapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersCoveredWithTheMinimapDrawnNowhere() {
+        void answersCoveredWithTheMinimapDrawnNowhere() {
             // A map found in the tree but with no box to point at - never positioned, or faded out.
             // Same answer as none found, for the same reason.
             var cursorFake = new CursorPositionFake();

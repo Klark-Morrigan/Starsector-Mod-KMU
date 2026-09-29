@@ -29,7 +29,7 @@ class ContestSidesTest {
     class SelectSide {
 
         @Test
-        void selectSideKeepsOnlyTheHoldersOwnAlliesOnTheAlliedSide() {
+        void keepsOnlyTheHoldersOwnAlliesOnTheAlliedSide() {
 
             assertThat(buildSidesUnderAGroup()
                     .selectSide(ContestSide.ALLIED, List.of(ALLY, RIVAL), BLOC_ID_ITSELF))
@@ -37,7 +37,7 @@ class ContestSidesTest {
         }
 
         @Test
-        void selectSideDropsTheHoldersOwnAlliesFromTheRivalSide() {
+        void dropsTheHoldersOwnAlliesFromTheRivalSide() {
             // The two sides take every contestant between them and none twice, which is what makes
             // them one split rather than two questions asked of the same list.
             assertThat(buildSidesUnderAGroup()
@@ -46,7 +46,7 @@ class ContestSidesTest {
         }
 
         @Test
-        void selectSideKeepsTheOrderTheContestantsArrivedIn() {
+        void keepsTheOrderTheContestantsArrivedIn() {
             // The caller hands them over ranked - strongest first on one box, a mechanic's own order
             // on another - and a block reads in that order rather than in one this
             // split invented.
@@ -61,7 +61,7 @@ class ContestSidesTest {
         }
 
         @Test
-        void selectSideKeepsTwoBlocsAlliedWithEachOtherButNotWithTheHolderAsRivals() {
+        void keepsTwoBlocsAlliedWithEachOtherButNotWithTheHolderAsRivals() {
             // Only the holder's own allies leave the rival side. Two rivals standing together still
             // both stand against the holder, which is the relation a contest block states.
             assertThat(new ContestSides(
@@ -72,7 +72,7 @@ class ContestSidesTest {
         }
 
         @Test
-        void selectSideAlliesNobodyWhereNothingGroupsFactions() {
+        void alliesNobodyWhereNothingGroupsFactions() {
             // An install with nothing grouping factions: no two blocs stand together, so
             // the allied block is empty and its heading is dropped by the surface drawing it.
             assertThat(new ContestSides(HOLDER, BlocAffiliation.NONE)
@@ -81,7 +81,7 @@ class ContestSidesTest {
         }
 
         @Test
-        void selectSideKeepsEverybodyAsRivalsWhereNothingGroupsFactions() {
+        void keepsEverybodyAsRivalsWhereNothingGroupsFactions() {
             // Why an install without groups needs no branch anywhere: every contestant routes
             // exactly as it did before either side existed.
             assertThat(new ContestSides(HOLDER, BlocAffiliation.NONE)
@@ -90,7 +90,7 @@ class ContestSidesTest {
         }
 
         @Test
-        void selectSideAlliesNobodyWhereNobodyHoldsTheSystem() {
+        void alliesNobodyWhereNobodyHoldsTheSystem() {
             // An unheld system stands nobody with anybody - there is no holder to be allied with -
             // so a heading naming one never draws over a system without one.
             assertThat(new ContestSides(null, buildGroupAffiliation())
@@ -99,7 +99,7 @@ class ContestSidesTest {
         }
 
         @Test
-        void selectSideKeepsEverybodyAsRivalsWhereNobodyHoldsTheSystem() {
+        void keepsEverybodyAsRivalsWhereNobodyHoldsTheSystem() {
 
             assertThat(new ContestSides(null, buildGroupAffiliation())
                     .selectSide(ContestSide.RIVAL, List.of(ALLY, RIVAL), BLOC_ID_ITSELF))

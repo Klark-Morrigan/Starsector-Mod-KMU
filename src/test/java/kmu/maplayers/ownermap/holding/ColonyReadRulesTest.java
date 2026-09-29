@@ -24,7 +24,7 @@ final class ColonyReadRulesTest {
     class ReadFromLunaSettings {
 
         @Test
-        void readFromLunaSettingsPairsTheLiveVisibilityRuleWithTheLiveHabitationRule() {
+        void pairsTheLiveVisibilityRuleWithTheLiveHabitationRule() {
 
             try (var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                     var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {

@@ -187,7 +187,7 @@ final class MapHoverPublisherTest {
     class PublishHoverFrom {
 
         @Test
-        void publishHoverFromPublishesTheHoveredCellWithItsCluster() {
+        void publishesTheHoveredCellWithItsCluster() {
 
             buildPublisher()
                 .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
@@ -201,7 +201,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void publishHoverFromPublishesIntoTheHolderItWasBuiltWith() {
+        void publishesIntoTheHolderItWasBuiltWith() {
             // Two sectors' machinery, each with a publisher of its own. A read taken over one
             // sector's cells has to reach that sector's highlight and hover box and leave the
             // other's where it stood - a publisher resolving the running sector's holder instead
@@ -224,7 +224,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void publishHoverFromReadsTheCursorThroughTheBindingItWasBuiltWith() {
+        void readsTheCursorThroughTheBindingItWasBuiltWith() {
             // Which reader binds is the caller's decision, so a publisher that resolved its own
             // would silently ignore the choice - and pick the wrong one under Fast Rendering.
             buildPublisher()
@@ -235,7 +235,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void publishHoverFromLetsTheLastPassOfAFrameOverwriteTheOnesBeforeIt() {
+        void letsTheLastPassOfAFrameOverwriteTheOnesBeforeIt() {
             // The offset's whole fix: several surfaces paint one frame, each binding a transform of
             // its own, and one of them can belong to a map another mod composited - drawn ahead of
             // the map screen, so it is the frame's first pass. Last write wins is what leaves the
@@ -251,7 +251,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void publishHoverFromParksTheHoverWhenTheCursorIsOverNoCell() {
+        void parksTheHoverWhenTheCursorIsOverNoCell() {
 
             stubCursorAt(POINT_OFF_CELL);
 
@@ -263,7 +263,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void publishHoverFromParksTheHoverWhenNothingWasPainted() {
+        void parksTheHoverWhenNothingWasPainted() {
             // No targets at all: a diagnostic overlay stood in for the production draw lists, or
             // the first build has yet to succeed. There are no cell shapes to test against.
             buildPublisher().publishHoverFrom(null, MAP_ZOOM);
@@ -273,7 +273,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void publishHoverFromParksTheHoverWhenTheCursorCannotBeResolved() {
+        void parksTheHoverWhenTheCursorCannotBeResolved() {
             // The cursor has left the window, the transform is not the map's, or it will not
             // invert - three failures KMLib reports as one, and all of them mean no hover here.
             // Which is which is MapCursorTest's to pin.
@@ -287,7 +287,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void publishHoverFromParksTheHoverOnAPassTheCursorCannotBeLocatedAgainst() {
+        void parksTheHoverOnAPassTheCursorCannotBeLocatedAgainst() {
             // A foreign map's pass. The cell shapes are there and the unproject would answer - the
             // point simply is not where the pointer is - so nothing further down would catch this.
             isCursorLocatable = false;
@@ -300,7 +300,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void publishHoverFromReadsNoCursorOnAPassItCannotBeLocatedAgainst() {
+        void readsNoCursorOnAPassItCannotBeLocatedAgainst() {
             // Skipped rather than resolved and discarded: the read is a matrix readback and an
             // unproject, and under Fast Rendering a hop to the render thread besides. A foreign map
             // redraws every frame, so paying for that would be a per-frame cost for nothing.
@@ -317,7 +317,7 @@ final class MapHoverPublisherTest {
     class AnnounceSettledArrival {
 
         @Test
-        void announceSettledArrivalTicksAsTheCursorReachesACell() {
+        void ticksAsTheCursorReachesACell() {
             // The whole moment: the map answers the cursor getting somewhere, and it answers with
             // what the host's look named rather than with a sample or a level of the pass's own.
             driveOneFrame(buildPublisher(), buildTargetsWithOneCell());
@@ -327,7 +327,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTicksOnceForAFrameWhosePassesDisagree() {
+        void ticksOnceForAFrameWhosePassesDisagree() {
             // The reason the moment is per frame while the read is per pass. Two surfaces paint one
             // frame through different transforms, so they resolve different cells; a latch stepped
             // by each of them would report the cursor crossing back and forth on every frame it
@@ -345,7 +345,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTicksForTheCellTheFramesLastPassSettledOn() {
+        void ticksForTheCellTheFramesLastPassSettledOn() {
             // And it is the surface that drew last the moment answers, not the one that read first:
             // the tick has to name the cell the highlight and the hover box name.
             var publisher = buildPublisher();
@@ -363,7 +363,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalStaysSilentBeforeAnyPassHasRead() {
+        void staysSilentBeforeAnyPassHasRead() {
             // The frame's preparation runs before its passes do, so the first one ever asks this of
             // a publisher that has resolved nothing. Nothing is owed and nothing is dereferenced.
             var publisher = buildPublisher();
@@ -375,7 +375,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalStaysSilentOnAPassTheCursorCannotBeLocatedAgainst() {
+        void staysSilentOnAPassTheCursorCannotBeLocatedAgainst() {
             // The half the player actually notices: a tick sounded for reaching a cell nobody
             // pointed at, on every frame a foreign map redraws.
             isCursorLocatable = false;
@@ -387,7 +387,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTicksForTheCellHeldWhileAForeignPassInterrupted() {
+        void ticksForTheCellHeldWhileAForeignPassInterrupted() {
             // A foreign map redrawing between two of the real map's frames must not read as the
             // cursor having left the cell it is resting on, or the tick would sound on every one of
             // those frames - the fault that made this audible in the first place.
@@ -405,7 +405,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTicksOnceWhileTheCursorRestsOnACell() {
+        void ticksOnceWhileTheCursorRestsOnACell() {
             // The pass runs every frame and the cursor is usually still, so a tick per frame is what
             // an unlatched read would give - a cell held under the pointer buzzing until it moves.
             var publisher = buildPublisher();
@@ -418,7 +418,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTicksAgainForACellReachedFromItsNeighbour() {
+        void ticksAgainForACellReachedFromItsNeighbour() {
             // Crossing straight from one cell to the next never leaves the map, so an arrival
             // detected only from off a cell would tick once for a whole sweep across the map. Two
             // cells of one cluster, deliberately: the tick answers the cell the hover box names and
@@ -434,7 +434,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTicksAgainWhenTheCursorReturnsToTheCellItLeft() {
+        void ticksAgainWhenTheCursorReturnsToTheCellItLeft() {
             // Parking has to forget where the cursor was, or a cell left for empty space and come
             // back to is silent - the one return trip a player makes constantly, the map being mostly
             // the space between cells.
@@ -452,7 +452,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTicksOnceAcrossAFrameThatCannotResolveTheCursor() {
+        void ticksOnceAcrossAFrameThatCannotResolveTheCursor() {
             // A read that failed says nothing about where the cursor is, so the cell it was resting
             // on is still the cell it is resting on. Treated as a departure instead, the frame after
             // reads as a fresh arrival - and a frame can be painted by more than one pass, so a
@@ -472,7 +472,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTicksForANewCellReachedAcrossAnUnresolvableFrame() {
+        void ticksForANewCellReachedAcrossAnUnresolvableFrame() {
             // The other side of keeping the last cell: holding it must not go deaf to the cursor
             // having genuinely moved while the read was down. A latch kept for the wrong reason
             // would swallow the arrival on the cell the cursor actually crossed to.
@@ -490,7 +490,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTicksOnceAcrossAFrameThatPaintsNothing() {
+        void ticksOnceAcrossAFrameThatPaintsNothing() {
             // Absent draw lists are a missing input on the same terms as an unreadable cursor: there
             // are no cell shapes to hit-test, so the frame answers nothing about where the cursor is
             // and the cell it was last seen on stands.
@@ -505,7 +505,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalReachesACellSilentlyWhenTheLookNamesNoCue() {
+        void reachesACellSilentlyWhenTheLookNamesNoCue() {
             // A player who has pulled the tick's slider to the bottom, which the look states by
             // naming no cue at all. Nothing reaches the player rather than a sound played at nothing.
             cellArrivalCue = null;
@@ -517,7 +517,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTicksAtWhateverTheLookNamesWhenTheMomentComes() {
+        void ticksAtWhateverTheLookNamesWhenTheMomentComes() {
             // The cue is composed per arrival rather than held from construction, so a level changed
             // on the settings screen reaches a publisher built when the map first drew - which is the
             // only publisher there is, one being kept for the session.
@@ -537,7 +537,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTracesTheCellItAnnouncedAndTheReadingBehindIt() {
+        void tracesTheCellItAnnouncedAndTheReadingBehindIt() {
             // The trace is the only caller that words a reading, so this is the one case that runs
             // the composed line at all - which is what makes the clip read inside it reachable from
             // a test, and the reason it is mocked out here rather than left to a GL-less JVM.
@@ -567,7 +567,7 @@ final class MapHoverPublisherTest {
         }
 
         @Test
-        void announceSettledArrivalTracesNothingWhileTheLogIsAboveDebug() {
+        void tracesNothingWhileTheLogIsAboveDebug() {
             // What a player who never turns the trace on pays: no line, and no clip read either. The
             // read is the expensive half - a stalling GL call under Fast Rendering, where the gate in
             // the seam is all that keeps it survivable - so reaching it and discarding the string

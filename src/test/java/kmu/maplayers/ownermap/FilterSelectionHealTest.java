@@ -67,7 +67,7 @@ final class FilterSelectionHealTest {
     class HealStaleSelectionAgainstActiveView {
 
         @Test
-        void healStaleSelectionAgainstActiveViewDoesNothingWhenNoViewIsSelected() {
+        void doesNothingWhenNoViewIsSelected() {
             try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 when(viewRegistryMock.getSelectedView(any()))
@@ -84,7 +84,7 @@ final class FilterSelectionHealTest {
         }
 
         @Test
-        void healStaleSelectionAgainstActiveViewHealsNothingWithoutASector() {
+        void healsNothingWithoutASector() {
             // Against no sector every view offers no blocs, so judging a stored spotlight there would
             // clear every one of them as lapsed. Nothing is judged instead.
             try (var selectionMock = mockStatic(FilterSelection.class)) {
@@ -97,7 +97,7 @@ final class FilterSelectionHealTest {
         }
 
         @Test
-        void healStaleSelectionAgainstActiveViewHealsWithTheActiveViewsSelectableBlocs() {
+        void healsWithTheActiveViewsSelectableBlocs() {
             try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 when(viewRegistryMock.getSelectedView(any()))
@@ -120,7 +120,7 @@ final class FilterSelectionHealTest {
         }
 
         @Test
-        void healStaleSelectionAgainstActiveViewHealsEveryScreensSlot() {
+        void healsEveryScreensSlot() {
             // A bloc that lapsed lapsed for both panels, so both are judged in the one pass. Healing
             // only the screen being looked at would leave the other spotlighting a footprint that is
             // no longer on the map, and no way to unpick it from the panel the player is on.
@@ -154,7 +154,7 @@ final class FilterSelectionHealTest {
         }
 
         @Test
-        void healStaleSelectionAgainstActiveViewJudgesEachScreenUnderItsOwnView() {
+        void judgesEachScreenUnderItsOwnView() {
             // The view is that panel's pick as much as the spotlight is, so each slot is judged under
             // the view its own panel is set to. Judged under the other panel's view instead, a
             // perfectly live faction spotlight would be cleared for not appearing in a group list.
@@ -180,7 +180,7 @@ final class FilterSelectionHealTest {
         }
 
         @Test
-        void healStaleSelectionAgainstActiveViewSkipsAScreenWithNoViewSelectedAndHealsTheRest() {
+        void skipsAScreenWithNoViewSelectedAndHealsTheRest() {
             // A panel with its map off has no grouping to judge its slot under, so its stored spotlight
             // waits for a view - while the panel beside it, which has one, is healed in the same pass.
             try (var selectionMock = mockStatic(FilterSelection.class)) {
@@ -199,7 +199,7 @@ final class FilterSelectionHealTest {
         }
 
         @Test
-        void healStaleSelectionAgainstActiveViewReadsNoBlocsUntilOneIsThereToJudge() {
+        void readsNoBlocsUntilOneIsThereToJudge() {
             // The cost contract, which matters because every settings change arrives here and
             // most saves hold no spotlight: resolving the view's blocs is a whole grouped holder
             // pass over the sector, so it must not run before the heal has found a stored ID worth
@@ -231,7 +231,7 @@ final class FilterSelectionHealTest {
     class HealStaleSelectionAgainstLiveSector {
 
         @Test
-        void healStaleSelectionAgainstLiveSectorJudgesAgainstTheRunningSector() {
+        void judgesAgainstTheRunningSector() {
             // A sidebar click is handed no sector, so the running one is resolved at the entry and
             // is the one the view's blocs are read off.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
@@ -259,7 +259,7 @@ final class FilterSelectionHealTest {
     class InstallHealOnSettingsChange {
 
         @Test
-        void installHealOnSettingsChangeRegistersTheHealAsTheSettingsChangeReaction() {
+        void registersTheHealAsTheSettingsChangeReaction() {
             // A settings change is what takes a bloc off the picker mid-game (a visibility override
             // switched off can leave a faction with no visible market), so what is pinned is that the
             // runnable handed to the settings seam is the heal itself and not some other reaction.
@@ -286,7 +286,7 @@ final class FilterSelectionHealTest {
         }
 
         @Test
-        void installHealOnSettingsChangeResolvesTheSectorWhenTheChangeFires() {
+        void resolvesTheSectorWhenTheChangeFires() {
             // The listener outlives any one save, so the sector it judges against is the one running
             // when a change fires rather than whichever was up when it was installed.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();

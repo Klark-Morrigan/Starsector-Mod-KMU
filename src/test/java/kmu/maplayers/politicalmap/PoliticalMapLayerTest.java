@@ -198,7 +198,7 @@ final class PoliticalMapLayerTest {
     class ResolveStanding {
 
         @Test
-        void resolveStandingYieldsThePairThatWiresThePoliticalMapToASector() {
+        void yieldsThePairThatWiresThePoliticalMapToASector() {
             // The counterpart to No Layer's null: this tab is the one with sector wiring - a save
             // heal, four listeners and a poll - so taking its tab off the bar has something to save.
             // One pair for the tab, since the pair holds nothing and every sector arrives as an
@@ -213,7 +213,7 @@ final class PoliticalMapLayerTest {
     class ResolveRenderer {
 
         @Test
-        void resolveRendererYieldsTheOneRendererThatMachineryKeeps() {
+        void yieldsTheOneRendererThatMachineryKeeps() {
             // The counterpart to No Layer's null: this tab is the one that draws, and it hands the map
             // surface one view-neutral renderer rather than branching on the view roster. Twice for
             // one sector is once, since the surface resolves it every frame and the hover box again
@@ -224,7 +224,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void resolveRendererYieldsARendererPerMachinerySoOneSectorsDrawingIsNotAnothers() {
+        void yieldsARendererPerMachinerySoOneSectorsDrawingIsNotAnothers() {
             // This tab is registered once for the process while everything behind its renderer - the
             // cut cells, the territories, the fitted names - is one sector's, so the same tab has to
             // answer for two sectors with two renderers.
@@ -233,7 +233,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void resolveRendererLeavesNothingBehindOnTheMachineryItWasReleasedWith() {
+        void leavesNothingBehindOnTheMachineryItWasReleasedWith() {
             // The renderer goes with the sector's machinery, so the sector installed on after it
             // draws through one of its own rather than through the previous sector's cached cells.
             var renderer = layer.resolveRenderer(machinery);
@@ -249,7 +249,7 @@ final class PoliticalMapLayerTest {
     class GetBodyControls {
 
         @Test
-        void getBodyControlsAppendsTheSelectedViewsControlsAfterTheSelector() {
+        void appendsTheSelectedViewsControlsAfterTheSelector() {
 
             when(viewWithControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of(VIEW_MARKER));
@@ -283,7 +283,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void getBodyControlsPlacesTheSpotlightPickerBetweenTheSelectorAndTheViewControls() {
+        void placesTheSpotlightPickerBetweenTheSelectorAndTheViewControls() {
 
             when(viewWithControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of(VIEW_MARKER));
@@ -324,7 +324,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void getBodyControlsOmitsViewControlsWhenTheSelectedViewAddsNone() {
+        void omitsViewControlsWhenTheSelectedViewAddsNone() {
 
             // The faction view adds no controls of its own, so the body is only the shared rows and
             // the selector - nothing trails the selector.
@@ -359,7 +359,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void getBodyControlsAppendsNoViewControlsWhenTheMapIsOff() {
+        void appendsNoViewControlsWhenTheMapIsOff() {
             // The off sentinel is stored for the asking panel, so no view is selected there; even a view
             // that has controls contributes none, since the tab is showing but that panel's map is dark.
             registerDefaultView(viewWithControlsMock);
@@ -392,7 +392,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void getBodyControlsPairsTheFilterRecedeWithThePickersSortSelector() {
+        void pairsTheFilterRecedeWithThePickersSortSelector() {
             // What sits beside the sort selector is this layer's decision, not the framework
             // picker's: the political map fills that half with the filter recede - a caption and the
             // Mute and Desaturate checkboxes - so the "rest of the sector" knobs read beside the
@@ -437,7 +437,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void getBodyControlsScopesThePickerToTheSelectedViewsId() {
+        void scopesThePickerToTheSelectedViewsId() {
             // The scope this layer hands over is what makes each view remember its own spotlight and
             // its own sort: the stores partition by whatever ID they are given, so a layer passing a
             // constant would still read and write consistently and every store-level test would stay
@@ -473,7 +473,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void getBodyControlsReadsThePickerOffTheRunningSectorsMachinery() {
+        void readsThePickerOffTheRunningSectorsMachinery() {
             // The body build is handed no sector - a vanilla screen names none - so it resolves the
             // running one's machinery itself, and the list it reads is that sector's. Every case
             // above resolves no sector at all, under which a build reaching any other machinery
@@ -487,7 +487,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void getBodyControlsHandsEveryWriterTheRunningSectorsOwnRefreshBoard() {
+        void handsEveryWriterTheRunningSectorsOwnRefreshBoard() {
             // The controls this body builds all write a sidebar-only preference, which repaints by
             // raising a signal rather than by moving settingsRevision - so each is handed the board
             // of the machinery this build resolved. Handed any other, a flip would repaint a map the
@@ -521,7 +521,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void getBodyControlsHandsEveryPieceTheScreenWhosePanelAskedForTheBody() {
+        void handsEveryPieceTheScreenWhosePanelAskedForTheBody() {
             // The screen travels the whole build for the same reason the board does: a control writes the
             // preference of the panel it was placed on, so a piece left to find a screen for itself would
             // file its click under whichever panel happened to be up when it was pressed. Every seam the
@@ -561,7 +561,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void getBodyControlsFilesThePickersPicksUnderThisModsOwnStoreNamespace() {
+        void filesThePickersPicksUnderThisModsOwnStoreNamespace() {
             // The shared stores hold no mod's name, so which mod's spotlight, sort and column count a
             // picker reads and writes is decided here. A slot built under any other namespace reads
             // back nothing every existing save holds, which no store's own suite can catch.
@@ -580,7 +580,7 @@ final class PoliticalMapLayerTest {
     class ResolveTabLabelText {
 
         @Test
-        void resolveTabLabelTextLettersTheTabFromThePoliticalMapsOwnKey() {
+        void lettersTheTabFromThePoliticalMapsOwnKey() {
 
             try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
@@ -598,7 +598,7 @@ final class PoliticalMapLayerTest {
     class ResolveShortcutKeycode {
 
         @Test
-        void resolveShortcutKeycodeReadsThePoliticalMapsOwnRebindingField() {
+        void readsThePoliticalMapsOwnRebindingField() {
             // Which row the rebind lands in is this tab's own fact now, so a wrong ID here silently
             // ignores the player's rebind while every framework test stays green.
             try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
@@ -613,7 +613,7 @@ final class PoliticalMapLayerTest {
         }
 
         @Test
-        void resolveShortcutKeycodeLeavesTheTabUnboundWhenTheSettingsRowAnswersNoKey() {
+        void leavesTheTabUnboundWhenTheSettingsRowAnswersNoKey() {
             // No key of this tab's own stands behind the row: a settings read answering nothing leaves
             // the tab unbound, which the bar draws no hint for and matches no press against. A fallback
             // keycode here would be a second answer to what the shipped table already decides, and would

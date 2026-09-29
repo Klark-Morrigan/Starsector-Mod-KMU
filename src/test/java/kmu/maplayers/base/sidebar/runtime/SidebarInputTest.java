@@ -53,7 +53,7 @@ final class SidebarInputTest {
     class GetListenerInputPriority {
 
         @Test
-        void getListenerInputPriorityRunsAheadOfTheCoreScreen() {
+        void runsAheadOfTheCoreScreen() {
             assertThat(input.getListenerInputPriority())
                 .isEqualTo(EXPECTED_PRIORITY);
         }
@@ -63,7 +63,7 @@ final class SidebarInputTest {
     class ProcessCampaignInputPreCore {
 
         @Test
-        void processCampaignInputPreCoreRoutesAKeyPressWhileThePanelPresentsItsTabs() {
+        void routesAKeyPressWhileThePanelPresentsItsTabs() {
 
             when(controllerMock.isPresentingTabsOf(placementMock))
                 .thenReturn(true);
@@ -77,7 +77,7 @@ final class SidebarInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreLeavesAKeyPressAloneWhileThePanelPresentsNoTabs() {
+        void leavesAKeyPressAloneWhileThePanelPresentsNoTabs() {
             // Docked, docking, or undocking, the panel is not offering its tabs, so its hotkeys stay inert
             // and the key falls through unconsumed to whatever else claims it.
             when(controllerMock.isPresentingTabsOf(placementMock))
@@ -94,7 +94,7 @@ final class SidebarInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreAsksThePanelAboutThePlacementRatherThanItsFold() {
+        void asksThePanelAboutThePlacementRatherThanItsFold() {
             // The two answers part on a tab with no body: the fold left standing from another tab says the
             // panel is docked, while the placement drawn says its row is there in full. Reading the fold
             // would leave that tab's keys dead for the rest of the session, with no handle to expand a body
@@ -113,7 +113,7 @@ final class SidebarInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreRoutesAKeyPressWithNothingDrawnToHit() {
+        void routesAKeyPressWithNothingDrawnToHit() {
             // A key press needs no placement: jumping to a layer does not depend on where the box landed,
             // so a frame that drew nothing still answers its hotkeys - and with no placement to ask about,
             // the fold is the only thing left to gate on.
@@ -131,7 +131,7 @@ final class SidebarInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreRoutesAPointerEventToTheController() {
+        void routesAPointerEventToTheController() {
 
             var eventMock = mockPointerEvent();
 
@@ -142,7 +142,7 @@ final class SidebarInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreHitTestsTheDrawnPanelRatherThanLayingOutItsOwn() {
+        void hitTestsTheDrawnPanelRatherThanLayingOutItsOwn() {
             // A click has to answer to the box the player is looking at. Laying one out here would hit-test
             // a panel resolved after the draw, which a settings change landing between the two passes would
             // have moved out from under the pointer.
@@ -153,7 +153,7 @@ final class SidebarInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreIgnoresAPointerEventWithNothingDrawnToHit() {
+        void ignoresAPointerEventWithNothingDrawnToHit() {
             // No placement means no box on screen this frame, so there is nothing to hit-test against.
             when(hostMock.getDrawnPlacement())
                 .thenReturn(null);
@@ -167,7 +167,7 @@ final class SidebarInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreSkipsAnEventAlreadyClaimedUpstream() {
+        void skipsAnEventAlreadyClaimedUpstream() {
 
             var eventMock = mock(InputEventAPI.class);
 
@@ -185,7 +185,7 @@ final class SidebarInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreCancelsADanglingDragWhileTheSidebarIsOff() {
+        void cancelsADanglingDragWhileTheSidebarIsOff() {
             // Off the gate the sidebar's keys and clicks must be inert, and a grab left over from the
             // overlay closing mid-drag has to end here rather than hijacking the next session.
             when(hostMock.isOverlayShowing())
@@ -211,7 +211,7 @@ final class SidebarInputTest {
         }
 
         @Test
-        void processCampaignInputPreCoreRoutesEveryUnclaimedEventInTheFrame() {
+        void routesEveryUnclaimedEventInTheFrame() {
             // Events arrive as a frame's worth at once, so one claimed event must not end the pass.
             when(controllerMock.isPresentingTabsOf(placementMock))
                 .thenReturn(true);
@@ -250,7 +250,7 @@ final class SidebarInputTest {
     class ProcessCampaignInputPreFleetControl {
 
         @Test
-        void processCampaignInputPreFleetControlLeavesEveryEventUntouched() {
+        void leavesEveryEventUntouched() {
 
             input.processCampaignInputPreFleetControl(List.of(mockKeyPress(), mockPointerEvent()));
             verifyNoInteractions(hostMock);
@@ -261,7 +261,7 @@ final class SidebarInputTest {
     class ProcessCampaignInputPostCore {
 
         @Test
-        void processCampaignInputPostCoreLeavesEveryEventUntouched() {
+        void leavesEveryEventUntouched() {
             // All of the sidebar's input is claimed pre-core, where consuming still stops the screen
             // underneath from seeing it.
             input.processCampaignInputPostCore(List.of(mockKeyPress(), mockPointerEvent()));

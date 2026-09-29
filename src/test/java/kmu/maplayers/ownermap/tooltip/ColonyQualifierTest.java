@@ -73,7 +73,7 @@ public final class ColonyQualifierTest {
     class QualifyColony {
 
         @Test
-        void qualifyColonyCallsNothingOutBesideAnOrdinaryColonyInPlainSight() {
+        void callsNothingOutBesideAnOrdinaryColonyInPlainSight() {
             // The common case, and the one the whole vocabulary has to leave alone: a listed,
             // open, found colony nobody has any finding about reads on its name.
             assertThat(qualify("Jangala", new ColonyQualifierFacts(
@@ -85,19 +85,19 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyCallsADerelictAbandoned() {
+        void callsADerelictAbandoned() {
             assertThat(qualify("Sentinel Gantries", buildUnlistedFacts(ColonyKind.SPACE_DERELICT)))
                 .isEqualTo("abandoned");
         }
 
         @Test
-        void qualifyColonyCallsACollapsedColonyDecivilised() {
+        void callsACollapsedColonyDecivilised() {
             assertThat(qualify("Tibicena", buildUnlistedFacts(ColonyKind.UNGOVERNED_COLONY)))
                 .isEqualTo("decivilised");
         }
 
         @Test
-        void qualifyColonyCallsAKeptStationNothingAtAll() {
+        void callsAKeptStationNothingAtAll() {
             // An outpost is a place somebody runs, whatever shape of market it wears, so the
             // vocabulary has nothing to say about it.
             assertThat(qualify("Tigra City", new ColonyQualifierFacts(
@@ -109,7 +109,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyCallsOutAnUndiscoveredColony() {
+        void callsOutAnUndiscoveredColony() {
             assertThat(qualify("Kanta's Den", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     NO_LEADING_FINDING,
@@ -119,7 +119,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyCallsAConcealedColonyHidden() {
+        void callsAConcealedColonyHidden() {
             assertThat(qualify("Kanta's Den", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     NO_LEADING_FINDING,
@@ -129,7 +129,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyCallsNoConcealmentOutOnAColonyTheSectorOpenlyPointsAt() {
+        void callsNoConcealmentOutOnAColonyTheSectorOpenlyPointsAt() {
             // Galatia Academy's shape: concealed, off the economy's listing, and a landmark the
             // tutorial sends the player to. It falls through to the fallback, which is the
             // separation the word was wanted for - the case below is the identical market with
@@ -143,7 +143,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyCallsAConcealedNeighbourOfALandmarkHidden() {
+        void callsAConcealedNeighbourOfALandmarkHidden() {
             // The market beside it, differing in nothing a colony read can see: nothing vouches for
             // this one, so the word stands.
             assertThat(qualify("Daybreak", new ColonyQualifierFacts(
@@ -155,7 +155,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyCallsNothingOutOnALandmarkTheEconomyDoesList() {
+        void callsNothingOutOnALandmarkTheEconomyDoesList() {
             // The excusing is of one word and no more. A listed colony has no fallback beneath it,
             // so a landmark the economy holds reads on its name alone rather than picking up
             // whatever the suppression uncovered.
@@ -168,7 +168,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyCallsOutAnUndiscoveredLandmark() {
+        void callsOutAnUndiscoveredLandmark() {
             // The word above is untouched by the excusing: it answers whether the player has found
             // the place, which no amount of the sector pointing at it settles.
             assertThat(qualify("Galatia Academy", new ColonyQualifierFacts(
@@ -180,7 +180,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyCallsAColonyTheEconomyDoesNotHoldUnlisted() {
+        void callsAColonyTheEconomyDoesNotHoldUnlisted() {
             // A colony hung on an entity without being registered, and concealing nothing - the
             // shape a mod builds when it wants a place named on the map and weighed by no mechanic.
             assertThat(qualify("Kirov Reserve", new ColonyQualifierFacts(
@@ -192,7 +192,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyStatesTheLayersLeadingFindingAheadOfEverythingElse() {
+        void statesTheLayersLeadingFindingAheadOfEverythingElse() {
             // The layer's own finding is about what the place is to its mechanic, so it reads before
             // the vocabulary's words about how the place is concealed.
             assertThat(qualify("Chicomoztoc", new ColonyQualifierFacts(
@@ -204,7 +204,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyStatesTheLeadingFindingAloneWhereNothingElseHolds() {
+        void statesTheLeadingFindingAloneWhereNothingElseHolds() {
             assertThat(qualify("Chicomoztoc", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     LEADING_FINDING,
@@ -214,7 +214,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyLetsTheLeadingFindingSuppressTheUnlistedFallback() {
+        void letsTheLeadingFindingSuppressTheUnlistedFallback() {
             // The fallback speaks only where nothing above it held, and a layer's finding is
             // something: an off-economy colony it names reads as that, not as unlisted too.
             assertThat(qualify("Chicomoztoc", new ColonyQualifierFacts(
@@ -226,7 +226,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyRunsAKindOnIntoHowTheColonyIsOutOfSight() {
+        void runsAKindOnIntoHowTheColonyIsOutOfSight() {
             // What a place is outranks how it is concealed, so the kind leads. Reachable under the
             // reveal, a derelict being exactly what a bare fog would leak.
             assertThat(qualify("Sentinel Gantries", new ColonyQualifierFacts(
@@ -238,7 +238,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyRunsAKindOnIntoAConcealmentAModHungOnIt() {
+        void runsAKindOnIntoAConcealmentAModHungOnIt() {
             // Vanilla conceals neither kind; a mod may, and the resolver has to be right for it.
             assertThat(qualify("Tibicena", new ColonyQualifierFacts(
                     ColonyKind.UNGOVERNED_COLONY,
@@ -249,7 +249,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyDisplacesHiddenWithUndiscoveredWhereBothHold() {
+        void displacesHiddenWithUndiscoveredWhereBothHold() {
             // Not a pair: a colony the player has not found is concealed from them by that alone,
             // and the market's own flag adds nothing a reader could act on.
             assertThat(qualify("Kanta's Den", new ColonyQualifierFacts(
@@ -261,7 +261,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonySuppressesUnlistedBehindAKind() {
+        void suppressesUnlistedBehindAKind() {
             // Both kinds that speak are off-economy by construction, so the fallback would repeat
             // itself on every derelict and every decivilised world.
             assertThat(qualify("Sentinel Gantries", buildUnlistedFacts(ColonyKind.SPACE_DERELICT)))
@@ -269,7 +269,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonySuppressesUnlistedBehindUndiscovered() {
+        void suppressesUnlistedBehindUndiscovered() {
             assertThat(qualify("Daybreak", new ColonyQualifierFacts(
                     ColonyKind.COLONY,
                     NO_LEADING_FINDING,
@@ -279,7 +279,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonySuppressesUnlistedBehindHidden() {
+        void suppressesUnlistedBehindHidden() {
             // Daybreak's own shape: concealed, off-economy and in plain sight of anyone who has
             // found it, so the fallback has a stronger word standing above it.
             assertThat(qualify("Daybreak", new ColonyQualifierFacts(
@@ -291,7 +291,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyGildsAWordTheColonyIsAlreadyCalled() {
+        void gildsAWordTheColonyIsAlreadyCalled() {
             // A station called Abandoned Station is the shape the rule exists for: the word is
             // already on the line, so it is stated where it stands rather than repeated at the end -
             // which would read as a fault in the box - and the end of the line says nothing.
@@ -304,7 +304,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyCallsTheWordOutAtTheEndOfALineTheNameDoesNotSay() {
+        void callsTheWordOutAtTheEndOfALineTheNameDoesNotSay() {
             // The same derelict under a name that says nothing about what it is, which is the case
             // the gilding leaves untouched: the word has nowhere in the name to be stated, so it
             // closes the line as it always did.
@@ -317,7 +317,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyKeepsUnlistedSuppressedBehindAWordItGilded() {
+        void keepsUnlistedSuppressedBehindAWordItGilded() {
             // A gilded word has still qualified. The fallback is suppressed by the condition holding
             // above it, not by where the word ends up being stated - so a derelict named for what it
             // is never falls through to the weaker statement.
@@ -326,7 +326,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyStatesTheRestOfTheVocabularyBesideAGildedName() {
+        void statesTheRestOfTheVocabularyBesideAGildedName() {
             // Two findings about two different things: what the place is, said in its own name, and
             // that the player has not found it, said after the name. Moving the kind's word into the
             // name says nothing about how the colony is out of sight.
@@ -343,7 +343,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyGildsAWordAHyphenPartsFromTheRestOfTheName() {
+        void gildsAWordAHyphenPartsFromTheRestOfTheName() {
             // A hyphen parts one word from another as plainly as a space does, and a reader would not
             // forgive the box for missing it.
             assertThat(qualifyLine("Abandoned-Station", buildUnlistedFacts(ColonyKind.SPACE_DERELICT))
@@ -352,7 +352,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyGildsNothingInANameThatMerelyOpensWithTheWord() {
+        void gildsNothingInANameThatMerelyOpensWithTheWord() {
             // The whole-word rule, and the case that makes it worth having: the consequence of a bare
             // containment would be gold letters across the first nine characters of a name that does not
             // say the word at all, so the word closes the line instead.
@@ -365,7 +365,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyGildsTheNamesOwnSpellingOfTheWord() {
+        void gildsTheNamesOwnSpellingOfTheWord() {
             // The vocabulary is lower case and a name is not. What is picked out is the stretch of the
             // name that matched, so nothing rewrites a name to match a lookup word and the box cannot
             // quietly disagree with the map about what a place is called.
@@ -378,7 +378,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyGildsOneStretchOfANameThatSaysTheWordTwice() {
+        void gildsOneStretchOfANameThatSaysTheWordTwice() {
             // At most one gilded stretch per line, and it is the first the reader meets. Two of them
             // would cost the line model a list of parts where one part does, for a shape nothing has
             // ever needed.
@@ -390,7 +390,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyStatesASecondWordTheNameSaysAtTheEndOfTheLineAnyway() {
+        void statesASecondWordTheNameSaysAtTheEndOfTheLineAnyway() {
             // The other half of one word moving: the rest stay put. A name saying two of the
             // vocabulary gilds one stretch and reads the other where it always was, rather than
             // growing a second gilded stretch or quietly dropping the word for being in the name.
@@ -407,7 +407,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyGildsTheWordTheNameSaysFirstRatherThanTheOneResolvedFirst() {
+        void gildsTheWordTheNameSaysFirstRatherThanTheOneResolvedFirst() {
             // The tie-break, and the one case that parts the two orders: the kind is resolved ahead
             // of the concealment, but the reader meets the name left to right - so the word standing
             // first in the name is the one picked out, and the earlier-resolved one closes the line.
@@ -424,14 +424,14 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyGildsAWholeNameThatIsNothingButTheWord() {
+        void gildsAWholeNameThatIsNothingButTheWord() {
             assertThat(qualifyLine("Abandoned", buildUnlistedFacts(ColonyKind.SPACE_DERELICT))
                     .labelFinding())
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
         }
 
         @Test
-        void qualifyColonyLeavesALineAloneWhereNothingIsFound() {
+        void leavesALineAloneWhereNothingIsFound() {
             // The same line back rather than a copy carrying an empty status, which the block
             // beneath would have to lay out a separator for.
             var line = buildLine("Jangala");
@@ -445,7 +445,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyLeavesALineAloneWhereNothingWasReadAboutTheColony() {
+        void leavesALineAloneWhereNothingWasReadAboutTheColony() {
             // A box holding a row it has no reading behind states nothing about it rather than
             // failing, the row being one it is already committed to drawing.
             var line = buildLine("Jangala");
@@ -455,7 +455,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyStatesEveryWordAfterANameTheLineWithholds() {
+        void statesEveryWordAfterANameTheLineWithholds() {
             // A withheld name says none of the vocabulary: the blocks drawn in its place stand for
             // words without spelling them, so there is nothing to match and nothing to gild. The words
             // close the line instead, exactly as they do for a name that carries none of them.
@@ -474,7 +474,7 @@ public final class ColonyQualifierTest {
         }
 
         @Test
-        void qualifyColonyReadsAnUnstatedKindAsNoGroundsForAFinding() {
+        void readsAnUnstatedKindAsNoGroundsForAFinding() {
             assertThat(qualify("Jangala", new ColonyQualifierFacts(
                     null,
                     NO_LEADING_FINDING,

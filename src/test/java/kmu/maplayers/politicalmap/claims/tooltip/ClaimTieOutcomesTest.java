@@ -77,7 +77,7 @@ final class ClaimTieOutcomesTest {
     class ResolveOutcome {
 
         @Test
-        void resolveOutcomeMarksTheClaimantsStandingAsHavingWonATieForTheSystem() {
+        void marksTheClaimantsStandingAsHavingWonATieForTheSystem() {
             // The comparison that settles the system: two factions' strongest markets on one score are
             // parted by the listing alone, so the claimant reads as having won it and the rival as
             // having lost - which is the only place either could learn why the system went that way.
@@ -92,7 +92,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeLeavesAClaimantThatOutScoredEveryRivalUnmarked() {
+        void leavesAClaimantThatOutScoredEveryRivalUnmarked() {
             // Winning outright is not winning a tie. The listing decided nothing, and a mark would
             // offer a tie-break to look for that never took place.
             var claimant = buildStanding(HEGEMONY, IS_TERRITORIAL, FIRST_LISTED, TIED_SCORE);
@@ -106,7 +106,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeLeavesATieWithANonTerritorialFactionUnmarked() {
+        void leavesATieWithANonTerritorialFactionUnmarked() {
             // Such a faction's score can never take the lead, so the claimant did not out-list it -
             // there was no rival in that tie to out-list. Marking either would invent a contest the
             // mechanic skipped.
@@ -121,7 +121,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeJudgesNoClaimantTieOverASystemHeldByDecree() {
+        void judgesNoClaimantTieOverASystemHeldByDecree() {
             // The decree settled the system before a market was weighed, so the listing settled
             // nothing between the two equal standings beneath it.
             var claimant = buildStanding(HEGEMONY, IS_TERRITORIAL, FIRST_LISTED, TIED_SCORE);
@@ -135,7 +135,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeJudgesNoClaimantTieOverASystemNobodyTook() {
+        void judgesNoClaimantTieOverASystemNobodyTook() {
             // No claimant means no contest was settled, so no standing won or lost one - a populated
             // system whose every faction is barred from claiming reaches exactly this.
             var outsider = buildStanding(PIRATES, !IS_TERRITORIAL, FIRST_LISTED, TIED_SCORE);
@@ -146,7 +146,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeMarksTheMarketThatWonTheRightToStandForItsFaction() {
+        void marksTheMarketThatWonTheRightToStandForItsFaction() {
             // The second comparison the listing settles, and one that runs whether or not the faction
             // went on to take the system: two of its own markets on one score are parted by the order
             // the economy reached them in.
@@ -162,7 +162,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeLeavesAMarketBelowItsFactionsBestUnmarked() {
+        void leavesAMarketBelowItsFactionsBestUnmarked() {
             // The standing selection is the one outcome the order decided here, so a market that never
             // came near it settled nothing by its place - and two lesser markets tied below the top
             // won and lost nothing between them.
@@ -184,7 +184,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeLeavesAHiddenMarketUnmarkedHoweverItScored() {
+        void leavesAHiddenMarketUnmarkedHoweverItScored() {
             // The walk skips a hidden market before scoring, so it competes in neither comparison -
             // and a standing tied only with one won nothing, there having been no contest to win.
             var standingMarket = buildMarket(FIRST_LISTED, TIED_SCORE, IS_NOT_HIDDEN);
@@ -199,7 +199,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeLeavesAMarketTheEconomyDoesNotListUnmarkedHoweverItScored() {
+        void leavesAMarketTheEconomyDoesNotListUnmarkedHoweverItScored() {
             // The walk covers the economy's markets, so one left off that listing is never reached at
             // all - a different reason from concealment, and the same answer: it took part in neither
             // comparison, and a standing tied only with it won nothing.
@@ -215,7 +215,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeMarksATieWithAnUndiscoveredSibling() {
+        void marksATieWithAnUndiscoveredSibling() {
             // Both sides of this tie are markets the contest weighed, so both take a line whatever the
             // player has found - and the ordering that settled them is on screen for the mark to be
             // about. Which of the two the fog reached is nothing the ordering turns on.
@@ -235,7 +235,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeMarksATieWithARivalStandingOnAnUndiscoveredColony() {
+        void marksATieWithARivalStandingOnAnUndiscoveredColony() {
             // The cross-faction half of the same reading. A standing rests on a market the contest
             // weighed by definition, so neither side of the comparison that settled the system is a
             // colony the list leaves out, and both places say what they decided.
@@ -254,7 +254,7 @@ final class ClaimTieOutcomesTest {
         }
 
         @Test
-        void resolveOutcomeStatesTheClaimantContestAheadOfTheStandingSelection() {
+        void statesTheClaimantContestAheadOfTheStandingSelection() {
             // A market can draw both comparisons at once. Having lost the system is the larger fact,
             // so it is what the place says: being its faction's own best is a smaller thing than
             // having been beaten to the system over it.

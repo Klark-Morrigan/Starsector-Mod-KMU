@@ -36,7 +36,7 @@ final class ShownMapSurfaceTest {
     class ResolveShownMapSurface {
 
         @Test
-        void resolveShownMapSurfaceAnswersTheMapTabWhileOneIsUp() {
+        void answersTheMapTabWhileOneIsUp() {
 
             var mapTabFake = new CoreUiComponentFake();
 
@@ -46,7 +46,7 @@ final class ShownMapSurfaceTest {
         }
 
         @Test
-        void resolveShownMapSurfaceAnswersTheMapTabEvenWithADockedMapOnScreen() {
+        void answersTheMapTabEvenWithADockedMapOnScreen() {
             // The frame is the vanilla host's, and it is settled before the docked panel is read at
             // all - a panel a mod keeps parked or slides about goes on existing while the player has
             // the map open, and it is not the surface they are pointing at.
@@ -58,7 +58,7 @@ final class ShownMapSurfaceTest {
         }
 
         @Test
-        void resolveShownMapSurfaceAnswersTheDockedPanelWithNoMapTabUp() {
+        void answersTheDockedPanelWithNoMapTabUp() {
             // Game space with a mod's minimap docked, which is the frame this reading exists for:
             // no tab is up, so the panel that mod added to the core UI is the whole of what a walk
             // rooted at the shown map can be rooted at.
@@ -70,7 +70,7 @@ final class ShownMapSurfaceTest {
         }
 
         @Test
-        void resolveShownMapSurfaceAnswersNothingWithNoSurfaceOnScreen() {
+        void answersNothingWithNoSurfaceOnScreen() {
             // A vanilla install in game space. Nothing to root at is the ordinary answer rather than
             // a failure, and a caller draws its own box rather than standing aside for a walk that
             // never ran.

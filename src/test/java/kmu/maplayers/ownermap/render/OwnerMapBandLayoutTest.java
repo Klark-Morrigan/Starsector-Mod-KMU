@@ -27,7 +27,7 @@ final class OwnerMapBandLayoutTest {
     class BorderLift {
 
         @Test
-        void borderLiftRaisesTheBordersWithTheFillsTheyWereLeftBeneath() {
+        void raisesTheBordersWithTheFillsTheyWereLeftBeneath() {
             var layout = new OwnerMapBandLayout(ABOVE, BENEATH, ABOVE, ABOVE);
 
             assertThat(layout.borderBand())
@@ -35,7 +35,7 @@ final class OwnerMapBandLayoutTest {
         }
 
         @Test
-        void borderLiftLeavesBordersRaisedAloneWhereTheirFillsStayedBeneath() {
+        void leavesBordersRaisedAloneWhereTheirFillsStayedBeneath() {
             // The asymmetry is the picture's: a border drawn over its own fill is still a border,
             // so this half of the pair is offered and must survive the resolution untouched.
             var layout = new OwnerMapBandLayout(BENEATH, ABOVE, ABOVE, ABOVE);
@@ -47,7 +47,7 @@ final class OwnerMapBandLayoutTest {
         }
 
         @Test
-        void borderLiftLeavesTheOtherSubLayersWhereTheyWerePlaced() {
+        void leavesTheOtherSubLayersWhereTheyWerePlaced() {
             // The resolution touches one field. A layout that lifted its neighbours with the
             // borders would move readouts the player never asked to move.
             var layout = new OwnerMapBandLayout(ABOVE, BENEATH, BENEATH, BENEATH);

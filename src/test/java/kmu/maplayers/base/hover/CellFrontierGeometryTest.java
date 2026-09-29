@@ -26,7 +26,7 @@ final class CellFrontierGeometryTest {
     class FindEnclosingLoop {
 
         @Test
-        void findEnclosingLoopAnswersTheLoopThatEnclosesTheCell() {
+        void answersTheLoopThatEnclosesTheCell() {
 
             var loop = buildSquareRun(0, 0, 100);
 
@@ -37,7 +37,7 @@ final class CellFrontierGeometryTest {
         }
 
         @Test
-        void findEnclosingLoopPassesOverALoopTheCellIsOutside() {
+        void passesOverALoopTheCellIsOutside() {
             // One group, two disjoint clusters - the whole reason the loop is searched for rather
             // than taken as "the cluster's border".
             var hoveredLoop = buildSquareRun(0, 0, 100);
@@ -50,7 +50,7 @@ final class CellFrontierGeometryTest {
         }
 
         @Test
-        void findEnclosingLoopAnswersTheInnermostOfNestedLoops() {
+        void answersTheInnermostOfNestedLoops() {
             // A group's enclave, walled inside a rival that is itself walled inside another cluster
             // of that same group: three of its loops enclose the cell, and only the tightest is the
             // cluster the cell actually belongs to.
@@ -64,7 +64,7 @@ final class CellFrontierGeometryTest {
         }
 
         @Test
-        void findEnclosingLoopAnswersTheInnermostWhicheverOrderTheLoopsArriveIn() {
+        void answersTheInnermostWhicheverOrderTheLoopsArriveIn() {
             // The same nesting with the tight loop met first: a group hands its loops over in
             // whatever order it traced them, so the rule has to be "the smallest that encloses"
             // rather than "the last one found to".
@@ -78,7 +78,7 @@ final class CellFrontierGeometryTest {
         }
 
         @Test
-        void findEnclosingLoopAnswersNothingForACellNoLoopEncloses() {
+        void answersNothingForACellNoLoopEncloses() {
             // Candidates exist but the cell sits outside every one of them, which reads the same as
             // a cell that fused into no cluster at all: it belongs to no frontier.
             assertThat(CellFrontierGeometry.findEnclosingLoop(
@@ -88,7 +88,7 @@ final class CellFrontierGeometryTest {
         }
 
         @Test
-        void findEnclosingLoopAnswersNothingWhenTheGroupTracedNoBorder() {
+        void answersNothingWhenTheGroupTracedNoBorder() {
 
             assertThat(CellFrontierGeometry.findEnclosingLoop(
                     List.of(),
@@ -101,7 +101,7 @@ final class CellFrontierGeometryTest {
     class ClipCellsToFrontier {
 
         @Test
-        void clipCellsToFrontierJoinsAbuttingCellsIntoOneBoundary() {
+        void joinsAbuttingCellsIntoOneBoundary() {
             // Two cells of one cluster lit together: the edge they share is interior to the region
             // they cover, so it is dropped rather than left as a seam inside a lit shape.
             var loops = CellFrontierGeometry.clipCellsToFrontier(
@@ -115,7 +115,7 @@ final class CellFrontierGeometryTest {
         }
 
         @Test
-        void clipCellsToFrontierClampsACellPokingPastTheFrontier() {
+        void clampsACellPokingPastTheFrontier() {
             // The shaped cell reaches past the frontier that encloses its centre - the corner the
             // border's rounding cut, which the raw cell keeps. Only the overlap
             // [50,100]x[50,100] survives, so nothing washes past the line the border strokes.
@@ -130,7 +130,7 @@ final class CellFrontierGeometryTest {
         }
 
         @Test
-        void clipCellsToFrontierAnswersTheCellsOwnBoundaryWithoutAFrontier() {
+        void answersTheCellsOwnBoundaryWithoutAFrontier() {
             // A cell no loop encloses has nothing to be clamped to, so it covers itself whole.
             var loops = CellFrontierGeometry.clipCellsToFrontier(
                 List.of(buildSquare(10, 10, 40)),

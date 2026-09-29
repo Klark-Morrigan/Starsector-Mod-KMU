@@ -58,7 +58,7 @@ final class MapLayerArrangementEditorTest {
     class GetRows {
 
         @Test
-        void getRowsFollowsTheStoredOrderAndCarriesEachTabsLabel() {
+        void followsTheStoredOrderAndCarriesEachTabsLabel() {
 
             arrangementSelectionFake.holdArrangement(List.of("gamma", "alpha"), List.of());
 
@@ -70,7 +70,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void getRowsShowsALayerWhoseTabIsOffTheBar() {
+        void showsALayerWhoseTabIsOffTheBar() {
             // The dialog is the only way that tab comes back, so it has to be on show here.
             arrangementSelectionFake.holdArrangement(List.of(), List.of("beta"));
 
@@ -83,7 +83,7 @@ final class MapLayerArrangementEditorTest {
     class MoveRowUp {
 
         @Test
-        void moveRowUpSwapsTheRowWithTheOneAboveIt() {
+        void swapsTheRowWithTheOneAboveIt() {
 
             var editor = buildEditor();
 
@@ -94,7 +94,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void moveRowUpRecordsTheWholeRowOrder() {
+        void recordsTheWholeRowOrder() {
 
             var editor = buildEditor();
 
@@ -105,7 +105,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void moveRowUpLeavesTheLeadingRowWhereItIs() {
+        void leavesTheLeadingRowWhereItIs() {
 
             var editor = buildEditor();
 
@@ -122,7 +122,7 @@ final class MapLayerArrangementEditorTest {
     class MoveRowDown {
 
         @Test
-        void moveRowDownSwapsTheRowWithTheOneBelowIt() {
+        void swapsTheRowWithTheOneBelowIt() {
 
             var editor = buildEditor();
 
@@ -133,7 +133,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void moveRowDownLeavesTheLastRowWhereItIs() {
+        void leavesTheLastRowWhereItIs() {
 
             var editor = buildEditor();
 
@@ -150,13 +150,13 @@ final class MapLayerArrangementEditorTest {
     class CanMoveRowUp {
 
         @Test
-        void canMoveRowUpIsFalseForTheLeadingRow() {
+        void isFalseForTheLeadingRow() {
             assertThat(buildEditor().canMoveRowUp("alpha"))
                 .isFalse();
         }
 
         @Test
-        void canMoveRowUpIsTrueForARowWithSomethingAboveIt() {
+        void isTrueForARowWithSomethingAboveIt() {
             assertThat(buildEditor().canMoveRowUp("beta"))
                 .isTrue();
         }
@@ -166,13 +166,13 @@ final class MapLayerArrangementEditorTest {
     class CanMoveRowDown {
 
         @Test
-        void canMoveRowDownIsFalseForTheLastRow() {
+        void isFalseForTheLastRow() {
             assertThat(buildEditor().canMoveRowDown("gamma"))
                 .isFalse();
         }
 
         @Test
-        void canMoveRowDownIsTrueForARowWithSomethingBelowIt() {
+        void isTrueForARowWithSomethingBelowIt() {
             assertThat(buildEditor().canMoveRowDown("beta"))
                 .isTrue();
         }
@@ -182,7 +182,7 @@ final class MapLayerArrangementEditorTest {
     class ToggleRowHidden {
 
         @Test
-        void toggleRowHiddenTakesATabOffTheBarAndRecordsIt() {
+        void takesATabOffTheBarAndRecordsIt() {
 
             var editor = buildEditor();
 
@@ -193,7 +193,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void toggleRowHiddenPutsATabBackOnTheBar() {
+        void putsATabBackOnTheBar() {
 
             arrangementSelectionFake.holdArrangement(List.of(), List.of("beta"));
             var editor = buildEditor();
@@ -205,7 +205,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void toggleRowHiddenRefusesTheLastRowStillOnTheBar() {
+        void refusesTheLastRowStillOnTheBar() {
             // What it would leave is a bar with no tabs, and this dialog is opened from that bar.
             arrangementSelectionFake.holdArrangement(List.of(), List.of("beta", "gamma"));
             var editor = buildEditor();
@@ -223,7 +223,7 @@ final class MapLayerArrangementEditorTest {
     class CanToggleRowHidden {
 
         @Test
-        void canToggleRowHiddenIsFalseForTheLastRowStillOnTheBar() {
+        void isFalseForTheLastRowStillOnTheBar() {
 
             arrangementSelectionFake.holdArrangement(List.of(), List.of("beta", "gamma"));
 
@@ -232,7 +232,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void canToggleRowHiddenIsTrueForAHiddenRowWhateverElseIsHidden() {
+        void isTrueForAHiddenRowWhateverElseIsHidden() {
             // Only hiding is ever refused. Putting a tab back can only ever make the bar more usable.
             arrangementSelectionFake.holdArrangement(List.of(), List.of("beta", "gamma"));
 
@@ -241,7 +241,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void canToggleRowHiddenIsFalseForALayerTheDialogIsNotShowing() {
+        void isFalseForALayerTheDialogIsNotShowing() {
             // Reached by holding a control from a column that has since been rebuilt over a roster the
             // layer has left.
             assertThat(buildEditor().canToggleRowHidden("delta"))
@@ -253,7 +253,7 @@ final class MapLayerArrangementEditorTest {
     class ApplyRowAction {
 
         @Test
-        void applyRowActionMovesTheRowUpForAPressOnUp() {
+        void movesTheRowUpForAPressOnUp() {
             // Each case is pinned against the direction the button is labelled for, because two cases
             // transposed compile, run, and move the row the other way with nothing to say so.
             var editor = buildEditor();
@@ -265,7 +265,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void applyRowActionMovesTheRowDownForAPressOnDown() {
+        void movesTheRowDownForAPressOnDown() {
 
             var editor = buildEditor();
 
@@ -276,7 +276,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void applyRowActionTakesTheTabOffTheBarForAPressOnTheBox() {
+        void takesTheTabOffTheBarForAPressOnTheBox() {
 
             var editor = buildEditor();
 
@@ -287,7 +287,7 @@ final class MapLayerArrangementEditorTest {
         }
 
         @Test
-        void applyRowActionLeavesTheOrderAloneForARefusedPress() {
+        void leavesTheOrderAloneForARefusedPress() {
             // A press that the control which raised it was disabled for, which is reachable by holding
             // a button from a column that has since been rebuilt.
             var editor = buildEditor();

@@ -25,7 +25,7 @@ final class PoliticalMapBandLayoutReaderTest {
     class ReadChosenLayout {
 
         @Test
-        void readChosenLayoutPlacesEachSubLayerOnTheSideItsOwnSettingPicked() {
+        void placesEachSubLayerOnTheSideItsOwnSettingPicked() {
             // Each of the four asked for a different side from its neighbours where it can be, so a
             // slot reading another's setting shows as a band rather than passing on a shared answer.
             // The borders go up with the fills because that pairing is the one the layout resolves;
@@ -53,7 +53,7 @@ final class PoliticalMapBandLayoutReaderTest {
         }
 
         @Test
-        void readChosenLayoutReproducesTheShippedSplitWhereEveryChoiceIsTheDefault() {
+        void reproducesTheShippedSplitWhereEveryChoiceIsTheDefault() {
             // The shipped split: the cell geometry fogged, the two readouts laid over cells clear of
             // the fog. A player who never opens the group sees this, and this is where it is settled.
             try (var settingsMock = mockStatic(KmuPoliticalMapDrawOrderSettings.class)) {

@@ -20,7 +20,7 @@ final class DecivilisedColonyHabitationTest {
     class ReadFromLunaSettings {
 
         @Test
-        void readFromLunaSettingsCountsADecivilisedWorldAsPopulatedWhenTheSettingIsOn() {
+        void countsADecivilisedWorldAsPopulatedWhenTheSettingIsOn() {
 
             try (var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
@@ -34,7 +34,7 @@ final class DecivilisedColonyHabitationTest {
         }
 
         @Test
-        void readFromLunaSettingsCountsADecivilisedWorldAsUnpopulatedWhenTheSettingIsOff() {
+        void countsADecivilisedWorldAsUnpopulatedWhenTheSettingIsOff() {
 
             try (var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 

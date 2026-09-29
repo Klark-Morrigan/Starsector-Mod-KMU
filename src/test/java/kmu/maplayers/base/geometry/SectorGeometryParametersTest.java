@@ -33,14 +33,14 @@ class SectorGeometryParametersTest {
     class WithCellRadius {
 
         @Test
-        void withCellRadiusMovesTheReachAndNothingElse() {
+        void movesTheReachAndNothingElse() {
 
             assertThat(PARAMETERS.withCellRadius(9000))
                 .isEqualTo(new SectorGeometryParameters(9000, 48, 150, 100, 4));
         }
 
         @Test
-        void withCellRadiusLeavesTheParametersItWasAskedOfAlone() {
+        void leavesTheParametersItWasAskedOfAlone() {
 
             PARAMETERS.withCellRadius(9000);
 
@@ -81,7 +81,7 @@ class SectorGeometryParametersTest {
     class WithBoundSegments {
 
         @Test
-        void withBoundSegmentsMovesTheBoundAndNothingElse() {
+        void movesTheBoundAndNothingElse() {
 
             assertThat(PARAMETERS.withBoundSegments(96))
                 .isEqualTo(new SectorGeometryParameters(4000, 96, 150, 100, 4));
@@ -92,7 +92,7 @@ class SectorGeometryParametersTest {
     class WithBorderInset {
 
         @Test
-        void withBorderInsetMovesTheChannelAndNothingElse() {
+        void movesTheChannelAndNothingElse() {
 
             assertThat(PARAMETERS.withBorderInset(300))
                 .isEqualTo(new SectorGeometryParameters(4000, 48, 300, 100, 4));
@@ -103,7 +103,7 @@ class SectorGeometryParametersTest {
     class WithWeldTolerance {
 
         @Test
-        void withWeldToleranceMovesTheToleranceAndNothingElse() {
+        void movesTheToleranceAndNothingElse() {
 
             assertThat(PARAMETERS.withWeldTolerance(250))
                 .isEqualTo(new SectorGeometryParameters(4000, 48, 150, 250, 4));
@@ -114,7 +114,7 @@ class SectorGeometryParametersTest {
     class WithMiterSpikeLimit {
 
         @Test
-        void withMiterSpikeLimitMovesTheLimitAndNothingElse() {
+        void movesTheLimitAndNothingElse() {
 
             assertThat(PARAMETERS.withMiterSpikeLimit(9))
                 .isEqualTo(new SectorGeometryParameters(4000, 48, 150, 100, 9));

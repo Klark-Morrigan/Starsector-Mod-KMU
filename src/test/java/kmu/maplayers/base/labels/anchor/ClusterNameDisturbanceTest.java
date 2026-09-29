@@ -52,7 +52,7 @@ final class ClusterNameDisturbanceTest {
     class CompareFittedNames {
 
         @Test
-        void compareFittedNamesReportsNothingWhenEveryNameStoodStill() {
+        void reportsNothingWhenEveryNameStoodStill() {
             // The carried-over fit: every cluster still names the same members and kept the
             // placement it had, so nothing laid around those names has to be laid again.
             var standing = List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN));
@@ -64,7 +64,7 @@ final class ClusterNameDisturbanceTest {
         }
 
         @Test
-        void compareFittedNamesReportsBothEndsOfANameThatMoved() {
+        void reportsBothEndsOfANameThatMoved() {
             // The room given up and the room taken, since a cell under either one is now laid out
             // against a name that is not where it was.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
@@ -76,7 +76,7 @@ final class ClusterNameDisturbanceTest {
         }
 
         @Test
-        void compareFittedNamesReportsTheRoomANewNameTook() {
+        void reportsTheRoomANewNameTook() {
             // A cluster the previous fit did not name at all: a faction's first colony, or a
             // partition the flip bridged into one.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
@@ -88,7 +88,7 @@ final class ClusterNameDisturbanceTest {
         }
 
         @Test
-        void compareFittedNamesReportsTheRoomAVanishedNameGaveUp() {
+        void reportsTheRoomAVanishedNameGaveUp() {
             // The last colony of a cluster goes: nothing is drawn there any more, so whatever was
             // keeping clear of the word may have the ring back.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
@@ -100,7 +100,7 @@ final class ClusterNameDisturbanceTest {
         }
 
         @Test
-        void compareFittedNamesReportsARepartitionedClusterAtBothPlacements() {
+        void reportsARepartitionedClusterAtBothPlacements() {
             // Same owner, different members: the cluster the placement was made for no longer
             // exists, so the fit's own placement is a new one and the old one vanished. Both boxes
             // count, which is what a change severing one cluster into two produces.
@@ -124,7 +124,7 @@ final class ClusterNameDisturbanceTest {
         }
 
         @Test
-        void compareFittedNamesReportsARestyledNameAsMoved() {
+        void reportsARestyledNameAsMoved() {
             // Only the shade changed, and the room is identical - but a placement is compared
             // whole, because what a name occupies has more than one reading and they are read off
             // different components of it. The cost is a re-lay that changes nothing, which is the
@@ -140,7 +140,7 @@ final class ClusterNameDisturbanceTest {
         }
 
         @Test
-        void compareFittedNamesReportsNothingForAPlacementThatOccupiesNoRoom() {
+        void reportsNothingForAPlacementThatOccupiesNoRoom() {
             // The collapsed fit: no line was accepted, so the placement is a dot on the debug
             // overlay and nothing at all on the map - it neither took room nor gave any up.
             assertThat(ClusterNameDisturbance
@@ -154,7 +154,7 @@ final class ClusterNameDisturbanceTest {
     class SelectDisturbedCellKeys {
 
         @Test
-        void selectDisturbedCellKeysLeavesOutACellNoMovedNameReaches() {
+        void leavesOutACellNoMovedNameReaches() {
             var disturbance = ClusterNameDisturbance.compareFittedNames(
                 List.of(),
                 List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)));
@@ -165,7 +165,7 @@ final class ClusterNameDisturbanceTest {
         }
 
         @Test
-        void selectDisturbedCellKeysReportsACellItsOwnOutlineDoesNotReach() {
+        void reportsACellItsOwnOutlineDoesNotReach() {
             // The name sits in the corner of the cell's bounding box that the cell itself does not
             // fill. Named outright because it is the deliberate error: cheap to make, and it costs
             // only work, where the opposite error costs a wrong map.
@@ -183,7 +183,7 @@ final class ClusterNameDisturbanceTest {
         }
 
         @Test
-        void selectDisturbedCellKeysLeavesOutACellWithNoOutline() {
+        void leavesOutACellWithNoOutline() {
             // A cell recorded without a shape encloses nothing, so no name can reach into it -
             // and it has nothing laid on it to be disturbed anyway.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
@@ -195,7 +195,7 @@ final class ClusterNameDisturbanceTest {
         }
 
         @Test
-        void selectDisturbedCellKeysReportsNoCellWhenNothingWasDisturbed() {
+        void reportsNoCellWhenNothingWasDisturbed() {
             assertThat(ClusterNameDisturbance.NONE.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
                 .isEmpty();
         }

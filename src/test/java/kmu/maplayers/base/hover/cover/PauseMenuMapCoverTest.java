@@ -27,7 +27,7 @@ final class PauseMenuMapCoverTest {
     class ReadLiveMenuState {
 
         @Test
-        void readLiveMenuStateAnswersCoveredWhileTheMenuIsUp() {
+        void answersCoveredWhileTheMenuIsUp() {
 
             // Stubbed before the static stubbing is opened, never inside its argument: Mockito reads
             // a mock arranged mid-statement as an unfinished stubbing of the outer one.
@@ -43,7 +43,7 @@ final class PauseMenuMapCoverTest {
         }
 
         @Test
-        void readLiveMenuStateAnswersUncoveredWhileNoMenuIsUp() {
+        void answersUncoveredWhileNoMenuIsUp() {
 
             var sectorMock = stubSectorShowingMenu(false);
 
@@ -57,7 +57,7 @@ final class PauseMenuMapCoverTest {
         }
 
         @Test
-        void readLiveMenuStateFailsOpenWithNoSector() {
+        void failsOpenWithNoSector() {
             // Fails open per the role's rule: what cannot be established is not covering. There is
             // no map to hover in this state either, so the open answer costs nothing.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
@@ -71,7 +71,7 @@ final class PauseMenuMapCoverTest {
         }
 
         @Test
-        void readLiveMenuStateFailsOpenWithNoCampaignUi() {
+        void failsOpenWithNoCampaignUi() {
             // The second way the campaign can be absent, and the one an unguarded read would throw
             // on rather than answer: a sector stood up before its UI is.
             var sectorMock = mock(SectorAPI.class);

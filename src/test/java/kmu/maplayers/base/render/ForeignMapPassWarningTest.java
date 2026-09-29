@@ -44,7 +44,7 @@ final class ForeignMapPassWarningTest {
     class WarnOnceIfNoMapIsShowing {
 
         @Test
-        void warnOnceIfNoMapIsShowingReportsThePassWithItsStackWhenNoMapIsOnScreen() {
+        void reportsThePassWithItsStackWhenNoMapIsOnScreen() {
 
             var loggerMock = mock(Logger.class);
 
@@ -58,7 +58,7 @@ final class ForeignMapPassWarningTest {
         }
 
         @Test
-        void warnOnceIfNoMapIsShowingStaysQuietWhileAMapIsShowing() {
+        void staysQuietWhileAMapIsShowing() {
             // The ordinary case, and by far the common one: this runs on every frame the sector map
             // paints, so a line here would be written sixty times a second on a working setup.
             var loggerMock = mock(Logger.class);
@@ -70,7 +70,7 @@ final class ForeignMapPassWarningTest {
         }
 
         @Test
-        void warnOnceIfNoMapIsShowingReportsOneForeignPassOnlyOnce() {
+        void reportsOneForeignPassOnlyOnce() {
             // It sits in a per-frame path, and a foreign pass is foreign on every frame it runs, so
             // an unlatched report would bury the log rather than inform it.
             var loggerMock = mock(Logger.class);
@@ -86,7 +86,7 @@ final class ForeignMapPassWarningTest {
         }
 
         @Test
-        void warnOnceIfNoMapIsShowingStopsAskingOnceTheMapIsShownAgain() {
+        void stopsAskingOnceTheMapIsShownAgain() {
             // The latch is on having spoken, not on the state that prompted it: a pass that is
             // foreign once and a map that opens afterwards must not re-arm the line, or every
             // switch back and forth would add another copy of it.
@@ -106,7 +106,7 @@ final class ForeignMapPassWarningTest {
         }
 
         @Test
-        void warnOnceIfNoMapIsShowingCarriesTheModOwnedClassesIntoTheLine() {
+        void carriesTheModOwnedClassesIntoTheLine() {
             // The point of the whole line. The stack cannot name an owner - the mod builds its
             // widget once and the engine renders it every frame after - so if the tree read does
             // not reach the message, the warning costs a walk and answers nothing.
@@ -120,7 +120,7 @@ final class ForeignMapPassWarningTest {
         }
 
         @Test
-        void warnOnceIfNoMapIsShowingSaysSoWhenTheTreeCouldNotBeWalked() {
+        void saysSoWhenTheTreeCouldNotBeWalked() {
             // A null read must not read as "walked the tree and found nobody", which would send a
             // reader looking for a mod that the walk never had a chance to see.
             var loggerMock = mock(Logger.class);
@@ -133,7 +133,7 @@ final class ForeignMapPassWarningTest {
         }
 
         @Test
-        void warnOnceIfNoMapIsShowingDoesNotWalkTheTreeWhileAMapIsShowing() {
+        void doesNotWalkTheTreeWhileAMapIsShowing() {
             // The walk is a full sweep of the core UI, and this runs on every frame the map paints.
             // Asking for it before knowing a line is owed would pay for it sixty times a second on
             // a working setup.
@@ -150,7 +150,7 @@ final class ForeignMapPassWarningTest {
         }
 
         @Test
-        void warnOnceIfNoMapIsShowingSwallowsAPresenceReadThatThrows() {
+        void swallowsAPresenceReadThatThrows() {
             // The read reaches into the live widget tree and into core classes. This is a report
             // about the frame and not part of drawing one, so a read that cannot be made must cost
             // the report alone - letting it out would take the overlay away over a log line.
@@ -167,7 +167,7 @@ final class ForeignMapPassWarningTest {
         }
 
         @Test
-        void warnOnceIfNoMapIsShowingStopsRetryingAReadThatThrows() {
+        void stopsRetryingAReadThatThrows() {
             // A read that broke once breaks every frame, so the failure spends the warning too. The
             // reported throwable is the failure itself, which is what says which of the two lines
             // this was.

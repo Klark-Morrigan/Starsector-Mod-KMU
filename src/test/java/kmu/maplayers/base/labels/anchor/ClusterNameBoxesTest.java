@@ -34,7 +34,7 @@ final class ClusterNameBoxesTest {
     class ListNameBoxes {
 
         @Test
-        void listNameBoxesTurnsAPlacementIntoTheBoxItsWordsFill() {
+        void turnsAPlacementIntoTheBoxItsWordsFill() {
             // The line plus the girth, read as one shape: the room the block of words occupies,
             // rather than the line the fit searched with.
             assertThat(ClusterNameBoxes.listNameBoxes(List.of(
@@ -49,7 +49,7 @@ final class ClusterNameBoxesTest {
         }
 
         @Test
-        void listNameBoxesReportsEveryNameOnTheMap() {
+        void reportsEveryNameOnTheMap() {
             // Whoever a name belongs to says nothing about whose cells it lies over, so the boxes
             // are the map's rather than any one cluster's.
             assertThat(ClusterNameBoxes.listNameBoxes(List.of(
@@ -59,7 +59,7 @@ final class ClusterNameBoxesTest {
         }
 
         @Test
-        void listNameBoxesLeavesOutAPlacementThatAcceptedNoLine() {
+        void leavesOutAPlacementThatAcceptedNoLine() {
             // The collapsed fit: no line was accepted anywhere in the cluster, so the placement is
             // a dot on the debug overlay and nothing at all on the map.
             assertThat(ClusterNameBoxes.listNameBoxes(List.of(
@@ -68,7 +68,7 @@ final class ClusterNameBoxesTest {
         }
 
         @Test
-        void listNameBoxesLeavesOutAPlacementWithNoGirthToItsBlock() {
+        void leavesOutAPlacementWithNoGirthToItsBlock() {
             // A line but no band: there is no area for words to fill, so nothing is drawn and
             // nothing has to be kept clear of it.
             assertThat(ClusterNameBoxes.listNameBoxes(List.of(
@@ -81,7 +81,7 @@ final class ClusterNameBoxesTest {
     class ComputeNameBox {
 
         @Test
-        void computeNameBoxTurnsOnePlacementIntoTheBoxItsWordsFill() {
+        void turnsOnePlacementIntoTheBoxItsWordsFill() {
             // The single-placement reading, so a reader asking whether one name's room moved gets
             // the same answer the whole-map list would have given for it.
             assertThat(ClusterNameBoxes.computeNameBox(
@@ -94,7 +94,7 @@ final class ClusterNameBoxesTest {
         }
 
         @Test
-        void computeNameBoxReportsNoRoomForAPlacementThatAcceptedNoLine() {
+        void reportsNoRoomForAPlacementThatAcceptedNoLine() {
             // Empty rather than absent: a collapsed fit occupies nothing, and a caller asking
             // about one placement has no list for it to be left out of.
             assertThat(ClusterNameBoxes.computeNameBox(

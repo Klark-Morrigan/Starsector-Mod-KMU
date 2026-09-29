@@ -63,7 +63,7 @@ final class RibbonPathTracerTest {
     class TraceLaidRibbonPath {
 
         @Test
-        void traceLaidRibbonPathTracesTheRingAtTheAuthoredInset() {
+        void tracesTheRingAtTheAuthoredInset() {
 
             var path = RibbonPathTracer.traceLaidRibbonPath(
                 SQUARE_CELL,
@@ -76,7 +76,7 @@ final class RibbonPathTracerTest {
         }
 
         @Test
-        void traceLaidRibbonPathHoldsNoStretchOnACellTooNarrowForThePadWhileForcingIsOff() {
+        void holdsNoStretchOnACellTooNarrowForThePadWhileForcingIsOff() {
 
             var path = RibbonPathTracer.traceLaidRibbonPath(
                 CELL_TOO_NARROW_FOR_THE_PAD,
@@ -91,7 +91,7 @@ final class RibbonPathTracerTest {
         }
 
         @Test
-        void traceLaidRibbonPathKeepsThePadOnACellNarrowedInOnePlaceOnly() {
+        void keepsThePadOnACellNarrowedInOnePlaceOnly() {
 
             var path = RibbonPathTracer.traceLaidRibbonPath(
                 NECKED_CELL,
@@ -107,7 +107,7 @@ final class RibbonPathTracerTest {
         }
 
         @Test
-        void traceLaidRibbonPathGivesUpThePadOnANarrowCellWhileForcingIsOn() {
+        void givesUpThePadOnANarrowCellWhileForcingIsOn() {
 
             var path = RibbonPathTracer.traceLaidRibbonPath(
                 CELL_TOO_NARROW_FOR_THE_PAD,
@@ -124,7 +124,7 @@ final class RibbonPathTracerTest {
     class TraceInspectedRibbonPath {
 
         @Test
-        void traceInspectedRibbonPathReportsACellTracedAtTheAuthoredInsetAsLaidAtThePad() {
+        void reportsACellTracedAtTheAuthoredInsetAsLaidAtThePad() {
 
             var ribbonPath = RibbonPathTracer.traceInspectedRibbonPath(
                 SQUARE_CELL,
@@ -146,7 +146,7 @@ final class RibbonPathTracerTest {
         }
 
         @Test
-        void traceInspectedRibbonPathKeepsTheRingANeckDeniedOutOfTheStretchesABandMayUse() {
+        void keepsTheRingANeckDeniedOutOfTheStretchesABandMayUse() {
 
             var ribbonPath = RibbonPathTracer.traceInspectedRibbonPath(
                 NECKED_CELL,
@@ -176,7 +176,7 @@ final class RibbonPathTracerTest {
         }
 
         @Test
-        void traceInspectedRibbonPathReportsANarrowCellDrawnAnywayAsLaidUnpadded() {
+        void reportsANarrowCellDrawnAnywayAsLaidUnpadded() {
 
             var ribbonPath = RibbonPathTracer.traceInspectedRibbonPath(
                 CELL_TOO_NARROW_FOR_THE_PAD,
@@ -190,7 +190,7 @@ final class RibbonPathTracerTest {
         }
 
         @Test
-        void traceInspectedRibbonPathKeepsTheRefusedPathOfANarrowCellWhileForcingIsOff() {
+        void keepsTheRefusedPathOfANarrowCellWhileForcingIsOff() {
 
             var ribbonPath = RibbonPathTracer.traceInspectedRibbonPath(
                 CELL_TOO_NARROW_FOR_THE_PAD,
@@ -206,7 +206,7 @@ final class RibbonPathTracerTest {
         }
 
         @Test
-        void traceInspectedRibbonPathTracesNothingOnACellNarrowerThanTheBand() {
+        void tracesNothingOnACellNarrowerThanTheBand() {
 
             var ribbonPath = RibbonPathTracer.traceInspectedRibbonPath(
                 CELL_NARROWER_THAN_THE_BAND,

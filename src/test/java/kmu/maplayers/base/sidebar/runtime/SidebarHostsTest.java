@@ -41,7 +41,7 @@ final class SidebarHostsTest {
     class GetRegisteredHosts {
 
         @Test
-        void getRegisteredHostsHoldsEveryScreenTheSidebarDrawsOn() {
+        void holdsEveryScreenTheSidebarDrawsOn() {
             // A host missing here is a bar that excludes nothing: the hover would light a cell
             // under a panel the player is pointing at. Pinned by identity, since the hit-test must
             // reach the very singletons the render and input passes run against.
@@ -54,7 +54,7 @@ final class SidebarHostsTest {
     class IsPointOverAnySidebarOf {
 
         @Test
-        void isPointOverAnySidebarOfAnswersYesInsideTheBody() {
+        void answersYesInsideTheBody() {
             showSidebar(hostMock, placeSidebar(NOTCH));
 
             assertThat(askOneHost(INSIDE_BODY_X, INSIDE_BODY_Y))
@@ -62,7 +62,7 @@ final class SidebarHostsTest {
         }
 
         @Test
-        void isPointOverAnySidebarOfAnswersYesInsideTheNotch() {
+        void answersYesInsideTheNotch() {
             // The notch protrudes past the body's edge and is all that is left on screen while the
             // panel is docked, so a point on it is still over the sidebar.
             showSidebar(hostMock, placeSidebar(NOTCH));
@@ -72,7 +72,7 @@ final class SidebarHostsTest {
         }
 
         @Test
-        void isPointOverAnySidebarOfAnswersNoOutsideBothBoxes() {
+        void answersNoOutsideBothBoxes() {
             showSidebar(hostMock, placeSidebar(NOTCH));
 
             assertThat(askOneHost(OUTSIDE_X, OUTSIDE_Y))
@@ -80,7 +80,7 @@ final class SidebarHostsTest {
         }
 
         @Test
-        void isPointOverAnySidebarOfAnswersNoForAPanelWithNoNotch() {
+        void answersNoForAPanelWithNoNotch() {
             // A panel with nothing to collapse exposes no handle; the null is the placement's own
             // contract, and reading it as a rect would throw on a live screen.
             showSidebar(hostMock, placeSidebar(null));
@@ -90,7 +90,7 @@ final class SidebarHostsTest {
         }
 
         @Test
-        void isPointOverAnySidebarOfAnswersNoWhileTheHostsSidebarIsNotShowing() {
+        void answersNoWhileTheHostsSidebarIsNotShowing() {
             // The gate, not the box, is what makes the question host-blind: the on-map host hangs
             // its panel from the screen corner and resolves a box wherever it is asked, so on the
             // intel screen its placement would suppress a hover under a bar not drawn there.
@@ -103,7 +103,7 @@ final class SidebarHostsTest {
         }
 
         @Test
-        void isPointOverAnySidebarOfLaysOutNoPanelOfItsOwnToAnswer() {
+        void laysOutNoPanelOfItsOwnToAnswer() {
             // The cursor asks this every frame it moves, so it reads the panel the draw published rather
             // than laying one out: a hit-test that measured a whole panel would spend a layout per frame
             // per host on a question about what is already on screen.
@@ -116,7 +116,7 @@ final class SidebarHostsTest {
         }
 
         @Test
-        void isPointOverAnySidebarOfAnswersNoWithNothingDrawnToHit() {
+        void answersNoWithNothingDrawnToHit() {
             // No placement means nothing on screen this frame - the tab font could not load, or the
             // host's anchor is gone - so there is nothing to be over.
             showSidebar(hostMock, null);
@@ -126,7 +126,7 @@ final class SidebarHostsTest {
         }
 
         @Test
-        void isPointOverAnySidebarOfAsksEveryHostRatherThanTheFirst() {
+        void asksEveryHostRatherThanTheFirst() {
             // The whole point of the roster: whichever screen is up, its own host is the one with a
             // box under the cursor, and the others answer for screens that are not showing.
             var quietHostMock = mock(SidebarHost.class);
@@ -141,7 +141,7 @@ final class SidebarHostsTest {
         }
 
         @Test
-        void isPointOverAnySidebarOfAnswersNoWhileNoHostsSidebarIsLive() {
+        void answersNoWhileNoHostsSidebarIsLive() {
             // Neither screen is showing a sidebar, which is every screen but the two - the hover is
             // then free to light the cell under the cursor.
             var quietHostMock = mock(SidebarHost.class);

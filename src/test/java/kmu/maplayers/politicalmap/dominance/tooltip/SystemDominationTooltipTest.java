@@ -245,7 +245,7 @@ final class SystemDominationTooltipTest {
     class ComposeBody {
 
         @Test
-        void composeBodyDrawsAGroupMadeUpOfNothingAsOneFlatLine() {
+        void drawsAGroupMadeUpOfNothingAsOneFlatLine() {
             // The faction view's shape: a lone faction resolves to a group made up of nothing, so the
             // box lists it and nothing beneath it - and its number reads called-out like every value.
             StandingsTooltipSeamsFake.stubGroupEntries(createLoneGroupEntry());
@@ -274,7 +274,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void composeBodyDrawsAnAllianceAboveItsIndentedMembers() {
+        void drawsAnAllianceAboveItsIndentedMembers() {
             // The alliances view's shape: the bloc is listed and its members read as belonging to it, by
             // the indent and the plainer colour rather than by any label saying so.
             StandingsTooltipSeamsFake.stubGroupEntries(createGroupEntry(
@@ -306,7 +306,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void composeBodyListsThePlaceholderOwnerApartFromWhoHoldsTheSystem() {
+        void listsThePlaceholderOwnerApartFromWhoHoldsTheSystem() {
             // Vanilla hands every abandoned station and collapsed colony to the neutral placeholder,
             // which takes a footprint like anybody else. Left among the contenders it would head the
             // box over a system a real faction runs, so it is set aside before a holder is picked -
@@ -327,7 +327,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void composeBodyLaysTheFiveBlocksDownFromTheHolderOutward() {
+        void laysTheFiveBlocksDownFromTheHolderOutward() {
             // The whole chain in one system, in the order a reader meets it: who holds the place,
             // who stands with it by alliance, who stands with it in disposition, who stands against
             // it, and who was never in the running. Posed here rather than with the shared shape
@@ -368,7 +368,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void composeBodyListsEachGroupOnceWhereNoBlocCanBeOfTwoMinds() {
+        void listsEachGroupOnceWhereNoBlocCanBeOfTwoMinds() {
             // Under a grouping that makes every bloc a singleton there is nothing for a bloc's members
             // to disagree about, so none folds into two headings and none is stood up anew: the box
             // names exactly the groups the ranking handed it, once each. What a fold looks like when
@@ -400,7 +400,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void composeBodyHeadsOnlyTheRivalsDifferentlyWhereNoSystemEverChangesHands() {
+        void headsOnlyTheRivalsDifferentlyWhereNoSystemEverChangesHands() {
             // The five blocks of the case above, in the same system, on an install that never
             // transfers one: the bloc beside the holder is a neighbour indefinitely rather than a
             // challenger, so that heading states its presence and leaves the struggle unsaid.
@@ -445,7 +445,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void composeBodyFallsBackToTheSystemStatusWhenNothingRanks() {
+        void fallsBackToTheSystemStatusWhenNothingRanks() {
             // An empty system says the same thing at every depth: there is no more detail to be had
             // about a system nobody holds.
             var statusRow = StandingsTooltipSeamsFake.stubStatusRow("Unpopulated");
@@ -462,7 +462,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void composeBodyWalksNoColonyOfTheSystemWhereTheLevelNamesItsHoldersAlone() {
+        void walksNoColonyOfTheSystemWhereTheLevelNamesItsHoldersAlone() {
             // The whole point of gating the account rather than cutting it afterwards. Every read
             // behind a colony line goes through the one walk, and it is the most expensive thing a
             // hover does - so the level that draws none of those lines has to pay for none of it.
@@ -479,7 +479,7 @@ final class SystemDominationTooltipTest {
     class ResolveDeepestAccountLevel {
 
         @Test
-        void resolveDeepestAccountLevelFillsOutTheWholeCycle() {
+        void fillsOutTheWholeCycle() {
             // This box is the one the levels were named after: colonies under a faction, factors under
             // a colony, and the patrol tiers under the patrol factor. It is what makes the deepest
             // level worth declaring at all - the claim box beside it stops a tier higher.
@@ -492,7 +492,7 @@ final class SystemDominationTooltipTest {
     class CreateFactionAccountResolver {
 
         @Test
-        void createFactionAccountResolverAccountsForAFactionWithTheColoniesItHolds() {
+        void accountsForAFactionWithTheColoniesItHolds() {
             // The point of the deeper levels, and the one thing a bloc's line cannot state: a faction's
             // score is the sum over the colonies it holds here, so those are what its account lists -
             // and a sibling's colonies are the sibling's account, never this one's.
@@ -510,7 +510,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverBreaksEachColonyDownIntoItsFactors() {
+        void breaksEachColonyDownIntoItsFactors() {
             // A colony's own line is a sum too, so the account goes one level further: the factors that
             // moved its weight hang beneath it rather than the number being left to be taken on trust.
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
@@ -524,7 +524,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverBreaksAColonyIntoNothingWhereTheLevelStopsAtTheColonies() {
+        void breaksAColonyIntoNothingWhereTheLevelStopsAtTheColonies() {
             // The level travels on into the account rather than stopping at the decision to build one:
             // the composition level names the colonies and works out none of the arithmetic beneath
             // them. Left to the cut, the box would have worded every factor of every colony first and
@@ -542,7 +542,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverAccountsForNothingWhereAFactionHoldsNoColonyHere() {
+        void accountsForNothingWhereAFactionHoldsNoColonyHere() {
             // Nothing to account for reads as the faction listed by its line alone, which is exactly
             // what an empty answer means to the shape above - not a heading over an empty account.
             stubBreakdowns(Map.of("tritachyon", List.of(buildBreakdown("Eventide", 5.0))));
@@ -554,7 +554,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverAccountsForTheColoniesTheEconomyDoesNotList() {
+        void accountsForTheColoniesTheEconomyDoesNotList() {
             // The one colony no score above accounts for: vanilla builds it and never registers it,
             // so the weighed read cannot see it and the player is left looking at a station in a
             // faction's colours that the box says nothing about.
@@ -571,7 +571,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverKeepsAnUnlistedColonyToTheFactionHoldingIt() {
+        void keepsAnUnlistedColonyToTheFactionHoldingIt() {
             // The two reads are keyed the same way and paired the same way, so an unlisted colony
             // can no more be listed under a sibling's name than a weighed one can.
             stubBreakdowns(Map.of());
@@ -589,7 +589,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverAccountsForAFactionPresentThroughUnlistedColoniesAlone() {
+        void accountsForAFactionPresentThroughUnlistedColoniesAlone() {
             // A faction the weighing never reached: its every colony here is one the economy does
             // not list, so its whole account is the unlisted read. The colonies were always carried
             // - what they lacked was a line to hang from, which the ranking now gives them.
@@ -607,7 +607,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverReadsTheColoniesUnderTheRankingsOwnPass() {
+        void readsTheColoniesUnderTheRankingsOwnPass() {
             // The parts have to be read under the rule and reveal the scores above them were ranked
             // through, or the box would explain a number with arithmetic that did not produce it.
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
@@ -622,7 +622,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverReadsTheWeighedColoniesOnceForTheWholeBox() {
+        void readsTheWeighedColoniesOnceForTheWholeBox() {
             // Every faction's colonies come out of one read of the pass's colony set: read per
             // faction, two of them could be explained from different selections over it, and the
             // walk behind that set is the most expensive thing a hover does.
@@ -645,7 +645,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverReadsTheUnlistedColoniesUnderTheRankingsOwnReveal() {
+        void readsTheUnlistedColoniesUnderTheRankingsOwnReveal() {
             // The reveal decides what the box may name, and a colony the pass could not weigh is no
             // exception. Read at a reveal of its own it would withhold an undiscovered station while
             // naming the weighed colonies beside it - or name one the player has not found.
@@ -661,7 +661,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverReadsTheUnlistedColoniesOnceForTheWholeBox() {
+        void readsTheUnlistedColoniesOnceForTheWholeBox() {
             // The unlisted colonies are a second selection over the same set, made once per paint
             // rather than once per faction listed - the same rule the weighed read is held to, so
             // neither can end up describing a system the other did not.
@@ -686,7 +686,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void createFactionAccountResolverDatesTheColoniesAgainstThePassesOwnRegister() {
+        void datesTheColoniesAgainstThePassesOwnRegister() {
             // The whole reason the register is handed down rather than opened here: the dates
             // stated have to come off the very observations the pass resolved its projection
             // against. Read from the sector afresh, a box could date a colony against a register

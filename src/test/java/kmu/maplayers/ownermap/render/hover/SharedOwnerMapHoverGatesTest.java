@@ -24,7 +24,7 @@ final class SharedOwnerMapHoverGatesTest {
     class IsHoverEffectsEnabled {
 
         @Test
-        void isHoverEffectsEnabledIsTrueWithEveryTierOn() {
+        void isTrueWithEveryTierOn() {
 
             try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
@@ -39,7 +39,7 @@ final class SharedOwnerMapHoverGatesTest {
         }
 
         @Test
-        void isHoverEffectsEnabledIsFalseWithTheHoveringMasterOff() {
+        void isFalseWithTheHoveringMasterOff() {
 
             try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
@@ -54,7 +54,7 @@ final class SharedOwnerMapHoverGatesTest {
         }
 
         @Test
-        void isHoverEffectsEnabledIsFalseWithTheGlobalEffectsSwitchOff() {
+        void isFalseWithTheGlobalEffectsSwitchOff() {
 
             try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
@@ -69,7 +69,7 @@ final class SharedOwnerMapHoverGatesTest {
         }
 
         @Test
-        void isHoverEffectsEnabledIsFalseWithTheOwnerMapEffectsSwitchOff() {
+        void isFalseWithTheOwnerMapEffectsSwitchOff() {
             // The case the tiers above cannot express: every other layer keeps its halo and wash.
             try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
@@ -84,7 +84,7 @@ final class SharedOwnerMapHoverGatesTest {
         }
 
         @Test
-        void isHoverEffectsEnabledIsUntouchedByTheOwnerMapTooltipSwitch() {
+        void isUntouchedByTheOwnerMapTooltipSwitch() {
             // The bottom tier is a pair, like the global one above it: silencing this layer's box
             // leaves this layer's halo and wash burning.
             try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
@@ -106,7 +106,7 @@ final class SharedOwnerMapHoverGatesTest {
     class IsHoverTooltipEnabled {
 
         @Test
-        void isHoverTooltipEnabledIsTrueWithEveryTierOn() {
+        void isTrueWithEveryTierOn() {
 
             try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
@@ -121,7 +121,7 @@ final class SharedOwnerMapHoverGatesTest {
         }
 
         @Test
-        void isHoverTooltipEnabledIsFalseWithTheHoveringMasterOff() {
+        void isFalseWithTheHoveringMasterOff() {
 
             try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
@@ -136,7 +136,7 @@ final class SharedOwnerMapHoverGatesTest {
         }
 
         @Test
-        void isHoverTooltipEnabledIsFalseWithTheGlobalTooltipSwitchOff() {
+        void isFalseWithTheGlobalTooltipSwitchOff() {
 
             try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
@@ -151,7 +151,7 @@ final class SharedOwnerMapHoverGatesTest {
         }
 
         @Test
-        void isHoverTooltipEnabledIsFalseWithTheOwnerMapTooltipSwitchOff() {
+        void isFalseWithTheOwnerMapTooltipSwitchOff() {
             // This layer's box goes; another layer's box, reading its own switch, is untouched.
             try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuOwnerMapHighlightSettings.class)) {
@@ -166,7 +166,7 @@ final class SharedOwnerMapHoverGatesTest {
         }
 
         @Test
-        void isHoverTooltipEnabledIsUntouchedByTheOwnerMapEffectsSwitch() {
+        void isUntouchedByTheOwnerMapEffectsSwitch() {
             // The other half: a player who wants the standings box without this map lighting up under
             // the cursor turns off this layer's effects alone and keeps the box.
             try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);

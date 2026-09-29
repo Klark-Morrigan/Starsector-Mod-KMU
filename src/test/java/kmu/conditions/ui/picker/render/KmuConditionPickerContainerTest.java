@@ -62,7 +62,7 @@ class KmuConditionPickerContainerTest {
     class Render {
 
         @Test
-        void renderDoesNotPrintTitleInsidePicker() {
+        void doesNotPrintTitleInsidePicker() {
             var titles = new ArrayList<String>();
             var body = buildProxy(TooltipMakerAPI.class, (proxy, method, args) -> {
                 if ("addTitle".equals(method.getName()) && args != null && args.length >= 1) {
@@ -88,7 +88,7 @@ class KmuConditionPickerContainerTest {
         }
 
         @Test
-        void renderRoutesLabelsToHeaderBodyAndGridToGridBody() {
+        void routesLabelsToHeaderBodyAndGridToGridBody() {
             var headerParas = new ArrayList<String>();
             var headerCustoms = new ArrayList<Object>();
             var gridParas = new ArrayList<String>();
@@ -130,7 +130,7 @@ class KmuConditionPickerContainerTest {
         }
 
         @Test
-        void renderUsesCustomPanelForSummaryRowWhenFactionHasCrestSprite() {
+        void usesCustomPanelForSummaryRowWhenFactionHasCrestSprite() {
             var headerParas = new ArrayList<String>();
             var headerCustoms = new ArrayList<Object>();
 
@@ -180,7 +180,7 @@ class KmuConditionPickerContainerTest {
         }
 
         @Test
-        void renderSkipsLocationLabelWhenLocationHasNoDisplayableFields() {
+        void skipsLocationLabelWhenLocationHasNoDisplayableFields() {
             var headerParas = new ArrayList<String>();
             var headerCustoms = new ArrayList<Object>();
 
@@ -214,7 +214,7 @@ class KmuConditionPickerContainerTest {
         }
 
         @Test
-        void renderSkipsEmptyStateAndInvokesGridForNonEmptyModel() {
+        void skipsEmptyStateAndInvokesGridForNonEmptyModel() {
             var gridParas = new ArrayList<String>();
             var gridCustoms = new ArrayList<Object>();
 
@@ -262,7 +262,7 @@ class KmuConditionPickerContainerTest {
         }
 
         @Test
-        void renderResultReturnsFalseFromUpdateEntryWhenModelIsEmpty() {
+        void resultReturnsFalseFromUpdateEntryWhenModelIsEmpty() {
             var body = buildProxy(TooltipMakerAPI.class, (p, method, args) -> {
                 if ("addPara".equals(method.getName())) return createLabel();
                 return resolveDefaultValue(method.getReturnType());
@@ -282,7 +282,7 @@ class KmuConditionPickerContainerTest {
         }
 
         @Test
-        void renderResultDelegatesToGridHandleForUpdateEntry() {
+        void resultDelegatesToGridHandleForUpdateEntry() {
             var headerBody = buildProxy(TooltipMakerAPI.class, (p, method, args) -> {
                 if ("addPara".equals(method.getName())) return createLabel();
                 return resolveDefaultValue(method.getReturnType());

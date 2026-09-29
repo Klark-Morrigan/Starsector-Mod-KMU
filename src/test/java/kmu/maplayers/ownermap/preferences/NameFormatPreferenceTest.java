@@ -56,7 +56,7 @@ final class NameFormatPreferenceTest {
     class GetSelectedNameFormat {
 
         @Test
-        void getSelectedNameFormatResolvesTheStoredKeyToItsChoice() {
+        void resolvesTheStoredKeyToItsChoice() {
 
             sectorMemoryFake.storeValue(KEY, FactionNameFormatChoice.SHORT.persistenceKey());
 
@@ -65,7 +65,7 @@ final class NameFormatPreferenceTest {
         }
 
         @Test
-        void getSelectedNameFormatReadsEachScreensOwnChoice() {
+        void readsEachScreensOwnChoice() {
             // Per-screen isolation: the two panels frame the sector at different sizes, so the form
             // that fits one is not the form the other was set to.
             sectorMemoryFake.storeValue(KEY, FactionNameFormatChoice.SHORT.persistenceKey());
@@ -78,7 +78,7 @@ final class NameFormatPreferenceTest {
         }
 
         @Test
-        void getSelectedNameFormatIsFullNamesWhenThatScreenNeverPicked() {
+        void isFullNamesWhenThatScreenNeverPicked() {
             // A screen whose radio was never touched reads the shipped default, even while the other
             // screen holds a choice - a pick made there must not carry over.
             sectorMemoryFake.storeValue(OTHER_KEY, FactionNameFormatChoice.NONE.persistenceKey());
@@ -88,7 +88,7 @@ final class NameFormatPreferenceTest {
         }
 
         @Test
-        void getSelectedNameFormatIsFullNamesBeforeTheSectorExists() {
+        void isFullNamesBeforeTheSectorExists() {
             // No sector means no save to read, which the shipped default treats as the long-form
             // name every cluster label carried before a format was picked.
             sectorMemoryFake.removeSector();
@@ -102,7 +102,7 @@ final class NameFormatPreferenceTest {
     class SelectNameFormat {
 
         @Test
-        void selectNameFormatPersistsTheChoiceKeyAndRaisesOnTheBoardItWasHanded() {
+        void persistsTheChoiceKeyAndRaisesOnTheBoardItWasHanded() {
 
             var board = new MapLayerRefreshBoard();
 
@@ -118,7 +118,7 @@ final class NameFormatPreferenceTest {
         }
 
         @Test
-        void selectNameFormatLeavesAnotherScreensChoiceUntouched() {
+        void leavesAnotherScreensChoiceUntouched() {
             // Per-screen isolation on the write side: a pick made on one panel writes that panel's slot
             // alone, so the other keeps the form its labels were last fitted to.
             preference.selectNameFormat(
@@ -131,7 +131,7 @@ final class NameFormatPreferenceTest {
         }
 
         @Test
-        void selectNameFormatWritesNothingAndRaisesNothingBeforeTheSectorExists() {
+        void writesNothingAndRaisesNothingBeforeTheSectorExists() {
             // Before a save there is nothing to write into, so the pick is dropped rather than
             // bumping a revision no overlay would read.
             sectorMemoryFake.removeSector();

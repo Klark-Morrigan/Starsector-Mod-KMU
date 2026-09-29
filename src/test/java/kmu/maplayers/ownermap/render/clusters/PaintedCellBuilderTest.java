@@ -140,7 +140,7 @@ final class PaintedCellBuilderTest {
                 1.0);
 
         @Test
-        void buildPaintedCellForSystemAppliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
+        void appliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, false))),
@@ -154,7 +154,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemDrawsTwoSystemsSharingAnIdInTheirOwnHoldersColours() {
+        void drawsTwoSystemsSharingAnIdInTheirOwnHoldersColours() {
             // The collision the whole address exists for, at the cell that shows it: both systems
             // answer to one vanilla ID and are held by different blocs, so the two cells paint in
             // two shades - where a holding keyed by ID drew the second in the first's colours.
@@ -176,7 +176,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemDesaturatesToThePassPaletteAtFullOpacityWhenOnlyDesaturateIsSet() {
+        void desaturatesToThePassPaletteAtFullOpacityWhenOnlyDesaturateIsSet() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(1.0, true))),
@@ -190,7 +190,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemMutesAndDesaturatesTogetherWhenBothAreSet() {
+        void mutesAndDesaturatesTogetherWhenBothAreSet() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, true))),
@@ -204,7 +204,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemLeavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
+        void leavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
@@ -218,7 +218,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemBuildsAnOwnedCellInTheFusedFormWithItsSeamsAlone() {
+        void buildsAnOwnedCellInTheFusedFormWithItsSeamsAlone() {
             // An owned cell's fill and cluster border are the cluster's, drawn from the cluster's
             // own shape. It comes back in the fused form, which has no slot for either, so what it
             // does not draw is a fact about its type rather than a hidden paint a reader has to
@@ -235,7 +235,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemRecedesANonSpotlightedBlocUnderFilterAndIgnoresTheView() {
+        void recedesANonSpotlightedBlocUnderFilterAndIgnoresTheView() {
             // Under an active filter the view's per-bloc seams are bypassed: a real (non-spotlit)
             // holder takes the pass's shared recede, not whatever the view would have said. The view
             // stub returns the identity adjustment, so seeing the recede applied proves the filter,
@@ -252,7 +252,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemDrawsACellWithNoStarAsUninhabited() {
+        void drawsACellWithNoStarAsUninhabited() {
             // A cell that draws as no system - a shard of a dead star's leftover space the
             // redistribution pass leaves behind - has no holder and no market to have died, so it
             // paints as plain uninhabited. The null star must resolve through the draws-as
@@ -270,7 +270,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemFillsADecivilisedCellInTheNeutralColour() {
+        void fillsADecivilisedCellInTheNeutralColour() {
             // Decivilised colonies carry a fill of their own - a factionless cell fills on its own,
             // since
             // it never fuses into a cluster with a tessellated cluster to fill from - so both the
@@ -287,7 +287,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemRecedesADecivilisedCellUnderTheFiltersRecede() {
+        void recedesADecivilisedCellUnderTheFiltersRecede() {
             // A decivilised colony is part of the "rest of the sector" a spotlight recedes, so its
             // own
             // fill dims and recolours to the pass's desaturation palette exactly as a non-spotlit
@@ -312,7 +312,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemSparesASettledCellTheSpotlitBlocLivesInTheFiltersRecede() {
+        void sparesASettledCellTheSpotlitBlocLivesInTheFiltersRecede() {
             // The pick's own colony in a system this layer's holding could not attribute to it.
             // Under the same receding pass that
             // sinks the case above, this cell keeps full opacity and paints the lifted neutral:
@@ -337,7 +337,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemStillRecedesASettledCellTheSpotlitBlocIsAbsentFrom() {
+        void stillRecedesASettledCellTheSpotlitBlocIsAbsentFrom() {
             // The other half of the case above, under the identical pass: a settled system the pick
             // does not live in stays part of the receded background, so the exception turns on the
             // presence set rather than on the cell being settled at all.
@@ -356,7 +356,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemDimsADecivilisedCellWithoutRecolouringItWhenOnlyMuteIsSet() {
+        void dimsADecivilisedCellWithoutRecolouringItWhenOnlyMuteIsSet() {
             // Mute and Desaturate are independent toggles, and Mute alone is the commoner setting:
             // the decivilised colony sinks in weight while staying the neutral colour it reads as
             // when
@@ -375,7 +375,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemLeavesAnUninhabitedCellUntouchedByTheFiltersRecede() {
+        void leavesAnUninhabitedCellUntouchedByTheFiltersRecede() {
             // An uninhabited cell is the backdrop the map is drawn over rather than something the
             // spotlight competes with, so the same receding pass leaves its outline at full
             // neutral strength - the sector keeps its shape.
@@ -393,7 +393,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemDrawsAnInhabitedCellWithNoHolderAsSettledRatherThanBackdrop() {
+        void drawsAnInhabitedCellWithNoHolderAsSettledRatherThanBackdrop() {
             // A layer whose holding rule admits only some markets leaves a system settled
             // solely outside them with no holder, and it arrives here holderless - exactly as an
             // empty system does. It must still take the settled bundle, since the uninhabited
@@ -413,7 +413,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemDrawsAnUninhabitedCellWithNoFill() {
+        void drawsAnUninhabitedCellWithNoFill() {
             // The other half of the case above: a system nothing stands in takes the outline-only
             // bundle, so the assertion there is about the classification rather than about every
             // factionless cell happening to carry a fill.
@@ -427,7 +427,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemKeepsADecivilisedCellAtFullStrengthWithNoRecedeInThePass() {
+        void keepsADecivilisedCellAtFullStrengthWithNoRecedeInThePass() {
             // Off filter the pass's recede is the identity, so a decivilised colony draws in the
             // neutral
             // colour at its style opacity - an unfiltered map is unchanged by the recede path.
@@ -443,7 +443,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemKeepsAFactionlessCellDrawnByItsFillAloneWhenTheOutlineIsHidden() {
+        void keepsAFactionlessCellDrawnByItsFillAloneWhenTheOutlineIsHidden() {
             // The outline's opacity is its only on/off, so zeroing it must not take the fill down
             // with it: the cell is kept for whichever of the two still puts ink on the map.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
@@ -460,7 +460,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemBakesNoFillTrianglesForAnOutlineOnlyFactionlessCell() {
+        void bakesNoFillTrianglesForAnOutlineOnlyFactionlessCell() {
             // Uninhabited cells cover everything nothing else holds, so triangulating a fill they
             // never paints would be the rebuild's largest wasted cost - the geometry stays unbuilt.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
@@ -475,7 +475,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemRoundsALoneCellsOutlineWhenTheSectorWideGateIsOn() {
+        void roundsALoneCellsOutlineWhenTheSectorWideGateIsOn() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildRoundingFactionlessDrawablesWith(buildFilledOutlineStyle()),
@@ -495,7 +495,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemLeavesALoneCellsOutlineSharpWhenTheGateIsOff() {
+        void leavesALoneCellsOutlineSharpWhenTheGateIsOff() {
             // The other half of the gate, and the reason the case above is not just "the outline
             // has vertices": with rounding off the raw Voronoi cell is what the map draws, corner
             // at the origin included.
@@ -509,7 +509,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemReportsALoneCellsRoundedRingAsWhatItPainted() {
+        void reportsALoneCellsRoundedRingAsWhatItPainted() {
             // The ring the cell reports is the one it strokes, not the cell it was shaped from.
             // Everything that has to know where a cell put ink - the cursor read, the wash lit over
             // it - reads this and nothing else, so a raw ring reported here would have them both
@@ -534,7 +534,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemReportsALoneCellsSharpRingWhenTheGateIsOff() {
+        void reportsALoneCellsSharpRingWhenTheGateIsOff() {
             // With rounding off the cell strokes the shape it was handed, so that is what it
             // reports - the four corners of the fixture's square, the origin included.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
@@ -549,7 +549,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemReportsAnOwnedCellsRawRingEvenUnderTheRoundingGate() {
+        void reportsAnOwnedCellsRawRingEvenUnderTheRoundingGate() {
             // A fused cell is bounded by its cluster's border rather than by anything of its own,
             // and that border is rounded where the cluster is traced. So the cell reports its raw
             // extent under the same gate that rounds a lone cell's: rounding it here would pull the
@@ -566,7 +566,7 @@ final class PaintedCellBuilderTest {
         }
 
         @Test
-        void buildPaintedCellForSystemDropsAFactionlessCellThatDrawsNothing() {
+        void dropsAFactionlessCellThatDrawsNothing() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),

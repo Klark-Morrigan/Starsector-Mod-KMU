@@ -108,7 +108,7 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
     class RenderOnMap {
 
         @Test
-        void renderOnMapPaintsTheLowerBandWhileAStarscapeMapIsShowing() {
+        void paintsTheLowerBandWhileAStarscapeMapIsShowing() {
 
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
 
@@ -122,7 +122,7 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapLeavesTheUpperBandToTheSurfaceAboveTheNebulae() {
+        void leavesTheUpperBandToTheSurfaceAboveTheNebulae() {
             // Painting it here as well would put the names back under the fog: this surface's icon
             // sits beneath the nebulae, so anything it emits is drawn beneath them whatever it is.
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
@@ -137,7 +137,7 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapPreparesTheFrameForTheSurfaceAboveItAsWell() {
+        void preparesTheFrameForTheSurfaceAboveItAsWell() {
             // The upper surface prepares nothing, so this is the frame's only preparation whenever
             // Starscape is the look on screen.
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
@@ -152,7 +152,7 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapPublishesTheHoverForItsOwnPass() {
+        void publishesTheHoverForItsOwnPass() {
             // Both Starscape surfaces read, this one included: the read inverts the transform its
             // own pass bound, so a surface skipping it would leave the frame's answer to whichever
             // other pass drew - the fault this arrangement exists to close.
@@ -168,7 +168,7 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapStandsAsideWhileNoStarscapeMapIsShowing() {
+        void standsAsideWhileNoStarscapeMapIsShowing() {
             // The engine calls this half in either mode, so standing aside is the only thing
             // keeping it off the map while the base half is the one already drawing there.
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> false);

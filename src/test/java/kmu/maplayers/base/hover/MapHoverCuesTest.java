@@ -27,7 +27,7 @@ final class MapHoverCuesTest {
     class ComposeCellArrivalCue {
 
         @Test
-        void composeCellArrivalCueTypesTheMapsOwnTickAtTheLevelThePlayerSet() {
+        void typesTheMapsOwnTickAtTheLevelThePlayerSet() {
             // The sample is the map's and not the sidebar's: a cell is crossed rather than aimed at,
             // and a button's mouseover under the cursor would claim a control the map has none of.
             try (var settingsMock = mockStatic(KmuMapSoundSettings.class)) {
@@ -42,7 +42,7 @@ final class MapHoverCuesTest {
         }
 
         @Test
-        void composeCellArrivalCueNamesNoCueAtAllWhenItsLevelIsSilenced() {
+        void namesNoCueAtAllWhenItsLevelIsSilenced() {
             // Silence stated by naming no cue rather than by handing one over at nothing, the rule the
             // sidebar's moments answer to as well: a sound asked for at zero is still a sound played,
             // and reads as wiring that half worked rather than as a map deliberately quiet.

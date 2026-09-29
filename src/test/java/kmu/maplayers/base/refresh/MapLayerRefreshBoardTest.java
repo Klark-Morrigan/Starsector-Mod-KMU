@@ -49,7 +49,7 @@ class MapLayerRefreshBoardTest {
     class GetRevision {
 
         @Test
-        void getRevisionAnswersZeroForASignalNothingHasRaised() {
+        void answersZeroForASignalNothingHasRaised() {
             // The board cannot enumerate the layers, so it cannot pre-seed their signals. An
             // unraised one has to read as a number all the same, or a consumer folding a signal
             // its producer has not fired yet would have nothing to fold.
@@ -62,7 +62,7 @@ class MapLayerRefreshBoardTest {
     class RequestRefresh {
 
         @Test
-        void requestRefreshAdvancesOnlyTheSignalItNames() {
+        void advancesOnlyTheSignalItNames() {
 
             board.requestRefresh(TestRefreshSignal.RAISED);
 
@@ -81,7 +81,7 @@ class MapLayerRefreshBoardTest {
         }
 
         @Test
-        void requestRefreshReachesOneCounterFromEverySignalEqualToTheSame() {
+        void reachesOneCounterFromEverySignalEqualToTheSame() {
             // The counter is keyed by equality rather than by identity, which is what lets a
             // producer and a consumer resolve their signal fresh rather than both having to hold
             // the one instance that seeded it.
@@ -96,7 +96,7 @@ class MapLayerRefreshBoardTest {
     class MarkSystemGroupingStale {
 
         @Test
-        void markSystemGroupingStaleQueuesTheSystemForTheNextDrain() {
+        void queuesTheSystemForTheNextDrain() {
 
             board.markSystemGroupingStale(SYSTEM);
 
@@ -105,7 +105,7 @@ class MapLayerRefreshBoardTest {
         }
 
         @Test
-        void markSystemGroupingStaleQueuesOneSystemOnceHoweverOftenItIsMarked() {
+        void queuesOneSystemOnceHoweverOftenItIsMarked() {
 
             board.markSystemGroupingStale(SYSTEM);
             board.markSystemGroupingStale(SYSTEM);
@@ -117,7 +117,7 @@ class MapLayerRefreshBoardTest {
         }
 
         @Test
-        void markSystemGroupingStaleQueuesEachOfTwoSystemsSharingAnIdApart() {
+        void queuesEachOfTwoSystemsSharingAnIdApart() {
             // The reason the set holds keys: a producer marking one of a pair the sector lists
             // under one ID names that system alone, so the drain hands the consumer that one
             // system to re-derive - where a set of IDs would have held one entry for both, and
@@ -130,7 +130,7 @@ class MapLayerRefreshBoardTest {
         }
 
         @Test
-        void markSystemGroupingStaleIgnoresANullSystemKey() {
+        void ignoresANullSystemKey() {
 
             board.markSystemGroupingStale(null);
 
@@ -145,7 +145,7 @@ class MapLayerRefreshBoardTest {
     class DrainStaleGroupingSystemKeys {
 
         @Test
-        void drainStaleGroupingSystemKeysReturnsEveryQueuedSystem() {
+        void returnsEveryQueuedSystem() {
 
             board.markSystemGroupingStale(FIRST_SYSTEM);
             board.markSystemGroupingStale(SECOND_SYSTEM);
@@ -155,7 +155,7 @@ class MapLayerRefreshBoardTest {
         }
 
         @Test
-        void drainStaleGroupingSystemKeysEmptiesTheSetSoOneStalenessIsProcessedOnce() {
+        void emptiesTheSetSoOneStalenessIsProcessedOnce() {
 
             board.markSystemGroupingStale(SYSTEM);
             board.drainStaleGroupingSystemKeys();
@@ -165,14 +165,14 @@ class MapLayerRefreshBoardTest {
         }
 
         @Test
-        void drainStaleGroupingSystemKeysReturnsEmptyWhenNothingIsQueued() {
+        void returnsEmptyWhenNothingIsQueued() {
 
             assertThat(board.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
         @Test
-        void drainStaleGroupingSystemKeysLosesNoSystemMarkedWhileItIsDraining()
+        void losesNoSystemMarkedWhileItIsDraining()
                 throws InterruptedException {
 
             // The reason the drain snapshots and then removes exactly what it snapshotted, rather

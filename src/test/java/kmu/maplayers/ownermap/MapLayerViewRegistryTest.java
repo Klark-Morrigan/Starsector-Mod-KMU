@@ -132,7 +132,7 @@ final class MapLayerViewRegistryTest {
     class GetViews {
 
         @Test
-        void getViewsReturnsTheRegisteredViewsInOrder() {
+        void returnsTheRegisteredViewsInOrder() {
 
             assertThat(registry.getViews())
                 .containsExactly(firstViewMock, secondViewMock);
@@ -143,7 +143,7 @@ final class MapLayerViewRegistryTest {
     class GetSelectedView {
 
         @Test
-        void getSelectedViewDefaultsToTheRegisteredDefaultWithoutASavedPick() {
+        void defaultsToTheRegisteredDefaultWithoutASavedPick() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -157,7 +157,7 @@ final class MapLayerViewRegistryTest {
         }
 
         @Test
-        void getSelectedViewResolvesTheStoredIdToItsView() {
+        void resolvesTheStoredIdToItsView() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -172,7 +172,7 @@ final class MapLayerViewRegistryTest {
         }
 
         @Test
-        void getSelectedViewIsNullForTheOffSentinel() {
+        void isNullForTheOffSentinel() {
             // The empty stored value is the "map off while the tab stays open" state, so no view
             // resolves and the plugin stays dark.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
@@ -188,7 +188,7 @@ final class MapLayerViewRegistryTest {
         }
 
         @Test
-        void getSelectedViewFallsBackToTheDefaultForAStaleStoredId() {
+        void fallsBackToTheDefaultForAStaleStoredId() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -203,7 +203,7 @@ final class MapLayerViewRegistryTest {
         }
 
         @Test
-        void getSelectedViewIsTheGivenScreensOwnPick() {
+        void isTheGivenScreensOwnPick() {
             // The point of the screen being on the signature: a player who sets one panel to the
             // grouped view and leaves the other on factions gets both, rather than the second panel
             // following the first.
@@ -227,7 +227,7 @@ final class MapLayerViewRegistryTest {
     class GetSelectedViewIndex {
 
         @Test
-        void getSelectedViewIndexIsThePickedViewsPosition() {
+        void isThePickedViewsPosition() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -242,7 +242,7 @@ final class MapLayerViewRegistryTest {
         }
 
         @Test
-        void getSelectedViewIndexIsNoSelectionWhenOff() {
+        void isNoSelectionWhenOff() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -262,7 +262,7 @@ final class MapLayerViewRegistryTest {
     class ResolveActiveViewOn {
 
         @Test
-        void resolveActiveViewOnIsTheDefaultViewWhileNoSaveHoldsAPick() {
+        void isTheDefaultViewWhileNoSaveHoldsAPick() {
             // No sector, so nothing is stored: the host tab being that screen's pick, the map paints
             // the view an untouched save resolves to rather than staying dark.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
@@ -276,7 +276,7 @@ final class MapLayerViewRegistryTest {
         }
 
         @Test
-        void resolveActiveViewOnAnswersForTheScreenHandedInRatherThanTheShowingOne() {
+        void answersForTheScreenHandedInRatherThanTheShowingOne() {
             // What a frame carries its screen for: the view it paints and the preferences it bakes
             // under come off one reading of which panel is up. The visor is posed open so a read
             // resolving its own screen would answer the intel pick and fail here.
@@ -298,7 +298,7 @@ final class MapLayerViewRegistryTest {
         }
 
         @Test
-        void resolveActiveViewOnIsNullWhileThatScreenIsOnAnotherTab() {
+        void isNullWhileThatScreenIsOnAnotherTab() {
             // The tab gate is that screen's too: a panel switched to No Layer paints nothing, whatever
             // view it has stored and whatever the other panel is on.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
@@ -318,7 +318,7 @@ final class MapLayerViewRegistryTest {
     class SelectView {
 
         @Test
-        void selectViewStoresThePickedViewsIdWhenItIsNotTheCurrentSelection() {
+        void storesThePickedViewsIdWhenItIsNotTheCurrentSelection() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -338,7 +338,7 @@ final class MapLayerViewRegistryTest {
         }
 
         @Test
-        void selectViewKeepsTheViewSelectedWhenItIsAlreadyTheCurrentSelection() {
+        void keepsTheViewSelectedWhenItIsAlreadyTheCurrentSelection() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 

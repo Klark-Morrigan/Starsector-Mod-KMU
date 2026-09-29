@@ -39,7 +39,7 @@ class LabelSlantPreferenceTest {
         private static final double MAX_SLANT = 22.0;
 
         @Test
-        void resolveFromLeansAStronglyElongatedVerticalClusterToTheCap() {
+        void leansAStronglyElongatedVerticalClusterToTheCap() {
             // A near-line vertical cloud (elongation ~1) wants its axis's 90 degrees, but
             // the cap holds the lean to the 22-degree ceiling rather than stand it upright.
             var slant = LabelSlantPreference.resolveFrom(buildAxisAt(90.0, 1000.0, 0.0), MAX_SLANT);
@@ -48,7 +48,7 @@ class LabelSlantPreferenceTest {
         }
 
         @Test
-        void resolveFromKeepsAShallowElongatedClusterBelowTheCap() {
+        void keepsAShallowElongatedClusterBelowTheCap() {
             // A cloud strung along 10 degrees sits under the cap, so the lean is its own
             // angle scaled by the elongation (1 - 50/1000 = 0.95): 10 * 0.95 = 9.5 degrees.
             var slant = LabelSlantPreference.resolveFrom(buildAxisAt(10.0, 1000.0, 50.0), MAX_SLANT);
@@ -57,7 +57,7 @@ class LabelSlantPreferenceTest {
         }
 
         @Test
-        void resolveFromCollapsesARoundClusterToLevel() {
+        void collapsesARoundClusterToLevel() {
             // The axis reads vertical, but the cloud is round (equal extents, elongation 0),
             // so its direction is noise and the lean fades to level rather than follow it.
             var slant = LabelSlantPreference.resolveFrom(buildAxisAt(90.0, 500.0, 500.0), MAX_SLANT);
@@ -66,7 +66,7 @@ class LabelSlantPreferenceTest {
         }
 
         @Test
-        void resolveFromForcesLevelWhenTheCapIsZero() {
+        void forcesLevelWhenTheCapIsZero() {
             // A zero cap forbids any lean, so even a strongly elongated tilted cloud sits
             // dead-level - the setting that reproduces the pre-slant horizontal labels.
             var slant = LabelSlantPreference.resolveFrom(buildAxisAt(40.0, 1000.0, 0.0), 0.0);
@@ -82,7 +82,7 @@ class LabelSlantPreferenceTest {
         private static final double EXPONENT = 2.0;
 
         @Test
-        void computePenaltyMultiplierReturnsOneAtThePreferredAngle() {
+        void returnsOneAtThePreferredAngle() {
             // A line sitting exactly on the lean pays nothing, whatever the strength.
             var slant = new LabelSlantPreference(Math.toRadians(15.0));
 
@@ -91,7 +91,7 @@ class LabelSlantPreferenceTest {
         }
 
         @Test
-        void computePenaltyMultiplierDocksAPerpendicularLineByTheFullStrength() {
+        void docksAPerpendicularLineByTheFullStrength() {
             // A line square to the lean is a quarter turn away - the worst case - so it
             // loses the whole strength: 1 - 0.5 * 1 = 0.5.
             var slant = new LabelSlantPreference(Math.toRadians(15.0));
@@ -101,7 +101,7 @@ class LabelSlantPreferenceTest {
         }
 
         @Test
-        void computePenaltyMultiplierFallsOffMonotonicallyFromThePreferredAngle() {
+        void fallsOffMonotonicallyFromThePreferredAngle() {
             // The penalty grows with the deviation, so a line closer to the lean always
             // scores at least as high as one further from it.
             var slant = new LabelSlantPreference(0.0);
@@ -115,7 +115,7 @@ class LabelSlantPreferenceTest {
         }
 
         @Test
-        void computePenaltyMultiplierTreatsALineAndItsOppositeAsOne() {
+        void treatsALineAndItsOppositeAsOne() {
             // A direction and its 180-degree opposite are the same undirected line, so a
             // line at 30 degrees and one at 210 degrees pay the identical penalty.
             var slant = new LabelSlantPreference(0.0);
@@ -127,7 +127,7 @@ class LabelSlantPreferenceTest {
         }
 
         @Test
-        void computePenaltyMultiplierReturnsOneWhenTheStrengthIsZero() {
+        void returnsOneWhenTheStrengthIsZero() {
             // A zero strength turns the penalty off, so every line scores the full one no
             // matter how far it sits from the lean.
             var slant = new LabelSlantPreference(0.0);
@@ -141,7 +141,7 @@ class LabelSlantPreferenceTest {
     class ToDirection {
 
         @Test
-        void toDirectionReturnsTheUnitVectorOfThePreferredAngle() {
+        void returnsTheUnitVectorOfThePreferredAngle() {
             var slant = new LabelSlantPreference(Math.toRadians(30.0));
 
             var direction = slant.toDirection();
@@ -151,7 +151,7 @@ class LabelSlantPreferenceTest {
         }
 
         @Test
-        void toDirectionYieldsAUnitVector() {
+        void yieldsAUnitVector() {
             var slant = new LabelSlantPreference(Math.toRadians(37.0));
 
             var direction = slant.toDirection();

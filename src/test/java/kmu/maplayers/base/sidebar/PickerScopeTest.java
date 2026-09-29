@@ -54,7 +54,7 @@ final class PickerScopeTest {
     class ResolveScopeOf {
 
         @Test
-        void resolveScopeOfTakesTheSlotsModAndList() {
+        void takesTheSlotsModAndList() {
 
             var slot = new SelectionSlot(
                 new ScreenSelectionSlot(NAMESPACE, ScreenMemoryScopes.createStandInScreen()),
@@ -65,7 +65,7 @@ final class PickerScopeTest {
         }
 
         @Test
-        void resolveScopeOfDropsTheScreenTheSlotWasPickedOn() {
+        void dropsTheScreenTheSlotWasPickedOn() {
             // Deliberate, and the one axis this address does not carry: the pass that reads a hover
             // back is drawing the screen that is up and has no pick of its own to resolve one from,
             // so a hover reported on either panel has to be the same entry.

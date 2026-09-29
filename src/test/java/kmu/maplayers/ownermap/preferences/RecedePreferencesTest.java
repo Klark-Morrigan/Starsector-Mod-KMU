@@ -67,7 +67,7 @@ final class RecedePreferencesTest {
     class IsMuted {
 
         @Test
-        void isMutedReadsTheMuteKeyFromSectorMemory() {
+        void readsTheMuteKeyFromSectorMemory() {
 
             sectorMemoryFake.storeValue(SAMPLE_MUTE_KEY, true);
 
@@ -76,7 +76,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void isMutedReadsEachScreensOwnToggle() {
+        void readsEachScreensOwnToggle() {
             // Per-screen isolation: the backdrop is tuned on the panel it is being looked at from, so a
             // Mute set on one panel leaves the other's backdrop as it was.
             sectorMemoryFake.storeValue(SAMPLE_MUTE_KEY, true);
@@ -88,7 +88,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void isMutedIsFalseBeforeTheSectorExists() {
+        void isFalseBeforeTheSectorExists() {
             // No sector means no save to read, so the read falls back to Mute's default of off.
             sectorMemoryFake.removeSector();
 
@@ -97,7 +97,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void isMutedIsFalseWhenTheKeyWasNeverSet() {
+        void isFalseWhenTheKeyWasNeverSet() {
             // Mute keeps the un-receded default: dimming and recolouring are separate asks, and only
             // the recolour is wanted out of the box.
             assertThat(SAMPLE_SET.isMuted(SCREEN_SCOPE))
@@ -109,7 +109,7 @@ final class RecedePreferencesTest {
     class IsDesaturated {
 
         @Test
-        void isDesaturatedReadsTheDesaturateKeyFromSectorMemory() {
+        void readsTheDesaturateKeyFromSectorMemory() {
 
             sectorMemoryFake.storeValue(SAMPLE_DESATURATE_KEY, true);
 
@@ -118,7 +118,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void isDesaturatedReadsEachScreensOwnToggle() {
+        void readsEachScreensOwnToggle() {
             // The same isolation as Mute, posed against the on default: one screen's explicit clear
             // must not clear the other, which still opens desaturated.
             sectorMemoryFake.storeValue(SAMPLE_DESATURATE_KEY, false);
@@ -130,7 +130,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void isDesaturatedIsTrueBeforeTheSectorExists() {
+        void isTrueBeforeTheSectorExists() {
             // No sector means no save to read, so the read falls back to Desaturate's default of on.
             sectorMemoryFake.removeSector();
 
@@ -139,7 +139,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void isDesaturatedIsTrueWhenTheKeyWasNeverSet() {
+        void isTrueWhenTheKeyWasNeverSet() {
             // An untouched save opens desaturated, so a spotlight recedes the sector from the first
             // click rather than after a hunt through the sidebar checkboxes.
             assertThat(SAMPLE_SET.isDesaturated(SCREEN_SCOPE))
@@ -147,7 +147,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void isDesaturatedIsFalseWhenTheStoredChoiceIsOff() {
+        void isFalseWhenTheStoredChoiceIsOff() {
             // Clearing the box writes a real false, which outranks the on default on every later
             // load - the default describes an untouched save only, never a player's own answer.
             sectorMemoryFake.storeValue(SAMPLE_DESATURATE_KEY, false);
@@ -161,7 +161,7 @@ final class RecedePreferencesTest {
     class SetMuted {
 
         @Test
-        void setMutedPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
+        void persistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
 
             var board = new MapLayerRefreshBoard();
 
@@ -177,7 +177,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void setMutedWritesTheOffChoiceToo() {
+        void writesTheOffChoiceToo() {
             // A clear is persisted as readily as a set, so turning muting off survives reload.
             SAMPLE_SET.setMuted(SCREEN_SCOPE, false, new MapLayerRefreshBoard());
 
@@ -186,7 +186,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void setMutedLeavesAnotherScreensToggleUntouched() {
+        void leavesAnotherScreensToggleUntouched() {
             // Per-screen isolation on the write side: a flip made on one panel writes that panel's slot
             // alone, so the other's backdrop keeps the tuning it was given.
             SAMPLE_SET.setMuted(SCREEN_SCOPE, true, new MapLayerRefreshBoard());
@@ -196,7 +196,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void setMutedNoOpsBeforeTheSectorExists() {
+        void noOpsBeforeTheSectorExists() {
             // No sector means no save to write into and nothing painting, so the write and the
             // refresh are both skipped rather than bumping a revision no overlay would read.
             sectorMemoryFake.removeSector();
@@ -213,7 +213,7 @@ final class RecedePreferencesTest {
     class SetDesaturated {
 
         @Test
-        void setDesaturatedPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
+        void persistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
 
             var board = new MapLayerRefreshBoard();
 
@@ -226,7 +226,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void setDesaturatedWritesTheOffChoiceToo() {
+        void writesTheOffChoiceToo() {
             // The explicit false is what lets a player overrule the on default: an unset key would
             // read back as desaturated again on the next load.
             SAMPLE_SET.setDesaturated(SCREEN_SCOPE, false, new MapLayerRefreshBoard());
@@ -236,7 +236,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void setDesaturatedLeavesAnotherScreensToggleUntouched() {
+        void leavesAnotherScreensToggleUntouched() {
 
             SAMPLE_SET.setDesaturated(SCREEN_SCOPE, false, new MapLayerRefreshBoard());
 
@@ -245,7 +245,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void setDesaturatedNoOpsBeforeTheSectorExists() {
+        void noOpsBeforeTheSectorExists() {
 
             sectorMemoryFake.removeSector();
             var board = new MapLayerRefreshBoard();
@@ -261,7 +261,7 @@ final class RecedePreferencesTest {
     class ResolveRecedeAdjustment {
 
         @Test
-        void resolveRecedeAdjustmentMutesOnlyWhenOnlyMuteIsSet() {
+        void mutesOnlyWhenOnlyMuteIsSet() {
             // Mute alone dims by the modifier and keeps the colour, so a receded bloc recedes
             // without a palette change.
             try (var settingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
@@ -274,7 +274,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void resolveRecedeAdjustmentDesaturatesOnlyWhenOnlyDesaturateIsSet() {
+        void desaturatesOnlyWhenOnlyDesaturateIsSet() {
             // Desaturate alone recolours at full opacity, so the modifier is left unread.
             try (var settingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
@@ -286,7 +286,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void resolveRecedeAdjustmentBothMutesAndDesaturatesWhenBothAreSet() {
+        void bothMutesAndDesaturatesWhenBothAreSet() {
             // The two knobs combine: a receded bloc dims and recolours at once.
             try (var settingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
@@ -298,7 +298,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void resolveRecedeAdjustmentIsNoneWhenNeitherIsSet() {
+        void isNoneWhenNeitherIsSet() {
             // Both toggles off is the identity adjustment, so an un-receded look is preserved.
             try (var settingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
@@ -310,7 +310,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void resolveRecedeAdjustmentResolvesEachScreenUnderItsOwnToggles() {
+        void resolvesEachScreenUnderItsOwnToggles() {
             // The adjustment is composed per screen, so one panel's dimmed backdrop leaves the other's
             // at the untouched reading rather than both painting alike.
             try (var settingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
@@ -323,7 +323,7 @@ final class RecedePreferencesTest {
         }
 
         @Test
-        void resolveRecedeAdjustmentTracksTheMutedModifierValue() {
+        void tracksTheMutedModifierValue() {
             // The muted multiplier is the modifier reading, not a constant, so a different modifier
             // value flows straight through to the adjustment.
             try (var settingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {

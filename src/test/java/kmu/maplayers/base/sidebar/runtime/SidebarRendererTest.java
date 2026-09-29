@@ -34,26 +34,26 @@ final class SidebarRendererTest {
     class ResolveSettledFold {
 
         @Test
-        void resolveSettledFoldReportsDockedOnceTheBodyReachesTheRail() {
+        void reportsDockedOnceTheBodyReachesTheRail() {
             assertThat(SidebarRenderer.resolveSettledFold(FULLY_DOCKED, false))
                 .isTrue();
         }
 
         @Test
-        void resolveSettledFoldReportsOpenWhenTheBodyRestsFullyExpanded() {
+        void reportsOpenWhenTheBodyRestsFullyExpanded() {
             assertThat(SidebarRenderer.resolveSettledFold(FULLY_EXPANDED, true))
                 .isFalse();
         }
 
         @Test
-        void resolveSettledFoldReportsNothingMidFold() {
+        void reportsNothingMidFold() {
             // Halfway between the ends and resting at neither, there is no choice to record yet.
             assertThat(SidebarRenderer.resolveSettledFold(0.5f, false))
                 .isNull();
         }
 
         @Test
-        void resolveSettledFoldReportsNothingOnTheFirstFrameOfACollapse() {
+        void reportsNothingOnTheFirstFrameOfACollapse() {
             // The handle has just turned an open panel toward the rail: the fraction is still zero but the
             // panel no longer rests open, so recording here would write back the fold being left behind.
             assertThat(SidebarRenderer.resolveSettledFold(FULLY_EXPANDED, false))
@@ -65,7 +65,7 @@ final class SidebarRendererTest {
     class RepaintVanillaTooltipOverPanel {
 
         @Test
-        void repaintVanillaTooltipOverPanelDrawsTheShownTooltipAgain() {
+        void drawsTheShownTooltipAgain() {
 
             var tooltipFake = new Object();
             var repainterFake = new CoreUiComponentRepainterFake();
@@ -78,7 +78,7 @@ final class SidebarRendererTest {
         }
 
         @Test
-        void repaintVanillaTooltipOverPanelClipsToTheWholePanelFootprint() {
+        void clipsToTheWholePanelFootprint() {
             // The clip is the panel's outer bound, not the tooltip's own box: the part of the tooltip
             // outside the panel keeps vanilla's single draw, so nothing is composited twice. The rect
             // spans the row's top edge down to the box's bottom and out to the handle's far side.
@@ -92,7 +92,7 @@ final class SidebarRendererTest {
         }
 
         @Test
-        void repaintVanillaTooltipOverPanelDrawsNothingWithNoTooltipUp() {
+        void drawsNothingWithNoTooltipUp() {
             // The probe answers null both for "no tooltip" and for a read that broke, so this is also
             // what a failed probe costs: the panel draws as it always did and nothing is lifted.
             var repainterFake = new CoreUiComponentRepainterFake();
@@ -105,7 +105,7 @@ final class SidebarRendererTest {
         }
 
         @Test
-        void repaintVanillaTooltipOverPanelKeepsDrawingAfterAFailedRepaint() {
+        void keepsDrawingAfterAFailedRepaint() {
             // A repaint that throws must neither escape into the render pass - which would take the whole
             // panel away - nor latch the lift off for the session: the draw entry point can fail on one
             // frame's state, so the next frame tries again and only the log is silenced after the first.

@@ -416,7 +416,7 @@ class SectorPoliticsIntegrationTest {
     class ResolveDominantHolder {
 
         @Test
-        void resolveDominantHolderNamesDominantFactionWithPalette() {
+        void namesDominantFactionWithPalette() {
 
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
@@ -433,7 +433,7 @@ class SectorPoliticsIntegrationTest {
         }
 
         @Test
-        void resolveDominantHolderReturnsNullForUninhabitedSystem() {
+        void returnsNullForUninhabitedSystem() {
 
             var sector = buildSectorWith("empty-system", List.of());
 
@@ -442,7 +442,7 @@ class SectorPoliticsIntegrationTest {
         }
 
         @Test
-        void resolveDominantHolderIgnoresConditionOnlyMarket() {
+        void ignoresConditionOnlyMarket() {
             // A bare rock's condition-only market is no colony, so the system has no
             // holder - matching the bulk pass.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
@@ -456,7 +456,7 @@ class SectorPoliticsIntegrationTest {
         }
 
         @Test
-        void resolveDominantHolderReturnsNullForNullSystem() {
+        void returnsNullForNullSystem() {
 
             var sector = buildSectorWith(
                 "owned-system",
@@ -468,7 +468,7 @@ class SectorPoliticsIntegrationTest {
         }
 
         @Test
-        void resolveDominantHolderReturnsNullForNullSector() {
+        void returnsNullForNullSector() {
 
             assertThat(SectorPolitics.resolveDominantHolder(mock(StarSystemAPI.class), buildPassOver(null)))
                 .isNull();

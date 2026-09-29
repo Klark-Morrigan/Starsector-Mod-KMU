@@ -46,7 +46,7 @@ final class ArrangedLayersTest {
     class ArrangeVisibleLayers {
 
         @Test
-        void arrangeVisibleLayersFollowsRegistrationOrderWithNothingArranged() {
+        void followsRegistrationOrderWithNothingArranged() {
             // The install every player starts on: no stored file, so the row is what load order
             // built - the layers a mod depends on to the left of its own.
             assertThat(ArrangedLayers.arrangeVisibleLayers(
@@ -56,7 +56,7 @@ final class ArrangedLayersTest {
         }
 
         @Test
-        void arrangeVisibleLayersPutsTheRowInTheStoredOrder() {
+        void putsTheRowInTheStoredOrder() {
 
             var arrangement = new MapLayerArrangement(
                 List.of("gamma", "beta", "alpha"),
@@ -67,7 +67,7 @@ final class ArrangedLayersTest {
         }
 
         @Test
-        void arrangeVisibleLayersSkipsAStoredIdNothingRegisters() {
+        void skipsAStoredIdNothingRegisters() {
             // A mod uninstalled since the arrangement was made, or one that renamed its layer.
             // Skipped rather than answered for, which is what lets the store outlive the mods it
             // names without a migration.
@@ -80,7 +80,7 @@ final class ArrangedLayersTest {
         }
 
         @Test
-        void arrangeVisibleLayersAppendsARegisteredIdTheStoreDoesNotName() {
+        void appendsARegisteredIdTheStoreDoesNotName() {
             // A mod installed after the arrangement was stored: its layer lands where registration
             // order would have put it, and the player moves it from there if they want to.
             var arrangement = new MapLayerArrangement(
@@ -92,7 +92,7 @@ final class ArrangedLayersTest {
         }
 
         @Test
-        void arrangeVisibleLayersPlacesADuplicatedStoredIdOnce() {
+        void placesADuplicatedStoredIdOnce() {
             // Only a hand-edit reaches this, and the row it would otherwise build carries one layer
             // under two tabs - both writing and reading the same stored pick.
             var arrangement = new MapLayerArrangement(
@@ -104,7 +104,7 @@ final class ArrangedLayersTest {
         }
 
         @Test
-        void arrangeVisibleLayersDropsAHiddenLayerFromTheRow() {
+        void dropsAHiddenLayerFromTheRow() {
 
             var arrangement = new MapLayerArrangement(
                 List.of(),
@@ -115,7 +115,7 @@ final class ArrangedLayersTest {
         }
 
         @Test
-        void arrangeVisibleLayersKeepsTheLeadingLayerWhereTheArrangementHidesEverything() {
+        void keepsTheLeadingLayerWhereTheArrangementHidesEverything() {
             // A bar with no tabs has no way back to itself. The layer left standing is the leading
             // one of the player's own order rather than of the roster's, so the fallback lands where
             // they would look for it.
@@ -128,7 +128,7 @@ final class ArrangedLayersTest {
         }
 
         @Test
-        void arrangeVisibleLayersAnswersAnEmptyRowBeforeAnythingIsRegistered() {
+        void answersAnEmptyRowBeforeAnythingIsRegistered() {
             // The state a process that has registered nothing is in. The guard above must not
             // invent a tab for it.
             assertThat(ArrangedLayers.arrangeVisibleLayers(

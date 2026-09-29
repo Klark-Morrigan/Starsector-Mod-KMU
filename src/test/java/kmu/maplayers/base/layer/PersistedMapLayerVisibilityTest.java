@@ -72,14 +72,14 @@ final class PersistedMapLayerVisibilityTest {
     class AreLayersShown {
 
         @Test
-        void areLayersShownDefaultsToShownWithoutAStoredPick() {
+        void defaultsToShownWithoutAStoredPick() {
 
             assertThat(visibility.areLayersShown())
                 .isTrue();
         }
 
         @Test
-        void areLayersShownReadsTheStoredPickUnderItsOwnKey() {
+        void readsTheStoredPickUnderItsOwnKey() {
 
             sectorMemoryFake.storeValue(KEY, false);
 
@@ -92,7 +92,7 @@ final class PersistedMapLayerVisibilityTest {
     class ShowLayers {
 
         @Test
-        void showLayersWritesThePickUnderItsOwnKey() {
+        void writesThePickUnderItsOwnKey() {
 
             visibility.showLayers(false);
 
@@ -101,7 +101,7 @@ final class PersistedMapLayerVisibilityTest {
         }
 
         @Test
-        void showLayersOnOneScreenLeavesAnotherScreensPickUntouched() {
+        void onOneScreenLeavesAnotherScreensPickUntouched() {
             // The independence the per-screen split needs: hiding on one screen must never write a
             // second screen's slot, or the player would lose the layers on a screen they are not on.
             visibility.showLayers(false);
@@ -111,7 +111,7 @@ final class PersistedMapLayerVisibilityTest {
         }
 
         @Test
-        void showLayersWritesNothingForAnUnchangedPick() {
+        void writesNothingForAnUnchangedPick() {
 
             sectorMemoryFake.storeValue(KEY, false);
             visibility.showLayers(false);
@@ -121,7 +121,7 @@ final class PersistedMapLayerVisibilityTest {
         }
 
         @Test
-        void showLayersRecordsNoRampWhenThereIsNoSectorToWriteInto() {
+        void recordsNoRampWhenThereIsNoSectorToWriteInto() {
 
             sectorMemoryFake.removeSector();
             visibility.showLayers(false);
@@ -137,14 +137,14 @@ final class PersistedMapLayerVisibilityTest {
     class ResolveShownFade {
 
         @Test
-        void resolveShownFadeIsFullyShownForAShownPickThatHasNotFlipped() {
+        void isFullyShownForAShownPickThatHasNotFlipped() {
 
             assertThat(visibility.resolveShownFade())
                 .isCloseTo(1f, within(FADE_TOLERANCE));
         }
 
         @Test
-        void resolveShownFadeIsFullyHiddenForAStoredHiddenPickThatHasNotFlipped() {
+        void isFullyHiddenForAStoredHiddenPickThatHasNotFlipped() {
             // What a save loaded with the layers hidden reads on its first frame: already gone, rather
             // than dissolving away a picture the screen never drew.
             sectorMemoryFake.storeValue(KEY, false);
@@ -154,7 +154,7 @@ final class PersistedMapLayerVisibilityTest {
         }
 
         @Test
-        void resolveShownFadeRidesDownTheRampAfterHiding() {
+        void ridesDownTheRampAfterHiding() {
 
             visibility.showLayers(false);
             advanceClockBySeconds(0.1);
@@ -166,7 +166,7 @@ final class PersistedMapLayerVisibilityTest {
         }
 
         @Test
-        void resolveShownFadeSettlesFullyHiddenOnceTheRampIsPast() {
+        void settlesFullyHiddenOnceTheRampIsPast() {
 
             visibility.showLayers(false);
             advanceClockBySeconds(0.4);
@@ -176,7 +176,7 @@ final class PersistedMapLayerVisibilityTest {
         }
 
         @Test
-        void resolveShownFadeRidesUpTheRampAfterShowing() {
+        void ridesUpTheRampAfterShowing() {
 
             sectorMemoryFake.storeValue(KEY, false);
 
@@ -189,7 +189,7 @@ final class PersistedMapLayerVisibilityTest {
         }
 
         @Test
-        void resolveShownFadeSettlesFullyShownOnceTheRampIsPast() {
+        void settlesFullyShownOnceTheRampIsPast() {
             // The far end of the ramp, which is the bound a fade left running would climb past: a
             // consumer multiplying by it would brighten the overlay beyond what it paints at rest.
             sectorMemoryFake.storeValue(KEY, false);
@@ -202,7 +202,7 @@ final class PersistedMapLayerVisibilityTest {
         }
 
         @Test
-        void resolveShownFadeCutsStraightToThePickWithARampOfNoTimeAtAll() {
+        void cutsStraightToThePickWithARampOfNoTimeAtAll() {
 
             rampSeconds = 0;
             visibility.showLayers(false);
@@ -214,7 +214,7 @@ final class PersistedMapLayerVisibilityTest {
         }
 
         @Test
-        void resolveShownFadeReversesFromTheProgressTheFlipCaughtItAt() {
+        void reversesFromTheProgressTheFlipCaughtItAt() {
 
             visibility.showLayers(false);
             advanceClockBySeconds(0.1);

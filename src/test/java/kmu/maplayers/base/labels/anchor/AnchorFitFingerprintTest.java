@@ -54,7 +54,7 @@ final class AnchorFitFingerprintTest {
     class Equality {
 
         @Test
-        void equalityHoldsForTwoPassesMadeUnderTheSameRulesAndGeometry() {
+        void holdsForTwoPassesMadeUnderTheSameRulesAndGeometry() {
             // The case the whole mechanism turns on: nothing moved between two rebuilds, so
             // the earlier pass's placements are still describable by the later pass's rules.
             var fittedEarlier = new AnchorFitFingerprint(
@@ -71,7 +71,7 @@ final class AnchorFitFingerprintTest {
         }
 
         @Test
-        void equalitySeparatesPassesMadeUnderDifferentSearchKnobs() {
+        void separatesPassesMadeUnderDifferentSearchKnobs() {
             // A sweep knob re-aims every candidate line, so no placement made under the old
             // width describes where the search would put it now.
             var fittedAtFourteenOffsets = new AnchorFitFingerprint(
@@ -86,7 +86,7 @@ final class AnchorFitFingerprintTest {
         }
 
         @Test
-        void equalitySeparatesPassesMadeUnderDifferentBandFitKnobs() {
+        void separatesPassesMadeUnderDifferentBandFitKnobs() {
             // The band-fit half of the tuning is the library's own record, reached through
             // this one - a knob the search does not own still changes what it accepted.
             var fittedAtOneUnit = new AnchorFitFingerprint(
@@ -101,7 +101,7 @@ final class AnchorFitFingerprintTest {
         }
 
         @Test
-        void equalitySeparatesPassesMadeUnderADifferentBorderTrace() {
+        void separatesPassesMadeUnderADifferentBorderTrace() {
             // The deepest knob in the tree, and the one a placement is clipped against: a
             // looser weld traces different rings, so the boxes were sized inside a different
             // outline even where every other knob held.
@@ -120,7 +120,7 @@ final class AnchorFitFingerprintTest {
         }
 
         @Test
-        void equalitySeparatesPassesMadeAgainstDifferentGeometry() {
+        void separatesPassesMadeAgainstDifferentGeometry() {
             // Recut cells move the borders the boxes were clipped inside and the keep-out
             // sites they were trimmed clear of, neither of which any tuning knob mentions.
             var fittedBeforeTheRecut = new AnchorFitFingerprint(

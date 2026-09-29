@@ -84,7 +84,7 @@ final class FactionsViewTest {
     class ResolveGrouping {
 
         @Test
-        void resolveGroupingReturnsTheIdentityGrouping() {
+        void returnsTheIdentityGrouping() {
             // Every faction is its own bloc, so the pipeline resolves plain faction holding.
             assertThat(FactionsView.INSTANCE.resolveGrouping())
                 .isSameAs(HolderGrouping.identity());
@@ -95,7 +95,7 @@ final class FactionsViewTest {
     class ResolveContestGrouping {
 
         @Test
-        void resolveContestGroupingReadsTheLiveAllianceSet() {
+        void readsTheLiveAllianceSet() {
             // Who stands together in a contest is the live alliance set on every view of this
             // layer, whatever the view paints as one bloc: allies painted apart still read as allies.
             var allianceSet = HolderGroupingFixture.buildGroupOf("hegemony", "persean");
@@ -115,7 +115,7 @@ final class FactionsViewTest {
     class ResolveHolderProvider {
 
         @Test
-        void resolveHolderProviderReturnsTheDefaultProvider() {
+        void returnsTheDefaultProvider() {
             // The faction view resolves holding no differently from the pipeline's default -
             // each system's dominant holder, extended with the systems it merely claims - so it
             // inherits the shared claim-augmented default rather than supplying one of its own.
@@ -128,7 +128,7 @@ final class FactionsViewTest {
     class ResolveRibbonPlanner {
 
         @Test
-        void resolveRibbonPlannerCountsEachSystemByTheMechanicThatPaintedIt() {
+        void countsEachSystemByTheMechanicThatPaintedIt() {
             // The faction view paints held territory and extends it with claims, so its bands are
             // counted the same way round: the shared composition every contest-painted view
             // inherits, rather than one mechanic answering for cells the other painted.
@@ -170,7 +170,7 @@ final class FactionsViewTest {
     class GetContentRevision {
 
         @Test
-        void getContentRevisionShiftsWhenTheAllianceRevisionMoves() {
+        void shiftsWhenTheAllianceRevisionMoves() {
             // The alliance set is this view's one live input: its bands lay a contested run only
             // against a bloc the painter is not allied with, so a membership change must shift the
             // revision - that is what repaints the bands at their new lengths instead of leaving
@@ -185,7 +185,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void getContentRevisionIsInvariantAcrossAnUnrelatedSignal() {
+        void isInvariantAcrossAnUnrelatedSignal() {
             // Only the alliance set is folded in, so a signal this view renders nothing from - a
             // geometry rebuild here - leaves its contribution fixed rather than churning the view.
             var board = new MapLayerRefreshBoard();
@@ -202,7 +202,7 @@ final class FactionsViewTest {
     class ShouldUseIndependentStyle {
 
         @Test
-        void shouldUseIndependentStyleIsTrueForIndependentSpace() {
+        void isTrueForIndependentSpace() {
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
                     Factions.INDEPENDENT,
                     ANY_GROUPING,
@@ -211,7 +211,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void shouldUseIndependentStyleIsFalseForACoreFaction() {
+        void isFalseForACoreFaction() {
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
                     "hegemony",
                     ANY_GROUPING,
@@ -220,7 +220,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void shouldUseIndependentStyleIsTrueForACoreFactionWhenDesaturated() {
+        void isTrueForACoreFactionWhenDesaturated() {
             // A faction the filter recede has desaturated reads as backdrop, so it takes
             // the independent borders and seams paired with the desaturation palette - the same
             // classification the alliances view makes for a desaturated non-allied bloc.
@@ -232,7 +232,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void shouldUseIndependentStyleIsFalseForACoreFactionWhenOnlyMuted() {
+        void isFalseForACoreFactionWhenOnlyMuted() {
             // Muting dims a bloc but does not desaturate it, so a merely muted faction keeps its
             // faction bundle: dimming alone never swaps border weight or the palette slot.
             assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
@@ -247,7 +247,7 @@ final class FactionsViewTest {
     class ResolveBlocStyleAdjustment {
 
         @Test
-        void resolveBlocStyleAdjustmentIsNoneForAnyBloc() {
+        void isNoneForAnyBloc() {
             // The faction view adjusts no bloc - a core faction and independent space alike
             // draw exactly as classified, so the pipeline has nothing to dim or recolour.
             assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment(
@@ -268,7 +268,7 @@ final class FactionsViewTest {
     class ResolveName {
 
         @Test
-        void resolveNameReadsTheLongNameForTheFullFormat() {
+        void readsTheLongNameForTheFullFormat() {
 
             var sectorMock = mock(SectorAPI.class);
             var factionMock = mock(FactionAPI.class);
@@ -287,7 +287,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveNameReadsTheShortNameForTheShortFormat() {
+        void readsTheShortNameForTheShortFormat() {
 
             var sectorMock = mock(SectorAPI.class);
 
@@ -302,7 +302,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveNameIsNullWhenTheFactionDoesNotResolve() {
+        void isNullWhenTheFactionDoesNotResolve() {
             // A bloc ID with no faction behind it carries no name; the label fit then sizes
             // its stand-in band instead of drawing a name.
             var sectorMock = mock(SectorAPI.class);
@@ -323,14 +323,14 @@ final class FactionsViewTest {
     class ResolveHoverTooltip {
 
         @Test
-        void resolveHoverTooltipOffersTheDominationBox() {
+        void offersTheDominationBox() {
             // The box explaining the fills this view paints, which are painted by domination.
             assertThat(FactionsView.INSTANCE.resolveHoverTooltip())
                 .containsInstanceOf(SystemDominationTooltip.class);
         }
 
         @Test
-        void resolveHoverTooltipOffersTheSameBoxOnEveryAsk() {
+        void offersTheSameBoxOnEveryAsk() {
             // Held once by the view rather than built per hover, so every ask reads one box.
             assertThat(FactionsView.INSTANCE.resolveHoverTooltip().orElseThrow())
                 .isSameAs(FactionsView.INSTANCE.resolveHoverTooltip().orElseThrow());
@@ -341,7 +341,7 @@ final class FactionsViewTest {
     class ResolveSelectableBlocGate {
 
         @Test
-        void resolveSelectableBlocGateAdmitsEveryBloc() {
+        void admitsEveryBloc() {
             // Under identity every faction is its own bloc, so a core faction, independent space and
             // a pirate bloc alike are spotlight targets; presence is the shared stats read's gate.
             var gate = FactionsView.INSTANCE.resolveSelectableBlocGate(ANY_GROUPING);
@@ -367,7 +367,7 @@ final class FactionsViewTest {
         private static final DominanceStats ANY_STATS = new DominanceStats(3, 2, 5000, 7);
 
         @Test
-        void resolveBlocPickerReadCarriesEachPresentFactionsCrestShortNameAndStats() {
+        void carriesEachPresentFactionsCrestShortNameAndStats() {
             // Every present faction becomes an option carrying its crest, short name, and the stats the
             // shared read computed for it, so the option reads exactly as the picker row will draw and
             // sort it. The presence gate is the shared stats read's job, stubbed here to one faction.
@@ -394,7 +394,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadKeepsAFactionWithNoCrestAsANullCrestOption() {
+        void keepsAFactionWithNoCrestAsANullCrestOption() {
             // A faction with no authored crest is still selectable - its option just carries a null
             // crest path and the row draws its name alone, rather than being dropped.
             var sectorMock = mock(SectorAPI.class);
@@ -417,7 +417,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadRecedesTheRowOfAFactionOfNoWeight() {
+        void recedesTheRowOfAFactionOfNoWeight() {
             // The layers the contest paints grey a bloc by the same rule the claims layer does, on
             // their own metric: a faction present only through colonies the contest never weighed
             // paints no cell anywhere, so its row reads back - and stays listed and pickable, since
@@ -447,7 +447,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadOffersNoItemsWhenNoBlocIsPresent() {
+        void offersNoItemsWhenNoBlocIsPresent() {
             // With no present bloc the picker offers no options and a stale saved selection heals to
             // none.
             var sectorMock = mock(SectorAPI.class);
@@ -465,7 +465,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadRanksItsBlocsByTheDominanceVocabularyThenTheirStanding() {
+        void ranksItsBlocsByTheDominanceVocabularyThenTheirStanding() {
             // The view answers the list and the modes together, so the numbers its blocs carry and
             // the metrics the sort selector offers can never drift apart - this layer is painted by
             // domination, so domination is what the picker ranks by. Behind them sits the standing
@@ -488,7 +488,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadCarriesTheDominanceWalksPresenceBesideTheRows() {
+        void carriesTheDominanceWalksPresenceBesideTheRows() {
             // Where a bloc lives comes off the very walk that totalled its row, handed on rather
             // than derived a second time here. Anything else would be a second answer to "where is
             // this bloc" beside rows already carrying the count of it.

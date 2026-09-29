@@ -39,7 +39,7 @@ final class OwnerMapStaticStateIntegrationTest {
     class EveryTierClass {
 
         @Test
-        void everyTierClassHoldsNoStaticFieldThatCanChange() throws IOException, URISyntaxException {
+        void holdsNoStaticFieldThatCanChange() throws IOException, URISyntaxException {
 
             var tierClasses = listTierClassNames();
 

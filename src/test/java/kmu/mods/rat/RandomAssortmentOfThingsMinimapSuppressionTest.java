@@ -43,7 +43,7 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
     class ResolveSuppressibleMinimap {
 
         @Test
-        void resolveSuppressibleMinimapAnswersTheOneEmbeddedMapWidget() {
+        void answersTheOneEmbeddedMapWidget() {
             // What the mode permits: one docked minimap, which the script beside this switches off
             // for as long as its owner keeps it parked.
             var minimapFake = createMinimapWidgetDrawnTo(FULLY_DRAWN);
@@ -54,7 +54,7 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
         }
 
         @Test
-        void resolveSuppressibleMinimapAnswersAMinimapAlreadyDrawnToNothing() {
+        void answersAMinimapAlreadyDrawnToNothing() {
             // The read is the widget rather than what shows of it, and it has to stay that way: the
             // moment the suppression lands, a widget sifted by what it is drawn at would stop being
             // reported and the minimap would be parked for good.
@@ -66,7 +66,7 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
         }
 
         @Test
-        void resolveSuppressibleMinimapAnswersNothingWhileTheModeIsNotEngaged() {
+        void answersNothingWhileTheModeIsNotEngaged() {
             // Inert without the mode, and asked before the walk, so an install that never switched
             // the mode on pays one boolean.
             assertThat(new RandomAssortmentOfThingsMinimapSuppression(
@@ -76,7 +76,7 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
         }
 
         @Test
-        void resolveSuppressibleMinimapAnswersNothingWithNoSingleEmbeddedMapOnScreen() {
+        void answersNothingWithNoSingleEmbeddedMapOnScreen() {
             // The shared reading answers nothing when the panel is not built yet, when the reach
             // into the tree broke, and when two surfaces are on screen - which for this rule is the
             // case that matters, the mode naming one mod and the widgets naming none. All three
@@ -86,7 +86,7 @@ final class RandomAssortmentOfThingsMinimapSuppressionTest {
         }
 
         @Test
-        void resolveSuppressibleMinimapAnswersNothingForAMapThatIsNotAWidget() {
+        void answersNothingForAMapThatIsNotAWidget() {
             // A map is recognised by the map interface alone, which promises nothing about being a
             // component - and a widget is what an opacity is written to.
             var embeddedMap = createEmbeddedMapOf(new SectorMapWidgetFake());

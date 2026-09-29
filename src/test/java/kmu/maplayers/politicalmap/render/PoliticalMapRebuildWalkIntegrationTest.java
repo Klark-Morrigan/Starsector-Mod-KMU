@@ -178,7 +178,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     class RefreshDrawLists {
 
         @Test
-        void refreshDrawListsSelectsEachSystemsColoniesOnceForTheWholeRebuild() {
+        void selectsEachSystemsColoniesOnceForTheWholeRebuild() {
             // The step's own claim. Every stage asks the same question of the same systems, so the
             // rebuild opens one reading of the sector and hands it down; three stages each opening
             // a reading of their own is what this stops, and each would show here as another
@@ -192,7 +192,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsKeepsTheRebuildInsideTheFrameworksWalkBudget() {
+        void keepsTheRebuildInsideTheFrameworksWalkBudget() {
             // What the framework promises the frame it draws in, read off the row the frame opens
             // around this very call: one traversal of the sector per refresh, however many stages
             // run. A stage going looking for the system list on its own breaks it, and the breach
@@ -204,7 +204,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsKeepsTheRebuildInsideTheWalkBudgetOnARefreshSignalToo() {
+        void keepsTheRebuildInsideTheWalkBudgetOnARefreshSignalToo() {
             // The second rebuild, which reads the sector afresh rather than off the first one's
             // reading. Each refresh is judged on its own call, so a second rebuild that traversed
             // twice would be the breach even though the first stayed inside the bound.
@@ -215,7 +215,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsWalksTheSectorAgainOnASecondRebuild() {
+        void walksTheSectorAgainOnASecondRebuild() {
             // The bound's other half: one walk per refresh rather than one walk ever. A reading
             // kept between rebuilds would draw the second off the sector the first saw, which is
             // the change a rebuild exists to show - and would show here as the walk that never
@@ -229,7 +229,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsReadsNoSectorOnAFrameWithNothingStaleToRebuild() {
+        void readsNoSectorOnAFrameWithNothingStaleToRebuild() {
             // The frame this cache spends nearly all of its life on: the map is open, refresh runs,
             // and no input has moved. Both staleness questions are settled before a reading of the
             // sector is opened for exactly this reason - a reading opened first would put a walk of
@@ -253,7 +253,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsSamplesTheVisibilityRulesOnceForTheWholeRebuild() {
+        void samplesTheVisibilityRulesOnceForTheWholeRebuild() {
             // The other half of one reading: one sampling of the rules it is taken under. Three
             // samplings let a gate flipped mid-rebuild cut the cells under one rule and paint the
             // fills under another, which nothing on screen would report.
@@ -266,7 +266,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsReadsTheSectorAsItStandsOnEachRebuildRatherThanOffTheLastOnes() {
+        void readsTheSectorAsItStandsOnEachRebuildRatherThanOffTheLastOnes() {
             // The other half of holding one reading per rebuild: it has to be this rebuild's. An
             // index kept between rebuilds would draw the second off the sector the first saw,
             // which is precisely the change a rebuild exists to show.
@@ -289,7 +289,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsResolvesEveryStageOfARebuildUnderTheRulesInForceForThatRebuild() {
+        void resolvesEveryStageOfARebuildUnderTheRulesInForceForThatRebuild() {
             // A gate flipped between two rebuilds, posed on a colony nobody has discovered: under
             // the shipped rule the system is unsettled, and under the reveal it is settled and
             // contested. So the second rebuild's cut, fills and bands each have to move, and a
@@ -327,7 +327,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsLeavesOutTheSystemsItsOwnMachinerySawMoving() {
+        void leavesOutTheSystemsItsOwnMachinerySawMoving() {
             // The cut consults the movers so a system drifting across hyperspace seeds no cell and
             // clips no neighbour, its borders having nowhere stable to sit. Posed here rather than
             // in a unit because the moving set is published by a real tracker off real observations
@@ -352,7 +352,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsLeavesOutTheTwinAloneWhenOneOfAPairSharingAnIdMoves() {
+        void leavesOutTheTwinAloneWhenOneOfAPairSharingAnIdMoves() {
             // The tracker and the cut address a system the same way now, so a mover leaves the
             // partition as itself and its twin under the shared ID stays cut. Posed with the twin
             // moving - the one an address by ID would have folded into the first - so it is the
@@ -375,7 +375,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsCutsASystemAnotherMachinerySawMoving() {
+        void cutsASystemAnotherMachinerySawMoving() {
             // The half a cache holding its own machinery is for. A tracker is keyed by system
             // key and nothing forbids two sectors from minting a system under the same one, so a
             // cache reading the running game's movers would drop this sector's system for a
@@ -399,7 +399,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsDrainsItsOwnMachineryStaleSystemsAndLeavesAnothersStanding() {
+        void drainsItsOwnMachineryStaleSystemsAndLeavesAnothersStanding() {
             // The board's half of the same claim. A full rebuild re-derives every system, so it
             // drains the marks it has just accounted for - and nothing forbids two sectors from
             // minting a system under one key, so a rebuild draining a shared board would swallow
@@ -424,7 +424,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrawListsCutsTheSectorItsMachineryWasMadeForRatherThanTheRunningOne() {
+        void cutsTheSectorItsMachineryWasMadeForRatherThanTheRunningOne() {
             // The question this whole rework was for. Vanilla's map hook names no sector, so a
             // rebuild used to ask the running game which one it was drawing - which is right only
             // while the sector it holds cells for and the sector that is loaded are the same. Posed

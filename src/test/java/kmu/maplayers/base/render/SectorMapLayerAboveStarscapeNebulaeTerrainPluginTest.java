@@ -112,7 +112,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
     class RenderOnMap {
 
         @Test
-        void renderOnMapPaintsTheUpperBandWhileAStarscapeMapIsShowing() {
+        void paintsTheUpperBandWhileAStarscapeMapIsShowing() {
 
             var plugin = new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(() -> true);
 
@@ -126,7 +126,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapLeavesTheLowerBandToTheSurfaceBeneathTheNebulae() {
+        void leavesTheLowerBandToTheSurfaceBeneathTheNebulae() {
 
             var plugin = new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(() -> true);
 
@@ -140,7 +140,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapLeavesTheFramesPreparationToTheSurfaceBeneathTheNebulae() {
+        void leavesTheFramesPreparationToTheSurfaceBeneathTheNebulae() {
 
             var plugin = new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(() -> true);
 
@@ -154,7 +154,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapPublishesTheHoverThoughItPreparesNoFrame() {
+        void publishesTheHoverThoughItPreparesNoFrame() {
             // The split the plugin's own frame call cannot express: this surface leaves the frame's
             // preparation to the one beneath it and still reads the cursor, because it is the pass
             // that draws last under Starscape and the last read is the one the frame keeps.
@@ -170,7 +170,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapStandsAsideWhileNoStarscapeMapIsShowing() {
+        void standsAsideWhileNoStarscapeMapIsShowing() {
             // Inherited, and pinned here because it is the guard that keeps this surface off a
             // schematic map - where the base half already paints both bands and this one would lay a
             // second set of names over its own.

@@ -85,7 +85,7 @@ final class MapLayersTest {
     class SelectPoliticalMapViews {
 
         @Test
-        void selectPoliticalMapViewsPutsTheAlliancesViewBetweenFactionsAndClaimsWhenNexIsPresent() {
+        void putsTheAlliancesViewBetweenFactionsAndClaimsWhenNexIsPresent() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -102,7 +102,7 @@ final class MapLayersTest {
         }
 
         @Test
-        void selectPoliticalMapViewsOffersOnlyViewsWhoseHoverBoxSitsOnTheLayersOwnBase() {
+        void offersOnlyViewsWhoseHoverBoxSitsOnTheLayersOwnBase() {
             // What no compiler catches: a view injects its hover box rather than inheriting one, so a
             // view added later could inject a box built straight on the framework's shape. It would
             // then head with the system name alone while the tab beside it names the faction holding
@@ -129,7 +129,7 @@ final class MapLayersTest {
         }
 
         @Test
-        void selectPoliticalMapViewsIsFactionThenClaimsWhenNexIsAbsent() {
+        void isFactionThenClaimsWhenNexIsAbsent() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -149,7 +149,7 @@ final class MapLayersTest {
     class RegisterAll {
 
         @Test
-        void registerAllHealsThePoliticalMapsSpotlightsUnderItsOwnViewsWhenTheSettingsMove() {
+        void healsThePoliticalMapsSpotlightsUnderItsOwnViewsWhenTheSettingsMove() {
             // The heal is the layer's, so it is installed where the layer is made and over that layer's
             // registry: a settings change then clears a spotlight the political map's own picker no
             // longer offers, judged under the views that layer holds rather than anybody else's.
@@ -168,7 +168,7 @@ final class MapLayersTest {
         }
 
         @Test
-        void registerAllNamesTheAcademyTheTutorialSendsThePlayerTo() {
+        void namesTheAcademyTheTutorialSendsThePlayerTo() {
             // The one entity vanilla builds that a hover box must not call out as hiding, and the
             // one place its ID may be written. Driven through the whole registration rather than
             // through the seam it lives on, so dropping the call from the wiring fails here - a
@@ -189,7 +189,7 @@ final class MapLayersTest {
         }
 
         @Test
-        void registerAllLeavesTheEmptyViewLeadingTheStripAndThePoliticalMapAsThePick() {
+        void leavesTheEmptyViewLeadingTheStripAndThePoliticalMapAsThePick() {
             // The row and the pick used to be one call's two arguments and are now spread over three
             // files - two registrations here, and each layer's own answer to whether it offers itself.
             // So nothing but this fails if the calls are reordered or either answer is flipped, and
@@ -214,7 +214,7 @@ final class MapLayersTest {
         }
 
         @Test
-        void registerAllLeavesNobodyAlliedWhereTheModThatKeepsAlliancesIsAbsent() {
+        void leavesNobodyAlliedWhereTheModThatKeepsAlliancesIsAbsent() {
             // The half of the alliance wiring an install can be held to. Registration sits behind
             // the mod-enabled gate, so a Nex-free install has to come out of the whole registration
             // reading the rule exactly as it ships - and a source wired past that gate would fault

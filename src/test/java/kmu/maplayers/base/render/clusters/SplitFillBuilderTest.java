@@ -110,7 +110,7 @@ final class SplitFillBuilderTest {
     class TraceFill {
 
         @Test
-        void traceFillDrawsNothingForANoColourFill() {
+        void drawsNothingForANoColourFill() {
             // An owner the player has switched the fill off for pays no tessellation at all,
             // rather than baking triangles the draw pass would then skip - and every body it
             // holds cuts to nothing, since the bodies themselves still stroke and hold a label.
@@ -129,7 +129,7 @@ final class SplitFillBuilderTest {
         }
 
         @Test
-        void traceFillTessellatesTheFrontierWhenEveryMemberFillsSolid() {
+        void tessellatesTheFrontierWhenEveryMemberFillsSolid() {
             // The fast path: no trace of its own, just the smoothed loops the border strokes, so
             // the fill lands exactly where the border does.
             var fill = createSplitFillBuilder()
@@ -143,7 +143,7 @@ final class SplitFillBuilderTest {
         }
 
         @Test
-        void traceFillGivesEachBodyItsOwnAreaRatherThanTheOwnersCombinedOne() {
+        void givesEachBodyItsOwnAreaRatherThanTheOwnersCombinedOne() {
             // Two bodies of one owner cut from the same traced fill, each from its own loops.
             // Cut against both at once, either would carry the union - the error the flat record
             // could not have caught, since it held one soup over everything either way.
@@ -160,7 +160,7 @@ final class SplitFillBuilderTest {
         }
 
         @Test
-        void traceFillCarvesPerStateWhenTheOwnerHoldsAHatchedMember() {
+        void carvesPerStateWhenTheOwnerHoldsAHatchedMember() {
             // Non-solid members force the carve even off the spotlight, so solid and hatched
             // fills read apart inside the one frontier.
             var fill = createSplitFillBuilder()
@@ -172,7 +172,7 @@ final class SplitFillBuilderTest {
         }
 
         @Test
-        void traceFillCarvesTwoMembersSharingAnIdIntoTheirOwnStates() {
+        void carvesTwoMembersSharingAnIdIntoTheirOwnStates() {
             // The sub-cluster keys are written under each member's own SystemKey, so a pair
             // answering to one vanilla ID can be carved apart: the solid state covers the solid
             // member's cell alone. Written by ID, the hatched member's key would have overwritten
@@ -201,7 +201,7 @@ final class SplitFillBuilderTest {
         }
 
         @Test
-        void traceFillConfinesACarvedStateToTheBodyItsMembersSitIn() {
+        void confinesACarvedStateToTheBodyItsMembersSitIn() {
             // The states are traced once across the whole owner, so nothing but the per-body clip
             // keeps the distant body from being painted over area it does not contain. Its fill
             // has to come back empty: its own loops enclose none of the members.
@@ -220,7 +220,7 @@ final class SplitFillBuilderTest {
         }
 
         @Test
-        void traceFillCarvesPerStateForASpotlitOwnerThatFillsSolidThroughout() {
+        void carvesPerStateForASpotlitOwnerThatFillsSolidThroughout() {
             // The spotlight always splits: its fill is per state even where it dominates
             // everywhere, so a spotlit owner does not fall into the solid fast path.
             var solid = createSplitFillBuilder()
@@ -237,7 +237,7 @@ final class SplitFillBuilderTest {
         }
 
         @Test
-        void traceFillLeavesTheHatchEmptyWhenNoMemberIsHatched() {
+        void leavesTheHatchEmptyWhenNoMemberIsHatched() {
             var fill = createSplitFillBuilder()
                 .traceFill(true, buildSolidOnlySplit(), REGION_KEY, Color.RED)
                 .buildFillFor(HOME_BODY);

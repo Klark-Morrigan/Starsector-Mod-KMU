@@ -60,7 +60,7 @@ final class ControlRowsIntegrationTest {
     class BuildRadio {
 
         @Test
-        void buildRadioTellsTheOwnerTheFirstOptionWhenNothingIsRemembered() {
+        void tellsTheOwnerTheFirstOptionWhenNothingIsRemembered() {
 
             var told = new ArrayList<Loudness>();
 
@@ -71,7 +71,7 @@ final class ControlRowsIntegrationTest {
         }
 
         @Test
-        void buildRadioOpensOnTheRememberedPick() {
+        void opensOnTheRememberedPick() {
 
             saved.put(KEY, "DEAFENING");
 
@@ -85,7 +85,7 @@ final class ControlRowsIntegrationTest {
         }
 
         @Test
-        void buildRadioRemembersAPickUnderTheOptionsOwnName() {
+        void remembersAPickUnderTheOptionsOwnName() {
 
             var told = new ArrayList<Loudness>();
             var refreshes = new ArrayList<String>();
@@ -107,7 +107,7 @@ final class ControlRowsIntegrationTest {
         }
 
         @Test
-        void buildRadioPutsTheRowAndTheOwnerBackToTheFirstOption() {
+        void putsTheRowAndTheOwnerBackToTheFirstOption() {
 
             saved.put(KEY, "LOUD");
 
@@ -125,7 +125,7 @@ final class ControlRowsIntegrationTest {
         }
 
         @Test
-        void buildRadioFallsBackWhereTheRememberedNameIsNoLongerOffered() {
+        void fallsBackWhereTheRememberedNameIsNoLongerOffered() {
 
             saved.put(KEY, "INAUDIBLE");
 

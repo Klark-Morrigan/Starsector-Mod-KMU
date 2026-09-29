@@ -44,7 +44,7 @@ final class ArrangementDialogPanelTest {
     class RaisePanel {
 
         @Test
-        void raisePanelStandsAPanelInTheCoreUiAndTakesTheScreen() {
+        void standsAPanelInTheCoreUiAndTakesTheScreen() {
 
             try (var screenScope = ArrangementDialogScreenScope.openOverAReachableCoreUi()) {
 
@@ -60,7 +60,7 @@ final class ArrangementDialogPanelTest {
         }
 
         @Test
-        void raisePanelLeavesTheScreenAloneWhereTheCoreUiCannotBeReached() {
+        void leavesTheScreenAloneWhereTheCoreUiCannotBeReached() {
             // Half-opening is the state this rules out: a panel built and hung from nothing would be
             // a dialog the player cannot see and cannot dismiss, with the screen already claimed.
             try (var screenScope = ArrangementDialogScreenScope.openOverAnUnreachableCoreUi()) {
@@ -75,7 +75,7 @@ final class ArrangementDialogPanelTest {
         }
 
         @Test
-        void raisePanelReusesTheStandingPanelWhenReopenedDuringTheFall() {
+        void reusesTheStandingPanelWhenReopenedDuringTheFall() {
             // The panel outlives the press that dismisses it, so a reopen while the box is still
             // falling has one to take back. Standing a second over the first would leave the first
             // on screen with nothing left holding it.
@@ -97,7 +97,7 @@ final class ArrangementDialogPanelTest {
     class ResolvePanelPresence {
 
         @Test
-        void resolvePanelPresenceReportsTheScreenClaimAndTheFadeTogether() {
+        void reportsTheScreenClaimAndTheFadeTogether() {
 
             try (var screenScope = ArrangementDialogScreenScope.openOverAReachableCoreUi()) {
 
@@ -117,7 +117,7 @@ final class ArrangementDialogPanelTest {
     class Advance {
 
         @Test
-        void advanceWritesTheFadeOntoThePanelAsItsOpacity() {
+        void writesTheFadeOntoThePanelAsItsOpacity() {
             // The one write that fades the box, its controls and the fills beneath them together. A
             // frame that skipped it would leave the box at whatever it was painted at last.
             try (var screenScope = ArrangementDialogScreenScope.openOverAReachableCoreUi()) {
@@ -134,7 +134,7 @@ final class ArrangementDialogPanelTest {
         }
 
         @Test
-        void advanceTakesThePanelDownAndReportsTheLossWhenTheMapHasGone() {
+        void takesThePanelDownAndReportsTheLossWhenTheMapHasGone() {
             // The panel hangs from the core UI, which outlives the screen the dialog was opened on,
             // so leaving that screen has to be noticed rather than waited for.
             try (var screenScope = ArrangementDialogScreenScope.openOverAReachableCoreUi()) {
@@ -152,7 +152,7 @@ final class ArrangementDialogPanelTest {
         }
 
         @Test
-        void advanceDoesNothingFurtherOnceThePanelHasBeenLetGo() {
+        void doesNothingFurtherOnceThePanelHasBeenLetGo() {
             // A detach that could not reach the core UI leaves a panel still advanced by whoever
             // holds it and no longer ours to paint, so every write below the guard would be through
             // a panel this no longer has.
@@ -172,7 +172,7 @@ final class ArrangementDialogPanelTest {
         }
 
         @Test
-        void advanceTakesThePanelDownOnceADismissedFadeHasSettled() {
+        void takesThePanelDownOnceADismissedFadeHasSettled() {
 
             try (var screenScope = ArrangementDialogScreenScope.openOverAReachableCoreUi()) {
 
@@ -197,7 +197,7 @@ final class ArrangementDialogPanelTest {
     class RenderBelow {
 
         @Test
-        void renderBelowPaintsTheBodysFillsUnderEveryWidget() {
+        void paintsTheBodysFillsUnderEveryWidget() {
             // The dim that stands the screen down and the box's own surface: the game publishes a
             // rectangle that strokes and none that fills, so nothing else paints either.
             try (var screenScope = ArrangementDialogScreenScope.openOverAReachableCoreUi()) {
@@ -214,7 +214,7 @@ final class ArrangementDialogPanelTest {
         }
 
         @Test
-        void renderBelowPaintsNothingBeforeABodyIsShown() {
+        void paintsNothingBeforeABodyIsShown() {
             // The frame between the panel being stood up and its widgets being composed, which the
             // engine renders like any other.
             try (var screenScope = ArrangementDialogScreenScope.openOverAReachableCoreUi()) {
@@ -233,7 +233,7 @@ final class ArrangementDialogPanelTest {
     class ProcessInput {
 
         @Test
-        void processInputClaimsAnEventNothingUnderTheDialogShouldSee() {
+        void claimsAnEventNothingUnderTheDialogShouldSee() {
             // The dialog's modality is this claim: a panel added to the core UI dims nothing and
             // stops nothing, so an unclaimed event reaches the map under the box.
             try (var screenScope = ArrangementDialogScreenScope.openOverAReachableCoreUi()) {
@@ -249,7 +249,7 @@ final class ArrangementDialogPanelTest {
         }
 
         @Test
-        void processInputReportsThePressThatDismissesTheDialog() {
+        void reportsThePressThatDismissesTheDialog() {
 
             try (var screenScope = ArrangementDialogScreenScope.openOverAReachableCoreUi()) {
 
@@ -269,7 +269,7 @@ final class ArrangementDialogPanelTest {
         }
 
         @Test
-        void processInputClaimsNothingWhileTheDialogIsOnlyFading() {
+        void claimsNothingWhileTheDialogIsOnlyFading() {
             // The press that dismisses the dialog is the moment the screen is the player's again, so
             // a claim held for the fall would eat the click that follows it.
             try (var screenScope = ArrangementDialogScreenScope.openOverAReachableCoreUi()) {

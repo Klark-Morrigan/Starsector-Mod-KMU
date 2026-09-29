@@ -61,7 +61,7 @@ final class MapFrameBeatsTest {
     class OpenBeat {
 
         @Test
-        void openBeatAnswersARootOfTheSectorItWasComposedFor() {
+        void answersARootOfTheSectorItWasComposedFor() {
             // The origin is what a capture taken across two games groups by, so a beat that named
             // none would leave its rows in the pile a reader cannot take back to a save.
             frameBeats.openBeat(BEAT).close();
@@ -71,7 +71,7 @@ final class MapFrameBeatsTest {
         }
 
         @Test
-        void openBeatAnswersARootEvenInsideAnOpenScope() {
+        void answersARootEvenInsideAnOpenScope() {
             // A beat has no parent whatever else is open. Nothing brackets one in play, but the
             // property is what the frame sequence rests on, and only a scope left open around one
             // can show it holding.
@@ -84,7 +84,7 @@ final class MapFrameBeatsTest {
         }
 
         @Test
-        void openBeatAnswersARootPerBeatInTheOrderTheyRan() {
+        void answersARootPerBeatInTheOrderTheyRan() {
             // Two beats of one frame are two rows, read in the order the frame spent them.
             frameBeats.openBeat(BEAT).close();
             frameBeats.openBeat(OTHER_BEAT).close();
@@ -98,7 +98,7 @@ final class MapFrameBeatsTest {
     class OpenLayerRow {
 
         @Test
-        void openLayerRowAnswersARowInsideTheBeatAlreadyOpen() {
+        void answersARowInsideTheBeatAlreadyOpen() {
             // The row the framework opens around a layer's callback, so what the layer cost is read
             // against the beat it cost it in.
             try (var beatScope = frameBeats.openBeat(BEAT)) {
@@ -114,7 +114,7 @@ final class MapFrameBeatsTest {
     class OpenStep {
 
         @Test
-        void openStepAnswersARowInsideWhateverIsAlreadyOpen() {
+        void answersARowInsideWhateverIsAlreadyOpen() {
             // A part of a beat worth its own row nests like any other section, which is what puts
             // the cache refresh inside the preparation rather than beside it.
             try (var beatScope = frameBeats.openBeat(BEAT)) {

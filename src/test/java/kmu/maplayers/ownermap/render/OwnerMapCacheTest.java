@@ -114,7 +114,7 @@ final class OwnerMapCacheTest {
     class RefreshDrawLists {
 
         @Test
-        void refreshDrawListsInstallsAnEmptyPlaceholderWhenTheRebuildThrows() {
+        void installsAnEmptyPlaceholderWhenTheRebuildThrows() {
             // No sector, so the rebuild throws part way through. The renderer must still find a draw
             // list rather than dereference a null one, and the next frame retries.
             var cache = buildCacheOver(machinery);
@@ -135,7 +135,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshDrawListsBuildsTheBorderTracingOverlayInPlaceOfTheDrawListsUnderTheDebugToggle() {
+        void buildsTheBorderTracingOverlayInPlaceOfTheDrawListsUnderTheDebugToggle() {
             // The overlay replaces the production view outright rather than drawing over it, so
             // the builder of the other view is never asked and its draw lists are left null.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
@@ -156,7 +156,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshDrawListsBuildsTheDrawListsAndNoOverlayWithTheDebugToggleOff() {
+        void buildsTheDrawListsAndNoOverlayWithTheDebugToggleOff() {
 
             var builtClusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
             openEverySeamARebuildReaches(builtClusters);
@@ -176,7 +176,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshDrawListsFoldsAMarkedSystemIntoTheStandingMapOnAFrameOwingNoRebuild() {
+        void foldsAMarkedSystemIntoTheStandingMapOnAFrameOwingNoRebuild() {
             // The colony event's path: nothing a decision reads moved, so no rebuild is owed, and
             // the one system marked since is handed to the fold rather than left for a rebuild
             // nothing is going to run.
@@ -196,7 +196,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshDrawListsFoldsNothingOnAFrameWithNoSystemMarked() {
+        void foldsNothingOnAFrameWithNoSystemMarked() {
             // The frame the map spends nearly all of its life on: nothing to rebuild and nothing
             // marked, so the fold is not so much as asked.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
@@ -210,7 +210,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshDrawListsDefersAMarkedSystemToTheNextRebuildWhileTheMapIsFiltered() {
+        void defersAMarkedSystemToTheNextRebuildWhileTheMapIsFiltered() {
             // The fold re-derives holders through the unfiltered holding, which would overwrite the
             // spotlight's synthetic keys - so a filtered map drops the mark rather than folding it,
             // and leaves nothing on the board for the next frame to find either.
@@ -235,7 +235,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void refreshDrawListsDropsAMarkedSystemWhileTheBorderTracingOverlayIsBuilt() {
+        void dropsAMarkedSystemWhileTheBorderTracingOverlayIsBuilt() {
             // The overlay builds no draw lists for a fold to patch, so the mark is dropped and the
             // overlay picks the change up on its next full rebuild.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
@@ -260,7 +260,7 @@ final class OwnerMapCacheTest {
     class ResolveHoverTargets {
 
         @Test
-        void resolveHoverTargetsIsTheBuiltDrawLists() {
+        void isTheBuiltDrawLists() {
             // The cursor is tested against the shapes the frame paints, so the targets are the very
             // draw lists the rebuild left rather than a copy that could drift from them.
             var builtClusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
@@ -275,7 +275,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void resolveHoverTargetsIsNullWhileTheBorderTracingOverlayReplacesTheDrawLists() {
+        void isNullWhileTheBorderTracingOverlayReplacesTheDrawLists() {
             // Nothing painted is a cell under the debug overlay, and a null is what the cursor read
             // parks on rather than resolving a hover into shapes nobody drew.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
@@ -294,7 +294,7 @@ final class OwnerMapCacheTest {
     class DisposeCachedState {
 
         @Test
-        void disposeCachedStateDropsTheDrawListsBuiltForItsSector() {
+        void dropsTheDrawListsBuiltForItsSector() {
             // What a sector removed mid-session leaves behind if this does nothing: the cached names
             // each own a GL buffer, so the drop is what frees them rather than leaving them to
             // LazyLib's finalizer sweep.
@@ -323,7 +323,7 @@ final class OwnerMapCacheTest {
         }
 
         @Test
-        void disposeCachedStateIsSafeBeforeAnythingHasBeenBuilt() {
+        void isSafeBeforeAnythingHasBeenBuilt() {
             // Reached for a sector installed on with the map never opened, when there are no draw
             // lists and no GL resources to release yet.
             var cache = buildCacheOver(machinery);

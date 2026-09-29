@@ -36,7 +36,7 @@ final class RibbonStyleTest {
     class ComputeCentrelineInset {
 
         @Test
-        void computeCentrelineInsetClearsTheBorderByThePadAndThenHalfTheBand() {
+        void clearsTheBorderByThePadAndThenHalfTheBand() {
             // 200 of clearance plus half of a 400-wide band, so the band's near edge lands exactly
             // at the pad and its far edge 200 deeper in.
             assertThat(buildStyle().computeCentrelineInset())
@@ -48,7 +48,7 @@ final class RibbonStyleTest {
     class ComputeUnpaddedCentrelineInset {
 
         @Test
-        void computeUnpaddedCentrelineInsetKeepsHalfTheBandAndNothingElse() {
+        void keepsHalfTheBandAndNothingElse() {
             // The pad given up entirely, so the band's near edge lands on the cell's own border
             // rather than clear of it - as deep as a cell short of room can be traced at without
             // hanging the band outside the cell it reports on.

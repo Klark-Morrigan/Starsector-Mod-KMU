@@ -15,7 +15,7 @@ final class NotchChevronColourChoiceTest {
     class GetLabel {
 
         @Test
-        void getLabelReturnsTheLunaLibOptionLabel() {
+        void returnsTheLunaLibOptionLabel() {
 
             assertThat(NotchChevronColourChoice.GOLD.getLabel())
                 .isEqualTo("Gold");

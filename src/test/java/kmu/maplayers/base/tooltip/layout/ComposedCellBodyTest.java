@@ -20,7 +20,7 @@ final class ComposedCellBodyTest {
     class Nothing {
 
         @Test
-        void nothingIsABodyWithNoBlocksAndNothingToOpenUp() {
+        void isABodyWithNoBlocksAndNothingToOpenUp() {
             // The one spelling of "the layer found nothing", so a box drawn from it stays undrawn
             // and offers no key either - two spellings of that state agree only until one is edited.
             // The shallowest level is what says there is nothing to open: read at it, the cycle has

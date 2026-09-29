@@ -29,7 +29,7 @@ final class UncontestedRibbonRunsTest {
     class ResolveRunLengths {
 
         @Test
-        void resolveRunLengthsCutsTheMarketRunToOneWidthWhereTheRunsAreShortened() {
+        void cutsTheMarketRunToOneWidthWhereTheRunsAreShortened() {
 
             var lengths = new UncontestedRibbonRuns(true)
                 .resolveRunLengths(AUTHORED_LENGTHS);
@@ -39,7 +39,7 @@ final class UncontestedRibbonRunsTest {
         }
 
         @Test
-        void resolveRunLengthsLeavesThePartingAtItsAuthoredLengthWhereTheRunsAreShortened() {
+        void leavesThePartingAtItsAuthoredLengthWhereTheRunsAreShortened() {
             // The parting says the same thing on an uncontested cell as on any other - one colony
             // ends, the next begins - so the shortening has no business with it.
             var lengths = new UncontestedRibbonRuns(true)
@@ -50,7 +50,7 @@ final class UncontestedRibbonRunsTest {
         }
 
         @Test
-        void resolveRunLengthsKeepsTheAuthoredLengthsWhereTheRunsAreNotShortened() {
+        void keepsTheAuthoredLengthsWhereTheRunsAreNotShortened() {
 
             assertThat(new UncontestedRibbonRuns(false).resolveRunLengths(AUTHORED_LENGTHS))
                 .isEqualTo(new RibbonSegmentLengths(3, 2));
@@ -61,7 +61,7 @@ final class UncontestedRibbonRunsTest {
     class ReadFromLunaSettings {
 
         @Test
-        void readFromLunaSettingsTakesItsAnswerFromTheShorteningKnob() {
+        void takesItsAnswerFromTheShorteningKnob() {
             // Answered off rather than on, which is not the shipped default: a read that ignored
             // the setting and answered its own way would pass against the default and fail here.
             try (var settingsMock = mockStatic(KmuOwnerMapRibbonSettings.class)) {

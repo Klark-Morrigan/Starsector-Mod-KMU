@@ -53,7 +53,7 @@ final class MapFrameSectionsTest {
     class ResolveLayerSection {
 
         @Test
-        void resolveLayerSectionAnswersOneSectionForOneLayerId() {
+        void answersOneSectionForOneLayerId() {
             // The renderer resolves its row once and holds it, but the framework will resolve one
             // per registered layer per sector - so two resolutions of one ID have to be the row,
             // not two rows a report shows side by side.
@@ -62,7 +62,7 @@ final class MapFrameSectionsTest {
         }
 
         @Test
-        void resolveLayerSectionAnswersASectionPerLayerId() {
+        void answersASectionPerLayerId() {
             // What a layer costs is only readable if it is its own row: two layers sharing one
             // would report a sum neither of them spent.
             assertThat(MapFrameSections.resolveLayerSection("political_map"))
@@ -70,7 +70,7 @@ final class MapFrameSectionsTest {
         }
 
         @Test
-        void resolveLayerSectionNamesTheRowAfterTheLayerId() {
+        void namesTheRowAfterTheLayerId() {
             // The ID is what a reader matches a row back to the layer by, and the prefix is what
             // gathers every layer's row under one place in the report.
             assertThat(MapFrameSections.resolveLayerSection("political_map").getName())
@@ -83,7 +83,7 @@ final class MapFrameSectionsTest {
 
         @ParameterizedTest
         @EnumSource(MapOverlayBand.class)
-        void resolveRenderSectionAnswersOneSectionForOneBand(MapOverlayBand band) {
+        void answersOneSectionForOneBand(MapOverlayBand band) {
             // Resolved per pass rather than held, so the answer has to be stable across the frames
             // a band is painted in.
             assertThat(MapFrameSections.resolveRenderSection(band))
@@ -91,7 +91,7 @@ final class MapFrameSectionsTest {
         }
 
         @Test
-        void resolveRenderSectionAnswersASectionPerBand() {
+        void answersASectionPerBand() {
             // The bands are separate passes carrying different contents, and one row averaging the
             // two would describe neither - which is the whole reason the paint beat is per band.
             assertThat(

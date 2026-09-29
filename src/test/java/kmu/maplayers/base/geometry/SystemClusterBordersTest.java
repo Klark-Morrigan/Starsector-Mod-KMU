@@ -132,7 +132,7 @@ final class SystemClusterBordersTest {
         }
 
         @Test
-        void traceBorderRingsLandsTheRingOnTheRawOutlineUnderNowhere() {
+        void landsTheRingOnTheRawOutlineUnderNowhere() {
             // The same lone F cell as the frontier case, traced with nothing inset: the ring
             // sits on the raw square (0..10) rather than pulled back to the 2..8 channel band.
             // The cluster's outline and its cells' fills are cut by one rule, so a cell drawn

@@ -15,7 +15,7 @@ final class FactionNameFormatChoiceTest {
     class PersistenceKey {
 
         @Test
-        void persistenceKeyReturnsTheFrozenSaveStableKey() {
+        void returnsTheFrozenSaveStableKey() {
             // Pinned as literals: renaming one resets every save that stored that format back to
             // the default, so a change must break this test first.
             assertThat(FactionNameFormatChoice.FULL.persistenceKey()).isEqualTo("full");
@@ -28,13 +28,13 @@ final class FactionNameFormatChoiceTest {
     class AreNamesDrawn {
 
         @Test
-        void areNamesDrawnIsTrueForBothNamedForms() {
+        void isTrueForBothNamedForms() {
             assertThat(FactionNameFormatChoice.FULL.areNamesDrawn()).isTrue();
             assertThat(FactionNameFormatChoice.SHORT.areNamesDrawn()).isTrue();
         }
 
         @Test
-        void areNamesDrawnIsFalseForNone() {
+        void isFalseForNone() {
             // The gate the label passes read: None must skip the whole label build, not merely
             // resolve to an empty string.
             assertThat(FactionNameFormatChoice.NONE.areNamesDrawn()).isFalse();

@@ -57,7 +57,7 @@ final class OwnerMapBuildInputsTest {
     class CreateEmpty {
 
         @Test
-        void createEmptyCarriesTheViewOverInertStandIns() {
+        void carriesTheViewOverInertStandIns() {
 
             var viewMock = mock(OwnerPaintedView.class);
             var inputs = OwnerMapBuildInputs.createEmpty(viewMock);
@@ -85,7 +85,7 @@ final class OwnerMapBuildInputsTest {
     class Accessors {
 
         @Test
-        void accessorsReturnEachConstructorInputInItsMatchingSlot() {
+        void returnEachConstructorInputInItsMatchingSlot() {
 
             var styling = MapStyling.createEmpty();
             var viewGrouping = new ViewGrouping(mock(OwnerPaintedView.class), HolderGrouping.identity());
@@ -117,7 +117,7 @@ final class OwnerMapBuildInputsTest {
     class ResolveBlocPaintOf {
 
         @Test
-        void resolveBlocPaintOfCascadesTheRecordsOwnViewGroupingAndPicks() {
+        void cascadesTheRecordsOwnViewGroupingAndPicks() {
             // Off filter the decision is the view's own call, asked under the grouping and the
             // picks this build was baked under - so the view sees exactly the record's two other
             // snapshots, and the adjustment it answers is the one the bloc draws under.
@@ -138,7 +138,7 @@ final class OwnerMapBuildInputsTest {
         }
 
         @Test
-        void resolveBlocPaintOfSinksADesaturatedBlocToTheRetainedDesaturationShades() {
+        void sinksADesaturatedBlocToTheRetainedDesaturationShades() {
             // The shades come off the record's own styling rather than from the caller, which is
             // what keeps a bloc's fill, its border and its cells' seams sunk to one grey: a
             // builder reaching for the palette itself is a builder that could reach a different

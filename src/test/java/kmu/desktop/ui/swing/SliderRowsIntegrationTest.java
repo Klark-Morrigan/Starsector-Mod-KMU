@@ -56,7 +56,7 @@ final class SliderRowsIntegrationTest {
     class BuildSliderPair {
 
         @Test
-        void buildSliderPairTellsEachOwnerItsOwnDefault() {
+        void tellsEachOwnerItsOwnDefault() {
 
             buildPair();
 
@@ -67,7 +67,7 @@ final class SliderRowsIntegrationTest {
         }
 
         @Test
-        void buildSliderPairOpensEachHalfOnItsOwnRememberedValue() {
+        void opensEachHalfOnItsOwnRememberedValue() {
 
             SavedValues.findSavedValues().putDouble(LEFT_KEY, 10);
             SavedValues.findSavedValues().putDouble(RIGHT_KEY, 90);
@@ -81,7 +81,7 @@ final class SliderRowsIntegrationTest {
         }
 
         @Test
-        void buildSliderPairGivesEachHalfItsOwnValueBox() {
+        void givesEachHalfItsOwnValueBox() {
 
             var boxes = ComponentTreeFixture.findAll(buildPair(), JTextField.class);
 
@@ -92,7 +92,7 @@ final class SliderRowsIntegrationTest {
         }
 
         @Test
-        void buildSliderPairGivesEachHalfItsOwnReset() {
+        void givesEachHalfItsOwnReset() {
 
             var pair = buildPair();
 

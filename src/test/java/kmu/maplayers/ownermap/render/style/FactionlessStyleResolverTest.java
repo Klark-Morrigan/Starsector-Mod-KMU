@@ -32,7 +32,7 @@ final class FactionlessStyleResolverTest {
     class ResolveCategoryOf {
 
         @Test
-        void resolveCategoryOfReturnsDecivilisedForASystemHoldingARevealedDecivilisedColony() {
+        void returnsDecivilisedForASystemHoldingARevealedDecivilisedColony() {
 
             assertThat(FactionlessStyleResolver.resolveCategoryOf(
                     INHABITED_SYSTEM_KEYS,
@@ -41,7 +41,7 @@ final class FactionlessStyleResolverTest {
         }
 
         @Test
-        void resolveCategoryOfReturnsDecivilisedForAnInhabitedSystemThePassFoundNoHolderFor() {
+        void returnsDecivilisedForAnInhabitedSystemThePassFoundNoHolderFor() {
             // A layer whose holding rule admits only some markets leaves a system settled
             // solely outside them with no holder, and it reaches this rule that way.
             // It is still inhabited, so it must not fall to the backdrop category the
@@ -53,7 +53,7 @@ final class FactionlessStyleResolverTest {
         }
 
         @Test
-        void resolveCategoryOfReturnsUninhabitedForASystemOutsideTheInhabitedSet() {
+        void returnsUninhabitedForASystemOutsideTheInhabitedSet() {
 
             assertThat(FactionlessStyleResolver.resolveCategoryOf(
                     INHABITED_SYSTEM_KEYS,
@@ -62,7 +62,7 @@ final class FactionlessStyleResolverTest {
         }
 
         @Test
-        void resolveCategoryOfReturnsUninhabitedForACellWithNoStarOfItsOwn() {
+        void returnsUninhabitedForACellWithNoStarOfItsOwn() {
             // A cell drawn as no system names nothing to look up, so it is uninhabited without the
             // null ID ever probing the set.
             assertThat(FactionlessStyleResolver.resolveCategoryOf(INHABITED_SYSTEM_KEYS, null))
@@ -81,7 +81,7 @@ final class FactionlessStyleResolverTest {
         private static final boolean SPOTLIT_BLOC_ABSENT = false;
 
         @Test
-        void resolveRecedeOfGivesADecivilisedCellThePassRecede() {
+        void givesADecivilisedCellThePassRecede() {
 
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
                     OwnerMapCategory.DECIVILISED,
@@ -91,7 +91,7 @@ final class FactionlessStyleResolverTest {
         }
 
         @Test
-        void resolveRecedeOfSparesASettledCellTheSpotlitBlocLivesIn() {
+        void sparesASettledCellTheSpotlitBlocLivesIn() {
             // The pick's own colony in a system this layer's holding could not attribute to it.
             // Sinking it would hide the very
             // presence the spotlight was picked to find, so it keeps full strength.
@@ -103,7 +103,7 @@ final class FactionlessStyleResolverTest {
         }
 
         @Test
-        void resolveRecedeOfLeavesAnUninhabitedCellUnreceded() {
+        void leavesAnUninhabitedCellUnreceded() {
             // The empty backdrop keeps the sector's shape whatever the spotlight does to the blocs
             // drawn over it.
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
@@ -114,7 +114,7 @@ final class FactionlessStyleResolverTest {
         }
 
         @Test
-        void resolveRecedeOfLeavesADecivilisedCellUntouchedWhenThePassRecedesNothing() {
+        void leavesADecivilisedCellUntouchedWhenThePassRecedesNothing() {
             // Off filter the pass's recede is the identity, so the rule is a no-op rather than a
             // path that has to be gated on whether a filter is active.
             assertThat(FactionlessStyleResolver.resolveRecedeOf(

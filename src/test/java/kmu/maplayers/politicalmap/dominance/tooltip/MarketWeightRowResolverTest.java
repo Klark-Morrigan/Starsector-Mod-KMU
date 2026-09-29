@@ -121,7 +121,7 @@ final class MarketWeightRowResolverTest {
     class ResolveMarketRows {
 
         @Test
-        void resolveMarketRowsRanksTheStrongestColonyFirst() {
+        void ranksTheStrongestColonyFirst() {
             // The colonies read strongest first for the same reason the blocs above them do: the
             // account of a score opens on what most of it came from.
             var rows = resolveUnremarkedRows(
@@ -136,7 +136,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsBreaksATieByNameSoTheOrderNeverDependsOnTheEconomyWalk() {
+        void breaksATieByNameSoTheOrderNeverDependsOnTheEconomyWalk() {
             // Two colonies of a bloc can weigh exactly the same, and left to the order the economy
             // handed them over the box would list them one way on one hover and the other on the next.
             var evenSize = new BaseSizeFactor(4, 4.0, 4.0, 0.0);
@@ -153,7 +153,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesTheColonysOwnWeightBesideIt() {
+        void statesTheColonysOwnWeightBesideIt() {
             // The colony's line carries the number its factors below add up to, so the account can be
             // checked one level at a time rather than only at the bloc.
             var rows = resolveUnremarkedRows(
@@ -166,7 +166,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeadsAColonyWithTheGlyphTheMapMarksItBy() {
+        void leadsAColonyWithTheGlyphTheMapMarksItBy() {
             // The reader has a list of names and a map, and the glyph is the one thing the two share
             // at a glance.
             var rows = resolveUnremarkedRows(
@@ -179,7 +179,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsDrawsAColonysGlyphInTheColonyNamesOwnColour() {
+        void drawsAColonysGlyphInTheColonyNamesOwnColour() {
             // The map's shades are authored to tell one world from another against black, and carried
             // into the box unchanged they arrive brighter than the numbers the account is about - a
             // column of coloured glyphs reads as the finding when what it is is a bullet point.
@@ -193,7 +193,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsOpensAColonyOnItsNameWhereTheMapMarksItWithNoGlyph() {
+        void opensAColonyOnItsNameWhereTheMapMarksItWithNoGlyph() {
             // An entity carrying no authored icon hands the absence straight over, so the line is
             // built from its words rather than from an image run with nothing to load.
             var rows = resolveUnremarkedRows(
@@ -206,7 +206,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsMarksNoTermOfArithmeticBeneathAColony() {
+        void marksNoTermOfArithmeticBeneathAColony() {
             // A stability, a size or a patrol tier is a term of arithmetic with nothing on the map to
             // point at, so a glyph there would be standing in for a number.
             var factors = resolveUnremarkedRows(
@@ -223,7 +223,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsOpensAColonyOnTheStabilityBehindItsCuts() {
+        void opensAColonyOnTheStabilityBehindItsCuts() {
             // Stability heads the factors because it is the cause of every cut beneath it; read after
             // them it would explain deductions the reader has already passed.
             var rows = resolveUnremarkedRows(
@@ -236,7 +236,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsDropsTheStabilityLineWhenStabilityWeighsNothing() {
+        void dropsTheStabilityLineWhenStabilityWeighsNothing() {
             // With the master weighting off stability moves no factor, so a line for it would state a
             // cause of cuts that are all zero.
             var rows = resolveUnremarkedRows(
@@ -253,7 +253,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsOutAHiddenColonyOnTheLineNamingIt() {
+        void callsOutAHiddenColonyOnTheLineNamingIt() {
             // Concealment is a finding about the place rather than about the size term it moves, and
             // the claims box states it on the colony's own line too - so the two boxes cannot part
             // over where the same fact belongs.
@@ -267,7 +267,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsNoConcealmentOutOnAColonyTheSectorOpenlyPointsAt() {
+        void callsNoConcealmentOutOnAColonyTheSectorOpenlyPointsAt() {
             // The identical breakdown, with the box's own walk of the system reporting the place as
             // one the sector points people at. Whether a concealment is real is nowhere in the
             // arithmetic, so the fact arrives beside the weight exactly as discovery does.
@@ -284,7 +284,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsOutAnUndiscoveredColony() {
+        void callsOutAnUndiscoveredColony() {
             // The word comes off the box's own walk of the system: no breakdown carries what the
             // player has discovered, the entity's flag being nowhere in the arithmetic.
             var rows = MarketWeightRowResolver.resolveMarketRows(
@@ -297,7 +297,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsNothingOutOnAHiddenColonysSizeLine() {
+        void callsNothingOutOnAHiddenColonysSizeLine() {
             // The term states what the concealment did to the number, in the raw size beside it,
             // and says nothing about the colony: one fact in one place, on the line about the place.
             var rows = resolveUnremarkedRows(
@@ -310,7 +310,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsMarksAFixedRatingAsNotTheColonysSize() {
+        void marksAFixedRatingAsNotTheColonysSize() {
             // Under fixed scaling the rating is a token the player pinned hidden colonies to, and an
             // unmarked one reads as a size this colony has.
             var rows = resolveFixedRatedHiddenMarketRows();
@@ -320,7 +320,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsOpensAFixedRatingOnTheColonysRealSize() {
+        void opensAFixedRatingOnTheColonysRealSize() {
             // The token says what the colony counted as and nothing about how big it is, which is the
             // one case a player is most likely to read as the map miscounting a large secret base.
             var rows = resolveFixedRatedHiddenMarketRows();
@@ -330,7 +330,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesNoRealSizeWhereTheColonyCountedByItsOwn() {
+        void statesNoRealSizeWhereTheColonyCountedByItsOwn() {
             // An openly held colony's rating is its size, so opening the line on it would state the
             // same number twice and imply a change that never happened.
             var rows = resolveUnremarkedRows(
@@ -343,7 +343,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsNamesTheStationThatEarnedTheBonus() {
+        void namesTheStationThatEarnedTheBonus() {
             // The station's own name is what ties the number to something the player can find on the
             // map, which a line reading "Station" would not.
             var rows = resolveUnremarkedRows(
@@ -356,7 +356,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeadsTheStationLineWithTheStationsOwnGlyph() {
+        void leadsTheStationLineWithTheStationsOwnGlyph() {
             // The station line names an entity the map draws, and a system's stations are told apart
             // there by their glyph as much as by their name - so the mark settles more here than it
             // does on the colony line above.
@@ -370,7 +370,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsDrawsTheStationsGlyphInTheStationNamesOwnColour() {
+        void drawsTheStationsGlyphInTheStationNamesOwnColour() {
             // A station's authored shade is as loud in a text box as a colony's, and the line means
             // no more by it: the glyph is the identifier, and the finding is the number opposite.
             var rows = resolveUnremarkedRows(
@@ -383,7 +383,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsOpensTheStationLineOnItsNameWhereTheMapMarksItWithNoGlyph() {
+        void opensTheStationLineOnItsNameWhereTheMapMarksItWithNoGlyph() {
             // A station carrying no authored icon hands the absence straight over, so the line is
             // built from the station's name rather than from an image run with nothing to load.
             var rows = resolveUnremarkedRows(
@@ -396,7 +396,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsTellsAStationColonysOwnStationApartFromIt() {
+        void tellsAStationColonysOwnStationApartFromIt() {
             // A colony on a station is one place to the player and two entries to the economy, named
             // alike, so the account states the same words at two levels for two different things.
             var rows = resolveUnremarkedRows(
@@ -412,7 +412,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsNamesAPlanetColonysNamesakeStationPlainly() {
+        void namesAPlanetColonysNamesakeStationPlainly() {
             // A planet and a station that happen to share a name are two places the player can see
             // apart on the map, so a clarifier would answer a question they never had.
             var rows = resolveUnremarkedRows(
@@ -425,7 +425,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsNamesAStationColonysDifferentlyNamedStationPlainly() {
+        void namesAStationColonysDifferentlyNamedStationPlainly() {
             // The station's own name already tells the two apart, and a clarifier on top of it would
             // be qualifying a line nothing was ambiguous about.
             var rows = resolveUnremarkedRows(
@@ -441,7 +441,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesTheStationClarifierInTheLinesOwnColour() {
+        void statesTheStationClarifierInTheLinesOwnColour() {
             // The parentheses already say the run is an aside; drawn in the qualifier's shade it
             // would read as loudly as the findings the box marks that way.
             var rows = resolveUnremarkedRows(
@@ -457,7 +457,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsMarksTheStationLineAloneBeneathAColony() {
+        void marksTheStationLineAloneBeneathAColony() {
             // The station is the only subject of the breakdown the player can go and find; every
             // other line beneath the colony states a term of the arithmetic behind its weight.
             var factors = resolveUnremarkedRows(
@@ -478,7 +478,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsAColonysFieldedTiersBeneathThePatrolLine() {
+        void listsAColonysFieldedTiersBeneathThePatrolLine() {
             // One heavy patrol and four light ones can be worth the same and are not the same force
             // fielded, so the tiers are what make the total explicable.
             var rows = resolveUnremarkedRows(
@@ -495,7 +495,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsWorksOutNoFactorWhereTheLevelStopsAtTheColonies() {
+        void worksOutNoFactorWhereTheLevelStopsAtTheColonies() {
             // The colony is listed and its arithmetic is not worked out at all. Left to the cut, four
             // factor lines per colony would be worded and then dropped, which is a system's worth of
             // numbers formatted for a reader who asked only which colonies a faction holds here.
@@ -511,7 +511,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsWorksOutNoPatrolTierWhereTheLevelStopsAtTheStats() {
+        void worksOutNoPatrolTierWhereTheLevelStopsAtTheStats() {
             // One tier further down, and the same rule: the patrol total is a stat the level admits,
             // while the split behind it is the tier below and is never worked out. So the level that
             // states what a colony fields costs nothing of the one that says what it fields it with.
@@ -529,7 +529,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesATiersRateApartFromWhatItCameTo() {
+        void statesATiersRateApartFromWhatItCameTo() {
             // The two halves reach the box separately so it can draw the rate quieter than the total
             // it explains; run together they would read as one number with a stray separator in it.
             var rows = resolveUnremarkedRows(
@@ -546,7 +546,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesThePatrolFactorsOwnValueWhole() {
+        void statesThePatrolFactorsOwnValueWhole() {
             // Only the tiers split. The patrol line is the weight alone - there is no working
             // behind it worth drawing quieter, since a headcount summed over tiers that count for
             // different amounts explains nothing about the number beside it.
@@ -566,7 +566,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsNoTierTheColonyFieldsNoneOf() {
+        void listsNoTierTheColonyFieldsNoneOf() {
             // A tier line for patrols that do not exist states a force the colony does not field.
             var rows = resolveUnremarkedRows(
                 List.of(buildPatrollingBreakdown(0, 0, 3)),
@@ -578,7 +578,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsGivesAFactorThatNeverRanNoLine() {
+        void givesAFactorThatNeverRanNoLine() {
             // The station and patrol factors are absent from the parts when the player has them off,
             // and a colony explained by lines for both would say they counted for nothing instead.
             var rows = resolveUnremarkedRows(
@@ -591,7 +591,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsNothingForABlocHoldingNoColony() {
+        void listsNothingForABlocHoldingNoColony() {
             assertThat(resolveUnremarkedRows(
                     List.of(),
                     NO_UNWEIGHED_COLONIES,
@@ -600,7 +600,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsNamesAColonyTheEconomyDoesNotListAtNought() {
+        void namesAColonyTheEconomyDoesNotListAtNought() {
             // The player can see the station on the map in the faction's colours, so an account
             // omitting it would withhold something they are looking straight at. Nought is what it
             // brought to the score - it is present, and it moved nothing.
@@ -616,7 +616,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsAnOrdinaryUnweighedColonyUnlisted() {
+        void callsAnOrdinaryUnweighedColonyUnlisted() {
             // The fallback finding, and the whole of why the colony is on this list rather than
             // among the weighed ones: the economy does not hold it.
             var rows = resolveUnremarkedRows(
@@ -629,7 +629,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsAConcealedUnweighedColonyHidden() {
+        void callsAConcealedUnweighedColonyHidden() {
             // The one shape that is concealed and off-economy at once - Galatia's, Daybreak's - and
             // the reason concealment travels on an unweighed colony at all: without it this line
             // would fall through to `unlisted` while the claims box called the same colony hidden.
@@ -643,7 +643,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsTellsADecivilisedWorldAndADerelictApartBesideTheirNoughts() {
+        void tellsADecivilisedWorldAndADerelictApartBesideTheirNoughts() {
             // The pair is what makes the words necessary: a decivilised world and a derelict arrive
             // identically - unowned, off-economy, at nought - so without them the reader cannot
             // tell a world people left from a wreck nobody ever lived on.
@@ -662,7 +662,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsDrawsAnUnweighedColonysNoughtInTheQuietShade() {
+        void drawsAnUnweighedColonysNoughtInTheQuietShade() {
             // The nought is the pass's statement about the colony rather than anything the colony
             // scored; in the list's own colour it would pass for a weight competed with and lost on.
             var rows = resolveUnremarkedRows(
@@ -675,7 +675,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsBreaksAnUnweighedColonyDownIntoNoFactors() {
+        void breaksAnUnweighedColonyDownIntoNoFactors() {
             // None of the three factors ran for it - there is nothing beneath the line to state, and
             // factor lines at nought would invite adding up to a total nobody computed.
             var rows = resolveUnremarkedRows(
@@ -688,7 +688,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsListsAnUnweighedColonyBelowEveryWeighedOne() {
+        void listsAnUnweighedColonyBelowEveryWeighedOne() {
             // Including one that weighed nothing: that colony was weighed and came to nought, which
             // is a different finding from one that was never weighed, and ranking them together by a
             // number only one of them earned would put the unweighed above it.
@@ -702,7 +702,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsLeadsAColonyTheEconomyDoesNotListWithItsGlyphToo() {
+        void leadsAColonyTheEconomyDoesNotListWithItsGlyphToo() {
             // The map's glyph is the only trace of such a colony beside its name - no score above
             // accounts for it - so the line the reader has most trouble placing is the last one that
             // should be left without it. It reads in the line's colour like every other colony's, a
@@ -720,7 +720,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRanksUnweighedColoniesByName() {
+        void ranksUnweighedColoniesByName() {
             // They have no weight to be ranked by, so they take the rule the weighed ones fall back
             // on at a tie - one order down the whole list rather than two.
             var rows = resolveUnremarkedRows(
@@ -735,7 +735,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsStatesNoListingPlaceOnAnyLine() {
+        void statesNoListingPlaceOnAnyLine() {
             // The shared line vocabulary can state where something falls in an ordering, and this box
             // has no use for one: dominance is settled by weight and distance, with no tie rule a
             // listing order could explain. A place stated here would be a number meaning nothing.
@@ -751,7 +751,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRemarksHowOldTheNewsOfAWeighedColonyIs() {
+        void remarksHowOldTheNewsOfAWeighedColonyIs() {
             // The remark is matched to the line by the colony's own ID rather than by its name,
             // which is what carrying the ID this far is for.
             var rows = MarketWeightRowResolver.resolveMarketRows(
@@ -764,7 +764,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRemarksHowOldTheNewsOfAnUnweighedColonyIs() {
+        void remarksHowOldTheNewsOfAnUnweighedColonyIs() {
             // The kind that most needs it: a derelict is admitted on the strength of somebody
             // having seen it, and no weight was ever worked out to say anything else about it.
             var rows = MarketWeightRowResolver.resolveMarketRows(
@@ -777,7 +777,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRemarksNothingBeneathARemarkedColony() {
+        void remarksNothingBeneathARemarkedColony() {
             // A stability or a size is arithmetic over the colony's own line, so a date there
             // would answer for the line above it twice.
             var rows = MarketWeightRowResolver.resolveMarketRows(
@@ -790,7 +790,7 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsRemarksNothingOnAColonyBeingLookedAtNow() {
+        void remarksNothingOnAColonyBeingLookedAtNow() {
             // The ordinary case: in sight, the name stands alone.
             var rows = resolveUnremarkedRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),

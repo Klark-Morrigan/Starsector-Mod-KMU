@@ -109,7 +109,7 @@ final class TooltipDensityDepthIntegrationTest {
     class FactorLineDepths {
 
         @Test
-        void factorLineDepthsPutAColonysTermsAtTheTierTheirGapIsBoundTo() {
+        void putAColonysTermsAtTheTierTheirGapIsBoundTo() {
             // The run that makes a hover box tall: a colony's size, stability, station and patrols all
             // land here, and the tier 2 slider is what packs them down.
             var rows = drawStandingsBlock();
@@ -121,7 +121,7 @@ final class TooltipDensityDepthIntegrationTest {
         }
 
         @Test
-        void factorLineDepthsPutAPatrolTierAtTheTierItsOwnGapIsBoundTo() {
+        void putAPatrolTierAtTheTierItsOwnGapIsBoundTo() {
             // The deepest run the box lists, and the one the tier 3 slider is set hardest against.
             var rows = drawStandingsBlock();
 
@@ -130,7 +130,7 @@ final class TooltipDensityDepthIntegrationTest {
         }
 
         @Test
-        void factorLineDepthsLeaveTheLinesAboveTheTiersOnTheBoxsOwnSpacing() {
+        void leaveTheLinesAboveTheTiersOnTheBoxsOwnSpacing() {
             // The other half of the binding: the faction and the colony are what the tightened runs
             // hang from, so they keep the box's own line gap. A knob reaching either of them would
             // close up the whole box while claiming to touch one run.
@@ -143,7 +143,7 @@ final class TooltipDensityDepthIntegrationTest {
         }
 
         @Test
-        void factorLineDepthsRunNoDeeperThanTheTiersTheKnobsName() {
+        void runNoDeeperThanTheTiersTheKnobsName() {
             // What says the two knobs cover the whole listing rather than most of it: nothing the box
             // draws sits below the deepest tier either names. A line that did would inherit that
             // tier's gap, which is the sane answer but not one anybody chose for it.

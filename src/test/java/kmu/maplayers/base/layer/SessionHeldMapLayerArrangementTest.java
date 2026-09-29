@@ -33,7 +33,7 @@ final class SessionHeldMapLayerArrangementTest {
     class ReadArrangement {
 
         @Test
-        void readArrangementAnswersWhatTheStoreHolds() {
+        void answersWhatTheStoreHolds() {
 
             var arrangement = new MapLayerArrangement(List.of("gamma"), List.of("beta"));
 
@@ -45,7 +45,7 @@ final class SessionHeldMapLayerArrangementTest {
         }
 
         @Test
-        void readArrangementOpensTheStoreOnceHoweverOftenItIsAsked() {
+        void opensTheStoreOnceHoweverOftenItIsAsked() {
 
             when(storedArrangementMock.readArrangement())
                 .thenReturn(new MapLayerArrangement(List.of("gamma"), List.of()));
@@ -59,7 +59,7 @@ final class SessionHeldMapLayerArrangementTest {
         }
 
         @Test
-        void readArrangementHoldsTheUnarrangedAnswerToo() {
+        void holdsTheUnarrangedAnswerToo() {
             // The install every player starts on. Read again each frame it would be the same answer at
             // the cost of a missing-file check per frame, so nothing having been arranged is a held
             // answer like any other.
@@ -78,7 +78,7 @@ final class SessionHeldMapLayerArrangementTest {
     class RecordArrangement {
 
         @Test
-        void recordArrangementWritesThroughToTheStore() {
+        void writesThroughToTheStore() {
 
             var arrangement = new MapLayerArrangement(List.of("alpha"), List.of());
 
@@ -89,7 +89,7 @@ final class SessionHeldMapLayerArrangementTest {
         }
 
         @Test
-        void recordArrangementAnswersTheNewArrangementWithoutReopeningTheStore() {
+        void answersTheNewArrangementWithoutReopeningTheStore() {
             // What the dialog leaves behind: the bar the player just arranged, on the next frame, from
             // the value they arranged rather than from a file just written and read back.
             var arrangement = new MapLayerArrangement(List.of("alpha"), List.of("gamma"));

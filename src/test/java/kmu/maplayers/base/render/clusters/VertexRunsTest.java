@@ -30,7 +30,7 @@ final class VertexRunsTest {
     class FlattenEdgesOfClass {
 
         @Test
-        void flattenEdgesOfClassPacksOnlyTheBoundaryEdgesWhenBoundaryIsWanted() {
+        void packsOnlyTheBoundaryEdgesWhenBoundaryIsWanted() {
             var shaped = new ShapedCell(TRIANGLE, BORDER_SEAM_BORDER);
 
             var run = VertexRuns.flattenEdgesOfClass(shaped, true);
@@ -41,7 +41,7 @@ final class VertexRunsTest {
         }
 
         @Test
-        void flattenEdgesOfClassPacksOnlyTheSeamEdgesWhenBoundaryIsNotWanted() {
+        void packsOnlyTheSeamEdgesWhenBoundaryIsNotWanted() {
             var shaped = new ShapedCell(TRIANGLE, BORDER_SEAM_BORDER);
 
             var run = VertexRuns.flattenEdgesOfClass(shaped, false);
@@ -51,7 +51,7 @@ final class VertexRunsTest {
         }
 
         @Test
-        void flattenEdgesOfClassSizesTheRunToExactlyTheMatchingSegments() {
+        void sizesTheRunToExactlyTheMatchingSegments() {
             var shaped = new ShapedCell(TRIANGLE, BORDER_SEAM_BORDER);
 
             var run = VertexRuns.flattenEdgesOfClass(shaped, true);
@@ -62,7 +62,7 @@ final class VertexRunsTest {
         }
 
         @Test
-        void flattenEdgesOfClassReturnsAnEmptyRunWhenNoEdgeMatches() {
+        void returnsAnEmptyRunWhenNoEdgeMatches() {
             var shaped = new ShapedCell(TRIANGLE, new boolean[] {false, false, false});
 
             var run = VertexRuns.flattenEdgesOfClass(shaped, true);

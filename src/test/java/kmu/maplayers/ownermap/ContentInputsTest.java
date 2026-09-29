@@ -96,7 +96,7 @@ public final class ContentInputsTest {
     class SampleForView {
 
         @Test
-        void sampleForViewReadsTheSpotlightPickMadeOnTheViewsOwnPicker() {
+        void readsTheSpotlightPickMadeOnTheViewsOwnPicker() {
             // The spotlight is the one pick stored per view, so it is read under the view being
             // painted rather than under whatever the map happens to hold elsewhere.
             FilterSelection.selectId(createSpotlightSlot(SCREEN_SCOPE), SPOTLIT_BLOC_ID, board);
@@ -106,7 +106,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void sampleForViewRecedesNothingWhileNothingIsSpotlighted() {
+        void recedesNothingWhileNothingIsSpotlighted() {
             // Off filter there is no spotlight for a backdrop to sit behind, so the recede is the
             // identity however the toggles are set - which is what keeps a Mute or Desaturate flip
             // made with nothing spotlighted from rebuilding a map it would not change. The
@@ -120,7 +120,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void sampleForViewTakesTheFilterRecedeWhileABlocIsSpotlighted() {
+        void takesTheFilterRecedeWhileABlocIsSpotlighted() {
             // With a bloc spotlit the rest of the sector recedes by the filter set's own toggles,
             // resolved here rather than by whoever paints, so the pick and the recede it implies
             // are one reading.
@@ -131,7 +131,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void sampleForViewAsksThePaintingViewForItsOwnRecedeApartFromTheFilterOne() {
+        void asksThePaintingViewForItsOwnRecedeApartFromTheFilterOne() {
             // The view's own backdrop is the view's to answer, and the filter's is the layer's: with a
             // bloc spotlit both are read, each from its own owner, so neither can stand in for the
             // other.
@@ -146,7 +146,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void sampleForViewReadsTheNameFormatAndTheUninhabitedOutline() {
+        void readsTheNameFormatAndTheUninhabitedOutline() {
             // The two picks that are neither spotlight nor recede, both moved off their defaults so
             // a reading that failed to consult either would answer FULL and off.
             preferences.nameFormat().selectNameFormat(SCREEN_SCOPE, FactionNameFormatChoice.SHORT, board);
@@ -161,7 +161,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void sampleForViewReadsEveryPickUnderTheScreenBeingPaintedFor() {
+        void readsEveryPickUnderTheScreenBeingPaintedFor() {
             // Every one of the five is a pick made on one panel, so a frame painting for one screen
             // must not pick up what the player set on the other. Posed with the whole set moved off
             // its default on a second screen: a reading that resolved a screen of its own, or left any
@@ -184,7 +184,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void sampleForViewReadsAnUntouchedSaveAtTheShippedDefaults() {
+        void readsAnUntouchedSaveAtTheShippedDefaults() {
             // What a fresh campaign bakes under, pinned as literals: nothing spotlighted, full
             // names, no uninhabited outline, and whatever the view answers for its own backdrop.
             var inputs = ContentInputs.sampleForView(viewMock, preferences, SCREEN_SCOPE);
@@ -203,7 +203,7 @@ public final class ContentInputsTest {
     class Equality {
 
         @Test
-        void equalityHoldsForTwoReadingsOfUnmovedPicks() {
+        void holdsForTwoReadingsOfUnmovedPicks() {
             // The frame this cache spends nearly all of its life on: nothing the player can click
             // has moved, so the map already on screen is the map these picks describe.
             assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
@@ -211,7 +211,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossASpotlightChange() {
+        void separatesReadingsAcrossASpotlightChange() {
             // The pick decides who holds a cell rather than only how it is coloured, so a different
             // bloc is a different map and not a restyle of the same one.
             assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
@@ -219,7 +219,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossAFilterRecedeChange() {
+        void separatesReadingsAcrossAFilterRecedeChange() {
             // How far the backdrop gives way is baked into every non-spotlit cell, so a Mute or
             // Desaturate flip under a spotlight has to read as a different bake.
             assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
@@ -232,7 +232,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossAViewRecedeChange() {
+        void separatesReadingsAcrossAViewRecedeChange() {
             // The view's own backdrop, separated on its own: a view bakes every bloc it recedes under
             // it, and it moves without the filter recede moving.
             assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
@@ -245,7 +245,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossANameFormatChange() {
+        void separatesReadingsAcrossANameFormatChange() {
             // The format is the text every cluster label is fitted around, so it changes the search
             // as well as the words - a placement sized for a full name does not describe a short one.
             assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
@@ -258,7 +258,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossAnUninhabitedOutlineFlip() {
+        void separatesReadingsAcrossAnUninhabitedOutlineFlip() {
             // Whether never-settled space is outlined at all is baked into the theme the cells are
             // styled from, so the flip cannot show without a rebuild.
             assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
@@ -275,7 +275,7 @@ public final class ContentInputsTest {
     class ClearFilterPick {
 
         @Test
-        void clearFilterPickDropsTheSpotlightAndTheRecedeBehindIt() {
+        void dropsTheSpotlightAndTheRecedeBehindIt() {
             // The debug border-tracing view paints real holders across the whole sector,
             // so it must not recede anything - and a spotlight left standing would also have it
             // naming synthetic keys no view can spell.
@@ -290,7 +290,7 @@ public final class ContentInputsTest {
         }
 
         @Test
-        void clearFilterPickKeepsEveryOtherPick() {
+        void keepsEveryOtherPick() {
             // Only the spotlight is dropped: such a pass still draws the names the player asked for,
             // in the format they asked for, over the categories they asked to see.
             var reading = new ContentInputs(

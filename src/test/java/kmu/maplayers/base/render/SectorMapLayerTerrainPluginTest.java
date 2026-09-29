@@ -128,7 +128,7 @@ final class SectorMapLayerTerrainPluginTest {
     class GetActiveLayers {
 
         @Test
-        void getActiveLayersReturnsEmptyWithoutThrowing() {
+        void returnsEmptyWithoutThrowing() {
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
@@ -143,7 +143,7 @@ final class SectorMapLayerTerrainPluginTest {
     class RenderOnMap {
 
         @Test
-        void renderOnMapDrawsThroughTheMachineryOfTheSectorItsTerrainSitsIn() {
+        void drawsThroughTheMachineryOfTheSectorItsTerrainSitsIn() {
             // The hook names no sector, and this surface cannot be handed one - it is rebuilt from
             // the save with no seam to inject through - so the entity it rides on is what says which
             // sector's machinery the frame belongs to. A surface resolving anything else would paint
@@ -158,7 +158,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapDrawsNothingWhileItsTerrainSitsWhereNothingIsInstalled() {
+        void drawsNothingWhileItsTerrainSitsWhereNothingIsInstalled() {
             // A surface whose location has no machinery belongs to a sector nothing is drawing - a
             // save carrying the terrain with the overlay switched off, or a sector the layers were
             // taken off. Standing down is what keeps it from painting through the holder every
@@ -173,7 +173,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapDrawsNothingBeforeTheEngineHasSeatedItsEntity() {
+        void drawsNothingBeforeTheEngineHasSeatedItsEntity() {
             // The entity is set on init, and a plugin the engine has built but not yet initialised
             // has no handle to resolve through at all. Reading past it would fault the render pass
             // rather than skip one frame.
@@ -186,7 +186,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapDrawsBothBandsThroughTheActiveLayersRendererWithTheFramesFactorAndAlpha() {
+        void drawsBothBandsThroughTheActiveLayersRendererWithTheFramesFactorAndAlpha() {
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
@@ -208,7 +208,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapThinsTheOverlayByTheShowingScreensHideFade() {
+        void thinsTheOverlayByTheShowingScreensHideFade() {
             // Hiding is a dissolve rather than a cut, so the screen's fade is multiplied into the alpha
             // the map pass already fades the overlay with rather than replacing it: an overlay that
             // ignored one of the two would either snap out from under the sidebar thinning beside it, or
@@ -236,7 +236,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapPreparesTheFrameOnceBeforeDrawingAnyBand() {
+        void preparesTheFrameOnceBeforeDrawingAnyBand() {
             // The refresh runs once however many passes the frame is painted in - a second one would
             // repeat the whole staleness check for nothing - and so does everything latched behind
             // it, the moment the cursor reaches a cell above all.
@@ -260,7 +260,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapPreparesOnceAcrossTwoSurfacesPaintingOneFrame() {
+        void preparesOnceAcrossTwoSurfacesPaintingOneFrame() {
             // The band pinning alone cannot settle this: whether a surface draws is that surface's
             // own answer, so two can paint the lower band of one frame. Both must still draw their
             // bands - the frame is genuinely painted twice over - while the preparation behind them,
@@ -282,7 +282,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapPreparesEachSectorsFrameOnThatSectorsOwnClaim() {
+        void preparesEachSectorsFrameOnThatSectorsOwnClaim() {
             // Two sectors drawing in one frame each owe their own draw lists a preparation, so the
             // count that keeps two surfaces of one map to a single preparation must not reach across
             // maps: a shared claim would leave the second sector's overlay painting draw lists
@@ -304,7 +304,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapPublishesTheHoverOnEveryPassOfOneFrame() {
+        void publishesTheHoverOnEveryPassOfOneFrame() {
             // The read is the one piece of per-frame work that turns on which pass is running: it
             // inverts the transform that pass bound. Pinned to the frame's first pass it would be
             // taken through whichever surface drew earliest - a map another mod composited, drawn
@@ -328,7 +328,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapPublishesTheHoverBeforeDrawingAnyBand() {
+        void publishesTheHoverBeforeDrawingAnyBand() {
             // The highlight rides the same draw lists as the fill, so the answer has to be standing
             // before this pass emits any of them.
             var plugin = new SectorMapLayerTerrainPlugin();
@@ -348,7 +348,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapPreparesAgainOnceTheNextFrameOpens() {
+        void preparesAgainOnceTheNextFrameOpens() {
             // A claim spent for good would leave the map painting the draw lists of whichever frame
             // happened to prepare first, which is the opposite fault and the worse one.
             var plugin = new SectorMapLayerTerrainPlugin();
@@ -366,7 +366,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapDrawsNothingWhileConstrainedToItsHostsWithNoneShowing() {
+        void drawsNothingWhileConstrainedToItsHostsWithNoneShowing() {
             // The compatibility constraint, and the pass it exists to stop: a map another mod built
             // drives this same hook, and with the constraint on the layers are not that mod's to
             // draw. Nothing at all happens - not the preparation either, so a foreign pass cannot
@@ -432,7 +432,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapDrawsNothingWhenTheActiveLayerHasNoRenderer() {
+        void drawsNothingWhenTheActiveLayerHasNoRenderer() {
             // The "show nothing" tab's shape: a registered layer that simply supplies no renderer,
             // which must stay an ordinary layer here rather than a named special case.
             var silentLayerMock = mock(MapLayer.class);
@@ -452,7 +452,7 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
-        void renderOnMapDrawsNothingWithoutAnActiveLayer() {
+        void drawsNothingWithoutAnActiveLayer() {
             // The pre-registration frame: the terrain can be added before any composition root has
             // run, so the surface must survive a null pick rather than dereference it.
             MapLayerRosters.forgetEveryLayer();

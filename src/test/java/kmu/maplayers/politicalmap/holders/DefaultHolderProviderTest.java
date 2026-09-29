@@ -44,7 +44,7 @@ final class DefaultHolderProviderTest {
     class ResolveHolder {
 
         @Test
-        void resolveHolderReturnsTheDominantHoldersAndNothingContestedOffFilter() {
+        void returnsTheDominantHoldersAndNothingContestedOffFilter() {
 
             var sectorMock = mock(SectorAPI.class);
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
@@ -70,7 +70,7 @@ final class DefaultHolderProviderTest {
         }
 
         @Test
-        void resolveHolderPassesThroughThePresenceAwareResolverWhenABlocIsSpotlighted() {
+        void passesThroughThePresenceAwareResolverWhenABlocIsSpotlighted() {
 
             var sectorMock = mock(SectorAPI.class);
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());

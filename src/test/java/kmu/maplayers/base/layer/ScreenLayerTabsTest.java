@@ -72,7 +72,7 @@ final class ScreenLayerTabsTest {
     class ResolveTabbedLayers {
 
         @Test
-        void resolveTabbedLayersWithholdsTheEmptyViewFromAScreenCarryingAControl() {
+        void withholdsTheEmptyViewFromAScreenCarryingAControl() {
             // Two controls for one thought, and the box is the more discoverable of them - it stands
             // where the player already looks for "show or hide this map furniture".
             registerTheEmptyViewBesideALayerThatPaints();
@@ -82,7 +82,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void resolveTabbedLayersOffersTheEmptyViewOnAScreenWithNoControl() {
+        void offersTheEmptyViewOnAScreenWithNoControl() {
             // Every way of not having a box reads the same here, which is what makes the injection
             // optional rather than load-bearing: a screen it never reached keeps the tab that empties
             // the map, whatever went wrong on the row.
@@ -93,7 +93,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void resolveTabbedLayersLeavesTheRosterWhole() {
+        void leavesTheRosterWhole() {
             // Withheld from the strip and never from the roster: a save's pick is an ID resolved
             // against these, so a roster without the empty view would read a save left on it as an ID
             // from an older build and fall back to the layer that paints - starting an overlay over
@@ -107,7 +107,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void resolveTabbedLayersKeepsTheLastTabStandingWhateverElseIsTrue() {
+        void keepsTheLastTabStandingWhateverElseIsTrue() {
             // An empty strip has no way back to itself. Unreachable while a layer that paints is
             // registered beside it, which is a composition root's arrangement rather than a rule.
             MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE);
@@ -117,7 +117,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void resolveTabbedLayersPutsTheStripInThePlayersOwnOrder() {
+        void putsTheStripInThePlayersOwnOrder() {
             // The whole of what the arrangement buys: the row is theirs, laid over whatever the load
             // order registered, and it is the same row on every screen and in every campaign.
             registerTheEmptyViewBesideALayerThatPaints();
@@ -131,7 +131,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void resolveTabbedLayersTakesAHiddenLayerOffTheStripAndLeavesItOnTheRoster() {
+        void takesAHiddenLayerOffTheStripAndLeavesItOnTheRoster() {
             // Hiding is not switching off: what the player took off is the way to reach the layer by
             // tab, not the layer. Held to through the roster lookup a stored pick resolves by, that
             // being what decides whether a save left on a hidden layer goes on painting it.
@@ -149,7 +149,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void resolveTabbedLayersComposesHidingWithTheWithheldEmptyView() {
+        void composesHidingWithTheWithheldEmptyView() {
             // The two subtractions answer different questions - what the player took off the bar, and
             // what this screen's own control has taken over - so a row has to survive both being asked
             // of it at once.
@@ -164,7 +164,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void resolveTabbedLayersKeepsTheLastTabHidingAndWithholdingWouldBothTakeOff() {
+        void keepsTheLastTabHidingAndWithholdingWouldBothTakeOff() {
             // The two guards read as one here: hiding leaves the empty view alone on the row, and this
             // screen's control would take that too. A bar with no tabs has no way back to itself
             // however it was emptied, so the one left standing is offered.
@@ -183,7 +183,7 @@ final class ScreenLayerTabsTest {
     class ReadOfferedTabsRevision {
 
         @Test
-        void readOfferedTabsRevisionIsUnchangedWhileNothingTheRowIsMadeFromMoves() {
+        void isUnchangedWhileNothingTheRowIsMadeFromMoves() {
             // What a holder skips work on. Two reads of a settled bar have to compare equal or the
             // gate never closes and the saving is nil.
             registerTheEmptyViewBesideALayerThatPaints();
@@ -195,7 +195,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void readOfferedTabsRevisionMovesWhenThePlayerHidesATab() {
+        void movesWhenThePlayerHidesATab() {
             // The change the whole heal exists for, so a revision that missed it would be worse than
             // no revision at all.
             registerTheEmptyViewBesideALayerThatPaints();
@@ -212,7 +212,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void readOfferedTabsRevisionMovesWhenALayerRegisters() {
+        void movesWhenALayerRegisters() {
             // A mod loading after KMU is the ordinary case rather than the exception, and its tab
             // arriving is a row that moved.
             registerTheEmptyViewBesideALayerThatPaints();
@@ -227,7 +227,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void readOfferedTabsRevisionMovesWhenAControlStandsOnTheScreen() {
+        void movesWhenAControlStandsOnTheScreen() {
             // The third ingredient, and the one a revision built from the row's own two would miss:
             // a box going up withholds a tab without touching the roster or the arrangement.
             registerTheEmptyViewBesideALayerThatPaints();
@@ -246,7 +246,7 @@ final class ScreenLayerTabsTest {
     class HealPickOntoOfferedTabs {
 
         @Test
-        void healPickOntoOfferedTabsMovesAPickOffATabThePlayerTookOffTheBar() {
+        void movesAPickOffATabThePlayerTookOffTheBar() {
             // A layer painting from a tab that is not there is a map nothing on screen accounts for,
             // and the only way back to it is a dialog the player has to remember to open. So the pick
             // follows the tabs, and the control goes down with it because the tab it lands on paints
@@ -271,7 +271,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsPutsThePickBackOnATabThePlayerRestores() {
+        void putsThePickBackOnATabThePlayerRestores() {
             // The other half of the round trip, and the case that needs both halves of the rule: the
             // pick left on the empty view has nowhere to sit once that tab is withheld again, and the
             // tab it lands on would light over a map the control was still holding down.
@@ -300,7 +300,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsMovesAPickOffTheTabAControlHasTakenOver() {
+        void movesAPickOffTheTabAControlHasTakenOver() {
             // The case the one-time migration used to cover, and the answer moved with the rule: the
             // pick lands on the tab that is actually there and the control stands up under it, rather
             // than the map staying blank beneath a lit tab.
@@ -317,7 +317,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsLeavesAPickTheRowStillOffersAlone() {
+        void leavesAPickTheRowStillOffersAlone() {
             // Which is every call but the ones just after something moved: a screen sitting on a tab
             // its own bar carries has nothing to settle, and a write here would move a player off a
             // map they are looking at.
@@ -337,7 +337,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsKeepsAnEmptyViewPickWhereThatTabStands() {
+        void keepsAnEmptyViewPickWhereThatTabStands() {
             // The empty view is a first-class tab wherever no control has taken it over, so a screen
             // set to it has made a choice its own bar still shows. Nothing to heal, and a heal that
             // fired would start painting over the map of a player who asked for nothing.
@@ -357,7 +357,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsLandsThePickOnTheLastTabARowWasHidDownTo() {
+        void landsThePickOnTheLastTabARowWasHidDownTo() {
             // The row asked about is the offered one, guard and all, so a bar hidden down to its last
             // tab lands the pick on that tab - the guard being the only reason anything is standing
             // there to land on.
@@ -381,7 +381,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsLandsAScreenSetToNoLayerAtAllOnTheLeadingTab() {
+        void landsAScreenSetToNoLayerAtAllOnTheLeadingTab() {
             // A selection seam answering nothing over a populated bar - which a foreign mod's own
             // implementation may - reads as a pick the row does not offer, so it is landed on a tab
             // rather than left lighting none.
@@ -399,7 +399,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsWritesBothHalvesOnTheOneFrame() {
+        void writesBothHalvesOnTheOneFrame() {
             // Nothing here waits for the picture to leave: what the player was looking at goes on being
             // drawn while it dissolves because the screen remembers it, so a pass that landed one half
             // and held the other would leave the bar and the box disagreeing for the length of a fade -
@@ -422,7 +422,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsReportsAScreenSettledOnceThePickLands() {
+        void reportsAScreenSettledOnceThePickLands() {
             // What a holder records on. The pick was written and read back as the tab it was sent to,
             // so there is nothing owed at this row.
             registerTheEmptyViewBesideALayerThatPaints();
@@ -442,7 +442,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsReportsAScreenUnsettledWhereTheMoveIsDropped() {
+        void reportsAScreenUnsettledWhereTheMoveIsDropped() {
             // A pick persisted in sector memory drops the write where there is no memory to write
             // into, and says nothing about having done so. Read back rather than assumed, because a
             // holder that took the attempt for the outcome would never come back to this bar.
@@ -455,7 +455,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsReportsAScreenAlreadyOnAnOfferedTabSettled() {
+        void reportsAScreenAlreadyOnAnOfferedTabSettled() {
             // The common answer, and the one that has to be settled rather than merely quiet: a
             // holder skipping only where something was written would ask again every frame.
             registerTheEmptyViewBesideALayerThatPaints();
@@ -470,7 +470,7 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
-        void healPickOntoOfferedTabsWritesNothingWithNothingRegistered() {
+        void writesNothingWithNothingRegistered() {
             // A bare bar has no tab to land a pick on. Reachable before a composition root has
             // registered anything, which is a frame the pass can run on rather than a state the
             // player can be in.

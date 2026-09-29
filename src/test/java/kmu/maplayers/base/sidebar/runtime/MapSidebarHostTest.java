@@ -67,7 +67,7 @@ final class MapSidebarHostTest {
     class IsOverlayShowing {
 
         @Test
-        void isOverlayShowingIsTrueWhileTheSectorMapIsUpWhicheverLookItWears() {
+        void isTrueWhileTheSectorMapIsUpWhicheverLookItWears() {
             // The Starscape terrain surfaces paint in that mode, so the overlay these
             // controls drive is on screen in either look. Pinned by the filter read never being made:
             // a gate that consulted it would hide the panel over a map that is plainly painting.
@@ -87,7 +87,7 @@ final class MapSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseWhenTheSectorMapIsNotShowing() {
+        void isFalseWhenTheSectorMapIsNotShowing() {
             try (var mapViewMock = mockStatic(CampaignMapView.class)) {
 
                 mapViewMock
@@ -100,7 +100,7 @@ final class MapSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseWhileTheSectorMapsScreenIsClaimed() {
+        void isFalseWhileTheSectorMapsScreenIsClaimed() {
             // The claim the host was handed has to be the one its gate reads: a host that dropped the seam
             // and answered on the map alone would leave the panel drawn over whatever claimed the screen,
             // taking the input that thing was raised to receive, with every case above still green.
@@ -117,7 +117,7 @@ final class MapSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseWhileTheSectorMapsOwnLayersAreHidden() {
+        void isFalseWhileTheSectorMapsOwnLayersAreHidden() {
             // The wiring, not the rule: the rule is the base host's and pinned there, so what this case
             // shows is that this host was handed the sector map's picks. Its own key alone is posed - a
             // host handed the intel screen's pair would read shown here and fail.
@@ -174,7 +174,7 @@ final class MapSidebarHostTest {
     class HeaderBandHeight {
 
         @Test
-        void headerBandHeightStandsTallEnoughToDrawATabRow() {
+        void standsTallEnoughToDrawATabRow() {
             // A band clamped to nothing leaves the panel with no tab row and no way to switch layer, and
             // the style built from this height cannot be reached without a live sector - so the number is
             // pinned here rather than caught on screen.
@@ -202,7 +202,7 @@ final class MapSidebarHostTest {
         }
 
         @Test
-        void resolveWidgetStyleWearsTheSectorMapsStripWithItsKeyUnderlined() {
+        void wearsTheSectorMapsStripWithItsKeyUnderlined() {
             // Which look this screen wears is the host's answer, so wiring it to the intel screen's
             // factory would stand the on-map row up as buttons with every style test still green.
             var tabStyle = buildTabStyle();
@@ -214,7 +214,7 @@ final class MapSidebarHostTest {
         }
 
         @Test
-        void resolveWidgetStyleFramesThePanelInItsOwnAccent() {
+        void framesThePanelInItsOwnAccent() {
             // This panel floats free with no chrome to match, so its frame takes the same step its
             // controls do - the base accent of whichever scheme the player picked - rather than the
             // recessive dark a panel abutting another screen's frames drops to.
@@ -223,7 +223,7 @@ final class MapSidebarHostTest {
         }
 
         @Test
-        void resolveWidgetStyleStandsTheBandAtThisScreensOwnHeight() {
+        void standsTheBandAtThisScreensOwnHeight() {
             // The height is this host's to hold, and the style it hands the paint pass has to be the one
             // its band was laid out against: a host composing its look at the widget default would stand
             // its tabs outside their own band with the case above still green. Pinned against the
@@ -243,7 +243,7 @@ final class MapSidebarHostTest {
     class ResolveBorderEdges {
 
         @Test
-        void resolveBorderEdgesFramesAllFourSides() {
+        void framesAllFourSides() {
             // The on-map sidebar floats free on the screen, touching no other panel's edge.
             assertThat(MapSidebarHost.INSTANCE.resolveBorderEdges(null))
                 .isEqualTo(BoxEdge.ALL);
@@ -254,7 +254,7 @@ final class MapSidebarHostTest {
     class HandleKeyPress {
 
         @Test
-        void handleKeyPressWritesTheSectorMapsOwnPick() {
+        void writesTheSectorMapsOwnPick() {
             // The shared jump reads whichever selection its host was built with, so this pins the wiring
             // that keeps an on-map shortcut on the sector map's tab: swapping the two hosts' selections
             // would leave every other test green while the key moved the intel screen's tab. Its twin on
@@ -285,7 +285,7 @@ final class MapSidebarHostTest {
         }
 
         @Test
-        void restoreFoldFromSaveOpensOutWhenTheSaveHoldsNoFoldYet() {
+        void opensOutWhenTheSaveHoldsNoFoldYet() {
             // A save that has never folded this panel opens it out: it is the player's primary way in to
             // the political map and has the screen width to sit open.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
@@ -309,7 +309,7 @@ final class MapSidebarHostTest {
         }
 
         @Test
-        void restoreFoldFromSaveOpensDockedWhenTheSaveWasLeftDocked() {
+        void opensDockedWhenTheSaveWasLeftDocked() {
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -331,7 +331,7 @@ final class MapSidebarHostTest {
         }
 
         @Test
-        void restoreFoldFromSaveReadsItsOwnKeyRatherThanTheIntelScreensFold() {
+        void readsItsOwnKeyRatherThanTheIntelScreensFold() {
             // The two screens' folds are independent, so the on-map panel must not answer to the key the
             // intel panel stores under.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {

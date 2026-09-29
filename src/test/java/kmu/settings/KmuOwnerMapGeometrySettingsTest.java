@@ -30,7 +30,7 @@ final class KmuOwnerMapGeometrySettingsTest {
     class GetOwnerMapHatchWidthFraction {
 
         @Test
-        void getOwnerMapHatchWidthFractionHandsBackTheStoredPercentageAsAFraction() {
+        void handsBackTheStoredPercentageAsAFraction() {
 
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
@@ -44,7 +44,7 @@ final class KmuOwnerMapGeometrySettingsTest {
         }
 
         @Test
-        void getOwnerMapHatchWidthFractionLiftsAWidthUnderTheFloor() {
+        void liftsAWidthUnderTheFloor() {
             // The old pixel range's own floor, which as a percentage is thinner than the rasteriser
             // can draw - the stroke would come out at its minimum width whatever the row says.
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
@@ -59,7 +59,7 @@ final class KmuOwnerMapGeometrySettingsTest {
         }
 
         @Test
-        void getOwnerMapHatchWidthFractionHoldsAWidthOverTheCeiling() {
+        void holdsAWidthOverTheCeiling() {
             // The old pixel range's own ceiling, which as a percentage inks the whole gap: ink
             // meeting ink is the solid fill, not a hatch.
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
@@ -74,7 +74,7 @@ final class KmuOwnerMapGeometrySettingsTest {
         }
 
         @Test
-        void getOwnerMapHatchWidthFractionClampsItsOwnFallbackWhileNothingIsStored() {
+        void clampsItsOwnFallbackWhileNothingIsStored() {
             // Stood in as a substrate answering with whatever fallback it is handed, which is what
             // an unset row - and a read taken outside a running game - gets. The fallback passes the
             // clamp untouched, so a map drawn before the settings load hatches at the shipped width.

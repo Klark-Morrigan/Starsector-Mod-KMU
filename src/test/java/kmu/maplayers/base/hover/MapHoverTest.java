@@ -23,13 +23,13 @@ final class MapHoverTest {
     class IsHovering {
 
         @Test
-        void isHoveringIsFalseForNone() {
+        void isFalseForNone() {
             assertThat(MapHover.NONE.isHovering()).isFalse();
             assertThat(MapHover.NONE.clusterMemberSystemKeys()).isEmpty();
         }
 
         @Test
-        void isHoveringIsTrueWhenACellResolved() {
+        void isTrueWhenACellResolved() {
             var hover = new MapHover(
                 buildCellKey("system"),
                 buildCellKeys("system", "neighbour"));
@@ -45,7 +45,7 @@ final class MapHoverTest {
     class ClusterMemberSystemKeys {
 
         @Test
-        void clusterMemberSystemKeysIgnoreLaterEditsToTheCallersList() {
+        void ignoreLaterEditsToTheCallersList() {
             var callersMembers = new ArrayList<>(buildCellKeys("system"));
             var hover = new MapHover(buildCellKey("system"), callersMembers);
 
@@ -56,7 +56,7 @@ final class MapHoverTest {
         }
 
         @Test
-        void clusterMemberSystemKeysCannotBeModified() {
+        void cannotBeModified() {
             var hover = new MapHover(buildCellKey("system"), buildCellKeys("system"));
 
             assertThatThrownBy(() ->

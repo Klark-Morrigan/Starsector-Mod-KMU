@@ -55,7 +55,7 @@ final class UninhabitedOutlinePreferenceTest {
     class IsOutlineDrawn {
 
         @Test
-        void isOutlineDrawnReadsTheOutlineKeyFromSectorMemory() {
+        void readsTheOutlineKeyFromSectorMemory() {
 
             sectorMemoryFake.storeValue(KEY, true);
 
@@ -64,7 +64,7 @@ final class UninhabitedOutlinePreferenceTest {
         }
 
         @Test
-        void isOutlineDrawnReadsEachScreensOwnToggle() {
+        void readsEachScreensOwnToggle() {
             // Per-screen isolation: the two panels are looked at for different things, so asking for
             // the unowned systems on one is not asking for them on the other.
             sectorMemoryFake.storeValue(KEY, true);
@@ -77,7 +77,7 @@ final class UninhabitedOutlinePreferenceTest {
         }
 
         @Test
-        void isOutlineDrawnIsFalseWhenThatScreensBoxWasNeverTicked() {
+        void isFalseWhenThatScreensBoxWasNeverTicked() {
             // A screen whose checkbox was never touched keeps the shipped default, even while the
             // other screen draws the outline.
             sectorMemoryFake.storeValue(OTHER_KEY, true);
@@ -87,7 +87,7 @@ final class UninhabitedOutlinePreferenceTest {
         }
 
         @Test
-        void isOutlineDrawnIsFalseBeforeTheSectorExists() {
+        void isFalseBeforeTheSectorExists() {
             // No sector means no save to read, which the shipped default treats as off - only
             // faction-held, independent, and decivilised systems draw.
             sectorMemoryFake.removeSector();
@@ -101,7 +101,7 @@ final class UninhabitedOutlinePreferenceTest {
     class SetOutlineDrawn {
 
         @Test
-        void setOutlineDrawnPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
+        void persistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
 
             var board = new MapLayerRefreshBoard();
 
@@ -114,7 +114,7 @@ final class UninhabitedOutlinePreferenceTest {
         }
 
         @Test
-        void setOutlineDrawnLeavesAnotherScreensToggleUntouched() {
+        void leavesAnotherScreensToggleUntouched() {
             // Per-screen isolation on the write side: a flip made on one panel writes that panel's slot
             // alone, so the other keeps the sector it was last showing.
             preference.setOutlineDrawn(
@@ -127,7 +127,7 @@ final class UninhabitedOutlinePreferenceTest {
         }
 
         @Test
-        void setOutlineDrawnWritesNothingAndRaisesNothingBeforeTheSectorExists() {
+        void writesNothingAndRaisesNothingBeforeTheSectorExists() {
             // Before a save there is nothing to write into, so the flip is dropped rather than
             // bumping a revision no overlay would read.
             sectorMemoryFake.removeSector();

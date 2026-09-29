@@ -248,7 +248,7 @@ final class SystemCellTooltipTest {
     class ResolveNextLevelFor {
 
         @Test
-        void resolveNextLevelForAgreesWithTheHintTheBoxDraws() {
+        void agreesWithTheHintTheBoxDraws() {
             // The key acts exactly where the box says it will. The two reach the answer by different
             // routes - the press asks the box, the paint takes what the composition found - so what
             // has to hold is that they agree, and the drift would be the cruel kind: a box
@@ -269,7 +269,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void resolveNextLevelForIsEmptyForABoxWithNothingDeeperToState() {
+        void isEmptyForABoxWithNothingDeeperToState() {
             // The same agreement the other way: no hint is drawn, and the key must not act.
             var tooltipFake = buildTooltipSayingSomething();
 
@@ -284,7 +284,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void resolveNextLevelForCollapsesAtTheDeepestLevelTheBoxItselfHolds() {
+        void collapsesAtTheDeepestLevelTheBoxItselfHolds() {
             // The wrap is the box's own rather than the cycle's last constant. A box whose account
             // ends at the market stats - a claim, which no patrol enters - would otherwise be offered
             // a patrol tier that redraws exactly what is on screen, and the player would press through
@@ -299,7 +299,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void resolveNextLevelForLeavesTheKeyAloneOverABoxTheLevelHasOutrun() {
+        void leavesTheKeyAloneOverABoxTheLevelHasOutrun() {
             // The level is one shared fact carried across hovers, so a box with nothing below the
             // shallowest level is met at depths it holds nothing at - and it draws one box at all of
             // them. Collapsing there would redraw exactly what is on screen, so the key falls through
@@ -314,7 +314,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void resolveNextLevelForCollapsesABoxReadPastItsOwnBound() {
+        void collapsesABoxReadPastItsOwnBound() {
             // The bound is short of the level being read and past the shallowest, so the box is drawn
             // cut - and the collapse takes away a tier the player can see. That the press acts here
             // and not over a box holding nothing is the whole distinction.
@@ -328,7 +328,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void resolveNextLevelForAsksTheBoxItsBoundOncePerPress() {
+        void asksTheBoxItsBoundOncePerPress() {
             // The press-time seam costs a walk of the hovered system, and it is the one question the
             // level cannot settle without: how deep the box goes is what says whether the press shows
             // the player anything. Asked once, so a press pays for one read however far the player is
@@ -349,7 +349,7 @@ final class SystemCellTooltipTest {
     class RenderFor {
 
         @Test
-        void renderForTitlesTheBoxWithTheHoveredSystemsName() {
+        void titlesTheBoxWithTheHoveredSystemsName() {
 
             var sections = captureDrawnBox(buildTooltipSayingSomething()).sections();
 
@@ -367,7 +367,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForDrawsHeadingsInTheGamesTitleFaceOverBodyLines() {
+        void drawsHeadingsInTheGamesTitleFaceOverBodyLines() {
             // The box's one typographic decision, and the reason a heading is a kind of line at all: the
             // title takes vanilla's title face while the body stays on its paragraph face, each at the
             // size its own atlas is crisp at rather than at a size the box picked.
@@ -382,7 +382,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForAsksForTheStepPerLevelThePlayerSet() {
+        void asksForTheStepPerLevelThePlayerSet() {
             // Whether a breakdown several levels deep gives the eye a second cue agreeing with the
             // indent is the player's call, so the box carries the step across rather than fixing one:
             // a deep listing is easier to read at one size and easier to fit at four. Asked for on the
@@ -396,7 +396,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForStacksItsLinesAtTheGapThePlayerSet() {
+        void stacksItsLinesAtTheGapThePlayerSet() {
             // The box's own spacing, spent under every line no run of its own claims - so the reader
             // who wants a tighter box gets one without any part of it being singled out.
             var typography = captureDrawnBox(buildTooltipSayingSomething())
@@ -410,7 +410,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForTightensTheTwoDepthsAListingRunsLongAt() {
+        void tightensTheTwoDepthsAListingRunsLongAt() {
             // What actually makes a hover box tall: the terms one listed thing's number was summed
             // from, and the tier one of those terms breaks into. Each depth is bound to its own knob
             // and resolved off the line above the gap, so tightening a run closes it up without moving
@@ -427,7 +427,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForKeepsALineDeeperThanEitherTierWithTheRunItBelongsTo() {
+        void keepsALineDeeperThanEitherTierWithTheRunItBelongsTo() {
             // Nothing bounds how deep a listing goes, and the knobs stop at the third step - so a line
             // below them reads with the run it is part of rather than springing back to the box's own
             // spacing, which would leave the innermost lines of a box the airiest thing in it.
@@ -440,7 +440,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForRulesItsLeadersAtTheWeightsThePlayerSet() {
+        void rulesItsLeadersAtTheWeightsThePlayerSet() {
             // The line from a label across to its value is the one part of the box whose weight cannot be
             // settled in code - how heavy a solid run looks beside glyphs turns on the face, the size,
             // and the atlas - so the box carries the player's own pair across rather than staying at the
@@ -456,7 +456,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForSinksWithheldNamesByTheStrengthThePlayerSet() {
+        void sinksWithheldNamesByTheStrengthThePlayerSet() {
             // The other solid mark the box draws among its glyphs: how heavy a block standing for a
             // withheld word reads beside text is a judgement made on screen, so the box carries the
             // player's strength across rather than the widget's shipped one.
@@ -467,7 +467,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForReadsTheLeaderWeightsAfreshOnEveryPaint() {
+        void readsTheLeaderWeightsAfreshOnEveryPaint() {
             // These two knobs are the ones a player actually tunes by eye, moving a slider with the map
             // open and watching the box - so a look settled once at class load would leave the box
             // ignoring every move until the game was restarted, which is the one thing that would make
@@ -485,7 +485,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForReadsTheDensityAfreshOnEveryPaint() {
+        void readsTheDensityAfreshOnEveryPaint() {
             // A slider moved with the box open takes effect on the next frame, which is the whole point
             // of settling the look per paint: a style built once at class load would leave the settings
             // screen and the map disagreeing until the game was restarted.
@@ -504,7 +504,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForDrawsEachStepUnderTheBoxsOwnVoiceAtTheSizeTheStepResolvesTo() {
+        void drawsEachStepUnderTheBoxsOwnVoiceAtTheSizeTheStepResolvesTo() {
             // Where the levels actually land, which is what a reader sees: the step is only worth asking
             // for if neighbouring levels stay comfortably legible while still telling apart at a glance.
             var typography = captureDrawnBox(buildTooltipSayingSomething())
@@ -522,7 +522,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForStopsShrinkingAtTheSmallestLegibleSize() {
+        void stopsShrinkingAtTheSmallestLegibleSize() {
             // A listing is as deep as its subject matter, so nothing about the box bounds how far under
             // its voice a line can stand - the deepest levels share the floor rather than shrinking away.
             var typography = captureDrawnBox(buildTooltipSayingSomething())
@@ -534,7 +534,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForHeadsTheBoxWithTheNameAloneAsItsOwnBlock() {
+        void headsTheBoxWithTheNameAloneAsItsOwnBlock() {
             // The parting under the heading is what a block buys: the name is not put in with the
             // layer's first block, so the gap beneath it is the box's own rather than a gap inside a
             // block the layer composed.
@@ -545,7 +545,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForKeepsTheLayersOwnBlocksAsItComposedThem() {
+        void keepsTheLayersOwnBlocksAsItComposedThem() {
             // What a layer groups together is the layer's statement about its own content, so the shared
             // shape adds a block above it and regroups nothing.
             var tooltipFake = new SystemCellTooltipFake(
@@ -560,7 +560,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForReadsATitleLineTogetherWithTheName() {
+        void readsATitleLineTogetherWithTheName() {
             // A title line continues the heading, so it sits in the heading's own block - which is the
             // whole difference between heading the box with a line and opening the body with one.
             var titleRow = buildRow("The Hegemony");
@@ -577,7 +577,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForPartsTheBodyFromTheTitleLinesAboveIt() {
+        void partsTheBodyFromTheTitleLinesAboveIt() {
             // The box's one parting falls under the whole heading block rather than at a fixed line, so
             // a line added to the heading joins it instead of being cut off above the break.
             var tooltipFake = new SystemCellTooltipFake(
@@ -589,7 +589,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForDrawsATitleLineWithNoBodyUnderIt() {
+        void drawsATitleLineWithNoBodyUnderIt() {
             // A heading line is content in its own right, so a layer with one and nothing else still
             // draws - as the one block it has.
             var titleRow = buildRow("The Hegemony");
@@ -605,7 +605,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForEndsABoxOfferingDetailWithTheKeyThatShowsIt() {
+        void endsABoxOfferingDetailWithTheKeyThatShowsIt() {
             // What the hint has to say to be worth a line: which key, and what the player would gain -
             // the key picked out and the words about it quiet, which is how the game states its own.
             // Drawn at the level the box opens on, where the next press opens the account further.
@@ -621,7 +621,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForDrawsTheHintFromTheCompositionRatherThanAskingTheBoxAgain() {
+        void drawsTheHintFromTheCompositionRatherThanAskingTheBoxAgain() {
             // The whole reason the offer travels back beside the blocks. A layer reads its system to
             // build the body and already holds the answer, so asking again would charge that read to a
             // line of fine print - once per frame for as long as the cursor rests on the cell. The
@@ -637,7 +637,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForEndsABoxTheLevelHasOutrunWithItsContent() {
+        void endsABoxTheLevelHasOutrunWithItsContent() {
             // The level is one shared fact carried across hovers, so a box with nothing to expand is
             // met at deeper levels all the same - reached over some other system. It draws the same
             // box at every one of them, so a collapse offered here would name a press that redraws
@@ -650,7 +650,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForGivesTheHintABlockOfItsOwnReadingAsAFootnote() {
+        void givesTheHintABlockOfItsOwnReadingAsAFootnote() {
             // A line about the box rather than about the system: set off by the box's own parting so it
             // is not read as the last entry of the block above, and marked as the kind of line it is so
             // the typography can set it apart from the content.
@@ -663,7 +663,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForOpensTheHintAtTheBoxsContentEdge() {
+        void opensTheHintAtTheBoxsContentEdge() {
             // The crest gutter is one column measured across the whole box, and the boxes that carry
             // this hint are full of crested lines - so a hint left aligned to that column would open
             // behind a gutter it can never fill, reading as indented under the content it is not part
@@ -678,7 +678,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForDrawsFootnotesInTheGamesOwnKeyHintFace() {
+        void drawsFootnotesInTheGamesOwnKeyHintFace() {
             // The face vanilla ends its own boxes in, at the body's size rather than its atlas's own:
             // the narrowness is what sets a line about the box apart from the box's findings, and drawn
             // at 12 beside 15pt content it read as fine print instead.
@@ -693,7 +693,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForStatesAtTheFootOfTheBoxWhatItHadNoRoomToShow() {
+        void statesAtTheFootOfTheBoxWhatItHadNoRoomToShow() {
             // The one thing a box short of room must not keep to itself. The rows standing in for
             // withheld entries say it listing by listing; this says it over the box, so a reader can
             // tell a short list from a cut one wherever the cut happened to land.
@@ -709,7 +709,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForSaysNothingAboutWithheldContentInABoxThatFitted() {
+        void saysNothingAboutWithheldContentInABoxThatFitted() {
             // A box that was never short of room states no figure about its own account: the hint at
             // its foot is the whole of that line, exactly as it was before a box could be cut.
             var tooltipFake = buildTooltipListing("Chicomoztoc", "Kazeron", "Sindria").offering();
@@ -725,7 +725,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForEndsABoxOfferingNoDetailWithItsContent() {
+        void endsABoxOfferingNoDetailWithItsContent() {
             // The ordinary box takes no part in the detail cycle, so it ends where its content does rather
             // than on a line offering a counterpart that does not exist.
             var sections = captureDrawnBox(buildTooltipSayingSomething()).sections();
@@ -735,7 +735,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForDrawsNothingForABoxOfferingDetailAndNothingToSay() {
+        void drawsNothingForABoxOfferingDetailAndNothingToSay() {
             // The hint is about the box rather than about the system, so it cannot be the thing that
             // makes a box worth drawing - a lone offer to expand into nothing says less than no box.
             var tooltipFake = new SystemCellTooltipFake(List.of()).offering();
@@ -748,7 +748,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForAsksTheBodyForTheDepthItWasDrawnAt() {
+        void asksTheBodyForTheDepthItWasDrawnAt() {
             // The shared shape carries the level rather than reading one: it is what the dispatcher was
             // handed for this frame, and a shape that resolved its own would leave every layer drawing
             // a depth the player never chose - invisibly, since one box at the wrong depth still draws.
@@ -767,7 +767,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForDrawsNothingForABodyWithNothingToSay() {
+        void drawsNothingForABodyWithNothingToSay() {
             // A lone system name only repeats what the cursor already sits on, so an empty body is no
             // box rather than a titled empty one.
             var tooltipFake = new SystemCellTooltipFake(List.of());
@@ -780,7 +780,7 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForDrawsNothingWithoutALiveEconomy() {
+        void drawsNothingWithoutALiveEconomy() {
             // Bodies read the economy for what a layer holds in the system, so a sector without one is
             // not asked for a body at all.
             var tooltipFake = buildTooltipSayingSomething();

@@ -36,7 +36,7 @@ class RoutedStandingTest {
     class ReadFractionFor {
 
         @Test
-        void readFractionForAnswersTheFractionWorkedOutForThatMember() {
+        void answersTheFractionWorkedOutForThatMember() {
 
             var routedStanding = new RoutedStanding(
                 ANY_STANDING,
@@ -48,7 +48,7 @@ class RoutedStandingTest {
         }
 
         @Test
-        void readFractionForStatesNothingForAFactionNoneWasWorkedOutFor() {
+        void statesNothingForAFactionNoneWasWorkedOutFor() {
             // Answered for every faction rather than only for those a block counted, so a resolver
             // laying rows out asks one question of every row instead of judging an absence itself.
             assertThat(RoutedStanding.routeWhole(ANY_STANDING).readFractionFor(MEMBER_FACTION_ID))
@@ -60,7 +60,7 @@ class RoutedStandingTest {
     class RouteWhole {
 
         @Test
-        void routeWholeStatesNoFractionOnTheRowEither() {
+        void statesNoFractionOnTheRowEither() {
             // What every block placed by membership hands over: the heading is true of the whole
             // group, so there is nothing for the row to qualify.
             assertThat(RoutedStanding.routeWhole(ANY_STANDING).fraction())

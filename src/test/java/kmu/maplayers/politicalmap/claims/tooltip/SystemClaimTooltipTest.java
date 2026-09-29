@@ -256,7 +256,7 @@ final class SystemClaimTooltipTest {
     class ComposeBody {
 
         @Test
-        void composeBodyNamesTheClaimantWithItsCrestAndScoreUnderTheClaimHeading() {
+        void namesTheClaimantWithItsCrestAndScoreUnderTheClaimHeading() {
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -281,7 +281,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodySortsTheRivalsIntoContestedAndNonTerritorialBlocks() {
+        void sortsTheRivalsIntoContestedAndNonTerritorialBlocks() {
             // The two kinds of presence answer different questions - who nearly took the system, and
             // who is merely there - so they are told apart by the heading they sit under rather than
             // by a note on a line.
@@ -310,7 +310,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyHeadsOnlyTheRivalsDifferentlyWhereNoSystemEverChangesHands() {
+        void headsOnlyTheRivalsDifferentlyWhereNoSystemEverChangesHands() {
             // The same rivals under the same claim, on an install that never transfers a system: they
             // could have taken it, they did not, and the border between them will not move again.
             // Calling that a contest reports a fight the player will wait the whole game for, so that
@@ -354,7 +354,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyListsATerritorialFactionTheContestNeverWeighedUnderContestedAtNought() {
+        void listsATerritorialFactionTheContestNeverWeighedUnderContestedAtNought() {
             // A presence-only standing is a faction the mechanic reached nothing of - a concealed
             // base, or a station the economy does not list. Territorial, it is in the running by the
             // mechanic's own gate and scored nothing here, which is what the contested heading plus a
@@ -378,7 +378,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyListsANonTerritorialFactionTheContestNeverWeighedUnderNonTerritorial() {
+        void listsANonTerritorialFactionTheContestNeverWeighedUnderNonTerritorial() {
             // The other half of the same routing: a faction barred from claiming is barred whether or
             // not the mechanic weighed anything for it, and that block is where the box says so.
             var presenceRow = 3;
@@ -399,7 +399,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodySortsBothKindsOfStandingByEligibilityRatherThanByKind() {
+        void sortsBothKindsOfStandingByEligibilityRatherThanByKind() {
             // The block says how a faction stands to the claim, not what kind of record the contest
             // gave it - so two factions sharing an eligibility share a heading however differently
             // they were reached. Sorting by kind instead would file a pirate base's owner beside a
@@ -423,7 +423,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyRoutesTheClaimHoldersAllyOutOfTheContestedBlock() {
+        void routesTheClaimHoldersAllyOutOfTheContestedBlock() {
             // The whole point of the third block. Vanilla scores each faction alone and knows nothing
             // of an alliance, so an ally competes for the system and loses it - left under
             // `Contested by:`, the box would show a faction fighting its own ally for a system the two
@@ -457,7 +457,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyRoutesEachHoverAgainstTheAllianceSetAsItStandsThen() {
+        void routesEachHoverAgainstTheAllianceSetAsItStandsThen() {
             // Why the box holds the means of sampling a grouping rather than a grouping: it lives for
             // the whole session while alliances form and dissolve inside it, so one taken at
             // construction would go on filing a faction under the alliance it left an hour ago. Posed
@@ -492,7 +492,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyQualifiesAnAllyThatCouldNeverHaveTakenTheSystem() {
+        void qualifiesAnAllyThatCouldNeverHaveTakenTheSystem() {
             // The relation places a faction before its eligibility does, so an ineligible ally sits in
             // the allied block beside one that nearly took the system. That heading names neither
             // kind, so the line is where this one says which it is.
@@ -520,7 +520,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyLeavesTheQualifierOffTheBlockWhoseHeadingAlreadyStatesIt() {
+        void leavesTheQualifierOffTheBlockWhoseHeadingAlreadyStatesIt() {
             // The same faction unallied falls to `Non-territorial:`, whose heading is that very fact -
             // so its line is its name and nothing after it, one thing met once in a hover rather than
             // twice in the space of two rows.
@@ -542,7 +542,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyRoutesAFactionOnGoodTermsWithTheClaimHolderOutOfTheContestedBlock() {
+        void routesAFactionOnGoodTermsWithTheClaimHolderOutOfTheContestedBlock() {
             // The fault the fourth block fixes, a step down the scale from the third: a faction the
             // sector puts on good terms with the claim holder has no quarrel with it over the system,
             // and `Contested by:` says it has. The score it lost by is untouched - the heading was the
@@ -571,7 +571,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyLeavesAFactionIndifferentTowardTheClaimHolderContesting() {
+        void leavesAFactionIndifferentTowardTheClaimHolderContesting() {
             // Where the block stops. `NEUTRAL` is the base game's own word for indifference and the
             // last level it declines to call goodwill, so a faction sitting exactly on it is a rival
             // like any other - which is what makes the threshold one the player can read off a
@@ -595,7 +595,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyKeepsTheClaimHoldersAllyAlliedHoweverWarmlyItIsDisposed() {
+        void keepsTheClaimHoldersAllyAlliedHoweverWarmlyItIsDisposed() {
             // Alliance is the outer axis and disposition never re-sorts what it took, so an ally on
             // excellent terms with the holder gains nothing by it - the two blocks would otherwise
             // both be true of one faction, and which of them it drew in would be down to the order
@@ -621,7 +621,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyQualifiesAFriendlyFactionThatCouldNeverHaveTakenTheSystem() {
+        void qualifiesAFriendlyFactionThatCouldNeverHaveTakenTheSystem() {
             // The friendly heading names an eligibility no more than the allied one does, so the rule
             // that puts the word on an ineligible ally's line puts it on an ineligible friend's -
             // stated once over the pair rather than per block.
@@ -649,7 +649,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyLaysTheFiveBlocksDownFromTheClaimOutward() {
+        void laysTheFiveBlocksDownFromTheClaimOutward() {
             // The whole chain in one system, in the order a reader meets it: who holds the place, who
             // stands with it by alliance, who stands with it in disposition, who stands against it,
             // and who could never have taken it. Every other case here poses one block at a time, so
@@ -689,7 +689,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyLeavesThePlaceholderOwnerUnderNonTerritorial() {
+        void leavesThePlaceholderOwnerUnderNonTerritorial() {
             // Why this box needs no block of its own for the placeholder owner every abandoned station
             // is handed to, where the standings box grew one. The claim mechanic never admits it, so
             // it arrives ineligible and the heading that says so is already the true statement about
@@ -715,7 +715,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyCallsEveryTerritorialFactionARivalWhereNobodyHoldsTheSystem() {
+        void callsEveryTerritorialFactionARivalWhereNobodyHoldsTheSystem() {
             // There is nobody to be allied or friendly with, so neither block whose heading names a
             // holder draws over a system without one - even where the two factions present are allied
             // to each other and on excellent terms besides, which is the pair either comparison would
@@ -743,7 +743,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyRoutesADecreedHoldersAllyIntoTheAlliedBlock() {
+        void routesADecreedHoldersAllyIntoTheAlliedBlock() {
             // A decree settles who the holder is and nothing about how the blocks are routed, so the
             // decreed faction's ally sorts exactly as a winner's would - and the faction that would
             // have claimed by score is neither, so it goes on contesting.
@@ -769,7 +769,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyLeavesOutAFactionThePlayerHasFoundNoColonyOf() {
+        void leavesOutAFactionThePlayerHasFoundNoColonyOf() {
             // The known projection over the listing: a faction present only through colonies nobody
             // has found is named nowhere, since naming it would tell the player exactly what the fog
             // is keeping back - and the account beneath it would have nothing in it to boot.
@@ -786,7 +786,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyListsARivalWeighedOnAColonyThePlayerHasNotFound() {
+        void listsARivalWeighedOnAColonyThePlayerHasNotFound() {
             // The scored kind survives the projection. The mechanic weighs colonies nobody has
             // reached and can hand one of them the system, so a rival dropped for the fog would
             // leave the contest reported as something other than what decided it - the account
@@ -809,7 +809,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyStatesTheScoreOfAHolderWeighedOnAColonyThePlayerHasNotFound() {
+        void statesTheScoreOfAHolderWeighedOnAColonyThePlayerHasNotFound() {
             // The claim line carries the number its standing reports, the standing now being listed.
             // What the blank value column means is the point: it says the claimant holds nothing the
             // contest weighed, which is the shape of a decree over a colony-less faction - so a
@@ -835,7 +835,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyListsAFactionThePlayerHasNotFoundUnderTheDevReveal() {
+        void listsAFactionThePlayerHasNotFoundUnderTheDevReveal() {
             // The reveal is the state a player has asked to be shown everything in, so the same
             // faction is listed in full - the withholding is about what they have found rather than
             // about the box.
@@ -856,7 +856,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyShowsAQuietNoughtForADecreedClaimantTheContestNeverWeighed() {
+        void showsAQuietNoughtForADecreedClaimantTheContestNeverWeighed() {
             // A decree over a system its holder is present in through a concealed base alone: the
             // faction has a standing, so the claim line states the nought that standing reports
             // rather than the blank value column of a claimant holding nothing there at all.
@@ -876,7 +876,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyHoldsEachHeadingWithTheLinesItNames() {
+        void holdsEachHeadingWithTheLinesItNames() {
             // Each block is a heading and its own entries, so the box parts one block from the next
             // and nothing inside a block - the shape the whole reading of the box rests on.
             stubBreakdown(new SystemClaimBreakdown(
@@ -897,7 +897,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyKeepsRivalsInTheOrderTheContestRankedThem() {
+        void keepsRivalsInTheOrderTheContestRankedThem() {
             // The breakdown hands its standings over strongest first, which is the order a contest is
             // read in - a section that re-ordered or reversed them would put the nearest challenger
             // last while every other assertion in this suite still passed.
@@ -921,7 +921,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodySetsHeadingsApartFromTheEntriesBeneathThem() {
+        void setsHeadingsApartFromTheEntriesBeneathThem() {
             // The two faults the review found on this box: a heading laid inside the crest gutter reads
             // as indented under nothing, and claim lines drawn as nested rows encode a second tier this
             // box does not have - claims resolve per faction, so every line here is an entry.
@@ -951,7 +951,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyOmitsContestedWhenTheClaimantIsTheOnlyTerritorialFaction() {
+        void omitsContestedWhenTheClaimantIsTheOnlyTerritorialFaction() {
             // An uncontested claim has to read as uncontested, and a heading standing over no lines
             // would read as a contest whose rivals failed to resolve.
             stubBreakdown(new SystemClaimBreakdown(
@@ -965,7 +965,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyMarksACoreClaimAndKeepsItsMarketScore() {
+        void marksACoreClaimAndKeepsItsMarketScore() {
             // The decree is what took the system, so it is called out in the highlight colour on the
             // claim line itself - while the number beside it stays the faction's market standing,
             // which the decree does not erase.
@@ -987,7 +987,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyDropsTheDisplacedTopScorerIntoContested() {
+        void dropsTheDisplacedTopScorerIntoContested() {
             // The regression this guards: a decree must not collapse the box to one line. The faction
             // that would have claimed by score is simply not the claimant, so it reads as contesting -
             // which is what shows the player a core imposed over a stronger presence.
@@ -1014,7 +1014,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyShowsNoScoreForACoreFactionHoldingNoMarketThere() {
+        void showsNoScoreForACoreFactionHoldingNoMarketThere() {
             // A decree needs no colony behind it, so the claimant is named with the value column left
             // blank rather than with a nought it never scored.
             stubBreakdown(new SystemClaimBreakdown(
@@ -1031,7 +1031,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyStatesTheClaimAsNoneWhenNobodyCanTakeTheSystem() {
+        void statesTheClaimAsNoneWhenNobodyCanTakeTheSystem() {
             // A faction present but barred from claiming leaves the system unclaimed, which the box has
             // to say outright - the claim heading over nothing would read as a failure to resolve one.
             stubBreakdown(new SystemClaimBreakdown(
@@ -1053,7 +1053,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyOpensEveryClaimLineAtTheContentEdge() {
+        void opensEveryClaimLineAtTheContentEdge() {
             // A crest rides in the label of the line carrying it, so the claim block listing only the
             // word for nobody opens flush under its own heading - level with the crested line in the
             // block below rather than a gutter's width apart from it.
@@ -1076,7 +1076,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyStatesTheClaimAsNoneForAPopulatedSystemNobodyHasTaken() {
+        void statesTheClaimAsNoneForAPopulatedSystemNobodyHasTaken() {
             // Nobody holding a system that is nonetheless lived in is a finding rather than an absence,
             // and the only line that states it - so the block stands whether or not anything scored.
             stubBreakdown(SystemClaimBreakdown.NONE);
@@ -1087,7 +1087,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyDropsTheClaimBlockForAnUnclaimedSystemHoldingNobody() {
+        void dropsTheClaimBlockForAnUnclaimedSystemHoldingNobody() {
             // "None" beneath a banner already saying the system holds nobody answers the same absence
             // twice, so the block is dropped and the banner is left to say it once.
             stubSystemHoldingNobody();
@@ -1099,7 +1099,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyNamesTheDecreeHoldingASystemThatHoldsNobody() {
+        void namesTheDecreeHoldingASystemThatHoldsNobody() {
             // The half the banner does not answer: a decree over a system with nothing in it is a hold
             // the player can read nowhere else in the box, so it survives the drop above.
             stubSystemHoldingNobody();
@@ -1114,7 +1114,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyNamesTheSystemsStatusBeforeItsClaimAndInABlockOfItsOwn() {
+        void namesTheSystemsStatusBeforeItsClaimAndInABlockOfItsOwn() {
             // A dead system names its state first, so the claim below reads as a hold over an empty
             // system rather than over a colony - and parted from it, since the two answer different
             // questions.
@@ -1136,7 +1136,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyJudgesTheSystemEmptyUnderTheNormalRevealWhileItIsOff() {
+        void judgesTheSystemEmptyUnderTheNormalRevealWhileItIsOff() {
             // An undiscovered colony must not count: suppressing the status line for one would make
             // the missing line itself the tell that something is hiding in the system.
             stubBreakdown(SystemClaimBreakdown.NONE);
@@ -1152,7 +1152,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyJudgesTheSystemEmptyUnderTheDevRevealWhileItIsOn() {
+        void judgesTheSystemEmptyUnderTheDevRevealWhileItIsOn() {
             // The reveal is read live off the same toggle the faction layer samples, so a player who
             // has turned it on is not told two different things by two layers about one system.
             visibilityRulesMock
@@ -1170,7 +1170,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyFallsBackToTheIdForAFactionTheSectorCannotResolve() {
+        void fallsBackToTheIdForAFactionTheSectorCannotResolve() {
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 "ghost_faction",
@@ -1185,7 +1185,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyReadsEveryBlockOnlyAsDeepAsTheLevelAsksFor() {
+        void readsEveryBlockOnlyAsDeepAsTheLevelAsksFor() {
             // The level has to reach all five of this body's blocks rather than stopping at the box.
             // One composition, drawn as the factions alone where the player asked who claims the
             // system, and with the colonies behind them where they asked on what - so a body that
@@ -1216,7 +1216,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyAsksTheBoxForNoAccountAtAllWhereTheLevelShowsNoLineOfOne() {
+        void asksTheBoxForNoAccountAtAllWhereTheLevelShowsNoLineOfOne() {
             // The other half of the cut, and the half the drawn box cannot show: an account is
             // everything a listed faction is subordinated over, so the shallowest level draws not one
             // of its lines - and it is therefore never asked for. Cut after the fact, every faction
@@ -1238,7 +1238,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyAsksTheBoxForTheAccountAtTheLevelItWillBeReadTo() {
+        void asksTheBoxForTheAccountAtTheLevelItWillBeReadTo() {
             // The level travels to the box rather than only gating the call, so an account carrying
             // tiers of its own stops where the cut would. Handed a fixed depth instead, the box would
             // work its deepest tiers out at every level that shows an account at all - and the cut
@@ -1259,7 +1259,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyHangsEachFactionsColoniesBeneathItsOwnLine() {
+        void hangsEachFactionsColoniesBeneathItsOwnLine() {
             // Every block the box has takes the account, claimant and rival alike - and a colony reads
             // under the faction that holds it rather than under whichever line came before it.
             stubBreakdown(new SystemClaimBreakdown(
@@ -1283,7 +1283,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyHangsAnAlliedFactionsColoniesBeneathItsLineInTheAlliedBlock() {
+        void hangsAnAlliedFactionsColoniesBeneathItsLineInTheAlliedBlock() {
             // The routing is the shared shape's and pinned there; what this case is about is that the
             // detail follows a faction into the block the relation put it in. An ally accounted for
             // only under `Contested by:` would be an account of a line the box no longer draws.
@@ -1310,7 +1310,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyHangsAFriendlyFactionsColoniesBeneathItsLineInTheFriendlyBlock() {
+        void hangsAFriendlyFactionsColoniesBeneathItsLineInTheFriendlyBlock() {
             // The other relation block on the same terms: the detail follows a faction wherever the
             // relation put it, so a faction merely on good terms with the claim holder is accounted
             // for under the block it was drawn in rather than under `Contested by:`.
@@ -1337,7 +1337,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyHangsTheColoniesOfAFactionTheContestNeverWeighedBeneathItsOwnLine() {
+        void hangsTheColoniesOfAFactionTheContestNeverWeighedBeneathItsOwnLine() {
             // The whole point of the widening, read as the box draws it: the faction's line states a
             // nought and its colonies hang under that line rather than under the claimant's above.
             // They break down no further, nothing having been computed for them - which is what
@@ -1365,7 +1365,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyAccountsForNothingWhereADecreedClaimantHoldsNoColonyHere() {
+        void accountsForNothingWhereADecreedClaimantHoldsNoColonyHere() {
             // A decree needs no colony behind it, so the claimant is named with nothing hung beneath
             // it rather than with a heading over an account it never earned.
             stubBreakdown(new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()));
@@ -1376,7 +1376,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyReadsTheSystemOnceHoweverManyFactionsTheContestHolds() {
+        void readsTheSystemOnceHoweverManyFactionsTheContestHolds() {
             // The kinds and the last-seen remarks a listing carries are read from one walk of the
             // system, made for the box rather than for a line. Resolved where an account is built,
             // they would walk the system once for every faction listed - and the walk is the most
@@ -1404,7 +1404,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyReadsTheColoniesOffTheWalkTheStatusRowWasJudgedFrom() {
+        void readsTheColoniesOffTheWalkTheStatusRowWasJudgedFrom() {
             // The one walk the box makes has to answer everything below it. Opened again for the
             // account, the kinds and the dates would come off a second reading of the system - so
             // the banner could call a system empty while the lines beneath it named a colony that
@@ -1442,7 +1442,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyOpensItsBreakdownReaderUnderTheRuleSampledForTheHover() {
+        void opensItsBreakdownReaderUnderTheRuleSampledForTheHover() {
             // One read of the player's settings per hover serves both the reader the contest comes
             // through and the listing projected over it. Sampled twice, a toggle moved between the two
             // reads would list under one rule a breakdown whose markets were flagged under another.
@@ -1481,7 +1481,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyOpensAFreshBreakdownReaderForEachHover() {
+        void opensAFreshBreakdownReaderForEachHover() {
             // The box lives for the whole session while the rule is a setting the player may move
             // between two hovers, so the second hover has to see the toggle moved after the first.
             var openedRules = new ArrayList<ColonyVisibility>();
@@ -1517,7 +1517,7 @@ final class SystemClaimTooltipTest {
     class OpenBreakdownReaderUnder {
 
         @Test
-        void openBreakdownReaderUnderOpensTheVanillaReaderUnderTheRuleItIsHanded() {
+        void opensTheVanillaReaderUnderTheRuleItIsHanded() {
             // A claim breakdown reports the player's knowledge as a flag on each market rather than by
             // leaving the market out, so a reader opened under any rule but the hover's would surface
             // only as a name the box should have withheld.
@@ -1542,7 +1542,7 @@ final class SystemClaimTooltipTest {
     class ResolveAccountEntries {
 
         @Test
-        void resolveAccountEntriesAccountsForAFactionWithTheMarketsItHolds() {
+        void accountsForAFactionWithTheMarketsItHolds() {
             // The point of the deeper levels, and the one thing the faction's line cannot state: its
             // number is one market's score, so the markets it was read from are what its account
             // lists.
@@ -1562,7 +1562,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveAccountEntriesBreaksEachMarketDownIntoItsTerms() {
+        void breaksEachMarketDownIntoItsTerms() {
             // A market's own line is a sum too, so the account goes one level further: the terms that
             // built its score hang beneath it rather than the number being left to be taken on trust.
             var entries = tooltip.resolveAccountEntries(
@@ -1576,7 +1576,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveAccountEntriesBreaksAMarketIntoNothingWhereTheLevelStopsAtTheMarkets() {
+        void breaksAMarketIntoNothingWhereTheLevelStopsAtTheMarkets() {
             // The level reaches the account rather than only deciding whether to ask for one, so the
             // composition level names the markets and works out none of the arithmetic beneath them.
             var entries = tooltip.resolveAccountEntries(
@@ -1592,7 +1592,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveAccountEntriesCallsOutTheMarketTheClaimantTookTheSystemWith() {
+        void callsOutTheMarketTheClaimantTookTheSystemWith() {
             // The box's half of the rule: it reads who took the system off the very contest it is
             // drawing, so the call-out lands on the one market in the whole box that won anything.
             var entries = tooltip.resolveAccountEntries(
@@ -1606,7 +1606,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveAccountEntriesCallsOutNoMarketOfAFactionThatTookNothing() {
+        void callsOutNoMarketOfAFactionThatTookNothing() {
             // A rival is represented by its own strongest market too, but that market took nothing -
             // called out, it would read as a second holder of a system that can only have one.
             var entries = tooltip.resolveAccountEntries(
@@ -1620,7 +1620,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveAccountEntriesAccountsForAFactionTheContestNeverWeighed() {
+        void accountsForAFactionTheContestNeverWeighed() {
             // The case the widening exists for: such a faction's line is a nought and nothing else,
             // so its colonies are the whole of what the deeper levels have to add about it - and they
             // are what the player is looking at on the map.
@@ -1641,7 +1641,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveAccountEntriesWithholdsUnderTheRuleTheContestWasProjectedUnder() {
+        void withholdsUnderTheRuleTheContestWasProjectedUnder() {
             // The account draws under the rule that selected the listing above it, not under one it
             // reads for itself. Posed as the two disagreeing: the contest carries the reveal, while
             // the live settings seam answers with it off. The undiscovered market has to be listed -
@@ -1670,7 +1670,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveAccountEntriesCallsOutNoMarketOfASystemHeldByDecree() {
+        void callsOutNoMarketOfASystemHeldByDecree() {
             // A decree took the system before any market was weighed, so no market's score decided
             // anything and none is called out for it - the claimant's least of all.
             var entries = tooltip.resolveAccountEntries(
@@ -1690,7 +1690,7 @@ final class SystemClaimTooltipTest {
     class ResolveDeepestAccountLevel {
 
         @Test
-        void resolveDeepestAccountLevelStopsAtTheMarketStats() {
+        void stopsAtTheMarketStats() {
             // The whole reason a box states its own depth. Vanilla settles a claim on a colony's size,
             // its garrison and how many colonies the faction holds beside it - no patrol enters the
             // arithmetic anywhere - so the account has no line at the level below and the cycle has to
@@ -1704,7 +1704,7 @@ final class SystemClaimTooltipTest {
     class ResolveDeepestHeldLevelFor {
 
         @Test
-        void resolveDeepestHeldLevelForOffersTheAccountBehindAScoredStanding() {
+        void offersTheAccountBehindAScoredStanding() {
             // What the key at the foot of the box would reach: the colonies behind the faction, and
             // the terms behind a colony's score - the deeper tiers accounting for the very score the
             // shallowest states, and stopping where the mechanic's arithmetic does.
@@ -1718,7 +1718,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveDeepestHeldLevelForOffersTheAccountBehindAPresenceTheContestNeverWeighed() {
+        void offersTheAccountBehindAPresenceTheContestNeverWeighed() {
             // Such a faction's colonies are exactly what the player can read nowhere else in the box,
             // its line stating a nought and nothing more - so the key has something to open even
             // where the mechanic weighed the whole system at nothing.
@@ -1732,7 +1732,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveDeepestHeldLevelForOffersNothingWhereTheProjectionListsNobody() {
+        void offersNothingWhereTheProjectionListsNobody() {
             // The deeper tiers account for the factions this box lists, and the fog has left it
             // listing none. Every level would state the same claim line, so the key would do nothing
             // the player could see - and a hint over it would advertise that it would.
@@ -1746,7 +1746,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveDeepestHeldLevelForAgreesWithTheDepthThePaintReports() {
+        void agreesWithTheDepthThePaintReports() {
             // The invariant the two-path design rests on, and the one place this box can break it: the
             // press asks here while the paint takes the depth off the body it just composed, and the
             // two run through separate reads of the system. Drifting, the hint would name a step the
@@ -1761,7 +1761,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void resolveDeepestHeldLevelForAgreesWithThePaintOverASystemListingNobody() {
+        void agreesWithThePaintOverASystemListingNobody() {
             // The same agreement at the other end, which is the half that would strand a player: a box
             // the fog left listing nobody must report the shallowest through both paths, or the key
             // would act over a box drawing no hint at all.

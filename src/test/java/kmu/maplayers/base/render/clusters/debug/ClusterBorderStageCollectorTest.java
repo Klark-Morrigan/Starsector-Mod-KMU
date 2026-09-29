@@ -24,13 +24,13 @@ final class ClusterBorderStageCollectorTest {
     class BuildOverlay {
 
         @Test
-        void buildOverlayLeavesEveryStageEmptyWhenNothingWasCaptured() {
+        void leavesEveryStageEmptyWhenNothingWasCaptured() {
             assertThat(new ClusterBorderStageCollector().buildOverlay().isEmpty())
                 .isTrue();
         }
 
         @Test
-        void buildOverlayFlattensCapturedLoopsIntoGlRuns() {
+        void flattensCapturedLoopsIntoGlRuns() {
             var collector = new ClusterBorderStageCollector();
 
             collector.captureBaseStage(ONE_LOOP);
@@ -42,7 +42,7 @@ final class ClusterBorderStageCollectorTest {
         }
 
         @Test
-        void buildOverlayAccumulatesEachClustersCaptureIntoTheSameStage() {
+        void accumulatesEachClustersCaptureIntoTheSameStage() {
             var collector = new ClusterBorderStageCollector();
 
             collector.captureBaseStage(ONE_LOOP);
@@ -59,7 +59,7 @@ final class ClusterBorderStageCollectorTest {
     class CaptureBaseStage {
 
         @Test
-        void captureBaseStageFillsTheBaseStageAndLeavesTheSmoothedStagesEmpty() {
+        void fillsTheBaseStageAndLeavesTheSmoothedStagesEmpty() {
             var collector = new ClusterBorderStageCollector();
 
             collector.captureBaseStage(ONE_LOOP);
@@ -78,7 +78,7 @@ final class ClusterBorderStageCollectorTest {
     class CaptureDespikedStage {
 
         @Test
-        void captureDespikedStageFillsOnlyTheDespikedStage() {
+        void fillsOnlyTheDespikedStage() {
             var collector = new ClusterBorderStageCollector();
 
             collector.captureDespikedStage(ONE_LOOP);
@@ -97,7 +97,7 @@ final class ClusterBorderStageCollectorTest {
     class CaptureRoundedStage {
 
         @Test
-        void captureRoundedStageFillsOnlyTheRoundedStage() {
+        void fillsOnlyTheRoundedStage() {
             var collector = new ClusterBorderStageCollector();
 
             collector.captureRoundedStage(ONE_LOOP);

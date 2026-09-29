@@ -93,7 +93,7 @@ final class RibbonBakeSurfaceTest {
     class CreateForPass {
 
         @Test
-        void createForPassHandsOverTheBuildsOwnSettledSystemsSitesAndRingStore() {
+        void handsOverTheBuildsOwnSettledSystemsSitesAndRingStore() {
             // The ring store is the cells' own rather than a copy, so a ring traced by this bake is
             // there for the next one and dropped with the shape it was traced inside.
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(Map.of(), Set.of(SETTLED_SYSTEM));
@@ -113,7 +113,7 @@ final class RibbonBakeSurfaceTest {
         }
 
         @Test
-        void createForPassKeepsClearOfTheFittedBoxesUnderTheFittedBoxReading() {
+        void keepsClearOfTheFittedBoxesUnderTheFittedBoxReading() {
 
             var surface = createSurfaceSpelling(FactionNameFormatChoice.SHORT);
 
@@ -124,7 +124,7 @@ final class RibbonBakeSurfaceTest {
         }
 
         @Test
-        void createForPassKeepsClearOfTheDrawnWordsUnderTheWordsReading() {
+        void keepsClearOfTheDrawnWordsUnderTheWordsReading() {
 
             settingsMock
                 .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonNameClearance)
@@ -139,7 +139,7 @@ final class RibbonBakeSurfaceTest {
         }
 
         @Test
-        void createForPassKeepsClearOfNothingWhileTheNamesAreSwitchedOff() {
+        void keepsClearOfNothingWhileTheNamesAreSwitchedOff() {
             // Read off the build's name format rather than off the placements being empty: the
             // placements are built for the anchor overlay too, so they can stand while nothing is
             // drawn for a band to give way to.
@@ -153,7 +153,7 @@ final class RibbonBakeSurfaceTest {
         }
 
         @Test
-        void createForPassKeepsClearOfNothingWhileTheBandsIgnoreTheNames() {
+        void keepsClearOfNothingWhileTheBandsIgnoreTheNames() {
             // The other reason a band has nothing to keep clear of: the names are drawn, and the
             // player would rather the band ran whole beneath them.
             settingsMock

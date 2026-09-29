@@ -23,7 +23,7 @@ final class CellTooltipEntryLevelTest {
     class ListedLevel {
 
         @Test
-        void listedLevelStandsFlushAndSpeaksInTheBoxsOwnVoice() {
+        void standsFlushAndSpeaksInTheBoxsOwnVoice() {
             // The floor both counts are measured up from, so every case below states steps taken from
             // here rather than an absolute - which only holds while here is actually zero.
             assertThat(CellTooltipEntryLevel.LISTED_LEVEL.indentDepth())
@@ -55,7 +55,7 @@ final class CellTooltipEntryLevelTest {
     class GroupedUnder {
 
         @Test
-        void groupedUnderSetsAPeerInWithoutDemotingIt() {
+        void setsAPeerInWithoutDemotingIt() {
             // An alliance's member factions: inset beneath the line naming the alliance, yet the same kind of
             // statement it is - who holds the system, said at a finer granularity.
             var level = CellTooltipEntryLevel.LISTED_LEVEL.groupedUnder();
@@ -67,7 +67,7 @@ final class CellTooltipEntryLevelTest {
         }
 
         @Test
-        void groupedUnderKeepsWhateverLevelItsParentWasAlreadyAt() {
+        void keepsWhateverLevelItsParentWasAlreadyAt() {
 
             var level = CellTooltipEntryLevel.LISTED_LEVEL
                 .subordinatedUnder()
@@ -84,7 +84,7 @@ final class CellTooltipEntryLevelTest {
     class SubordinatedUnder {
 
         @Test
-        void subordinatedUnderSetsAnAccountInAndAStepUnderTheBoxsVoice() {
+        void setsAnAccountInAndAStepUnderTheBoxsVoice() {
 
             var level = CellTooltipEntryLevel.LISTED_LEVEL.subordinatedUnder();
 
@@ -95,7 +95,7 @@ final class CellTooltipEntryLevelTest {
         }
 
         @Test
-        void subordinatedUnderPutsAGroupedLinesAccountWhereAnUngroupedOnesLands() {
+        void putsAGroupedLinesAccountWhereAnUngroupedOnesLands() {
             // The consistency the whole type exists for: a market under a faction inside an alliance is
             // one step further in than a market under a lone faction, and exactly as loud - the alliance
             // added a level the account had nothing to do with.
@@ -120,7 +120,7 @@ final class CellTooltipEntryLevelTest {
     class IsAdmittedBy {
 
         @Test
-        void isAdmittedByHoldsForABlocksOwnLineAtEveryLevel() {
+        void holdsForABlocksOwnLineAtEveryLevel() {
             // A block's own lines speak in the box's voice, so the shallowest level shows them - which
             // is what leaves a block that lists anything drawn however little detail is asked for.
             assertThat(CellTooltipEntryLevel.LISTED_LEVEL
@@ -132,7 +132,7 @@ final class CellTooltipEntryLevelTest {
         }
 
         @Test
-        void isAdmittedByKeepsAGatheredPeerAtTheShallowestLevel() {
+        void keepsAGatheredPeerAtTheShallowestLevel() {
             // The case the cut is asked of the subordination for: an alliance's member factions are set
             // in beneath the line naming the alliance, and they are exactly the content the shallowest
             // level exists to state. A cut on the indent would drop them.
@@ -143,7 +143,7 @@ final class CellTooltipEntryLevelTest {
         }
 
         @Test
-        void isAdmittedByDropsAnAccountAtTheShallowestLevel() {
+        void dropsAnAccountAtTheShallowestLevel() {
             // The other relation, at the same indent: a market beneath the faction holding it is the
             // account of that faction's line, which is the tier the next level up buys.
             assertThat(CellTooltipEntryLevel.LISTED_LEVEL
@@ -157,7 +157,7 @@ final class CellTooltipEntryLevelTest {
         }
 
         @Test
-        void isAdmittedByDropsAStepDeeperThanTheLevelAdmits() {
+        void dropsAStepDeeperThanTheLevelAdmits() {
             // The bound itself, one step past where each level stops: the level names the deepest tier
             // it shows rather than a tier it shows from.
             assertThat(CellTooltipEntryLevel.LISTED_LEVEL
@@ -174,7 +174,7 @@ final class CellTooltipEntryLevelTest {
         }
 
         @Test
-        void isAdmittedByKeepsEveryTierABoxReachesAtTheDeepestLevel() {
+        void keepsEveryTierABoxReachesAtTheDeepestLevel() {
             // The deepest level hides nothing the boxes list: three steps under the box's own voice is
             // as far as a listing goes, and the level that names that tier admits it.
             assertThat(CellTooltipEntryLevel.LISTED_LEVEL
@@ -190,14 +190,14 @@ final class CellTooltipEntryLevelTest {
     class IsListedInItsOwnRight {
 
         @Test
-        void isListedInItsOwnRightHoldsForABlocksOwnLine() {
+        void holdsForABlocksOwnLine() {
 
             assertThat(CellTooltipEntryLevel.LISTED_LEVEL.isListedInItsOwnRight())
                 .isTrue();
         }
 
         @Test
-        void isListedInItsOwnRightFailsForAnythingSetInBeneathOne() {
+        void failsForAnythingSetInBeneathOne() {
             // A peer is not one of the block's own lines even though it speaks as loudly: how a line is
             // laid follows where it sits, and only how loudly it reads follows what it is.
             assertThat(CellTooltipEntryLevel.LISTED_LEVEL.groupedUnder().isListedInItsOwnRight())

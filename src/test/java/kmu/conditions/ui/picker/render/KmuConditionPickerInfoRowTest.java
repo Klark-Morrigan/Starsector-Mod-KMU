@@ -58,7 +58,7 @@ class KmuConditionPickerInfoRowTest {
     class ComputeHeight {
 
         @Test
-        void computeHeightIncludesSectionGapWhenBothSectionsPresent() {
+        void includesSectionGapWhenBothSectionsPresent() {
             var height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 2);
 
             var expected = 4 * KmuConditionPickerInfoRow.LINE_HEIGHT + 8f; // 8f = SECTION_PAD
@@ -66,7 +66,7 @@ class KmuConditionPickerInfoRowTest {
         }
 
         @Test
-        void computeHeightExcludesSectionGapWhenOnlyLocationPresent() {
+        void excludesSectionGapWhenOnlyLocationPresent() {
             var height = KmuConditionPickerInfoRow.computeHeight(0f, 2, 0);
 
             var expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);
@@ -74,7 +74,7 @@ class KmuConditionPickerInfoRowTest {
         }
 
         @Test
-        void computeHeightExcludesSectionGapWhenOnlySummaryPresent() {
+        void excludesSectionGapWhenOnlySummaryPresent() {
             var height = KmuConditionPickerInfoRow.computeHeight(0f, 0, 2);
 
             var expected = Math.max(KmuConditionPickerInfoRow.ICON_SIZE, 2 * KmuConditionPickerInfoRow.LINE_HEIGHT);

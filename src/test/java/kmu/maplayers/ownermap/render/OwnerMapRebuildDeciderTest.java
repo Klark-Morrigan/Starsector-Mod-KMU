@@ -77,7 +77,7 @@ final class OwnerMapRebuildDeciderTest {
     class DecideWhatIsStale {
 
         @Test
-        void decideWhatIsStaleOwesBothHalvesOnTheFirstFrame() {
+        void owesBothHalvesOnTheFirstFrame() {
             // Every baseline starts at its rebuild-forcing seed, and nothing has been cut, so the
             // first frame after a sector is installed on builds both halves from scratch.
             var staleHalves = decideWithNothingBuilt();
@@ -89,7 +89,7 @@ final class OwnerMapRebuildDeciderTest {
         }
 
         @Test
-        void decideWhatIsStaleOwesNothingOnceTheRebuildIsRecordedAndNothingMoved() {
+        void owesNothingOnceTheRebuildIsRecordedAndNothingMoved() {
             // The frame the map spends nearly all of its life on: a rebuild has been recorded and
             // no input moved since, so the decision stops here and opens no reading.
             decideAndRecordARebuild();
@@ -103,7 +103,7 @@ final class OwnerMapRebuildDeciderTest {
         }
 
         @Test
-        void decideWhatIsStaleOwesARecutWhenTheGeometrySignalIsRaised() {
+        void owesARecutWhenTheGeometrySignalIsRaised() {
 
             decideAndRecordARebuild();
             machinery.resolveRefreshBoard().requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
@@ -117,7 +117,7 @@ final class OwnerMapRebuildDeciderTest {
         }
 
         @Test
-        void decideWhatIsStaleOwesARebuildButNoRecutWhenTheSpotlitBlocMoves() {
+        void owesARebuildButNoRecutWhenTheSpotlitBlocMoves() {
             // A pick is a different map but the same cells: the content revision folds the sampled
             // reading and moves, while nothing the cells are cut from has.
             var rebuilt = decideAndRecordARebuild();
@@ -135,7 +135,7 @@ final class OwnerMapRebuildDeciderTest {
         }
 
         @Test
-        void decideWhatIsStaleGoesOnOwingTheRebuildUntilAStageIsRecorded() {
+        void goesOnOwingTheRebuildUntilAStageIsRecorded() {
             // The baselines advance only as the cache reports each stage complete, which is what
             // lets a rebuild that threw part way be asked for again rather than taken as done.
             decideWithNothingBuilt();
@@ -153,7 +153,7 @@ final class OwnerMapRebuildDeciderTest {
     class CanReuseStandingHolding {
 
         @Test
-        void canReuseStandingHoldingWhenNothingReachingTheResolveMoved() {
+        void isTrueWhenNothingReachingTheResolveMoved() {
 
             decideAndRecordARebuild();
 
@@ -162,7 +162,7 @@ final class OwnerMapRebuildDeciderTest {
         }
 
         @Test
-        void canReuseStandingHoldingIsFalseWhileNothingIsStanding() {
+        void isFalseWhileNothingIsStanding() {
             // A cache's first rebuild has nothing to keep, whatever the revisions say.
             decideAndRecordARebuild();
 
@@ -171,7 +171,7 @@ final class OwnerMapRebuildDeciderTest {
         }
 
         @Test
-        void canReuseStandingHoldingIsFalseWhenASystemIsMarked() {
+        void isFalseWhenASystemIsMarked() {
             // A marked system is one the sector moved under, so a holding read before it moved no
             // longer says who holds it.
             decideAndRecordARebuild();
@@ -184,7 +184,7 @@ final class OwnerMapRebuildDeciderTest {
         }
 
         @Test
-        void canReuseStandingHoldingIsFalseWhenTheCellsAreRecut() {
+        void isFalseWhenTheCellsAreRecut() {
             // A recut admits or drops systems, so the holding has to be read over the new set.
             decideAndRecordARebuild();
             machinery.resolveRefreshBoard().requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
@@ -194,7 +194,7 @@ final class OwnerMapRebuildDeciderTest {
         }
 
         @Test
-        void canReuseStandingHoldingIsFalseWhenAPickReachingTheResolveMoved() {
+        void isFalseWhenAPickReachingTheResolveMoved() {
             // The spotlight decides who holds a cell rather than only how it is coloured, so the
             // holding revision folds it and a moved pick reads the holding afresh.
             decideAndRecordARebuild();
@@ -209,7 +209,7 @@ final class OwnerMapRebuildDeciderTest {
     class DescribeCellCutTransition {
 
         @Test
-        void describeCellCutTransitionNamesTheNeverCutStateBeforeAnythingIsCut() {
+        void namesTheNeverCutStateBeforeAnythingIsCut() {
             // The never-cut state is a reading of its own rather than a zero one, so the first
             // recut says so instead of naming a set of inputs no player was ever under.
             assertThat(decider.describeCellCutTransition(decideWithNothingBuilt()))
@@ -217,7 +217,7 @@ final class OwnerMapRebuildDeciderTest {
         }
 
         @Test
-        void describeCellCutTransitionNamesTheStandingReadingOnceACutIsRecorded() {
+        void namesTheStandingReadingOnceACutIsRecorded() {
             // The other half of recording a cut: the reading a later recut moves away from is the
             // one that was actually cut, so a transition described after it names no absence.
             decideAndRecordARebuild();

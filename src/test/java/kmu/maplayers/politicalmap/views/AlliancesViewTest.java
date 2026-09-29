@@ -86,7 +86,7 @@ final class AlliancesViewTest {
     class GetId {
 
         @Test
-        void getIdIsTheFrozenAlliancesId() {
+        void isTheFrozenAlliancesId() {
             // Frozen: renaming it silently resets any save that selected this view to the default.
             assertThat(AlliancesView.INSTANCE.getId())
                 .isEqualTo("alliances");
@@ -97,7 +97,7 @@ final class AlliancesViewTest {
     class GetContentRevision {
 
         @Test
-        void getContentRevisionShiftsWhenTheAllianceRevisionMoves() {
+        void shiftsWhenTheAllianceRevisionMoves() {
             // The alliance set is one of the view's live inputs, so a membership change must shift
             // the revision - that is what folds it into the content token and repaints the view
             // without a reload.
@@ -111,7 +111,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void getContentRevisionStandsStillWhenTheRecedeStyleRevisionMoves() {
+        void standsStillWhenTheRecedeStyleRevisionMoves() {
             // A Mute/Desaturate flip is not folded here. The bake samples this view's non-allied
             // recede with every other preference and folds the values in, so a flip that leaves the
             // recede where it was must cost nothing - and one that moves it rebuilds through the
@@ -126,7 +126,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void getContentRevisionFoldsTheBoardItIsHandedRatherThanAnother() {
+        void foldsTheBoardItIsHandedRatherThanAnother() {
             // One stateless view answers for every sector, so the board handed in is the only thing
             // telling two sectors' asks apart. An alliance formed under one sector must move that
             // sector's number and leave the other's exactly where it was - a view folding an
@@ -154,7 +154,7 @@ final class AlliancesViewTest {
     class ResolveGrouping {
 
         @Test
-        void resolveGroupingFallsBackToIdentityWhenNexIsAbsent() {
+        void fallsBackToIdentityWhenNexIsAbsent() {
             // Without Nex the gate returns the identity grouping, so the view degrades to the faction
             // grouping rather than touching any exerelin class.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
@@ -171,7 +171,7 @@ final class AlliancesViewTest {
     class GetViewBodyControls {
 
         @Test
-        void getViewBodyControlsHandsThePanelItWasGivenToTheRecedeAdapter() {
+        void handsThePanelItWasGivenToTheRecedeAdapter() {
             // This view's Mute/Desaturate checkboxes repaint by raising a signal and store under the
             // panel they were placed on, so the panel has to reach them from the tab that placed them.
             // Dropped here - a delegation short enough to look incapable of losing anything - the
@@ -199,7 +199,7 @@ final class AlliancesViewTest {
     class ResolveHolderProvider {
 
         @Test
-        void resolveHolderProviderReturnsTheDefaultProvider() {
+        void returnsTheDefaultProvider() {
             // The alliances view rolls factions into alliance blocs through its grouping, but the
             // holding source underneath is the same dominant-holder resolution the faction view
             // uses - extended with claimed systems - so it inherits the shared claim-augmented
@@ -219,7 +219,7 @@ final class AlliancesViewTest {
         private static final ElementStyleAdjustment MUTED_ONLY = new ElementStyleAdjustment(0.3, false);
 
         @Test
-        void shouldUseIndependentStyleIsTrueForIndependentSpace() {
+        void isTrueForIndependentSpace() {
             // Genuine independent space always takes the independent style, exactly as the faction
             // view classifies it - short-circuiting before the adjustment is even read.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
@@ -230,7 +230,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void shouldUseIndependentStyleIsFalseForAnAllianceBlocEvenWhenDesaturated() {
+        void isFalseForAnAllianceBlocEvenWhenDesaturated() {
             // An alliance always paints in the full faction style so it stands out, whatever the
             // adjustment says.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
@@ -241,7 +241,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void shouldUseIndependentStyleIsFalseForALoneFactionWhenNotDesaturated() {
+        void isFalseForALoneFactionWhenNotDesaturated() {
             // Undesaturated, a non-allied faction keeps its own faction style, so it reads exactly as
             // the faction view draws it.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
@@ -252,7 +252,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void shouldUseIndependentStyleIsFalseForALoneFactionThatOnlyMutes() {
+        void isFalseForALoneFactionThatOnlyMutes() {
             // Muting only dims the active style through the opacity modifier; it never swaps the
             // bundle, so a merely dimmed faction keeps its faction borders and seams.
             assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
@@ -263,7 +263,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void shouldUseIndependentStyleIsTrueForALoneFactionWhenDesaturated() {
+        void isTrueForALoneFactionWhenDesaturated() {
             // Desaturate makes a non-allied faction adopt the independent style - its independent
             // borders and seams, not just an independent recolour over the faction ones. The test
             // reads the passed adjustment, so it holds however that desaturation was asked for: this
@@ -290,7 +290,7 @@ final class AlliancesViewTest {
             ContentInputsFixtures.createInputsRecedingNonAllied(RECEDED);
 
         @Test
-        void resolveBlocStyleAdjustmentIsNoneForAnAllianceBlocEvenWhenTheBackdropRecedes() {
+        void isNoneForAnAllianceBlocEvenWhenTheBackdropRecedes() {
             // An alliance keeps its full colour: the view gates it to NONE ahead of the recede the
             // bake sampled, so recede can never dim or desaturate an alliance.
             assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
@@ -301,7 +301,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void resolveBlocStyleAdjustmentTakesTheSampledNonAlliedRecedeForANonAllianceBloc() {
+        void takesTheSampledNonAlliedRecedeForANonAllianceBloc() {
             // A non-allied faction is backdrop, so the view hands back exactly the non-allied recede
             // the rebuild sampled - the one adjustment every faction outside an alliance takes.
             // Taken off the reading rather than off the stored toggles, so every cell of one rebuild
@@ -314,7 +314,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void resolveBlocStyleAdjustmentIsNoneForEveryBlocWhenNoAllianceExists() {
+        void isNoneForEveryBlocWhenNoAllianceExists() {
             // No alliance means no figure, so receding would sink the whole sector rather than
             // isolate anything - the state a fresh Nex campaign opens in, before diplomacy has
             // formed a single alliance. The gate runs ahead of the sampled recede, so the
@@ -340,7 +340,7 @@ final class AlliancesViewTest {
         private static final double MUTED_MODIFIER = 0.3;
 
         @Test
-        void resolveViewRecedeAdjustmentReadsTheNonAlliedBackdropsOwnToggles() {
+        void readsTheNonAlliedBackdropsOwnToggles() {
             // The view's own backdrop, off its own frozen keys: muted and left in colour here, which
             // neither the shipped defaults nor the layer's filter recede would answer.
             try (var sectorMemoryFake = new SectorMemoryFake();
@@ -364,7 +364,7 @@ final class AlliancesViewTest {
     class ResolveName {
 
         @Test
-        void resolveNameReadsTheAllianceNameForAnAllianceBloc() {
+        void readsTheAllianceNameForAnAllianceBloc() {
             // An alliance bloc ID is not a faction ID, so its label comes from the grouping, not the
             // sector - which is therefore never consulted.
             var sectorMock = mock(SectorAPI.class);
@@ -378,7 +378,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void resolveNameReadsTheFactionNameForALoneFaction() {
+        void readsTheFactionNameForALoneFaction() {
             // A non-alliance bloc is a lone faction, named as the faction view names it.
             var sectorMock = mock(SectorAPI.class);
             var factionMock = mock(FactionAPI.class);
@@ -402,14 +402,14 @@ final class AlliancesViewTest {
     class ResolveHoverTooltip {
 
         @Test
-        void resolveHoverTooltipOffersTheDominationBox() {
+        void offersTheDominationBox() {
             // The box explaining the fills this view paints, which are painted by domination.
             assertThat(AlliancesView.INSTANCE.resolveHoverTooltip())
                 .containsInstanceOf(SystemDominationTooltip.class);
         }
 
         @Test
-        void resolveHoverTooltipOffersABoxOfItsOwnRatherThanTheFactionViews() {
+        void offersABoxOfItsOwnRatherThanTheFactionViews() {
             // Each view's box ranks under that view's own grouping, so the one hovered here nests
             // members under their alliance; sharing the faction view's would list them flat.
             assertThat(AlliancesView.INSTANCE.resolveHoverTooltip().orElseThrow())
@@ -421,7 +421,7 @@ final class AlliancesViewTest {
     class ResolveSelectableBlocGate {
 
         @Test
-        void resolveSelectableBlocGateAdmitsAnAllianceBloc() {
+        void admitsAnAllianceBloc() {
 
             assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(ALLIANCE_GROUPING)
                     .test("rebel_pact"))
@@ -429,7 +429,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void resolveSelectableBlocGateTurnsAwayALoneFaction() {
+        void turnsAwayALoneFaction() {
             // Only an alliance is a spotlight target here; a faction outside every alliance is
             // present on the map but not offered in this view's picker.
             assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(ALLIANCE_GROUPING)
@@ -438,7 +438,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void resolveSelectableBlocGateTurnsAwayEveryBlocWhenNoAllianceExists() {
+        void turnsAwayEveryBlocWhenNoAllianceExists() {
             // With no alliance formed every bloc is a lone faction, so the picker offers nothing.
             assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(HolderGrouping.identity())
                     .test("hegemony"))
@@ -462,7 +462,7 @@ final class AlliancesViewTest {
         private static final DominanceStats ANY_STATS = new DominanceStats(4, 3, 8000, 12);
 
         @Test
-        void resolveBlocPickerReadOffersOnlyAllianceBlocsCrestedFromTheLeadMemberWithStats() {
+        void offersOnlyAllianceBlocsCrestedFromTheLeadMemberWithStats() {
             // Under the alliances view only an alliance is a filter target: a present lone faction is
             // dropped, and the alliance option reads its name off the grouping, carries its lead
             // (colour) member's crest, and forwards the stats the shared read computed for it.
@@ -506,7 +506,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadRanksItsBlocsByTheDominanceVocabularyThenTheirStanding() {
+        void ranksItsBlocsByTheDominanceVocabularyThenTheirStanding() {
             // This view's blocs are folded sets of factions, but they carry the same metrics a lone
             // faction's do, so it ranks by the same vocabulary the factions view offers. Asserted
             // per view rather than once on the shared assembly, since which vocabulary a view's rows
@@ -535,7 +535,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadCarriesThePresenceOfBlocsItsGateDropped() {
+        void carriesThePresenceOfBlocsItsGateDropped() {
             // The index is the whole walk's, not the offered rows'. This is the view where the two
             // differ - a lone faction is present but never listed - and trimming it to match would
             // cost a pass to remove entries no lookup can reach, only a listed bloc being hoverable.

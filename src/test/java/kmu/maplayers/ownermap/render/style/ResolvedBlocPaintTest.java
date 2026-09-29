@@ -55,7 +55,7 @@ final class ResolvedBlocPaintTest {
     class PickPaintOf {
 
         @Test
-        void pickPaintOfPicksTheElementsSlotAtItsOwnOpacityScaledByTheMute() {
+        void picksTheElementsSlotAtItsOwnOpacityScaledByTheMute() {
 
             var paint = buildPaintAdjustedBy(new ElementStyleAdjustment(MUTE_FACTOR, false))
                 .pickPaintOf(buildElementAt(FactionPaletteSlot.SECONDARY));
@@ -67,7 +67,7 @@ final class ResolvedBlocPaintTest {
         }
 
         @Test
-        void pickPaintOfPicksOutOfTheDesaturationPaletteWhenTheAdjustmentDesaturates() {
+        void picksOutOfTheDesaturationPaletteWhenTheAdjustmentDesaturates() {
             // The swap is one decision for the whole bloc, so it is applied as the paint source is
             // resolved rather than per element: a fill reading the desaturated shades while the
             // border beside it reads the holder's own would split one surface into two blocs.
@@ -81,7 +81,7 @@ final class ResolvedBlocPaintTest {
         }
 
         @Test
-        void pickPaintOfLeavesTheOpacityAloneForTheIdentityAdjustment() {
+        void leavesTheOpacityAloneForTheIdentityAdjustment() {
             // Off filter the pass recedes nothing, so an element paints at the opacity the player
             // set it to.
             var paint = buildPaintAdjustedBy(ElementStyleAdjustment.NONE)
@@ -94,7 +94,7 @@ final class ResolvedBlocPaintTest {
         }
 
         @Test
-        void pickPaintOfCarriesNoColourForAnElementPointedAtNoShade() {
+        void carriesNoColourForAnElementPointedAtNoShade() {
             // A "No color" choice is how the player switches one element off, and the draw pass
             // skips a paint carrying no colour - so the alpha still resolves rather than the whole
             // paint being absent.
@@ -112,7 +112,7 @@ final class ResolvedBlocPaintTest {
     class PickColourOf {
 
         @Test
-        void pickColourOfPicksTheElementsSlotOutOfTheResolvedShades() {
+        void picksTheElementsSlotOutOfTheResolvedShades() {
 
             assertThat(buildPaintAdjustedBy(ElementStyleAdjustment.NONE)
                     .pickColourOf(buildElementAt(FactionPaletteSlot.PRIMARY)))
@@ -120,7 +120,7 @@ final class ResolvedBlocPaintTest {
         }
 
         @Test
-        void pickColourOfReturnsNothingForAnElementPointedAtNoShade() {
+        void returnsNothingForAnElementPointedAtNoShade() {
             // The question a caller asks before it has anything to paint: a bloc whose fill and
             // border both answer null bakes no geometry at all.
             assertThat(buildPaintAdjustedBy(ElementStyleAdjustment.NONE)
@@ -133,7 +133,7 @@ final class ResolvedBlocPaintTest {
     class ResolveFrom {
 
         @Test
-        void resolveFromReadsAHolderShadesThroughTheStylingItWasResolvedUnder() {
+        void readsAHolderShadesThroughTheStylingItWasResolvedUnder() {
             // The bloc path: the bundle and adjustment come off the styling, and the shades off
             // whoever holds the system, so all three describe one bloc.
             var styling = new OwnerStyling(
@@ -151,7 +151,7 @@ final class ResolvedBlocPaintTest {
         }
 
         @Test
-        void resolveFromSinksAHolderToTheDesaturationShadesWhereTheStylingDesaturates() {
+        void sinksAHolderToTheDesaturationShadesWhereTheStylingDesaturates() {
 
             var paint = ResolvedBlocPaint.resolveFrom(
                 new OwnerStyling(
@@ -165,7 +165,7 @@ final class ResolvedBlocPaintTest {
         }
 
         @Test
-        void resolveFromTakesStatedShadesForACellNobodyHolds() {
+        void takesStatedShadesForACellNobodyHolds() {
             // The factionless path: a cell's own pair is the neutral, or the neutral lifted where
             // a spotlight spared it, and neither belongs to anyone the pass could ask for it.
             var paint = ResolvedBlocPaint.resolveFrom(

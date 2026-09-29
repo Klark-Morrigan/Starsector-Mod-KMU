@@ -70,7 +70,7 @@ final class SelectableBlocCacheTest {
     class ResolveBlocCacheIn {
 
         @Test
-        void resolveBlocCacheInAnswersOneCachePerMachinery() {
+        void answersOneCachePerMachinery() {
             // The body build asking for rows and the pass asking where a bloc was found resolve
             // separately, so both asks under one sector must land on the same memo or the second
             // pays for a whole economy walk of its own.
@@ -81,7 +81,7 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
-        void resolveBlocCacheInAnswersEachLayerAMemoOfItsOwn() {
+        void answersEachLayerAMemoOfItsOwn() {
             // The memo holds one entry, so two layers listing their pickers on one sector would evict
             // each other on every frame both are drawn and re-walk the economy each time.
             var machinery = new SectorMapMachinery(mock(SectorAPI.class));
@@ -91,7 +91,7 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
-        void resolveBlocCacheInAnswersAFreshCacheAfterTheMachineryIsDisposed() {
+        void answersAFreshCacheAfterTheMachineryIsDisposed() {
             // A load disposes the machinery, which is what stands in for a discard of this memo's
             // own - the sector after it walks its own economy rather than reading the previous
             // sector's rows out of a revision that never moved.
@@ -109,7 +109,7 @@ final class SelectableBlocCacheTest {
     class ResolveBlocPickerRead {
 
         @Test
-        void resolveBlocPickerReadWalksTheViewOnceWhileItsRevisionHolds() {
+        void walksTheViewOnceWhileItsRevisionHolds() {
             // Nothing the picker depends on moved between the two calls, so the revision this layer
             // computes must come out the same and the second call read the memo.
             var sectorMock = mock(SectorAPI.class);
@@ -129,7 +129,7 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
-        void resolveBlocPickerReadRecomputesWhenTheViewsContentRevisionMoves() {
+        void recomputesWhenTheViewsContentRevisionMoves() {
             var sectorMock = mock(SectorAPI.class);
             var viewMock = stubViewAnswering(sectorMock, "groups");
             var cache = buildCacheOver(sectorMock);
@@ -147,7 +147,7 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
-        void resolveBlocPickerReadKeysTheMemoOnItsOwnMachineryBoard() {
+        void keysTheMemoOnItsOwnMachineryBoard() {
             // The key is the view's fold of a board, and the board it folds has to be this
             // machinery's: keyed on the running sector's instead, a list would never be re-walked
             // when its own sector's groups moved, and would be thrown away when another sector's
@@ -164,7 +164,7 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
-        void resolveBlocPickerReadServesEachMachineryItsOwnSectorsRows() {
+        void servesEachMachineryItsOwnSectorsRows() {
             // The wrongness a shared memo produces is a wrong list, not a stale one: the revision is
             // the view's, so one sector's rows would answer under the other's ask with nothing about
             // the key saying they came from elsewhere.
@@ -179,7 +179,7 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
-        void resolveBlocPickerReadKeepsOneMachineryListWhileTheOtherResolvesItsOwn() {
+        void keepsOneMachineryListWhileTheOtherResolvesItsOwn() {
             // One memo between two sectors holds a single entry, so alternating asks evict each
             // other and re-walk the whole economy every call. A memo apiece is what leaves each
             // sector's list standing while the other resolves.
@@ -205,7 +205,7 @@ final class SelectableBlocCacheTest {
     class ReadPresentSystemIds {
 
         @Test
-        void readPresentSystemIdsAnswersFromTheSameReadTheRowsCameFrom() {
+        void answersFromTheSameReadTheRowsCameFrom() {
             // The presence rides the picker's own memo, so a lookup answers the index the view built
             // beside its rows rather than a second walk's - which is what stops a lit set and a row
             // count from describing the sector at two different moments.
@@ -217,7 +217,7 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
-        void readPresentSystemIdsWalksTheViewOnceForTheRowsAndThePresenceTogether() {
+        void walksTheViewOnceForTheRowsAndThePresenceTogether() {
             // The reason the two share a memo rather than a store apiece: asking for the rows and
             // then for a bloc's systems is one resolve, so a hover costs no economy walk of its own.
             var sectorMock = mock(SectorAPI.class);
@@ -232,7 +232,7 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
-        void readPresentSystemIdsAnswersEmptyForABlocTheViewNeverSurfaced() {
+        void answersEmptyForABlocTheViewNeverSurfaced() {
             // A hover can outlive the row it started on (a rebuild between the report and the read),
             // so an unknown ID has to answer an empty set rather than a null the render side would
             // fall over on.
@@ -248,7 +248,7 @@ final class SelectableBlocCacheTest {
     class DisposeMachinery {
 
         @Test
-        void disposeMachineryDropsTheMemoisedRead() {
+        void dropsTheMemoisedRead() {
             // What a caller still holding a cache resolved before the disposal gets: a fresh walk,
             // rather than the rows the gone sector's economy last answered under a revision that has
             // no reason to have moved.

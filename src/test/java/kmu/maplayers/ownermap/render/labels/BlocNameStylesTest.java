@@ -27,7 +27,7 @@ final class BlocNameStylesTest {
     class ReadFromLunaSettings {
 
         @Test
-        void readFromLunaSettingsThreadsEachGroupsColourChoiceAndOpacityIntoItsOwnSlot() {
+        void threadsEachGroupsColourChoiceAndOpacityIntoItsOwnSlot() {
             try (MockedStatic<KmuOwnerMapStyleSettings> settingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
                 settingsMock

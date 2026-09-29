@@ -62,7 +62,7 @@ final class PersistedActiveLayerSelectionTest {
     class GetActiveLayer {
 
         @Test
-        void getActiveLayerDefaultsToTheRegisteredDefaultWithoutASavedPick() {
+        void defaultsToTheRegisteredDefaultWithoutASavedPick() {
 
             sectorMemoryFake.removeSector();
 
@@ -71,7 +71,7 @@ final class PersistedActiveLayerSelectionTest {
         }
 
         @Test
-        void getActiveLayerResolvesTheStoredIdUnderItsOwnKey() {
+        void resolvesTheStoredIdUnderItsOwnKey() {
 
             sectorMemoryFake.storeValue(KEY, "first");
 
@@ -80,7 +80,7 @@ final class PersistedActiveLayerSelectionTest {
         }
 
         @Test
-        void getActiveLayerFallsBackToTheDefaultForAStaleStoredId() {
+        void fallsBackToTheDefaultForAStaleStoredId() {
 
             sectorMemoryFake.storeValue(KEY, "removed_long_ago");
 
@@ -93,7 +93,7 @@ final class PersistedActiveLayerSelectionTest {
     class SelectLayer {
 
         @Test
-        void selectLayerWritesThePickedIdUnderItsOwnKey() {
+        void writesThePickedIdUnderItsOwnKey() {
 
             selection.selectLayer(firstLayerMock);
 
@@ -102,7 +102,7 @@ final class PersistedActiveLayerSelectionTest {
         }
 
         @Test
-        void selectLayerOnOneScreenLeavesAnotherScreensPickUntouched() {
+        void onOneScreenLeavesAnotherScreensPickUntouched() {
             // The independence the per-screen split needs: writing this selection's slot must never touch a
             // second screen's, so a switch on one screen cannot move the other's tab.
             selection.selectLayer(firstLayerMock);

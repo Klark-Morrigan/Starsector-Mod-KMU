@@ -43,7 +43,7 @@ final class StaleOwnerMapDisturbanceTest {
     class HasFlips {
 
         @Test
-        void hasFlipsIsFalseBeforeAnythingIsRecorded() {
+        void isFalseBeforeAnythingIsRecorded() {
             // The common frame: every marked system resized without changing hands, so the
             // clustering, cluster group and name work has to be skipped rather than run over nothing.
             assertThat(new StaleOwnerMapDisturbance().hasFlips())
@@ -51,7 +51,7 @@ final class StaleOwnerMapDisturbanceTest {
         }
 
         @Test
-        void hasFlipsIsTrueForASystemThatOnlyGainedAHolder() {
+        void isTrueForASystemThatOnlyGainedAHolder() {
             // A first colony has no losing side. Reading a flip off both sides being present
             // would leave the new cluster group undrawn until some later full rebuild.
             var disturbance = new StaleOwnerMapDisturbance();
@@ -63,7 +63,7 @@ final class StaleOwnerMapDisturbanceTest {
         }
 
         @Test
-        void hasFlipsIsTrueForASystemThatOnlyLostItsHolder() {
+        void isTrueForASystemThatOnlyLostItsHolder() {
             // The mirror: a decivilised system has no gaining side, and its old holder's
             // cluster group is exactly the one that has to stop drawing the cell.
             var disturbance = new StaleOwnerMapDisturbance();
@@ -75,7 +75,7 @@ final class StaleOwnerMapDisturbanceTest {
         }
 
         @Test
-        void hasFlipsIsFalseForARestyleAlone() {
+        void isFalseForARestyleAlone() {
             // A system whose last colony went, or one the spotlit bloc just settled, draws
             // differently with its holder exactly where it was - so nothing above the cell is
             // owed, and a batch of these must not re-fit every name on the map.
@@ -92,7 +92,7 @@ final class StaleOwnerMapDisturbanceTest {
     class RecordFlip {
 
         @Test
-        void recordFlipRedrawsTheFlippedSystemAndItsNeighbours() {
+        void redrawsTheFlippedSystemAndItsNeighbours() {
             // The neighbour's own holder did not move, but the edge it shares with the flipped
             // system just turned from a same-faction seam into a cluster border, so it re-shapes
             // too or the border draws down one side only.
@@ -109,7 +109,7 @@ final class StaleOwnerMapDisturbanceTest {
         }
 
         @Test
-        void recordFlipNamesBothSidesOfATransfer() {
+        void namesBothSidesOfATransfer() {
             // Both outlines moved - one lost the cell, the other gained it - so both rebuild,
             // and no third faction's rings trace a cell that moved.
             var disturbance = new StaleOwnerMapDisturbance();
@@ -125,7 +125,7 @@ final class StaleOwnerMapDisturbanceTest {
         }
 
         @Test
-        void recordFlipNamesOnlyTheGainingFactionWhenNobodyHeldItBefore() {
+        void namesOnlyTheGainingFactionWhenNobodyHeldItBefore() {
             // Nobody held it, so there is no losing cluster group to rebuild - and naming one would
             // send a faction that never drew this cell through a rebuild for nothing.
             var disturbance = new StaleOwnerMapDisturbance();
@@ -137,7 +137,7 @@ final class StaleOwnerMapDisturbanceTest {
         }
 
         @Test
-        void recordFlipNamesOnlyTheLosingFactionWhenNobodyHoldsItNow() {
+        void namesOnlyTheLosingFactionWhenNobodyHoldsItNow() {
 
             var disturbance = new StaleOwnerMapDisturbance();
 
@@ -148,7 +148,7 @@ final class StaleOwnerMapDisturbanceTest {
         }
 
         @Test
-        void recordFlipCountsACellOnceWhenTwoFlipsDisturbIt() {
+        void countsACellOnceWhenTwoFlipsDisturbIt() {
             // Two adjacent systems flipping in one frame disturb overlapping rings: each is the
             // other's neighbour, and both name the same cells. Redrawing a cell twice would
             // cost the frame this fold exists to save, which is why the batch accumulates rather
@@ -177,7 +177,7 @@ final class StaleOwnerMapDisturbanceTest {
     class RecordRestyle {
 
         @Test
-        void recordRestyleRedrawsTheSystemsOwnCellAlone() {
+        void redrawsTheSystemsOwnCellAlone() {
             // What a cell is settled from moved without any seam moving with it, so its
             // neighbours draw exactly as they did and re-shaping them would spend the frame this
             // fold exists to save.
@@ -190,7 +190,7 @@ final class StaleOwnerMapDisturbanceTest {
         }
 
         @Test
-        void recordRestyleRebuildsNoClusterGroup() {
+        void rebuildsNoClusterGroup() {
             // No bloc's outline moved - the system is drawn by whoever drew it before, or by
             // nobody as before - so naming a faction here would rebuild a cluster group that traces
             // the same cells it already did.
@@ -203,7 +203,7 @@ final class StaleOwnerMapDisturbanceTest {
         }
 
         @Test
-        void recordRestyleCountsACellOnceWhenItAlsoFlipped() {
+        void countsACellOnceWhenItAlsoFlipped() {
             // Both facts can move in one batch - a system taking its first colony changes hands
             // and becomes settled at once - and the cell is worth redrawing once.
             var disturbance = new StaleOwnerMapDisturbance();

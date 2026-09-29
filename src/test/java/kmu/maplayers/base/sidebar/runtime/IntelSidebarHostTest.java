@@ -67,7 +67,7 @@ final class IntelSidebarHostTest {
     class IsOverlayShowing {
 
         @Test
-        void isOverlayShowingIsTrueWhileTheMapVisorIsLitAndOutOfStarscapeMode() {
+        void isTrueWhileTheMapVisorIsLitAndOutOfStarscapeMode() {
 
             var intelScreenFake = new IntelScreenViewFake();
 
@@ -80,7 +80,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseWhenTheIntelTabIsUpWithNoMapVisor() {
+        void isFalseWhenTheIntelTabIsUpWithNoMapVisor() {
             // The Planets and Factions sub-tabs are the same core tab carrying no visor, so the tab-open
             // read stays true while the rectangle goes away. Gating on the rectangle is what keeps the
             // sidebar off them; gating on the tab-open read would draw it over both.
@@ -94,7 +94,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsTrueWhileTheLitVisorIsInStarscapeMode() {
+        void isTrueWhileTheLitVisorIsInStarscapeMode() {
             // The Starscape terrain surfaces paint in that mode, so a lit visor carries the
             // overlay these controls drive in that look too and the filter must not close the gate.
             var intelScreenFake = new IntelScreenViewFake();
@@ -108,7 +108,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseWhenTheIntelTabIsNotShowing() {
+        void isFalseWhenTheIntelTabIsNotShowing() {
 
             var intelScreenFake = new IntelScreenViewFake();
             intelScreenFake.setIntelTabOpen(false);
@@ -118,7 +118,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseWhileALitVisorsScreenIsClaimed() {
+        void isFalseWhileALitVisorsScreenIsClaimed() {
             // The claim the host was handed has to be the one its gate reads: a host that dropped the seam
             // and answered on the visor alone would leave the panel drawn over whatever claimed the screen,
             // taking the input that thing was raised to receive, with every case above still green. A lit
@@ -135,7 +135,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void isOverlayShowingIsFalseWhileTheIntelScreensOwnLayersAreHidden() {
+        void isFalseWhileTheIntelScreensOwnLayersAreHidden() {
             // The wiring, not the rule: the rule is the base host's and pinned there, so what this case
             // shows is that this host was handed the intel screen's picks. Its own key alone is posed - a
             // host handed the sector map's pair would read shown here and fail.
@@ -173,7 +173,7 @@ final class IntelSidebarHostTest {
     class HeaderBandHeight {
 
         @Test
-        void headerBandHeightStandsShorterThanTheOnMapBand() {
+        void standsShorterThanTheOnMapBand() {
             // This sidebar overlays the visor beneath the vanilla map toggles and reads tighter than the
             // on-map one, which floats free beside the Sector/System tabs. Wiring both screens to one
             // height would lay out and draw without complaint, so the divergence is pinned rather than
@@ -183,7 +183,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void headerBandHeightStandsTallEnoughToDrawATabRow() {
+        void standsTallEnoughToDrawATabRow() {
             // A band clamped to nothing leaves the panel with no tab row and no way to switch layer, and
             // the style built from this height cannot be reached without a live sector - so the number is
             // pinned here rather than caught on screen.
@@ -211,7 +211,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void resolveWidgetStyleWearsTheIntelScreensRaisedButtonsWithTheirKeyLeftBare() {
+        void wearsTheIntelScreensRaisedButtonsWithTheirKeyLeftBare() {
             // Which look this screen wears is the host's answer, so wiring it to the map's factory would
             // draw a seamless strip over the intel visor with every style test still green.
             var tabStyle = buildTabStyle();
@@ -223,7 +223,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void resolveWidgetStyleFramesThePanelInTheSchemesDarkStep() {
+        void framesThePanelInTheSchemesDarkStep() {
             // The panel's frame abuts the visor's own, and the chrome around it is framed in the dark
             // member of the set it is built from - so this panel frames itself at that step rather than
             // at the base the on-map panel takes.
@@ -236,7 +236,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void resolveWidgetStyleStandsTheBandAtThisScreensOwnHeight() {
+        void standsTheBandAtThisScreensOwnHeight() {
             // The height is this host's to hold, and the style it hands the paint pass has to be the one
             // its band was laid out against: a host composing its look at the widget default would stand
             // its tabs outside their own band with the case above still green. Pinned against the
@@ -256,7 +256,7 @@ final class IntelSidebarHostTest {
     class DecideBorderEdges {
 
         @Test
-        void decideBorderEdgesAlwaysDropsTheLeftEdge() {
+        void alwaysDropsTheLeftEdge() {
 
             var floatingBox = IntelSidebarHost.decideBorderEdges(400f, MAP_VISOR);
             var flushBox = IntelSidebarHost.decideBorderEdges(MAP_VISOR.y(), MAP_VISOR);
@@ -268,7 +268,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void decideBorderEdgesAlwaysKeepsTheTopAndRightEdges() {
+        void alwaysKeepsTheTopAndRightEdges() {
 
             var edges = IntelSidebarHost.decideBorderEdges(400f, MAP_VISOR);
 
@@ -277,7 +277,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void decideBorderEdgesDropsTheBottomEdgeWhenTheBoxSitsOnTheVisorBottom() {
+        void dropsTheBottomEdgeWhenTheBoxSitsOnTheVisorBottom() {
 
             var edges = IntelSidebarHost.decideBorderEdges(MAP_VISOR.y(), MAP_VISOR);
 
@@ -286,7 +286,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void decideBorderEdgesDropsTheBottomEdgeWhenTheBoxIsWithinTheFlushTolerance() {
+        void dropsTheBottomEdgeWhenTheBoxIsWithinTheFlushTolerance() {
             // One pixel above the visor bottom still counts as flush, absorbing the padding's rounding.
             var edges = IntelSidebarHost.decideBorderEdges(MAP_VISOR.y() + 1f, MAP_VISOR);
 
@@ -295,7 +295,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void decideBorderEdgesKeepsTheBottomEdgeWhenTheBoxFloatsClearOfTheVisorBottom() {
+        void keepsTheBottomEdgeWhenTheBoxFloatsClearOfTheVisorBottom() {
             // Ten pixels above the visor bottom: the box does not reach it, so the bottom border shows.
             var edges = IntelSidebarHost.decideBorderEdges(MAP_VISOR.y() + 10f, MAP_VISOR);
 
@@ -304,7 +304,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void decideBorderEdgesKeepsTheBottomEdgeWhenThereIsNoVisor() {
+        void keepsTheBottomEdgeWhenThereIsNoVisor() {
 
             var edges = IntelSidebarHost.decideBorderEdges(400f, null);
 
@@ -317,7 +317,7 @@ final class IntelSidebarHostTest {
     class LayoutBorderEdges {
 
         @Test
-        void layoutBorderEdgesDropsTheLeftEdgeSoTheReservedStripCollapses() {
+        void dropsTheLeftEdgeSoTheReservedStripCollapses() {
             // The box sits flush against the visor's left edge, so it reserves no left inset and the content
             // meets the visor rather than leaving a bare strip where the border would have been.
             assertThat(IntelSidebarHost.layoutBorderEdges())
@@ -325,7 +325,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void layoutBorderEdgesKeepsTheTopRightAndBottomEdges() {
+        void keepsTheTopRightAndBottomEdges() {
             // The top and right frame the sidebar inside the visor; the bottom keeps its reserved inset for
             // now (its stroke drops separately on flush, but collapsing the bottom strip is deferred).
             assertThat(IntelSidebarHost.layoutBorderEdges())
@@ -333,7 +333,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void layoutBorderEdgesDropsTheLeftEdgeInStepWithTheStroke() {
+        void dropsTheLeftEdgeInStepWithTheStroke() {
             // The reserved edges and the stroked edges must agree on the left, or the box would collapse the
             // left strip while still stroking the border there (or the reverse). Both drop it.
             assertThat(IntelSidebarHost.decideBorderEdges(400f, null))
@@ -347,7 +347,7 @@ final class IntelSidebarHostTest {
     class HandleKeyPress {
 
         @Test
-        void handleKeyPressWritesTheIntelScreensOwnPick() {
+        void writesTheIntelScreensOwnPick() {
             // The shared jump reads whichever selection its host was built with, so this pins the wiring
             // that makes a shortcut pressed on the intel screen move the intel tab: swapping the two hosts'
             // selections would leave every other test green while the key moved the sector map's tab. Its
@@ -381,7 +381,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void restoreFoldFromSaveOpensDockedWhenTheSaveHoldsNoChoiceYet() {
+        void opensDockedWhenTheSaveHoldsNoChoiceYet() {
             // A fresh save has never written the key, so the default applies and the rail stays clear of
             // the visor until the player expands it.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
@@ -403,7 +403,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void restoreFoldFromSaveOpensExpandedWhenTheSaveWasLeftWithTheRailOpen() {
+        void opensExpandedWhenTheSaveWasLeftWithTheRailOpen() {
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -427,7 +427,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void restoreFoldFromSaveOpensDockedWhenTheSaveWasLeftDocked() {
+        void opensDockedWhenTheSaveWasLeftDocked() {
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -449,7 +449,7 @@ final class IntelSidebarHostTest {
         }
 
         @Test
-        void restoreFoldFromSaveDropsTheFoldTheHostCarriedFromAPreviousSave() {
+        void dropsTheFoldTheHostCarriedFromAPreviousSave() {
             // Loading a second save in one run must not inherit the first save's rail: the host is a
             // process-lifetime singleton, so the reseed is the only thing that clears the old fold.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {

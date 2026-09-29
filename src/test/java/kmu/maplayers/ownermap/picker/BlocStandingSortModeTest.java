@@ -62,7 +62,7 @@ final class BlocStandingSortModeTest {
     class PersistenceKey {
 
         @Test
-        void persistenceKeyIsTheOneKeyEveryViewStoresTheChoiceUnder() {
+        void isTheOneKeyEveryViewStoresTheChoiceUnder() {
 
             // One key rather than one per vocabulary, which is what lets the choice survive a switch
             // between the views.
@@ -75,7 +75,7 @@ final class BlocStandingSortModeTest {
     class DefaultDirection {
 
         @Test
-        void defaultDirectionIsDescendingSoTheFriendliestBlocLeads() {
+        void isDescendingSoTheFriendliestBlocLeads() {
 
             assertThat(buildMode(HolderGrouping.identity(), Map.of()).defaultDirection())
                 .isEqualTo(SortDirection.DESCENDING);
@@ -86,7 +86,7 @@ final class BlocStandingSortModeTest {
     class Comparator {
 
         @Test
-        void comparatorRanksMeasuredBlocsByTheLowEndOfTheirRange() {
+        void ranksMeasuredBlocsByTheLowEndOfTheirRange() {
 
             var mode = buildMode(
                 HolderGrouping.identity(),
@@ -100,7 +100,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void comparatorBreaksATieOnTheLowEndByTheHighEnd() {
+        void breaksATieOnTheLowEndByTheHighEnd() {
 
             // Both blocs hold a hostile low end; only the group's friendlier member separates them,
             // which is the high end doing the work.
@@ -116,7 +116,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void comparatorPutsThePlayersOwnBlocAboveEveryMeasuredBloc() {
+        void putsThePlayersOwnBlocAboveEveryMeasuredBloc() {
 
             // Above the friendliest faction there is, so the placing is the case rather than a number
             // the player's own bloc happens to hold.
@@ -133,7 +133,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void comparatorPutsAnUnreadableBlocBelowEveryMeasuredBloc() {
+        void putsAnUnreadableBlocBelowEveryMeasuredBloc() {
 
             // Below the most hostile faction there is, rather than ranking with the neutrals as a
             // reputation of nought would have it.
@@ -147,7 +147,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void comparatorSendsBothEndsOfTheScaleTheOtherWayUnderTheFlip() {
+        void sendsBothEndsOfTheScaleTheOtherWayUnderTheFlip() {
 
             // The case ordering is part of the primary key, so the player's own bloc trails and the
             // unreadable one leads - neither is the row the direction control does not govern.
@@ -166,7 +166,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void comparatorBreaksAPairOfBlankStandingsBySharedTail() {
+        void breaksAPairOfBlankStandingsBySharedTail() {
 
             // Neither bloc holds a number at all, so the ranking separates nothing before the tail and
             // the labels decide. The payload numbers point the other way, which is what shows the mode
@@ -181,7 +181,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void comparatorBreaksAPairHoldingTheSameStandingBySharedTail() {
+        void breaksAPairHoldingTheSameStandingBySharedTail() {
 
             // Identical standings, so the ranking falls straight to the shared tail and the labels
             // decide - the mode has no numeric chain of its own to fall through first.
@@ -201,7 +201,7 @@ final class BlocStandingSortModeTest {
     class ResolveTrailingRuns {
 
         @Test
-        void resolveTrailingRunsDrawsOneSignedNumberWhenTheRangesEndsCoincide() {
+        void drawsOneSignedNumberWhenTheRangesEndsCoincide() {
 
             // A lone faction folds to a range whose ends are the same standing, so the value collapses
             // to that one number in its own relation's colour.
@@ -214,7 +214,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void resolveTrailingRunsDrawsANegativeStandingWithItsOwnMinus() {
+        void drawsANegativeStandingWithItsOwnMinus() {
 
             var mode = buildMode(HolderGrouping.identity(), Map.of("hegemony", HOSTILE));
 
@@ -225,7 +225,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void resolveTrailingRunsDrawsANeutralStandingUnsigned() {
+        void drawsANeutralStandingUnsigned() {
 
             // Nought leans neither way, so it is drawn plain rather than claiming a direction.
             var mode = buildMode(HolderGrouping.identity(), Map.of("hegemony", NEUTRAL));
@@ -237,7 +237,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void resolveTrailingRunsDrawsBothEndsInTheirOwnColoursWhenMembersDisagree() {
+        void drawsBothEndsInTheirOwnColoursWhenMembersDisagree() {
 
             var mode = buildMode(
                 PACT_GROUPING,
@@ -257,7 +257,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void resolveTrailingRunsJoinsTheRangeIntoOneRowColouredValue() {
+        void joinsTheRangeIntoOneRowColouredValue() {
 
             var mode = buildMode(
                 PACT_GROUPING,
@@ -277,7 +277,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void resolveTrailingRunsDrawsTheHighEndItsMembersActuallyReached() {
+        void drawsTheHighEndItsMembersActuallyReached() {
 
             // The same group with a warmer second member draws that member's number, so the high
             // end is read off whoever holds it rather than restated from the low end.
@@ -293,7 +293,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void resolveTrailingRunsDrawsNothingForThePlayersOwnBloc() {
+        void drawsNothingForThePlayersOwnBloc() {
 
             // The bloc the scale is measured from draws no number: it would be the engine's answer to
             // a question nobody asked.
@@ -309,7 +309,7 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
-        void resolveTrailingRunsDrawsNothingForAnUnreadableBloc() {
+        void drawsNothingForAnUnreadableBloc() {
 
             var mode = buildMode(HolderGrouping.identity(), Map.of());
 

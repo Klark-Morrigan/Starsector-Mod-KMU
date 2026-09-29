@@ -90,7 +90,7 @@ final class ClusterLabelStylingTest {
     class ResolveLabelColour {
 
         @Test
-        void resolveLabelColourTakesThePrimaryShadeWhenTheOuterBorderIsPrimary() {
+        void takesThePrimaryShadeWhenTheOuterBorderIsPrimary() {
             // The default outer-border choice is the bright primary shade, so the name
             // (and its debug dot) inherits it - RED here.
             var colour = ClusterLabelStyling.resolveLabelColour(
@@ -103,7 +103,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void resolveLabelColourInheritsTheSecondaryShadeWhenTheOuterBorderIsSecondary() {
+        void inheritsTheSecondaryShadeWhenTheOuterBorderIsSecondary() {
             // Point the outer border at the secondary (dark) shade and the name follows
             // it - BLUE - so the label reads as the border's own colour, not a fixed pick.
             var colour = ClusterLabelStyling.resolveLabelColour(
@@ -116,7 +116,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void resolveLabelColourFallsBackToThePrimaryShadeWhenTheOuterBorderIsHidden() {
+        void fallsBackToThePrimaryShadeWhenTheOuterBorderIsHidden() {
             // A hidden outer border ("No color") resolves to no colour, but a name still
             // needs one, so it falls back to the bright primary shade rather than vanishing.
             var colour = ClusterLabelStyling.resolveLabelColour(
@@ -129,7 +129,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void resolveLabelColourFollowsTheIndependentOuterBorderWhenTheBlocIsIndependentStyled() {
+        void followsTheIndependentOuterBorderWhenTheBlocIsIndependentStyled() {
             // The classification, not a hardcoded independent-faction test, decides which
             // outer-border choice the label follows. Classified independent-styled, the label
             // inherits the independent choice (SECONDARY -> BLUE) even though the faction
@@ -149,7 +149,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void resolveLabelColourFadesAFactionNameByTheFactionNameOpacity() {
+        void fadesAFactionNameByTheFactionNameOpacity() {
             // A faction-styled bloc takes the faction group's name opacity: half fades the
             // resolved PRIMARY shade's alpha to half, leaving its RGB (and the dot's) intact.
             var colour = ClusterLabelStyling.resolveLabelColour(
@@ -169,7 +169,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void resolveLabelColourLeavesAFactionNameUntouchedByTheIndependentNameOpacity() {
+        void leavesAFactionNameUntouchedByTheIndependentNameOpacity() {
             // The independent group's opacity fades only independent names: a faction-styled
             // bloc is unaffected even when independent opacity is dimmed, so the two groups
             // fade independently.
@@ -187,7 +187,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void resolveLabelColourFadesAnIndependentStyledNameByTheIndependentNameOpacity() {
+        void fadesAnIndependentStyledNameByTheIndependentNameOpacity() {
             // An independent-styled bloc takes the independent group's opacity: half fades
             // its resolved shade's alpha to half, while the faction opacity (full here) has
             // no say over it.
@@ -208,7 +208,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void resolveLabelColourMutesTheAlphaForABlocWithAMutedAdjustment() {
+        void mutesTheAlphaForABlocWithAMutedAdjustment() {
             // A bloc's adjustment dims its label on top of the (full) name opacity: half
             // fades the resolved shade's alpha to half and leaves its RGB intact - the same
             // fold applied wherever the style classification is read.
@@ -225,7 +225,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void resolveLabelColourDesaturatesToThePassPaletteForADesaturatedBloc() {
+        void desaturatesToThePassPaletteForADesaturatedBloc() {
             // A desaturated bloc's label follows the pass's shared desaturation palette
             // instead of the holder's own shades, at full alpha since mute is off here.
             var colour = ClusterLabelStyling.resolveLabelColour(
@@ -238,7 +238,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void resolveLabelColourLeavesAnUnadjustedBlocUntouchedRegardlessOfThePalette() {
+        void leavesAnUnadjustedBlocUntouchedRegardlessOfThePalette() {
             // A bloc the resolver maps to NONE draws unmuted and undesaturated no matter what the
             // pass's palette holds, since the adjustment (not the palette alone) gates whether
             // either applies.
@@ -252,7 +252,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void resolveLabelColourGivesAFilterRecededNameTheSameRecededPaletteItsFillTakes() {
+        void givesAFilterRecededNameTheSameRecededPaletteItsFillTakes() {
             // Under a filter a non-spotlit bloc recedes: its label must follow the pass's shared
             // desaturation palette - the exact palette OwnerMapBuilder recolours its fill to for
             // the same recede - so the receded name never drifts from the receded fill. The recede
@@ -294,7 +294,7 @@ final class ClusterLabelStylingTest {
             new SystemOwner("G", OTHER_PRIMARY, Color.DARK_GRAY);
 
         @Test
-        void newLabelColourResolverAnswersTheShadeOfTheBlocItIsAskedFor() {
+        void answersTheShadeOfTheBlocItIsAskedFor() {
             // Every system of a bloc carries that bloc's own two shades, so the resolver must
             // key off the bloc ID the search hands it rather than any one system.
             var resolver = ClusterLabelStyling.newLabelColourResolver(
@@ -308,7 +308,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void newLabelColourResolverAppliesEachBlocsOwnStyleDecision() {
+        void appliesEachBlocsOwnStyleDecision() {
             // The decision carries both halves the colour needs - which group's outer border
             // to follow and how the bloc recedes - so a bloc classified independent takes the
             // independent choice while its neighbour keeps the faction one.
@@ -327,7 +327,7 @@ final class ClusterLabelStylingTest {
         }
 
         @Test
-        void newLabelColourResolverDecidesOncePerBlocAcrossItsClusters() {
+        void decidesOncePerBlocAcrossItsClusters() {
             // Every cluster of a bloc draws its name the same, and a bloc can hold many, so
             // the decision is made once and reused rather than re-resolved per cluster.
             var askedBlocIds = new ArrayList<String>();

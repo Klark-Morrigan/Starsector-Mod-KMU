@@ -105,7 +105,7 @@ final class MapLayerScreensTest {
     class GetAllScreenPicks {
 
         @Test
-        void getAllScreenPicksHandsBackEveryScreenTheModHas() {
+        void handsBackEveryScreenTheModHas() {
             // The roster a pass owing every panel walks - a self-heal clearing a choice that lapsed for
             // both at once. A screen missing from it is a panel that pass silently skips, so what is
             // pinned is that the two named here are both on it and nothing else is.
@@ -116,7 +116,7 @@ final class MapLayerScreensTest {
         }
 
         @Test
-        void getAllScreenPicksCarriesEachScreensOwnScope() {
+        void carriesEachScreensOwnScope() {
             // Each entry is the screen's whole picks rather than a bare scope, so a caller walking the
             // roster to resolve a preference key cannot pair one screen's scope with another's tab.
             assertThat(MapLayerScreens.getAllScreenPicks())
@@ -127,7 +127,7 @@ final class MapLayerScreensTest {
         }
 
         @Test
-        void getAllScreenPicksCarriesAPictureOfItsOwnPerScreen() {
+        void carriesAPictureOfItsOwnPerScreen() {
             // What a screen is drawing is that screen's own memory, holding what was last on it so a
             // dissolve has something to finish. One shared between the panels would have the visor
             // dissolving the sector map's picture, which is the crossing the whole per-screen value
@@ -141,7 +141,7 @@ final class MapLayerScreensTest {
     class GetMapPicks {
 
         @Test
-        void getMapPicksSelectsThroughTheFrozenMapKey() {
+        void selectsThroughTheFrozenMapKey() {
 
             MapLayerScreens
                 .getMapPicks()
@@ -153,7 +153,7 @@ final class MapLayerScreensTest {
         }
 
         @Test
-        void getMapPicksHidesThroughTheFrozenMapKey() {
+        void hidesThroughTheFrozenMapKey() {
             // The pair's second key, pinned beside the first: both are this screen's, so a pair built
             // from one screen's tab and the other's hiding fails here rather than in play.
             MapLayerScreens
@@ -166,7 +166,7 @@ final class MapLayerScreensTest {
         }
 
         @Test
-        void getMapPicksCarriesTheMapScreensOwnScope() {
+        void carriesTheMapScreensOwnScope() {
             // The scope travels with the picks so that a preference set on this screen's panel lands in
             // the same screen's save as its tab and its hiding do. Carried wrongly, the panel would set a
             // preference the other screen reads back, with both cases above still green.
@@ -179,7 +179,7 @@ final class MapLayerScreensTest {
     class GetIntelPicks {
 
         @Test
-        void getIntelPicksSelectsThroughTheFrozenIntelKey() {
+        void selectsThroughTheFrozenIntelKey() {
 
             MapLayerScreens
                 .getIntelPicks()
@@ -191,7 +191,7 @@ final class MapLayerScreensTest {
         }
 
         @Test
-        void getIntelPicksHidesThroughTheFrozenIntelKey() {
+        void hidesThroughTheFrozenIntelKey() {
 
             MapLayerScreens
                 .getIntelPicks()
@@ -203,7 +203,7 @@ final class MapLayerScreensTest {
         }
 
         @Test
-        void getIntelPicksCarriesTheIntelScreensOwnScope() {
+        void carriesTheIntelScreensOwnScope() {
             // Its own, and not the map screen's: the two panels' preferences part here, so both are
             // pinned rather than one and the composition trusted for the other.
             assertThat(MapLayerScreens.getIntelPicks().memoryScope().resolveKeyFor(PREFERENCE_KEY))
@@ -215,7 +215,7 @@ final class MapLayerScreensTest {
     class ResolveLivePicks {
 
         @Test
-        void resolveLivePicksHandsBackTheShowingScreensOwnPicks() {
+        void handsBackTheShowingScreensOwnPicks() {
             // The whole value rather than any one part of it, and one resolution for all of it:
             // everything composed on top of this reads a tab, a show-or-hide state and a scope together,
             // and two resolutions could answer them for different screens.
@@ -231,7 +231,7 @@ final class MapLayerScreensTest {
         }
 
         @Test
-        void resolveLivePicksCarriesTheShowingScreensOwnStoredPick() {
+        void carriesTheShowingScreensOwnStoredPick() {
             // The value is also what a control on a screen's own chrome is stood through, so it has to
             // carry the stored pick such a control shows and moves - and writing through it must move
             // the screen that was up and leave the other where it was, which is the whole of what a
@@ -256,7 +256,7 @@ final class MapLayerScreensTest {
     class AreLayersShownOnLiveScreen {
 
         @Test
-        void areLayersShownOnLiveScreenAnswersFromTheShowingScreensPick() {
+        void answersFromTheShowingScreensPick() {
             // Per screen, so hiding on one leaves the other showing: the control sits on each screen's
             // own chrome, and a shared answer would empty a screen the player is not looking at.
             hideTheIntelScreensLayers();
@@ -276,7 +276,7 @@ final class MapLayerScreensTest {
     class ResolveShownFadeOnLiveScreen {
 
         @Test
-        void resolveShownFadeOnLiveScreenAnswersFromTheShowingScreensPick() {
+        void answersFromTheShowingScreensPick() {
             // What a pass multiplies into its alpha, and it follows the same screen the pick does - a
             // fade taken off the other screen would thin an overlay nobody asked to hide.
             hideTheIntelScreensLayers();

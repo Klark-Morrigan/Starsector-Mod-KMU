@@ -34,7 +34,7 @@ final class CellTooltipMarkTest {
     class ResolveMarkAsAuthored {
 
         @Test
-        void resolveMarkAsAuthoredKeepsTheAssetsOwnColours() {
+        void keepsTheAssetsOwnColours() {
             // A crest is a picture of a thing rather than a shorthand for it, and its colours are in
             // its own pixels - drawn in the line's shade it would come out a tinted smudge.
             var mark = CellTooltipMark.resolveMarkAsAuthored(CREST);
@@ -44,7 +44,7 @@ final class CellTooltipMarkTest {
         }
 
         @Test
-        void resolveMarkAsAuthoredAnswersNoMarkForAPathTheGameDidNotSupply() {
+        void answersNoMarkForAPathTheGameDidNotSupply() {
             assertThat(CellTooltipMark.resolveMarkAsAuthored(NO_PATH))
                 .isNull();
         }
@@ -54,7 +54,7 @@ final class CellTooltipMarkTest {
     class ResolveMarkInLineColour {
 
         @Test
-        void resolveMarkInLineColourFollowsTheNameBesideIt() {
+        void followsTheNameBesideIt() {
             // It names no colour of its own: what a line speaks in is the block's to settle and differs
             // by the tier the line lands at, so the mark states only that it follows its name.
             var mark = CellTooltipMark.resolveMarkInLineColour(COLONY_ICON);
@@ -64,7 +64,7 @@ final class CellTooltipMarkTest {
         }
 
         @Test
-        void resolveMarkInLineColourAnswersNoMarkForAPathTheGameDidNotSupply() {
+        void answersNoMarkForAPathTheGameDidNotSupply() {
             // The same absence the other reading answers, so a line showing nothing at its head is one
             // state however the mark was resolved.
             assertThat(CellTooltipMark.resolveMarkInLineColour(NO_PATH))
@@ -72,7 +72,7 @@ final class CellTooltipMarkTest {
         }
 
         @Test
-        void resolveMarkInLineColourIsTheOnlyThingSeparatingItFromAnAuthoredMark() {
+        void isTheOnlyThingSeparatingItFromAnAuthoredMark() {
             // The same texture can be a subject on one line and a shorthand on the next, which is why
             // the colouring is stated here rather than read off the sprite.
             assertThat(CellTooltipMark.resolveMarkInLineColour(COLONY_ICON))
@@ -84,7 +84,7 @@ final class CellTooltipMarkTest {
     class ResolveMarkForMapIcon {
 
         @Test
-        void resolveMarkForMapIconFollowsTheNameBesideIt() {
+        void followsTheNameBesideIt() {
             // A map glyph stands in for the name it prefixes rather than picturing anything, so it
             // reads in the line's colour - vanilla's own shade is authored to carry against black and
             // arrives brighter than the numbers a box is about.
@@ -96,7 +96,7 @@ final class CellTooltipMarkTest {
         }
 
         @Test
-        void resolveMarkForMapIconSpendsNoneOfTheAuthoredColour() {
+        void spendsNoneOfTheAuthoredColour() {
             // The asset's colour is KMLib's answer about the asset and a surface drawing the map still
             // wants it; a mark carries no colour of its own, so nothing of it can reach the line.
             var authored = CellTooltipMark.resolveMarkForMapIcon(
@@ -110,7 +110,7 @@ final class CellTooltipMarkTest {
         }
 
         @Test
-        void resolveMarkForMapIconAnswersNoMarkForAnEntityTheMapMarksWithNothing() {
+        void answersNoMarkForAnEntityTheMapMarksWithNothing() {
             // The same absence a path the game never supplied answers, so a caller lists a marked and
             // an unmarked subject through one expression rather than branching first.
             assertThat(CellTooltipMark.resolveMarkForMapIcon(Optional.empty()))
@@ -122,7 +122,7 @@ final class CellTooltipMarkTest {
     class Constructor {
 
         @Test
-        void constructorRefusesAMarkWithNothingToLoad() {
+        void refusesAMarkWithNothingToLoad() {
             // A line showing no mark carries no mark at all, so a null reaching here would otherwise
             // surface at the texture lookup inside a draw, past the point that could name the line.
             assertThatThrownBy(() -> new CellTooltipMark(NO_PATH, true))

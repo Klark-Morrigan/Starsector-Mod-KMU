@@ -330,7 +330,7 @@ final class OwnerMapBodyControlsTest {
         }
 
         @Test
-        void buildSharedControlsLabelsTheNameRadioFullThenShortThenNo() {
+        void labelsTheNameRadioFullThenShortThenNo() {
             // The labels, the lit segment and a click's choice read one order, so the labels are
             // pinned in it too: a label out of step would caption a segment with the choice beside it.
             try (var stringsMock = mockStatic(KmuStringKeys.class)) {
@@ -357,7 +357,7 @@ final class OwnerMapBodyControlsTest {
         }
 
         @Test
-        void buildSharedControlsIgnoresANameSegmentOutsideTheThree() {
+        void ignoresANameSegmentOutsideTheThree() {
             // A stray hit past the last segment writes no choice at all rather than a wrong one.
             try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 

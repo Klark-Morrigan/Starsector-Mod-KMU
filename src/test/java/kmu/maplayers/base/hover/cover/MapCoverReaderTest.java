@@ -29,7 +29,7 @@ final class MapCoverReaderTest {
     class IsMapCoveredAtCursor {
 
         @Test
-        void isMapCoveredAtCursorAnswersCoveredWhenALaterCoverIsOverTheCursor() {
+        void answersCoveredWhenALaterCoverIsOverTheCursor() {
             // Any one cover is enough: they are alternatives, not conditions to meet together, so a
             // console down does not excuse the chrome the cursor is actually on.
             var reader = new MapCoverReader(List.of(
@@ -41,7 +41,7 @@ final class MapCoverReaderTest {
         }
 
         @Test
-        void isMapCoveredAtCursorAnswersUncoveredWhileNoCoverIs() {
+        void answersUncoveredWhileNoCoverIs() {
             // The ordinary frame: the cursor is on the map itself, so the hover read behind this
             // goes ahead.
             var reader = new MapCoverReader(List.of(
@@ -53,7 +53,7 @@ final class MapCoverReaderTest {
         }
 
         @Test
-        void isMapCoveredAtCursorStopsAtTheFirstCoverThatAnswers() {
+        void stopsAtTheFirstCoverThatAnswers() {
             // What makes the cost ordering worth stating: an answered read never reaches the dearer
             // covers behind it.
             var answeringCoverFake = new MapCoverFake(IS_COVERING);

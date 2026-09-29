@@ -24,14 +24,14 @@ final class FlagMapCoverTest {
     class IsCoveringCursor {
 
         @Test
-        void isCoveringCursorAnswersCoveredWhileTheReadingStands() {
+        void answersCoveredWhileTheReadingStands() {
 
             assertThat(new TestFlagMapCover(() -> true).isCoveringCursor())
                 .isTrue();
         }
 
         @Test
-        void isCoveringCursorAnswersUncoveredWhileItDoesNot() {
+        void answersUncoveredWhileItDoesNot() {
             // The ordinary case, and the one that keeps these from being hover switches: with
             // nothing standing the map hovers as it did before any of them existed.
             assertThat(new TestFlagMapCover(() -> false).isCoveringCursor())
@@ -39,7 +39,7 @@ final class FlagMapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAsksTheReadingEachTime() {
+        void asksTheReadingEachTime() {
             // Nothing is settled at construction, so a cover built once answers a flag that moves.
             var standing = new boolean[] { false };
             var cover = new TestFlagMapCover(() -> standing[0]);

@@ -81,7 +81,7 @@ final class SortSelectionTest {
     class GetSortModeKeyOf {
 
         @Test
-        void getSortModeKeyOfReturnsTheSlotsStoredKey() {
+        void returnsTheSlotsStoredKey() {
 
             sectorMemoryFake.storeValue(MODE_KEY, STORED_MODE);
 
@@ -90,7 +90,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void getSortModeKeyOfIsNullForAScopeThatStoredNothing() {
+        void isNullForAScopeThatStoredNothing() {
             // Each scope reads its own slot, so a mode picked in one scope must not surface as
             // another's - two vocabularies mean a cross-read key would resolve against nothing.
             sectorMemoryFake.storeValue(MODE_KEY, STORED_MODE);
@@ -100,7 +100,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void getSortModeKeyOfIsNullForAnotherModsSlot() {
+        void isNullForAnotherModsSlot() {
             // Per-namespace isolation: two mods listing under the same scope string on the same panel
             // rank their own lists, where before the namespace one mod's pick reordered both.
             sectorMemoryFake.storeValue(MODE_KEY, STORED_MODE);
@@ -110,7 +110,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void getSortModeKeyOfReadsEachScreensOwnMode() {
+        void readsEachScreensOwnMode() {
             // Per-screen isolation under one scope ID: the same list ranked one way on one panel and
             // another way on the other reads back as each panel left it.
             sectorMemoryFake.storeValue(MODE_KEY, STORED_MODE);
@@ -123,7 +123,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void getSortModeKeyOfIsNullWhenNoModeIsStored() {
+        void isNullWhenNoModeIsStored() {
             // A save that never picked a mode holds no key, which the sort mode resolves to its
             // default.
             assertThat(SortSelection.getSortModeKeyOf(SLOT))
@@ -131,7 +131,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void getSortModeKeyOfIsNullBeforeTheSectorExists() {
+        void isNullBeforeTheSectorExists() {
             // No sector means no save to read, so nothing can have been picked yet.
             sectorMemoryFake.removeSector();
 
@@ -144,7 +144,7 @@ final class SortSelectionTest {
     class SelectSortMode {
 
         @Test
-        void selectSortModePersistsTheKeyUnderTheSlot() {
+        void persistsTheKeyUnderTheSlot() {
 
             SortSelection.selectSortMode(SLOT, STORED_MODE);
 
@@ -153,7 +153,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void selectSortModeLeavesTheNeighbouringSlotsUntouched() {
+        void leavesTheNeighbouringSlotsUntouched() {
             // Every axis on the write side: a mode picked on one panel's list leaves the same list on
             // the other panel, every other list on this one, and another mod's list of the same name,
             // ranked as they were.
@@ -168,7 +168,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void selectSortModeNoOpsBeforeTheSectorExists() {
+        void noOpsBeforeTheSectorExists() {
             // No sector means no save to write into, so the pick is silently dropped rather than
             // dereferencing a null sector.
             sectorMemoryFake.removeSector();
@@ -183,7 +183,7 @@ final class SortSelectionTest {
     class GetSortDirectionKeyOf {
 
         @Test
-        void getSortDirectionKeyOfReturnsTheSlotsStoredKey() {
+        void returnsTheSlotsStoredKey() {
 
             sectorMemoryFake.storeValue(DIRECTION_KEY, STORED_DIRECTION);
 
@@ -192,7 +192,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void getSortDirectionKeyOfIsNullForASlotThatStoredNothing() {
+        void isNullForASlotThatStoredNothing() {
             // The direction is partitioned exactly as the mode is: it belongs to the mode it was
             // flipped against, which is one panel's list.
             sectorMemoryFake.storeValue(DIRECTION_KEY, STORED_DIRECTION);
@@ -202,7 +202,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void getSortDirectionKeyOfIsNullWhenNoDirectionIsStored() {
+        void isNullWhenNoDirectionIsStored() {
             // A slot whose sort was never flipped holds no key, which the caller resolves to the
             // active mode's default direction.
             assertThat(SortSelection.getSortDirectionKeyOf(SLOT))
@@ -214,7 +214,7 @@ final class SortSelectionTest {
     class SelectSortDirection {
 
         @Test
-        void selectSortDirectionPersistsTheKeyUnderTheSlot() {
+        void persistsTheKeyUnderTheSlot() {
 
             SortSelection.selectSortDirection(SLOT, STORED_DIRECTION);
 
@@ -223,7 +223,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void selectSortDirectionLeavesAnotherScreensDirectionUntouched() {
+        void leavesAnotherScreensDirectionUntouched() {
             // Per-screen isolation on the write side: a flip made on one panel writes that panel's
             // slot alone, so the other's list keeps the order it was left in.
             SortSelection.selectSortDirection(SLOT, STORED_DIRECTION);
@@ -233,7 +233,7 @@ final class SortSelectionTest {
         }
 
         @Test
-        void selectSortDirectionNoOpsBeforeTheSectorExists() {
+        void noOpsBeforeTheSectorExists() {
             // No sector means no save to write into, so the flip is silently dropped rather than
             // dereferencing a null sector.
             sectorMemoryFake.removeSector();

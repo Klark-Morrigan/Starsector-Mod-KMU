@@ -83,7 +83,7 @@ final class MapLayerPickUpkeepTest {
     class Advance {
 
         @Test
-        void advanceHealsEveryScreenRatherThanTheOneOnShow() {
+        void healsEveryScreenRatherThanTheOneOnShow() {
 
             registerTheEmptyViewBesideALayerThatPaints();
 
@@ -102,7 +102,7 @@ final class MapLayerPickUpkeepTest {
         }
 
         @Test
-        void advanceLeavesAScreenAlreadyOnAnOfferedTabAlone() {
+        void leavesAScreenAlreadyOnAnOfferedTabAlone() {
 
             registerTheEmptyViewBesideALayerThatPaints();
 
@@ -120,7 +120,7 @@ final class MapLayerPickUpkeepTest {
         }
 
         @Test
-        void advanceSwallowsAFailedRowAndGoesOnRunning() {
+        void swallowsAFailedRowAndGoesOnRunning() {
 
             registerARosterWhoseLayerRefusesItsOwnId();
 
@@ -138,7 +138,7 @@ final class MapLayerPickUpkeepTest {
         }
 
         @Test
-        void advanceStopsAskingAFailingScreenUntilItsRowMoves() {
+        void stopsAskingAFailingScreenUntilItsRowMoves() {
 
             var idReadCount = new AtomicInteger();
 
@@ -159,7 +159,7 @@ final class MapLayerPickUpkeepTest {
         }
 
         @Test
-        void advanceAsksAFailedScreenAgainOnceItsRowMoves() {
+        void asksAFailedScreenAgainOnceItsRowMoves() {
 
             var idReadCount = new AtomicInteger();
 
@@ -182,7 +182,7 @@ final class MapLayerPickUpkeepTest {
         }
 
         @Test
-        void advanceAsksNothingOfAScreenWhoseRowHasNotMoved() {
+        void asksNothingOfAScreenWhoseRowHasNotMoved() {
 
             registerTheEmptyViewBesideALayerThatPaints();
 
@@ -202,7 +202,7 @@ final class MapLayerPickUpkeepTest {
         }
 
         @Test
-        void advanceHealsAgainOnceTheRowMoves() {
+        void healsAgainOnceTheRowMoves() {
 
             registerTheEmptyViewBesideALayerThatPaints();
 
@@ -223,7 +223,7 @@ final class MapLayerPickUpkeepTest {
         }
 
         @Test
-        void advanceAsksAgainNextFrameWhereTheMoveDidNotTake() {
+        void asksAgainNextFrameWhereTheMoveDidNotTake() {
 
             registerTheEmptyViewBesideALayerThatPaints();
 
@@ -247,7 +247,7 @@ final class MapLayerPickUpkeepTest {
     class IsDone {
 
         @Test
-        void isDoneIsFalseSoThePassRunsForTheSession() {
+        void isFalseSoThePassRunsForTheSession() {
             // Rows go on moving for as long as the player keeps arranging their bar, so a pass that
             // ended would leave every arrangement made after it unhealed.
             assertThat(new MapLayerPickUpkeep().isDone())
@@ -255,7 +255,7 @@ final class MapLayerPickUpkeepTest {
         }
 
         @Test
-        void isDoneIsFalseEvenAfterAFailure() {
+        void isFalseEvenAfterAFailure() {
 
             registerARosterWhoseLayerRefusesItsOwnId();
 
@@ -276,7 +276,7 @@ final class MapLayerPickUpkeepTest {
     class RunWhilePaused {
 
         @Test
-        void runWhilePausedIsTrueSoTheHealReachesTheScreensThatCanMoveARow() {
+        void isTrueSoTheHealReachesTheScreensThatCanMoveARow() {
             // Every screen the bar draws on pauses the campaign, so a pass that stood down while
             // paused would run on none of the frames it exists for.
             assertThat(new MapLayerPickUpkeep().runWhilePaused())

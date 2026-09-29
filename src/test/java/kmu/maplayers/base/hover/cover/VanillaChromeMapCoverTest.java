@@ -37,13 +37,13 @@ final class VanillaChromeMapCoverTest {
     class IsCoveringCursor {
 
         @Test
-        void isCoveringCursorAnswersUncoveredOverTheVisibleMap() {
+        void answersUncoveredOverTheVisibleMap() {
             assertThat(buildCoverWithCursorAt(POINT_ON_MAP_X, POINT_ON_MAP_Y).isCoveringCursor())
                 .isFalse();
         }
 
         @Test
-        void isCoveringCursorAnswersCoveredOverChromeDrawnOnTheSurface() {
+        void answersCoveredOverChromeDrawnOnTheSurface() {
             // Inside the surface's own box and inside the control bar drawn across it, which is the
             // case a complement of the surface alone cannot catch - the intel visor's shape.
             assertThat(buildCoverWithCursorAt(POINT_ON_CHROME_X, POINT_ON_CHROME_Y).isCoveringCursor())
@@ -51,7 +51,7 @@ final class VanillaChromeMapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersCoveredOutsideTheSurfaceAltogether() {
+        void answersCoveredOutsideTheSurfaceAltogether() {
             // The tab strip beside an inset surface - the M map's shape.
             assertThat(
                     buildCoverWithCursorAt(POINT_OUTSIDE_SURFACE_X, POINT_OUTSIDE_SURFACE_Y)
@@ -60,7 +60,7 @@ final class VanillaChromeMapCoverTest {
         }
 
         @Test
-        void isCoveringCursorAnswersUncoveredWhileNoSurfaceCanBeRead() {
+        void answersUncoveredWhileNoSurfaceCanBeRead() {
             // Fails open, per the role's rule: an unreadable tree, or no map tab up at all, restores
             // the un-suppressed behaviour rather than covering the map everywhere.
             var cursorFake = new CursorPositionFake();

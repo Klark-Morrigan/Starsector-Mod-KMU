@@ -21,21 +21,21 @@ final class FactionPaletteSlotTest {
     class ResolvePaintSelectionOf {
 
         @Test
-        void resolvePaintSelectionOfSelectsTheBrightSlotForThePrimaryChoice() {
+        void selectsTheBrightSlotForThePrimaryChoice() {
 
             assertThat(FactionPaletteSlot.resolvePaintSelectionOf(FactionPaletteChoice.PRIMARY))
                 .isEqualTo(FactionPaletteSlot.PRIMARY);
         }
 
         @Test
-        void resolvePaintSelectionOfSelectsTheDarkSlotForTheSecondaryChoice() {
+        void selectsTheDarkSlotForTheSecondaryChoice() {
 
             assertThat(FactionPaletteSlot.resolvePaintSelectionOf(FactionPaletteChoice.SECONDARY))
                 .isEqualTo(FactionPaletteSlot.SECONDARY);
         }
 
         @Test
-        void resolvePaintSelectionOfTakesTheNoColourChoiceToNoSelection() {
+        void takesTheNoColourChoiceToNoSelection() {
             // The settings enum's third option names no slot: a style says "paints
             // nothing" by holding no selection, which is why the render-side type is narrower
             // than the wire format and cannot express an explicit no-colour value.
@@ -44,7 +44,7 @@ final class FactionPaletteSlotTest {
         }
 
         @Test
-        void resolvePaintSelectionOfTakesAnUnresolvedSettingToNoSelection() {
+        void takesAnUnresolvedSettingToNoSelection() {
             // A setting that did not resolve reads the same to a style as an explicit
             // no-colour pick, so the crossing absorbs the null rather than forcing every
             // caller to guard one branch that ends in the same place.

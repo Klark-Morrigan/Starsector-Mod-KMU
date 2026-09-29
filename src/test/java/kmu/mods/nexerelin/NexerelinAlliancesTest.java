@@ -53,7 +53,7 @@ class NexerelinAlliancesTest {
     class ResolveFactionAlliances {
 
         @Test
-        void resolveFactionAlliancesReadsNobodyAsAlliedWhereNexerelinIsAbsent() {
+        void readsNobodyAsAlliedWhereNexerelinIsAbsent() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -69,7 +69,7 @@ class NexerelinAlliancesTest {
     class ResolveGrouping {
 
         @Test
-        void resolveGroupingHandsBackTheSharedIdentityGroupingWhereNexerelinIsAbsent() {
+        void handsBackTheSharedIdentityGroupingWhereNexerelinIsAbsent() {
             // The answer every rebuild on such an install takes, so it is the shared grouping itself
             // rather than a fold rebuilt to look like it.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
@@ -82,7 +82,7 @@ class NexerelinAlliancesTest {
         }
 
         @Test
-        void resolveGroupingHandsBackTheSharedIdentityGroupingWhereNoAllianceStands() {
+        void handsBackTheSharedIdentityGroupingWhereNoAllianceStands() {
             // The mod present with nothing formed yet reads exactly as the mod absent.
             try (var allianceSourceMock = mockStatic(NexerelinAllianceSource.class)) {
 
@@ -94,7 +94,7 @@ class NexerelinAlliancesTest {
         }
 
         @Test
-        void resolveGroupingFoldsTheLiveAlliancesIntoBlocs() {
+        void foldsTheLiveAlliancesIntoBlocs() {
 
             try (var allianceSourceMock = mockStatic(NexerelinAllianceSource.class)) {
 
@@ -114,7 +114,7 @@ class NexerelinAlliancesTest {
     class ComputeAllianceFingerprint {
 
         @Test
-        void computeAllianceFingerprintPollsTheSteadyTokenWhereNexerelinIsAbsent() {
+        void pollsTheSteadyTokenWhereNexerelinIsAbsent() {
             // What keeps the alliance revision still on such an install: the watcher polls this every
             // pass, and a token that moved would rebuild a map nothing about has changed.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
@@ -127,7 +127,7 @@ class NexerelinAlliancesTest {
         }
 
         @Test
-        void computeAllianceFingerprintMovesOffTheSteadyTokenOnceAnAllianceStands() {
+        void movesOffTheSteadyTokenOnceAnAllianceStands() {
             // The one change the watcher exists to notice, read through the live source rather than
             // off records handed in.
             try (var allianceSourceMock = mockStatic(NexerelinAllianceSource.class)) {

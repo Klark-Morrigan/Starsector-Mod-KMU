@@ -34,7 +34,7 @@ final class KmuMapSidebarSettingsTest {
     class GetMapSidebarBackgroundOpacity {
 
         @Test
-        void getMapSidebarBackgroundOpacityConvertsTheStoredPercentageToAFraction() {
+        void convertsTheStoredPercentageToAFraction() {
 
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
@@ -48,7 +48,7 @@ final class KmuMapSidebarSettingsTest {
         }
 
         @Test
-        void getMapSidebarBackgroundOpacityLiftsAPercentageUnderTheFloor() {
+        void liftsAPercentageUnderTheFloor() {
 
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
@@ -62,7 +62,7 @@ final class KmuMapSidebarSettingsTest {
         }
 
         @Test
-        void getMapSidebarBackgroundOpacityHoldsAPercentageOverTheCeiling() {
+        void holdsAPercentageOverTheCeiling() {
 
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
@@ -76,7 +76,7 @@ final class KmuMapSidebarSettingsTest {
         }
 
         @Test
-        void getMapSidebarBackgroundOpacityConvertsItsOwnFallbackWhileNothingIsStored() {
+        void convertsItsOwnFallbackWhileNothingIsStored() {
             // Stood in as a substrate that answers with whatever fallback it is handed, which is what an
             // unset row gets. The conversion runs on that answer like any other, so the panel before the
             // settings load is the panel the shipped row draws rather than a raw percentage read as an
@@ -97,7 +97,7 @@ final class KmuMapSidebarSettingsTest {
     class GetMapSidebarScrollbarThickness {
 
         @Test
-        void getMapSidebarScrollbarThicknessHandsBackAWidthInsideTheRange() {
+        void handsBackAWidthInsideTheRange() {
 
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
@@ -111,7 +111,7 @@ final class KmuMapSidebarSettingsTest {
         }
 
         @Test
-        void getMapSidebarScrollbarThicknessLiftsAWidthUnderTheFloor() {
+        void liftsAWidthUnderTheFloor() {
             // The widget library reads a width of nothing as no bar at all, which is the one state this
             // panel never wants: the slider cannot reach it, and neither can a settings file that names it.
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
@@ -126,7 +126,7 @@ final class KmuMapSidebarSettingsTest {
         }
 
         @Test
-        void getMapSidebarScrollbarThicknessHoldsAWidthOverTheCeiling() {
+        void holdsAWidthOverTheCeiling() {
             // A bar past the ceiling widens the panel by whatever it overruns the gutter by, so an absurd
             // stored width would stand an absurd panel rather than an absurd bar.
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
@@ -141,7 +141,7 @@ final class KmuMapSidebarSettingsTest {
         }
 
         @Test
-        void getMapSidebarScrollbarThicknessClampsItsOwnFallbackWhileNothingIsStored() {
+        void clampsItsOwnFallbackWhileNothingIsStored() {
             // Stood in as a substrate answering with whatever fallback it is handed, which is what an unset
             // row gets. The fallback passes the clamp untouched, so the panel before the settings load is
             // the panel the shipped row draws.

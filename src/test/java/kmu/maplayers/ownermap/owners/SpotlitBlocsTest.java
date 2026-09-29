@@ -35,7 +35,7 @@ final class SpotlitBlocsTest {
     class FindPresentSystemKeys {
 
         @Test
-        void findPresentSystemKeysNamesTheCandidatesTheSpotlitBlocLivesIn() {
+        void namesTheCandidatesTheSpotlitBlocLivesIn() {
 
             var sector = buildTwoSystemSector();
 
@@ -50,7 +50,7 @@ final class SpotlitBlocsTest {
         }
 
         @Test
-        void findPresentSystemKeysLeavesOutASystemThatIsNoCandidate() {
+        void leavesOutASystemThatIsNoCandidate() {
             // The holder map already drew every system it resolved, so a system outside the
             // candidates is never answered for, wherever the bloc lives.
             var sector = buildTwoSystemSector();
@@ -63,7 +63,7 @@ final class SpotlitBlocsTest {
         }
 
         @Test
-        void findPresentSystemKeysAnswersNothingWithNoBlocSpotlit() {
+        void answersNothingWithNoBlocSpotlit() {
 
             var sector = buildTwoSystemSector();
 
@@ -75,7 +75,7 @@ final class SpotlitBlocsTest {
         }
 
         @Test
-        void findPresentSystemKeysAnswersNothingWithNoCandidates() {
+        void answersNothingWithNoCandidates() {
 
             var sector = buildTwoSystemSector();
 
@@ -87,7 +87,7 @@ final class SpotlitBlocsTest {
         }
 
         @Test
-        void findPresentSystemKeysAnswersNothingBeforeTheEconomyStandsUp() {
+        void answersNothingBeforeTheEconomyStandsUp() {
             // Mid-load the systems are walkable while the economy is not, so no colony can be read
             // and nothing is reported present rather than every system reported empty.
             var sector = SectorOwnershipFixtures.buildEconomylessSectorWithSystem("corvus");
@@ -104,21 +104,21 @@ final class SpotlitBlocsTest {
     class IsSpotlitBloc {
 
         @Test
-        void isSpotlitBlocRecognisesTheSpotlitKey() {
+        void recognisesTheSpotlitKey() {
 
             assertThat(SpotlitBlocs.isSpotlitBloc(SpotlitBlocs.readSpotlitBlocKey()))
                 .isTrue();
         }
 
         @Test
-        void isSpotlitBlocRejectsARealBlocId() {
+        void rejectsARealBlocId() {
 
             assertThat(SpotlitBlocs.isSpotlitBloc(SPOTLIT_BLOC_ID))
                 .isFalse();
         }
 
         @Test
-        void isSpotlitBlocRejectsNoKey() {
+        void rejectsNoKey() {
 
             assertThat(SpotlitBlocs.isSpotlitBloc(null))
                 .isFalse();
@@ -129,7 +129,7 @@ final class SpotlitBlocsTest {
     class ReadSpotlitBlocKey {
 
         @Test
-        void readSpotlitBlocKeyAnswersTheSentinelPrefixedKey() {
+        void answersTheSentinelPrefixedKey() {
             // The "$" prefix is what keeps the key from colliding with any real faction or group ID.
             assertThat(SpotlitBlocs.readSpotlitBlocKey())
                 .isEqualTo("$kmu_filter_spotlit");

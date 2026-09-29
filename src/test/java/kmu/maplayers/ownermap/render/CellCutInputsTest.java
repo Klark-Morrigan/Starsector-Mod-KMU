@@ -34,7 +34,7 @@ final class CellCutInputsTest {
     class Equality {
 
         @Test
-        void equalityHoldsForTwoReadingsOfAnUnmovedMap() {
+        void holdsForTwoReadingsOfAnUnmovedMap() {
             // The per-frame case: nothing the cells are cut from has moved, so the cells in hand
             // are still the cells these inputs describe and no recut is owed.
             assertThat(new CellCutInputs(GEOMETRY_REVISION, SEED_INPUTS, DEV_TOGGLES))
@@ -42,7 +42,7 @@ final class CellCutInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossAReachableSetChange() {
+        void separatesReadingsAcrossAReachableSetChange() {
             // A system gained or lost access, or one started or stopped moving: the framework
             // raises its signal and the partition is cut again around the changed site.
             assertThat(new CellCutInputs(GEOMETRY_REVISION, SEED_INPUTS, DEV_TOGGLES))
@@ -50,7 +50,7 @@ final class CellCutInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossACellReachChange() {
+        void separatesReadingsAcrossACellReachChange() {
             // Dragging the cell radius reseeds every cell at an unmoved reachable-set revision.
             // Read on that revision alone this is invisible, which is the whole reason the reach
             // travels in this value rather than being compared beside it.
@@ -62,7 +62,7 @@ final class CellCutInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossAFrontierResolutionChange() {
+        void separatesReadingsAcrossAFrontierResolutionChange() {
             // The other seed input, at the same unmoved revision: how many segments bound a cell
             // changes every cell's outline, so a box clipped inside the old one no longer fits.
             assertThat(new CellCutInputs(GEOMETRY_REVISION, SEED_INPUTS, DEV_TOGGLES))
@@ -73,7 +73,7 @@ final class CellCutInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossAHiddenSystemsFlip() {
+        void separatesReadingsAcrossAHiddenSystemsFlip() {
             // The toggle admits every star system to the partition, so cells appear where there
             // were none and every neighbour cedes area to them - at an unmoved revision again.
             assertThat(new CellCutInputs(GEOMETRY_REVISION, SEED_INPUTS, DEV_TOGGLES))
@@ -84,7 +84,7 @@ final class CellCutInputsTest {
         }
 
         @Test
-        void equalitySeparatesReadingsAcrossAnUndiscoveredMarketsFlip() {
+        void separatesReadingsAcrossAnUndiscoveredMarketsFlip() {
             // The second reveal reaches the cells through inhabitation: an undiscovered colony
             // counted makes its system drawn, which seeds a cell that was not there before.
             assertThat(new CellCutInputs(GEOMETRY_REVISION, SEED_INPUTS, DEV_TOGGLES))

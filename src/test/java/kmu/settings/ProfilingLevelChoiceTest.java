@@ -25,21 +25,21 @@ final class ProfilingLevelChoiceTest {
     class ResolveProfileLevel {
 
         @Test
-        void resolveProfileLevelMapsOffToOff() {
+        void mapsOffToOff() {
 
             assertThat(ProfilingLevelChoice.OFF.resolveProfileLevel())
                 .isEqualTo(ProfileLevel.OFF);
         }
 
         @Test
-        void resolveProfileLevelMapsCoarseToCoarse() {
+        void mapsCoarseToCoarse() {
 
             assertThat(ProfilingLevelChoice.COARSE.resolveProfileLevel())
                 .isEqualTo(ProfileLevel.COARSE);
         }
 
         @Test
-        void resolveProfileLevelMapsFineToFine() {
+        void mapsFineToFine() {
 
             assertThat(ProfilingLevelChoice.FINE.resolveProfileLevel())
                 .isEqualTo(ProfileLevel.FINE);
@@ -50,7 +50,7 @@ final class ProfilingLevelChoiceTest {
     class GetLabel {
 
         @Test
-        void getLabelReadsTheWordingTheSettingsScreenStores() {
+        void readsTheWordingTheSettingsScreenStores() {
             // The stored key wearing a caption's costume. Held here as well as against the CSV
             // because a label edited on one side alone is a player's pick that silently stops
             // resolving.

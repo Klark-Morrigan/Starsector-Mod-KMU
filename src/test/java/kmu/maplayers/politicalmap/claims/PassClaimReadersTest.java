@@ -24,7 +24,7 @@ final class PassClaimReadersTest {
     class OpenClaimReaderOver {
 
         @Test
-        void openClaimReaderOverHandsTheSourceThePassesOwnWalkAndColonyRule() {
+        void handsTheSourceThePassesOwnWalkAndColonyRule() {
 
             var passMock = mock(HolderPass.class);
             var colonyKnowledgeMock = mock(ColonyKnowledge.class);

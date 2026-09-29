@@ -39,7 +39,7 @@ final class ControlBackedMapLayerVisibilityTest {
     class AreLayersShown {
 
         @Test
-        void areLayersShownIsTrueForAScreenThatNeverGotAControl() {
+        void isTrueForAScreenThatNeverGotAControl() {
             // The rule itself: a hide the player cannot take back is not acted on, whatever the save
             // holds, so a reach that stops working between one session and the next costs them a
             // control rather than the feature.
@@ -50,7 +50,7 @@ final class ControlBackedMapLayerVisibilityTest {
         }
 
         @Test
-        void areLayersShownDoesNotAskTheStoredPickWithoutAControl() {
+        void doesNotAskTheStoredPickWithoutAControl() {
             // Pinned rather than left as an accident of how the branch is written: the reading a
             // screen with no control gets is the rule's own and not a stored pick that happens to
             // agree with it.
@@ -61,7 +61,7 @@ final class ControlBackedMapLayerVisibilityTest {
         }
 
         @Test
-        void areLayersShownFollowsTheStoredPickOnceAControlStands() {
+        void followsTheStoredPickOnceAControlStands() {
 
             hideTheStoredPick();
             visibility.recordControlAttached();
@@ -75,7 +75,7 @@ final class ControlBackedMapLayerVisibilityTest {
     class ForgetControlAttached {
 
         @Test
-        void forgetControlAttachedReturnsTheScreenToTheReadingItHadBeforeAControl() {
+        void returnsTheScreenToTheReadingItHadBeforeAControl() {
             // A control can be taken away as well as never obtained - a campaign unloaded under the
             // screens, or the player closing the switch that permits the reach at all. Either leaves
             // the screen with no way to reverse a hide, so either has to put the rule back in force;
@@ -92,7 +92,7 @@ final class ControlBackedMapLayerVisibilityTest {
         }
 
         @Test
-        void forgetControlAttachedLeavesTheStoredPickAsThePlayerLeftIt() {
+        void leavesTheStoredPickAsThePlayerLeftIt() {
             // The rule is about whether the mod acts on the choice, never about the choice: honoured
             // again the moment a control exists to reverse it, so a session that lost one costs the
             // player nothing beyond that session.
@@ -111,7 +111,7 @@ final class ControlBackedMapLayerVisibilityTest {
     class ResolveShownFade {
 
         @Test
-        void resolveShownFadeIsFullyShownForAScreenThatNeverGotAControl() {
+        void isFullyShownForAScreenThatNeverGotAControl() {
             // The two readings stand down together: a screen the rule says is wholly shown cannot
             // also be part-way through dissolving off it.
             when(storedVisibilityMock.resolveShownFade())
@@ -122,7 +122,7 @@ final class ControlBackedMapLayerVisibilityTest {
         }
 
         @Test
-        void resolveShownFadeFollowsTheStoredPickOnceAControlStands() {
+        void followsTheStoredPickOnceAControlStands() {
 
             when(storedVisibilityMock.resolveShownFade())
                 .thenReturn(PART_WAY_THROUGH_A_HIDE);
@@ -138,7 +138,7 @@ final class ControlBackedMapLayerVisibilityTest {
     class ShowLayers {
 
         @Test
-        void showLayersWritesThroughForAScreenThatNeverGotAControl() {
+        void writesThroughForAScreenThatNeverGotAControl() {
             // The player's choice is kept whatever the rule reads: it is honoured again the moment a
             // control exists to reverse it, so a session that could not put a box up must not be able
             // to swallow one.
@@ -152,7 +152,7 @@ final class ControlBackedMapLayerVisibilityTest {
     class GetStoredVisibility {
 
         @Test
-        void getStoredVisibilityHandsBackThePickBeneathTheRule() {
+        void handsBackThePickBeneathTheRule() {
             // What a control is bound to, and the reason it is the stored pick rather than the reading
             // above it: a box seeded from the reading would come up ticked over a save holding the
             // layers hidden, and stay at odds with them until it was clicked twice.

@@ -29,7 +29,7 @@ final class KmuMapRefreshSettingsTest {
     class GetMapRefreshPollSeconds {
 
         @Test
-        void getMapRefreshPollSecondsHandsBackACadenceInsideTheRange() {
+        void handsBackACadenceInsideTheRange() {
 
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
@@ -43,7 +43,7 @@ final class KmuMapRefreshSettingsTest {
         }
 
         @Test
-        void getMapRefreshPollSecondsLiftsACadenceUnderTheFloor() {
+        void liftsACadenceUnderTheFloor() {
             // Zero is the value the floor exists for: it polls every frame on the campaign thread,
             // which turns a diagnostics row into a frame-cost hazard.
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
@@ -58,7 +58,7 @@ final class KmuMapRefreshSettingsTest {
         }
 
         @Test
-        void getMapRefreshPollSecondsHoldsACadenceOverTheCeiling() {
+        void holdsACadenceOverTheCeiling() {
 
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
@@ -72,7 +72,7 @@ final class KmuMapRefreshSettingsTest {
         }
 
         @Test
-        void getMapRefreshPollSecondsClampsItsOwnFallbackWhileNothingIsStored() {
+        void clampsItsOwnFallbackWhileNothingIsStored() {
             // Stood in as a substrate answering with whatever fallback it is handed, which is what
             // an unset row - and a read taken outside a running game - gets. The fallback passes the
             // clamp untouched, so the polls before the settings load run at the shipped cadence.

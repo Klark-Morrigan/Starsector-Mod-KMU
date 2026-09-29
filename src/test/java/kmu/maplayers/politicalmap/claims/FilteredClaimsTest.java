@@ -55,7 +55,7 @@ final class FilteredClaimsTest {
     class ResolveFilteredClaims {
 
         @Test
-        void resolveFilteredClaimsPassesThePlainClaimResolveThroughOffFilter() {
+        void passesThePlainClaimResolveThroughOffFilter() {
 
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
@@ -84,7 +84,7 @@ final class FilteredClaimsTest {
         }
 
         @Test
-        void resolveFilteredClaimsMovesOnlyTheSelectedBlocsClaimsOntoTheSpotlightHolder() {
+        void movesOnlyTheSelectedBlocsClaimsOntoTheSpotlightHolder() {
 
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
@@ -122,7 +122,7 @@ final class FilteredClaimsTest {
         }
 
         @Test
-        void resolveFilteredClaimsDropsTheSelectedBlocsClaimsWhenItsPaletteIsGone() {
+        void dropsTheSelectedBlocsClaimsWhenItsPaletteIsGone() {
 
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
@@ -157,7 +157,7 @@ final class FilteredClaimsTest {
         }
 
         @Test
-        void resolveFilteredClaimsPassesThePlainClaimResolveThroughWithNoSector() {
+        void passesThePlainClaimResolveThroughWithNoSector() {
 
             var claimReaderMock = mock(ClaimReader.class);
             var pass = HolderPass.over(null, UNDER_THE_FOG, HolderGrouping.identity());

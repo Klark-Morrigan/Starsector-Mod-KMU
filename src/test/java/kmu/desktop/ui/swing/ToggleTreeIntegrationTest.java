@@ -50,7 +50,7 @@ final class ToggleTreeIntegrationTest {
     class OfSwitchPair {
 
         @Test
-        void ofSwitchPairTellsBothOwnersBeforeAnythingDraws() {
+        void tellsBothOwnersBeforeAnythingDraws() {
 
             buildPairedTree(true, false);
 
@@ -65,7 +65,7 @@ final class ToggleTreeIntegrationTest {
         // The roll-up's own box is a checkbox too, so it is named here: what the pair adds is
         // the two under it, and what makes them a PAIR is that they share a parent.
         @Test
-        void ofSwitchPairDrawsBothSwitchesOnOneRow() {
+        void drawsBothSwitchesOnOneRow() {
 
             var tree = buildPairedTree(true, false);
             var boxes = ComponentTreeFixture.findAll(tree, JCheckBox.class);
@@ -80,7 +80,7 @@ final class ToggleTreeIntegrationTest {
         }
 
         @Test
-        void ofSwitchPairOpensEachHalfOnWhatWasRemembered() {
+        void opensEachHalfOnWhatWasRemembered() {
 
             SavedValues.findSavedValues().putBoolean(LEFT_KEY, false);
             SavedValues.findSavedValues().putBoolean(RIGHT_KEY, true);
@@ -94,7 +94,7 @@ final class ToggleTreeIntegrationTest {
         }
 
         @Test
-        void ofSwitchPairWritesDownBothHalves() {
+        void writesDownBothHalves() {
 
             buildPairedTree(true, false);
 
@@ -107,7 +107,7 @@ final class ToggleTreeIntegrationTest {
         // The half a roll-up would forget: a pair is one ROW, and a roll-up that walked rows
         // rather than keys would cover the left switch and miss the right.
         @Test
-        void ofSwitchPairLetsARollUpReachTheRightHalf() {
+        void letsARollUpReachTheRightHalf() {
 
             var tree = buildPairedTree(false, false);
             var rollUp = ComponentTreeFixture.findAll(tree, JCheckBox.class).get(0);

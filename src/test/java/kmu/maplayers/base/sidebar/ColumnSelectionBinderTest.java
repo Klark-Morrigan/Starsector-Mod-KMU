@@ -28,7 +28,7 @@ final class ColumnSelectionBinderTest {
     class ResolveStoredColumns {
 
         @Test
-        void resolveStoredColumnsPassesTheSlotsStoredKeyToTheChoice() {
+        void passesTheSlotsStoredKeyToTheChoice() {
 
             try (var selectionMock = mockStatic(ColumnSelection.class)) {
 
@@ -46,7 +46,7 @@ final class ColumnSelectionBinderTest {
     class StoreColumns {
 
         @Test
-        void storeColumnsWritesThePickedChoicesKeyUnderTheSlot() {
+        void writesThePickedChoicesKeyUnderTheSlot() {
 
             try (var selectionMock = mockStatic(ColumnSelection.class)) {
 

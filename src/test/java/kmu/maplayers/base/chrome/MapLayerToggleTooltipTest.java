@@ -73,7 +73,7 @@ final class MapLayerToggleTooltipTest {
     class DescribeToggle {
 
         @Test
-        void describeToggleNamesTheLayersTheMapAndEveryViewItOffers() {
+        void namesTheLayersTheMapAndEveryViewItOffers() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
             var labelMock = ParagraphLabelMock.mockLabelOn(tooltipMock);
@@ -102,7 +102,7 @@ final class MapLayerToggleTooltipTest {
         }
 
         @Test
-        void describeToggleNamesTheModAnswerableForTheFeatureAndNothingElse() {
+        void namesTheModAnswerableForTheFeatureAndNothingElse() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
             var labelMock = ParagraphLabelMock.mockLabelOn(tooltipMock);
@@ -125,7 +125,7 @@ final class MapLayerToggleTooltipTest {
         }
 
         @Test
-        void describeToggleFlagsTheWarningThenGivesTheStepsThatAvoidIt() {
+        void flagsTheWarningThenGivesTheStepsThatAvoidIt() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
             var labelMock = ParagraphLabelMock.mockLabelOn(tooltipMock);
@@ -159,7 +159,7 @@ final class MapLayerToggleTooltipTest {
         }
 
         @Test
-        void describeToggleLeavesTheAlliancesViewOutWhereItIsNotOffered() {
+        void leavesTheAlliancesViewOutWhereItIsNotOffered() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
             var labelMock = ParagraphLabelMock.mockLabelOn(tooltipMock);
@@ -183,7 +183,7 @@ final class MapLayerToggleTooltipTest {
         }
 
         @Test
-        void describeToggleAsksWhichViewsAreOfferedAfreshOnEveryHover() {
+        void asksWhichViewsAreOfferedAfreshOnEveryHover() {
 
             var isAllianceViewOffered = new AtomicBoolean(false);
             var tooltip = new MapLayerToggleTooltip(isAllianceViewOffered::get);
