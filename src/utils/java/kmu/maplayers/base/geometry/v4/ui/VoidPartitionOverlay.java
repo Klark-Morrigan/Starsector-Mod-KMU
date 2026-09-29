@@ -70,9 +70,10 @@ public final class VoidPartitionOverlay {
      *                    between cell and void already stands; handed in rather than built
      *                    again, since the rebuild that calls this has just built them
      * @param fixture     the sector to read, for the sites the pieces are placed against
-     * @param lakeReaches the lakes' coast reaches, which are the lines the lake coast lays;
-     *                    read off the trace the rebuild that calls this made, so the two
-     *                    constructions are drawn from one coast
+     * @param lakeReaches the lakes' coast reaches, which are the lines the lake coast lays,
+     *                    each running with its lake's water on its left; read off the trace
+     *                    the rebuild that calls this made, so the two constructions are drawn
+     *                    from one coast
      * @param lakeBridges the bridges across the lakes, asked for only while their switch is
      *                    on: the search behind them runs on the first ask, and with the
      *                    other construction's own bridges off nothing else asks
@@ -119,7 +120,7 @@ public final class VoidPartitionOverlay {
             ? collectRegions(partition, settings)
             : List.of();
         landable = settings.isLandableFrontageV4Shown()
-            ? collectLandableRuns(partition)
+            ? collectLandableRuns(partition, lakeReaches)
             : List.of();
     }
 
@@ -194,17 +195,18 @@ public final class VoidPartitionOverlay {
             settings.resolveBorderSmoothing());
     }
 
-    // Every piece's landable runs as the point runs the painting takes, which cell each is on
-    // being a fact for a reader of the map and not for the stroke.
-    private static List<List<double[]>> collectLandableRuns(VoidPartition partition) {
+    // The runs the open pieces face, as the point runs the painting takes - which cell each is
+    // on being a fact for a reader of the map and not for the stroke. The reaches are handed
+    // over whether the coast is laid or not: with it off no piece has an edge along one, so
+    // they are never asked about.
+    private static List<List<double[]>> collectLandableRuns(
+            VoidPartition partition, List<CellGap> reaches) {
 
-        var runs = new ArrayList<List<double[]>>();
-
-        for (var piece : partition.collectPieces()) {
-            for (var run : LandableFrontage.collectLandableRuns(piece)) {
-                runs.add(run.points());
-            }
-        }
-        return List.copyOf(runs);
+        return LandableFrontage.collectLandableRuns(
+                partition.collectPieces(),
+                piece -> LakeTier.isCaptured(piece, reaches))
+            .stream()
+            .map(LandableFrontage.Run::points)
+            .toList();
     }
 }

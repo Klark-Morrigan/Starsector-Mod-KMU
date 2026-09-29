@@ -1,13 +1,18 @@
 package kmu.maplayers.base.geometry.ui;
 
+import kmlib.math.geometry.Segments;
+
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.v3.CoastFrontages;
 import kmu.maplayers.base.geometry.v4.LakeTier;
+import kmu.maplayers.base.geometry.v4.LandableFrontage;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.KNOBS;
@@ -45,6 +50,10 @@ class LakeBridgesIntegrationTest {
     // the continents, so the sea is not touched at all, and this is only rounding.
     private static final double AREA_SHARE = 1e-9;
 
+    // How far apart two points may stand and still be the same place, which is room for the
+    // rounding in a distance and nothing more.
+    private static final double SAME_POINT = 1e-6;
+
     static Stream<String> provideSectorNames() {
         return SectorFixture.listSectorNames().stream();
     }
@@ -73,6 +82,38 @@ class LakeBridgesIntegrationTest {
                         .as("the frontage of cell %d", bridge.toSite())
                         .contains(bridge.end());
                 });
+        }
+
+        @ParameterizedTest
+        @MethodSource(SECTORS)
+        void everyBridgeLandsOnOpenFrontageOrAtASinglePoint(String sector) {
+            // The rule a bridge is judged by, asked of v4's own frontage: the frontage standing
+            // when the bridges go in is what the coast left open, and each end has to stand on
+            // its own cell's stretch of it - to within a sagitta, since an end sits on the
+            // cell's true rim and the frontage on the polygon drawn inside it. The one exception
+            // is a cell the coast only touches between two reaches, which offers a single point
+            // and no stretch; the frontage has no runs for those yet.
+            var continents = LakePartitions.layContinents(sector);
+            var reaches = LakePartitions.collectReaches(continents);
+            var open = LandableFrontage.collectLandableRuns(
+                LakePartitions.readCoastPartition(sector).collectPieces(),
+                piece -> LakeTier.isCaptured(piece, reaches));
+            var points = CoastFrontages.collectLakeFrontages(continents.traceCoasts());
+            var furthest = KNOBS.measureBoundSagitta() + SAME_POINT;
+
+            for (var bridge : continents.layLakeSpans()) {
+                for (var end : List.of(
+                        new BridgeEnd(bridge.fromSite(), bridge.start()),
+                        new BridgeEnd(bridge.toSite(), bridge.end()))) {
+
+                    if (isSinglePoint(points.get(end.cell()), end.point())) {
+                        continue;
+                    }
+                    assertThat(measureDistanceToRuns(open, end))
+                        .as("a bridge end on cell %d", end.cell())
+                        .isLessThanOrEqualTo(furthest);
+                }
+            }
         }
 
         @ParameterizedTest
@@ -112,5 +153,42 @@ class LakeBridgesIntegrationTest {
                     measureSea(LakePartitions.readCoastPartition(sector)),
                     withinPercentage(AREA_SHARE));
         }
+    }
+
+    // Whether a point is one of a cell's single-point stretches of lake frontage: where the coast
+    // touches the cell between two reaches and runs along none of it.
+    private static boolean isSinglePoint(List<List<double[]>> stretches, double[] point) {
+
+        for (var stretch : stretches) {
+
+            if (stretch.size() == 1 && Arrays.equals(stretch.get(0), point)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // How far a bridge end stands from the nearest stretch of open frontage on its own cell.
+    private static double measureDistanceToRuns(
+            List<LandableFrontage.Run> runs, BridgeEnd end) {
+
+        var nearest = Double.MAX_VALUE;
+
+        for (var run : runs) {
+
+            if (run.cell() != end.cell()) {
+                continue;
+            }
+            for (var corner = 0; corner + 1 < run.points().size(); corner++) {
+
+                nearest = Math.min(nearest, Segments.computeDistanceToPoint(
+                    run.points().get(corner), run.points().get(corner + 1), end.point()));
+            }
+        }
+        return nearest;
+    }
+
+    // One end of a bridge and the cell it stands on.
+    private record BridgeEnd(int cell, double[] point) {
     }
 }

@@ -2,6 +2,7 @@ package kmu.maplayers.base.geometry.v4;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Which stretches of cell border face void nothing has captured: where anything can land.
@@ -17,9 +18,8 @@ import java.util.List;
  * border facing captured water faces nothing anything can still arrive from. So the frontage
  * a layer is laid against is what the pieces still open leave, and it is read again after each
  * layer rather than settled once. At the base there is no line laid and every piece is open.
- *
- * <p>TODO: every piece is still read as open, laid lines or not, so a bay behind a lake
- * coast's reach still counts as frontage. The captured-piece rule is its own step.
+ * Which pieces a layer captured is that layer's to say - only it knows which side of its lines
+ * is which - so this is handed the answer rather than working it out.
  *
  * <p>TODO: a run is edges, so a cell a coast only touches at one point - between two reaches -
  * offers no run at all, though a bridge may land there.
@@ -32,6 +32,26 @@ import java.util.List;
 public final class LandableFrontage {
 
     private LandableFrontage() {
+    }
+
+    /**
+     * Every run of border the open void faces: the runs of every piece nothing captured.
+     *
+     * @param pieces     the pieces of a partition
+     * @param isCaptured whether the layers laid so far have closed a piece off
+     * @return the open pieces' runs, piece by piece in the order given
+     */
+    public static List<Run> collectLandableRuns(List<Face> pieces, Predicate<Face> isCaptured) {
+
+        var runs = new ArrayList<Run>();
+
+        for (var piece : pieces) {
+
+            if (!isCaptured.test(piece)) {
+                runs.addAll(collectLandableRuns(piece));
+            }
+        }
+        return List.copyOf(runs);
     }
 
     /**

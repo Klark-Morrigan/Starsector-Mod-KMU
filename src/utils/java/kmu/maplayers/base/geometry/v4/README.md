@@ -32,7 +32,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | cut them into the base | `SegmentCrossings` | the welded base read back as lines, and the walls | lines meeting only at their ends |
 | weld and order again | `PlanarArrangement` | those lines, at rounding | the graph the faces are walked on |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
-| read the shore | `LandableFrontage` | a piece | its runs of border, by cell |
+| read the shore | `LandableFrontage` | the pieces, and which of them each tier captured | the open pieces' runs of border, by cell |
 | cut the channel | `PieceShaper` | a piece, an `EdgeInset` | its rings pulled off what they face, crossings and all |
 | make it drawable | `PieceRegions` | those rings | bodies and holes, resolved and smoothed |
 
@@ -120,9 +120,14 @@ There is no measurement, because the question of HOW something lands - how far, 
 It shrinks as the layers go down:
 water a coastline closes off is captured, and a border facing captured water faces nothing anything can still arrive from.
 
-TODO: `LandableFrontage` neither shrinks nor offers single points yet.
-It reads every piece as open, so a bay behind a reach still counts,
-and its runs are edges, so a single point of contact offers nothing.
+Which pieces are captured is each tier's to say, since only the tier knows which side of its lines is which, and `LandableFrontage` is handed the answer.
+The lake tier captures the bay behind every reach, and the water either side of every bridge.
+It reads the side off the piece's own edges:
+a piece is walked with itself on the left, and a reach arrives running with its lake's water on its left,
+so an edge along a reach that runs against it puts the piece in the bay.
+
+TODO: a single point of contact offers no frontage yet.
+A run is edges, so a cell the coast only touches between two reaches has no run, though a bridge may land there.
 
 A run carries both ends of every edge it covers, so consecutive runs share the corner where one cell gives way to the next.
 Carrying only each edge's start leaves a notch at every junction.

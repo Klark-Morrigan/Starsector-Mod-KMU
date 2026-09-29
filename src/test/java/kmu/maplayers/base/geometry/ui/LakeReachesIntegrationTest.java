@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry.ui;
 import kmlib.math.geometry.Points;
 
 import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.v4.LakeTier;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,9 +26,10 @@ import static org.assertj.core.api.Assertions.withinPercentage;
  * <p>Here rather than beside either construction, because it reads both and the layering keeps
  * each of them from reading the other - in tests as in the code.
  *
- * <p><b>Two things are pinned.</b> Which steps of a coast cross as reaches, since the channel
- * that decides it is the one knob a caller can get wrong without anything failing; and what
- * the reaches do once laid, since a line that divides water may not take any of it away.
+ * <p><b>Three things are pinned.</b> Which steps of a coast cross as reaches, since the channel
+ * that decides it is the one knob a caller can get wrong without anything failing; which way
+ * each reach runs, since that is what says which side the coast captured; and what the reaches
+ * do once laid, since a line that divides water may not take any of it away.
  */
 class LakeReachesIntegrationTest {
 
@@ -84,6 +86,24 @@ class LakeReachesIntegrationTest {
 
             assertThat(LakeReaches.collectLakeReaches(continents.traceCoasts(), NO_CHANNEL))
                 .hasSizeGreaterThan(LakePartitions.collectReaches(continents).size());
+        }
+
+        @ParameterizedTest
+        @MethodSource(SECTORS)
+        void theCoastLeavesEveryPieceOfTheVoidOneOpenPart(String sector) {
+            // Which side of a reach is the bay rests on each reach running with its lake's
+            // water on its left. Read the right way round, a lake keeps its water open and gives
+            // up only the bays, and every other piece is untouched - so the open pieces count
+            // the pieces there were before the coast went in. Read the wrong way round, every
+            // lake's water is captured and its bays left open, and the count comes out as many
+            // bays as there are rather than one piece per lake.
+            var reaches = LakePartitions.collectReaches(LakePartitions.layContinents(sector));
+            var open = LakePartitions.readCoastPartition(sector).collectPieces().stream()
+                .filter(piece -> !LakeTier.isCaptured(piece, reaches))
+                .count();
+
+            assertThat(open)
+                .isEqualTo(readPartition(sector, NOTHING_LAID).countPieces());
         }
 
         @ParameterizedTest

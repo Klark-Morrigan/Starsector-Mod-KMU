@@ -12,8 +12,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>The rule has no arithmetic in it, so what is pinned is the bookkeeping: every EDGE on a
  * cell is covered by exactly one run, a run carries both ends of every edge it covers and so
- * meets the next where one cell gives way to it, the frame is nobody's, and a piece's holes
- * are shore as much as its outline is.
+ * meets the next where one cell gives way to it, the frame is nobody's, a piece's holes are
+ * shore as much as its outline is, and a piece a layer captured faces nothing.
  */
 class LandableFrontageTest {
 
@@ -138,6 +138,35 @@ class LandableFrontageTest {
                 .containsExactly(0, 1, 2, 3, 7);
 
             assertThat(runs.get(4).points()).hasSize(5);
+        }
+
+        @Test
+        void aCapturedPieceFacesNothing() {
+            // The same square twice over, on different cells, and the first captured: its shore
+            // faces water nothing can arrive in, so only the second's cells come back.
+            var captured = Face.encloseFace(new LabelledRing(CORNERS, ONE_CELL_PER_SIDE));
+            var open = Face.encloseFace(new LabelledRing(CORNERS, new int[] {4, 5, 6, 7}));
+
+            var runs = LandableFrontage.collectLandableRuns(
+                List.of(captured, open), piece -> piece == captured);
+
+            assertThat(runs)
+                .extracting(LandableFrontage.Run::cell)
+                .containsExactly(4, 5, 6, 7);
+        }
+
+        @Test
+        void withNothingCapturedEveryPieceFacesItsShoreInTheOrderGiven() {
+
+            var first = Face.encloseFace(new LabelledRing(CORNERS, ONE_CELL_PER_SIDE));
+            var second = Face.encloseFace(new LabelledRing(CORNERS, new int[] {4, 5, 6, 7}));
+
+            var runs = LandableFrontage.collectLandableRuns(
+                List.of(first, second), piece -> false);
+
+            assertThat(runs)
+                .extracting(LandableFrontage.Run::cell)
+                .containsExactly(0, 1, 2, 3, 4, 5, 6, 7);
         }
     }
 }
