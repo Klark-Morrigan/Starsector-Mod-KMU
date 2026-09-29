@@ -443,7 +443,7 @@ final class VoidV3Section extends PanelSection {
         // what it changes is the set itself.
         //
         // The label says bridge where the key says span: the key is what saved windows hold,
-        // and the label is what v4's lake bridges, laid off this same search, are called.
+        // and the label uses v4's word for these lines.
         controls.add(rows.buildToggle(
             "shouldThinSpanFormations",
             "Thin shared-anchor bridges",

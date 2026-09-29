@@ -44,6 +44,10 @@ final class VoidV4Section extends PanelSection {
     // separate to see.
     private static final String THIN_LAKE_BRIDGES = "shouldThinLakeBridgesV4";
 
+    // How deep a rule of one substep sits: a level under that substep's switch, so it folds
+    // away with the substep it governs. The root, a tier and a substep are the three above it.
+    private static final int SUBSTEP_RULE_DEPTH = 3;
+
     // Not a layer, so not in the roll-up above it: it changes how the pieces are drawn rather
     // than whether they are, and a roll-up that turned it on with the layers would claim to have
     // switched on something there is no separate thing to see.
@@ -107,7 +111,7 @@ final class VoidV4Section extends PanelSection {
                 "Bridges",
                 false,
                 on -> settings.showLakeBridgesV4 = on)),
-            ToggleTree.Row.ofSwitch(3, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(SUBSTEP_RULE_DEPTH, new ToggleTree.Switch(
                 THIN_LAKE_BRIDGES,
                 "Thin shared-anchor bridges",
                 true,

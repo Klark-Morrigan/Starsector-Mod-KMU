@@ -55,6 +55,7 @@ public final class BridgedContinents {
     private CoastRounding.RoundedCoasts rounded;
     private List<CellGap> inletSpans;
     private List<CellGap> lakeSpans;
+    private List<CellGap> lakeSpansThinnedOtherwise;
     private List<CellGap> puddleSpans;
     private List<CellGap> links;
     private Coastlines.TracedCoasts linked;
@@ -130,15 +131,6 @@ public final class BridgedContinents {
     }
 
     /**
-     * The rules every span of this laying is offered and judged under.
-     *
-     * @return the bridge rules
-     */
-    public ContinentBridges.BridgeRules bridgeRules() {
-        return bridgeRules;
-    }
-
-    /**
      * Every line of the trace with its sharp joins taken off, which is what a drawing strokes.
      *
      * <p>Rounded once for the whole laying rather than at each drawing. A sector's coasts are
@@ -183,7 +175,7 @@ public final class BridgedContinents {
     public List<CellGap> layInletSpans() {
 
         if (inletSpans == null) {
-            inletSpans = layAnchoredSpans(CoastFrontages.Shore.EXTERIOR);
+            inletSpans = layAnchoredSpans(CoastFrontages.Shore.EXTERIOR, bridgeRules);
         }
         return inletSpans;
     }
@@ -201,9 +193,36 @@ public final class BridgedContinents {
     public List<CellGap> layLakeSpans() {
 
         if (lakeSpans == null) {
-            lakeSpans = layAnchoredSpans(CoastFrontages.Shore.INTERIOR);
+            lakeSpans = layAnchoredSpans(CoastFrontages.Shore.INTERIOR, bridgeRules);
         }
         return lakeSpans;
+    }
+
+    /**
+     * The same spans across the lakes, thinned or not as the caller says rather than as this
+     * laying's rules do.
+     *
+     * <p>For a reader that carries its own say on thinning - whether chains and fans are thinned
+     * is a rule of whichever tier lays these, and two tiers laying them from one laying may
+     * disagree. Nothing else of the rules moves, so the two answers differ in the thinning alone.
+     * Where the caller agrees with this laying it is this laying's own answer; where it does not,
+     * the other answer is searched once and kept, like every other set here.
+     *
+     * @param shouldThinFormations whether spans sharing an anchor are thinned
+     * @return the spans across the lakes, in the order they were judged
+     */
+    public List<CellGap> layLakeSpans(boolean shouldThinFormations) {
+
+        if (shouldThinFormations == bridgeRules.shouldThinFormations()) {
+            return layLakeSpans();
+        }
+        if (lakeSpansThinnedOtherwise == null) {
+
+            lakeSpansThinnedOtherwise = layAnchoredSpans(
+                CoastFrontages.Shore.INTERIOR,
+                bridgeRules.copyWithThinning(shouldThinFormations));
+        }
+        return lakeSpansThinnedOtherwise;
     }
 
     /**
@@ -387,11 +406,12 @@ public final class BridgedContinents {
         return walled;
     }
 
-    // One shore's spans, which is the same search either way once the shore has named the
-    // stretches its lines may start from.
-    private List<CellGap> layAnchoredSpans(CoastFrontages.Shore shore) {
+    // One shore's spans under the given rules, which is the same search either way once the
+    // shore has named the stretches its lines may start from.
+    private List<CellGap> layAnchoredSpans(
+            CoastFrontages.Shore shore,
+            ContinentBridges.BridgeRules rules) {
 
-        return ContinentBridges.findAnchoredBridges(
-            traceCoasts(), shore, parameters, bridgeRules);
+        return ContinentBridges.findAnchoredBridges(traceCoasts(), shore, parameters, rules);
     }
 }

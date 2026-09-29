@@ -11,9 +11,11 @@ import kmu.maplayers.base.geometry.v4.SectorPartitions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -98,23 +100,53 @@ class VoidPartitionOverlayIntegrationTest {
             var settings = buildSettings(true, true);
             var overlay = new VoidPartitionOverlay(settings);
 
-            refreshWithOneBridge(overlay);
+            refreshWithOneLine(overlay);
 
-            assertThat(countPaintedPixels(overlay))
+            assertThat(countPaintedPixels(overlay::paintLakeBridges))
                 .isPositive();
         }
 
         @Test
-        void aTierOffAtTheRefreshLaysNothingToDraw() {
+        void bridgesOffAtTheRefreshLayNothingToDraw() {
             // Switched on after the refresh, the tier has nothing to show: the refresh took its
             // lines out, which is what keeps them from dividing pieces nobody can see.
             var settings = buildSettings(true, false);
             var overlay = new VoidPartitionOverlay(settings);
 
-            refreshWithOneBridge(overlay);
+            refreshWithOneLine(overlay);
             settings.showLakeBridgesV4 = true;
 
-            assertThat(countPaintedPixels(overlay))
+            assertThat(countPaintedPixels(overlay::paintLakeBridges))
+                .isZero();
+        }
+    }
+
+    @Nested
+    class PaintLakeCoast {
+
+        @Test
+        void theCoastLaidAtTheRefreshIsDrawn() {
+
+            var settings = buildSettings(true, false);
+            var overlay = new VoidPartitionOverlay(settings);
+
+            settings.showLakeCoastV4 = true;
+            refreshWithOneLine(overlay);
+
+            assertThat(countPaintedPixels(overlay::paintLakeCoast))
+                .isPositive();
+        }
+
+        @Test
+        void aCoastOffAtTheRefreshLaysNothingToDraw() {
+            // The bridges' promise made for the coast, which reads its own switch.
+            var settings = buildSettings(true, false);
+            var overlay = new VoidPartitionOverlay(settings);
+
+            refreshWithOneLine(overlay);
+            settings.showLakeCoastV4 = true;
+
+            assertThat(countPaintedPixels(overlay::paintLakeCoast))
                 .isZero();
         }
     }
@@ -145,9 +177,10 @@ class VoidPartitionOverlayIntegrationTest {
         };
     }
 
-    // One bridge between the first two cells, each end a cell radius off its own site towards
-    // the other's, which is where a real bridge's ends stand.
-    private static void refreshWithOneBridge(VoidPartitionOverlay overlay) {
+    // One line between the first two cells, handed over as the only reach and the only bridge,
+    // each end a cell radius off its own site towards the other's - which is where a real
+    // line's ends stand.
+    private static void refreshWithOneLine(VoidPartitionOverlay overlay) {
 
         var sites = SectorFixture.loadSector(SECTOR).getSites();
         var from = sites.get(0);
@@ -155,13 +188,13 @@ class VoidPartitionOverlayIntegrationTest {
         var radius = SectorPartitions.KNOBS.cellRadius();
         var start = stepTowards(from, to, radius);
         var end = stepTowards(to, from, radius);
-        var bridge = new CellGap(0, 1, start, end, Points.computeDistance(start, end));
+        var line = new CellGap(0, 1, start, end, Points.computeDistance(start, end));
 
         overlay.refresh(
             SectorPartitions.readCellEdges(SECTOR),
             SectorFixture.loadSector(SECTOR),
-            List.of(),
-            () -> List.of(bridge));
+            List.of(line),
+            () -> List.of(line));
     }
 
     private static double[] stepTowards(double[] from, double[] to, double distance) {
@@ -173,9 +206,9 @@ class VoidPartitionOverlayIntegrationTest {
             from[1] + (to[1] - from[1]) * distance / length};
     }
 
-    // The lake bridges painted into a picture the whole sector fits in, and how many pixels
-    // they touched.
-    private static int countPaintedPixels(VoidPartitionOverlay overlay) {
+    // One layer painted into a picture the whole sector fits in, and how many pixels it
+    // touched.
+    private static int countPaintedPixels(Consumer<Graphics2D> paintLayer) {
 
         var around = Bounds.computeEnclosingBounds(SectorFixture.loadSector(SECTOR).getSites());
         var scale = PICTURE_SIDE
@@ -185,7 +218,7 @@ class VoidPartitionOverlayIntegrationTest {
 
         g2.scale(scale, scale);
         g2.translate(-around.minX(), -around.minY());
-        overlay.paintLakeBridges(g2);
+        paintLayer.accept(g2);
         g2.dispose();
 
         var painted = 0;
