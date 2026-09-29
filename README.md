@@ -267,7 +267,7 @@ How the copy is made, and why a locale is chosen at build time rather than in pl
 is KMLib's `writeLocaleFiles`, described in
 [KMLib's Build & Test section](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#build--test).
 
-`LocaleParityIntegrationTest` holds every locale to the default under `test`.
+`LocaleParityIntegrationTests` holds every locale to the default under `test`.
 
 ### Local linting
 

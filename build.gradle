@@ -125,7 +125,7 @@ enforcePackageVocabulary {
     allowWord word: 'bloc',
             inFile: 'src/main/java/kmu/maplayers/base/sidebar/README.md'
     allowWord word: 'bloc',
-            inFile: 'src/test/java/kmu/maplayers/base/sidebar/FilterSelectionTest.java'
+            inFile: 'src/test/java/kmu/maplayers/base/sidebar/FilterSelectionTests.java'
 
     // The fourth names a rule rather than a key: the theme's README explains why
     // `MapPalettes` stays with the owner-painted tier, and it cannot make that

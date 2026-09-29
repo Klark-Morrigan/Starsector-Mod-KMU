@@ -104,7 +104,7 @@ public final class RibbonPlanFixtures {
      * The design's own proportions - a colony three widths long, parted by one width - paired with
      * the uncontested shortening switched off, so every cell's runs come out at those same lengths
      * whether a rival is in it or not. What the shortening does to them is
-     * {@link UncontestedRibbonRunsTest}'s.
+     * {@link UncontestedRibbonRunsTests}'s.
      *
      * <p>The widths are not exported for a case to assert with. A case states the run lengths it
      * expects as its own literals, so an edit to these proportions fails the suites that read a

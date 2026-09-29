@@ -18,7 +18,7 @@ import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
  * whose subject is not the names should not be paying for them. The suite whose subject is the
  * names says so through {@link #createInputsSpellingNames}.
  *
- * <p>{@link ContentInputsTest} builds its own readings rather than taking these: it is what pins
+ * <p>{@link ContentInputsTests} builds its own readings rather than taking these: it is what pins
  * what the record means, so a fixture standing between it and the constructor would be pinning the
  * fixture.
  */

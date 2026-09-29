@@ -62,7 +62,7 @@ public final class SystemColonyReadingFixture {
 
     /**
      * A walk remarking on exactly one colony. The notes are mocked because what makes a remark due
-     * is the notes' own question, pinned by {@link ColonyObservationNotesTest}; what the suites
+     * is the notes' own question, pinned by {@link ColonyObservationNotesTests}; what the suites
      * taking this are about is which line carries the answer.
      *
      * @param colonyId the colony's market ID, as the account listing it carries

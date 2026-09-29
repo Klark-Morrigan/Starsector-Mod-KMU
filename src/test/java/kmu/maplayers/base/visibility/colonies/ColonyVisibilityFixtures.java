@@ -26,7 +26,7 @@ public final class ColonyVisibilityFixtures {
      *
      * <p>Not what the player's live read returns with that toggle on - a reveal drops the one arm
      * it names and clears no gate beside it, so the shipped state holds every gate whatever the
-     * reveals say. A case wanting that state has to say so itself, and {@code MapVisibilityRulesTest}
+     * reveals say. A case wanting that state has to say so itself, and {@code MapVisibilityRulesTests}
      * is where it is pinned.
      */
     public static final ColonyVisibility UNDER_THE_REVEAL = new ColonyVisibility(
