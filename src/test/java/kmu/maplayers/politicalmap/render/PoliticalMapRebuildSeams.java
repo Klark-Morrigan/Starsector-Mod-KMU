@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.render;
 import com.fs.starfarer.api.Global;
 
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -10,7 +11,6 @@ import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.NameFormatPreference;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
-import kmu.maplayers.ownermap.render.StaticSeams;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
@@ -64,11 +64,7 @@ public final class PoliticalMapRebuildSeams {
 
     private PoliticalMapRebuildSeams() {
 
-        globalSeam = seams.openSeam(Global.class);
-
-        // Not optional: a class whose static LOG field is first resolved inside this seam keeps
-        // whatever it was handed for the rest of the JVM. StubbedGlobalLogger says why.
-        StubbedGlobalLogger.answerLoggersOn(globalSeam);
+        globalSeam = seams.holdSeam(StubbedGlobalLogger.openGlobalAnsweringLoggers());
 
         // The dev reveal, the anchor tuning and the dev overlays, all LunaLib-backed: no rebuild
         // claim turns on any of the three, so the seam's own answers stand for them.

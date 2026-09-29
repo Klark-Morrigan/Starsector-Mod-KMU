@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap.render;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.testfixtures.statics.StaticSeams;
+
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;

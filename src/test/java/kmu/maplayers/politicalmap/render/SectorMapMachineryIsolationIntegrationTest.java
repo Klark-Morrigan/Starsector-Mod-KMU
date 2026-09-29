@@ -126,8 +126,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
     void discardEveryMachineryAndOpenSeams() {
 
         // The index is process-wide, so a sector another suite installed on would still be indexed
-        // here - and a resolution by location would walk it. Cleared before the seams open because
-        // the index holds a logger taken from Global at class load.
+        // here - and a resolution by location would walk it.
         SectorMapMachineryIndex.disposeAllMachinery();
 
         seams = PoliticalMapRebuildSeams.openEverySeamARebuildNeeds();

@@ -38,9 +38,8 @@ import static org.mockito.Mockito.when;
  * each axis to its own refresh - a visibility or moving-set move rebuilds geometry, an
  * holder-map diff marks exactly the changed systems politics-stale under their keys (the same
  * set the event listeners feed), and an alliance-fingerprint move bumps the alliance revision - while the
- * first poll only establishes the baselines. Asserts on a real {@link MapLayerRefreshBoard}
- * rather than a mocked one (whose logger a static mock would null during class init), stubbing
- * the snapshot scan and the alliance fingerprint across polls. The board is the one its own
+ * first poll only establishes the baselines. Asserts on a real {@link MapLayerRefreshBoard},
+ * stubbing the snapshot scan and the alliance fingerprint across polls. The board is the one its own
  * machinery holds, so a run reads only what it raised.
  *
  * <p>Also pins what this poll no longer does: the observation each system's own inhabitants make of

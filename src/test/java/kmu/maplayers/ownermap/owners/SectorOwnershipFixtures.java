@@ -1,6 +1,5 @@
 package kmu.maplayers.ownermap.owners;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
@@ -10,7 +9,6 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
-import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.markets.colonies.ColonyMarketFixture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
@@ -19,7 +17,6 @@ import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
 
 import org.lwjgl.util.vector.Vector2f;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -772,23 +769,5 @@ public final class SectorOwnershipFixtures {
             .thenReturn(system);
 
         return sector;
-    }
-
-    /**
-     * Stubs the statics a listener reaches through: the sector it records into, and a logger for
-     * whatever class first touches {@code Global} inside the block.
-     *
-     * <p>The logger matters more than it looks. A class whose static {@code LOG} field is resolved
-     * while {@code Global} is mocked keeps a null logger for the rest of the JVM, so a suite that
-     * stubs only the sector can leave every later suite faulting on a log line it never wrote.
-     *
-     * @param globalMock the open static mock the caller owns and closes
-     * @param sector     the sector {@code Global.getSector} answers with
-     */
-    public static void stubGlobalSector(MockedStatic<Global> globalMock, SectorAPI sector) {
-
-        globalMock.when(Global::getSector)
-            .thenReturn(sector);
-        StubbedGlobalLogger.answerLoggersOn(globalMock);
     }
 }

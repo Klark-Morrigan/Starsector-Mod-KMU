@@ -362,10 +362,6 @@ class MapLayerCellTooltipGateIntegrationTest {
     // The whole installer is run and the wanted half picked out of what it registered, rather than
     // one step being called directly: the composition under test is the one a load performs, and a
     // case that drove a single step would go on passing if the load stopped performing it.
-    //
-    // The install runs outside the mocked statics on purpose: it is where the presence class and its
-    // live intel-screen binding are built, and that binding takes its logger from Global at
-    // class-init, which a mocked Global would answer null for once and for the rest of the JVM.
     private <T> T installListener(Class<T> listenerType) {
 
         var listenerManagerMock = mock(ListenerManagerAPI.class);

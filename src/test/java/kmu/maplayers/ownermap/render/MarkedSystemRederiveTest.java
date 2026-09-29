@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.render;
 
+import kmlib.testfixtures.statics.StaticSeams;
+
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;

@@ -9,6 +9,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -32,7 +33,6 @@ import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.IncrementalOwnerRefresh;
 import kmu.maplayers.ownermap.render.IncrementalOwnerRefreshTest;
 import kmu.maplayers.ownermap.render.StandingOwnerMap;
-import kmu.maplayers.ownermap.render.StaticSeams;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
@@ -185,11 +185,7 @@ final class IncrementalOwnerRefreshIntegrationTest {
         @BeforeEach
         void openSeamsAndSettleTheSector() {
 
-            var globalMock = seams.openSeam(Global.class);
-
-            // The builders below log through static fields initialised on first touch, which
-            // happens inside this block: StubbedGlobalLogger says what an unanswered one costs.
-            StubbedGlobalLogger.answerLoggersOn(globalMock);
+            var globalMock = seams.holdSeam(StubbedGlobalLogger.openGlobalAnsweringLoggers());
 
             hegemonyMock = SectorOwnershipFixtures.buildFaction(
                 HEGEMONY,
