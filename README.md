@@ -269,6 +269,15 @@ is KMLib's `writeLocaleFiles`, described in
 
 `LocaleParityIntegrationTests` holds every locale to the default under `test`.
 
+A translated locale keeps a terminology reference in its own bundle directory:
+the words the game's core localisation already uses for vanilla concepts,
+and the translations settled for KMU's.
+Check it before translating a string, and add to it when a term is settled.
+
+| Locale | Reference |
+| --- | --- |
+| Simplified Chinese (`zh-hans`) | [localisation/zh-hans/README.md](localisation/zh-hans/README.md) |
+
 ### Local linting
 
 Two delegating CI workflows lint the repo's non-Gradle surface on every pull request:
