@@ -1,7 +1,7 @@
 package kmu.maplayers.base.sidebar.style;
 
 import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
-import kmlib.testfixtures.starsector.ui.font.LazyFontLineHeightReaderMock;
+import kmlib.testfixtures.starsector.ui.font.installed.LazyFontLineHeightReaderMock;
 
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;

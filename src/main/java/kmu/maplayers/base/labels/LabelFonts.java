@@ -1,7 +1,7 @@
 package kmu.maplayers.base.labels;
 
-import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
 
 import org.lazywizard.lazylib.ui.LazyFont;
 

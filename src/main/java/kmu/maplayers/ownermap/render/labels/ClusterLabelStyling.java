@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.colour.Colours;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
-import kmlib.starsector.ui.font.LazyFontMeasurer;
+import kmlib.starsector.ui.font.measure.LazyFontMeasurer;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;

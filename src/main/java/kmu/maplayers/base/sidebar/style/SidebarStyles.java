@@ -4,6 +4,7 @@ import kmlib.starsector.ui.colour.AccentColours;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
+import kmlib.starsector.ui.font.installed.InstalledFaces;
 import kmlib.starsector.ui.render.gl.style.BoxColours;
 import kmlib.starsector.ui.render.gl.style.ControlHoverWash;
 import kmlib.starsector.ui.render.gl.style.ControlPressLight;
@@ -315,7 +316,7 @@ public final class SidebarStyles {
             case RAISED_BUTTON -> RAISED_BUTTON_FONT;
         };
 
-        return TextFace.createInstalledNativeFace(font);
+        return InstalledFaces.createNativeFace(font);
     }
 
     // How a row marks the key it answers to, which the chrome decides for the same reason it decides

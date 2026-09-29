@@ -3,6 +3,7 @@ package kmu.maplayers.base.tooltip.layout;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
+import kmlib.starsector.ui.font.installed.InstalledFaces;
 import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipStyle;
 import kmlib.starsector.ui.render.gl.tooltip.TooltipLeaderLineStyle;
 import kmlib.starsector.ui.text.TextStyle;
@@ -85,12 +86,12 @@ final class CellTooltipLook {
      */
     static CursorTooltipStyle buildStyle() {
 
-        var bodyFace = TextFace.createInstalledNativeFace(BODY_FONT);
+        var bodyFace = InstalledFaces.createNativeFace(BODY_FONT);
 
         return CursorTooltipStyle.createStyle(
                 TooltipStyle
                     .createStyle(
-                        TextStyle.createStyle(TextFace.createInstalledNativeFace(HEADER_FONT)),
+                        TextStyle.createStyle(InstalledFaces.createNativeFace(HEADER_FONT)),
                         TextStyle.createStyle(bodyFace))
                     .footnotedIn(TextStyle.createStyle(new TextFace(FOOTNOTE_FONT, bodyFace.size())))
                     .shrunkPerLevel(KmuMapTooltipSettings.getMapTooltipNestingLevelShrink())

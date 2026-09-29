@@ -1,7 +1,7 @@
 package kmu.maplayers.base.labels;
 
 import kmlib.math.geometry.Segment;
-import kmlib.starsector.ui.font.LineWidthMeasurer;
+import kmlib.starsector.ui.font.measure.LineWidthMeasurer;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;

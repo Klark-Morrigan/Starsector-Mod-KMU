@@ -15,7 +15,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
-import kmlib.testfixtures.starsector.ui.font.LazyFontLineHeightReaderMock;
+import kmlib.testfixtures.starsector.ui.font.installed.LazyFontLineHeightReaderMock;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
