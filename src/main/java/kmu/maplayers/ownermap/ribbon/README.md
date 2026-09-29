@@ -12,7 +12,7 @@ Nothing here traces a ring or emits a triangle;
 that is [`ownermap.render.ribbon`](../render/ribbon/README.md).
 
 Part of [the owner-map tier](../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../../../README.md) for project context.
 
 ## Index

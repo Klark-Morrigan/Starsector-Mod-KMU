@@ -19,7 +19,7 @@ final class KmuModTests {
         @Test
         void exposesStableModIdentityConstants() {
             assertThat(KmuMod.MOD_ID).isEqualTo("kmu");
-            assertThat(KmuMod.MOD_NAME).isEqualTo("Klark Morrigan's Utilities");
+            assertThat(KmuMod.MOD_NAME).isEqualTo("Klark Morrigan's Utilities (KMU)");
         }
     }
 }

@@ -4,7 +4,7 @@ What the map layers lose when a game release changes the code they reach into,
 as the reporters a failed reach is filed through.
 
 Part of [the map layers](../../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../../../README.md) for project context.
 
 ## Index

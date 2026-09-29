@@ -8,7 +8,7 @@ no key is bound to it,
 a bar that is on screen needing no second way in.
 
 Part of [the map chrome](../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see [the map layers framework](../../../README.md) for the layer roster and the arrangement this writes,
 and the [mod README](../../../../../../../../README.md) for project context.
 

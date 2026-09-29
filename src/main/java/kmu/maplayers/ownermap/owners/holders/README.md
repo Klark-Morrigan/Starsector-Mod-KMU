@@ -14,7 +14,7 @@ borders,
 and labels the result.
 
 Part of [the owner-map tier](../../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../../../../README.md) for project context.
 
 ## Index

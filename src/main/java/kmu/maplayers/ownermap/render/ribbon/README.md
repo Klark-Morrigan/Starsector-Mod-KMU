@@ -8,7 +8,7 @@ Everything here is a world size,
 so the whole band resolves at rebuild and a frame measures nothing about one.
 
 Part of [the owner-map tier](../../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../../../../README.md) for project context.
 
 ## Index

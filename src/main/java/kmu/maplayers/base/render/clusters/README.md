@@ -10,7 +10,7 @@ Nothing here interprets an owner,
 so a layer's meaning never reaches it.
 
 Part of [the render surface](../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../../../../README.md) for project context.
 
 ## Index

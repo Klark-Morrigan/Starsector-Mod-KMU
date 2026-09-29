@@ -11,7 +11,7 @@ The emission itself is the framework's,
 reached through a seam this package's built state satisfies.
 
 Part of [the owner-map tier](../../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../../../../README.md) for project context.
 
 ## Index

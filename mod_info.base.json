@@ -1,6 +1,6 @@
 {
   "id": "kmu",
-  "name": "Klark Morrigan's Utilities",
+  "name": "Klark Morrigan's Utilities (KMU)",
   "author": "Klark Morrigan",
   "utility": "true",
   "version": "0.1.2",
@@ -11,7 +11,7 @@
   "dependencies": [
     {
       "id": "kmlib",
-      "name": "Klark Morrigan's Library",
+      "name": "Klark Morrigan's Library (KMLib)",
       "version": "0.4.0"
     },
     {

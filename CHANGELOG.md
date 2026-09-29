@@ -19,6 +19,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **The mod list names the mod Klark Morrigan's Utilities (KMU)**, so the abbreviation used everywhere else in the game and in its settings sits beside the full name. Update checkers show the same name.
 - **The release zip is named for its language:** `KMU-<version>-en.zip`. Each language KMU is translated into ships as a zip of its own on the same release page, and the release notes name which zip is which. Update checkers keep working across the change: an install of an earlier version is still told about this release.
 - A **decivilised world** is now revealed by another faction's colony in the same system at every setting of *Map - Visibility* **Show decivilised worlds surveyed at least to**. That setting now governs your own survey alone: at *Seen* a visit to the system is enough, and at *Preliminary* or *Full* you must survey the world itself. Previously the two upper levels also refused a neighbouring colony's word, so a world plainly visible to everyone living beside it stayed off the map.
 - **Show decivilised worlds surveyed at least to** now ships at *Full* rather than *Seen*. Unless you have set the field yourself, in which case your value is kept, a decivilised world is named only once you have surveyed it or somebody is already living in its system. Flying past no longer puts one on the map. With a neighbour's word travelling at every level the common case is still covered, and surveying a world standing alone is now worth doing.

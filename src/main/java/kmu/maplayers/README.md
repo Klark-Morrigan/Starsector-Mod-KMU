@@ -13,7 +13,7 @@ and opens that layer's own controls beneath the tabs.
 The box draws on both screens that show the sector map:
 the full map screen (M) and the map preview (the "visor") embedded in the intel screen.
 
-Part of Klark Morrigan's Utilities;
+Part of Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../README.md) for project context.
 
 ## Index

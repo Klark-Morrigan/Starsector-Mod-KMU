@@ -3,7 +3,7 @@
     "dependencies": [
         {
             "id": "kmlib",
-            "name": "Klark Morrigan's Library",
+            "name": "Klark Morrigan's Library (KMLib)",
             "version": "0.4.0"
         },
         {
@@ -22,7 +22,7 @@
         "jars/KMU.jar"
     ],
     "modPlugin": "kmu.KMU_ModPlugin",
-    "name": "Klark Morrigan's Utilities",
+    "name": "Klark Morrigan's Utilities (KMU)",
     "utility": "true",
     "version": "0.1.2"
 }

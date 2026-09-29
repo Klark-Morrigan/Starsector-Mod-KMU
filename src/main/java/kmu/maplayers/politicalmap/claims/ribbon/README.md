@@ -8,7 +8,7 @@ in [`ownermap.ribbon`](../../../ownermap/ribbon/README.md);
 the geometry is [`ownermap.render.ribbon`](../../../ownermap/render/ribbon/README.md)'s.
 
 Part of [the political map](../../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../../../../README.md) for project context.
 
 ## Index
