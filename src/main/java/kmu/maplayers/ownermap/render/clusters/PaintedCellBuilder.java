@@ -102,7 +102,7 @@ public final class PaintedCellBuilder {
             SystemOwner holder,
             ShapedCell shaped) {
 
-        var blocPaint = buildInputs.resolveBlocPaintOf(holder.factionId(), holder);
+        var blocPaint = buildInputs.resolveBlocPaintOf(holder.ownerId(), holder);
         var style = blocPaint.style();
 
         return new PaintedCell(
@@ -132,15 +132,17 @@ public final class PaintedCellBuilder {
         var mapStyling = buildInputs.styling();
 
         // One classification drives both the bundle and the recede, so a cell cannot take the
-        // decivilised style yet miss the recede that style is meant to draw under. Classified
+        // settled style yet miss the recede that style is meant to draw under. Classified
         // off what stands in the system rather than off the holder lookup that sent the cell
         // here: an inhabited system this layer's holding does not account for is not the empty
-        // backdrop, whatever the absent holder alone would suggest.
-        var category = FactionlessStyleResolver.resolveCategoryOf(
+        // backdrop, whatever the absent holder alone would suggest. Which category that makes
+        // the cell is the layer's own declaration.
+        var isSettled = FactionlessStyleResolver.isSettledSystem(
             occupancy.getInhabitedSystemKeys(),
             systemKey);
 
-        var style = mapStyling.renderStyle().categoryStyle(category);
+        var style = mapStyling.renderStyle().categoryStyle(
+            mapStyling.categories().resolveUnownedCategory(isSettled));
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
             return null;
         }
@@ -160,7 +162,7 @@ public final class PaintedCellBuilder {
         // Only the filter's recede reaches a factionless cell: a recede the view applies of its own
         // accord describes blocs, which such a cell is not.
         var adjustment = FactionlessStyleResolver.resolveRecedeOf(
-            category,
+            isSettled,
             buildInputs.contentInputs().filterRecedeAdjustment(),
             isSpotlitBlocPresent);
 

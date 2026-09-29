@@ -11,13 +11,14 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.ownermap.holding.ColonyReadRules;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
 import kmu.maplayers.ownermap.picker.BlocMetrics;
 import kmu.maplayers.ownermap.picker.BlocPickerRead;
 import kmu.maplayers.ownermap.picker.BlocStandingSortMode;
 import kmu.maplayers.ownermap.picker.BlocStatsRead;
 import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
@@ -28,13 +29,14 @@ import java.util.function.Predicate;
 
 /**
  * One owner-painted view's rules, read by the shared owner-map pipeline: how the view folds
- * factions into blocs, where each system's holder comes from, how a bloc is styled and named, and
- * what the view adds to the picker, the sidebar body, and the hover box. Gathering them behind one
- * seam makes a new view an added rules object rather than a fork of the render pipeline.
+ * factions into blocs, where each system's owner comes from, what the view answers about its
+ * owners and the categories they draw in, and what the view adds to the picker, the sidebar body,
+ * and the hover box. Gathering them behind one seam makes a new view an added rules object rather
+ * than a fork of the render pipeline.
  *
- * <p>The grouping is resolved once per pass and handed back into the per-bloc decisions, so the
- * style classifier and the name resolver stay pure lookups over that one snapshot rather than
- * re-reading a live source per cell.
+ * <p>The owner reading is resolved once per rebuild and carried through every stage, so styling
+ * and naming stay pure lookups over that one snapshot rather than re-reading a live source per
+ * cell.
  */
 public interface OwnerPaintedView {
 
@@ -142,56 +144,41 @@ public interface OwnerPaintedView {
     SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs);
 
     /**
-     * Whether a bloc paints in the muted independent cell style rather than the full
-     * faction style. A view painting lone factions styles only independent space this way; a
-     * view setting groups against a backdrop styles every bloc outside a group this way, so the
-     * ungrouped recede while groups stand out in full colour.
+     * The answers about this view's owners - each one's shades, name, crest, recede and category,
+     * and the neutral shades the unowned and receded palettes come from - over one snapshot.
      *
-     * <p>The bloc's already-resolved {@code adjustment} is supplied so a view that keys the
-     * style bundle off desaturation reads the one adjustment the pass actually paints under -
-     * every reason to recede already folded in - rather than re-deriving it from a source of
-     * its own. A view answering from a narrower source than the palette resolves from would
-     * paint a bloc in the desaturation palette while leaving it in the faction bundle.
+     * <p>Resolved once per rebuild, over the sector and the grouping the rebuild's holding was
+     * folded under, and carried through every stage that styles or names an owner: a reading may
+     * rest on a live source, and every shade, name and category one rebuild paints has to come off
+     * the one sampling of it. That is also what keeps the tier from working any of it out for
+     * itself off what the owner key happens to mean.
      *
-     * @param blocId     the winning bloc for a system, as resolved under {@code grouping}
-     * @param grouping   the grouping this pass resolved, supplied so the test is a pure
-     *                   lookup over the once-sampled snapshot rather than a fresh read
-     * @param adjustment the dimming and recolouring this bloc draws under, resolved ahead of
-     *                   this test so both read one decision
-     * @return true when the bloc takes the independent style
+     * <p>Carries no default, for the reason {@link #resolveHolderProvider} carries none: a default
+     * would name one kind of owner's answers in front of every view.
+     *
+     * @param sector   the sector the rebuild reads
+     * @param grouping the grouping the rebuild's holding was folded under, so the reading answers
+     *                 about the owners the holding produced
+     * @return this view's reading of its owners for the rebuild
      */
-    boolean shouldUseIndependentStyle(
-        String blocId,
-        HolderGrouping grouping,
-        ElementStyleAdjustment adjustment);
+    OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping);
 
     /**
-     * How a bloc's fills, borders, and name are dimmed or recoloured before the pipeline
-     * paints it, applied uniformly wherever the style classification is read. A view with no
-     * backdrop of its own never adjusts a bloc ({@link ElementStyleAdjustment#NONE}); a view setting
-     * groups against a backdrop dims and/or desaturates every bloc outside a group when the player
-     * has asked it to, leaving groups untouched. Resolving it here lets the pipeline apply the two knobs without
-     * knowing why a view wanted them, mirroring the {@link #shouldUseIndependentStyle} seam.
+     * The categories this view's cells divide into: which exist and how each is styled, which one
+     * an owner at full strength draws in, and which one a cell nobody owns falls to.
      *
-     * @param blocId        the winning bloc for a system, as resolved under {@code grouping}
-     * @param grouping      the grouping this pass resolved, so the decision is a pure lookup over
-     *                      the once-sampled snapshot rather than a fresh read
-     * @param contentInputs the preferences this bake sampled, so a view that recedes blocs of its
-     *                      own reads its recede out of the rebuild's one sampling rather than off
-     *                      the stored preference a second time
-     * @return the per-bloc styling adjustment; {@link ElementStyleAdjustment#NONE} to draw the
-     *         bloc exactly as classified
+     * <p>Carries no default: how a map divides is the vocabulary of whoever paints it, and a
+     * default would name one kind of owner's division in front of every view.
+     *
+     * @return this view's categories
      */
-    ElementStyleAdjustment resolveBlocStyleAdjustment(
-        String blocId,
-        HolderGrouping grouping,
-        ContentInputs contentInputs);
+    OwnerCategories resolveCategories();
 
     /**
-     * How the blocs this view recedes of its own accord draw on one screen - a backdrop the view keeps
-     * apart from the spotlight's, such as every bloc outside a group. Read once per rebuild into
-     * {@link ContentInputs}, so {@link #resolveBlocStyleAdjustment} decides which blocs recede while
-     * this decides how far, off one sampling.
+     * How the owners this view recedes of its own accord draw on one screen - a backdrop the view
+     * keeps apart from the spotlight's, such as every bloc outside a group. Read once per rebuild into
+     * {@link ContentInputs}, so the owner reading decides which owners recede while this decides how
+     * far, off one sampling.
      *
      * <p>Asked of the view rather than held by the tier, because the backdrop and the toggles behind it
      * are the view's own: the tier learns only that a view recedes something, never what. Defaults to
@@ -206,28 +193,9 @@ public interface OwnerPaintedView {
     }
 
     /**
-     * The label a bloc reads under this view: a faction's display name for a lone-faction
-     * bloc, the group's name for a grouped bloc. Null when no name resolves, which
-     * the label fit treats as an unresolved name and sizes a stand-in band for instead.
-     *
-     * @param blocId     the winning bloc to name, as resolved under {@code grouping}
-     * @param grouping   the grouping this pass resolved
-     * @param sector     the sector, from which a faction bloc's display name is read
-     * @param nameFormat whether a faction name reads in its short or full form; one of the
-     *                   drawn forms, since the whole label build is skipped when the player's
-     *                   choice draws no name at all
-     * @return the bloc's display name, or null when none resolves
-     */
-    String resolveName(
-        String blocId,
-        HolderGrouping grouping,
-        SectorAPI sector,
-        FactionNameFormatChoice nameFormat);
-
-    /**
      * The spotlight picker this view offers: the blocs it lists - every bloc present on the map, or
      * only the kind the view paints - together with the sort vocabulary that ranks them. Each bloc
-     * carries the ID the filter stores, its picker label, and its colour faction's crest. The list
+     * carries the ID the filter stores, its picker label, and its crest. The list
      * is what the picker draws and what
      * {@link kmu.maplayers.base.sidebar.FilterSelection} heals a stale saved selection against, so a
      * bloc that is no longer here is no longer spotlightable.
@@ -305,18 +273,17 @@ public interface OwnerPaintedView {
      * hand over a map from one walk and an index from another, which is precisely the disagreement
      * the paired read exists to make impossible.
      *
-     * <p>The crest comes from the bloc's colour faction, which is a group's leading member and, for
-     * a faction bloc, the faction itself, so one lookup serves a grouped and an ungrouped view alike.
-     * A bloc with no authored crest keeps its option and simply draws its name alone. The label is
-     * this view's own {@link #resolveName}, always in the short form: the picker labels a bloc by its
-     * short name regardless of the map's name-format setting, so a long-form map label never widens
-     * the sidebar's option rows.
+     * <p>The crest and the label are this view's own owner reading's ({@link #resolveOwnerReading}),
+     * taken over the walk's grouping, so the rows name and badge each bloc exactly as the map does.
+     * A bloc with no crest keeps its option and simply draws its name alone. The label is always in
+     * the short form: the picker labels a bloc by its short name regardless of the map's name-format
+     * setting, so a long-form map label never widens the sidebar's option rows.
      *
      * <p>It is parameterised on the metrics rather than fixed to one layer's because a
      * view ranks by whatever its own layer is painted from: the identity half of an option is
      * assembled the same way for every view, while the payload half is the calling view's alone. That
      * also keeps this a default method rather than a static - the label is <em>this</em> view's
-     * {@link #resolveName}, so no view has to reach into a sibling for a name.
+     * reading's, so no view has to reach into a sibling for a name.
      *
      * <p>The vocabulary it bundles is the caller's own modes with {@link BlocStandingSortMode} behind
      * them, which is why the sector and the grouping are read here for more than the crest. Where a
@@ -328,11 +295,11 @@ public interface OwnerPaintedView {
      * @param <S>             the calling view's own metrics type, ranked by that view's vocabulary;
      *                        bounded only by what every option must answer of its metrics, never by
      *                        one layer's numbers
-     * @param sector          the sector a bloc's colour faction and its standing with the player are
-     *                        read from
-     * @param grouping        the grouping the walk folded under, so the colour faction, the name, the
-     *                        gate, and a bloc's membership all resolve against the same snapshot the
-     *                        numbers came from
+     * @param sector          the sector a bloc's reading and its standing with the player are read
+     *                        from
+     * @param grouping        the grouping the walk folded under, so the reading, the gate, and a
+     *                        bloc's membership all resolve against the same snapshot the numbers
+     *                        came from
      * @param statsRead       the walk's totals and the systems behind them, in the order it surfaced
      *                        them, which the returned rows preserve
      * @param vocabularyModes the calling layer's own modes - the numbers its rows carry - bundled

@@ -5,6 +5,7 @@ import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.SectorBlocPalettes;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
 
 import java.util.LinkedHashMap;
@@ -17,7 +18,7 @@ import java.util.Map;
  * <p>Where {@link SectorPolitics} reads who <em>holds</em> a system from the live economy,
  * this reads who <em>claims</em> it through the {@link ClaimReader} port, then routes the
  * claimant through the same grouping fold and palette lookup the held pass uses. Reusing
- * {@link SystemOwner#resolveForBloc} gives a claim the identical alliance rollup and
+ * {@link SectorBlocPalettes#resolveOwnerOf} gives a claim the identical alliance rollup and
  * authored-palette resolve a held holder gets, so a claimed system and a held one of the same
  * bloc resolve to an equal {@link SystemOwner} - and therefore share a holder and
  * fuse into one territory downstream.
@@ -39,7 +40,7 @@ public final class SectorClaims {
      * every claimed star system, under a holder grouping.
      *
      * <p>Each system's claimant faction ID is folded to its bloc under the grouping and
-     * coloured through {@link SystemOwner#resolveForBloc}, so a claim carries the same
+     * coloured through {@link SectorBlocPalettes#resolveOwnerOf}, so a claim carries the same
      * bloc key and palette a held system of that bloc would. A system with no claim is absent;
      * a claim whose colour faction does not resolve is dropped, exactly as an unresolved held
      * holder is, so it does not paint a colourless cluster.
@@ -57,18 +58,15 @@ public final class SectorClaims {
             ClaimReader claimReader) {
 
         var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
-        var sector = pass.sector();
         var grouping = pass.grouping();
+        var palettes = new SectorBlocPalettes(pass.sector(), grouping);
 
         for (var system : pass.readSystems()) {
             var claimantId = claimReader.readClaimingFactionId(system);
             if (claimantId == null) {
                 continue;
             }
-            var holder = SystemOwner.resolveForBloc(
-                sector,
-                grouping,
-                grouping.resolveBlocId(claimantId));
+            var holder = palettes.resolveOwnerOf(grouping.resolveBlocId(claimantId));
 
             if (holder != null) {
                 ownerBySystemKey.put(SystemKey.readKeyOf(system), holder);

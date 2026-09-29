@@ -78,7 +78,7 @@ public final class FilteredClaims {
         var spotlitClaims = new LinkedHashMap<SystemKey, SystemOwner>();
 
         for (var claim : claimingHolderBySystemKey.entrySet()) {
-            var holder = selectedBlocId.equals(claim.getValue().factionId())
+            var holder = selectedBlocId.equals(claim.getValue().ownerId())
                 ? spotlitHolder
                 : claim.getValue();
 

@@ -2,7 +2,6 @@ package kmu.maplayers.ownermap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
@@ -42,8 +41,8 @@ final class BlocPickerAssembly {
      * contract.
      *
      * @param <S>             the calling view's own metrics type
-     * @param view            the view whose gate picks the rows and whose names label them
-     * @param sector          the sector a bloc's colour faction and its standing are read from
+     * @param view            the view whose gate picks the rows and whose reading labels them
+     * @param sector          the sector a bloc's reading and its standing are read from
      * @param grouping        the grouping the walk folded under
      * @param statsRead       the walk's totals and the systems behind them, in walk order
      * @param vocabularyModes the calling layer's own sort modes
@@ -77,16 +76,19 @@ final class BlocPickerAssembly {
         var isSelectable = view.resolveSelectableBlocGate(grouping);
         var selectableBlocs = new ArrayList<RankedBloc<S>>();
 
+        // One reading for every row, over the walk's own grouping, so the rows name and badge each
+        // bloc exactly as the map built over that grouping does.
+        var reading = view.resolveOwnerReading(sector, grouping);
+
         for (var entry : statsByBlocId.entrySet()) {
             var blocId = entry.getKey();
             if (!isSelectable.test(blocId)) {
                 continue;
             }
-            var colourFaction = sector.getFaction(grouping.resolveColourFactionId(blocId));
             var identity = new SelectableBloc(
                 blocId,
-                view.resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT),
-                FactionCrests.resolveCrestPath(colourFaction));
+                reading.resolveName(blocId, FactionNameFormatChoice.SHORT),
+                reading.resolveCrestPath(blocId));
 
             selectableBlocs.add(new RankedBloc<>(identity, entry.getValue()));
         }

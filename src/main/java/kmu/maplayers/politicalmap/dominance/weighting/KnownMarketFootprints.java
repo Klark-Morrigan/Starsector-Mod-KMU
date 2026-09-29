@@ -24,7 +24,7 @@ import java.util.Map;
  * another surface names are the one set read once rather than two walks that can part company. The
  * pure comparison of the footprints it produces is {@link SystemDominance}'s job; turning the
  * winner into draw colours is
- * {@link kmu.maplayers.ownermap.owners.SystemOwner#resolveForBloc}'s.
+ * {@link kmu.maplayers.ownermap.render.style.SectorBlocPalettes#resolveOwnerOf}'s.
  *
  * <p>Every weight is worked out once, as a {@link MarketWeightBreakdown} the scalar
  * weight is then summed over. A caller that wants the number reads the footprint;

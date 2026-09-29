@@ -1,11 +1,11 @@
 package kmu.maplayers.ownermap.render.style;
 
-import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.awt.Color;
@@ -34,31 +34,30 @@ import java.awt.Color;
 public record ResolvedBlocPaint(
     CategoryStyle style,
     ElementStyleAdjustment adjustment,
-    FactionPalette palette) {
+    OwnerPalette palette) {
 
     /**
-     * What a bloc somebody holds paints from: its holder's own two shades under the styling
-     * resolved for it.
+     * What an owned bloc paints from: its owner's own two shades under the styling resolved for it.
      *
      * @param styling             the bundle and adjustment this bloc draws under
-     * @param holder              whose shades it paints in when nothing desaturates it
+     * @param owner               whose shades it paints in when nothing desaturates it
      * @param desaturationPalette the shades the pass sinks a desaturated bloc to
      * @return the paint source for that bloc
      */
     public static ResolvedBlocPaint resolveFrom(
             OwnerStyling styling,
-            SystemOwner holder,
-            FactionPalette desaturationPalette) {
+            SystemOwner owner,
+            OwnerPalette desaturationPalette) {
 
         return resolveFrom(
             styling.style(),
             styling.adjustment(),
-            holder.resolvePalette(),
+            owner.palette(),
             desaturationPalette);
     }
 
     /**
-     * The same over shades stated outright rather than read off a holder, for a cell nobody holds:
+     * The same over shades stated outright rather than read off an owner, for a cell nobody owns:
      * its own pair is the neutral, or the neutral lifted where a spotlight spared it, and neither
      * belongs to anyone the pass could ask.
      *
@@ -71,8 +70,8 @@ public record ResolvedBlocPaint(
     public static ResolvedBlocPaint resolveFrom(
             CategoryStyle style,
             ElementStyleAdjustment adjustment,
-            FactionPalette ownPalette,
-            FactionPalette desaturationPalette) {
+            OwnerPalette ownPalette,
+            OwnerPalette desaturationPalette) {
 
         return new ResolvedBlocPaint(
             style,

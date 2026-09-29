@@ -178,6 +178,7 @@ final class OwnerMapDrawables {
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
             cellGeometry.cells(),
             sector,
+            view.resolveCategories(),
             contentInputs,
             diagnosticsHolderProvider);
 
@@ -231,7 +232,6 @@ final class OwnerMapDrawables {
         ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
             cellGeometry,
-            pass.sector(),
             ClusterLabelStylingSnapshot.resolveFrom(clusters));
 
         // The bands come last, after the names have places, because they are laid around

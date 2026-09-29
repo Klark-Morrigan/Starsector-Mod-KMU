@@ -104,7 +104,7 @@ public final class IncrementalOwnerRefresh {
 
             var holderResolve = holderResolveSource.openResolveOver(
                 sector,
-                standingMap.clusters().getBuildInputs().viewGrouping().grouping());
+                standingMap.clusters().getBuildInputs().viewReading().grouping());
 
             new IncrementalOwnerRefresh(standingMap, holderResolve)
                 .applyMarkedOwnerUpdates(staleSystemKeys);
@@ -209,12 +209,11 @@ public final class IncrementalOwnerRefresh {
         // consumers are off. The name labels then rebuild from the placements so a renamed or
         // relocated cluster's name follows.
         //
-        // Fitted over the batch's own sector rather than the running game's, so every half of one
-        // redraw is answered off the reading the re-derive already worked from.
+        // Named off the build's own owner reading rather than a fresh one, so the names this batch
+        // re-fits read exactly as the ones it carries over.
         var nameDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingMap.standingAnchors(),
             standingMap.cellGeometry(),
-            holderResolve.readHolderPass().sectorIndex().getSector(),
             ClusterLabelStylingSnapshot.resolveFrom(clusters));
 
         // The name choice off the standing map rather than off the preference: this fold edits the
@@ -323,11 +322,11 @@ public final class IncrementalOwnerRefresh {
         // This cell's own holder narrowly, and the whole holding beside it: the shaper compares
         // every neighbour's holder against this one to tell a same-bloc seam from a border, so that
         // half is one of the few reads the map itself answers.
-        var ownerFactionId = holder == null ? null : holder.factionId();
+        var ownerId = holder == null ? null : holder.ownerId();
         var shaped = CellShaper.shapeCell(
             edges,
-            ownerFactionId,
-            SystemOwner.mapFactionIdBySystemKey(occupancy.getHolderBySystemKey()),
+            ownerId,
+            SystemOwner.mapOwnerIdBySystemKey(occupancy.getHolderBySystemKey()),
             EdgeInset.asTheMapDraws());
 
         var painted = PaintedCellBuilder.buildPaintedCellForSystem(

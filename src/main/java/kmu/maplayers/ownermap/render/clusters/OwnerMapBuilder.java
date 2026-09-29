@@ -1,12 +1,9 @@
 package kmu.maplayers.ownermap.render.clusters;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
-import kmlib.starsector.factions.StarsectorFactionColours;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -19,12 +16,14 @@ import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewGrouping;
+import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.holding.OwnerMapInhabitation;
+import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SpotlitBlocs;
 import kmu.maplayers.ownermap.owners.holders.HolderResolution;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
+import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 
 import java.util.Map;
@@ -160,9 +159,9 @@ public final class OwnerMapBuilder {
     // cluster-filled (owned) and per-cell (decivilised/uninhabited) draw lists, baking in each
     // cell's colours, opacities, and widths resolved from the current settings, then
     // flattens each to GL-ready vertex runs. Reads the settings once per category, not
-    // per cell. The active view supplies the style classifier each cell reads, beside the
-    // grouping the handed pass was opened under; both are retained on the clusters so an
-    // incremental re-shape classifies against the same view and grouping snapshot.
+    // per cell. The active view supplies the owner reading each cell is styled and named by,
+    // resolved here once over the grouping the handed pass was opened under; both are retained on
+    // the clusters so an incremental re-shape classifies against the same view and reading.
     //
     // The reading of the sector arrives rather than being opened here, so this build's walk of
     // each system is the same walk the geometry and the band bake either side of it make. It is
@@ -182,7 +181,13 @@ public final class OwnerMapBuilder {
         try (var rebuildScope = profiler.open(REBUILD_SECTION)) {
 
             var resolution = holding.resolution();
-            var styling = readMapStyling(pass.sector(), contentInputs);
+
+            // The layer's answers about its owners, resolved once for the whole build over the
+            // pass's own grouping rather than a second sampling of the view's (a view's grouping
+            // can be a live read of the game), so the holding this build resolved and every shade,
+            // name and category painted over it are one reading.
+            var reading = view.resolveOwnerReading(pass.sector(), pass.grouping());
+            var styling = readMapStyling(view.resolveCategories(), reading, contentInputs);
 
             var clusters = new OwnerMapClusters(
                 // Copied out of the holding rather than adopted: the incremental refresh folds
@@ -194,11 +199,7 @@ public final class OwnerMapBuilder {
                     holding.spotlitPresenceSystemKeys()),
                 new OwnerMapBuildInputs(
                     styling,
-                    // The grouping is the pass's rather than a second sampling of the view's (a
-                    // view's grouping can be a live read of the game), so the holding this build
-                    // resolved and the grouping the retained copy names cannot be two readings of
-                    // it.
-                    new ViewGrouping(view, pass.grouping()),
+                    new ViewReading(view, reading, pass.grouping()),
                     contentInputs,
                     // The owned systems this resolution paints no fill for - held by their bloc
                     // but drawn empty inside its one border. Filled only by a view whose holder
@@ -254,15 +255,17 @@ public final class OwnerMapBuilder {
     }
 
     // The paint scheme this build styles every cell from: the whole theme read once through the
-    // single reader seam, the sector's neutral shade, and the two palettes a spotlight separates
-    // its subject from its backdrop with. Held on the clusters so the incremental refresh
-    // re-shapes cells against the same snapshot this pass used.
-    private static MapStyling readMapStyling(SectorAPI sector, ContentInputs contentInputs) {
+    // single reader seam for the layer's own categories, the reading's unowned shade, and the two
+    // palettes a spotlight separates its subject from its backdrop with. Held on the clusters so the
+    // incremental refresh re-shapes cells against the same snapshot this pass used.
+    private static MapStyling readMapStyling(
+            OwnerCategories categories,
+            OwnerReading reading,
+            ContentInputs contentInputs) {
 
-        var renderStyle = RenderStyleReader.readRenderStyle(
-            contentInputs.isUninhabitedOutlineDrawn());
+        var renderStyle = RenderStyleReader.readRenderStyle(categories, contentInputs);
 
-        var neutralColour = StarsectorFactionColours.resolveNeutralColour(sector);
+        var neutralColour = reading.resolveUnownedColour();
 
         // Stated once here, ahead of any geometry, because it does not vary across the bodies this
         // pass then cuts: it is the heading the per-body hatch lines are read under, and the one
@@ -271,12 +274,13 @@ public final class OwnerMapBuilder {
 
         return new MapStyling(
             renderStyle,
+            categories,
             MapPalettes.resolveNeutralPalette(neutralColour),
-            // The receded background desaturates to a uniform Independent-based grey, darkened by
-            // the live setting so it sits below genuine independent-held space - a spotlit bloc,
-            // even Independent at full strength, therefore reads distinctly against it.
+            // The receded background desaturates to one uniform palette, the reading's recede
+            // shades darkened by the live setting so it sits below the quieter owners' own space -
+            // a spotlit owner at full strength therefore reads distinctly against it.
             MapPalettes.resolveDesaturationPalette(
-                sector,
+                reading.resolveRecedePalette(),
                 renderStyle.global().desaturationDarkening()),
             // The other end of that separation: the neutral a spared factionless cell paints in,
             // lifted toward white so it clears the greys the recede just sank. Resolved beside its
@@ -314,7 +318,7 @@ public final class OwnerMapBuilder {
             ProfileScope shapeScope) {
 
         // Shape the raw cells into merged clusters once, holding-aware. The agnostic geometry
-        // clusters by holder, so hand it each system's faction ID as the key. Cells consumed by
+        // clusters by owner, so hand it each system's owner ID as the key. Cells consumed by
         // the inset (fewer than three vertices left) drop out.
         var cellGrouping = clusters.resolveCellGroupingOver(
             geometryCache.getSystemKeyByCellKey());

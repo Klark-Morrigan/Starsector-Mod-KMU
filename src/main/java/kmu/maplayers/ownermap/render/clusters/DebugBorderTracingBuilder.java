@@ -22,6 +22,7 @@ import kmu.maplayers.ownermap.holding.OwnerMapInhabitation;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
 import kmu.maplayers.ownermap.render.style.FactionlessStyleResolver;
+import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 
 import java.util.List;
@@ -65,6 +66,7 @@ public final class DebugBorderTracingBuilder {
     public static ClusterBorderStageOverlay buildDebugDrawables(
             CellGeometryCache geometryCache,
             SectorAPI sector,
+            OwnerCategories categories,
             ContentInputs contentInputs,
             HolderProvider holderProvider) {
 
@@ -76,7 +78,7 @@ public final class DebugBorderTracingBuilder {
         var ownerBySystemKey = holderProvider.resolveHolder(pass, null).ownerBySystemKey();
 
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
-        // as and that system to its faction id.
+        // as and that system to its owner ID.
         var cellGrouping = SystemOwner.mapCellGrouping(
             geometryCache.getSystemKeyByCellKey(),
             ownerBySystemKey);
@@ -91,12 +93,11 @@ public final class DebugBorderTracingBuilder {
         // because the factionless pass below indexes into it by category - read twice, the outlines
         // could be gated by one reading of the knobs and smoothed by another.
         //
-        // The uninhabited outline's own switch arrives with the rebuild rather than being read: it
-        // is a sidebar preference, sampled once per rebuild, and a second reading here could show
-        // cells the production draw would not.
+        // The categories are the painting layer's, and the preferences arrive with the rebuild
+        // rather than being read: a category's style may ride on a sidebar pick, sampled once per
+        // rebuild, and a second reading here could show cells the production draw would not.
         var borderTrace = ClusterBorderTrace.readFromLunaSettings();
-        var renderStyle = RenderStyleReader.readRenderStyle(
-            contentInputs.isUninhabitedOutlineDrawn());
+        var renderStyle = RenderStyleReader.readRenderStyle(categories, contentInputs);
 
         var stageCollector = new ClusterBorderStageCollector();
 
@@ -114,6 +115,7 @@ public final class DebugBorderTracingBuilder {
             cellGrouping,
             inhabitedSystemKeys,
             renderStyle,
+            categories,
             stageCollector);
 
         return stageCollector.buildOverlay();
@@ -154,6 +156,7 @@ public final class DebugBorderTracingBuilder {
             CellGrouping cellGrouping,
             Set<SystemKey> inhabitedSystemKeys,
             RenderStyle renderStyle,
+            OwnerCategories categories,
             ClusterBorderStageCollector stageCollector) {
 
         // The rebuild's one reading of the theme, handed over whole rather than re-read here, so a
@@ -166,12 +169,11 @@ public final class DebugBorderTracingBuilder {
             if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {
                 continue;
             }
-            // A factionless cell resolves its settled/uninhabited style through the system it
-            // draws as; a cell with no system of its own is uninhabited.
+            // A factionless cell resolves its settled or empty style through the system it
+            // draws as; a cell with no system of its own is empty.
             var drawnSystemKey = cellGrouping.resolveDrawnSystemKeyOf(entry.getKey());
-            var style = renderStyle.categoryStyle(FactionlessStyleResolver.resolveCategoryOf(
-                inhabitedSystemKeys,
-                drawnSystemKey));
+            var style = renderStyle.categoryStyle(categories.resolveUnownedCategory(
+                FactionlessStyleResolver.isSettledSystem(inhabitedSystemKeys, drawnSystemKey)));
 
             if (!style.outer().isDrawn()) {
                 continue;

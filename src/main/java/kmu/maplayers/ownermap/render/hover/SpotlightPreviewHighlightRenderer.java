@@ -10,7 +10,6 @@ import kmu.maplayers.base.sidebar.PickerScope;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
-import kmu.maplayers.ownermap.render.style.SectorBlocPalettes;
 import kmu.maplayers.ownermap.sidebar.SelectableBlocCache;
 
 import java.awt.Color;
@@ -30,10 +29,10 @@ import java.awt.Color;
  * <p>The shade is keyed on the bloc rather than on any cell of it, which is what separates this
  * from the cursor's highlight beside it. A previewed bloc lights cells that rivals hold and cells a
  * spotlight has sunk to grey, and both would answer in someone else's colour - or in none - if the
- * shade were read off what the cell was painted as. It comes through
- * {@link SectorBlocPalettes}, the shared reader of what colour a bloc is, so no two surfaces
- * painting for a bloc can come to disagree - including on the bloc whose colour faction has gone
- * from the sector, which none of them paints.
+ * shade were read off what the cell was painted as. It comes through the owner reading the frame was
+ * built under, the painting layer's one answer to what colour an owner is, so no two surfaces
+ * painting for a bloc can come to disagree - including on a bloc gone from the sector, which none
+ * of them paints.
  *
  * <p>It cannot collide with the cursor's highlight: the sidebar parks the map hover while the
  * pointer is over it, so the cursor's is already dark on every frame this one could draw.
@@ -109,7 +108,7 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
     PreviewHighlightPaint resolvePreviewPaint(OwnerMapClusters clusters) {
 
         // The view the frame painted, off the inputs the build was baked under.
-        var view = clusters.getBuildInputs().viewGrouping().view();
+        var view = clusters.getBuildInputs().viewReading().view();
 
         // The view's ID under the layer's own store namespace, which is how the picker reported the
         // hover: the ID is opaque, so a view named the same by another mod's picker is a different
@@ -152,15 +151,17 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
     }
 
     // The one shade the whole previewed set burns in, or null when it has none to burn - the
-    // player having pointed the tier at no shade, or the bloc's colour faction having gone from
-    // the sector. The second is the band rule's own answer, inherited rather than restated: a bloc
-    // the map cannot name is one neither surface paints.
+    // player having pointed the tier at no shade, or the reading having no shades for the bloc.
+    // The second is the band rule's own answer, inherited rather than restated: a bloc the map
+    // cannot colour is one neither surface paints.
     private Color resolveShadeOf(OwnerMapClusters clusters, String blocId) {
 
-        var palette = new SectorBlocPalettes(
-                machinery.resolveSector(),
-                clusters.getBuildInputs().viewGrouping().grouping())
-            .readBlocPalette(blocId);
+        // The placeholder a failed first build stands behind resolved no reading, and a bloc with no
+        // reading to ask has no shade to burn.
+        var reading = clusters.getBuildInputs().viewReading().reading();
+        var palette = reading == null
+            ? null
+            : reading.resolvePalette(blocId);
 
         return palette == null
             ? null

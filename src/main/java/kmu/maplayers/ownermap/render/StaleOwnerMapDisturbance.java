@@ -76,10 +76,10 @@ final class StaleOwnerMapDisturbance {
             SystemOwner newHolder) {
 
         if (oldHolder != null) {
-            affectedFactionIds.add(oldHolder.factionId());
+            affectedFactionIds.add(oldHolder.ownerId());
         }
         if (newHolder != null) {
-            affectedFactionIds.add(newHolder.factionId());
+            affectedFactionIds.add(newHolder.ownerId());
         }
         cellKeysToRedraw.add(systemKey);
         cellKeysToRedraw.addAll(neighbourSystemKeys);

@@ -13,34 +13,33 @@ import kmu.maplayers.base.theme.HatchStyle;
 import kmu.maplayers.base.theme.HoverGlowStyle;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
 import kmu.maplayers.base.theme.HoverWashStyle;
-import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
+import kmu.maplayers.ownermap.ContentInputs;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuOwnerMapGeometrySettings;
 import kmu.settings.KmuOwnerMapHighlightSettings;
 import kmu.settings.KmuOwnerMapStyleSettings;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 /**
  * Reads the whole owner-map theme out of the player's LunaLib settings into one
  * {@link RenderStyle}: the global tier (hatch, border smoothing, the cursor and preview highlight
- * tiers, desaturation profile) and one {@link CategoryStyle} per {@link OwnerMapCategory}.
- * This is the single
- * seam a rebuild reads the render settings through, so every knob resolves in one place rather
- * than being fetched ad hoc across the builders, and an incremental re-shape restyles against
- * the same snapshot.
+ * tiers, desaturation profile) and one {@link CategoryStyle} per category the painting layer
+ * declares. This is the single seam a rebuild reads the render settings through, so every knob
+ * resolves in one place rather than being fetched ad hoc across the builders, and an incremental
+ * re-shape restyles against the same snapshot.
  *
- * <p>The two owned categories - core factions and independent space - carry a full
- * fill/outer/inner style. The two factionless categories - decivilised and uninhabited -
- * have no faction palette, so both paint in the shared neutral colour and neither carries a
- * colour choice: a decivilised cell draws a fill and an outline, an uninhabited cell an
- * outline alone, and both set their inner seam to "No color" since factionless cells never
- * fuse into clusters. Whether the uninhabited outline draws at all is the player's sidebar
- * checkbox rather than a settings field, so that one input arrives from the rebuild's own sampling
- * of the preferences instead of being read here; every other input is a LunaLib knob this reads.
+ * <p>Which categories there are is the layer's ({@link OwnerCategories}). The four
+ * {@link OwnerMapCategory} styles the layers painting holders share are read here all the same, by
+ * {@link HolderCategories}, since their knobs sit beside the global tier's. The two owned
+ * categories - core factions and independent space - carry a full fill/outer/inner style. The two
+ * factionless categories - decivilised and uninhabited - have no faction palette, so both paint in
+ * the shared neutral colour and neither carries a colour choice: a decivilised cell draws a fill
+ * and an outline, an uninhabited cell an outline alone, and both set their inner seam to "No color"
+ * since factionless cells never fuse into clusters. Whether the uninhabited outline draws at all is
+ * the player's sidebar checkbox rather than a settings field, so that one input arrives from the
+ * rebuild's own sampling of the preferences instead of being read here; every other input is a
+ * LunaLib knob this reads.
  */
 public final class RenderStyleReader {
 
@@ -53,25 +52,17 @@ public final class RenderStyleReader {
     private RenderStyleReader() {
     }
 
-    // Reads the global tier and all four category styles into one theme, so the build loop
-    // and every incremental re-shape draw from a single already-read snapshot. The theme keys
-    // on the open MapStyleCategory rather than on this layer's enum, so the map is a plain
-    // hash map rather than an EnumMap - four inserts once per rebuild, against a lookup the
-    // framework can serve for any layer's categories.
+    // Reads the global tier and every category style the painting layer declares into one theme,
+    // so the build loop and every incremental re-shape draw from a single already-read snapshot.
     //
-    // The uninhabited outline's on/off arrives rather than being read, because it is a sidebar
-    // preference and every one of those is sampled once per rebuild: read here it would be a second
-    // reading, free to disagree with the one the rebuild decided it was owed by.
-    public static RenderStyle readRenderStyle(boolean isUninhabitedOutlineDrawn) {
-        Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
-        categories.put(OwnerMapCategory.FACTION, readFactionStyle());
-        categories.put(OwnerMapCategory.INDEPENDENT, readIndependentStyle());
-        categories.put(OwnerMapCategory.DECIVILISED, readDecivilisedStyle());
-        categories.put(
-            OwnerMapCategory.UNINHABITED,
-            readUninhabitedStyle(isUninhabitedOutlineDrawn));
+    // The preferences arrive rather than being read, because a category's style may ride on a
+    // sidebar pick and every one of those is sampled once per rebuild: read here it would be a
+    // second reading, free to disagree with the one the rebuild decided it was owed by.
+    public static RenderStyle readRenderStyle(
+            OwnerCategories categories,
+            ContentInputs contentInputs) {
 
-        return new RenderStyle(readGlobalStyle(), categories);
+        return new RenderStyle(readGlobalStyle(), categories.readCategoryStyles(contentInputs));
     }
 
     // Folds the sector-wide knobs into the global tier: the hatch over contested cells,
