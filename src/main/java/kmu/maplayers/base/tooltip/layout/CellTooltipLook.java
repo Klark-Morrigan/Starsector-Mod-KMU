@@ -2,6 +2,8 @@ package kmu.maplayers.base.tooltip.layout;
 
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.TextFace;
+import kmlib.starsector.ui.font.installed.InstalledFaces;
 import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipStyle;
 import kmlib.starsector.ui.render.gl.tooltip.TooltipLeaderLineStyle;
 import kmlib.starsector.ui.text.TextStyle;
@@ -32,7 +34,7 @@ final class CellTooltipLook {
     // The face the box ends its key hint in - the very one the game sets its own "Press F1 for more
     // info" line in, so a KM box tells the player about a key the way every vanilla box does. Its
     // narrowness is what sets the line apart from the body; the size is not, so it is drawn at the
-    // body's rather than at the atlas's own 12, which reads as fine print beside 15pt content.
+    // body's rather than at the atlas's own, which reads as fine print beside the body's content.
     private static final StarsectorFont FOOTNOTE_FONT = StarsectorFont.VANILLA_ORBITRON_12_CONDENSED;
 
     // The box's own look, handed to the tooltip widget as its style: a thin bright frame over a near
@@ -61,13 +63,15 @@ final class CellTooltipLook {
      *
      * <p>The heading and the body name no size: each face is a bitmap atlas crisp at exactly one size,
      * and the box has no fit of its own to squeeze text into, so a line speaking in the box's own voice
-     * takes the native size and is drawn 1:1 rather than scaled.
+     * takes the native size and is drawn 1:1 rather than scaled. That size is the installed atlas's own,
+     * read each paint, since a localised install carries a taller atlas under the same basename.
      *
      * <p>Two kinds of line are scaled off their atlas anyway, both knowingly. The note at the foot,
-     * because its atlas is rasterised at 12, which beside 15pt content reads as fine print rather than
-     * as a quieter line of the same box - it takes the body's size instead, and what sets it apart is
-     * its narrowness and its colours, neither of which costs it a size of its own. And any line standing
-     * under that voice, by the player's own step per level, which is the whole point of asking for it.
+     * because its atlas is rasterised small enough that beside the body it reads as fine print rather
+     * than as a quieter line of the same box - it takes the body's size instead, and what sets it apart
+     * is its narrowness and its colours, neither of which costs it a size of its own. And any line
+     * standing under that voice, by the player's own step per level, which is the whole point of asking
+     * for it.
      *
      * <p>How dense the box is set is read live rather than fixed here: a box lists as much as the
      * hovered system holds, so what reads comfortably on a two-colony system and what fits on screen for
@@ -82,14 +86,14 @@ final class CellTooltipLook {
      */
     static CursorTooltipStyle buildStyle() {
 
+        var bodyFace = InstalledFaces.createNativeFace(BODY_FONT);
+
         return CursorTooltipStyle.createStyle(
                 TooltipStyle
                     .createStyle(
-                        TextStyle.createStyle(HEADER_FONT),
-                        TextStyle.createStyle(BODY_FONT))
-                    .footnotedIn(TextStyle
-                        .createStyle(FOOTNOTE_FONT)
-                        .sizedAt(BODY_FONT.getNativeSize()))
+                        TextStyle.createStyle(InstalledFaces.createNativeFace(HEADER_FONT)),
+                        TextStyle.createStyle(bodyFace))
+                    .footnotedIn(TextStyle.createStyle(new TextFace(FOOTNOTE_FONT, bodyFace.size())))
                     .shrunkPerLevel(KmuMapTooltipSettings.getMapTooltipNestingLevelShrink())
                     .stackedAt(buildLineGaps()),
                 OPACITY,

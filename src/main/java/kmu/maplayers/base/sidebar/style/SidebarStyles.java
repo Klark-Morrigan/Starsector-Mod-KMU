@@ -4,6 +4,7 @@ import kmlib.starsector.ui.colour.AccentColours;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
+import kmlib.starsector.ui.font.installed.InstalledFaces;
 import kmlib.starsector.ui.render.gl.style.BoxColours;
 import kmlib.starsector.ui.render.gl.style.ControlHoverWash;
 import kmlib.starsector.ui.render.gl.style.ControlPressLight;
@@ -68,24 +69,19 @@ public final class SidebarStyles {
     private static final float STRIP_TAB_HEIGHT = 18f;
     private static final float STRIP_TAB_GAP = 1f;
 
-    // The strip reads in the condensed orbitron vanilla letters its own Sector/System map tabs in, at the
-    // size that atlas draws at. A condensed face is narrower per glyph than the title orbitron at the same
-    // height, and vanilla's tab box was sized against that width - so the face is what lets a label sit in
-    // a box built to vanilla's measure rather than one grown to fit the text. It travels inside the tab
-    // style, off which the layout's tab-face measurement is bound and from which the paint pass letters,
-    // so the width a tab is measured at is the width its text draws at.
-    private static final TextFace STRIP_FACE = new TextFace(
-        StarsectorFont.VANILLA_ORBITRON_12_CONDENSED,
-        StarsectorFont.VANILLA_ORBITRON_12_CONDENSED.getNativeSize());
+    // The strip reads in the condensed orbitron vanilla letters its own Sector/System map tabs in. A
+    // condensed face is narrower per glyph than the title orbitron at the same height, and vanilla's tab
+    // box was sized against that width - so the face is what lets a label sit in a box built to vanilla's
+    // measure rather than one grown to fit the text. It travels inside the tab style, off which the
+    // layout's tab-face measurement is bound and from which the paint pass letters, so the width a tab is
+    // measured at is the width its text draws at.
+    private static final StarsectorFont STRIP_FONT = StarsectorFont.VANILLA_ORBITRON_12_CONDENSED;
 
-    // The buttons read in the pixel face vanilla letters its own intel-screen map toggles in, at the size
-    // that atlas was drawn at: a bitmap face is crisp at one size only, and a row copying those buttons
-    // wants the same glyphs on the same grid rather than a scaled approximation of them. Its capitals
-    // come with the face - every glyph sits on one cell whatever case it is written in - so the labels
-    // need no upper-casing pass to match the row beside them.
-    private static final TextFace RAISED_BUTTON_FACE = new TextFace(
-        StarsectorFont.VANILLA_VICTOR_10,
-        StarsectorFont.VANILLA_VICTOR_10.getNativeSize());
+    // The buttons read in the pixel face vanilla letters its own intel-screen map toggles in: a row
+    // copying those buttons wants the same glyphs on the same grid rather than a scaled approximation of
+    // them. Its capitals come with the face - every glyph sits on one cell whatever case it is written in
+    // - so the labels need no upper-casing pass to match the row beside them.
+    private static final StarsectorFont RAISED_BUTTON_FONT = StarsectorFont.VANILLA_VICTOR_10;
 
     // Composes only; never instantiated.
     private SidebarStyles() {
@@ -309,11 +305,18 @@ public final class SidebarStyles {
     // so a row sharing one would letter itself unlike the very chrome it was drawn to match. It is the
     // one field both tiers read - the layout snaps a tab to it and the paint pass draws in it - so the
     // choice made here is what a tab is measured by as well as what it says.
+    //
+    // Drawn at the size the installed atlas states, read each time a style is composed: a bitmap face is
+    // crisp at one size only, both faces here are hard-edged pixel atlases that visibly blur at any other,
+    // and a localised install carries a taller atlas under the same basename than vanilla does.
     private static TextFace resolveTabFace(TabChrome chrome) {
-        return switch (chrome) {
-            case STRIP -> STRIP_FACE;
-            case RAISED_BUTTON -> RAISED_BUTTON_FACE;
+
+        var font = switch (chrome) {
+            case STRIP -> STRIP_FONT;
+            case RAISED_BUTTON -> RAISED_BUTTON_FONT;
         };
+
+        return InstalledFaces.createNativeFace(font);
     }
 
     // How a row marks the key it answers to, which the chrome decides for the same reason it decides

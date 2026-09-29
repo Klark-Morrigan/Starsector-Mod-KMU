@@ -461,17 +461,21 @@ Every face is named through KMLib's `StarsectorFont` enum rather than by atlas b
 
 ## Faces, rings and hotkeys
 
-The strip is lettered in `VANILLA_ORBITRON_20AA` scaled to the tab size,
+The strip is lettered in `VANILLA_ORBITRON_12_CONDENSED`,
 the face the vanilla tabs it sits beneath are set in;
-the buttons in `VANILLA_VICTOR_10` at that atlas's own size,
+the buttons in `VANILLA_VICTOR_10`,
 the pixel face the intel screen's map toggles are set in.
+Both are drawn at their installed atlas's own size,
+read off the loaded face each time a style is composed.
 A pixel face is crisp at one size only,
-so the button row takes its native 9 -
-the line height its atlas states,
+so the button row takes the line height its atlas states -
+9 on vanilla,
 not the 10 its name carries -
-rather than the strip's 15;
+rather than the strip's;
 scaled,
 it would read as a blurred copy of the row it was drawn to match.
+The size is read rather than written down
+because a localised install replaces both atlases under the same basenames with taller ones.
 Its capitals come with the atlas:
 every glyph sits on the same 5x5 cell with lowercase included and no descenders,
 so a mixed-case label needs no upper-casing pass

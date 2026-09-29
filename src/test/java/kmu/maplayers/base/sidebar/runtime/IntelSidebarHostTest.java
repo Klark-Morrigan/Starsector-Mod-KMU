@@ -13,6 +13,7 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayerScreenControls;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.sidebar.style.SidebarLookScope;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
 
@@ -197,21 +198,16 @@ final class IntelSidebarHostTest {
         // Held rather than opened per case in a try-with-resources, because every case here needs the
         // same live colours: the look is composed from several of them at once and reads them all
         // whichever field the case then asserts on.
-        private StarsectorUiColoursMock uiColoursMock;
-        private SidebarSettingsMock sidebarSettingsMock;
+        private SidebarLookScope lookScope;
 
         @BeforeEach
         void mockLiveColoursAndSettings() {
-
-            uiColoursMock = StarsectorUiColoursMock.install();
-            sidebarSettingsMock = SidebarSettingsMock.install();
+            lookScope = SidebarLookScope.openOnVanillaAtlases();
         }
 
         @AfterEach
         void closeLiveColoursAndSettings() {
-
-            sidebarSettingsMock.close();
-            uiColoursMock.close();
+            lookScope.close();
         }
 
         @Test
