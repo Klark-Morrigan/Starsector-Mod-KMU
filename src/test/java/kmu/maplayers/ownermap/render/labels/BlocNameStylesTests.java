@@ -1,59 +1,44 @@
 package kmu.maplayers.ownermap.render.labels;
 
+import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
-import kmu.settings.FactionPaletteChoice;
-import kmu.settings.KmuOwnerMapStyleSettings;
+import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins that each group's name styling threads its own two settings into its own slot. Both
- * groups hold the same shape - an outer-border colour choice and a name opacity - so a
- * crossed pair would still type-check and would only show as independent space's names
- * taking the core factions' shade in-game.
+ * Pins the name-style lookup: a category the layer styled answers its own style, and one it gave no
+ * style answers the style that draws nothing rather than borrowing another category's.
  */
 final class BlocNameStylesTests {
 
-    // Distinct sentinels so a slot fed from the wrong setting is caught by value.
-    private static final double FACTION_NAME_OPACITY = 0.25;
-    private static final double INDEPENDENT_NAME_OPACITY = 0.75;
+    private static final ElementStyle FACTION_NAME_STYLE =
+        new ElementStyle(FactionPaletteSlot.PRIMARY, 0.25);
 
     @Nested
-    class ReadFromLunaSettings {
+    class ResolveNameStyleOf {
 
         @Test
-        void threadsEachGroupsColourChoiceAndOpacityIntoItsOwnSlot() {
-            try (MockedStatic<KmuOwnerMapStyleSettings> settingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
+        void answersTheStyleTheLayerGaveTheCategory() {
 
-                settingsMock
-                    .when(KmuOwnerMapStyleSettings::getFactionOuterBorderColour)
-                    .thenReturn(FactionPaletteChoice.PRIMARY);
-                settingsMock
-                    .when(KmuOwnerMapStyleSettings::getFactionNameOpacity)
-                    .thenReturn(FACTION_NAME_OPACITY);
-                settingsMock
-                    .when(KmuOwnerMapStyleSettings::getIndependentOuterBorderColour)
-                    .thenReturn(FactionPaletteChoice.SECONDARY);
-                settingsMock
-                    .when(KmuOwnerMapStyleSettings::getIndependentNameOpacity)
-                    .thenReturn(INDEPENDENT_NAME_OPACITY);
+            var nameStyles = new BlocNameStyles(Map.of(OwnerMapCategory.FACTION, FACTION_NAME_STYLE));
 
-                var nameStyles = BlocNameStyles.readFromLunaSettings();
+            assertThat(nameStyles.resolveNameStyleOf(OwnerMapCategory.FACTION))
+                .isEqualTo(new ElementStyle(FactionPaletteSlot.PRIMARY, 0.25));
+        }
 
-                assertThat(nameStyles.factionNameStyle().colour())
-                    .isEqualTo(FactionPaletteSlot.PRIMARY);
-                assertThat(nameStyles.factionNameStyle().opacity())
-                    .isEqualTo(FACTION_NAME_OPACITY);
-                assertThat(nameStyles.independentNameStyle().colour())
-                    .isEqualTo(FactionPaletteSlot.SECONDARY);
-                assertThat(nameStyles.independentNameStyle().opacity())
-                    .isEqualTo(INDEPENDENT_NAME_OPACITY);
-            }
+        @Test
+        void answersNotDrawnForACategoryTheLayerGaveNoStyle() {
+
+            var nameStyles = new BlocNameStyles(Map.of(OwnerMapCategory.FACTION, FACTION_NAME_STYLE));
+
+            assertThat(nameStyles.resolveNameStyleOf(OwnerMapCategory.INDEPENDENT))
+                .isEqualTo(ElementStyle.NOT_DRAWN);
         }
     }
 }

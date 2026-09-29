@@ -1,7 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
 import kmlib.math.geometry.CornerRounding;
-import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.ShapedCell;
@@ -17,10 +16,14 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewGrouping;
+import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
 
 import org.junit.jupiter.api.Nested;
@@ -35,9 +38,7 @@ import java.util.Set;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins how one shaped cell is baked into its draw record: an owned cell threading its bloc's
@@ -58,20 +59,13 @@ import static org.mockito.Mockito.when;
  */
 final class PaintedCellBuilderTests {
 
-    // A view stub answering both per-bloc style seams with fixed values, so a test can prove
-    // whether the style resolver consulted the view (off filter) or bypassed it (under filter).
-    private static OwnerPaintedView buildViewMockDeciding(
-            boolean usesIndependentStyle,
+    // A reading answering both per-owner style questions with fixed values, so a case can prove
+    // whether the style resolver consulted the reading (off filter) or bypassed it (under filter).
+    private static OwnerReading buildReadingDeciding(
+            OwnerMapCategory category,
             ElementStyleAdjustment adjustment) {
 
-        var viewMock = mock(OwnerPaintedView.class);
-
-        when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
-            .thenReturn(usesIndependentStyle);
-        when(viewMock.resolveBlocStyleAdjustment(any(), any(), any()))
-            .thenReturn(adjustment);
-
-        return viewMock;
+        return OwnerReadingFake.createAnsweringNothing().withStyle(category, adjustment);
     }
 
     @Nested
@@ -109,7 +103,7 @@ final class PaintedCellBuilderTests {
         private static final double NO_CHAMFER = 0.0;
 
         private static final SystemOwner OWNER =
-            new SystemOwner("hegemony", OWNER_PRIMARY, OWNER_SECONDARY);
+            new SystemOwner("hegemony", new OwnerPalette(OWNER_PRIMARY, OWNER_SECONDARY));
 
         // Two systems the sector answers to one ID for - vanilla's own unnamed deep space, which
         // only their anchors tell apart - and the rival holding the second of them. Its seam shade
@@ -121,7 +115,7 @@ final class PaintedCellBuilderTests {
         private static final Color RIVAL_SECONDARY = Color.MAGENTA;
 
         private static final SystemOwner RIVAL_OWNER =
-            new SystemOwner("tritachyon", RIVAL_PRIMARY, RIVAL_SECONDARY);
+            new SystemOwner("tritachyon", new OwnerPalette(RIVAL_PRIMARY, RIVAL_SECONDARY));
 
         // An owned cell's fill and cluster border are per cluster (in StyledCluster),
         // so fill and outer are "No color" here and only inner - the interior seam -
@@ -143,7 +137,7 @@ final class PaintedCellBuilderTests {
         void appliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, false))),
+                buildDrawablesWith(buildReadingAdjusting(new ElementStyleAdjustment(0.5, false))),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
@@ -179,7 +173,7 @@ final class PaintedCellBuilderTests {
         void desaturatesToThePassPaletteAtFullOpacityWhenOnlyDesaturateIsSet() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(1.0, true))),
+                buildDrawablesWith(buildReadingAdjusting(new ElementStyleAdjustment(1.0, true))),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
@@ -193,7 +187,7 @@ final class PaintedCellBuilderTests {
         void mutesAndDesaturatesTogetherWhenBothAreSet() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, true))),
+                buildDrawablesWith(buildReadingAdjusting(new ElementStyleAdjustment(0.5, true))),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
@@ -207,7 +201,7 @@ final class PaintedCellBuilderTests {
         void leavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
+                buildDrawablesWith(buildReadingAdjusting(ElementStyleAdjustment.NONE)),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
@@ -224,7 +218,7 @@ final class PaintedCellBuilderTests {
             // does not draw is a fact about its type rather than a hidden paint a reader has to
             // spot - and the seams it does draw are all it carries.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
+                buildDrawablesWith(buildReadingAdjusting(ElementStyleAdjustment.NONE)),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
@@ -555,7 +549,7 @@ final class PaintedCellBuilderTests {
             // extent under the same gate that rounds a lone cell's: rounding it here would pull the
             // cell in from a frontier the cluster draws for it.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildRoundingDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
+                buildRoundingDrawablesWith(buildReadingAdjusting(ElementStyleAdjustment.NONE)),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
@@ -577,11 +571,10 @@ final class PaintedCellBuilderTests {
                 .isNull();
         }
 
-        // A view stub that paints in the full faction style (never independent) and
-        // returns the given adjustment for any bloc, so each test names only the
-        // adjustment it exercises.
-        private static OwnerPaintedView buildViewMockAdjusting(ElementStyleAdjustment adjustment) {
-            return buildViewMockDeciding(false, adjustment);
+        // A reading that places every owner in the full-strength category and returns the given
+        // adjustment for any owner, so each case names only the adjustment it exercises.
+        private static OwnerReading buildReadingAdjusting(ElementStyleAdjustment adjustment) {
+            return buildReadingDeciding(OwnerMapCategory.FACTION, adjustment);
         }
 
         // The unfiltered factionless backdrop under a chosen pair of factionless category styles,
@@ -645,17 +638,21 @@ final class PaintedCellBuilderTests {
         // The owned backdrop under that same rounding tier, for the case about what a fused cell
         // reports under the gate that reshapes a lone cell's ring - the one arrangement where the
         // two forms have to answer differently about the shape they were built from.
-        private static OwnerMapClusters buildRoundingDrawablesWith(OwnerPaintedView viewMock) {
+        private static OwnerMapClusters buildRoundingDrawablesWith(OwnerReading reading) {
 
             return new OwnerMapClusters(
                 SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()),
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         buildFactionlessTheme(STYLE, STYLE, buildRoundingGlobalStyle()),
-                        new FactionPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
-                        new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
-                    new ViewGrouping(viewMock, HolderGrouping.identity()),
+                        HolderCategories.INSTANCE,
+                        new OwnerPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
+                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                    new ViewReading(
+                        mock(OwnerPaintedView.class),
+                        reading,
+                        HolderGrouping.identity()),
                     ContentInputsFixtures.createInputsRecedingBehind(
                         null, // No bloc spotlighted.
                         ElementStyleAdjustment.NONE),
@@ -724,11 +721,13 @@ final class PaintedCellBuilderTests {
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         theme,
-                        new FactionPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
-                        new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
-                    new ViewGrouping(
-                        buildViewMockAdjusting(ElementStyleAdjustment.NONE),
+                        HolderCategories.INSTANCE,
+                        new OwnerPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
+                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                    new ViewReading(
+                        mock(OwnerPaintedView.class),
+                        buildReadingAdjusting(ElementStyleAdjustment.NONE),
                         HolderGrouping.identity()),
                     ContentInputsFixtures.createInputsRecedingBehind(selectedBlocId, recede),
                     Set.of(),
@@ -786,17 +785,17 @@ final class PaintedCellBuilderTests {
                     null, 1.0), 1.0);
         }
 
-        // An un-filtered pass over one owned system, styled by the given view stub - the backdrop
-        // the view-driven adjustment tests read.
-        private static OwnerMapClusters buildDrawablesWith(OwnerPaintedView viewMock) {
-            return buildDrawablesWith(viewMock, false, ElementStyleAdjustment.NONE);
+        // An un-filtered pass over one owned system, styled by the given reading - the backdrop the
+        // reading-driven adjustment cases read.
+        private static OwnerMapClusters buildDrawablesWith(OwnerReading reading) {
+            return buildDrawablesWith(reading, false, ElementStyleAdjustment.NONE);
         }
 
-        // A filtered pass whose recede is the given adjustment, backed by a view stub that would
-        // return the identity adjustment if consulted - so a recede in the output can only have
-        // come from the filter mode bypassing the view.
+        // A filtered pass whose recede is the given adjustment, backed by a reading that answers the
+        // identity adjustment - so a recede in the output can only have come from the filter's own
+        // recede.
         private static OwnerMapClusters buildFilteringDrawablesWith(ElementStyleAdjustment recede) {
-            return buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE), true, recede);
+            return buildDrawablesWith(buildReadingAdjusting(ElementStyleAdjustment.NONE), true, recede);
         }
 
         // The same backdrop holding the two systems that answer to one ID, each under its own
@@ -814,11 +813,13 @@ final class PaintedCellBuilderTests {
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         OwnerMapClusterFixtures.createRenderStyleForEveryCategory(STYLE),
+                        HolderCategories.INSTANCE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                        new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
-                    new ViewGrouping(
-                        buildViewMockAdjusting(ElementStyleAdjustment.NONE),
+                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                    new ViewReading(
+                        mock(OwnerPaintedView.class),
+                        buildReadingAdjusting(ElementStyleAdjustment.NONE),
                         HolderGrouping.identity()),
                     ContentInputsFixtures.createInputsRecedingBehind(
                         null, // No bloc spotlighted.
@@ -828,9 +829,9 @@ final class PaintedCellBuilderTests {
         }
 
         // The one owned system every adjustment test shares over a fixed style/palette backdrop;
-        // only the view stub, whether the pass filters, and the recede it applies vary.
+        // only the reading, whether the pass filters, and the recede it applies vary.
         private static OwnerMapClusters buildDrawablesWith(
-                OwnerPaintedView viewMock,
+                OwnerReading reading,
                 boolean isFiltering,
                 ElementStyleAdjustment recede) {
 
@@ -841,10 +842,14 @@ final class PaintedCellBuilderTests {
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         OwnerMapClusterFixtures.createRenderStyleForEveryCategory(STYLE),
+                        HolderCategories.INSTANCE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                        new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
-                    new ViewGrouping(viewMock, HolderGrouping.identity()),
+                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                    new ViewReading(
+                        mock(OwnerPaintedView.class),
+                        reading,
+                        HolderGrouping.identity()),
                     ContentInputsFixtures.createInputsRecedingBehind(
                         isFiltering ? "selected-bloc" : null,
                         recede),

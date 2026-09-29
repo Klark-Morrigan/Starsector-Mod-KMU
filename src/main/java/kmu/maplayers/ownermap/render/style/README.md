@@ -14,7 +14,7 @@ see the [mod README](../../../../../../../../README.md) for project context.
 ## Index
 
 - [Layout](#layout)
-- [The categories: how this map divides its cells](#the-categories-how-this-map-divides-its-cells)
+- [The categories: how a layer divides its cells](#the-categories-how-a-layer-divides-its-cells)
 - [The selections: which slot an element is pointed at](#the-selections-which-slot-an-element-is-pointed-at)
 - [The reader: the one seam](#the-reader-the-one-seam)
 - [The resolvers: choices into colours](#the-resolvers-choices-into-colours)
@@ -40,20 +40,34 @@ see the [mod README](../../../../../../../../README.md) for project context.
   one reader that populates the theme,
   and the resolvers that turn a selection plus a bloc's recede into concrete shades.
 
-## The categories: how this map divides its cells
+## The categories: how a layer divides its cells
 
-`OwnerMapCategory` is the four ways this map divides the sector -
+Which categories a map divides its cells into is the painting layer's declaration,
+`OwnerCategories`,
+and the tier never names one.
+It states only the roles a category plays:
+the categories and their styles,
+read once per rebuild;
+each owned category's name style;
+the *full-strength* category,
+whose fill opacity a desaturated owner holds;
+and the category an unowned cell falls to,
+settled or empty.
+Which category an owner draws in is the owner reading's answer rather than the declaration's,
+since it can depend on the snapshot the reading was taken over.
+The theme keys on the open `MapStyleCategory`,
+so a hazard or relay layer declares its own set alongside its own painting code.
+
+The layers painting holders share one declaration,
+`HolderCategories`,
+over the four `OwnerMapCategory` values -
 `FACTION`,
 `INDEPENDENT`,
 `DECIVILISED`,
 `UNINHABITED` -
-and the keys the theme's per-category bundles are held under.
-It lives here rather than in `base.theme`
-because dividing cells by *who holds them* is this layer's reading of the sector:
-the theme keys on the open `MapStyleCategory`,
-so a hazard or trade layer would declare its own set alongside its own painting code.
+with `FACTION` as full strength.
 An enum,
-so this side's own lookups stay a closed set the compiler checks.
+so the holder side's own lookups stay a closed set the compiler checks.
 
 Two of the four are owned and carry a full fill/border/seam style.
 The other two have no owner and so no faction palette to choose a shade from:
@@ -123,6 +137,9 @@ almost all of it out of LunaLib.
 A new knob is read here and lands on the matching theme record -
 never fetched ad hoc in a builder,
 which is what lets an incremental re-shape restyle against the same snapshot the full build used.
+It reads the global tier itself and asks the layer's declaration for the category styles;
+`HolderCategories` answers with the four holder bundles this reader's own per-category reads produce,
+since their knobs sit beside the global tier's.
 
 The single exception is whether the uninhabited outline draws at all:
 that is the overlay sidebar's checkbox
@@ -154,7 +171,14 @@ and every rule here stays pure over the shades it is handed.
   Stated over a palette rather than over an owner,
   so an ownerless cell recolours by the same rule a bloc does -
   and an ownerless cell gets that palette from `resolveNeutralPalette`,
-  the one statement of "no holder means the neutral colour in both slots".
+  the one statement of "no owner means the neutral colour in both slots".
+  Every palette here is an `OwnerPalette`,
+  the tier's pair of shades,
+  which names no faction:
+  a faction's authored pair is one source of it and nothing more.
+  The neutral an unowned cell paints in,
+  and the shades a receded owner sinks toward,
+  are the owner reading's answers rather than factions this package reads for itself.
 - `BlocPaletteReader` -
   the one live read among these,
   and a port rather than a rule:
@@ -163,20 +187,23 @@ and every rule here stays pure over the shades it is handed.
   Everything else here works over a palette it is handed,
   so anything keyed on a bloc rather than on a cell reads through this
   and brings the pair to `MapPalettes` to pick a slot.
-  `SectorBlocPalettes` is the live implementation,
+  `SectorBlocPalettes` is the live implementation for the layers painting holders,
   naming the bloc's colour faction through the pass's grouping -
   a group's bloc ID is synthetic and answers to no faction -
   and returning null for a bloc the sector can no longer name at all,
   which is what has a caller drop the bloc rather than paint it in a stand-in shade.
+  It is also where a faction's palette crosses into an `OwnerPalette`,
+  and where a holder source turns a bloc into a `SystemOwner`.
 - `OwnerStyleResolver` -
-  resolves the shared per-bloc decision
-  (independent-vs-faction style and the adjustment a bloc draws under) into a `OwnerStyleDecision`.
+  resolves the shared per-owner decision
+  (the category an owner draws in and the adjustment it draws under) into an `OwnerStyleDecision`,
+  off the owner reading - except the spotlit owner, which draws in the full-strength category.
 - `FactionlessStyleResolver` -
   the counterpart for a cell with no owner,
-  which has no bloc to carry a decision:
-  which factionless category it draws in,
+  which has no owner to carry a decision:
+  whether the cell is settled, which the layer's declaration turns into its category,
   and whether the pass's recede reaches it
-  (a settled cell yes, an uninhabited one no, and a settled one the spotlit bloc lives in no either).
+  (a settled cell yes, an empty one no, and a settled one the spotlit owner lives in no either).
   Classifies off the pass's inhabited-system set
   (`OwnerMapInhabitation.readInhabitedSystemKeys`) and its spotlit-presence set
   (`SpotlitBlocs.findPresentSystemKeys`),
@@ -185,11 +212,10 @@ and every rule here stays pure over the shades it is handed.
   so a cell drawn as uninhabited is never one the spotlight spared.
 - `OwnerStyling` -
   maps that decision onto the pass's actual theme,
-  giving the concrete bundle plus adjustment a bloc draws under.
+  giving the concrete bundle plus adjustment an owner draws under.
   It owns the one field that crosses between bundles:
-  a desaturated bloc's fill is held at the *faction* opacity,
+  a desaturated owner's fill is held at the *full-strength* category's opacity,
   so a desaturated surface reads as one uniform grey rather than splitting into two weights of empty.
-
 - `ResolvedBlocPaint` -
   carries that bundle and adjustment down to the shades,
   and is the one read every element is painted through:
@@ -224,18 +250,20 @@ and the rule for which factionless cells it reaches (`FactionlessStyleResolver`)
 
 A spotlight separates its subject from its backdrop with **two** palettes,
 both resolved once per pass by `MapPalettes` and both moving value alone:
-`resolveDesaturationPalette` sinks a receded bloc's Independent grey toward black by `desaturationDarkening`,
-and `resolvePresencePalette` lifts a spared factionless cell's neutral toward white by `presenceLightening`.
+`resolveDesaturationPalette` sinks the reading's recede shades toward black by `desaturationDarkening`,
+and `resolvePresencePalette` lifts a spared unowned cell's neutral toward white by `presenceLightening`.
 Either alone leaves the two too close to tell apart,
-because the neutral and the Independent grey start out the same grey -
+because on the layers painting holders the neutral and the recede shades -
+Independent's grey -
+start out the same grey,
 so a cell that is merely not receded sits exactly where the background began.
 The lift is a wash toward white on RGB,
 never a recolour:
 a spared cell has no holder to borrow a hue from,
 and one would state an ownership the layer sparing it is reporting it does not have.
 
-The *policy* of which bloc recedes
-and by how much lives one package up in `ownermap` (`RecedePreferences` and the views).
+The *policy* of which owner recedes is the owner reading's,
+and how far is the preferences' one package up in `ownermap` (`RecedePreferences` and the views' own backdrops).
 *Baking* the resolved style into the draw packets is [`render.clusters`](../clusters/README.md) -
 its `PaintedCellBuilder` and `ClusterGroupBuilder`.
 What makes the "once per map rebuild" above actually happen -

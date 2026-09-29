@@ -37,7 +37,9 @@ and they are not declared here.
 memberless,
 since a category is only ever looked up -
 and each layer declares its own constants of it beside the code that paints them;
-the owner-painted tier's four are `OwnerMapCategory` in [`ownermap.render.style`](../../ownermap/render/style/README.md).
+the owner-painted tier asks a layer for its own through `OwnerCategories`,
+and the layers painting holders answer with the four `OwnerMapCategory` values,
+both in [`ownermap.render.style`](../../ownermap/render/style/README.md).
 `RenderStyle` keys on the interface,
 so a layer whose cells divide some other way brings its own set
 rather than inheriting one tier's vocabulary of owners.
@@ -169,17 +171,18 @@ this tier owns only the shape and the combination rule.
 Nothing here reads a setting,
 resolves a colour,
 or names a category.
-*The categories themselves* are `OwnerMapCategory`,
+*The categories themselves* are declared by each owner-painted layer through `OwnerCategories`,
 *populating* these records from LunaLib is `RenderStyleReader`,
 and *turning a selection into a concrete shade* is `MapPalettes`,
 all three in [`ownermap.render.style`](../../ownermap/render/style/README.md).
 All three stay out of this package because all three belong to one way of painting,
 which is by owner:
-the four categories are a division of the cells by their owner,
+the categories are a division of the cells by their owner,
 the reader's knobs and its per-save uninhabited-outline preference are the owner-painted tier's,
-and the palettes resolve a bloc's recede.
+and the palettes resolve an owner's recede.
 They sit in `ownermap` rather than in any one layer for the same reason,
-since every owner-painted layer divides and shades its cells that way.
+since every owner-painted layer divides and shades its cells that way;
+the layers painting holders share the four `OwnerMapCategory` values there too.
 A layer that paints by something other than an owner would bring its own categories
 and its own reader rather than share those.
 

@@ -1,19 +1,21 @@
 package kmu.maplayers.ownermap.render.labels;
 
-import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewGrouping;
+import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,8 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
- * Pins the read that turns a finished build into the four values a label rebuild styles from.
- * The point of the type is that those four describe one pass, so every assertion here is an
+ * Pins the read that turns a finished build into the values a label rebuild styles from.
+ * The point of the type is that they describe one pass, so every assertion here is an
  * identity check against the clusters' own retained state rather than a value comparison:
  * a snapshot that copied or re-derived any of them could drift from the fills it must match.
  */
@@ -47,15 +49,14 @@ final class ClusterLabelStylingSnapshotTests {
                 buildCellKey("corvus"),
                 new SystemOwner(
                     SPOTLIT_BLOC_ID,
-                    Color.BLUE,
-                    Color.DARK_GRAY));
+                    new OwnerPalette(Color.BLUE, Color.DARK_GRAY)));
 
-            var desaturationPalette = new FactionPalette(Color.LIGHT_GRAY, Color.GRAY);
+            var desaturationPalette = new OwnerPalette(Color.LIGHT_GRAY, Color.GRAY);
 
             var clusters = buildClusters(
                 holderBySystemKey,
                 desaturationPalette,
-                buildViewGrouping(),
+                buildViewReading(),
                 buildSpotlightPicks());
 
             var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters);
@@ -71,22 +72,25 @@ final class ClusterLabelStylingSnapshotTests {
         }
 
         @Test
-        void carriesTheViewGroupingAndSampledPicksWhole() {
-            // Taken as the two retained records rather than unpacked and recombined, so the view a
-            // label is named under, the filter it recedes by and the format it is spelled in cannot
-            // come from two passes.
-            var viewGrouping = buildViewGrouping();
+        void carriesTheBuildsReadingCategoriesAndSampledPicksWhole() {
+            // Taken as the retained values rather than re-resolved, so the reading a label is named
+            // under, the categories its name style comes from, the filter it recedes by and the
+            // format it is spelled in cannot come from two passes.
+            var viewReading = buildViewReading();
             var contentInputs = buildSpotlightPicks();
 
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(
-                buildClusters(
-                    Map.of(),
-                    new FactionPalette(Color.GRAY, Color.GRAY),
-                    viewGrouping,
-                    contentInputs));
+            var clusters = buildClusters(
+                Map.of(),
+                new OwnerPalette(Color.GRAY, Color.GRAY),
+                viewReading,
+                contentInputs);
 
-            assertThat(styling.viewGrouping())
-                .isSameAs(viewGrouping);
+            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters);
+
+            assertThat(styling.reading())
+                .isSameAs(viewReading.reading());
+            assertThat(styling.categories())
+                .isSameAs(clusters.getBuildInputs().styling().categories());
             assertThat(styling.contentInputs())
                 .isSameAs(contentInputs);
         }
@@ -98,8 +102,8 @@ final class ClusterLabelStylingSnapshotTests {
             var styling = ClusterLabelStylingSnapshot.resolveFrom(
                 buildClusters(
                     Map.of(),
-                    new FactionPalette(Color.GRAY, Color.GRAY),
-                    buildViewGrouping(),
+                    new OwnerPalette(Color.GRAY, Color.GRAY),
+                    buildViewReading(),
                     ContentInputs.createEmpty()));
 
             assertThat(styling.contentInputs().isFiltering())
@@ -109,8 +113,8 @@ final class ClusterLabelStylingSnapshotTests {
 
     private static OwnerMapClusters buildClusters(
             Map<SystemKey, SystemOwner> holderBySystemKey,
-            FactionPalette desaturationPalette,
-            ViewGrouping viewGrouping,
+            OwnerPalette desaturationPalette,
+            ViewReading viewReading,
             ContentInputs contentInputs) {
 
         return new OwnerMapClusters(
@@ -118,19 +122,23 @@ final class ClusterLabelStylingSnapshotTests {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     null,
+                    HolderCategories.INSTANCE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     desaturationPalette,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-                viewGrouping,
+                viewReading,
                 contentInputs,
                 Set.of(),
                 Set.of()));
     }
 
-    // The view is a seam the snapshot only carries, so a mock stands in for whichever concrete
-    // view was being painted.
-    private static ViewGrouping buildViewGrouping() {
-        return new ViewGrouping(mock(OwnerPaintedView.class), HolderGrouping.identity());
+    // The view is a seam the snapshot never reads, so a mock stands in for whichever concrete view
+    // was being painted; the reading is the one it carries on.
+    private static ViewReading buildViewReading() {
+        return new ViewReading(
+            mock(OwnerPaintedView.class),
+            OwnerReadingFake.createAnsweringNothing(),
+            HolderGrouping.identity());
     }
 
     private static ContentInputs buildSpotlightPicks() {

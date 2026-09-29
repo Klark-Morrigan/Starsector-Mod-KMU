@@ -54,9 +54,9 @@ public record OwnerMapBuildInputs(
      *
      * <p>Each snapshot's own placeholder, named by the record that owns it, plus no reading, the
      * identity grouping and two empty sets. It carries the active view rather than naming a
-     * concrete one, keeping the model view-agnostic; nothing here is read, since the render path
-     * skips an empty overlay before it would reach any of it - which is what lets the reading be
-     * the honest null of a build that never resolved one.
+     * concrete one, keeping the model view-agnostic. The null reading is the honest record of a
+     * build that never resolved one, and {@link #wasBuilt()} is what every reader that would reach
+     * it asks first.
      *
      * @param view the view being drawn when the build failed
      * @return the placeholder inputs
@@ -68,6 +68,20 @@ public record OwnerMapBuildInputs(
             ContentInputs.createEmpty(),
             Set.of(),
             Set.of());
+    }
+
+    /**
+     * Whether a build actually ran under these inputs, rather than these being the placeholder a
+     * failed first build stands behind - which resolved no theme, no categories and no reading, so
+     * nothing may be styled, folded or coloured against it.
+     *
+     * <p>Asked of the reading rather than of any one drawn part, because a real build can draw
+     * nothing at all and still be one a later change may fold into.
+     *
+     * @return true for the inputs of a build that ran
+     */
+    public boolean wasBuilt() {
+        return viewReading.reading() != null;
     }
 
     /**

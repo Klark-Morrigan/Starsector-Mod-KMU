@@ -15,8 +15,9 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewGrouping;
+import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
@@ -25,6 +26,7 @@ import kmu.maplayers.ownermap.render.clusters.PaintedCellBuilder;
 import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
 
 import org.junit.jupiter.api.Nested;
@@ -158,10 +160,11 @@ final class OwnerMapHoverHighlightIntegrationTests {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     buildThemeRoundingBy(cornerRounding),
+                    HolderCategories.INSTANCE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-                new ViewGrouping(mock(OwnerPaintedView.class), HolderGrouping.identity()),
+                new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), HolderGrouping.identity()),
                 ContentInputs.createEmpty(),
                 Set.of(),
                 Set.of()));

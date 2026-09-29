@@ -158,10 +158,10 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
 
         // The placeholder a failed first build stands behind resolved no reading, and a bloc with no
         // reading to ask has no shade to burn.
-        var reading = clusters.getBuildInputs().viewReading().reading();
-        var palette = reading == null
-            ? null
-            : reading.resolvePalette(blocId);
+        var buildInputs = clusters.getBuildInputs();
+        var palette = buildInputs.wasBuilt()
+            ? buildInputs.viewReading().reading().resolvePalette(blocId)
+            : null;
 
         return palette == null
             ? null

@@ -4,13 +4,12 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.factions.FactionPalette;
-
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.ownermap.holding.BlocAffiliation;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.render.style.BlocPaletteReader;
 
 import java.awt.Color;
@@ -87,17 +86,17 @@ public final class RibbonPlanFixtures {
      */
     public static final BlocPaletteReader PALETTES = Map.of(
             HEGEMONY,
-            new FactionPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
+            new OwnerPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
             GROUP_BLOC_ID,
-            new FactionPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
+            new OwnerPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
             TRITACHYON,
-            new FactionPalette(TRITACHYON_BRIGHT, TRITACHYON_DARK),
+            new OwnerPalette(TRITACHYON_BRIGHT, TRITACHYON_DARK),
             PERSEAN,
-            new FactionPalette(PERSEAN_BRIGHT, PERSEAN_DARK),
+            new OwnerPalette(PERSEAN_BRIGHT, PERSEAN_DARK),
             DIKTAT,
-            new FactionPalette(DIKTAT_BRIGHT, DIKTAT_DARK),
+            new OwnerPalette(DIKTAT_BRIGHT, DIKTAT_DARK),
             NEUTRAL,
-            new FactionPalette(NEUTRAL_BRIGHT, NEUTRAL_DARK))
+            new OwnerPalette(NEUTRAL_BRIGHT, NEUTRAL_DARK))
         ::get;
 
     /**

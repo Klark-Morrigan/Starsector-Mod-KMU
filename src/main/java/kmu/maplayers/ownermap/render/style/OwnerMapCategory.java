@@ -4,16 +4,16 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 
 /**
- * The four categories an owner map divides its cells into, and the keys its
+ * The four categories a layer painting holders divides its cells into, and the keys its
  * per-category {@link CategoryStyle} bundles are held under. Two are owned (a coloured fill,
  * cluster border, and interior seams) and two are factionless (a neutral-coloured outline, and
  * a fill where a cell holds something): a bloc paints in {@link #FACTION} or, where it
  * recedes to independent-held space, {@link #INDEPENDENT}; a system with no holder draws in
  * {@link #DECIVILISED} when something stands there the layer's holding does not account for -
  * a revealed decivilised world, or a colony held by nobody this layer admits - and
- * {@link #UNINHABITED} when nothing stands there at all. Making the category a type (rather
- * than four hardcoded reader methods and four fields) lets the theme carry the four styles as
- * one keyed map the builders index.
+ * {@link #UNINHABITED} when nothing stands there at all. {@link HolderCategories} is the
+ * declaration that hands these four to the tier, which indexes the theme by whatever category
+ * a layer's declaration answers and never names one of these itself.
  *
  * <p>{@link #DECIVILISED} is named for one case it covers rather than for the whole of what it
  * covers, its bundle being the one the player configures under that name.
@@ -25,10 +25,10 @@ import kmu.maplayers.base.theme.MapStyleCategory;
  * is why the knob is not the same thing as zeroing this bundle's opacities: those reach all three
  * views at once, and this reaches one shape of colony.
  *
- * <p>Declared beside the layer that paints them rather than in the framework's theme: how the
- * a map divides into is the vocabulary of whoever is painting it, and the theme keys on the open
+ * <p>Declared beside the layers that paint them rather than in the framework's theme: how a map
+ * divides is the vocabulary of whoever is painting it, and the theme keys on the open
  * {@link MapStyleCategory} so a layer dividing the sector some other way brings its own set
- * instead of inheriting these four. An enum, so the layer side's own lookups over the
+ * instead of inheriting these four. An enum, so the holder side's own lookups over the
  * category stay a closed set the compiler checks.
  */
 public enum OwnerMapCategory implements MapStyleCategory {

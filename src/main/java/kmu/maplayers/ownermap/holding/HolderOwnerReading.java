@@ -1,10 +1,11 @@
 package kmu.maplayers.ownermap.holding;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.factions.FactionCrests;
+import kmlib.starsector.factions.FactionNameForm;
+import kmlib.starsector.factions.FactionNames;
 import kmlib.starsector.factions.StarsectorFactionColours;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -64,9 +65,10 @@ public final class HolderOwnerReading
         return palettes.readBlocPalette(ownerId);
     }
 
-    // A group reads by its own name; a lone faction by its own, in the player's chosen form, so a
-    // lone faction's label never drifts between the groupings it can be folded under. A faction
-    // that will not resolve carries no name.
+    // A group reads by its own name; a lone faction by its own, in the player's chosen form - its
+    // abbreviated display name for Short, its long-form title for Full - so a lone faction's label
+    // never drifts between the groupings it can be folded under. A faction that will not resolve
+    // carries no name, and a blank one is left for the caller to treat as unresolved.
     @Override
     public String resolveName(String ownerId, FactionNameFormatChoice nameFormat) {
 
@@ -79,9 +81,11 @@ public final class HolderOwnerReading
             ? null
             : sector.getFaction(ownerId);
 
-        return faction == null
-            ? null
-            : resolveFactionName(faction, nameFormat);
+        return FactionNames.resolveName(
+            faction,
+            nameFormat == FactionNameFormatChoice.SHORT
+                ? FactionNameForm.SHORT
+                : FactionNameForm.LONG);
     }
 
     // The colour faction's crest - a group's leading member, or a lone faction's own - so one lookup
@@ -146,20 +150,7 @@ public final class HolderOwnerReading
     @Override
     public OwnerPalette resolveRecedePalette() {
 
-        var independent = StarsectorFactionColours.resolvePalette(sector, Factions.INDEPENDENT);
-        return new OwnerPalette(independent.primaryColour(), independent.secondaryColour());
-    }
-
-    // The faction's name in the player's chosen format: the abbreviated display name for Short, the
-    // long-form title for Full (the default). getDisplayName is a faction's short name and
-    // getDisplayNameLong its full title; both may be blank, which the caller then treats as an
-    // unresolved name.
-    private static String resolveFactionName(
-            FactionAPI faction,
-            FactionNameFormatChoice nameFormat) {
-
-        return nameFormat == FactionNameFormatChoice.SHORT
-            ? faction.getDisplayName()
-            : faction.getDisplayNameLong();
+        return SectorBlocPalettes.adoptFactionPalette(
+            StarsectorFactionColours.resolvePalette(sector, Factions.INDEPENDENT));
     }
 }

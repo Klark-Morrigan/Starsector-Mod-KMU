@@ -12,6 +12,7 @@ import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.HolderResolution;
@@ -67,8 +68,8 @@ final class ClaimAugmentedHolderProviderTests {
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var heldHolder = new SystemOwner("hegemony", PRIMARY, SECONDARY);
-            var claimedHolder = new SystemOwner("tritachyon", PRIMARY, SECONDARY);
+            var heldHolder = new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
+            var claimedHolder = new SystemOwner("tritachyon", new OwnerPalette(PRIMARY, SECONDARY));
 
             when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
@@ -110,8 +111,8 @@ final class ClaimAugmentedHolderProviderTests {
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var heldHolder = new SystemOwner("hegemony", PRIMARY, SECONDARY);
-            var claimOverHeld = new SystemOwner("tritachyon", PRIMARY, SECONDARY);
+            var heldHolder = new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
+            var claimOverHeld = new SystemOwner("tritachyon", new OwnerPalette(PRIMARY, SECONDARY));
 
             when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
@@ -148,8 +149,8 @@ final class ClaimAugmentedHolderProviderTests {
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var spotlightHolder = new SystemOwner("$spotlit", PRIMARY, SECONDARY);
-            var plainClaimHolder = new SystemOwner("hegemony", PRIMARY, SECONDARY);
+            var spotlightHolder = new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY));
+            var plainClaimHolder = new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
 
             // The spotlit bloc holds a contested (hatched) system as well, so this pins that adding
             // its claim leaves that existing fill split untouched.
@@ -202,8 +203,8 @@ final class ClaimAugmentedHolderProviderTests {
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var spotlightHolder = new SystemOwner("$spotlit", PRIMARY, SECONDARY);
-            var rivalClaimHolder = new SystemOwner("tritachyon", PRIMARY, SECONDARY);
+            var spotlightHolder = new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY));
+            var rivalClaimHolder = new SystemOwner("tritachyon", new OwnerPalette(PRIMARY, SECONDARY));
 
             when(baseProviderMock.resolveHolder(pass, "hegemony"))
                 .thenReturn(

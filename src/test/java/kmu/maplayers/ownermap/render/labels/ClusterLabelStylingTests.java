@@ -1,13 +1,13 @@
 package kmu.maplayers.ownermap.render.labels;
 
-import kmlib.starsector.factions.FactionPalette;
-
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
+import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
 import kmu.maplayers.ownermap.render.style.OwnerStyleDecision;
 
 import org.junit.jupiter.api.Nested;
@@ -23,11 +23,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins what shade a cluster name draws in - the half of a label the owner map decides
- * before the placement search ever sees it. The rule is that a name inherits the outer border
- * of the group its bloc was classified into, resolved against the same palette the fill and
- * border read, so a name can never drift from the space it labels; these tests hold that
- * against each branch of the classification, each colour choice, and each recede. The name
- * half needs a view and a font, so it only resolves in-engine and is not covered here.
+ * before the placement search ever sees it. The rule is that a name takes the name style of
+ * the category its owner was placed in, resolved against the same palette the fill and border
+ * read, so a name can never drift from the space it labels; these tests hold that against each
+ * category, each colour choice, and each recede. The name half needs the label font, so it only
+ * resolves in-engine and is not covered here.
  */
 final class ClusterLabelStylingTests {
 
@@ -37,12 +37,12 @@ final class ClusterLabelStylingTests {
 
     // The bloc whose shades a resolved name should carry.
     private static final SystemOwner FACTION_F =
-        new SystemOwner("F", PRIMARY, SECONDARY);
+        new SystemOwner("F", new OwnerPalette(PRIMARY, SECONDARY));
 
     // A garish pair no test with an identity adjustment ever reads, so a name that
     // desaturated when it should not stands out.
-    private static final FactionPalette UNUSED_PALETTE =
-        new FactionPalette(Color.MAGENTA, Color.MAGENTA);
+    private static final OwnerPalette UNUSED_PALETTE =
+        new OwnerPalette(Color.MAGENTA, Color.MAGENTA);
 
     // Full opacity leaves scaleAlpha an identity, so the colour tests read the resolved shade
     // unfaded; the fade tests dim one group at a time.
@@ -53,16 +53,16 @@ final class ClusterLabelStylingTests {
     // branch it exercises.
     private static final OwnerStyleDecision FACTION_STYLED = buildFactionStyled(ElementStyleAdjustment.NONE);
     private static final OwnerStyleDecision INDEPENDENT_STYLED =
-        new OwnerStyleDecision(true, ElementStyleAdjustment.NONE);
+        new OwnerStyleDecision(OwnerMapCategory.INDEPENDENT, ElementStyleAdjustment.NONE);
 
     // A faction-styled bloc under a given recede, for the tests that vary the adjustment
     // rather than the classification.
     private static OwnerStyleDecision buildFactionStyled(ElementStyleAdjustment adjustment) {
-        return new OwnerStyleDecision(false, adjustment);
+        return new OwnerStyleDecision(OwnerMapCategory.FACTION, adjustment);
     }
 
-    // Both groups pointed at the same slot and opacity, so a test that varies neither reads
-    // one shade whichever branch the classification took.
+    // Both categories pointed at the same slot and opacity, so a test that varies neither reads
+    // one shade whichever category the owner was placed in.
     private static BlocNameStyles nameStyles(ElementPaintSelection factionOuterSelection) {
         return nameStyles(
             factionOuterSelection,
@@ -71,8 +71,8 @@ final class ClusterLabelStylingTests {
             FULL_OPACITY);
     }
 
-    // The two groups' styling spelled out in full, so a test can point the faction and
-    // independent branches at different slots or opacities and prove which one was read.
+    // The two categories' name styles spelled out in full, so a test can point the faction and
+    // independent categories at different slots or opacities and prove which one was read.
     // Takes the selections a style actually holds rather than the settings-side choices they
     // are stored as, so these tests pin the label rule and not the crossing between the two -
     // which FactionPaletteSlotTests owns. A null selection is a hidden element.
@@ -81,9 +81,11 @@ final class ClusterLabelStylingTests {
             ElementPaintSelection independentOuterSelection,
             double factionNameOpacity,
             double independentNameOpacity) {
-        return new BlocNameStyles(
+        return new BlocNameStyles(Map.of(
+            OwnerMapCategory.FACTION,
             new ElementStyle(factionOuterSelection, factionNameOpacity),
-            new ElementStyle(independentOuterSelection, independentNameOpacity));
+            OwnerMapCategory.INDEPENDENT,
+            new ElementStyle(independentOuterSelection, independentNameOpacity)));
     }
 
     @Nested
@@ -129,12 +131,11 @@ final class ClusterLabelStylingTests {
         }
 
         @Test
-        void followsTheIndependentOuterBorderWhenTheBlocIsIndependentStyled() {
-            // The classification, not a hardcoded independent-faction test, decides which
-            // outer-border choice the label follows. Classified independent-styled, the label
-            // inherits the independent choice (SECONDARY -> BLUE) even though the faction
-            // choice differs (PRIMARY) - the seam a view drives when it gives some blocs the
-            // independent style.
+        void followsTheNameStyleOfTheCategoryTheOwnerDrawsIn() {
+            // The category, not a hardcoded independent-faction test, decides which name style the
+            // label follows. Placed in the independent category, the label inherits its choice
+            // (SECONDARY -> BLUE) even though the faction choice differs (PRIMARY) - the seam a
+            // layer drives when it places some owners in a quieter category.
             var colour = ClusterLabelStyling.resolveLabelColour(
                 FACTION_F,
                 nameStyles(
@@ -150,7 +151,7 @@ final class ClusterLabelStylingTests {
 
         @Test
         void fadesAFactionNameByTheFactionNameOpacity() {
-            // A faction-styled bloc takes the faction group's name opacity: half fades the
+            // A faction-category owner takes the faction category's name opacity: half fades the
             // resolved PRIMARY shade's alpha to half, leaving its RGB (and the dot's) intact.
             var colour = ClusterLabelStyling.resolveLabelColour(
                 FACTION_F,
@@ -170,8 +171,8 @@ final class ClusterLabelStylingTests {
 
         @Test
         void leavesAFactionNameUntouchedByTheIndependentNameOpacity() {
-            // The independent group's opacity fades only independent names: a faction-styled
-            // bloc is unaffected even when independent opacity is dimmed, so the two groups
+            // The independent category's opacity fades only independent names: a faction-category
+            // owner is unaffected even when independent opacity is dimmed, so the two categories
             // fade independently.
             var colour = ClusterLabelStyling.resolveLabelColour(
                 FACTION_F,
@@ -187,8 +188,8 @@ final class ClusterLabelStylingTests {
         }
 
         @Test
-        void fadesAnIndependentStyledNameByTheIndependentNameOpacity() {
-            // An independent-styled bloc takes the independent group's opacity: half fades
+        void fadesAnIndependentNameByTheIndependentNameOpacity() {
+            // An independent-category owner takes the independent category's opacity: half fades
             // its resolved shade's alpha to half, while the faction opacity (full here) has
             // no say over it.
             var colour = ClusterLabelStyling.resolveLabelColour(
@@ -232,7 +233,7 @@ final class ClusterLabelStylingTests {
                 FACTION_F,
                 nameStyles(FactionPaletteSlot.PRIMARY),
                 buildFactionStyled(new ElementStyleAdjustment(FULL_OPACITY, true)),
-                new FactionPalette(Color.GREEN, Color.YELLOW));
+                new OwnerPalette(Color.GREEN, Color.YELLOW));
 
             assertThat(colour).isEqualTo(Color.GREEN);
         }
@@ -246,7 +247,7 @@ final class ClusterLabelStylingTests {
                 FACTION_F,
                 nameStyles(FactionPaletteSlot.PRIMARY),
                 FACTION_STYLED,
-                new FactionPalette(Color.GREEN, Color.YELLOW));
+                new OwnerPalette(Color.GREEN, Color.YELLOW));
 
             assertThat(colour).isEqualTo(PRIMARY);
         }
@@ -259,7 +260,7 @@ final class ClusterLabelStylingTests {
             // both mutes and desaturates, as a real filter recede can; the colour comparison reads
             // RGB, since the label additionally fades its alpha by the name opacity the fill omits.
             var recede = new ElementStyleAdjustment(HALF_OPACITY, true);
-            var desaturationPalette = new FactionPalette(Color.GREEN, Color.YELLOW);
+            var desaturationPalette = new OwnerPalette(Color.GREEN, Color.YELLOW);
 
             var labelColour = ClusterLabelStyling.resolveLabelColour(
                 FACTION_F,
@@ -291,7 +292,7 @@ final class ClusterLabelStylingTests {
         private static final Color OTHER_PRIMARY = Color.CYAN;
 
         private static final SystemOwner FACTION_G =
-            new SystemOwner("G", OTHER_PRIMARY, Color.DARK_GRAY);
+            new SystemOwner("G", new OwnerPalette(OTHER_PRIMARY, Color.DARK_GRAY));
 
         @Test
         void answersTheShadeOfTheBlocItIsAskedFor() {
@@ -300,7 +301,7 @@ final class ClusterLabelStylingTests {
             var resolver = ClusterLabelStyling.newLabelColourResolver(
                 Map.of(buildCellKey("alpha"), FACTION_F, buildCellKey("beta"), FACTION_G),
                 nameStyles(FactionPaletteSlot.PRIMARY),
-                blocId -> new OwnerStyleDecision(false, ElementStyleAdjustment.NONE),
+                blocId -> new OwnerStyleDecision(OwnerMapCategory.FACTION, ElementStyleAdjustment.NONE),
                 UNUSED_PALETTE);
 
             assertThat(resolver.apply("F")).isEqualTo(PRIMARY);
@@ -309,9 +310,9 @@ final class ClusterLabelStylingTests {
 
         @Test
         void appliesEachBlocsOwnStyleDecision() {
-            // The decision carries both halves the colour needs - which group's outer border
-            // to follow and how the bloc recedes - so a bloc classified independent takes the
-            // independent choice while its neighbour keeps the faction one.
+            // The decision carries both halves the colour needs - which category's name style to
+            // follow and how the owner recedes - so an owner placed in the independent category
+            // takes its choice while its neighbour keeps the faction one.
             var resolver = ClusterLabelStyling.newLabelColourResolver(
                 Map.of(buildCellKey("alpha"), FACTION_F, buildCellKey("beta"), FACTION_G),
                 nameStyles(
@@ -319,7 +320,9 @@ final class ClusterLabelStylingTests {
                     FactionPaletteSlot.SECONDARY,
                     FULL_OPACITY,
                     FULL_OPACITY),
-                blocId -> new OwnerStyleDecision("F".equals(blocId), ElementStyleAdjustment.NONE),
+                blocId -> new OwnerStyleDecision(
+                    "F".equals(blocId) ? OwnerMapCategory.INDEPENDENT : OwnerMapCategory.FACTION,
+                    ElementStyleAdjustment.NONE),
                 UNUSED_PALETTE);
 
             assertThat(resolver.apply("F")).isEqualTo(SECONDARY);
@@ -336,7 +339,7 @@ final class ClusterLabelStylingTests {
                 nameStyles(FactionPaletteSlot.PRIMARY),
                 blocId -> {
                     askedBlocIds.add(blocId);
-                    return new OwnerStyleDecision(false, ElementStyleAdjustment.NONE);
+                    return new OwnerStyleDecision(OwnerMapCategory.FACTION, ElementStyleAdjustment.NONE);
                 },
                 UNUSED_PALETTE);
 

@@ -14,11 +14,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins the cascade from a resolved style decision onto the pass's actual theme: which category
- * bundle a bloc paints from, and the one field that crosses between bundles - a desaturated
- * bloc's fill opacity, held at the faction weight so the desaturated surface reads uniform.
+ * bundle an owner paints from, and the one field that crosses between bundles - a desaturated
+ * owner's fill opacity, held at the weight of the category its layer declares full strength so the
+ * desaturated surface reads uniform.
  */
 final class OwnerStylingTests {
 
@@ -40,7 +43,8 @@ final class OwnerStylingTests {
 
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                new OwnerStyleDecision(false, ElementStyleAdjustment.NONE));
+                HolderCategories.INSTANCE,
+                new OwnerStyleDecision(OwnerMapCategory.FACTION, ElementStyleAdjustment.NONE));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(FACTION_FILL_OPACITY);
@@ -52,7 +56,8 @@ final class OwnerStylingTests {
             var adjustment = new ElementStyleAdjustment(0.5, true);
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                new OwnerStyleDecision(false, adjustment));
+                HolderCategories.INSTANCE,
+                new OwnerStyleDecision(OwnerMapCategory.FACTION, adjustment));
 
             assertThat(styling.adjustment())
                 .isEqualTo(adjustment);
@@ -64,7 +69,8 @@ final class OwnerStylingTests {
             // space still recedes behind a faction's fill.
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                new OwnerStyleDecision(true, ElementStyleAdjustment.NONE));
+                HolderCategories.INSTANCE,
+                new OwnerStyleDecision(OwnerMapCategory.INDEPENDENT, ElementStyleAdjustment.NONE));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(INDEPENDENT_FILL_OPACITY);
@@ -76,7 +82,8 @@ final class OwnerStylingTests {
             // surface reads uniform rather than splitting into two weights of grey.
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                new OwnerStyleDecision(true, new ElementStyleAdjustment(1.0, true)));
+                HolderCategories.INSTANCE,
+                new OwnerStyleDecision(OwnerMapCategory.INDEPENDENT, new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(FACTION_FILL_OPACITY);
@@ -88,8 +95,9 @@ final class OwnerStylingTests {
             // independent bundle's own choice.
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
+                HolderCategories.INSTANCE,
                 new OwnerStyleDecision(
-                    true, // Uses independent style.
+                    OwnerMapCategory.INDEPENDENT,
                     new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().colour())
@@ -102,14 +110,47 @@ final class OwnerStylingTests {
             // uniformity, so they survive the crossover untouched.
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
+                HolderCategories.INSTANCE,
                 new OwnerStyleDecision(
-                    true, // Uses independent style.
+                    OwnerMapCategory.INDEPENDENT,
                     new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().innerWidth())
                 .isEqualTo(INDEPENDENT_INNER_WIDTH);
             assertThat(styling.style().outer().opacity())
                 .isEqualTo(INDEPENDENT_OUTER_OPACITY);
+        }
+
+        @Test
+        void holdsTheFillAtTheCategoryTheLayerDeclaresFullStrength() {
+            // The weight a desaturated owner holds is whichever category its layer names as full
+            // strength, not a category the tier knows by name: declared the other way round, a
+            // faction-category owner takes the independent weight.
+            var categoriesMock = mock(OwnerCategories.class);
+            when(categoriesMock.resolveFullStrengthCategory())
+                .thenReturn(OwnerMapCategory.INDEPENDENT);
+
+            var styling = OwnerStyling.resolveFrom(
+                buildTheme(),
+                categoriesMock,
+                new OwnerStyleDecision(OwnerMapCategory.FACTION, new ElementStyleAdjustment(1.0, true)));
+
+            assertThat(styling.style().fill().opacity())
+                .isEqualTo(INDEPENDENT_FILL_OPACITY);
+        }
+
+        @Test
+        void keepsTheFullStrengthBundleWholeWhenItIsTheOneDesaturated() {
+
+            var styling = OwnerStyling.resolveFrom(
+                buildTheme(),
+                HolderCategories.INSTANCE,
+                new OwnerStyleDecision(OwnerMapCategory.FACTION, new ElementStyleAdjustment(1.0, true)));
+
+            assertThat(styling.style().fill().colour())
+                .isEqualTo(FactionPaletteSlot.PRIMARY);
+            assertThat(styling.style().fill().opacity())
+                .isEqualTo(FACTION_FILL_OPACITY);
         }
     }
 

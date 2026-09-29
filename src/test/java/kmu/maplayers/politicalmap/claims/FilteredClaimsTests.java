@@ -7,6 +7,7 @@ import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 
@@ -34,7 +35,7 @@ final class FilteredClaimsTests {
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
     private static final SystemOwner SPOTLIT_HOLDER =
-        new SystemOwner("$spotlit", PRIMARY, SECONDARY);
+        new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY));
 
     private static final SystemKey HEGEMONY_CLAIMED = buildCellKey("hegemony-claimed");
     private static final SystemKey RIVAL_CLAIMED = buildCellKey("rival-claimed");
@@ -45,8 +46,8 @@ final class FilteredClaimsTests {
 
         var claims = new LinkedHashMap<SystemKey, SystemOwner>();
 
-        claims.put(HEGEMONY_CLAIMED, new SystemOwner("hegemony", PRIMARY, SECONDARY));
-        claims.put(RIVAL_CLAIMED, new SystemOwner("tritachyon", PRIMARY, SECONDARY));
+        claims.put(HEGEMONY_CLAIMED, new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY)));
+        claims.put(RIVAL_CLAIMED, new SystemOwner("tritachyon", new OwnerPalette(PRIMARY, SECONDARY)));
 
         return claims;
     }

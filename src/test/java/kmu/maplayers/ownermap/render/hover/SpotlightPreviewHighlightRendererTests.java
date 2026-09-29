@@ -15,12 +15,14 @@ import kmu.maplayers.base.theme.HoverWashStyle;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.picker.BlocPickerRead;
 import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
-import kmu.starsector.StarsectorFactionFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,10 +44,10 @@ import static org.mockito.Mockito.when;
  * and the ways that comes to nothing. The emission itself is a static GL pass covered where it
  * lives; what is decided here is whether it is reached at all, and in whose colour.
  *
- * <p>The shade is asserted against the previewed bloc's own faction rather than against anything
- * the frame painted, which is the whole of what separates this from the cursor's highlight: the
- * cells lit for a bloc are not necessarily cells it holds, so a shade read off the cell under them
- * would answer in a rival's colour or in none.
+ * <p>The shade is asserted against the previewed bloc's own shades in the reading the frame was
+ * built under rather than against anything the frame painted, which is the whole of what separates
+ * this from the cursor's highlight: the cells lit for a bloc are not necessarily cells it holds, so
+ * a shade read off the cell under them would answer in a rival's colour or in none.
  */
 final class SpotlightPreviewHighlightRendererTests {
 
@@ -73,12 +75,14 @@ final class SpotlightPreviewHighlightRendererTests {
         HoverGlowStyle.NO_GLOW,
         new HoverWashStyle(0, 0, 0));
 
-    // The sector the previewed bloc's shade is read from, and the machinery installed on it - the
-    // one sector every case here previews over, since a preview is one sector's throughout.
-    private final SectorAPI sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(
-        BLOC_ID,
-        BLOC_BRIGHT_COLOUR,
-        BLOC_DARK_COLOUR);
+    // The reading the frame was built under, answering the previewed bloc's own shades.
+    private static final OwnerReading READING_SHADING_THE_BLOC = OwnerReadingFake
+        .createAnsweringNothing()
+        .withLooks(Map.of(BLOC_ID, new OwnerPalette(BLOC_BRIGHT_COLOUR, BLOC_DARK_COLOUR)), Map.of());
+
+    // The sector the picker's presence is read over, and the machinery installed on it - the one
+    // sector every case here previews over, since a preview is one sector's throughout.
+    private final SectorAPI sectorMock = mock(SectorAPI.class);
 
     private final SectorMapMachinery machinery = new SectorMapMachinery(sectorMock);
 
@@ -167,22 +171,32 @@ final class SpotlightPreviewHighlightRendererTests {
         }
 
         @Test
-        void lightsNothingWhenTheHoveredBlocsColourFactionIsGone() {
+        void lightsNothingWhenTheReadingHasNoShadesForTheHoveredBloc() {
             // The same answer the presence bands give such a bloc, and for the same reason: a bloc
-            // the sector can no longer name has no shade, and lighting its cells in a stand-in one
+            // the layer can no longer colour has no shade, and lighting its cells in a stand-in one
             // would put colour on the map for something the map cannot name.
-            var machineryWithoutTheFaction = new SectorMapMachinery(mock(SectorAPI.class));
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
+            hover(BLOC_ID);
 
-            FilterHoverSlot
-                .resolveHoverSlotIn(machineryWithoutTheFaction)
-                .recordHoveredId(createScopeOfView(VIEW_ID), BLOC_ID);
+            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+                .resolvePreviewPaint(buildFrameDrawing(
+                    view,
+                    PAINTING_TIER,
+                    OwnerReadingFake.createAnsweringNothing(),
+                    PRESENT_SYSTEM_ID));
 
-            var paint = new SpotlightPreviewHighlightRenderer(
-                    machineryWithoutTheFaction,
-                    LAYER_ID,
-                    KmuMod.MAP_STORE_NAMESPACE)
-                .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
+            assertThat(paint.isPainting())
+                .isFalse();
+        }
+
+        @Test
+        void lightsNothingOverThePlaceholderAFailedBuildStandsBehind() {
+            // The placeholder resolved no reading, so there is no shade to ask it for.
+            var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
+            hover(BLOC_ID);
+
+            var paint = new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE)
+                .resolvePreviewPaint(OwnerMapClusters.createEmpty(view));
 
             assertThat(paint.isPainting())
                 .isFalse();
@@ -229,11 +243,22 @@ final class SpotlightPreviewHighlightRendererTests {
             HoverHighlightStyle previewTier,
             String... drawnCellIds) {
 
+        return buildFrameDrawing(view, previewTier, READING_SHADING_THE_BLOC, drawnCellIds);
+    }
+
+    // The same frame built under a stated reading, for the case about a bloc it cannot colour.
+    private static OwnerMapClusters buildFrameDrawing(
+            OwnerPaintedView view,
+            HoverHighlightStyle previewTier,
+            OwnerReading reading,
+            String... drawnCellIds) {
+
         var clusters = OwnerMapClusterFixtures.createClustersThemedFor(
             view,
             new RenderStyle(
                 ThemeFixtures.createGlobalStylePreviewingWith(previewTier),
-                Map.of()));
+                Map.of()),
+            reading);
 
         for (var cellId : drawnCellIds) {
             clusters.getPaintedCells().putPaintedCell(

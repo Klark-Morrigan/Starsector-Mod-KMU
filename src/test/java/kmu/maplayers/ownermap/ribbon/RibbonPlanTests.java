@@ -1,8 +1,7 @@
 package kmu.maplayers.ownermap.ribbon;
 
-import kmlib.starsector.factions.FactionPalette;
-
 import kmu.maplayers.ownermap.holding.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -639,7 +638,7 @@ final class RibbonPlanTests {
 
         return new BlocPresence(
             blocId,
-            new FactionPalette(brightShade, darkShade),
+            new OwnerPalette(brightShade, darkShade),
             marketCount);
     }
 }

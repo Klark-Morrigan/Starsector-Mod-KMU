@@ -8,6 +8,7 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HoverGlowStyle;
+import kmu.maplayers.ownermap.ContentInputs;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuOwnerMapGeometrySettings;
 import kmu.settings.KmuOwnerMapHighlightSettings;
@@ -16,8 +17,13 @@ import kmu.settings.KmuOwnerMapStyleSettings;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins how the owner-map settings fold into one theme: each owned category threads its
@@ -25,8 +31,8 @@ import static org.mockito.Mockito.mockStatic;
  * opacity/width would show here), a factionless category collapses to neutral-colour elements
  * with no colour choice - a decivilised cell a fill plus an outline, an uninhabited cell an
  * outline whose on/off is the sidebar toggle - the {@link GlobalStyle} global tier gathers the
- * hatch, smoothing, desaturation and both highlight tiers, and {@code readRenderStyle} carries all
- * four categories plus the global tier as one snapshot.
+ * hatch, smoothing, desaturation and both highlight tiers, and {@code readRenderStyle} carries the
+ * categories the painting layer declares plus the global tier as one snapshot.
  *
  * <p>The two highlight tiers are the same record read out of two sets of getters, so every
  * stand-in below is distinct across both: a slot reading its counterpart in the other tier then
@@ -616,7 +622,7 @@ final class RenderStyleReaderTests {
     class ReadRenderStyle {
 
         @Test
-        void carriesTheGlobalTierAndAllFourCategories() {
+        void carriesTheGlobalTierAndTheCategoriesTheLayerDeclares() {
 
             try (var styleSettingsMock = mockStatic(KmuOwnerMapStyleSettings.class);
                     var geometrySettingsMock = mockStatic(KmuOwnerMapGeometrySettings.class);
@@ -626,22 +632,26 @@ final class RenderStyleReaderTests {
                     .when(KmuOwnerMapStyleSettings::getOwnerMapDesaturationDarkening)
                     .thenReturn(0.3);
 
-                // Every category getter can default here: the assertions below only check that
-                // each category slot is populated, not its values, so the uninhabited category's
-                // outline pick is stated as off. The two mocks nothing stubs stand in for the
-                // section classes the whole-theme read also reaches, a settings read outside them
-                // having no LunaLib to answer it.
-                var renderStyle = RenderStyleReader.readRenderStyle(false);
+                // One category the layer declares, so the theme can hold only what the declaration
+                // read. The two mocks nothing stubs stand in for the section classes the global tier
+                // also reaches, a settings read outside them having no LunaLib to answer it.
+                var declaredStyle = new CategoryStyle(
+                    new ElementStyle(FactionPaletteSlot.PRIMARY, FILL_OPACITY),
+                    ElementStyle.NOT_DRAWN,
+                    OUTER_WIDTH,
+                    ElementStyle.NOT_DRAWN,
+                    INNER_WIDTH);
+                var contentInputs = ContentInputs.createEmpty();
+                var categoriesMock = mock(OwnerCategories.class);
+                when(categoriesMock.readCategoryStyles(contentInputs))
+                    .thenReturn(Map.of(OwnerMapCategory.FACTION, declaredStyle));
 
-                assertThat(renderStyle.global())
-                    .isNotNull();
+                var renderStyle = RenderStyleReader.readRenderStyle(categoriesMock, contentInputs);
+
+                assertThat(renderStyle.global().desaturationDarkening())
+                    .isEqualTo(0.3);
                 assertThat(renderStyle.categories())
-                    .containsOnlyKeys(OwnerMapCategory.values());
-
-                for (var category : OwnerMapCategory.values()) {
-                    assertThat(renderStyle.categoryStyle(category))
-                        .isNotNull();
-                }
+                    .containsExactly(entry(OwnerMapCategory.FACTION, declaredStyle));
             }
         }
     }

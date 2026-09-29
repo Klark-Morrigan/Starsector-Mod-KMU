@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap.render.clusters;
 
-import kmlib.starsector.factions.FactionPalette;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,9 +29,10 @@ final class MapStylingTests {
             // colour is whichever slot you look at.
             var styling = new MapStyling(
                 null,
-                new FactionPalette(Color.CYAN, Color.CYAN),
-                new FactionPalette(Color.MAGENTA, Color.ORANGE),
-                new FactionPalette(Color.PINK, Color.WHITE));
+                HolderCategories.INSTANCE,
+                new OwnerPalette(Color.CYAN, Color.CYAN),
+                new OwnerPalette(Color.MAGENTA, Color.ORANGE),
+                new OwnerPalette(Color.PINK, Color.WHITE));
 
             assertThat(styling.readNeutralColour())
                 .isEqualTo(Color.CYAN);
@@ -42,9 +44,10 @@ final class MapStylingTests {
             // one would still compile and still answer a Color. Only distinct shades catch it.
             var styling = new MapStyling(
                 null,
-                new FactionPalette(Color.CYAN, Color.CYAN),
-                new FactionPalette(Color.MAGENTA, Color.ORANGE),
-                new FactionPalette(Color.PINK, Color.WHITE));
+                HolderCategories.INSTANCE,
+                new OwnerPalette(Color.CYAN, Color.CYAN),
+                new OwnerPalette(Color.MAGENTA, Color.ORANGE),
+                new OwnerPalette(Color.PINK, Color.WHITE));
 
             assertThat(styling.readNeutralColour())
                 .isNotEqualTo(Color.MAGENTA)
@@ -86,11 +89,11 @@ final class MapStylingTests {
             var placeholder = styling.readNeutralColour();
 
             assertThat(styling.neutralPalette())
-                .isEqualTo(new FactionPalette(placeholder, placeholder));
+                .isEqualTo(new OwnerPalette(placeholder, placeholder));
             assertThat(styling.desaturationPalette())
-                .isEqualTo(new FactionPalette(placeholder, placeholder));
+                .isEqualTo(new OwnerPalette(placeholder, placeholder));
             assertThat(styling.presencePalette())
-                .isEqualTo(new FactionPalette(placeholder, placeholder));
+                .isEqualTo(new OwnerPalette(placeholder, placeholder));
         }
     }
 }

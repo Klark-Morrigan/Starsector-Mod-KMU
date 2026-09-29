@@ -1,6 +1,5 @@
 package kmu.maplayers.ownermap.render.clusters;
 
-import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
@@ -16,11 +15,15 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewGrouping;
+import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
 
 import java.awt.Color;
@@ -57,20 +60,21 @@ public final class OwnerMapClusterFixtures {
 
     /**
      * That shade as the pair a factionless cell paints in - the neutral in both slots, since such a
-     * cell names no faction to take two shades from. Shared so a case that only needs an inert
+     * cell names no owner to take two shades from. Shared so a case that only needs an inert
      * palette says so by naming this rather than by spelling out a grey pair whose two equal slots
      * read as a choice somebody made.
      */
-    public static final FactionPalette NEUTRAL_PALETTE =
-        new FactionPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR);
+    public static final OwnerPalette NEUTRAL_PALETTE =
+        new OwnerPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR);
 
     // Fixtures only; never instantiated.
     private OwnerMapClusterFixtures() {
     }
 
     /**
-     * A clusters carrying the given holders and nothing else: empty draw lists, an inert theme
-     * and grouping, and no filter.
+     * A clusters carrying the given holders and nothing else: empty draw lists, an inert theme,
+     * the holder layers' categories, a reading placing every owner at full strength, and no
+     * filter.
      *
      * <p>The view is a Mockito mock rather than a concrete one so a test naming no view stays
      * agnostic about which exist - the model only carries it for an incremental re-shape to read
@@ -205,11 +209,13 @@ public final class OwnerMapClusterFixtures {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     null, // No render style.
+                    HolderCategories.INSTANCE,
                     NEUTRAL_PALETTE, // Neutral palette.
                     NEUTRAL_PALETTE, // Desaturation palette.
                     NEUTRAL_PALETTE), // Presence palette.
-                new ViewGrouping(
+                new ViewReading(
                     mockViewStandingNobodyTogether(),
+                    OwnerReadingFake.createAnsweringNothing(),
                     HolderGrouping.identity()),
                 contentInputs,
                 Set.of(), // No unfilled systems.
@@ -233,15 +239,33 @@ public final class OwnerMapClusterFixtures {
             OwnerPaintedView view,
             RenderStyle renderStyle) {
 
+        return createClustersThemedFor(view, renderStyle, OwnerReadingFake.createAnsweringNothing());
+    }
+
+    /**
+     * The same clusters built under a stated owner reading, for a suite whose subject is what that
+     * build's reading answers about an owner - its shades, above all.
+     *
+     * @param view        the view the build painted
+     * @param renderStyle the theme the build styled against
+     * @param reading     the owner reading the build retained
+     * @return a live clusters holding nobody, ready to have draw records written into it
+     */
+    public static OwnerMapClusters createClustersThemedFor(
+            OwnerPaintedView view,
+            RenderStyle renderStyle,
+            OwnerReading reading) {
+
         return new OwnerMapClusters(
             SystemOccupancy.createEmpty(),
             new OwnerMapBuildInputs(
                 new MapStyling(
                     renderStyle,
+                    HolderCategories.INSTANCE,
                     NEUTRAL_PALETTE, // Neutral palette.
                     NEUTRAL_PALETTE, // Desaturation palette.
                     NEUTRAL_PALETTE), // Presence palette.
-                new ViewGrouping(view, HolderGrouping.identity()),
+                new ViewReading(view, reading, HolderGrouping.identity()),
                 ContentInputs.createEmpty(),
                 Set.of(),
                 Set.of()));

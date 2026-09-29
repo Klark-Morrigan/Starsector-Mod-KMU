@@ -364,7 +364,7 @@ final class OwnerMapCacheTests {
 
         debugBuilderMock = seams.openSeam(DebugBorderTracingBuilder.class);
         debugBuilderMock
-            .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any(), any()))
+            .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any(), any(), any()))
             .thenReturn(debugOverlay);
 
         productionBuilderMock = seams.openSeam(OwnerMapBuilder.class);

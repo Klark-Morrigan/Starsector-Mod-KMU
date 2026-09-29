@@ -82,13 +82,13 @@ class FilteredPoliticsIntegrationTests {
             var filtered = resolveFor(sector, "hegemony");
             var holder = filtered.ownerBySystemKey().get(buildCellKey("owned-system"));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.factionId()))
+            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
                 .isTrue();
             assertThat(filtered.contestedSystemKeys())
                 .doesNotContain(buildCellKey("owned-system"));
-            assertThat(holder.primaryColour())
+            assertThat(holder.palette().primaryColour())
                 .isEqualTo(HEGEMONY_BRIGHT);
-            assertThat(holder.secondaryColour())
+            assertThat(holder.palette().secondaryColour())
                 .isEqualTo(buildDarkTheme(HEGEMONY_BRIGHT));
         }
 
@@ -108,13 +108,13 @@ class FilteredPoliticsIntegrationTests {
             var filtered = resolveFor(sector, "tritachyon");
             var holder = filtered.ownerBySystemKey().get(buildCellKey("owned-system"));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.factionId()))
+            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
                 .isTrue();
             assertThat(filtered.contestedSystemKeys())
                 .contains(buildCellKey("owned-system"));
-            assertThat(holder.primaryColour())
+            assertThat(holder.palette().primaryColour())
                 .isEqualTo(TRITACHYON_BRIGHT);
-            assertThat(holder.secondaryColour())
+            assertThat(holder.palette().secondaryColour())
                 .isEqualTo(buildDarkTheme(TRITACHYON_BRIGHT));
         }
 
@@ -133,13 +133,13 @@ class FilteredPoliticsIntegrationTests {
             var filtered = resolveFor(sector, "hegemony");
             var holder = filtered.ownerBySystemKey().get(buildCellKey("tritachyon-system"));
 
-            assertThat(holder.factionId())
+            assertThat(holder.ownerId())
                 .isEqualTo("tritachyon");
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.factionId()))
+            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
                 .isFalse();
             assertThat(filtered.contestedSystemKeys())
                 .doesNotContain(buildCellKey("tritachyon-system"));
-            assertThat(holder.primaryColour())
+            assertThat(holder.palette().primaryColour())
                 .isEqualTo(TRITACHYON_BRIGHT);
         }
 
@@ -160,8 +160,8 @@ class FilteredPoliticsIntegrationTests {
 
             var filtered = resolveFor(sector, "hegemony");
 
-            assertThat(filtered.ownerBySystemKey().get(buildCellKey("solid-system")).factionId())
-                .isEqualTo(filtered.ownerBySystemKey().get(buildCellKey("contested-system")).factionId());
+            assertThat(filtered.ownerBySystemKey().get(buildCellKey("solid-system")).ownerId())
+                .isEqualTo(filtered.ownerBySystemKey().get(buildCellKey("contested-system")).ownerId());
             assertThat(filtered.contestedSystemKeys())
                 .contains(buildCellKey("contested-system")).doesNotContain(buildCellKey("solid-system"));
         }
@@ -179,8 +179,8 @@ class FilteredPoliticsIntegrationTests {
 
             var filtered = resolveFor(sector, "hegemony");
 
-            assertThat(filtered.ownerBySystemKey().get(buildCellKey("system-a")).factionId())
-                .isEqualTo(filtered.ownerBySystemKey().get(buildCellKey("system-b")).factionId());
+            assertThat(filtered.ownerBySystemKey().get(buildCellKey("system-a")).ownerId())
+                .isEqualTo(filtered.ownerBySystemKey().get(buildCellKey("system-b")).ownerId());
             assertThat(filtered.contestedSystemKeys())
                 .isEmpty();
         }
@@ -211,9 +211,9 @@ class FilteredPoliticsIntegrationTests {
                 .ownerBySystemKey()
                 .get(buildCellKey("contested-system"));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.factionId()))
+            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
                 .isTrue();
-            assertThat(holder.primaryColour())
+            assertThat(holder.palette().primaryColour())
                 .isEqualTo(HEGEMONY_BRIGHT);
         }
 
@@ -234,7 +234,7 @@ class FilteredPoliticsIntegrationTests {
             var filtered = resolveFor(sector, "hegemony");
 
             assertThat(SpotlitBlocs.isSpotlitBloc(
-                    filtered.ownerBySystemKey().get(buildCellKey("salvage-system")).factionId()))
+                    filtered.ownerBySystemKey().get(buildCellKey("salvage-system")).ownerId()))
                 .isTrue();
             assertThat(filtered.contestedSystemKeys())
                 .doesNotContain(buildCellKey("salvage-system"));
@@ -252,11 +252,11 @@ class FilteredPoliticsIntegrationTests {
             var filtered = resolveFor(sector, "tritachyon");
             var holder = filtered.ownerBySystemKey().get(buildCellKey("owned-system"));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.factionId()))
+            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
                 .isTrue();
             assertThat(filtered.contestedSystemKeys())
                 .contains(buildCellKey("owned-system"));
-            assertThat(holder.primaryColour())
+            assertThat(holder.palette().primaryColour())
                 .isEqualTo(TRITACHYON_BRIGHT);
         }
 
@@ -276,7 +276,7 @@ class FilteredPoliticsIntegrationTests {
             var filtered = resolveFor(sector, "pirates");
             var holder = filtered.ownerBySystemKey().get(buildCellKey("haven"));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.factionId()))
+            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
                 .isTrue();
             assertThat(filtered.contestedSystemKeys())
                 .contains(buildCellKey("haven"));
@@ -309,13 +309,13 @@ class FilteredPoliticsIntegrationTests {
                     resolveFor(sector, "tritachyon")
                         .ownerBySystemKey()
                         .get(buildCellKey("owned-system"))
-                        .factionId()))
+                        .ownerId()))
                 .isFalse();
             assertThat(SpotlitBlocs.isSpotlitBloc(
                     resolveRevealedFor(sector, "tritachyon")
                         .ownerBySystemKey()
                         .get(buildCellKey("owned-system"))
-                        .factionId()))
+                        .ownerId()))
                 .isTrue();
         }
 

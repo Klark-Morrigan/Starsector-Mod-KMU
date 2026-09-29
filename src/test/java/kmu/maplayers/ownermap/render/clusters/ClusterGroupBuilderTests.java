@@ -1,6 +1,5 @@
 package kmu.maplayers.ownermap.render.clusters;
 
-import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -8,13 +7,15 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewGrouping;
+import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.settings.KmuMapLabelSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -36,7 +37,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -86,10 +86,10 @@ final class ClusterGroupBuilderTests {
     private static final Color OWNER_PRIMARY = Color.RED;
     private static final Color OWNER_SECONDARY = Color.BLUE;
     private static final SystemOwner HEGEMONY_OWNER =
-        new SystemOwner(HEGEMONY, OWNER_PRIMARY, OWNER_SECONDARY);
+        new SystemOwner(HEGEMONY, new OwnerPalette(OWNER_PRIMARY, OWNER_SECONDARY));
 
     private static final SystemOwner TRITACHYON_OWNER =
-        new SystemOwner(TRITACHYON, OWNER_PRIMARY, OWNER_SECONDARY);
+        new SystemOwner(TRITACHYON, new OwnerPalette(OWNER_PRIMARY, OWNER_SECONDARY));
 
     private static final double FILL_OPACITY = 0.5;
     private static final double BORDER_OPACITY = 0.25;
@@ -570,27 +570,19 @@ final class ClusterGroupBuilderTests {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     OwnerMapClusterFixtures.createRenderStyleForEveryCategory(style),
+                    HolderCategories.INSTANCE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                    new FactionPalette(Color.GREEN, Color.YELLOW),
+                    new OwnerPalette(Color.GREEN, Color.YELLOW),
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-                new ViewGrouping(buildViewMockAdjustingNothing(), HolderGrouping.identity()),
+                // A reading placing every owner at full strength and receding none of them, so the
+                // paints below come from the category style and the owner's palette alone.
+                new ViewReading(
+                    mock(OwnerPaintedView.class),
+                    OwnerReadingFake.createAnsweringNothing(),
+                    HolderGrouping.identity()),
                 ContentInputsFixtures.createInertInputs(),
                 Set.of(),
                 Set.of()));
-    }
-
-    // A view stub that styles every bloc as its own faction and recedes none of them, so the
-    // paints below come from the category style and the holder's palette alone.
-    private static OwnerPaintedView buildViewMockAdjustingNothing() {
-
-        var viewMock = mock(OwnerPaintedView.class);
-
-        when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
-            .thenReturn(false);
-        when(viewMock.resolveBlocStyleAdjustment(any(), any(), any()))
-            .thenReturn(ElementStyleAdjustment.NONE);
-
-        return viewMock;
     }
 
     // Fill and cluster border both drawn, each from a different palette slot so the two paints

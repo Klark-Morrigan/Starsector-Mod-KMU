@@ -114,9 +114,11 @@ not the bloc's colours -
 nobody holds the system on this layer,
 and its shades would state exactly the holding the view reports it does not have.
 The lift is what makes sparing the recede visible at all:
-the neutral a factionless cell paints in
+on the layers painting holders the neutral a factionless cell paints in
 and the Independent grey the background sinks from are the same grey,
 so a merely-unreceded cell sits at the value the background started at and reads as part of it.
+Both shades are the owner reading's answers,
+so a layer painting other owners brings its own pair.
 `desaturationDarkening` sinks the backdrop,
 `presenceLightening` raises the spared cell,
 and the pair is what separates them -
@@ -310,25 +312,32 @@ where a keyed one is a rule somebody has to keep true.
 
 Everything a rebuild retained to build under lives in its own record,
 reached through `getBuildInputs`:
-the `MapStyling` (the theme and the three factionless palettes),
-the `ViewGrouping` (the view and the grouping snapshot its holding was resolved under),
+the `MapStyling` (the theme, the layer's categories and the three factionless palettes),
+the `ViewReading` (the view, the owner reading it was styled and named by,
+and the grouping its holding was folded under),
 the `ContentInputs` it sampled,
 and the two sets the holding resolve derived about the fill -
 the unfilled systems and the contested ones.
+The grouping rides there for the incremental refresh alone,
+which reopens a per-system resolve under the fold it patches;
+nothing styles or names by it.
 
 They are one record because they are fixed together:
 set once when the build ends and read until the next one,
 where the occupancy beside them is folded per marked system.
 A reader takes the record and names which snapshot it reads -
 `styling()`,
-`viewGrouping()`,
+`viewReading()`,
 `contentInputs()` -
 rather than reaching one field of it through a flat getter on the built map,
-which would let a pass compose a cell out of one snapshot's theme and another's grouping without the type saying so.
+which would let a pass compose a cell out of one snapshot's theme and another's reading without the type saying so.
 `resolveBlocPaintOf` sits on the record for the same reason:
-it cascades the view, the grouping, the picks and the theme's shades into the one thing an element is painted from
+it cascades the reading, the categories, the picks and the theme's shades into the one thing an element is painted from
 (`ResolvedBlocPaint`, in [`render.style`](../style/README.md)),
 so it belongs to the type that holds all four.
+`wasBuilt` is the record's answer to whether a build ran under it at all:
+the placeholder a failed first build stands behind resolved no reading,
+so the incremental refresh and the picker preview ask it before reaching for one.
 The bundle-and-adjustment step behind it stays private:
 a caller wanting one is a caller about to paint an element with it,
 and resolving the shades separately is how a fill comes to be muted while the border beside it is not.

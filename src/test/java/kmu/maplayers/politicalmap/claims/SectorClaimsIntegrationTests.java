@@ -4,6 +4,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import org.junit.jupiter.api.Nested;
@@ -69,7 +70,7 @@ final class SectorClaimsIntegrationTests {
             assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     buildHolderPassOver(sectorMock), claimReaderFake))
                     .containsExactly(Map.entry(buildCellKey("claimed"),
-                            new SystemOwner("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                            new SystemOwner("hegemony", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)))));
         }
 
         @Test
@@ -89,7 +90,7 @@ final class SectorClaimsIntegrationTests {
             assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     HolderPass.over(sectorMock, UNDER_THE_FOG, grouping), claimReaderFake))
                     .containsExactly(Map.entry(buildCellKey("claimed"),
-                            new SystemOwner("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                            new SystemOwner("alliance-1", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)))));
         }
 
         @Test

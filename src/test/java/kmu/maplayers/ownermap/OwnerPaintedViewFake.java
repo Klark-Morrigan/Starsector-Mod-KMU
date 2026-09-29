@@ -3,11 +3,13 @@ package kmu.maplayers.ownermap;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
+import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
@@ -118,30 +120,16 @@ public final class OwnerPaintedViewFake implements OwnerPaintedView {
         return system -> RibbonPlan.NONE;
     }
 
+    // A reading naming blocs from the canned map, so a case reads a name it chose rather than one a
+    // faction lookup produced - null for an unknown bloc, the unresolved-name case the seam allows.
     @Override
-    public boolean shouldUseIndependentStyle(
-            String blocId,
-            HolderGrouping grouping,
-            ElementStyleAdjustment adjustment) {
-        return false;
+    public OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
+        return OwnerReadingFake.createNaming(nameByBlocId);
     }
 
+    // The holder layers' categories, which is what every view in the mod declares.
     @Override
-    public ElementStyleAdjustment resolveBlocStyleAdjustment(
-            String blocId,
-            HolderGrouping grouping,
-            ContentInputs contentInputs) {
-        return ElementStyleAdjustment.NONE;
-    }
-
-    // The canned label, so a test reads a name it chose rather than one a faction lookup produced.
-    // Returns null for an unknown bloc, the unresolved-name case the seam allows.
-    @Override
-    public String resolveName(
-            String blocId,
-            HolderGrouping grouping,
-            SectorAPI sector,
-            FactionNameFormatChoice nameFormat) {
-        return nameByBlocId.get(blocId);
+    public OwnerCategories resolveCategories() {
+        return HolderCategories.INSTANCE;
     }
 }

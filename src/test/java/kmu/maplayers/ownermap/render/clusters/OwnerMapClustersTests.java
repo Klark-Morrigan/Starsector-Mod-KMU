@@ -10,10 +10,13 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewGrouping;
+import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -83,7 +86,7 @@ final class OwnerMapClustersTests {
             // The placeholder inputs' own stand-ins are OwnerMapBuildInputs' to pin; read back
             // here only to prove the fallback carries the view it was built for, which is the one
             // thing about them a later frame reads.
-            assertThat(clusters.getBuildInputs().viewGrouping().view())
+            assertThat(clusters.getBuildInputs().viewReading().view())
                 .isSameAs(viewMock);
         }
     }
@@ -138,10 +141,11 @@ final class OwnerMapClustersTests {
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         renderStyle,
+                        HolderCategories.INSTANCE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-                    new ViewGrouping(mock(OwnerPaintedView.class), HolderGrouping.identity()),
+                    new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), HolderGrouping.identity()),
                     ContentInputs.createEmpty(),
                     Set.of(),
                     Set.of()));
@@ -390,7 +394,7 @@ final class OwnerMapClustersTests {
 
     // Clustering keys off the faction ID alone, so the palette shades are inert here.
     private static SystemOwner readOwnerOf(String factionId) {
-        return new SystemOwner(factionId, Color.GRAY, Color.GRAY);
+        return new SystemOwner(factionId, new OwnerPalette(Color.GRAY, Color.GRAY));
     }
 
     // Reindexes the clusters over the given adjacency, each cell drawing as its own star

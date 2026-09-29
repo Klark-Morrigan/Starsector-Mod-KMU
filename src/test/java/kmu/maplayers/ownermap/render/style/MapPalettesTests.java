@@ -1,14 +1,8 @@
 package kmu.maplayers.ownermap.render.style;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Factions;
-
-import kmlib.colour.Colours;
-import kmlib.starsector.factions.FactionPalette;
-
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import org.junit.jupiter.api.Nested;
@@ -17,8 +11,6 @@ import org.junit.jupiter.api.Test;
 import java.awt.Color;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins the shared palette resolution both the fills and the cluster-name labels read: the
@@ -33,7 +25,7 @@ final class MapPalettesTests {
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
 
-    private static final FactionPalette PALETTE = new FactionPalette(PRIMARY, SECONDARY);
+    private static final OwnerPalette PALETTE = new OwnerPalette(PRIMARY, SECONDARY);
 
     // A selection from no layer's option set, standing in for a second map layer's own options.
     // Not an enum, since the interface admits any implementation and a record proves the pick
@@ -105,7 +97,7 @@ final class MapPalettesTests {
         // the holder's own.
         private static final Color NEUTRAL = Color.GRAY;
         private static final SystemOwner OWNER =
-            new SystemOwner("hegemony", PRIMARY, SECONDARY);
+            new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
 
         @Test
         void returnsTheHoldersShadeForTheChoice() {
@@ -162,15 +154,15 @@ final class MapPalettesTests {
 
         // The pass's shared desaturation shades, distinct from every other colour here so a swap
         // to them is unmistakable.
-        private static final FactionPalette DESATURATION =
-            new FactionPalette(Color.GREEN, Color.YELLOW);
+        private static final OwnerPalette DESATURATION =
+            new OwnerPalette(Color.GREEN, Color.YELLOW);
 
         private static final SystemOwner OWNER =
-            new SystemOwner("hegemony", PRIMARY, SECONDARY);
+            new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
 
         // The one pair a factionless cell holds: neutral in both slots, since it names no faction.
-        private static final FactionPalette NEUTRAL_PAIR =
-            new FactionPalette(Color.GRAY, Color.GRAY);
+        private static final OwnerPalette NEUTRAL_PAIR =
+            new OwnerPalette(Color.GRAY, Color.GRAY);
 
         @Test
         void keepsTheHoldersOwnShadesWhenTheAdjustmentDoesNotDesaturate() {
@@ -228,56 +220,23 @@ final class MapPalettesTests {
     @Nested
     class ResolveDesaturationPalette {
 
-        // A sample darkening strength (30% removed); mirrored here so the expected shades are the
-        // Independent pair scaled to the same kept fraction the resolver applies.
-        private static final double DARKENING_STRENGTH = 0.3;
-        private static final float KEEP_FACTOR = (float) (1.0 - DARKENING_STRENGTH);
+        // Recede shades whose channels halve exactly, so the darkened pair is stated as literals.
+        private static final OwnerPalette RECEDE_PALETTE =
+            new OwnerPalette(new Color(200, 100, 50), new Color(100, 40, 20));
 
         @Test
-        void darkensTheIndependentFactionsOwnShades() {
-
-            var independentMock = mock(FactionAPI.class);
-
-            when(independentMock.getBrightUIColor())
-                .thenReturn(Color.GREEN);
-            when(independentMock.getDarkUIColor())
-                .thenReturn(Color.YELLOW);
-
-            var sectorMock = mock(SectorAPI.class);
-
-            when(sectorMock.getFaction(Factions.INDEPENDENT))
-                .thenReturn(independentMock);
-
-            var palette = MapPalettes.resolveDesaturationPalette(sectorMock, DARKENING_STRENGTH);
-
-            // The Independent pair, sunk toward black by the strength so the receded fills read
-            // behind genuine independent-held space rather than as it.
-            assertThat(palette)
-                .isEqualTo(new FactionPalette(
-                    Colours.darken(Color.GREEN, KEEP_FACTOR),
-                    Colours.darken(Color.YELLOW, KEEP_FACTOR)));
+        void darkensTheRecedeShades() {
+            // Half the brightness removed: the pair sinks toward black so the receded fills read
+            // behind the quieter owners' own space rather than as it.
+            assertThat(MapPalettes.resolveDesaturationPalette(RECEDE_PALETTE, 0.5))
+                .isEqualTo(new OwnerPalette(new Color(100, 50, 25), new Color(50, 20, 10)));
         }
 
         @Test
-        void leavesTheIndependentShadesUntouchedAtZeroStrength() {
-
-            var independentMock = mock(FactionAPI.class);
-
-            when(independentMock.getBrightUIColor())
-                .thenReturn(Color.GREEN);
-            when(independentMock.getDarkUIColor())
-                .thenReturn(Color.YELLOW);
-
-            var sectorMock = mock(SectorAPI.class);
-
-            when(sectorMock.getFaction(Factions.INDEPENDENT))
-                .thenReturn(independentMock);
-
-            // A strength of 0 keeps full brightness, so the target is the raw Independent pair.
-            var palette = MapPalettes.resolveDesaturationPalette(sectorMock, 0.0);
-
-            assertThat(palette)
-                .isEqualTo(new FactionPalette(Color.GREEN, Color.YELLOW));
+        void leavesTheRecedeShadesUntouchedAtZeroStrength() {
+            // A strength of 0 keeps full brightness, so the target is the raw recede pair.
+            assertThat(MapPalettes.resolveDesaturationPalette(RECEDE_PALETTE, 0.0))
+                .isEqualTo(new OwnerPalette(new Color(200, 100, 50), new Color(100, 40, 20)));
         }
     }
 
@@ -297,7 +256,7 @@ final class MapPalettesTests {
             var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 0.2);
 
             assertThat(palette)
-                .isEqualTo(new FactionPalette(
+                .isEqualTo(new OwnerPalette(
                     new Color(153, 153, 153),
                     new Color(153, 153, 153)));
         }
@@ -309,7 +268,7 @@ final class MapPalettesTests {
             var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 0.0);
 
             assertThat(palette)
-                .isEqualTo(new FactionPalette(NEUTRAL_GREY, NEUTRAL_GREY));
+                .isEqualTo(new OwnerPalette(NEUTRAL_GREY, NEUTRAL_GREY));
         }
 
         @Test
@@ -318,7 +277,7 @@ final class MapPalettesTests {
             var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 1.0);
 
             assertThat(palette)
-                .isEqualTo(new FactionPalette(Color.WHITE, Color.WHITE));
+                .isEqualTo(new OwnerPalette(Color.WHITE, Color.WHITE));
         }
     }
 }

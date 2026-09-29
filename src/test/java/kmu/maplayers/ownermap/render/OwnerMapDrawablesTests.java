@@ -9,15 +9,22 @@ import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
+import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
+import kmu.maplayers.ownermap.render.clusters.ResolvedHolding;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
+import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -168,7 +175,7 @@ final class OwnerMapDrawablesTests {
         private void traceBordersThrough(OwnerMapDrawables drawables) {
 
             seams.openSeam(DebugBorderTracingBuilder.class)
-                .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any(), any()))
+                .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any(), any(), any()))
                 .thenReturn(TRACED_OVERLAY);
 
             seams.openSeam(ClusterAnchorsBuilder.class);
@@ -185,6 +192,15 @@ final class OwnerMapDrawablesTests {
     @Nested
     class CanFoldHolderChanges {
 
+        // The builders a production rebuild drives, stood in for: what each builds is pinned where
+        // it lives, and all this asks is what the holder makes of a build that ran.
+        private final StaticSeams seams = new StaticSeams();
+
+        @AfterEach
+        void closeSeams() {
+            seams.closeEverySeam();
+        }
+
         @Test
         void refusesBeforeAnythingHasBeenBuilt() {
             // There is nothing to patch, so the frame's marks are drained and dropped rather than
@@ -199,10 +215,41 @@ final class OwnerMapDrawablesTests {
             // safe exactly while no spotlight has keyed the cells to something else.
             var drawables = new OwnerMapDrawables();
 
-            drawables.ensureClustersNonNull(viewMock);
+            buildProductionThrough(drawables, OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
 
             assertThat(drawables.canFoldHolderChanges())
                 .isTrue();
+        }
+
+        @Test
+        void refusesThePlaceholderAFailedBuildStandsBehind() {
+            // The placeholder resolved no theme, no categories and no reading, so a marked system
+            // folded into it would be styled against nothing at all.
+            var drawables = new OwnerMapDrawables();
+
+            drawables.ensureClustersNonNull(viewMock);
+
+            assertThat(drawables.canFoldHolderChanges())
+                .isFalse();
+        }
+
+        // Builds the production view over stood-in builders, the one handing back the given clusters.
+        private void buildProductionThrough(OwnerMapDrawables drawables, OwnerMapClusters clusters) {
+
+            seams.openSeam(OwnerMapBuilder.class)
+                .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()))
+                .thenReturn(clusters);
+            seams.openSeam(ClusterAnchorsBuilder.class);
+            seams.openSeam(CellRibbonsBaker.class)
+                .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any()))
+                .thenReturn(mock(CellRibbonsBaker.class));
+
+            drawables.rebuildClustersAndBands(
+                CELL_GEOMETRY,
+                mock(HolderPass.class),
+                viewMock,
+                ContentInputs.createEmpty(),
+                mock(ResolvedHolding.class));
         }
     }
 

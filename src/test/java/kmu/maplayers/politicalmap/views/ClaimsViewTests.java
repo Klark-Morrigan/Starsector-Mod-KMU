@@ -1,8 +1,6 @@
 package kmu.maplayers.politicalmap.views;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
@@ -22,11 +20,12 @@ import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.holding.BlocAffiliation;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
+import kmu.maplayers.ownermap.holding.HolderOwnerReading;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.picker.SelectableBloc;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
@@ -211,123 +210,25 @@ final class ClaimsViewTests {
     }
 
     @Nested
-    class ShouldUseIndependentStyle {
+    class ResolveOwnerReading {
 
         @Test
-        void isTrueForIndependentSpace() {
-            // Delegated to the faction view: an independent claimant recedes to the muted style like
-            // independent territory.
-            assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT,
-                    ANY_GROUPING,
-                    ElementStyleAdjustment.NONE))
-                .isTrue();
-        }
-
-        @Test
-        void isFalseForACoreFaction() {
-            // A held claimant faction paints in full faction style, exactly as the faction view draws
-            // it.
-            assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony",
-                    ANY_GROUPING,
-                    ElementStyleAdjustment.NONE))
-                .isFalse();
-        }
-
-        @Test
-        void forwardsTheAdjustmentToTheFactionView() {
-            // The adjustment argument must reach the delegate: a core faction the recede has
-            // desaturated takes the independent style, so passing a desaturating adjustment (rather
-            // than NONE) flips the result - pinning that the arg is forwarded, not dropped.
-            assertThat(ClaimsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony",
-                    ANY_GROUPING,
-                    new ElementStyleAdjustment(0.3, true)))
-                .isTrue();
+        void readsEachBlocOffTheFactionItPaintsAs() {
+            // The holder reading every layer painting holders shares, taken over the grouping the
+            // rebuild handed in - what it answers is pinned by that reading's own suite.
+            assertThat(ClaimsView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), HolderGrouping.identity()))
+                .isInstanceOf(HolderOwnerReading.class);
         }
     }
 
     @Nested
-    class ResolveBlocStyleAdjustment {
+    class ResolveCategories {
 
         @Test
-        void isNoneForAnyBloc() {
-            // The claims view adjusts no bloc, delegating the faction view's decision that a claimant
-            // and independent space alike draw exactly as classified.
-            assertThat(ClaimsView.INSTANCE.resolveBlocStyleAdjustment(
-                    "hegemony",
-                    ANY_GROUPING,
-                    RECEDING_INPUTS))
-                .isEqualTo(ElementStyleAdjustment.NONE);
-            assertThat(ClaimsView.INSTANCE.resolveBlocStyleAdjustment(
-                    Factions.INDEPENDENT,
-                    ANY_GROUPING,
-                    RECEDING_INPUTS))
-                .isEqualTo(ElementStyleAdjustment.NONE);
-        }
-    }
+        void declaresTheHolderCategories() {
 
-    @Nested
-    class ResolveName {
-
-        @Test
-        void readsTheClaimingFactionsOwnName() {
-            // A claim bloc ID is a plain faction ID, so the label is that faction's display name in
-            // the player's chosen form - resolved through the faction view.
-            var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
-
-            when(sectorMock.getFaction("hegemony"))
-                .thenReturn(factionMock);
-
-            when(factionMock.getDisplayNameLong())
-                .thenReturn("The Hegemony");
-
-            assertThat(ClaimsView.INSTANCE.resolveName(
-                    "hegemony",
-                    ANY_GROUPING,
-                    sectorMock,
-                    FactionNameFormatChoice.FULL))
-                .isEqualTo("The Hegemony");
-        }
-
-        @Test
-        void forwardsTheShortFormatToTheFactionView() {
-            // The name-format argument must reach the delegate too: Short reads the faction's short
-            // name rather than its long title, so asserting the short name pins that the format is
-            // forwarded rather than defaulted.
-            var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
-
-            when(sectorMock.getFaction("hegemony"))
-                .thenReturn(factionMock);
-
-            when(factionMock.getDisplayName())
-                .thenReturn("Hegemony");
-
-            assertThat(ClaimsView.INSTANCE.resolveName(
-                    "hegemony",
-                    ANY_GROUPING,
-                    sectorMock,
-                    FactionNameFormatChoice.SHORT))
-                .isEqualTo("Hegemony");
-        }
-
-        @Test
-        void isNullWhenTheFactionDoesNotResolve() {
-
-            var sectorMock = mock(SectorAPI.class);
-
-            when(sectorMock.getFaction("ghost"))
-                .thenReturn(null);
-
-            assertThat(ClaimsView.INSTANCE.resolveName(
-                    "ghost",
-                    ANY_GROUPING,
-                    sectorMock,
-                    FactionNameFormatChoice.FULL))
-                .isNull();
+            assertThat(ClaimsView.INSTANCE.resolveCategories())
+                .isSameAs(HolderCategories.INSTANCE);
         }
     }
 

@@ -217,7 +217,6 @@ public final class IncrementalOwnerRefreshTests {
                 .when(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     any(),
                     any(),
-                    any(),
                     any()))
                 .thenReturn(ClusterNameDisturbance.NONE);
 
@@ -301,7 +300,7 @@ public final class IncrementalOwnerRefreshTests {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
-            when(clusters.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
+            when(clusters.getBuildInputs().viewReading().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
@@ -337,7 +336,7 @@ public final class IncrementalOwnerRefreshTests {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
-            when(clusters.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
+            when(clusters.getBuildInputs().viewReading().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
@@ -369,7 +368,7 @@ public final class IncrementalOwnerRefreshTests {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
-            when(clusters.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
+            when(clusters.getBuildInputs().viewReading().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             settingsMock
@@ -415,7 +414,7 @@ public final class IncrementalOwnerRefreshTests {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
-            when(clusters.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
+            when(clusters.getBuildInputs().viewReading().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
@@ -447,7 +446,7 @@ public final class IncrementalOwnerRefreshTests {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
-            when(clusters.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
+            when(clusters.getBuildInputs().viewReading().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             settingsMock
@@ -755,7 +754,6 @@ public final class IncrementalOwnerRefreshTests {
                 .when(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     any(),
                     any(),
-                    any(),
                     any()))
                 .thenReturn(ClusterNameDisturbance.compareFittedNames(
                     List.of(),
@@ -846,7 +844,7 @@ public final class IncrementalOwnerRefreshTests {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(DISTANT_SYSTEM, new double[] {12000.0, 12000.0})));
 
-            when(clusters.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
+            when(clusters.getBuildInputs().viewReading().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
         }
 
@@ -871,7 +869,6 @@ public final class IncrementalOwnerRefreshTests {
                 () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     any(),
                     same(cellGeometry),
-                    any(),
                     any()));
         }
 
@@ -897,7 +894,6 @@ public final class IncrementalOwnerRefreshTests {
             anchorsMock.verify(
                 () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     same(standingAnchors),
-                    any(),
                     any(),
                     any()));
         }

@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.render.clusters;
 
 import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import org.junit.jupiter.api.Nested;
@@ -37,10 +38,10 @@ final class SystemOccupancyTests {
     private static final SystemKey PRESENT_SYSTEM = buildCellKey("present");
 
     private static final SystemOwner HEGEMONY =
-        new SystemOwner("hegemony", Color.GRAY, Color.GRAY);
+        new SystemOwner("hegemony", new OwnerPalette(Color.GRAY, Color.GRAY));
 
     private static final SystemOwner TRITACHYON =
-        new SystemOwner("tritachyon", Color.GRAY, Color.GRAY);
+        new SystemOwner("tritachyon", new OwnerPalette(Color.GRAY, Color.GRAY));
 
     // Two systems the sector answers to one ID for - vanilla's own unnamed deep space - which only
     // their anchors tell apart. The pair every fact here has to be able to hold two answers for.

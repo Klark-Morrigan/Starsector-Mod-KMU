@@ -3,7 +3,6 @@ package kmu.maplayers.ownermap.render.labels;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Segment;
-import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
@@ -25,17 +24,21 @@ import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewGrouping;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
+import kmu.maplayers.ownermap.render.style.OwnerCategories;
+import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
@@ -114,18 +117,18 @@ final class ClusterAnchorsBuilderTests {
     private static final Color HEGEMONY_PRIMARY = Color.RED;
     private static final Color TRITACHYON_PRIMARY = Color.CYAN;
     private static final SystemOwner HEGEMONY_HOLDER =
-        new SystemOwner(HEGEMONY, HEGEMONY_PRIMARY, Color.BLUE);
+        new SystemOwner(HEGEMONY, new OwnerPalette(HEGEMONY_PRIMARY, Color.BLUE));
     private static final SystemOwner TRITACHYON_HOLDER =
-        new SystemOwner(TRITACHYON, TRITACHYON_PRIMARY, Color.DARK_GRAY);
+        new SystemOwner(TRITACHYON, new OwnerPalette(TRITACHYON_PRIMARY, Color.DARK_GRAY));
 
     // The shades a receded bloc recolours to, garish so a label that kept its own colour through a
     // recede is unmistakable.
-    private static final FactionPalette DESATURATION_PALETTE =
-        new FactionPalette(Color.GREEN, Color.YELLOW);
+    private static final OwnerPalette DESATURATION_PALETTE =
+        new OwnerPalette(Color.GREEN, Color.YELLOW);
 
     // A palette no unfiltered case should ever reach for, for the same reason.
-    private static final FactionPalette UNUSED_PALETTE =
-        new FactionPalette(Color.MAGENTA, Color.MAGENTA);
+    private static final OwnerPalette UNUSED_PALETTE =
+        new OwnerPalette(Color.MAGENTA, Color.MAGENTA);
 
     // Full opacity throughout, so an asserted colour is the resolved shade itself rather than a
     // faded version of it; how a name fades is pinned by the styling's own suite.
@@ -154,15 +157,13 @@ final class ClusterAnchorsBuilderTests {
             new BandFitSpecification(0.0, 0.0, FINE_FONT_TOLERANCE),
             new NameFitSpecification(0.0, 2000.0, 1, 1.0));
 
-    // Both groups' names pointed at the bright primary shade at full opacity, so a label's colour
-    // reads back as the palette shade its bloc resolved to.
-    private static final BlocNameStyles NAME_STYLES = new BlocNameStyles(
-        new ElementStyle(
-            FactionPaletteSlot.PRIMARY,
-            FULL_OPACITY),
-        new ElementStyle(
-            FactionPaletteSlot.PRIMARY,
-            FULL_OPACITY));
+    // Both owned categories' names pointed at the bright primary shade at full opacity, so a
+    // label's colour reads back as the palette shade its owner resolved to.
+    private static final Map<MapStyleCategory, ElementStyle> NAME_STYLE_BY_CATEGORY = Map.of(
+        OwnerMapCategory.FACTION,
+        new ElementStyle(FactionPaletteSlot.PRIMARY, FULL_OPACITY),
+        OwnerMapCategory.INDEPENDENT,
+        new ElementStyle(FactionPaletteSlot.PRIMARY, FULL_OPACITY));
 
     // What every path here has to report having produced its list under: the stubbed tuning and
     // the revision it was handed. Named once because the point is that all four paths answer the
@@ -190,12 +191,13 @@ final class ClusterAnchorsBuilderTests {
         NEIGHBOUR_SYSTEM, new double[] {3000, 1000},
         RIVAL_SYSTEM, new double[] {21000, 1000}));
 
-    // The sector is never walked: the one question the rebuild asks of it - who holds what - is
-    // stubbed at the resolver, so this stands for the argument those stubs match on. The
-    // desaturation palette the debug path resolves does read it, and answers a neutral fallback.
+    // The sector is never walked: the one question the debug path asks of it - who holds what - is
+    // stubbed at the resolver, and the reading it is handed to is a canned one, so this stands for
+    // the argument those stubs match on.
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final CellGeometryCache geometryCacheMock = mock(CellGeometryCache.class);
     private final OwnerPaintedView viewMock = mock(OwnerPaintedView.class);
+    private final OwnerCategories categoriesMock = mock(OwnerCategories.class);
 
     // The cells every case hands over, carrying the revision they stand at. Paired once because
     // the two travel as one fact: a case that means to fit against geometry standing somewhere
@@ -214,7 +216,6 @@ final class ClusterAnchorsBuilderTests {
 
     private MockedStatic<KmuOwnerMapDiagnosticsSettings> settingsMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
-    private MockedStatic<BlocNameStyles> nameStylesMock;
     private MockedStatic<LabelFonts> fontsMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
     private HolderProviderFake holderProvider;
@@ -225,7 +226,6 @@ final class ClusterAnchorsBuilderTests {
 
         settingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class);
         specificationMock = mockStatic(LabelAnchorSpecification.class);
-        nameStylesMock = mockStatic(BlocNameStyles.class);
         fontsMock = mockStatic(LabelFonts.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
         visibilityRulesMock = mockStatic(MapVisibilityRules.class);
@@ -245,9 +245,10 @@ final class ClusterAnchorsBuilderTests {
         specificationMock
             .when(LabelAnchorSpecification::readFromLunaSettings)
             .thenReturn(ANCHOR_SPECIFICATION);
-        nameStylesMock
-            .when(BlocNameStyles::readFromLunaSettings)
-            .thenReturn(NAME_STYLES);
+        when(categoriesMock.readNameStyles())
+            .thenReturn(NAME_STYLE_BY_CATEGORY);
+        when(categoriesMock.resolveFullStrengthCategory())
+            .thenReturn(OwnerMapCategory.FACTION);
         styleReaderMock
             .when(RenderStyleReader::readGlobalStyle)
             .thenReturn(ThemeFixtures.createInertGlobalStyle());
@@ -265,12 +266,15 @@ final class ClusterAnchorsBuilderTests {
         useNameFormat(FactionNameFormatChoice.FULL);
         stubAnchorOverlay(false);
 
-        // A view that groups every faction as its own bloc and adjusts none of them, so a case's
-        // observed colour comes from the holder and the filter alone.
+        // A view that groups every faction as its own bloc, over a reading placing every owner at
+        // full strength and adjusting none, so a case's observed colour comes from the owner and
+        // the filter alone.
         when(viewMock.resolveGrouping())
             .thenReturn(HolderGrouping.identity());
-        when(viewMock.resolveBlocStyleAdjustment(any(), any(), any()))
-            .thenReturn(ElementStyleAdjustment.NONE);
+        when(viewMock.resolveOwnerReading(any(), any()))
+            .thenReturn(OwnerReadingFake.createAnsweringNothing());
+        when(viewMock.resolveCategories())
+            .thenReturn(categoriesMock);
 
         when(geometryCacheMock.getCellEdgesByCellKey())
             .thenReturn(EDGES);
@@ -286,7 +290,6 @@ final class ClusterAnchorsBuilderTests {
         visibilityRulesMock.close();
         styleReaderMock.close();
         fontsMock.close();
-        nameStylesMock.close();
         specificationMock.close();
         settingsMock.close();
     }
@@ -299,7 +302,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 buildUnfilteredStyling(Map.of(
                     HELD_SYSTEM,
                     HEGEMONY_HOLDER,
@@ -323,7 +325,6 @@ final class ClusterAnchorsBuilderTests {
                 .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
                     standingAnchors,
                     cellGeometry,
-                    sectorMock,
                     buildUnfilteredStyling(Map.of(
                         HELD_SYSTEM,
                         HEGEMONY_HOLDER,
@@ -345,7 +346,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 buildUnfilteredStyling(Map.of(
                     HELD_SYSTEM,
                     HEGEMONY_HOLDER,
@@ -371,11 +371,11 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 new ClusterLabelStylingSnapshot(
                     Map.of(buildCellKey(RIVAL_SYSTEM), TRITACHYON_HOLDER),
                     DESATURATION_PALETTE,
-                    new ViewGrouping(viewMock, HolderGrouping.identity()),
+                    categoriesMock,
+                    OwnerReadingFake.createAnsweringNothing(),
                     buildSpotlitPicksDrawingNames(
                         HEGEMONY,
                         new ElementStyleAdjustment(FULL_OPACITY, true))));
@@ -395,7 +395,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
@@ -411,7 +410,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
@@ -429,7 +427,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
@@ -445,7 +442,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getFitFingerprint())
@@ -469,7 +465,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 styling);
 
             var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
@@ -482,7 +477,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 styling);
 
             assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
@@ -505,7 +499,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 styling);
 
             var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
@@ -513,7 +506,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 new RevisedCellGeometry(geometryCacheMock, MOVED_GEOMETRY_REVISION),
-                sectorMock,
                 styling);
 
             assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
@@ -533,7 +525,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
 
             assertThat(standingAnchors.getAnchors())
@@ -557,7 +548,6 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 styling);
 
             // Guarded, because a pass that fitted nothing would leave two empty lists to compare
@@ -566,7 +556,7 @@ final class ClusterAnchorsBuilderTests {
                 .isNotEmpty();
 
             assertThat(ClusterAnchorsBuilder
-                    .rebuildClusterAnchors(standingAnchors, cellGeometry, sectorMock, styling)
+                    .rebuildClusterAnchors(standingAnchors, cellGeometry, styling)
                     .isDisturbingNothing())
                 .isTrue();
         }
@@ -585,7 +575,6 @@ final class ClusterAnchorsBuilderTests {
                     .rebuildClusterAnchors(
                         standingAnchors,
                         cellGeometry,
-                        sectorMock,
                         buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)))
                     .isDisturbingNothing())
                 .isFalse();
@@ -762,14 +751,15 @@ final class ClusterAnchorsBuilderTests {
         }
     }
 
-    // The styling one unfiltered pass resolves: the given holders under the identity grouping,
-    // with a palette nothing should recolour to since no bloc recedes off filter.
+    // The styling one unfiltered pass resolves: the given owners under a reading placing all of them
+    // at full strength, with a palette nothing should recolour to since no owner recedes off filter.
     private ClusterLabelStylingSnapshot buildUnfilteredStyling(
             Map<String, SystemOwner> holderBySystemId) {
         return new ClusterLabelStylingSnapshot(
             buildKeyedValues(holderBySystemId),
             UNUSED_PALETTE,
-            new ViewGrouping(viewMock, HolderGrouping.identity()),
+            categoriesMock,
+            OwnerReadingFake.createAnsweringNothing(),
             contentInputs);
     }
 

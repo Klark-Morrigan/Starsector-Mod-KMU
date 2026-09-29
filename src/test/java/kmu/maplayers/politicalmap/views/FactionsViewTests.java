@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.views;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
@@ -16,11 +15,12 @@ import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.holding.BlocAffiliation;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
+import kmu.maplayers.ownermap.holding.HolderOwnerReading;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.picker.SelectableBloc;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
@@ -199,123 +199,25 @@ final class FactionsViewTests {
     }
 
     @Nested
-    class ShouldUseIndependentStyle {
+    class ResolveOwnerReading {
 
         @Test
-        void isTrueForIndependentSpace() {
-            assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT,
-                    ANY_GROUPING,
-                    ElementStyleAdjustment.NONE))
-                .isTrue();
-        }
-
-        @Test
-        void isFalseForACoreFaction() {
-            assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony",
-                    ANY_GROUPING,
-                    ElementStyleAdjustment.NONE))
-                .isFalse();
-        }
-
-        @Test
-        void isTrueForACoreFactionWhenDesaturated() {
-            // A faction the filter recede has desaturated reads as backdrop, so it takes
-            // the independent borders and seams paired with the desaturation palette - the same
-            // classification the alliances view makes for a desaturated non-allied bloc.
-            assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony",
-                    ANY_GROUPING,
-                    new ElementStyleAdjustment(0.3, true)))
-                .isTrue();
-        }
-
-        @Test
-        void isFalseForACoreFactionWhenOnlyMuted() {
-            // Muting dims a bloc but does not desaturate it, so a merely muted faction keeps its
-            // faction bundle: dimming alone never swaps border weight or the palette slot.
-            assertThat(FactionsView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony",
-                    ANY_GROUPING,
-                    new ElementStyleAdjustment(0.3, false)))
-                .isFalse();
+        void readsEachBlocOffTheFactionItPaintsAs() {
+            // The holder reading every layer painting holders shares, taken over the grouping the
+            // rebuild handed in - what it answers is pinned by that reading's own suite.
+            assertThat(FactionsView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), HolderGrouping.identity()))
+                .isInstanceOf(HolderOwnerReading.class);
         }
     }
 
     @Nested
-    class ResolveBlocStyleAdjustment {
+    class ResolveCategories {
 
         @Test
-        void isNoneForAnyBloc() {
-            // The faction view adjusts no bloc - a core faction and independent space alike
-            // draw exactly as classified, so the pipeline has nothing to dim or recolour.
-            assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment(
-                    "hegemony",
-                    ANY_GROUPING,
-                    RECEDING_INPUTS))
-                .isEqualTo(ElementStyleAdjustment.NONE);
+        void declaresTheHolderCategories() {
 
-            assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment(
-                    Factions.INDEPENDENT,
-                    ANY_GROUPING,
-                    RECEDING_INPUTS))
-                .isEqualTo(ElementStyleAdjustment.NONE);
-        }
-    }
-
-    @Nested
-    class ResolveName {
-
-        @Test
-        void readsTheLongNameForTheFullFormat() {
-
-            var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
-
-            when(sectorMock.getFaction("hegemony"))
-                .thenReturn(factionMock);
-            when(factionMock.getDisplayNameLong())
-                .thenReturn("The Hegemony");
-
-            assertThat(FactionsView.INSTANCE.resolveName(
-                    "hegemony",
-                    ANY_GROUPING,
-                    sectorMock,
-                    FactionNameFormatChoice.FULL))
-                .isEqualTo("The Hegemony");
-        }
-
-        @Test
-        void readsTheShortNameForTheShortFormat() {
-
-            var sectorMock = mock(SectorAPI.class);
-
-            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
-
-            assertThat(FactionsView.INSTANCE.resolveName(
-                    "hegemony",
-                    ANY_GROUPING,
-                    sectorMock,
-                    FactionNameFormatChoice.SHORT))
-                .isEqualTo("Hegemony");
-        }
-
-        @Test
-        void isNullWhenTheFactionDoesNotResolve() {
-            // A bloc ID with no faction behind it carries no name; the label fit then sizes
-            // its stand-in band instead of drawing a name.
-            var sectorMock = mock(SectorAPI.class);
-
-            when(sectorMock.getFaction("ghost"))
-                .thenReturn(null);
-
-            assertThat(FactionsView.INSTANCE.resolveName(
-                    "ghost",
-                    ANY_GROUPING,
-                    sectorMock,
-                    FactionNameFormatChoice.FULL))
-                .isNull();
+            assertThat(FactionsView.INSTANCE.resolveCategories())
+                .isSameAs(HolderCategories.INSTANCE);
         }
     }
 
