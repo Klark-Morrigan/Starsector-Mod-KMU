@@ -112,8 +112,8 @@ none of it reaches the other.
 The rule is written here rather than left as a property of the current code
 because a layer built from a spec depends on it:
 a spec that wired a process-wide holder would hand every layer built from it the same one.
-The gate is `OwnerMapStaticStateIntegrationTests`,
-which fails on any static field under this package that is not final.
+`OwnerMapStaticStateIntegrationTests` holds the rule,
+failing on any static field under this package that is not final.
 
 ## The arrow
 
