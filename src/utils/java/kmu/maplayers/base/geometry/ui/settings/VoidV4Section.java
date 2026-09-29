@@ -44,10 +44,6 @@ final class VoidV4Section extends PanelSection {
     // separate to see.
     private static final String THIN_LAKE_BRIDGES = "shouldThinLakeBridgesV4";
 
-    // How deep a rule of one substep sits: a level under that substep's switch, so it folds
-    // away with the substep it governs. The root, a tier and a substep are the three above it.
-    private static final int SUBSTEP_RULE_DEPTH = 3;
-
     // Not a layer, so not in the roll-up above it: it changes how the pieces are drawn rather
     // than whether they are, and a roll-up that turned it on with the layers would claim to have
     // switched on something there is no separate thing to see.
@@ -93,30 +89,30 @@ final class VoidV4Section extends PanelSection {
         controls.add(ToggleTree.buildToggleTree(
             refreshes::refreshVoidV4,
             ToggleTree.Row.ofRollUp(
-                0, "allVoidV4Layers", "Every v4 layer",
+                TreeDepths.ROOT, "allVoidV4Layers", "Every v4 layer",
                 VOID_PIECES, LAKE_COAST, LAKE_BRIDGES, LANDABLE_FRONTAGE),
-            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.BRANCH, new ToggleTree.Switch(
                 VOID_PIECES,
                 "Pieces",
                 true,
                 on -> settings.showVoidPiecesV4 = on)),
-            ToggleTree.Row.ofRollUp(1, LAKES_BRANCH, "Lakes", LAKE_COAST, LAKE_BRIDGES),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofRollUp(TreeDepths.BRANCH, LAKES_BRANCH, "Lakes", LAKE_COAST, LAKE_BRIDGES),
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
                 LAKE_COAST,
                 "Coast",
                 false,
                 on -> settings.showLakeCoastV4 = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
                 LAKE_BRIDGES,
                 "Bridges",
                 false,
                 on -> settings.showLakeBridgesV4 = on)),
-            ToggleTree.Row.ofSwitch(SUBSTEP_RULE_DEPTH, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.RULE, new ToggleTree.Switch(
                 THIN_LAKE_BRIDGES,
                 "Thin shared-anchor bridges",
                 true,
                 on -> settings.shouldThinLakeBridgesV4 = on)),
-            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.BRANCH, new ToggleTree.Switch(
                 LANDABLE_FRONTAGE,
                 "Landable frontage",
                 false,
