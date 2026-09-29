@@ -101,11 +101,7 @@ final class MapChromeInstallerTest {
         @Test
         void installsOverNoControlCarriedInFromAnEarlierCampaign() {
 
-            // An earlier campaign in this session, which got as far as standing a box on a row. Posed
-            // before the sector below rather than inside it, and that is not only narrative order: the
-            // fake stands in for Global wholesale, and the pass resolves its logger once, when its
-            // class initialises. First initialised inside the stand-in, that logger is nothing for the
-            // rest of the JVM.
+            // An earlier campaign in this session, which got as far as standing a box on a row.
             MapChromeInstaller.installAll(mock(SectorAPI.class));
             MapLayerScreenControls.standAControlOnTheShownScreen();
 

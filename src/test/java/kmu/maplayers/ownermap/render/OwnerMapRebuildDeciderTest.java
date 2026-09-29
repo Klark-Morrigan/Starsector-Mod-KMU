@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap.render;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.testfixtures.statics.StaticSeams;
+
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;

@@ -1,7 +1,5 @@
 package kmu.maplayers.base.hover;
 
-import com.fs.starfarer.api.Global;
-
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.map.transform.CampaignMapTransform;
 import kmlib.starsector.ui.map.transform.MapCursor;
@@ -9,13 +7,13 @@ import kmlib.starsector.ui.map.transform.MapCursorRead;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReader;
 import kmlib.starsector.ui.sound.StarsectorUiSound;
 import kmlib.starsector.ui.sound.UiSoundCue;
+import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.starsector.ui.sound.UiSoundPlayerFake;
 
 import kmu.maplayers.base.geometry.SystemClusterIndex;
 
-import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +22,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector2f;
 import org.mockito.MockedStatic;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -120,7 +117,6 @@ final class MapHoverPublisherTest {
     // Whether the pass under test is one the cursor can be located against, mutable so a case
     // can put the publisher on a foreign map's pass the way a frame does.
     private boolean isCursorLocatable;
-    private LogAppenderFake appenderFake;
     private MockedStatic<MapCursor> cursorMock;
     private MapHoverState hoverState;
     private ModelviewMatrixReader readerMock;
@@ -159,15 +155,8 @@ final class MapHoverPublisherTest {
 
         // The arrival trace words the reading it announced, and wording one reads the clip live off
         // GL - which a test JVM has no context for. So the level is held below DEBUG for every case
-        // but the one about the trace itself, which raises it with that read mocked out.
-        //
-        // Additivity is off with it: the trace case plants a line on a logger the whole run shares,
-        // and a run's console output should carry none of what a test logs.
-        var log = Global.getLogger(MapHoverPublisher.class);
-        log.setLevel(Level.INFO);
-        log.setAdditivity(false);
-
-        appenderFake = new LogAppenderFake();
+        // but the one about the trace itself, whose capture raises it with that read mocked out.
+        Logger.getLogger(MapHoverPublisher.class).setLevel(Level.INFO);
 
         readerMock = mock(ModelviewMatrixReader.class);
         soundPlayerFake = new UiSoundPlayerFake();
@@ -188,13 +177,9 @@ final class MapHoverPublisherTest {
 
     @AfterEach
     void tearDown() {
-        // All of these are shared for the run, so what this test planted must not reach another: the
-        // level goes back to inheriting whatever the run was configured with, and the appender comes
-        // off whether or not the case attached it.
-        var log = Global.getLogger(MapHoverPublisher.class);
-        log.removeAppender(appenderFake);
-        log.setAdditivity(true);
-        log.setLevel(null);
+        // The level is shared for the run, so it goes back to inheriting whatever the run was
+        // configured with rather than reaching another suite.
+        Logger.getLogger(MapHoverPublisher.class).setLevel(null);
         cursorMock.close();
     }
 
@@ -565,13 +550,14 @@ final class MapHoverPublisherTest {
                 glMock
                     .when(() -> GL11.glIsEnabled(GL11.GL_SCISSOR_TEST))
                     .thenReturn(false);
-                Global.getLogger(MapHoverPublisher.class).setLevel(Level.DEBUG);
-                Global.getLogger(MapHoverPublisher.class).addAppender(appenderFake);
 
-                driveOneFrame(buildPublisher(), buildTargetsWithOneCell());
+                var capture = LogAppenderFake.captureLogOf(
+                    MapHoverPublisher.class,
+                    Level.DEBUG,
+                    () -> driveOneFrame(buildPublisher(), buildTargetsWithOneCell()));
 
-                assertThat(appenderFake.getMessages()).hasSize(1);
-                assertThat(appenderFake.getMessages().get(0))
+                assertThat(capture.getMessages()).hasSize(1);
+                assertThat(capture.getMessages().get(0))
                     .contains("system=" + HOVERED_SYSTEM_KEY)
                     .contains("clusterMembers=[" + HOVERED_SYSTEM_KEY + ", " + NEIGHBOUR_SYSTEM_KEY
                         + "]")
@@ -587,11 +573,13 @@ final class MapHoverPublisherTest {
             // the seam is all that keeps it survivable - so reaching it and discarding the string
             // would be the diagnostic's whole cost paid on every arrival.
             try (MockedStatic<GL11> glMock = mockStatic(GL11.class)) {
-                Global.getLogger(MapHoverPublisher.class).addAppender(appenderFake);
 
-                driveOneFrame(buildPublisher(), buildTargetsWithOneCell());
+                var capture = LogAppenderFake.captureLogOf(
+                    MapHoverPublisher.class,
+                    Level.INFO,
+                    () -> driveOneFrame(buildPublisher(), buildTargetsWithOneCell()));
 
-                assertThat(appenderFake.getMessages()).isEmpty();
+                assertThat(capture.getMessages()).isEmpty();
                 glMock.verifyNoInteractions();
             }
         }
@@ -652,30 +640,5 @@ final class MapHoverPublisherTest {
                 eq(MAP_ZOOM),
                 any(ModelviewMatrixReader.class)))
             .thenReturn(cursorRead);
-    }
-
-    // Records what reached the log, the trace's line being the one thing the arrival pass produces
-    // that leaves nothing behind in state a case could read back.
-    private static final class LogAppenderFake extends AppenderSkeleton {
-
-        private final List<String> messages = new ArrayList<>();
-
-        @Override
-        public void close() {
-        }
-
-        @Override
-        public boolean requiresLayout() {
-            return false;
-        }
-
-        List<String> getMessages() {
-            return messages;
-        }
-
-        @Override
-        protected void append(LoggingEvent event) {
-            messages.add(String.valueOf(event.getMessage()));
-        }
     }
 }

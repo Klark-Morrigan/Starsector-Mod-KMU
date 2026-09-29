@@ -8,6 +8,7 @@ import com.fs.starfarer.api.ui.PositionAPI;
 
 import kmlib.starsector.ui.coreui.CoreUiOverlayPanels;
 import kmlib.starsector.ui.map.probes.ShownMapTab;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import org.mockito.MockedStatic;
 
@@ -46,7 +47,7 @@ final class ArrangementDialogScreenScope implements AutoCloseable {
 
     private ArrangementDialogScreenScope(boolean isCoreUiReachable) {
 
-        this.globalMock = mockStatic(Global.class);
+        this.globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
         this.overlayPanelsMock = mockStatic(CoreUiOverlayPanels.class);
         this.shownMapTabMock = mockStatic(ShownMapTab.class);
 

@@ -7,7 +7,6 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -50,8 +49,7 @@ final class DrawnLayerGuardTest {
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
     private final MapLayerRenderer siblingRendererMock = mock(MapLayerRenderer.class);
 
-    private final DrawnLayerGuard guard =
-        new DrawnLayerGuard(machinery, Logger.getLogger(DrawnLayerGuard.class));
+    private final DrawnLayerGuard guard = new DrawnLayerGuard(machinery);
 
     private MockedStatic<MapLayerRegistry> layerRegistryMock;
 

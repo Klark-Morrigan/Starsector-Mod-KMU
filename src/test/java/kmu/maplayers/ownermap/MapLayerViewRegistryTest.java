@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.ui.controls.specs.ControlSpec;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
@@ -29,7 +30,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -145,7 +145,7 @@ final class MapLayerViewRegistryTest {
         @Test
         void getSelectedViewDefaultsToTheRegisteredDefaultWithoutASavedPick() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -159,7 +159,7 @@ final class MapLayerViewRegistryTest {
         @Test
         void getSelectedViewResolvesTheStoredIdToItsView() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -175,7 +175,7 @@ final class MapLayerViewRegistryTest {
         void getSelectedViewIsNullForTheOffSentinel() {
             // The empty stored value is the "map off while the tab stays open" state, so no view
             // resolves and the plugin stays dark.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -190,7 +190,7 @@ final class MapLayerViewRegistryTest {
         @Test
         void getSelectedViewFallsBackToTheDefaultForAStaleStoredId() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -207,7 +207,7 @@ final class MapLayerViewRegistryTest {
             // The point of the screen being on the signature: a player who sets one panel to the
             // grouped view and leaves the other on factions gets both, rather than the second panel
             // following the first.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -229,7 +229,7 @@ final class MapLayerViewRegistryTest {
         @Test
         void getSelectedViewIndexIsThePickedViewsPosition() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -244,7 +244,7 @@ final class MapLayerViewRegistryTest {
         @Test
         void getSelectedViewIndexIsNoSelectionWhenOff() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -265,7 +265,7 @@ final class MapLayerViewRegistryTest {
         void resolveActiveViewOnIsTheDefaultViewWhileNoSaveHoldsAPick() {
             // No sector, so nothing is stored: the host tab being that screen's pick, the map paints
             // the view an untouched save resolves to rather than staying dark.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock.when(Global::getSector)
                     .thenReturn(null);
@@ -284,7 +284,7 @@ final class MapLayerViewRegistryTest {
             intelScreenFake.setIntelTabOpen(true);
             MapLayerScreens.registerIntelScreen(intelScreenFake);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -301,7 +301,7 @@ final class MapLayerViewRegistryTest {
         void resolveActiveViewOnIsNullWhileThatScreenIsOnAnotherTab() {
             // The tab gate is that screen's too: a panel switched to No Layer paints nothing, whatever
             // view it has stored and whatever the other panel is on.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -320,7 +320,7 @@ final class MapLayerViewRegistryTest {
         @Test
         void selectViewStoresThePickedViewsIdWhenItIsNotTheCurrentSelection() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -340,7 +340,7 @@ final class MapLayerViewRegistryTest {
         @Test
         void selectViewKeepsTheViewSelectedWhenItIsAlreadyTheCurrentSelection() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -367,7 +367,7 @@ final class MapLayerViewRegistryTest {
         void aPickStoredForOneLayerLeavesTheOtherLayerOnItsDefault() {
             // The collision a process-wide registry had: a second layer's radio reading the first
             // layer's slot. Each reads its own key, so the foreign layer has never been picked for.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -385,7 +385,7 @@ final class MapLayerViewRegistryTest {
         void selectViewWritesUnderItsOwnLayersKeyAlone() {
             // The write half of the same guarantee: a pick on the foreign radio lands in the foreign
             // slot, and the case layer's slot is never written.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
 

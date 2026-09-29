@@ -9,6 +9,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
@@ -156,7 +157,7 @@ final class AlliancesViewTest {
         void resolveGroupingFallsBackToIdentityWhenNexIsAbsent() {
             // Without Nex the gate returns the identity grouping, so the view degrades to the faction
             // grouping rather than touching any exerelin class.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, false);
 

@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.systems.SystemKey;
+import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.layer.ScreenMemoryScope;

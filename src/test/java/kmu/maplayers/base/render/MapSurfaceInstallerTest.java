@@ -7,6 +7,7 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -40,9 +41,7 @@ class MapSurfaceInstallerTest {
     private static final float ONE_FRAME = 0.016f;
 
     // The index is process-wide, so a sector installed on by one case would go on holding that
-    // case's script for the next. Outside any Global stand-in on purpose: this index holds a logger
-    // taken from Global at class load, so a first load inside a mocked scope would leave it null for
-    // the rest of the JVM.
+    // case's script for the next.
     @BeforeEach
     @AfterEach
     void clearEveryMachinery() {
@@ -131,16 +130,10 @@ class MapSurfaceInstallerTest {
             // stands down, which is also what it does on every ordinary frame.
             var sectorMock = mock(SectorAPI.class);
 
-            // Loaded before Global is stood in for, and this is not optional: the installer holds a
-            // logger in a static field initialised from Global, so a class first loaded inside a
-            // mockStatic scope keeps a null logger for the rest of the JVM and faults every later
-            // test that logs. Answering null for a null sector is its own contract, covered next door.
-            MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(null);
-
             SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             try (var mapViewMock = mockStatic(CampaignMapView.class);
-                    var globalMock = mockStatic(Global.class);
+                    var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var layeringProbeMock = mockStatic(MapIconLayeringProbe.class)) {
 
                 globalMock
@@ -176,14 +169,10 @@ class MapSurfaceInstallerTest {
             var installedSectorMock = mock(SectorAPI.class);
             var runningSectorMock = mock(SectorAPI.class);
 
-            // Loaded before Global is stood in for, so the installer's logger is resolved outside
-            // the stubbed scope rather than left null for the rest of the JVM.
-            MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(null);
-
             SectorMapMachineryIndex.installMachineryOn(installedSectorMock);
 
             try (var mapViewMock = mockStatic(CampaignMapView.class);
-                    var globalMock = mockStatic(Global.class);
+                    var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var terrainMock = mockStatic(MapLayerTerrainInstaller.class);
                     var layeringProbeMock = mockStatic(MapIconLayeringProbe.class)) {
 

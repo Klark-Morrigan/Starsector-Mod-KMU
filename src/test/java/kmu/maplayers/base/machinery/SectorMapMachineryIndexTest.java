@@ -4,6 +4,8 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.refresh.MovableSystemSectorFake;
 
@@ -18,7 +20,6 @@ import static kmu.maplayers.base.refresh.MovableSystemSectorFake.FORCED_ONTO_MAP
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -428,7 +429,7 @@ class SectorMapMachineryIndexTest {
 
             var machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)
@@ -444,7 +445,7 @@ class SectorMapMachineryIndexTest {
 
             var sectorMock = mock(SectorAPI.class);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock
                     .when(Global::getSector)

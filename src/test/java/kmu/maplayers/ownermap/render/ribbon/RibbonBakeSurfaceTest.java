@@ -1,11 +1,12 @@
 package kmu.maplayers.ownermap.render.ribbon;
 
+import kmlib.testfixtures.statics.StaticSeams;
+
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
-import kmu.maplayers.ownermap.render.StaticSeams;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.settings.KmuOwnerMapRibbonSettings;
 import kmu.settings.RibbonNameClearanceChoice;

@@ -4,12 +4,13 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -32,7 +33,7 @@ final class PauseMenuMapCoverTest {
             // a mock arranged mid-statement as an unfinished stubbing of the outer one.
             var sectorMock = stubSectorShowingMenu(true);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock.when(Global::getSector).thenReturn(sectorMock);
 
@@ -46,7 +47,7 @@ final class PauseMenuMapCoverTest {
 
             var sectorMock = stubSectorShowingMenu(false);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock.when(Global::getSector).thenReturn(sectorMock);
 
@@ -59,7 +60,7 @@ final class PauseMenuMapCoverTest {
         void readLiveMenuStateFailsOpenWithNoSector() {
             // Fails open per the role's rule: what cannot be established is not covering. There is
             // no map to hover in this state either, so the open answer costs nothing.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock.when(Global::getSector)
                     .thenReturn(null);
@@ -76,7 +77,7 @@ final class PauseMenuMapCoverTest {
             var sectorMock = mock(SectorAPI.class);
             when(sectorMock.getCampaignUI()).thenReturn(null);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 globalMock.when(Global::getSector).thenReturn(sectorMock);
 

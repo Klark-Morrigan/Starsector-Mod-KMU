@@ -5,6 +5,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRosters;
 
@@ -12,7 +14,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -60,7 +61,7 @@ final class LayerShortcutPresses {
         when(eventMock.getEventValue())
             .thenReturn(SHORTCUT_KEYCODE);
 
-        try (var globalMock = mockStatic(Global.class)) {
+        try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
             var memoryMock = mock(MemoryAPI.class);
             var sectorMock = mock(SectorAPI.class);

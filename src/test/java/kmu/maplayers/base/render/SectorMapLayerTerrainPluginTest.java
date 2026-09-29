@@ -73,20 +73,7 @@ final class SectorMapLayerTerrainPluginTest {
     @BeforeEach
     void standInForTheRunningGame() {
 
-        // Loaded before the stand-in opens, and not optional: both hold a logger taken from Global in
-        // a static field, and a class first loaded inside a mocked scope keeps a null one for the
-        // rest of the JVM and faults every later case that logs. Forced here rather than left to
-        // whichever order JUnit happens to run the other setups in.
-        SectorMapMachineryIndex.disposeAllMachinery();
-        new SectorMapLayerTerrainPlugin();
-
-        globalMock = mockStatic(Global.class);
-
-        // Loggers answered as the game answers them: a guard made during a case takes its logger
-        // from here, and one handed the stand-in's null would fault on the very line it exists to
-        // write.
-        StubbedGlobalLogger.answerLoggersOn(globalMock);
-
+        globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
         globalMock
             .when(Global::getSector)
             .thenReturn(null);

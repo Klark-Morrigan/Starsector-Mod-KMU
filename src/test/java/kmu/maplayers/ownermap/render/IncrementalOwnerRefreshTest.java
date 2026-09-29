@@ -7,6 +7,7 @@ import kmlib.math.geometry.Segment;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
+import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
@@ -157,10 +158,7 @@ public final class IncrementalOwnerRefreshTest {
         @BeforeEach
         void openSeamsAndClearTheStaleSet() {
 
-            globalMock = seams.openSeam(Global.class);
-            // The class logs through a static field initialised on first touch, which may
-            // happen inside this block: StubbedGlobalLogger says what an unanswered one costs.
-            StubbedGlobalLogger.answerLoggersOn(globalMock);
+            globalMock = seams.holdSeam(StubbedGlobalLogger.openGlobalAnsweringLoggers());
 
             sectorMock = buildSectorWithSystems(
                 FLIPPED_SYSTEM,

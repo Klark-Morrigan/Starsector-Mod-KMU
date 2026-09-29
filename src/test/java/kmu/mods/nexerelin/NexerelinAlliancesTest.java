@@ -7,6 +7,7 @@ import com.fs.starfarer.api.SettingsAPI;
 import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.starsector.factions.alliances.AllianceRecord;
 import kmlib.starsector.factions.alliances.FactionAlliances;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 
@@ -54,7 +55,7 @@ class NexerelinAlliancesTest {
         @Test
         void resolveFactionAlliancesReadsNobodyAsAlliedWhereNexerelinIsAbsent() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, false);
 
@@ -71,7 +72,7 @@ class NexerelinAlliancesTest {
         void resolveGroupingHandsBackTheSharedIdentityGroupingWhereNexerelinIsAbsent() {
             // The answer every rebuild on such an install takes, so it is the shared grouping itself
             // rather than a fold rebuilt to look like it.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, false);
 
@@ -116,7 +117,7 @@ class NexerelinAlliancesTest {
         void computeAllianceFingerprintPollsTheSteadyTokenWhereNexerelinIsAbsent() {
             // What keeps the alliance revision still on such an install: the watcher polls this every
             // pass, and a token that moved would rebuild a map nothing about has changed.
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, false);
 

@@ -4,6 +4,8 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
 
 import org.junit.jupiter.api.Nested;
@@ -12,7 +14,6 @@ import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -35,7 +36,7 @@ class NexerelinContestWordingTest {
         @Test
         void wordsTheBlockAsAContestWhereNexerelinIsPresent() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, true);
 
@@ -47,7 +48,7 @@ class NexerelinContestWordingTest {
         @Test
         void wordsTheBlockAsPlainPresenceWhereNexerelinIsAbsent() {
 
-            try (var globalMock = mockStatic(Global.class)) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, false);
 

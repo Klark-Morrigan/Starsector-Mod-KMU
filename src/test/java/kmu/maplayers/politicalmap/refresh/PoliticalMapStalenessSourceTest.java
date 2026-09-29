@@ -38,9 +38,8 @@ import static org.mockito.Mockito.when;
  * each axis to its own refresh - a visibility or moving-set move rebuilds geometry, an
  * holder-map diff marks exactly the changed systems politics-stale under their keys (the same
  * set the event listeners feed), and an alliance-fingerprint move bumps the alliance revision - while the
- * first poll only establishes the baselines. Asserts on a real {@link MapLayerRefreshBoard}
- * rather than a mocked one (whose logger a static mock would null during class init), stubbing
- * the snapshot scan and the alliance fingerprint across polls. The board is the one its own
+ * first poll only establishes the baselines. Asserts on a real {@link MapLayerRefreshBoard},
+ * stubbing the snapshot scan and the alliance fingerprint across polls. The board is the one its own
  * machinery holds, so a run reads only what it raised.
  *
  * <p>Also pins what this poll no longer does: the observation each system's own inhabitants make of
@@ -303,14 +302,13 @@ final class PoliticalMapStalenessSourceTest {
             var installedSector = buildOneSystemSector();
             var polledSector = new AtomicReference<SectorAPI>();
 
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                     var snapshotMock = mockStatic(PoliticalMapSectorSnapshot.class)) {
 
                 globalMock
                     .when(Global::getSector)
                     .thenReturn(mock(SectorAPI.class));
-                StubbedGlobalLogger.answerLoggersOn(globalMock);
 
                 visibilityRulesMock
                     .when(MapVisibilityRules::readFromLunaSettings)
@@ -414,15 +412,13 @@ final class PoliticalMapStalenessSourceTest {
             int pollCount,
             SectorMapMachinery machinery) {
 
-        try (var globalMock = mockStatic(Global.class);
+        // Global answers the logger alone. The sector lookup is left unstubbed on purpose: a poll
+        // reads its machinery's sector, so a run that only passed because the running game
+        // answered with one would fail here rather than read as a case about routing.
+        try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                 var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                 var snapshotMock = mockStatic(PoliticalMapSectorSnapshot.class);
                 var alliancesMock = mockStatic(NexerelinAlliances.class)) {
-
-            // Only the logger. The sector lookup is left unstubbed on purpose: a poll reads its
-            // machinery's sector, so a run that only passed because the running game answered
-            // with one would fail here rather than read as a case about routing.
-            StubbedGlobalLogger.answerLoggersOn(globalMock);
 
             // The source reads the reveal toggles itself; stub them to the no-reveal view
             // so the scan and motion walks resolve the normal drawn set.

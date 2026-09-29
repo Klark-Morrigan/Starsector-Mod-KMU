@@ -11,6 +11,7 @@ import kmlib.starsector.ui.controls.specs.LabelSpec;
 import kmlib.starsector.ui.controls.specs.SideBySideSpec;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
 import kmu.KmuMod;
@@ -36,7 +37,6 @@ import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.settings.KmuMapKeybindSettings;
 import kmu.util.KmuStringKeys;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -129,15 +129,6 @@ final class PoliticalMapLayerTest {
     // shared, since the roster is the layer's own - which is what this step made it.
     private PoliticalMapLayer layer =
         new PoliticalMapLayer(List.of(viewWithoutControlsMock), viewWithoutControlsMock);
-
-    // Loads the machinery index before any case stubs Global. The body build resolves the running
-    // sector's machinery through it, and the index resolves its logger once at class initialisation -
-    // so a first load from inside a Global stub would leave it holding a null logger for the rest of
-    // the JVM, and the next suite to install or release machinery would fall over on it.
-    @BeforeAll
-    static void loadTheMachineryIndex() {
-        SectorMapMachineryIndex.resolveMachineryFor(null);
-    }
 
     @Nested
     class GetBodyControlsPreferences {
@@ -265,7 +256,7 @@ final class PoliticalMapLayerTest {
 
             registerDefaultView(viewWithControlsMock);
 
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var controlsMock = mockStatic(OwnerMapBodyControls.class)) {
 
                 // No sector resolves the default view as selected, so the registered view paints.
@@ -299,7 +290,7 @@ final class PoliticalMapLayerTest {
 
             registerDefaultView(viewWithControlsMock);
 
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var controlsMock = mockStatic(OwnerMapBodyControls.class);
                     var pickerMock = mockStatic(ListPickerBinder.class)) {
 
@@ -342,7 +333,7 @@ final class PoliticalMapLayerTest {
 
             registerDefaultView(viewWithoutControlsMock);
 
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var controlsMock = mockStatic(OwnerMapBodyControls.class)) {
 
                 globalMock
@@ -373,7 +364,7 @@ final class PoliticalMapLayerTest {
             // that has controls contributes none, since the tab is showing but that panel's map is dark.
             registerDefaultView(viewWithControlsMock);
 
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var controlsMock = mockStatic(OwnerMapBodyControls.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -408,7 +399,7 @@ final class PoliticalMapLayerTest {
             // metric. Built for real (no picker stub), since the pairing is the thing under test.
             registerViewWithOneBloc(viewWithoutControlsMock);
 
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var controlsMock = mockStatic(OwnerMapBodyControls.class)) {
 
                 globalMock
@@ -453,7 +444,7 @@ final class PoliticalMapLayerTest {
             // green while all three views shared one slot. Pinned here because this is the only place
             // the ID is chosen.
             registerViewWithOneBloc(viewWithoutControlsMock);
-            try (var globalMock = mockStatic(Global.class);
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var controlsMock = mockStatic(OwnerMapBodyControls.class);
                     var pickerMock = mockStatic(ListPickerBinder.class)) {
 
@@ -640,8 +631,7 @@ final class PoliticalMapLayerTest {
     // static stubbing closes, since a MockedStatic cannot be verified after it does.
     //
     // The arrangement is the wide part of the cases that use it and none of what they assert: a real
-    // install (made outside the stubbing, so the index resolves a real logger rather than one taken
-    // from a stubbed Global), the sector the running game answers with, a settings proxy the recede's
+    // install, the sector the running game answers with, a settings proxy the recede's
     // text tone is read off, and the two view-agnostic pieces stubbed to their sentinels. Written
     // once so the cases cannot drift into arranging different builds and reading the difference
     // as a finding.
@@ -677,7 +667,7 @@ final class PoliticalMapLayerTest {
         var settingsMock = buildSettingsAnsweringColours();
         var machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
-        try (var globalMock = mockStatic(Global.class);
+        try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                 var controlsMock = mockStatic(OwnerMapBodyControls.class);
                 var pickerMock = mockStatic(ListPickerBinder.class);
                 var recedeMock = mockStatic(RecedeControl.class)) {
@@ -784,7 +774,7 @@ final class PoliticalMapLayerTest {
 
         registerDefaultView(viewWithoutControlsMock);
 
-        try (var globalMock = mockStatic(Global.class);
+        try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                 var controlsMock = mockStatic(OwnerMapBodyControls.class)) {
 
             globalMock
