@@ -5,6 +5,9 @@
 ## Index
 
 - [Dependencies](#dependencies)
+- [Languages](#languages)
+  - [English](#english)
+  - [Simplified Chinese](#simplified-chinese)
 - [Features](#features)
   - [Map layers](#map-layers)
     - [Political map](#political-map)
@@ -33,6 +36,48 @@
 | [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | *Optional* | Enables `kmu_` commands |
 | [Nexerelin](https://fractalsoftworks.com/forum/index.php?topic=9175) | *Optional* | Adds the **Alliances** view to the **Political Map** |
 | [Random Assortment of Things](https://fractalsoftworks.com/forum/index.php?topic=26260) | *Optional* | The **compatibility mode** is on the `Map - Compatibility` tab |
+
+## Languages
+
+Each release carries one zip per language, named for it:
+`KMU-<version>-en.zip` is English and `KMU-<version>-zh-hans.zip` is Simplified Chinese.
+Install one.
+Each is the whole mod;
+they differ only in the text of the settings screen, the Map Layers sidebar, the hover boxes and the notices,
+and in the launcher's mod list entry.
+Settings carry over between them.
+
+### English
+
+English is the default language:
+the one this README and the changelog are written in,
+the one an install from before there were language zips updates to,
+and the one a launcher field shows where a translation leaves it out.
+
+### Simplified Chinese
+
+The game's own fonts hold no Chinese characters.
+The Chinese zip needs the [Chinese core localisation](https://github.com/TruthOriginem/Starsector-Localization-CN)
+installed over `starsector-core` first:
+it translates the game itself and replaces the game's fonts with ones that hold the characters.
+
+Without it the mod loads and runs, and nothing reports a problem:
+every Chinese character draws as `?`, wherever KMU shows text.
+
+The launcher cannot check for it.
+The core localisation is not a mod:
+it has no mod ID and no entry in the mod list,
+so `mod_info.json` cannot name it the way it names KMLib,
+and the launcher's dependency check passes with it missing.
+This section, the release notes and the Chinese zip's own mod list entry are what say so.
+
+The core localisation is made for one game version at a time,
+stated on its page,
+and replaces files under `starsector-core`, the game's own jars among them,
+so install the one made for the game version you run.
+
+The English zip runs on a Chinese install too,
+and draws the Chinese faction, system and colony names on the map in a font that holds them.
 
 ## Features
 
