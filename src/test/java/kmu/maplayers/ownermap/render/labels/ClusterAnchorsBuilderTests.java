@@ -606,8 +606,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider,
-            StarsectorFont.VANILLA_INSIGNIA_42);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(2);
@@ -640,8 +640,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider,
-            StarsectorFont.VANILLA_INSIGNIA_42);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(HEGEMONY_PRIMARY);
@@ -661,8 +661,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider,
-            StarsectorFont.VANILLA_INSIGNIA_42);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -682,8 +682,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider,
-            StarsectorFont.VANILLA_INSIGNIA_42);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -708,8 +708,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider,
-            StarsectorFont.VANILLA_INSIGNIA_42);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
@@ -724,8 +724,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider,
-            StarsectorFont.VANILLA_INSIGNIA_42);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isSameAs(firstPassAxis);
@@ -744,8 +744,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider,
-            StarsectorFont.VANILLA_INSIGNIA_42);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
