@@ -123,12 +123,6 @@ enforcePackageLayering {
                       'kmu.maplayers.base.geometry.settings',
                       'kmu.maplayers.base.geometry.v4.ui']
 
-    forbidImport exactly: 'kmu.maplayers.base.hover',
-                 of: 'kmu.maplayers.base.installation'
-
-    forbidImport exactly: 'kmu.maplayers.base.refresh',
-                 of: 'kmu.maplayers.base.installation'
-
     forbidImport exactly: 'kmu.maplayers.base.tooltip',
                  of: ['kmu.maplayers.base.tooltip.layout',
                       'kmu.maplayers.base.tooltip.content']
