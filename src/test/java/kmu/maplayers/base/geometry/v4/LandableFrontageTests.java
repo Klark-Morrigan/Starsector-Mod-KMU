@@ -15,7 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>The rule has no arithmetic in it, so what is pinned is the bookkeeping: every EDGE on a
  * cell is covered by exactly one run, a run carries both ends of every edge it covers and so
  * meets the next where one cell gives way to it, the frame is nobody's, a piece's holes are
- * shore as much as its outline is, and a piece a layer captured faces nothing.
+ * shore as much as its outline is, a piece a layer captured faces nothing, and what is too short
+ * to show at the map's resolution - a run under it, or a corner with laid lines either side on a
+ * cell's shore - is a point.
  */
 class LandableFrontageTests {
 
@@ -142,34 +144,6 @@ class LandableFrontageTests {
             assertThat(runs.get(4).points()).hasSize(5);
         }
 
-        @Test
-        void aCapturedPieceFacesNothing() {
-            // The same square twice over, on different cells, and the first captured: its shore
-            // faces water nothing can arrive in, so only the second's cells come back.
-            var captured = Face.encloseFace(new LabelledRing(CORNERS, ONE_CELL_PER_SIDE));
-            var open = Face.encloseFace(new LabelledRing(CORNERS, new int[] {4, 5, 6, 7}));
-
-            var runs = LandableFrontage.collectLandableRuns(
-                List.of(captured, open), piece -> piece == captured);
-
-            assertThat(runs)
-                .extracting(LandableFrontage.Run::cell)
-                .containsExactly(4, 5, 6, 7);
-        }
-
-        @Test
-        void withNothingCapturedEveryPieceFacesItsShoreInTheOrderGiven() {
-
-            var first = Face.encloseFace(new LabelledRing(CORNERS, ONE_CELL_PER_SIDE));
-            var second = Face.encloseFace(new LabelledRing(CORNERS, new int[] {4, 5, 6, 7}));
-
-            var runs = LandableFrontage.collectLandableRuns(
-                List.of(first, second), piece -> false);
-
-            assertThat(runs)
-                .extracting(LandableFrontage.Run::cell)
-                .containsExactly(0, 1, 2, 3, 4, 5, 6, 7);
-        }
     }
 
     @Nested
@@ -181,6 +155,35 @@ class LandableFrontageTests {
 
         // Below every run of the square, whose sides are 100 long, so none of them is a point.
         private static final double RESOLUTION = 10;
+
+        @Test
+        void aCapturedPieceFacesNothing() {
+            // The same square twice over, on different cells, and the first captured: its shore
+            // faces water nothing can arrive in, so only the second's cells come back.
+            var captured = Face.encloseFace(new LabelledRing(CORNERS, ONE_CELL_PER_SIDE));
+            var open = Face.encloseFace(new LabelledRing(CORNERS, new int[] {4, 5, 6, 7}));
+
+            var frontage = LandableFrontage.collectLandableFrontage(
+                List.of(captured, open), piece -> piece == captured, List.of(), RESOLUTION);
+
+            assertThat(frontage.runs())
+                .extracting(LandableFrontage.Run::cell)
+                .containsExactly(4, 5, 6, 7);
+        }
+
+        @Test
+        void withNothingCapturedEveryPieceFacesItsShoreInTheOrderGiven() {
+
+            var first = Face.encloseFace(new LabelledRing(CORNERS, ONE_CELL_PER_SIDE));
+            var second = Face.encloseFace(new LabelledRing(CORNERS, new int[] {4, 5, 6, 7}));
+
+            var frontage = LandableFrontage.collectLandableFrontage(
+                List.of(first, second), piece -> false, List.of(), RESOLUTION);
+
+            assertThat(frontage.runs())
+                .extracting(LandableFrontage.Run::cell)
+                .containsExactly(0, 1, 2, 3, 4, 5, 6, 7);
+        }
 
         // Above cell 2's run and below cell 3's, once the square is stretched: see the test.
         private static final double BETWEEN_THE_TWO_RUNS = 50;
@@ -268,7 +271,7 @@ class LandableFrontageTests {
         }
 
         @Test
-        void aCapturedPieceOffersNothing() {
+        void aCapturedPieceOffersNoPointEither() {
 
             var frontage = LandableFrontage.collectLandableFrontage(
                 List.of(Face.encloseFace(
@@ -277,8 +280,6 @@ class LandableFrontageTests {
                 List.of(SHORE_THROUGH_THE_CORNER),
                 RESOLUTION);
 
-            assertThat(frontage.runs())
-                .isEmpty();
             assertThat(frontage.points())
                 .isEmpty();
         }

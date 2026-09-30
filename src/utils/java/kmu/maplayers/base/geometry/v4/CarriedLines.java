@@ -24,13 +24,10 @@ import java.util.List;
  * face, which is discarded. The wall is one straight segment, so the piece it divides has one
  * straight edge along it, from shore to shore.
  *
- * <p><b>Not a stub past the end.</b> A wall laid as the line itself plus a short stub from each
- * end towards the site divides just as well, but leaves the stub's remainder - the few units
- * between the frontier crossing and the line's end - as an edge of the piece, at an angle to the
- * line. Inset by a channel many times its length, that edge folds, and the fold shows as a hook
- * at every junction; and where the end floats off the shore the stub, the line and the shore
- * close a sliver too small to draw and just big enough to keep. Moving the end instead moves the
- * line by at most the distance its end floated, which is under the map's resolution.
+ * <p><b>Moved, not carried through on a stub.</b> A stub past the end divides just as well, but
+ * its remainder between the frontier and the end is an edge of the piece a few units long at an
+ * angle to the line, which folds under the channel into a hook at every junction. Moving the end
+ * moves the line by at most the distance its end floated, which is under the map's resolution.
  *
  * <p>Held once rather than per tier, because what makes a line divide is the same fact about the
  * walk for every tier: a second copy is a second answer to where the shore is.

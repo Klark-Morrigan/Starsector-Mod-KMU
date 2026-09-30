@@ -151,6 +151,26 @@ class VoidPartitionOverlayIntegrationTests {
         }
     }
 
+    @Nested
+    class PaintLandableFrontage {
+
+        @Test
+        void theFrontageTheCoastLeavesIsDrawn() {
+            // With the coast laid the frontage is read off the walked void, runs and points:
+            // this is the one case here that walks the sector, and the one that pins the layer
+            // painting at all.
+            var settings = buildSettings(true, false);
+            var overlay = new VoidPartitionOverlay(settings);
+
+            settings.showLakeCoastV4 = true;
+            settings.showLandableFrontageV4 = true;
+            refreshWithOneLine(overlay);
+
+            assertThat(countPaintedPixels(overlay::paintLandableFrontage))
+                .isPositive();
+        }
+    }
+
     private static VoidPartitionOverlay buildOverlay(boolean isV4Shown, boolean areBridgesShown) {
         return new VoidPartitionOverlay(buildSettings(isV4Shown, areBridgesShown));
     }

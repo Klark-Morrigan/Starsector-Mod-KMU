@@ -41,11 +41,6 @@ import java.util.function.Predicate;
  */
 public final class LandableFrontage {
 
-    // How far a vertex may sit off a frontier edge and still lie on it, in map units. The
-    // vertex is the cut the walk made through that edge, so it lies on it to rounding; far
-    // below anything drawn, so a vertex merely near a shore is not taken for a point of it.
-    private static final double ON_THE_SHORE = 1e-3;
-
     private LandableFrontage() {
     }
 
@@ -81,7 +76,7 @@ public final class LandableFrontage {
 
             for (var run : collectLandableRuns(piece)) {
 
-                if (measureLength(run.points()) >= resolution) {
+                if (Points.measurePathLength(run.points()) >= resolution) {
                     runs.add(run);
                 } else {
                     points.add(new Point(run.cell(), Points.computeMean(run.points())));
@@ -94,26 +89,6 @@ public final class LandableFrontage {
             }
         }
         return new Frontage(List.copyOf(runs), List.copyOf(points));
-    }
-
-    /**
-     * Every run of border the open void faces: the runs of every piece nothing captured.
-     *
-     * @param pieces     the pieces of a partition
-     * @param isCaptured whether the layers laid so far have closed a piece off
-     * @return the open pieces' runs, piece by piece in the order given
-     */
-    public static List<Run> collectLandableRuns(List<Face> pieces, Predicate<Face> isCaptured) {
-
-        var runs = new ArrayList<Run>();
-
-        for (var piece : pieces) {
-
-            if (!isCaptured.test(piece)) {
-                runs.addAll(collectLandableRuns(piece));
-            }
-        }
-        return List.copyOf(runs);
     }
 
     /**
@@ -137,16 +112,6 @@ public final class LandableFrontage {
         return List.copyOf(runs);
     }
 
-    private static double measureLength(List<double[]> points) {
-
-        var length = 0.0;
-
-        for (var index = 0; index + 1 < points.size(); index++) {
-            length += Points.computeDistance(points.get(index), points.get(index + 1));
-        }
-        return length;
-    }
-
     // One ring's worth of points: each corner with laid lines either side of it, filed under
     // the cell whose frontier it lies on. A corner with a cell edge on either side is the end
     // of a run and already frontage.
@@ -168,7 +133,7 @@ public final class LandableFrontage {
 
                 if (Segments.computeDistanceToPoint(
                         edge.segment().readStart(), edge.segment().readEnd(), corners.get(corner))
-                        <= ON_THE_SHORE) {
+                        <= FaceWalk.ON_THE_LINE) {
 
                     points.add(new Point(edge.label(), corners.get(corner)));
                     break;

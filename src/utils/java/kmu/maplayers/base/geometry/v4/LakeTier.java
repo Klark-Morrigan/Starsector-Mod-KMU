@@ -60,10 +60,6 @@ public final class LakeTier {
      */
     public static final int THE_LAKE_BRIDGES = -4;
 
-    // How far a corner may sit off a wall and still lie on it, in map units. Far above what the
-    // cutting and the rounding weld move a corner by, and far below anything drawn.
-    private static final double ON_THE_WALL = 1e-3;
-
     private LakeTier() {
     }
 
@@ -168,8 +164,8 @@ public final class LakeTier {
             var start = wall.segment().readStart();
             var end = wall.segment().readEnd();
 
-            if (Segments.computeDistanceToPoint(start, end, from) > ON_THE_WALL
-                    || Segments.computeDistanceToPoint(start, end, to) > ON_THE_WALL) {
+            if (Segments.computeDistanceToPoint(start, end, from) > FaceWalk.ON_THE_LINE
+                    || Segments.computeDistanceToPoint(start, end, to) > FaceWalk.ON_THE_LINE) {
 
                 continue;
             }

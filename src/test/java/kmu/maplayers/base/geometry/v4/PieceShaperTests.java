@@ -15,11 +15,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit coverage for the inset over a piece, on one square.
  *
- * <p>Three things are pinned, and they are the three the rule can get wrong. What an edge faces
+ * <p>Four things are pinned, and they are the four the rule can get wrong. What an edge faces
  * decides whether it moves, and only the frame faces nothing. What the rule says decides whether
- * any edge moves at all, which is what keeps the true partition drawable. And a hole moves the
- * other way from an outline under the one positive depth, which is the only place the winding
- * could quietly invert and still produce a plausible shape.
+ * any edge moves at all, which is what keeps the true partition drawable. A hole moves the other
+ * way from an outline under the one positive depth, which is the only place the winding could
+ * quietly invert and still produce a plausible shape. And a piece narrower than the channel is
+ * gone where it is narrow throughout and kept where it is narrow only at its ends.
  *
  * <p>Every expectation is the square the shift lands on, written out, rather than the input with
  * the depth arithmetic done to it again.

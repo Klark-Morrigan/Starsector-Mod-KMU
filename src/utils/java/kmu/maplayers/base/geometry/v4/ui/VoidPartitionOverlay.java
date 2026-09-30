@@ -108,29 +108,51 @@ public final class VoidPartitionOverlay {
         // it - the laid lines are drawn from the tier, not from the walk. So with neither of
         // those on it is not paid for, even with a tier switched on.
         if (!settings.isVoidPiecesV4Shown() && !settings.isLandableFrontageV4Shown()) {
-
-            regions = List.of();
-            landable = List.of();
-            landablePoints = List.of();
+            clearLayers();
             return;
         }
 
         // A tier switched off lays nothing, so the switch takes its lines out of the partition
         // rather than leaving them dividing pieces nobody can see.
+        readLayers(
+            VoidPartition.readVoidPartition(
+                cellEdges, sites, settings.parameters, joinWalls(coast, bridges)),
+            coast.walls(),
+            frontier);
+    }
+
+    // Every tier's walls as one list for the walk, which divides by all of them at once.
+    private static List<LabelledWall> joinWalls(
+            CarriedLines.LaidLines coast, CarriedLines.LaidLines bridges) {
+
         var walls = new ArrayList<LabelledWall>(coast.walls());
 
         walls.addAll(bridges.walls());
 
-        var partition = VoidPartition.readVoidPartition(
-            cellEdges, sites, settings.parameters, walls);
+        return walls;
+    }
 
-        // Each read only for the layer that draws it: the pieces are inset and smoothed, which
-        // is the dearest pass here, and a window showing only the frontage has no use for it.
+    private void clearLayers() {
+
+        regions = List.of();
+        landable = List.of();
+        landablePoints = List.of();
+    }
+
+    // What the window shows of a partition, each layer read only while it is drawn: the
+    // pieces are inset and smoothed, which is the dearest pass here, and a window showing only
+    // the frontage has no use for it.
+    private void readLayers(
+            VoidPartition partition,
+            List<LabelledWall> coastWalls,
+            List<LabelledWall> frontier) {
+
         regions = settings.isVoidPiecesV4Shown()
             ? collectRegions(partition, settings)
             : List.of();
+
         var frontage = settings.isLandableFrontageV4Shown()
-            ? collectLandableFrontage(partition, coast.walls(), frontier)
+            ? collectLandableFrontage(partition, coastWalls, frontier)
             : NO_FRONTAGE;
 
         landable = frontage.runs().stream().map(LandableFrontage.Run::points).toList();

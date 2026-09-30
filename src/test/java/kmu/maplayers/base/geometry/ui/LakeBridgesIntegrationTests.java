@@ -7,7 +7,6 @@ import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.v3.CoastFrontages;
 import kmu.maplayers.base.geometry.v4.LakeTier;
 import kmu.maplayers.base.geometry.v4.LandableFrontage;
-import kmu.maplayers.base.geometry.v4.VoidPartition;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -20,7 +19,7 @@ import java.util.stream.Stream;
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.KNOBS;
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.measureSea;
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.measureVoid;
-import static kmu.maplayers.base.geometry.v4.SectorPartitions.readCellEdges;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.readFrontier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withinPercentage;
@@ -31,9 +30,11 @@ import static org.assertj.core.api.Assertions.withinPercentage;
  * <p>Here rather than beside {@link LakeTier}, because it reads both constructions and the
  * layering keeps each of them from reading the other - in tests as in the code.
  *
- * <p><b>Two things are pinned.</b> That every bridge lands on the lake's frontage, since that is
- * the one place a bridge may land; and what the bridges do once laid over the coast, since a
- * line that divides water may not take any of it away.
+ * <p><b>Three things are pinned.</b> That every bridge lands on the lake's frontage, since that
+ * is the one place a bridge may land; that where the coast only touches a cell it lands on
+ * v4's point of frontage there, since a point is all such a contact offers; and what the
+ * bridges do once laid over the coast, since a line that divides water may not take any of it
+ * away.
  */
 class LakeBridgesIntegrationTests {
 
@@ -105,7 +106,7 @@ class LakeBridgesIntegrationTests {
             var frontage = LandableFrontage.collectLandableFrontage(
                 LakePartitions.readCoastPartition(sector).collectPieces(),
                 piece -> LakeTier.isCaptured(piece, coastWalls),
-                VoidPartition.collectFrontier(readCellEdges(sector)),
+                readFrontier(sector),
                 KNOBS.measureBoundSagitta());
             var contacts = CoastFrontages.collectLakeFrontages(continents.traceCoasts());
             var furthest = CONTACT_SLACK_SAGITTAS * KNOBS.measureBoundSagitta();

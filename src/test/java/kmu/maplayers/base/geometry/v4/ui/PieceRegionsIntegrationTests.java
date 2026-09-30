@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.v4.ui;
 
 import kmlib.math.geometry.PolygonRegions;
+import kmlib.math.geometry.RingRegion;
 
 import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
@@ -64,6 +65,17 @@ class PieceRegionsIntegrationTests {
             .collectPieces();
     }
 
+    // The sector's pieces through the whole sequence, at the knobs the window draws with.
+    private static List<RingRegion> collectRegions(String sectorName, EdgeInset edgeInset) {
+
+        return PieceRegions.collectDrawableRegions(
+            readPieces(sectorName),
+            edgeInset,
+            KNOBS.miterSpikeLimit(),
+            SMOOTHING,
+            KNOBS.measureBoundSagitta());
+    }
+
     @Nested
     class CollectDrawableRegions {
 
@@ -71,12 +83,7 @@ class PieceRegionsIntegrationTests {
         @MethodSource(SECTORS)
         void noRingOfAnyRegionCrossesItself(String sectorName) {
 
-            var regions = PieceRegions.collectDrawableRegions(
-                readPieces(sectorName),
-                INSET,
-                KNOBS.miterSpikeLimit(),
-                SMOOTHING,
-                KNOBS.measureBoundSagitta());
+            var regions = collectRegions(sectorName, INSET);
 
             assertThat(regions)
                 .isNotEmpty();
@@ -118,14 +125,7 @@ class PieceRegionsIntegrationTests {
         void everyRegionEnclosesSomething(String sectorName) {
             // A region with an empty outer ring is one the sequence lost hold of rather than
             // one it dropped: a folded piece contributes no region at all.
-            var regions = PieceRegions.collectDrawableRegions(
-                readPieces(sectorName),
-                INSET,
-                KNOBS.miterSpikeLimit(),
-                SMOOTHING,
-                KNOBS.measureBoundSagitta());
-
-            for (var region : regions) {
+            for (var region : collectRegions(sectorName, INSET)) {
 
                 assertThat(PolygonRegions.computeSignedArea(region.outerRing()))
                     .as("the area a region of %s encloses", sectorName)
@@ -139,14 +139,7 @@ class PieceRegionsIntegrationTests {
             // The loops the rounding splits off at a sharp corner are a few units across, and
             // the walk itself keeps no face under a sagitta squared: nothing drawn from its
             // faces is smaller than they can be.
-            var regions = PieceRegions.collectDrawableRegions(
-                readPieces(sectorName),
-                INSET,
-                KNOBS.miterSpikeLimit(),
-                SMOOTHING,
-                KNOBS.measureBoundSagitta());
-
-            for (var region : regions) {
+            for (var region : collectRegions(sectorName, INSET)) {
 
                 assertThat(PolygonRegions.computeSignedArea(region.outerRing()))
                     .as("the area of a region of %s", sectorName)
@@ -162,13 +155,7 @@ class PieceRegionsIntegrationTests {
             // pieces either side of a seam would each round their own corner there and stop
             // meeting, and what was drawn would no longer be the partition.
             var pieces = readPieces(sectorName);
-
-            var regions = PieceRegions.collectDrawableRegions(
-                pieces,
-                NO_INSET,
-                KNOBS.miterSpikeLimit(),
-                SMOOTHING,
-                KNOBS.measureBoundSagitta());
+            var regions = collectRegions(sectorName, NO_INSET);
 
             assertThat(regions)
                 .as("regions of %s with nothing inset", sectorName)

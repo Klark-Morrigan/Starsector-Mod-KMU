@@ -96,31 +96,12 @@ public final class PieceShaper {
                 piece.holes().stream().map(LabelledRing::vertices).toList());
         }
 
-        // The folds the miter leaves at a corner too tight for the channel are spliced out
-        // here rather than left to the resolve, which fills a reversed loop as a fill of its
-        // own: a speck beside every junction. Such a fold is local - its two sides are a few
-        // corners apart along the ring - so a short window finds it at a cost the sea's
-        // thousands of corners can bear.
-        var outline = PolygonOffsets.removeReversedLoops(
-            shapeRing(piece.outline(), edgeInset, miterSpikeLimit), true, NEARBY_EDGES);
+        var outline = shapeOutline(piece, edgeInset, miterSpikeLimit);
 
         // Holes and all. A hole handed on beside a folded outline would be taken for the
         // fill by whatever resolves the rings next, so the whole piece goes, not the outline.
-        if (PolygonOffsets.hasInsetCollapsed(piece.boundary(), outline)) {
-
-            // Folded, but perhaps only at its ends. A bay behind a reach is a lens: as wide
-            // as it likes in the middle and a few units across where the reach meets the
-            // shore, so the miter folds both ends into loops that run out to the spike limit
-            // and outweigh the body between them. Read as one signed area that is a collapse;
-            // read with the folds spliced out it is a body with its ends gone, which is what
-            // a channel does to a lens. An end fold's two sides can be many corners apart
-            // where the end runs along the shore, so every pair of edges is compared - asked
-            // only of the few rings the first reading rejected, never of the sea.
-            outline = PolygonOffsets.removeReversedLoops(outline, true, EVERY_PAIR_OF_EDGES);
-
-            if (PolygonOffsets.hasInsetCollapsed(piece.boundary(), outline)) {
-                return NOTHING_LEFT_TO_DRAW;
-            }
+        if (outline.isEmpty()) {
+            return NOTHING_LEFT_TO_DRAW;
         }
         var holes = new ArrayList<List<double[]>>(piece.holes().size());
 
@@ -128,6 +109,39 @@ public final class PieceShaper {
             holes.add(shapeRing(hole, edgeInset, miterSpikeLimit));
         }
         return new RingRegion(outline, List.copyOf(holes));
+    }
+
+    // The outline shifted and its folds spliced out, or nothing where the inset consumed it.
+    //
+    // The folds the miter leaves at a corner too tight for the channel are spliced out here
+    // rather than left to the resolve, which fills a reversed loop as a fill of its own: a speck
+    // beside every junction. Such a fold is local - its two sides are a few corners apart along
+    // the ring - so a short window finds it at a cost the sea's thousands of corners can bear.
+    //
+    // A ring the collapse test then rejects may be folded only at its ends. A bay behind a reach
+    // is a lens: as wide as it likes in the middle and a few units across where the reach meets
+    // the shore, so the miter folds both ends into loops that run out to the spike limit and
+    // outweigh the body between them. Read as one signed area that is a collapse; read with the
+    // folds spliced out it is a body with its ends gone, which is what a channel does to a lens.
+    // An end fold's two sides can be many corners apart where the end runs along the shore, so
+    // every pair of edges is compared - asked only of the few rings the first reading rejected,
+    // never of the sea.
+    private static List<double[]> shapeOutline(
+            Face piece,
+            EdgeInset edgeInset,
+            double miterSpikeLimit) {
+
+        var outline = PolygonOffsets.removeReversedLoops(
+            shapeRing(piece.outline(), edgeInset, miterSpikeLimit), true, NEARBY_EDGES);
+
+        if (!PolygonOffsets.hasInsetCollapsed(piece.boundary(), outline)) {
+            return outline;
+        }
+        outline = PolygonOffsets.removeReversedLoops(outline, true, EVERY_PAIR_OF_EDGES);
+
+        return PolygonOffsets.hasInsetCollapsed(piece.boundary(), outline)
+            ? List.of()
+            : outline;
     }
 
     // One ring shifted edge by edge, by the miter path rather than the half-plane clip: a clip
