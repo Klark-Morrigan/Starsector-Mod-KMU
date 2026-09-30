@@ -1,17 +1,12 @@
 package kmu.maplayers.politicalmap.views;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Factions;
-
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
 import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
@@ -36,7 +31,9 @@ import java.util.function.Predicate;
  * faction reads identically in both views and only the allied factions differ between the two.
  * A sector holding no alliance recedes nothing, whatever the toggles say - there is no figure for
  * a backdrop to sit behind. It exists so the shared pipeline can paint alliances without knowing
- * anything about them - the view supplies only the grouping, the recede test, and the label.
+ * anything about them - the view supplies the grouping and how far its backdrop recedes, and the
+ * holder owner reading it shares with the faction view answers the recede test and the label off
+ * that grouping.
  *
  * <p>The grouping is sampled live from Nexerelin, which is why the view is registered only
  * when Nex is present. It names no {@code exerelin.*} type of its own: {@link NexerelinAlliances}
@@ -97,77 +94,11 @@ public final class AlliancesView implements DominancePaintedView {
     }
 
     @Override
-    public boolean shouldUseIndependentStyle(
-            String blocId,
-            HolderGrouping grouping,
-            ElementStyleAdjustment adjustment) {
-
-        // Genuine independent space always takes the independent style, exactly as the faction view
-        // classifies it. A non-allied faction takes it too once it desaturates: desaturation means
-        // "read as independent territory", so the bloc adopts the independent borders and seams, paired
-        // with the desaturation palette the same adjustment carries - not a bare independent recolour
-        // painted over the faction style. Its fill is the exception: a desaturated bloc fills at the
-        // faction opacity, so the desaturated background stays one uniform surface rather than
-        // splitting into two weights of grey. An alliance always paints in the full faction style so
-        // it stands out. Muting never swaps the bundle; it only dims the active style via the opacity
-        // modifier, so a lone faction that neither desaturates nor mutes reads exactly as the faction
-        // view draws it.
-        //
-        // The test reads the passed adjustment - every reason to recede already unioned into it -
-        // rather than this view's own toggle, so the bundle and the palette can never disagree about
-        // whether a bloc is desaturated. Reading the view's toggle alone would leave a faction the
-        // filter recede desaturates painted grey but still in the faction bundle, and flipping this
-        // view's toggle would then appear to change nothing but the border weight.
-        return Factions.INDEPENDENT.equals(blocId)
-            || (!grouping.isGroupedBloc(blocId) && adjustment.shouldDesaturate());
-    }
-
-    @Override
-    public ElementStyleAdjustment resolveBlocStyleAdjustment(
-            String blocId,
-            HolderGrouping grouping,
-            ContentInputs contentInputs) {
-
-        // An alliance keeps its full colour; only a non-alliance bloc recedes. The view owns just
-        // that gate - how far a receded bloc dims or desaturates is its own non-allied recede set's
-        // decision, taken off the bake's one sampling so every cell of this rebuild recedes by the
-        // same reading of the toggles. Keeping the gate here (like the grouping already samples Nex)
-        // leaves the pipeline a pure applier that never names an alliance.
-        //
-        // A sector holding no alliance at all recedes nothing. Every bloc would otherwise be
-        // non-allied and the whole map would sink at once, with no figure left for it to be the
-        // backdrop to - which reads as the layer having failed rather than as an answer. This
-        // matches how the filter recede is only resolved while a bloc is actually spotlit; it is
-        // load-bearing because Desaturate starts on and the empty-alliance case is where a fresh
-        // campaign opens.
-        if (!grouping.hasAnyGroupedBloc() || grouping.isGroupedBloc(blocId)) {
-            return ElementStyleAdjustment.NONE;
-        }
-        return contentInputs.viewRecedeAdjustment();
-    }
-
-    @Override
     public ElementStyleAdjustment resolveViewRecedeAdjustment(ScreenMemoryScope memoryScope) {
         // How far the non-allied backdrop recedes on the screen being painted, off this view's own
-        // toggles. Which blocs are the backdrop is resolveBlocStyleAdjustment's gate above.
+        // toggles. Which blocs are the backdrop is the holder owner reading's gate: every lone
+        // faction, and only where some alliance exists.
         return NON_ALLIED_RECEDE.resolveRecedeAdjustment(memoryScope);
-    }
-
-    @Override
-    public String resolveName(
-            String blocId,
-            HolderGrouping grouping,
-            SectorAPI sector,
-            FactionNameFormatChoice nameFormat) {
-
-        var allianceName = grouping.resolveGroupName(blocId);
-        if (allianceName != null) {
-            return allianceName;
-        }
-
-        // A non-alliance bloc is a lone faction, named exactly as the faction view names it, so the
-        // two views can never drift on how a plain faction's label reads.
-        return FactionsView.INSTANCE.resolveName(blocId, grouping, sector, nameFormat);
     }
 
     @Override

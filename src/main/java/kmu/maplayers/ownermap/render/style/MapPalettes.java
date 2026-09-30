@@ -1,14 +1,10 @@
 package kmu.maplayers.ownermap.render.style;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Factions;
-
 import kmlib.colour.Colours;
-import kmlib.starsector.factions.FactionPalette;
-import kmlib.starsector.factions.StarsectorFactionColours;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.awt.Color;
@@ -18,7 +14,7 @@ import java.awt.Color;
  * element paint in" rules that both the fills/borders and the cluster-name labels read, so
  * a name can never drift from the space it labels. Kept apart from the theme records (which
  * only hold player choices) and from the drawables build (which owns geometry), so this is
- * the one home for turning a style choice plus a bloc's recede into concrete colours.
+ * the one home for turning a style choice plus an owner's recede into concrete colours.
  */
 public final class MapPalettes {
 
@@ -27,36 +23,36 @@ public final class MapPalettes {
     }
 
     /**
-     * The two shades a bloc actually paints in under its style adjustment: its holder's own
-     * bright and dark shades normally, or the pass's shared desaturation palette when the
-     * adjustment desaturates the bloc. The single home for the "desaturate swaps the
-     * palette" rule, so a cell's seams, a faction's fill and border, and the bloc's name
-     * all recolour off one decision rather than three copies of it.
+     * The two shades an owner actually paints in under its style adjustment: its own two shades
+     * normally, or the pass's shared desaturation palette when the adjustment desaturates the
+     * owner. The single home for the "desaturate swaps the palette" rule, so a cell's seams, an
+     * owner's fill and border, and the owner's name all recolour off one decision rather than
+     * three copies of it.
      */
-    public static FactionPalette resolveEffectivePalette(
+    public static OwnerPalette resolveEffectivePalette(
             ElementStyleAdjustment adjustment,
-            SystemOwner holder,
-            FactionPalette desaturationPalette) {
+            SystemOwner owner,
+            OwnerPalette desaturationPalette) {
         return resolveEffectivePalette(
             adjustment,
-            holder.resolvePalette(),
+            owner.palette(),
             desaturationPalette);
     }
 
     /**
      * The two shades any cell paints in under its style adjustment, stated over the
-     * shades themselves rather than over whoever holds them: the cell's own pair normally, the
+     * shades themselves rather than over whoever owns them: the cell's own pair normally, the
      * pass's shared desaturation palette once the adjustment desaturates it.
      *
-     * <p>A cell with no holder has shades all the same - two neutral slots -
+     * <p>A cell with no owner has shades all the same - two neutral slots -
      * yet still recolours by the same rule, so the swap is expressed over a palette and the
-     * holder-keyed form above resolves to this one. That keeps "desaturate swaps the palette" a
+     * owner-keyed form above resolves to this one. That keeps "desaturate swaps the palette" a
      * single rule no matter what the un-desaturated shades came from.
      */
-    public static FactionPalette resolveEffectivePalette(
+    public static OwnerPalette resolveEffectivePalette(
             ElementStyleAdjustment adjustment,
-            FactionPalette ownPalette,
-            FactionPalette desaturationPalette) {
+            OwnerPalette ownPalette,
+            OwnerPalette desaturationPalette) {
         return adjustment.shouldDesaturate()
             ? desaturationPalette
             : ownPalette;
@@ -65,11 +61,11 @@ public final class MapPalettes {
     /**
      * The palette an ownerless cell draws in: the shared neutral colour in both
      * slots, so whichever slot an element names it paints neutral. Stated once here because
-     * "a factionless cell has no palette of its own" is one rule, and a caller spelling the
+     * "an unowned cell has no palette of its own" is one rule, and a caller spelling the
      * colour twice is stating it again rather than reading it.
      */
-    public static FactionPalette resolveNeutralPalette(Color neutralColour) {
-        return new FactionPalette(neutralColour, neutralColour);
+    public static OwnerPalette resolveNeutralPalette(Color neutralColour) {
+        return new OwnerPalette(neutralColour, neutralColour);
     }
 
     /**
@@ -89,7 +85,7 @@ public final class MapPalettes {
      */
     public static Color pickPaletteColour(
             ElementPaintSelection paintSelection,
-            FactionPalette palette) {
+            OwnerPalette palette) {
 
         if (!(paintSelection instanceof FactionPaletteSlot slot)) {
             return null;
@@ -101,73 +97,76 @@ public final class MapPalettes {
     }
 
     /**
-     * Picks the palette shade of a cell itself: its holder's, or the shared neutral
-     * colour when nothing owns it - a factionless system (decivilised, or uninhabited) has no
+     * Picks the palette shade of a cell itself: its owner's, or the shared neutral
+     * colour when nothing owns it - an unowned system (decivilised, or uninhabited) has no
      * palette of its own, so both shades resolve neutral, exactly as its cell's own outline
      * draws. Null for a NONE ("No color") choice, so the caller skips the element.
      *
-     * <p>Reads the holder's authored shades untouched, with no per-bloc adjustment folded in,
+     * <p>Reads the owner's shades untouched, with no per-owner adjustment folded in,
      * so this answers "whose cell is this" rather than "how is this cell painted right
      * now". The two diverge under a recede: a cell the map has sunk to grey still belongs to
-     * its holder, and an element whose whole job is to name that holder should say so.
+     * its owner, and an element whose whole job is to name that owner should say so.
      */
     public static Color pickHolderPaletteColour(
             ElementPaintSelection paintSelection,
-            SystemOwner holder,
+            SystemOwner owner,
             Color neutralColour) {
         return pickPaletteColour(
             paintSelection,
-            holder == null
+            owner == null
                 ? resolveNeutralPalette(neutralColour)
-                : holder.resolvePalette());
+                : owner.palette());
     }
 
     /**
-     * Resolves the one uniform palette every desaturated bloc recolours to: the Independent
-     * faction's own two shades, each scaled toward black by {@code darkeningStrength}. Independent's
-     * authored colour and the mid-grey genuine independent space paints in are the same grey, so
-     * painting a desaturated faction in Independent's shades unchanged would make it read as
-     * independent-held space; darkening sinks the receded fills to a distinctly darker grey that
-     * sits behind it, separated by value rather than a hue neither grey has. The strength is the
-     * fraction of brightness removed - 0 leaves the Independent shades untouched, 0.3 draws them
-     * 30% darker, 1 goes to black. Takes the sector and strength as parameters (rather than reading
-     * the setting itself) so the mapping is a pure lookup; the caller reads the live setting once
-     * per pass and hands it in.
+     * Resolves the one uniform palette every desaturated owner recolours to: the painting layer's
+     * recede shades, each scaled toward black by {@code darkeningStrength}. On the layers painting
+     * holders those shades are Independent's, and Independent's authored colour and the mid-grey
+     * genuine independent space paints in are the same grey, so painting a desaturated faction in
+     * them unchanged would make it read as independent-held space; darkening sinks the receded fills
+     * to a distinctly darker grey that sits behind it, separated by value rather than a hue neither
+     * grey has. The strength is the fraction of brightness removed - 0 leaves the shades untouched,
+     * 0.3 draws them 30% darker, 1 goes to black. Takes the shades and strength as parameters
+     * (rather than reading either itself) so the mapping is a pure lookup; the caller reads both once
+     * per pass and hands them in.
+     *
+     * @param recedePalette     the shades a receded owner sinks toward, from the owner reading
+     * @param darkeningStrength the fraction of brightness removed
+     * @return the palette every desaturated owner recolours to
      */
-    public static FactionPalette resolveDesaturationPalette(
-            SectorAPI sector,
+    public static OwnerPalette resolveDesaturationPalette(
+            OwnerPalette recedePalette,
             double darkeningStrength) {
 
         var keepFactor = (float) (1.0 - darkeningStrength);
-        var independent = StarsectorFactionColours.resolvePalette(sector, Factions.INDEPENDENT);
 
-        return new FactionPalette(
-            Colours.darken(independent.primaryColour(), keepFactor),
-            Colours.darken(independent.secondaryColour(), keepFactor));
+        return new OwnerPalette(
+            Colours.darken(recedePalette.primaryColour(), keepFactor),
+            Colours.darken(recedePalette.secondaryColour(), keepFactor));
     }
 
     /**
-     * Resolves the palette a factionless cell the spotlight spares paints in: the shared neutral
+     * Resolves the palette an unowned cell the spotlight spares paints in: the shared neutral
      * colour washed toward white by {@code lighteningStrength}, in both slots as the plain neutral
      * palette holds it.
      *
      * <p>The counterpart to {@link #resolveDesaturationPalette}, and the reason both exist. That
-     * one sinks the receded background below genuine independent space; this one lifts a spared
-     * cell above it. Sparing the recede alone does not separate the two, because the neutral a
-     * factionless cell paints in and the Independent grey the background sinks from are the same
-     * grey to begin with - so the spared cell would sit at the value the background started at,
-     * which is exactly where the eye stops telling them apart.
+     * one sinks the receded background below the quieter owners' space; this one lifts a spared
+     * cell above it. Sparing the recede alone does not separate the two, because the neutral an
+     * unowned cell paints in and the grey the background sinks from are the same grey to begin
+     * with - so the spared cell would sit at the value the background started at, which is exactly
+     * where the eye stops telling them apart.
      *
-     * <p>Washed toward white rather than recoloured, on RGB alone. The cell has no holder to
+     * <p>Washed toward white rather than recoloured, on RGB alone. The cell has no owner to
      * borrow a hue from, and giving it one would state an ownership the layer sparing it is
      * reporting it does not have; a neutral grey moved toward white is the same grey, brighter.
      *
-     * @param neutralColour      the shared colour every factionless cell paints in
+     * @param neutralColour      the shared colour every unowned cell paints in
      * @param lighteningStrength the fraction of the way to white; 0 yields the plain neutral
      *                           palette, 1 yields white
      * @return the two shades a spared cell paints in
      */
-    public static FactionPalette resolvePresencePalette(
+    public static OwnerPalette resolvePresencePalette(
             Color neutralColour,
             double lighteningStrength) {
 

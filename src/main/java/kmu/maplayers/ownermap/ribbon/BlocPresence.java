@@ -1,7 +1,6 @@
 package kmu.maplayers.ownermap.ribbon;
 
-import kmlib.starsector.factions.FactionPalette;
-
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.render.style.BlocPaletteReader;
 
 import java.util.ArrayList;
@@ -38,7 +37,7 @@ import java.util.Map;
  */
 public record BlocPresence(
     String blocId,
-    FactionPalette palette,
+    OwnerPalette palette,
     int marketCount) {
 
     // A bloc holding nothing the player may be shown, which is the count presence starts above.

@@ -156,9 +156,11 @@ flowchart TD
     V([Selected view]) --> G[Grouping:<br/>how factions form blocs]
     V --> O[Ownership source:<br/>which systems each bloc paints]
     V --> R[Ribbon planner:<br/>what each system holds]
+    V --> RD[Owner reading:<br/>how each bloc looks and reads]
     G --> PIPE[Shared draw pipeline]
     O --> PIPE
     R --> PIPE
+    RD --> PIPE
     PIPE --> S[Shape cells into<br/>bordered territories]
     S --> Fi[Split the fill:<br/>solid / hatched / unfilled]
     Fi --> L[Overlay bloc names]
@@ -177,7 +179,7 @@ where the player would rather have the whole band and let the name draw across i
 Either way the pass runs last,
 so the ordering is what makes the choice available rather than what settles it.
 
-What changes between views is only those three inputs;
+What changes between views is only those four inputs;
 from the seam on,
 every view shapes,
 fills,
@@ -185,6 +187,17 @@ bands,
 and labels identically.
 The sources themselves are [below](#the-ownership-sources);
 the seam they answer and the three fill states are [ownership resolution](../ownermap/owners/holders/README.md).
+
+The fourth is the one the three views share outright.
+Each answers with the holder owner reading and the holder categories,
+which read a bloc off the faction it paints as under whatever grouping they are handed:
+the group rules - a group named by its own name, never receding,
+a lone faction receding beside it -
+never fire under the identity grouping,
+so the Factions and Claims views' plain faction holding
+and the Alliances view's alliances-against-a-backdrop are one reading,
+differing only by the grouping.
+What that reading answers is the [owner-map tier's](../ownermap/README.md#what-a-layer-supplies).
 
 The third input is the second one layer along:
 a view's cells are painted by some mechanic,

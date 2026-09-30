@@ -20,9 +20,11 @@ import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.holding.OwnerMapInhabitation;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.settings.KmuMapLabelSettings;
@@ -45,8 +47,9 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -92,7 +95,7 @@ final class DebugBorderTracingBuilderTests {
     // nothing to outline.
     private static final String TINY_SYSTEM = "tiny";
     private static final SystemOwner HEGEMONY_OWNER =
-        new SystemOwner(HEGEMONY, Color.RED, Color.BLUE);
+        new SystemOwner(HEGEMONY, new OwnerPalette(Color.RED, Color.BLUE));
 
     // The live Dev-tab trace parameters, stubbed at their read: a weld tolerance loose enough to
     // chain the hand-built corners, and the miter limit the shipped border uses.
@@ -197,6 +200,7 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
                 sectorMock,
+                HolderCategories.INSTANCE,
                 OUTLINE_DRAWN,
                 holderProvider);
 
@@ -218,6 +222,7 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM),
                 sectorMock,
+                HolderCategories.INSTANCE,
                 OUTLINE_DRAWN,
                 holderProvider);
 
@@ -232,7 +237,7 @@ final class DebugBorderTracingBuilderTests {
             stubTheme(buildRoundingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(HELD_SYSTEM), sectorMock, OUTLINE_DRAWN,
+                listCellsFor(HELD_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
                 holderProvider);
 
             // Rounding feeds off whatever the previous stage left, so with sanding off it rounds
@@ -247,7 +252,7 @@ final class DebugBorderTracingBuilderTests {
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), sectorMock, OUTLINE_DRAWN,
+                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
                 holderProvider);
 
             // The decivilised world's cell resolves to the decivilised bundle and draws; the
@@ -261,7 +266,7 @@ final class DebugBorderTracingBuilderTests {
             stubInhabitedSystems(DECIVILISED_SYSTEM);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), sectorMock, OUTLINE_DRAWN,
+                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
                 holderProvider);
 
             assertThat(drawables.isEmpty()).isTrue();
@@ -273,7 +278,7 @@ final class DebugBorderTracingBuilderTests {
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(HELD_SYSTEM), sectorMock, OUTLINE_DRAWN,
+                listCellsFor(HELD_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
                 holderProvider);
 
             // One loop with both factionless outlines on: the cell is grouped, so the factionless
@@ -292,7 +297,7 @@ final class DebugBorderTracingBuilderTests {
                 .thenReturn(buildDrawnSystemKeys(Map.of(HELD_SYSTEM, HELD_SYSTEM)));
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    geometryCacheMock, sectorMock, OUTLINE_DRAWN,
+                    geometryCacheMock, sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
                 holderProvider);
 
             // A bloc whose cells carry no edges traces nothing, and the overlay drops it rather
@@ -306,7 +311,7 @@ final class DebugBorderTracingBuilderTests {
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(TINY_SYSTEM), sectorMock, OUTLINE_DRAWN,
+                listCellsFor(TINY_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
                 holderProvider);
 
             // The cell is narrower than twice the border inset, so insetting leaves no polygon
@@ -324,13 +329,18 @@ final class DebugBorderTracingBuilderTests {
             stubInhabitedSystems(DECIVILISED_SYSTEM);
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
+            var contentInputs = ContentInputsFixtures.createInputsOutlining(false);
+
             DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(DECIVILISED_SYSTEM),
                 sectorMock,
-                ContentInputsFixtures.createInputsOutlining(false),
+                HolderCategories.INSTANCE,
+                contentInputs,
                 holderProvider);
 
-            styleReaderMock.verify(() -> RenderStyleReader.readRenderStyle(false));
+            styleReaderMock.verify(() -> RenderStyleReader.readRenderStyle(
+                same(HolderCategories.INSTANCE),
+                same(contentInputs)));
         }
 
         @Test
@@ -339,7 +349,7 @@ final class DebugBorderTracingBuilderTests {
             stubTheme(buildBothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM), sectorMock, OUTLINE_DRAWN,
+                listCellsFor(DECIVILISED_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
                 holderProvider);
 
             // A lone convex cell has no needle protrusions to sand, so its two stages are the raw
@@ -423,7 +433,7 @@ final class DebugBorderTracingBuilderTests {
             categories);
 
         styleReaderMock
-            .when(() -> RenderStyleReader.readRenderStyle(anyBoolean()))
+            .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
             .thenReturn(renderStyle);
     }
 

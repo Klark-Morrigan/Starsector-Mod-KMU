@@ -70,6 +70,8 @@ Every place the tier needs a layer's answer is a seam the layer fills where it c
 | --- | --- |
 | each system's owner, for a whole rebuild | `HolderProvider`, one per view |
 | one system's owner, for an incremental refresh | `SystemHolderResolveSource` |
+| each owner's shades, name, crest, recede and category, and the shades an unowned or receded cell is derived from | an `OwnerReading`, resolved once per rebuild through `OwnerPaintedView.resolveOwnerReading` |
+| which categories cells divide into, which one is full strength, and which one an unowned cell falls to | `OwnerCategories`, through `OwnerPaintedView.resolveCategories` |
 | whether the cursor is answered at all | the substrate's `MapLayerHoverGates`, or the tier's `SharedOwnerMapHoverGates` over the shared owner-map switches |
 | what the picker's hovered row lights | `OwnerMapPreviewHighlight`, or the tier's `SpotlightPreviewHighlightRenderer` for a layer offering the spotlight picker |
 | which side of the nebulae each sub-layer paints | `OwnerMapBandLayout`, supplied per frame |
@@ -84,6 +86,35 @@ and it names no layer's answer:
 a view recedes nothing of its own accord unless it says so.
 Any other default would name one layer's answer in front of every layer,
 including the ones it does not describe.
+
+**The tier holds an owner key and asks the layer everything else about an owner.**
+Fusing, bordering and labelling never ask what an owner ID means,
+and nor does anything else here:
+the colours an owner paints in,
+the name it reads by,
+the crest its picker row carries,
+how far it recedes and which category it draws in
+are the owner reading's answers,
+and so are the neutral shades an unowned cell paints in and a receded one sinks toward.
+One reading per rebuild rather than per question,
+because an answer may rest on a live source -
+which factions stand together, say -
+and every shade, name and category one rebuild paints has to come off one sampling of it.
+The build resolves it over the very grouping its holding was folded under
+and retains it for every stage after,
+the label fit and the incremental refresh included.
+
+The categories are declared the same way.
+The tier states the roles a category plays -
+the full-strength one a desaturated owner's fill opacity is held at,
+and the split of unowned cells into settled and empty -
+and indexes the theme by whatever category the layer answers,
+never naming one itself.
+
+The layers painting holders answer both through `HolderOwnerReading` and `HolderCategories`,
+which read a bloc off the faction it paints as and divide cells into the four `OwnerMapCategory` values.
+A layer painting owners that are not factions brings its own,
+and the build then never asks the sector for a faction at all.
 
 ## What a layer holds
 
@@ -161,14 +192,14 @@ since that is what a player's stored setting is keyed by.
 
 | Package | What is in it |
 | --- | --- |
-| *(top level)* | the view seam (`OwnerPaintedView`, `MapLayerViewRegistry`, `ViewGrouping`), the picker assembly behind its defaults (`BlocPickerAssembly`), the stale-spotlight heal (`FilterSelectionHeal`) and the preferences a rebuild samples (`ContentInputs`) |
-| `holding` | one rebuild's reading of a sector: `HolderPass`, the grouping it folds factions by, the colony rules it reads under, and the contest sides a `BlocAffiliation` places blocs on |
-| `owners` | what is read off a holding: the owner of a system (`SystemOwner`) and the spotlight's own key (`SpotlitBlocs`) |
+| *(top level)* | the view seam (`OwnerPaintedView`, `MapLayerViewRegistry`, `ViewReading`), the picker assembly behind its defaults (`BlocPickerAssembly`), the stale-spotlight heal (`FilterSelectionHeal`) and the preferences a rebuild samples (`ContentInputs`) |
+| `holding` | one rebuild's reading of a sector: `HolderPass`, the grouping it folds factions by, the colony rules it reads under, the contest sides a `BlocAffiliation` places blocs on, and `HolderOwnerReading`, the owner reading of the layers painting holders |
+| `owners` | what is read off a holding: the owner of a system (`SystemOwner`) and the two shades it paints in (`OwnerPalette`), the seam a layer answers everything else about its owners through (`OwnerReading`), and the spotlight's own key (`SpotlitBlocs`) |
 | [`owners/holders`](owners/holders/README.md) | the ownership seam every view resolves through, the per-system resolve a refresh uses, and the three fill states |
 | `picker` | the bloc picker model: its rows (`SelectableBloc`, `RankedBloc`), the metrics they carry, the sort modes ranking them, a bloc's standing with the player, and the presence index a preview lights |
 | `preferences` | the per-save body choices - name format, uninhabited outline, recede - and `OwnerMapBodyPreferences`, the set a layer builds over keys of its own |
 | [`render/clusters`](render/clusters/README.md) | cells into coloured, bordered clusters with their seams and split fills |
-| [`render/style`](render/style/README.md) | player settings into each element's colours, widths and opacities |
+| [`render/style`](render/style/README.md) | player settings into each element's colours, widths and opacities, and the categories a layer declares (`OwnerCategories`, with the holder layers' `HolderCategories`) |
 | `render/labels` | what a cluster's name reads and what shade it draws in, handed to the substrate's overlay |
 | [`render/ribbon`](render/ribbon/README.md) | a planned band as triangles inside its cell's ring, and the draw |
 | [`ribbon`](ribbon/README.md) | what a band is made of before any geometry: the runs, their order and the count itself |

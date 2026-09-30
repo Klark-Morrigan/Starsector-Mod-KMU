@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.factions.FactionCrests;
+import kmlib.starsector.factions.FactionNames;
 import kmlib.starsector.factions.relation.StarsectorPlayerRelations;
 
 import kmu.conditions.domain.KmuEditableMarket;
@@ -117,10 +118,7 @@ final class StarsectorConditionPickerLocationFactory {
             return null;
         }
 
-        var name = normaliseText(faction.getDisplayNameLong());
-        if (name == null) {
-            name = normaliseText(faction.getDisplayName());
-        }
+        var name = FactionNames.resolveFullestName(faction);
         if (name == null) {
             return null;
         }

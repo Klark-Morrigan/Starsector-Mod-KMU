@@ -2,7 +2,6 @@ package kmu.maplayers.ownermap.render.clusters;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.StarsectorFactionColours;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
@@ -10,13 +9,17 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
+import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.OwnerPaintedViewFake;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.holding.OwnerMapInhabitation;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SpotlitBlocs;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 
@@ -39,9 +42,14 @@ import static kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures.cre
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Pins what a build hands down: the one reading of the sector it was given, at every reader
@@ -51,6 +59,9 @@ import static org.mockito.Mockito.mockStatic;
  * itself. Each of them takes a pass and shares its walk of a system with whatever else reads that
  * system through it - but only this build decides which pass they are handed, and one opened here
  * would have the sector walked again while every reader below went on looking correct.
+ *
+ * <p>It also pins the one owner reading a build resolves: asked of the view once, over the pass's
+ * own sector and grouping, and retained whole for every stage after it.
  *
  * <p>Everything the build reads apart from that is stood in for: the theme, the palettes and the
  * inhabitation scan all read live sources no test JVM answers, and the sidebar picks arrive as a
@@ -71,7 +82,7 @@ final class OwnerMapBuilderTests {
 
     // One held system, for the cases about a holding handed in rather than read.
     private static final SystemKey HELD_SYSTEM = buildCellKey("corvus");
-    private static final SystemOwner HELD_BY = new SystemOwner("hegemony", NEUTRAL, NEUTRAL);
+    private static final SystemOwner HELD_BY = new SystemOwner("hegemony", new OwnerPalette(NEUTRAL, NEUTRAL));
 
     // The picks a pass off filter was baked under. No case here spotlights a bloc, so the whole
     // reading is inert and the build reduces to the passes it hands down.
@@ -81,7 +92,6 @@ final class OwnerMapBuilderTests {
     private MockedStatic<OwnerMapInhabitation> inhabitationMock;
     private MockedStatic<SpotlitBlocs> spotlitBlocsMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
-    private MockedStatic<StarsectorFactionColours> factionColoursMock;
     private MockedStatic<MapPalettes> palettesMock;
 
     // The passes the presence scan was asked for, in the order the build asked.
@@ -97,7 +107,6 @@ final class OwnerMapBuilderTests {
         inhabitationMock = mockStatic(OwnerMapInhabitation.class);
         spotlitBlocsMock = mockStatic(SpotlitBlocs.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
-        factionColoursMock = mockStatic(StarsectorFactionColours.class);
         palettesMock = mockStatic(MapPalettes.class);
 
         // The inhabitation scan's pass is kept on the same terms the presence scan's is: it walks
@@ -110,11 +119,8 @@ final class OwnerMapBuilderTests {
                 return Set.of(buildCellKey("inhabited-system"));
             });
         styleReaderMock
-            .when(() -> RenderStyleReader.readRenderStyle(anyBoolean()))
+            .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
             .thenReturn(createRenderStyleForEveryCategory(createInertCategoryStyle()));
-        factionColoursMock
-            .when(() -> StarsectorFactionColours.resolveNeutralColour(any()))
-            .thenReturn(NEUTRAL);
 
         // Each pass the presence scan is handed, kept rather than answered about: the case is
         // about which pass reached it, not what it reported.
@@ -129,7 +135,6 @@ final class OwnerMapBuilderTests {
     @AfterEach
     void closeTheLiveSeams() {
         palettesMock.close();
-        factionColoursMock.close();
         styleReaderMock.close();
         spotlitBlocsMock.close();
         inhabitationMock.close();
@@ -326,14 +331,66 @@ final class OwnerMapBuilderTests {
                 UNFILTERED_INPUTS,
                 OwnerMapBuilder.resolveHolding(pass, viewFake, UNFILTERED_INPUTS));
 
-            assertThat(clusters.getBuildInputs().viewGrouping().grouping())
+            assertThat(clusters.getBuildInputs().viewReading().grouping())
                 .isSameAs(grouping);
+        }
+
+        @Test
+        void resolvesTheOwnerReadingOnceOverThePassesOwnSnapshot() {
+            // One reading per rebuild, asked with the very sector and grouping the holding was read
+            // under: a reading taken over a second sampling of the grouping could name, colour and
+            // categorise the owners of a fold the holding never made.
+            var viewSpy = spy(new OwnerPaintedViewFake(
+                Map.of(),
+                (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of())));
+            var pass = buildPassOverAnEmptySector();
+
+            OwnerMapBuilder.buildClusters(
+                new CellGeometryCache(),
+                pass,
+                viewSpy,
+                UNFILTERED_INPUTS,
+                OwnerMapBuilder.resolveHolding(pass, viewSpy, UNFILTERED_INPUTS));
+
+            verify(viewSpy, times(1)).resolveOwnerReading(same(pass.sector()), same(pass.grouping()));
+        }
+
+        @Test
+        void retainsTheReadingItResolvedForEveryLaterStage() {
+            // The fills, borders and seams are styled off the build inputs and the labels off the
+            // snapshot taken from them, so the reading retained here is the one all of them read.
+            var reading = OwnerReadingFake.createAnsweringNothing();
+            var viewSpy = spy(new OwnerPaintedViewFake(
+                Map.of(),
+                (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of())));
+            doReturn(reading).when(viewSpy).resolveOwnerReading(any(), any());
+
+            var clusters = buildOverAnEmptySector(viewSpy);
+
+            assertThat(clusters.getBuildInputs().viewReading().reading())
+                .isSameAs(reading);
+        }
+
+        @Test
+        void derivesTheUnownedPaletteFromTheReadingsUnownedShade() {
+            // The shade an unowned cell paints in is the layer's answer, not a faction the tier
+            // reads for itself.
+            var clusters = buildOverAnEmptySector(new OwnerPaintedViewFake(
+                Map.of(),
+                (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of())));
+
+            palettesMock.verify(() -> MapPalettes.resolveNeutralPalette(OwnerReadingFake.UNOWNED_COLOUR));
+            palettesMock.verify(() -> MapPalettes.resolveDesaturationPalette(
+                same(OwnerReadingFake.RECEDE_PALETTE),
+                anyDouble()));
+            assertThat(clusters.getBuildInputs().styling().categories())
+                .isSameAs(HolderCategories.INSTANCE);
         }
     }
 
     // A build over nothing from a holding read for it, which is the whole of a rebuild that owes a
     // new reading - the shape every case not about the split takes.
-    private static OwnerMapClusters buildOverAnEmptySector(OwnerPaintedViewFake viewFake) {
+    private static OwnerMapClusters buildOverAnEmptySector(OwnerPaintedView viewFake) {
 
         var pass = buildPassOverAnEmptySector();
 

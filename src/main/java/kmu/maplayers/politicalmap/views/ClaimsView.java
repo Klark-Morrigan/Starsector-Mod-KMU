@@ -6,17 +6,18 @@ import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.holding.ColonyReadRules;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderOwnerReading;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
 import kmu.maplayers.ownermap.picker.BlocPickerRead;
 import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
+import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.ClaimSortModes;
@@ -40,9 +41,9 @@ import java.util.Optional;
  * border and name.
  *
  * <p>A bloc's styling and label are the faction view's exactly - an independent claimant recedes like
- * independent territory, and a bloc is named by its claiming faction's own display name - so those three
- * seams delegate to {@link FactionsView} rather than restating them, which keeps the two views from
- * drifting on how a plain faction bloc paints and reads.
+ * independent territory, and a bloc is named by its claiming faction's own display name - so it
+ * takes the same holder owner reading and categories {@link FactionsView} does rather than restating
+ * them, which keeps the two views from drifting on how a plain faction bloc paints and reads.
  *
  * <p>Its spotlight picker is its own, not the held layers': the blocs it offers are the ones that
  * claim a system or live in one, and they carry claim metrics rather than domination ones, so the
@@ -135,35 +136,18 @@ public final class ClaimsView implements OwnerPaintedView {
     }
 
     @Override
-    public boolean shouldUseIndependentStyle(
-            String blocId,
-            HolderGrouping grouping,
-            ElementStyleAdjustment adjustment) {
-        // A claimant bloc styles exactly as the faction view styles a held one, so an independent
-        // claimant recedes to the muted style like independent territory; delegated so the two views
-        // can never diverge on the classification.
-        return FactionsView.INSTANCE.shouldUseIndependentStyle(blocId, grouping, adjustment);
+    public OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
+        // A claimant bloc is read exactly as the faction view reads a held one - an independent
+        // claimant recedes like independent territory, and a claim bloc ID is a plain faction ID
+        // under identity grouping, named by the claiming faction - so it takes the one holder reading
+        // rather than restating any of it.
+        return new HolderOwnerReading(sector, grouping);
     }
 
     @Override
-    public ElementStyleAdjustment resolveBlocStyleAdjustment(
-            String blocId,
-            HolderGrouping grouping,
-            ContentInputs contentInputs) {
-        // The claims view dims or recolours no bloc, exactly as the faction view does not; delegated
-        // to keep that one decision in a single place.
-        return FactionsView.INSTANCE.resolveBlocStyleAdjustment(blocId, grouping, contentInputs);
-    }
-
-    @Override
-    public String resolveName(
-            String blocId,
-            HolderGrouping grouping,
-            SectorAPI sector,
-            FactionNameFormatChoice nameFormat) {
-        // A claim bloc ID is a plain faction ID under identity grouping, so the label is the claiming
-        // faction's own name - resolved by the faction view so the two never drift on a faction label.
-        return FactionsView.INSTANCE.resolveName(blocId, grouping, sector, nameFormat);
+    public OwnerCategories resolveCategories() {
+        // The faction layer's look, so the faction layer's categories.
+        return HolderCategories.INSTANCE;
     }
 
     @Override

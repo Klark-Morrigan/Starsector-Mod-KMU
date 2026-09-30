@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.render;
 
 import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import org.junit.jupiter.api.Nested;
@@ -218,6 +219,6 @@ final class StaleOwnerMapDisturbanceTests {
 
     // Only the faction ID is read here, so the shades are inert placeholders.
     private static SystemOwner buildHolderOf(String factionId) {
-        return new SystemOwner(factionId, Color.GRAY, Color.GRAY);
+        return new SystemOwner(factionId, new OwnerPalette(Color.GRAY, Color.GRAY));
     }
 }

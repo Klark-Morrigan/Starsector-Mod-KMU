@@ -11,6 +11,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -330,7 +331,7 @@ final class CellRibbonsBakerTests {
         // The mechanic the pass counts by, answered off the view the clusters already carry -
         // which is where a bake reads it from, so a stub anywhere else would leave the pass
         // counting through whatever the fixture's mock returns by default.
-        when(clusters.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
+        when(clusters.getBuildInputs().viewReading().view().resolveRibbonPlanner(any()))
             .thenReturn(system -> ANY_PLAN);
 
         return clusters;
@@ -409,6 +410,6 @@ final class CellRibbonsBakerTests {
     // Any holder, which the fixture also counts as making its system inhabited - the set the band
     // pass gates on. Which bloc holds it decides nothing here.
     private static SystemOwner buildHolder() {
-        return new SystemOwner("hegemony", Color.WHITE, Color.GRAY);
+        return new SystemOwner("hegemony", new OwnerPalette(Color.WHITE, Color.GRAY));
     }
 }

@@ -25,7 +25,6 @@ import kmu.settings.KmuOwnerMapRibbonSettings;
 import org.mockito.MockedStatic;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -106,7 +105,7 @@ public final class PoliticalMapRebuildSeams {
         // from the geometry or the holding.
         var renderStyleSeam = seams.openSeam(RenderStyleReader.class);
         renderStyleSeam
-            .when(() -> RenderStyleReader.readRenderStyle(anyBoolean()))
+            .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
             .thenReturn(OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
                 OwnerMapClusterFixtures.createInertCategoryStyle()));
     }

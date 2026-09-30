@@ -23,7 +23,6 @@ import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
@@ -36,12 +35,12 @@ import java.util.Map;
 
 /**
  * Drives the cluster-label placements: clusters the owned systems, reads the live tuning and
- * palette, wires the active view and any active filter into the per-bloc colour and name
+ * palette, wires the owner reading and any active filter into the per-owner colour and name
  * resolvers, and hands it all to the pure {@link ClusterAnchorPlacement} search - then keeps
  * the resulting overlay list current in place.
  *
  * <p>The collaborators split by responsibility so this one stays the thin, settings-fed seam:
- * {@link ClusterLabelStyling} resolves each label's colour and name (view off filter, filter
+ * {@link ClusterLabelStyling} resolves each label's colour and name (the reading off filter, filter
  * rules under one), {@link ClusterAnchorPlacement} runs the pure geometric search over the
  * plain functions of a bloc ID those resolvers hand it, and {@link LabelAnchorSpecification}
  * carries the search's tuning. This is the whole of what the owner map contributes to a
@@ -54,8 +53,8 @@ import java.util.Map;
  * build. The overlay list is owned by the terrain plugin and rebuilt in place here, whichever
  * base view a rebuild produced.
  *
- * <p>Both entry points take a {@link ClusterLabelStylingSnapshot} rather than the holders, the
- * palette, the view and grouping and the picks the pass was baked under one by one, so the two
+ * <p>Both entry points take a {@link ClusterLabelStylingSnapshot} rather than the owners, the
+ * palette, the categories and reading and the picks the pass was baked under one by one, so the two
  * paths differ only in where that snapshot came from and a label can never be styled from two
  * passes at once.
  *
@@ -98,9 +97,9 @@ public final class ClusterAnchorsBuilder {
      * search's tuning are read here rather than at the call sites, so every path gates identically
      * and a settings change re-fits on the rebuild it triggers.
      *
-     * <p>The snapshot's view supplies each bloc's label and the style its colour follows; under a
-     * filter the names recede exactly as the fills do, and the synthetic spotlight keys resolve to
-     * the selected bloc's name, since the view cannot name a synthetic id. The standing pair that
+     * <p>The snapshot's reading supplies each owner's label and the style its colour follows; under
+     * a filter the names recede exactly as the fills do, and the synthetic spotlight keys resolve to
+     * the selected owner's name, since the reading cannot name a synthetic ID. The standing pair that
      * came in lets placements whose clusters still stand carry over rather than be searched again,
      * and the pair left behind states the rules this fit ran under, which only this build knows.
      *
@@ -109,7 +108,6 @@ public final class ClusterAnchorsBuilder {
      * @param cellGeometry    the cells the fit clips and trims against, carrying the revision that
      *                        names them, so no path can fit against one reading of the geometry
      *                        and label its placements with another
-     * @param sector          the sector the names are read from
      * @param styling         everything the pass was baked under that styles a label
      * @return which names this pass moved: the list left behind says where every name ended up
      *         and nothing about which are new, and this is the only point where both lists exist
@@ -119,7 +117,6 @@ public final class ClusterAnchorsBuilder {
     public static ClusterNameDisturbance rebuildClusterAnchors(
             StandingClusterAnchors standingAnchors,
             RevisedCellGeometry cellGeometry,
-            SectorAPI sector,
             ClusterLabelStylingSnapshot styling) {
 
         // Read ahead of the gate rather than inside it, because the standing pair needs
@@ -148,7 +145,6 @@ public final class ClusterAnchorsBuilder {
         // value and cannot drift apart on a rebuild that straddles a settings change.
         var fittedAnchors = fitClusterAnchors(
             cellGeometry,
-            sector,
             styling,
             fitFingerprint.specification(),
             reusableAnchors);
@@ -183,15 +179,17 @@ public final class ClusterAnchorsBuilder {
             return;
         }
 
-        // Sample the view's grouping once and resolve holding under it, so the anchors
-        // key off the same snapshot their names and colours are classified against.
+        // Sample the view's grouping once and resolve both the holding and the owner reading under
+        // it, so the anchors key off the same snapshot their names and colours are classified
+        // against.
         var grouping = view.resolveGrouping();
+        var reading = view.resolveOwnerReading(sector, grouping);
 
         // This path builds no drawables to borrow the palette from, so resolve it here - through
         // the same darkening seam the theme reads, so the debug names desaturate exactly as
         // production does and the setting still has a single reader.
         var desaturationPalette = MapPalettes.resolveDesaturationPalette(
-            sector,
+            reading.resolveRecedePalette(),
             RenderStyleReader.readGlobalStyle().desaturationDarkening());
 
         // The debug border-tracing path never filters - it resolves real holders from the
@@ -204,13 +202,13 @@ public final class ClusterAnchorsBuilder {
         rebuildClusterAnchors(
             standingAnchors,
             cellGeometry,
-            sector,
             new ClusterLabelStylingSnapshot(
                 holderProvider
                     .resolveHolder(HolderPass.readFromLunaSettings(sector, grouping), null)
                     .ownerBySystemKey(),
                 desaturationPalette,
-                new ViewGrouping(view, grouping),
+                view.resolveCategories(),
+                reading,
                 contentInputs.clearFilterPick()));
     }
 
@@ -221,21 +219,19 @@ public final class ClusterAnchorsBuilder {
     // rebuild does with it stay two statements.
     private static List<ClusterAnchor> fitClusterAnchors(
             RevisedCellGeometry cellGeometry,
-            SectorAPI sector,
             ClusterLabelStylingSnapshot styling,
             LabelAnchorSpecification spec,
             Map<ClusterIdentity, ClusterAnchor> reusableAnchors) {
 
         try (var fitScope = ActiveProfiler.resolveProfiler().open(FIT_ANCHORS_SECTION)) {
             return fitClusterAnchorsInScope(
-                cellGeometry, sector, styling, spec, reusableAnchors, fitScope);
+                cellGeometry, styling, spec, reusableAnchors, fitScope);
         }
     }
 
     // The sweep inside its scope, reporting what it ran onto it.
     private static List<ClusterAnchor> fitClusterAnchorsInScope(
             RevisedCellGeometry cellGeometry,
-            SectorAPI sector,
             ClusterLabelStylingSnapshot styling,
             LabelAnchorSpecification spec,
             Map<ClusterIdentity, ClusterAnchor> reusableAnchors,
@@ -274,10 +270,9 @@ public final class ClusterAnchorsBuilder {
         // receded name matches its receded fill and a spotlit name stays full, the drift a
         // filter opens.
         var contentInputs = styling.contentInputs();
-        var viewGrouping = styling.viewGrouping();
         var styleDecisionByBlocId = ClusterLabelStyling.newBlocStyleDecisionResolver(
-            viewGrouping.view(),
-            viewGrouping.grouping(),
+            styling.reading(),
+            styling.categories(),
             contentInputs);
 
         FontToleranceAnnouncement.announceIfMoved(spec);
@@ -288,13 +283,11 @@ public final class ClusterAnchorsBuilder {
             new ClusterLabelResolvers(
                 ClusterLabelStyling.newLabelColourResolver(
                     ownerBySystemKey,
-                    BlocNameStyles.readFromLunaSettings(),
+                    new BlocNameStyles(styling.categories().readNameStyles()),
                     styleDecisionByBlocId,
                     styling.desaturationPalette()),
                 ClusterLabelStyling.newNameEstimatorResolver(
-                    sector,
-                    viewGrouping.view(),
-                    viewGrouping.grouping(),
+                    styling.reading(),
                     contentInputs)),
             reusableAnchors);
 

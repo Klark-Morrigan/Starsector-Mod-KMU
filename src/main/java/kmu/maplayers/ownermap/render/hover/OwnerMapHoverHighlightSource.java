@@ -56,7 +56,7 @@ public record OwnerMapHoverHighlightSource(
         // body this cell sits in would mean deciding here which body that is - the containment
         // question the highlight already answers to pick its loop, and answering it twice by two
         // rules is how a halo comes to trace a frontier the cursor is not inside.
-        return clusters.listCandidateBorderLoopsOf(holder.factionId());
+        return clusters.listCandidateBorderLoopsOf(holder.ownerId());
     }
 
     @Override

@@ -5,7 +5,6 @@ import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
@@ -16,13 +15,12 @@ import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderOwnerReading;
 import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.picker.SelectableBloc;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
@@ -210,120 +208,25 @@ final class AlliancesViewTests {
     }
 
     @Nested
-    class ShouldUseIndependentStyle {
-
-        // The two adjustments the style test discriminates on: one that desaturates the bloc and one
-        // that only dims it. The mute multiplier is arbitrary - the test proves only desaturation
-        // moves the bundle.
-        private static final ElementStyleAdjustment DESATURATED = new ElementStyleAdjustment(0.3, true);
-        private static final ElementStyleAdjustment MUTED_ONLY = new ElementStyleAdjustment(0.3, false);
+    class ResolveOwnerReading {
 
         @Test
-        void isTrueForIndependentSpace() {
-            // Genuine independent space always takes the independent style, exactly as the faction
-            // view classifies it - short-circuiting before the adjustment is even read.
-            assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    Factions.INDEPENDENT,
-                    ALLIANCE_GROUPING,
-                    ElementStyleAdjustment.NONE))
-                .isTrue();
-        }
-
-        @Test
-        void isFalseForAnAllianceBlocEvenWhenDesaturated() {
-            // An alliance always paints in the full faction style so it stands out, whatever the
-            // adjustment says.
-            assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "rebel_pact",
-                    ALLIANCE_GROUPING,
-                    DESATURATED))
-                .isFalse();
-        }
-
-        @Test
-        void isFalseForALoneFactionWhenNotDesaturated() {
-            // Undesaturated, a non-allied faction keeps its own faction style, so it reads exactly as
-            // the faction view draws it.
-            assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony",
-                    ALLIANCE_GROUPING,
-                    ElementStyleAdjustment.NONE))
-                .isFalse();
-        }
-
-        @Test
-        void isFalseForALoneFactionThatOnlyMutes() {
-            // Muting only dims the active style through the opacity modifier; it never swaps the
-            // bundle, so a merely dimmed faction keeps its faction borders and seams.
-            assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony",
-                    ALLIANCE_GROUPING,
-                    MUTED_ONLY))
-                .isFalse();
-        }
-
-        @Test
-        void isTrueForALoneFactionWhenDesaturated() {
-            // Desaturate makes a non-allied faction adopt the independent style - its independent
-            // borders and seams, not just an independent recolour over the faction ones. The test
-            // reads the passed adjustment, so it holds however that desaturation was asked for: this
-            // view's own toggle, or the filter recede unioned in upstream. Nothing here touches
-            // sector memory, since the view no longer resolves the choice a second time.
-            assertThat(AlliancesView.INSTANCE.shouldUseIndependentStyle(
-                    "hegemony",
-                    ALLIANCE_GROUPING,
-                    DESATURATED))
-                .isTrue();
+        void readsEachBlocOffTheFactionItPaintsAs() {
+            // The holder reading every layer painting holders shares, taken over the grouping the
+            // rebuild handed in - what it answers is pinned by that reading's own suite.
+            assertThat(AlliancesView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING))
+                .isInstanceOf(HolderOwnerReading.class);
         }
     }
 
     @Nested
-    class ResolveBlocStyleAdjustment {
-
-        // The recede the bake sampled for this view's non-allied set, distinct from the identity so
-        // a bloc that took it can be told from a bloc the gate spared.
-        private static final ElementStyleAdjustment RECEDED = new ElementStyleAdjustment(0.3, true);
-
-        // The picks a pass carrying that recede was baked under. Nothing else in the reading
-        // reaches this decision, so the other four sit at the inert values.
-        private static final ContentInputs RECEDING_INPUTS =
-            ContentInputsFixtures.createInputsRecedingNonAllied(RECEDED);
+    class ResolveCategories {
 
         @Test
-        void isNoneForAnAllianceBlocEvenWhenTheBackdropRecedes() {
-            // An alliance keeps its full colour: the view gates it to NONE ahead of the recede the
-            // bake sampled, so recede can never dim or desaturate an alliance.
-            assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
-                    "rebel_pact",
-                    ALLIANCE_GROUPING,
-                    RECEDING_INPUTS))
-                .isEqualTo(ElementStyleAdjustment.NONE);
-        }
+        void declaresTheHolderCategories() {
 
-        @Test
-        void takesTheSampledNonAlliedRecedeForANonAllianceBloc() {
-            // A non-allied faction is backdrop, so the view hands back exactly the non-allied recede
-            // the rebuild sampled - the one adjustment every faction outside an alliance takes.
-            // Taken off the reading rather than off the stored toggles, so every cell of one rebuild
-            // recedes by one answer and a flip mid-rebuild cannot split the backdrop in two.
-            assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
-                    "hegemony",
-                    ALLIANCE_GROUPING,
-                    RECEDING_INPUTS))
-                .isEqualTo(RECEDED);
-        }
-
-        @Test
-        void isNoneForEveryBlocWhenNoAllianceExists() {
-            // No alliance means no figure, so receding would sink the whole sector rather than
-            // isolate anything - the state a fresh Nex campaign opens in, before diplomacy has
-            // formed a single alliance. The gate runs ahead of the sampled recede, so the
-            // on-by-default Desaturate never reaches a bloc here.
-            assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
-                    "hegemony",
-                    HolderGrouping.identity(),
-                    RECEDING_INPUTS))
-                .isEqualTo(ElementStyleAdjustment.NONE);
+            assertThat(AlliancesView.INSTANCE.resolveCategories())
+                .isSameAs(HolderCategories.INSTANCE);
         }
     }
 
@@ -357,44 +260,6 @@ final class AlliancesViewTests {
                         ScreenMemoryScopes.createStandInScreen()))
                     .isEqualTo(new ElementStyleAdjustment(MUTED_MODIFIER, false));
             }
-        }
-    }
-
-    @Nested
-    class ResolveName {
-
-        @Test
-        void readsTheAllianceNameForAnAllianceBloc() {
-            // An alliance bloc ID is not a faction ID, so its label comes from the grouping, not the
-            // sector - which is therefore never consulted.
-            var sectorMock = mock(SectorAPI.class);
-
-            assertThat(AlliancesView.INSTANCE.resolveName(
-                    "rebel_pact",
-                    ALLIANCE_GROUPING,
-                    sectorMock,
-                    FactionNameFormatChoice.FULL))
-                .isEqualTo("Rebel Pact");
-        }
-
-        @Test
-        void readsTheFactionNameForALoneFaction() {
-            // A non-alliance bloc is a lone faction, named as the faction view names it.
-            var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
-
-            when(sectorMock.getFaction("hegemony"))
-                .thenReturn(factionMock);
-
-            when(factionMock.getDisplayNameLong())
-                .thenReturn("The Hegemony");
-
-            assertThat(AlliancesView.INSTANCE.resolveName(
-                    "hegemony",
-                    ALLIANCE_GROUPING,
-                    sectorMock,
-                    FactionNameFormatChoice.FULL))
-                .isEqualTo("The Hegemony");
         }
     }
 

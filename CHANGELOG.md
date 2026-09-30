@@ -71,6 +71,16 @@ None of these reach a player: every LunaLib field ID and every value saved in se
   - `resolveHolderProvider()` has no default.
   - `resolveViewRecedeAdjustment(ScreenMemoryScope)` is new, defaulting to receding nothing.
   - `computeAllianceContentRevision` left the seam for the political map's own refresh signal.
+  - `resolveOwnerReading(SectorAPI, HolderGrouping)` and `resolveCategories()` are new and required, and `shouldUseIndependentStyle`, `resolveBlocStyleAdjustment` and `resolveName` are gone: everything the tier asks about an owner is the reading's, and which categories cells divide into is the declaration's.
+- **The tier asks a layer about its owners:**
+  - `kmu.maplayers.ownermap.owners.OwnerReading` answers each owner's shades, name, crest, recede and category, and the shades an unowned or receded cell is derived from, resolved once per rebuild. `HolderOwnerReading` is the political map's.
+  - `kmu.maplayers.ownermap.render.style.OwnerCategories` declares which categories exist and how each is styled, each owned category's name style, the full-strength category and the category an unowned cell falls to. `HolderCategories` declares the four `OwnerMapCategory` values.
+  - `OwnerPalette` is the tier's pair of shades in place of KMLib's `FactionPalette`, in `MapPalettes`, `MapStyling`, `ResolvedBlocPaint`, `BlocPaletteReader`, `BlocPresence` and the label styling.
+  - `SystemOwner` is an owner ID and an `OwnerPalette`: `factionId` is `ownerId`, the two colour components are one `palette`, `resolvePalette` is gone and `mapFactionIdBySystemKey` is `mapOwnerIdBySystemKey`. `resolveForBloc` is `SectorBlocPalettes.resolveOwnerOf`.
+  - `ViewGrouping` is `ViewReading`, carrying the reading beside the view and the grouping. `ClusterLabelStylingSnapshot` carries the categories and the reading in place of it.
+  - `OwnerStyleDecision` carries the category an owner draws in rather than whether it takes the independent style, and `OwnerStyleResolver.resolveBlocStyleDecision` and `OwnerStyling.resolveFrom` take the reading and the categories.
+  - `RenderStyleReader.readRenderStyle` takes the layer's categories and the sampled preferences, `BlocNameStyles` is a name style per category with `readFromLunaSettings` gone, `FactionlessStyleResolver.resolveCategoryOf` is `isSettledSystem`, `DebugBorderTracingBuilder.buildDebugDrawables` takes the categories and `ClusterAnchorsBuilder.rebuildClusterAnchors` no longer takes a sector.
+  - `OwnerMapBuildInputs.wasBuilt()` is new: false for the placeholder a failed first build stands behind, which the incremental refresh does not fold into.
 - **The frame sequence is the framework's:**
   - `PoliticalMapLayerRenderer` is gone. `kmu.maplayers.base.render.SequencedMapLayerRenderer` runs the frame every painting layer runs - the stand-down, the refresh, the cursor read per pass, the paint per band and the hover box - over the `MapLayerFrameParts` a layer supplies: a stand-down read, a `MapFrameCache`, a `MapFrameCompositor`, its `MapLayerHoverGates` and its box.
   - `OwnerMapLayerRenderer.createForLiveScreen` composes the owner map's parts into one and returns it.

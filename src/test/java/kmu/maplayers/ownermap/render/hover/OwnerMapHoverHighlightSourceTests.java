@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render.hover;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -34,7 +35,7 @@ final class OwnerMapHoverHighlightSourceTests {
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
     private static final SystemOwner OWNER =
-        new SystemOwner(FACTION_ID, PRIMARY, SECONDARY);
+        new SystemOwner(FACTION_ID, new OwnerPalette(PRIMARY, SECONDARY));
 
     @Nested
     class ResolveCandidateFrontierLoopsOf {

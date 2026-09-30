@@ -13,6 +13,7 @@ import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.picker.BlocMetrics;
 import kmu.maplayers.ownermap.picker.BlocMetricsFake;
 import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
@@ -37,7 +38,9 @@ import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_F
 import static kmu.maplayers.ownermap.picker.BlocSortFixtures.ROW_COLOUR;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
@@ -144,24 +147,25 @@ final class OwnerPaintedViewTests {
         }
 
         @Test
-        void crestsABlocFromItsColourFaction() {
-            // A group paints in its lead member's palette, so the row draws that member's crest.
-            // Identity grouping returns the bloc itself, which is why one lookup serves both views.
+        void takesEachRowsNameAndCrestFromTheViewsReadingOverTheWalksGrouping() {
+            // The row names and badges a bloc exactly as the map does, so both come off the view's
+            // own reading - taken over the grouping the walk folded under, not a second sampling.
             var sectorMock = mock(SectorAPI.class);
-            var leadFactionMock = mock(FactionAPI.class);
-            var viewFake = new OwnerPaintedViewFake(Map.of("rebel_pact", "Rebel Pact"));
+            var grouping = new HolderGrouping(
+                Map.of("rebels", "rebel_pact"),
+                Map.of("rebel_pact", "rebels"),
+                Map.of("rebel_pact", "Rebel Pact"));
+            var viewSpy = spy(new OwnerPaintedViewFake(Map.of()));
 
-            when(sectorMock.getFaction("rebels"))
-                .thenReturn(leadFactionMock);
-            when(leadFactionMock.getCrest())
-                .thenReturn("graphics/rebels_crest.png");
+            doReturn(OwnerReadingFake
+                    .createNaming(Map.of("rebel_pact", "Rebel Pact"))
+                    .withLooks(Map.of(), Map.of("rebel_pact", "graphics/rebels_crest.png")))
+                .when(viewSpy)
+                .resolveOwnerReading(sectorMock, grouping);
 
-            assertThat(viewFake.buildBlocPickerRead(
+            assertThat(viewSpy.buildBlocPickerRead(
                     sectorMock,
-                    new HolderGrouping(
-                        Map.of("rebels", "rebel_pact"),
-                        Map.of("rebel_pact", "rebels"),
-                        Map.of("rebel_pact", "Rebel Pact")),
+                    grouping,
                     BlocStatsReadFake.createRowsOnlyFake(Map.of("rebel_pact", ANY_STATS_FAKE)),
                     ANY_MODES)
                 .picker().items())

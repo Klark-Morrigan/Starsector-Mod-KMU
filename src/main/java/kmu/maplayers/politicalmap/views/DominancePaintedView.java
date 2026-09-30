@@ -5,9 +5,13 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.holding.ColonyReadRules;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.holding.HolderOwnerReading;
+import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
 import kmu.maplayers.ownermap.picker.BlocPickerRead;
 import kmu.maplayers.ownermap.picker.RankedBloc;
+import kmu.maplayers.ownermap.render.style.HolderCategories;
+import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
@@ -51,6 +55,34 @@ public interface DominancePaintedView extends OwnerPaintedView {
     @Override
     default HolderProvider resolveHolderProvider() {
         return ClaimAugmentedHolderProvider.INSTANCE;
+    }
+
+    /**
+     * The owner reading of a view the domination contest paints: a bloc read off the faction it
+     * paints as, under the grouping handed in.
+     *
+     * <p>Answered once for both such views because they differ only by grouping, and the holder
+     * reading's group rules never fire under the identity grouping - so the faction view's plain
+     * faction holding and the alliances view's alliances-against-a-backdrop are one reading.
+     *
+     * @param sector   the sector the rebuild reads
+     * @param grouping the grouping the rebuild's holding was folded under
+     * @return the holder reading over that grouping
+     */
+    @Override
+    default OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
+        return new HolderOwnerReading(sector, grouping);
+    }
+
+    /**
+     * The categories of a view the domination contest paints: the four every layer painting
+     * holders shares, read off the settings rows those four have always been read from.
+     *
+     * @return the holder layers' categories
+     */
+    @Override
+    default OwnerCategories resolveCategories() {
+        return HolderCategories.INSTANCE;
     }
 
     /**

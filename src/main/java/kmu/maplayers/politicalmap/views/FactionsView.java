@@ -1,15 +1,8 @@
 package kmu.maplayers.politicalmap.views;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.impl.campaign.ids.Factions;
-
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.util.KmuStringKeys;
@@ -18,11 +11,11 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
- * The faction-territory view's render rules: every faction is its own bloc, only
- * independent space recedes to the muted independent style, and a bloc's label is the
- * owning faction's own display name. The faction view is the identity case of the
- * shared pipeline, so its grouping is {@link HolderGrouping#identity()} and its two
- * per-bloc decisions read the bloc ID as a plain faction id.
+ * The faction-territory view's render rules: every faction is its own bloc. The faction view is
+ * the identity case of the shared pipeline, so its grouping is {@link HolderGrouping#identity()},
+ * and the holder owner reading it shares with the other dominance-painted view reads every bloc ID
+ * as a plain faction ID: only independent space recedes to the muted independent style, and a
+ * bloc's label is the owning faction's own display name.
  */
 public final class FactionsView implements DominancePaintedView {
 
@@ -67,47 +60,6 @@ public final class FactionsView implements DominancePaintedView {
     }
 
     @Override
-    public boolean shouldUseIndependentStyle(
-            String blocId,
-            HolderGrouping grouping,
-            ElementStyleAdjustment adjustment) {
-        // Genuine independent space always takes the independent style. A faction the recede has
-        // desaturated takes it too: desaturation means "read as backdrop", so the bloc
-        // adopts the independent borders and seams paired with the desaturation palette the same
-        // adjustment carries, rather than sitting at full faction border weight and slot with only
-        // its colour greyed. The grouping is identity here, so no bloc is an alliance and every
-        // desaturated faction qualifies; a merely muted (dimmed, not desaturated) faction keeps the
-        // faction bundle, so dimming alone never swaps border weight.
-        //
-        // The test reads the passed adjustment - the filter recede already unioned in - not this
-        // view's own toggle, so the border bundle and the desaturation palette can never disagree
-        // about whether a bloc has desaturated.
-        return Factions.INDEPENDENT.equals(blocId) || adjustment.shouldDesaturate();
-    }
-
-    @Override
-    public ElementStyleAdjustment resolveBlocStyleAdjustment(
-            String blocId,
-            HolderGrouping grouping,
-            ContentInputs contentInputs) {
-        // The faction view dims or recolours no bloc - every faction paints exactly as its
-        // style classification says, so there is nothing for the pipeline to adjust.
-        return ElementStyleAdjustment.NONE;
-    }
-
-    @Override
-    public String resolveName(
-            String blocId,
-            HolderGrouping grouping,
-            SectorAPI sector,
-            FactionNameFormatChoice nameFormat) {
-        // A faction bloc ID is a real faction ID, so the label is the faction's own name
-        // in the player's chosen form; a faction that will not resolve carries no name.
-        var faction = sector.getFaction(blocId);
-        return faction == null ? null : resolveFactionName(faction, nameFormat);
-    }
-
-    @Override
     public Optional<MapHoverTooltip> resolveHoverTooltip() {
         // The faction and alliance views share the one domination tooltip: it adapts flat vs nested
         // off the active grouping, so both layers show the same per-system breakdown, flat here.
@@ -120,17 +72,5 @@ public final class FactionsView implements DominancePaintedView {
         // The presence gate (a bloc appears in the stats exactly when it holds a market somewhere) is
         // the shared stats read's, which every dominance-painted view draws from.
         return blocId -> true;
-    }
-
-    // The faction's name in the player's chosen format: the abbreviated display name for
-    // Short, the long-form title for Full (the default). getDisplayName is a faction's
-    // short name and getDisplayNameLong its full title; both may be blank, which the
-    // caller then treats as an unresolved name.
-    private static String resolveFactionName(
-            FactionAPI faction,
-            FactionNameFormatChoice nameFormat) {
-        return nameFormat == FactionNameFormatChoice.SHORT
-            ? faction.getDisplayName()
-            : faction.getDisplayNameLong();
     }
 }

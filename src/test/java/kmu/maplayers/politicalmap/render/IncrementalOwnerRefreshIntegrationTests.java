@@ -70,7 +70,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -242,7 +242,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
 
             var renderStyleMock = seams.openSeam(RenderStyleReader.class);
             renderStyleMock
-                .when(() -> RenderStyleReader.readRenderStyle(anyBoolean()))
+                .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
                 .thenReturn(buildThemePaintingEachCategoryApart());
 
             // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory
@@ -489,7 +489,6 @@ final class IncrementalOwnerRefreshIntegrationTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
                 ClusterLabelStylingSnapshot.resolveFrom(territories));
 
             CellRibbonsBaker

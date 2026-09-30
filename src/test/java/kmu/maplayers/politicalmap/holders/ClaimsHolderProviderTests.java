@@ -13,6 +13,7 @@ import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.politicalmap.claims.SectorClaims;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
@@ -64,7 +65,7 @@ final class ClaimsHolderProviderTests {
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var claimHolder = new SystemOwner("hegemony", PRIMARY, SECONDARY);
+            var claimHolder = new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
             var provider = new ClaimsHolderProvider((visibility, colonies) -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
@@ -95,9 +96,9 @@ final class ClaimsHolderProviderTests {
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var spotlightHolder = new SystemOwner("$spotlit", PRIMARY, SECONDARY);
-            var ownClaimHolder = new SystemOwner("hegemony", PRIMARY, SECONDARY);
-            var rivalClaimHolder = new SystemOwner("tritachyon", PRIMARY, SECONDARY);
+            var spotlightHolder = new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY));
+            var ownClaimHolder = new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
+            var rivalClaimHolder = new SystemOwner("tritachyon", new OwnerPalette(PRIMARY, SECONDARY));
             var claims = new LinkedHashMap<SystemKey, SystemOwner>();
 
             claims.put(buildCellKey("own-claimed"), ownClaimHolder);
@@ -149,8 +150,8 @@ final class ClaimsHolderProviderTests {
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var spotlightHolder = new SystemOwner("$spotlit", PRIMARY, SECONDARY);
-            var claimHolder = new SystemOwner("hegemony", PRIMARY, SECONDARY);
+            var spotlightHolder = new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY));
+            var claimHolder = new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
             var provider = new ClaimsHolderProvider((visibility, colonies) -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);

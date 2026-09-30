@@ -6,6 +6,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.HolderResolution;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
@@ -50,7 +51,7 @@ final class DefaultHolderProviderTests {
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
             var holders = Map.of(
                 OWNED_SYSTEM,
-                new SystemOwner("hegemony", PRIMARY, SECONDARY));
+                new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY)));
 
             try (var sectorPoliticsMock = mockStatic(SectorPolitics.class)) {
 
@@ -76,7 +77,7 @@ final class DefaultHolderProviderTests {
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
             var holders = Map.of(
                 OWNED_SYSTEM,
-                new SystemOwner("$spotlit", PRIMARY, SECONDARY));
+                new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY)));
 
             var contested = Set.of(OWNED_SYSTEM);
             var filtered = new HolderResolution(holders, contested, Set.of());

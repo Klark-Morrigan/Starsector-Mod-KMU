@@ -2,6 +2,9 @@ package kmu.maplayers.ownermap.tooltip;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
 
+import kmlib.starsector.factions.FactionNameForm;
+import kmlib.starsector.factions.FactionNames;
+
 /**
  * How a faction is named on a tooltip row. One definition of the fallback so every row that names a
  * faction, whatever it lists the faction for, reads the same when the sector does not know the ID it
@@ -24,6 +27,6 @@ final class TooltipFactionNames {
     static String resolveLongName(FactionAPI faction, String factionId) {
         return faction == null
             ? factionId
-            : faction.getDisplayNameLong();
+            : FactionNames.resolveName(faction, FactionNameForm.LONG);
     }
 }

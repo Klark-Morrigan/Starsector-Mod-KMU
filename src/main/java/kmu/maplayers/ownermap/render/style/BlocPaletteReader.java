@@ -1,6 +1,6 @@
 package kmu.maplayers.ownermap.render.style;
 
-import kmlib.starsector.factions.FactionPalette;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
 
 /**
  * Where the two shades a bloc paints in are read from.
@@ -25,5 +25,5 @@ public interface BlocPaletteReader {
      * @return the bloc's bright and dark shades, or null where the bloc has no colour to resolve
      *         at all - the degenerate case of a bloc whose colour faction has gone from the sector
      */
-    FactionPalette readBlocPalette(String blocId);
+    OwnerPalette readBlocPalette(String blocId);
 }

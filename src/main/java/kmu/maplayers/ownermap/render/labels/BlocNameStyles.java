@@ -1,42 +1,34 @@
 package kmu.maplayers.ownermap.render.labels;
 
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
-import kmu.settings.KmuOwnerMapStyleSettings;
+import kmu.maplayers.base.theme.MapStyleCategory;
+
+import java.util.Map;
 
 /**
- * How a cluster name is coloured and faded, per holder group: the outer-border colour choice
- * the name inherits (the same one the cluster border reads, so a name never drifts from the
- * border it labels) beside that group's own name opacity.
+ * How a cluster name is coloured and faded, per category an owner draws in: the colour choice the
+ * name inherits beside that category's own name opacity.
  *
- * <p>Two groups rather than one because independent space is styled apart from the core
- * factions throughout the map, and a name follows whichever group its bloc was classified
- * into. That classification is what makes this an owner-map value: the search that places a
- * name knows nothing of factions or independence, so the resolved shade reaches it as a plain
- * colour and the group split stays on this side of the seam.
+ * <p>Per category because an owner's name follows whichever category its owner was placed in, the
+ * way its fill and border do - a name receded with its owner reads as quietly as the space it
+ * labels. Which categories there are, and what each name style holds, is the painting layer's
+ * declaration; this only looks the answer up. That lookup is what makes it an owner-map value: the
+ * search that places a name knows nothing of categories, so the resolved shade reaches it as a plain
+ * colour and the split stays on this side of the seam.
  *
- * @param factionNameStyle     how a core faction's names are coloured and faded
- * @param independentNameStyle how independent space's names are coloured and faded
+ * @param nameStyleByCategory each category's name style, as the painting layer read it this
+ *                            rebuild
  */
-public record BlocNameStyles(
-    ElementStyle factionNameStyle,
-    ElementStyle independentNameStyle) {
+public record BlocNameStyles(Map<MapStyleCategory, ElementStyle> nameStyleByCategory) {
 
     /**
-     * Reads the live per-group name styling: each group's outer-border colour choice beside
-     * its name opacity, from the visuals tab's "Faction systems" and "Independent systems"
-     * sections. Read once per rebuild, since every cluster of a group resolves its shade
-     * against the same pair.
+     * The name style of one category.
      *
-     * @return the two groups' name styling as the settings currently hold it
+     * @param category the category the named owner draws in
+     * @return that category's name style, or {@link ElementStyle#NOT_DRAWN} for a category its layer
+     *         gave no name style - one whose owners it never meant to label
      */
-    public static BlocNameStyles readFromLunaSettings() {
-        return new BlocNameStyles(
-            new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuOwnerMapStyleSettings.getFactionOuterBorderColour()),
-                KmuOwnerMapStyleSettings.getFactionNameOpacity()),
-            new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuOwnerMapStyleSettings.getIndependentOuterBorderColour()),
-                KmuOwnerMapStyleSettings.getIndependentNameOpacity()));
+    public ElementStyle resolveNameStyleOf(MapStyleCategory category) {
+        return nameStyleByCategory.getOrDefault(category, ElementStyle.NOT_DRAWN);
     }
 }

@@ -10,6 +10,7 @@ import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SpotlitBlocs;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.render.style.SectorBlocPalettes;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.LinkedHashMap;
@@ -188,14 +189,11 @@ public final class FilteredPolitics {
             HolderGrouping grouping,
             String selectedBlocId) {
 
-        var paletteHolder = SystemOwner.resolveForBloc(sector, grouping, selectedBlocId);
-        if (paletteHolder == null) {
+        var palette = new SectorBlocPalettes(sector, grouping).readBlocPalette(selectedBlocId);
+        if (palette == null) {
             return null;
         }
-        return new SystemOwner(
-            SpotlitBlocs.readSpotlitBlocKey(),
-            paletteHolder.primaryColour(),
-            paletteHolder.secondaryColour());
+        return new SystemOwner(SpotlitBlocs.readSpotlitBlocKey(), palette);
     }
 
     // Resolves one system's presence-aware holder: the selected bloc under the spotlit key where
