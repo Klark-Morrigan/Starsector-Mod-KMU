@@ -97,9 +97,9 @@ class LakeReachesIntegrationTests {
             // the pieces there were before the coast went in. Read the wrong way round, every
             // lake's water is captured and its bays left open, and the count comes out as many
             // bays as there are rather than one piece per lake.
-            var reaches = LakePartitions.collectReaches(LakePartitions.layContinents(sector));
+            var coastWalls = LakePartitions.layCoastWalls(sector);
             var open = LakePartitions.readCoastPartition(sector).collectPieces().stream()
-                .filter(piece -> !LakeTier.isCaptured(piece, reaches))
+                .filter(piece -> !LakeTier.isCaptured(piece, coastWalls))
                 .count();
 
             assertThat(open)

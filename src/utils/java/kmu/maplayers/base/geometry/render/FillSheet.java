@@ -37,7 +37,7 @@ public final class FillSheet {
 
     // Which way every ring is made to wind. Arbitrary in itself; what is load-bearing is that
     // all of them agree, since two wound opposite ways cancel where they overlap.
-    private static final boolean WINDS_POSITIVE = true;
+    private static final boolean IS_FILL_COUNTER_CLOCKWISE = true;
 
     // Each ring's own path, kept as it is appended rather than rebuilt from the body when the
     // edges are drawn: a path flattened a second time has to come out identical to the first
@@ -65,9 +65,9 @@ public final class FillSheet {
      */
     public void addRing(List<double[]> ring) {
 
-        var windsPositive = PolygonRegions.computeSignedArea(ring) >= 0;
+        var isCounterClockwise = PolygonRegions.computeSignedArea(ring) >= 0;
         var path = MapPainting.buildPath(
-            windsPositive == WINDS_POSITIVE ? ring : reverseRing(ring));
+            isCounterClockwise == IS_FILL_COUNTER_CLOCKWISE ? ring : reverseRing(ring));
 
         edges.add(path);
         body.append(path, false);

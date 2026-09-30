@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry.v4;
 
+import kmlib.math.geometry.Segment;
+
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
@@ -28,14 +30,17 @@ class LakeTierTests {
     private static final CellGap LINE =
         new CellGap(0, 1, new double[] {0, 300}, new double[] {1000, 300}, 1000);
 
-    // A reach across the middle of a square 100 across, running east, so its left - the lake's
-    // water - is the upper half and the bay behind it the lower.
-    private static final CellGap EASTWARD_REACH =
-        new CellGap(3, 1, new double[] {0, 50}, new double[] {100, 50}, 100);
+    // No shore to move the ends onto; where they end is CarriedLinesTests' subject.
+    private static final List<LabelledWall> NO_SHORE = List.of();
 
-    // The same reach running west, which puts the water below it.
-    private static final CellGap WESTWARD_REACH =
-        new CellGap(1, 3, new double[] {100, 50}, new double[] {0, 50}, 100);
+    // A coast wall across the middle of a square 100 across, running east, so its left - the
+    // lake's water - is the upper half and the bay behind it the lower.
+    private static final LabelledWall EASTWARD_WALL =
+        new LabelledWall(new Segment(0, 50, 100, 50), LakeTier.THE_LAKE_COAST);
+
+    // The same wall running west, which puts the water below it.
+    private static final LabelledWall WESTWARD_WALL =
+        new LabelledWall(new Segment(100, 50, 0, 50), LakeTier.THE_LAKE_COAST);
 
     // The two halves of that square, each wound counter-clockwise as a bounded piece is and so
     // walked with itself on the left, their shared side labelled with whatever lies along it.
@@ -57,7 +62,7 @@ class LakeTierTests {
         @Test
         void everyWallCarriesTheLakeCoastLabel() {
 
-            var laid = LakeTier.layCoastWalls(List.of(LINE), SITES, PARAMETERS);
+            var laid = LakeTier.layCoastWalls(List.of(LINE), NO_SHORE, SITES, PARAMETERS);
 
             assertThat(laid.walls())
                 .isNotEmpty()
@@ -73,7 +78,7 @@ class LakeTierTests {
         void theBayBehindAReachIsCaptured() {
 
             assertThat(LakeTier.isCaptured(
-                    buildLowerHalf(LakeTier.THE_LAKE_COAST), List.of(EASTWARD_REACH)))
+                    buildLowerHalf(LakeTier.THE_LAKE_COAST), List.of(EASTWARD_WALL)))
                 .isTrue();
         }
 
@@ -81,7 +86,7 @@ class LakeTierTests {
         void theWaterInFrontOfAReachIsOpen() {
             // Where the bridges are to land, so capturing it would leave them nowhere.
             assertThat(LakeTier.isCaptured(
-                    buildUpperHalf(LakeTier.THE_LAKE_COAST), List.of(EASTWARD_REACH)))
+                    buildUpperHalf(LakeTier.THE_LAKE_COAST), List.of(EASTWARD_WALL)))
                 .isFalse();
         }
 
@@ -90,7 +95,7 @@ class LakeTierTests {
             // The side is read off the reach's direction and nothing else, so turning it round
             // is the whole difference between the lake and the bay.
             assertThat(LakeTier.isCaptured(
-                    buildUpperHalf(LakeTier.THE_LAKE_COAST), List.of(WESTWARD_REACH)))
+                    buildUpperHalf(LakeTier.THE_LAKE_COAST), List.of(WESTWARD_WALL)))
                 .isTrue();
         }
 
@@ -116,7 +121,7 @@ class LakeTierTests {
         @Test
         void aPieceTheTierNeverTouchedIsOpen() {
 
-            assertThat(LakeTier.isCaptured(buildLowerHalf(2), List.of(EASTWARD_REACH)))
+            assertThat(LakeTier.isCaptured(buildLowerHalf(2), List.of(EASTWARD_WALL)))
                 .isFalse();
         }
     }
@@ -127,7 +132,7 @@ class LakeTierTests {
         @Test
         void everyWallCarriesTheLakeBridgesLabel() {
 
-            var laid = LakeTier.layBridgeWalls(List.of(LINE), SITES, PARAMETERS);
+            var laid = LakeTier.layBridgeWalls(List.of(LINE), NO_SHORE, SITES, PARAMETERS);
 
             assertThat(laid.walls())
                 .isNotEmpty()

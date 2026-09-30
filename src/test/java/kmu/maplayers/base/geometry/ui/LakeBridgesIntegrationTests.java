@@ -94,10 +94,10 @@ class LakeBridgesIntegrationTests {
             // is a cell the coast only touches between two reaches, which offers a single point
             // and no stretch; the frontage has no runs for those yet.
             var continents = LakePartitions.layContinents(sector);
-            var reaches = LakePartitions.collectReaches(continents);
+            var coastWalls = LakePartitions.layCoastWalls(sector);
             var open = LandableFrontage.collectLandableRuns(
                 LakePartitions.readCoastPartition(sector).collectPieces(),
-                piece -> LakeTier.isCaptured(piece, reaches));
+                piece -> LakeTier.isCaptured(piece, coastWalls));
             var points = CoastFrontages.collectLakeFrontages(continents.traceCoasts());
             var furthest = KNOBS.measureBoundSagitta() + SAME_POINT;
 

@@ -104,7 +104,7 @@ import javax.swing.SwingUtilities;
  *       cell-to-edge translation, so every fixture row is drawn and nothing exercises the
  *       cache, its diffing, or the incremental refresh.</li>
  *   <li><i>Deciding who owns it</i> - {@code SectorPolitics.resolveDominantHolderBySystemKey},
- *       {@code SystemDominance}, {@code SystemOwner.mapFactionIdBySystemKey},
+ *       {@code SystemDominance}, {@code SystemOwner.mapOwnerIdBySystemKey},
  *       {@code DecivilisedMarkets.isRevealedDecivilised},
  *       {@code FilteredPolitics}, {@code FilterSelection}. Ownership is the fixture's
  *       dominant-owner column, whose score is summed market size rather than the real

@@ -28,7 +28,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | the cells' own frontier | `VoidPartition` | each cell's adjacency-tagged edges | the lines between cell and void, and a frame round the sector |
 | cut the base at crossings | `SegmentCrossings` | those lines | lines meeting only at their ends |
 | weld and order the base | `PlanarArrangement` | those lines, at the sagitta | a graph knowing the turn order at each vertex |
-| lay a tier's lines | `LakeTier`, through `CarriedLines` | lines as `CellGap`s, two points and two cells | walls, each end carried through the shore |
+| lay a tier's lines | `LakeTier`, through `CarriedLines` | lines as `CellGap`s, two points and two cells, and the frontier | walls, one straight segment each, its ends moved just inside the shore |
 | cut them into the base | `SegmentCrossings` | the welded base read back as lines, and the walls | lines meeting only at their ends |
 | weld and order again | `PlanarArrangement` | those lines, at rounding | the graph the faces are walked on |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
@@ -37,7 +37,8 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | make it drawable | `PieceRegions` | those rings | bodies and holes, resolved and smoothed |
 
 The last two are drawing rather than geometry, and the partition does not change under them:
-the shaping is paint over pieces that already exist, and under `EdgeInsetRule.NOWHERE` what it hands back is the piece itself.
+the shaping is paint over pieces that already exist, and under `EdgeInsetRule.NOWHERE` what it hands back is the piece itself, drawn as it is with nothing resolved or smoothed.
+Smoothed, the pieces either side of a seam would each round their own corner there and stop meeting, and the partition would be drawn as something it is not.
 They are in the table because leaving them out is what made the inset look finished when it was not - see [the channel](#the-channel).
 
 With nothing laid, the three rows about laid lines do nothing, and the walk runs on the welded base as it stands.
@@ -99,7 +100,10 @@ Drawn from its outline alone, the sea paints over every cell on the map.
 
 The frontier reports each shared corner twice, up to a sagitta apart, and the weld at that tolerance is what closes its rings.
 A tier's line needs none of that:
-its ends are where its tier put them, and the walk cuts it at the shore where its stubs cross.
+its ends are moved onto the shore, just inside it, and the walk cuts it where it crosses.
+Not carried through on a stub past the end:
+the stub's remainder between the crossing and the end was an edge of the piece a few units long at an angle to the line,
+which folded under the channel into a hook at every junction, and with the end floating off the shore closed a sliver just above the floor.
 
 Welded together with the frontier, the line's ends are pulled up to a sagitta sideways after the cutting has run.
 A reach that grazes a cell, which v3's do, passes a polygon corner by less than that,
@@ -150,6 +154,16 @@ One profile over the cells and the void beside them is what makes the two sides 
 **A piece narrower than two channels is gone, not thin.**
 The miter does not shrink such a piece; it folds the ring over, and the folded ring winds the wrong way.
 The resolve will not catch that - handed a lone ring it takes that ring's winding for the plane's and hands it back as a fill - so the fold is caught while the raw ring is still there to compare against, by `PolygonOffsets.hasInsetCollapsed`.
+
+**A piece narrower than two channels only at its ends keeps its body.**
+A bay behind a reach is a lens, a few units across where the reach meets the shore and as wide as it likes between,
+and the miter folds both its ends into loops that run out to the spike limit and outweigh the body.
+Read as one signed area that is a collapse, so a ring the first reading rejects has its folds spliced out by `PolygonOffsets.removeReversedLoops`, asked for the counter-clockwise remainder, and is judged again on what is left.
+The folds at every corner too tight for the channel are spliced the same way before the resolve, which would otherwise fill each of them as a speck.
+
+**Nothing drawn is smaller than a piece can be.**
+The rounding steps a sharp corner back by more than the corner's own edges, and the loop that leaves comes back from the resolve as a region a few units across.
+`PieceRegions` keeps no region under a sagitta squared, which is the floor the walk keeps no face under.
 
 ## What the resolution decides
 

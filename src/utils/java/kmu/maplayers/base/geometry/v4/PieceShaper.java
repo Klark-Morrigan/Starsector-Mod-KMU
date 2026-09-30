@@ -44,7 +44,9 @@ import java.util.List;
  * such a piece to a sliver; it folds the ring over, and the folded ring winds the wrong way.
  * That is judged here against the raw ring, by the same test a cluster border is judged by,
  * because it is the last moment the raw ring is at hand - and a resolve handed the folded ring
- * alone would take its winding for the plane's and draw it as a fill.
+ * alone would take its winding for the plane's and draw it as a fill. A piece narrower than two
+ * channels only at its ends is not gone: its end folds are spliced out and the body between
+ * them is judged on its own.
  *
  * <p>What comes back is still the raw miter, crossings included: a piece of void is all necks,
  * and a miter of anything that pinches to a neck crosses itself there. Resolving those is the
@@ -56,6 +58,14 @@ public final class PieceShaper {
     // What a piece the inset consumed comes back as: no rings at all, rather than an outline
     // folded over and its holes beside it.
     private static final RingRegion NOTHING_LEFT_TO_DRAW = new RingRegion(List.of(), List.of());
+
+    // What the fold splicer takes to compare every pair of edges rather than a window.
+    private static final int EVERY_PAIR_OF_EDGES = 0;
+
+    // How far apart along the ring the two sides of a corner's fold can be, in edges: the
+    // corner's own two, its bevel, and the few short edges a shore's corner leaves beside a
+    // junction. Wide enough for those, and a fraction of any piece's ring.
+    private static final int NEARBY_EDGES = 12;
 
     private PieceShaper() {
     }
@@ -75,12 +85,42 @@ public final class PieceShaper {
             EdgeInset edgeInset,
             double miterSpikeLimit) {
 
-        var outline = shapeRing(piece.outline(), edgeInset, miterSpikeLimit);
+        // The piece itself, corner for corner. Run through the miter at no depth it comes
+        // back a corner doubled at every reflex turn and a unit off at the rest, which is
+        // near enough to draw and not the piece - and under this rule the piece is what is
+        // being looked at.
+        if (edgeInset.rule() == EdgeInsetRule.NOWHERE) {
+
+            return new RingRegion(
+                piece.boundary(),
+                piece.holes().stream().map(LabelledRing::vertices).toList());
+        }
+
+        // The folds the miter leaves at a corner too tight for the channel are spliced out
+        // here rather than left to the resolve, which fills a reversed loop as a fill of its
+        // own: a speck beside every junction. Such a fold is local - its two sides are a few
+        // corners apart along the ring - so a short window finds it at a cost the sea's
+        // thousands of corners can bear.
+        var outline = PolygonOffsets.removeReversedLoops(
+            shapeRing(piece.outline(), edgeInset, miterSpikeLimit), true, NEARBY_EDGES);
 
         // Holes and all. A hole handed on beside a folded outline would be taken for the
         // fill by whatever resolves the rings next, so the whole piece goes, not the outline.
         if (PolygonOffsets.hasInsetCollapsed(piece.boundary(), outline)) {
-            return NOTHING_LEFT_TO_DRAW;
+
+            // Folded, but perhaps only at its ends. A bay behind a reach is a lens: as wide
+            // as it likes in the middle and a few units across where the reach meets the
+            // shore, so the miter folds both ends into loops that run out to the spike limit
+            // and outweigh the body between them. Read as one signed area that is a collapse;
+            // read with the folds spliced out it is a body with its ends gone, which is what
+            // a channel does to a lens. An end fold's two sides can be many corners apart
+            // where the end runs along the shore, so every pair of edges is compared - asked
+            // only of the few rings the first reading rejected, never of the sea.
+            outline = PolygonOffsets.removeReversedLoops(outline, true, EVERY_PAIR_OF_EDGES);
+
+            if (PolygonOffsets.hasInsetCollapsed(piece.boundary(), outline)) {
+                return NOTHING_LEFT_TO_DRAW;
+            }
         }
         var holes = new ArrayList<List<double[]>>(piece.holes().size());
 

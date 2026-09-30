@@ -44,8 +44,8 @@ public final class SvgDrawing {
     // disagree, since that is what drops the winding count to zero inside a hole and lifts it
     // again where another body covers the same place. Which of the two directions is which is
     // arbitrary, and only their disagreement is load-bearing.
-    private static final boolean WINDS_AS_BODY = true;
-    private static final boolean WINDS_AS_HOLE = false;
+    private static final boolean IS_BODY_COUNTER_CLOCKWISE = true;
+    private static final boolean IS_HOLE_COUNTER_CLOCKWISE = false;
 
     private final StringBuilder svg = new StringBuilder();
 
@@ -233,10 +233,10 @@ public final class SvgDrawing {
         var subPaths = new StringBuilder();
 
         for (var ring : bodies) {
-            appendSubPath(subPaths, ring, WINDS_AS_BODY);
+            appendSubPath(subPaths, ring, IS_BODY_COUNTER_CLOCKWISE);
         }
         for (var ring : holes) {
-            appendSubPath(subPaths, ring, WINDS_AS_HOLE);
+            appendSubPath(subPaths, ring, IS_HOLE_COUNTER_CLOCKWISE);
         }
 
         if (subPaths.length() == 0) {
@@ -294,15 +294,15 @@ public final class SvgDrawing {
     private static void appendSubPath(
             StringBuilder subPaths,
             List<double[]> ring,
-            boolean shouldWindPositive) {
+            boolean shouldBeCounterClockwise) {
 
         if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
             return;
         }
 
-        var windsPositive = PolygonRegions.computeSignedArea(ring) >= 0;
-        var step = windsPositive == shouldWindPositive ? 1 : -1;
-        var first = windsPositive == shouldWindPositive ? 0 : ring.size() - 1;
+        var isCounterClockwise = PolygonRegions.computeSignedArea(ring) >= 0;
+        var step = isCounterClockwise == shouldBeCounterClockwise ? 1 : -1;
+        var first = isCounterClockwise == shouldBeCounterClockwise ? 0 : ring.size() - 1;
 
         for (var count = 0; count < ring.size(); count++) {
 

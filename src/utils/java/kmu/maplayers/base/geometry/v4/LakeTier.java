@@ -16,8 +16,8 @@ import java.util.List;
  * here: the smoothing is the whole point of a coastline, and which pairs a bridge is offered, how
  * it lands on its two frontages and which bridges survive the ones already down is the search's
  * whole construction, both tuned by eye against the map. What this tier decides is only where
- * the lines go - into the one partition every tier divides, as walls, each end carried through
- * the shore by {@link CarriedLines} - so the water they close off comes back as pieces rather
+ * the lines go - into the one partition every tier divides, as walls, each end moved onto the
+ * shore by {@link CarriedLines} - so the water they close off comes back as pieces rather
  * than as fills traced by a second construction.
  *
  * <p><b>Only a coast's reaches are laid.</b> A coast alternates between fillets, which run along
@@ -60,73 +60,81 @@ public final class LakeTier {
      */
     public static final int THE_LAKE_BRIDGES = -4;
 
-    // How far a corner may sit off a reach and still lie on it, in map units. Far above what the
-    // cutting and the rounding weld move a corner by, and far below anything drawn - so a stub,
-    // which leaves the reach's end at an angle, is never taken for a stretch of the reach.
-    private static final double ON_THE_REACH = 1e-3;
+    // How far a corner may sit off a wall and still lie on it, in map units. Far above what the
+    // cutting and the rounding weld move a corner by, and far below anything drawn.
+    private static final double ON_THE_WALL = 1e-3;
 
     private LakeTier() {
     }
 
     /**
-     * Lays every reach of the lakes' coasts as a wall, each end carried through its shore.
+     * Lays every reach of the lakes' coasts as a wall, each end moved onto its shore.
      *
      * @param reaches    the reaches, already told apart from the fillets
-     * @param sites      the cells' own positions, which the stubs run towards
+     * @param frontier   every cell edge facing void, which the ends are moved onto
+     * @param sites      the cells' own positions, which the ends are moved towards
      * @param parameters the knobs the map is drawn under
      * @return the walls to lay, and the reaches to draw
      */
     public static CarriedLines.LaidLines layCoastWalls(
             List<CellGap> reaches,
+            List<LabelledWall> frontier,
             List<double[]> sites,
             SectorGeometryParameters parameters) {
 
-        return CarriedLines.layCarriedLines(reaches, sites, parameters, THE_LAKE_COAST);
+        return CarriedLines.layCarriedLines(reaches, frontier, sites, parameters, THE_LAKE_COAST);
     }
 
     /**
-     * Lays every bridge across the lakes as a wall, each end carried through its shore.
+     * Lays every bridge across the lakes as a wall, each end moved onto its shore.
      *
      * @param bridges    the bridges, as the search left them
-     * @param sites      the cells' own positions, which the stubs run towards
+     * @param frontier   every cell edge facing void, which the ends are moved onto
+     * @param sites      the cells' own positions, which the ends are moved towards
      * @param parameters the knobs the map is drawn under
      * @return the walls to lay, and the bridges to draw
      */
     public static CarriedLines.LaidLines layBridgeWalls(
             List<CellGap> bridges,
+            List<LabelledWall> frontier,
             List<double[]> sites,
             SectorGeometryParameters parameters) {
 
-        return CarriedLines.layCarriedLines(bridges, sites, parameters, THE_LAKE_BRIDGES);
+        return CarriedLines.layCarriedLines(bridges, frontier, sites, parameters, THE_LAKE_BRIDGES);
     }
 
     /**
      * Whether this tier's lines have closed a piece off.
      *
      * <p>Read off the piece's own edges. A piece is walked with itself on the left of every
-     * edge, and a reach is handed over with its lake's water on its left - so an edge along a
-     * reach that runs against the reach puts the piece on the reach's land side, in the bay the
-     * coast gave up. A bridge captures whichever side a piece is on.
+     * edge, and a reach is handed over with its lake's water on its left, a direction its wall
+     * keeps - so an edge along a coast wall that runs against the wall puts the piece on the
+     * reach's land side, in the bay the coast gave up. A bridge captures whichever side a piece
+     * is on.
      *
-     * @param piece   the piece, its edges labelled with what they lie on
-     * @param reaches the reaches laid, each running with its lake's water on its left
+     * <p>Against the walls as laid rather than the reaches as found, because the piece's edges
+     * lie on the walls to rounding and on the reaches only to within the distance an end was
+     * moved onto its shore.
+     *
+     * @param piece     the piece, its edges labelled with what they lie on
+     * @param laidWalls this tier's walls as laid; those of other tiers are passed over
      * @return true where the piece lies behind a reach or against a bridge
      */
-    public static boolean isCaptured(Face piece, List<CellGap> reaches) {
+    public static boolean isCaptured(Face piece, List<LabelledWall> laidWalls) {
 
-        if (isCapturedAlong(piece.outline(), reaches)) {
+        if (isCapturedAlong(piece.outline(), laidWalls)) {
             return true;
         }
         for (var hole : piece.holes()) {
 
-            if (isCapturedAlong(hole, reaches)) {
+            if (isCapturedAlong(hole, laidWalls)) {
                 return true;
             }
         }
         return false;
     }
 
-    private static boolean isCapturedAlong(LabelledRing ring, List<CellGap> reaches) {
+    private static boolean isCapturedAlong(LabelledRing ring, List<LabelledWall> laidWalls) {
 
         var corners = ring.vertices();
         var labels = ring.edgeLabels();
@@ -137,7 +145,7 @@ public final class LakeTier {
             var to = corners.get((edge + 1) % corners.size());
 
             if (labels[edge] == THE_LAKE_BRIDGES
-                    || labels[edge] == THE_LAKE_COAST && isBehindAReach(from, to, reaches)) {
+                    || labels[edge] == THE_LAKE_COAST && isBehindAReach(from, to, laidWalls)) {
 
                 return true;
             }
@@ -145,22 +153,29 @@ public final class LakeTier {
         return false;
     }
 
-    // Whether an edge runs along a reach against that reach's direction, which is what puts
-    // the piece walked along it on the land side. An edge off every reach - a stub, carried
-    // through the shore at an angle - says nothing either way.
-    private static boolean isBehindAReach(double[] from, double[] to, List<CellGap> reaches) {
+    // Whether an edge runs along a coast wall against that wall's direction, which is what
+    // puts the piece walked along it on the land side. An edge on no coast wall says nothing
+    // either way.
+    private static boolean isBehindAReach(
+            double[] from, double[] to, List<LabelledWall> laidWalls) {
 
-        for (var reach : reaches) {
+        for (var wall : laidWalls) {
 
-            if (Segments.computeDistanceToPoint(reach.start(), reach.end(), from) > ON_THE_REACH
-                    || Segments.computeDistanceToPoint(reach.start(), reach.end(), to)
-                        > ON_THE_REACH) {
+            if (wall.label() != THE_LAKE_COAST) {
+                continue;
+            }
+
+            var start = wall.segment().readStart();
+            var end = wall.segment().readEnd();
+
+            if (Segments.computeDistanceToPoint(start, end, from) > ON_THE_WALL
+                    || Segments.computeDistanceToPoint(start, end, to) > ON_THE_WALL) {
 
                 continue;
             }
 
-            var along = (to[0] - from[0]) * (reach.end()[0] - reach.start()[0])
-                + (to[1] - from[1]) * (reach.end()[1] - reach.start()[1]);
+            var along = (to[0] - from[0]) * (end[0] - start[0])
+                + (to[1] - from[1]) * (end[1] - start[1]);
 
             return along < 0;
         }

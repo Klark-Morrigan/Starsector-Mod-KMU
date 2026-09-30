@@ -4,6 +4,7 @@ import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.RingRegion;
 
 import kmu.maplayers.base.geometry.EdgeInset;
+import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.v4.Face;
 import kmu.maplayers.base.geometry.v4.PieceShaper;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
@@ -47,18 +48,24 @@ public final class PieceRegions {
      *
      * @param pieces          the pieces of void, as the walk closed them
      * @param edgeInset       which edges take the channel and how deep it is; under
-     *                        {@link kmu.maplayers.base.geometry.EdgeInsetRule#NOWHERE} what is
-     *                        shaped is the partition itself, which still wants the resolve
+     *                        {@link EdgeInsetRule#NOWHERE} the partition itself is drawn, with
+     *                        nothing resolved or smoothed, since there is nothing to clean up
+     *                        and every piece already meets its neighbours to the unit
      * @param miterSpikeLimit multiple of the inset past which a sharp corner bevels
      * @param smoothing       the sector-wide profile, the same one the cluster borders take
+     * @param resolution      how far the drawn frontier sits from the true one, which is the
+     *                        sagitta the pieces were walked at; a region smaller than its
+     *                        square is under the map's resolution and is not drawn
      * @return one region per body left, each with its own holes; a piece the inset folded over
-     *         contributes none
+     *         contributes none, and neither does a loop the smoothing split off below the
+     *         resolution
      */
     public static List<RingRegion> collectDrawableRegions(
             List<Face> pieces,
             EdgeInset edgeInset,
             double miterSpikeLimit,
-            BorderSmoothingStyle smoothing) {
+            BorderSmoothingStyle smoothing,
+            double resolution) {
 
         var regions = new ArrayList<RingRegion>();
 
@@ -69,8 +76,31 @@ public final class PieceRegions {
             if (shaped.outerRing().isEmpty()) {
                 continue;
             }
-            regions.addAll(PolygonRegions.groupRingsIntoRegions(
-                BorderSmoothing.resolveSmoothedBorderLoops(shaped.toRings(), smoothing)));
+
+            // With nothing inset the shaped piece is the piece, and it is drawn as it is. The
+            // cleanup below is for the channel: it rounds every corner, and the pieces either
+            // side of a seam each round their own, so two that shared the seam to the unit
+            // stop meeting there - and the partition, which is the thing being judged, is
+            // drawn as something it is not.
+            if (edgeInset.rule() == EdgeInsetRule.NOWHERE) {
+                regions.add(shaped);
+                continue;
+            }
+
+            // The rounding steps a sharp corner back by more than the corner's own edges
+            // where a lens ends, and the arc it lays crosses them; the resolve then hands
+            // that crossing back as a loop of its own, a few units across, which paints as a
+            // speck beside the junction. The walk keeps no face under a sagitta squared, and
+            // nothing drawn from its faces should be smaller than they can be.
+            for (var region : PolygonRegions.groupRingsIntoRegions(
+                    BorderSmoothing.resolveSmoothedBorderLoops(shaped.toRings(), smoothing))) {
+
+                if (PolygonRegions.computeSignedArea(region.outerRing())
+                        >= resolution * resolution) {
+
+                    regions.add(region);
+                }
+            }
         }
         return List.copyOf(regions);
     }

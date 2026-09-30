@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry.v4;
 
+import kmlib.math.geometry.PolygonRegions;
+
 import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 
@@ -71,6 +73,23 @@ class PieceShaperTests {
     // the miter hands back is the strait turned inside out. Not the square at this depth,
     // whose four edges all cross and re-emerge as a smaller square wound the right way.
     private static final double DEEPER_THAN_HALF_THE_STRAIT = 15;
+
+    // A lens 300 long: 8 across at x = 100 and x = 200, 60 across in the middle, which is what
+    // a bay behind a reach looks like where the reach meets the shore at a shallow angle. Inset
+    // by 10 it folds along both long ends, into loops that between them outweigh the body 40
+    // across left in the middle - so read as one signed area it is a collapse, and only the
+    // body it keeps says otherwise.
+    private static final List<double[]> LENS = List.of(
+        new double[] {0, 0},
+        new double[] {100, -4},
+        new double[] {150, -30},
+        new double[] {200, -4},
+        new double[] {300, 0},
+        new double[] {200, 4},
+        new double[] {150, 30},
+        new double[] {100, 4});
+
+    private static final int[] LENS_AGAINST_CELLS = {0, 0, 0, 0, 1, 1, 1, 1};
 
     // Well clear of any corner here, every one of which is a right angle: no corner in these
     // fixtures bevels for being sharp, so where one bevels anyway it is the winding saying so.
@@ -207,6 +226,25 @@ class PieceShaperTests {
                 .isEmpty();
             assertThat(shaped.holeRings())
                 .isEmpty();
+        }
+
+        @Test
+        void aPieceNarrowOnlyAtItsEndsKeepsItsBody() {
+            // The end folds spliced out leave the body: the middle's four corners pulled in,
+            // its two side corners at the crossings where the folds were, wound the right way
+            // and with no fold left in it.
+            var shaped = PieceShaper.shapePiece(
+                Face.encloseFace(new LabelledRing(LENS, LENS_AGAINST_CELLS)),
+                new EdgeInset(EdgeInsetRule.AT_EVERY_BORDER, INSET),
+                MITER_SPIKE_LIMIT);
+
+            assertThat(shaped.outerRing())
+                .hasSize(4);
+            assertThat(PolygonRegions.computeSignedArea(shaped.outerRing()))
+                .isPositive()
+                .isLessThan(PolygonRegions.computeSignedArea(LENS));
+            assertThat(PolygonRegions.countSelfCrossings(shaped.outerRing()))
+                .isZero();
         }
     }
 }

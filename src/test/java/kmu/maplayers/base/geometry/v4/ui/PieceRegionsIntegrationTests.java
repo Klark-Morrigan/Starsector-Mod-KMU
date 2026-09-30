@@ -34,9 +34,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * on the sectors and reports the raw count beside it, which is what says the check still has
  * something to catch.
  *
- * <p>Under {@link EdgeInsetRule#NOWHERE} the same sequence runs over the partition itself: no
- * edge moves, nothing can fold, and the pieces must all survive. That is the half which would
- * catch a resolve that dropped bodies it should have kept.
+ * <p>Under {@link EdgeInsetRule#NOWHERE} none of it runs: the partition is drawn as it is,
+ * piece for piece and corner for corner, which is what lets it be judged.
  */
 class PieceRegionsIntegrationTests {
 
@@ -76,7 +75,8 @@ class PieceRegionsIntegrationTests {
                 readPieces(sectorName),
                 INSET,
                 KNOBS.miterSpikeLimit(),
-                SMOOTHING);
+                SMOOTHING,
+                KNOBS.measureBoundSagitta());
 
             assertThat(regions)
                 .isNotEmpty();
@@ -122,7 +122,8 @@ class PieceRegionsIntegrationTests {
                 readPieces(sectorName),
                 INSET,
                 KNOBS.miterSpikeLimit(),
-                SMOOTHING);
+                SMOOTHING,
+                KNOBS.measureBoundSagitta());
 
             for (var region : regions) {
 
@@ -134,20 +135,51 @@ class PieceRegionsIntegrationTests {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void withNothingInsetEveryPieceStillDraws(String sectorName) {
-            // Nothing moves, so nothing can fold, and every piece has to come back. A resolve
-            // that dropped bodies would show here and nowhere else.
+        void noRegionIsUnderTheMapsResolution(String sectorName) {
+            // The loops the rounding splits off at a sharp corner are a few units across, and
+            // the walk itself keeps no face under a sagitta squared: nothing drawn from its
+            // faces is smaller than they can be.
+            var regions = PieceRegions.collectDrawableRegions(
+                readPieces(sectorName),
+                INSET,
+                KNOBS.miterSpikeLimit(),
+                SMOOTHING,
+                KNOBS.measureBoundSagitta());
+
+            for (var region : regions) {
+
+                assertThat(PolygonRegions.computeSignedArea(region.outerRing()))
+                    .as("the area of a region of %s", sectorName)
+                    .isGreaterThanOrEqualTo(
+                        KNOBS.measureBoundSagitta() * KNOBS.measureBoundSagitta());
+            }
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource(SECTORS)
+        void withNothingInsetThePartitionIsDrawnAsItIs(String sectorName) {
+            // One region per piece, its outline the piece's own to the unit. Smoothed, the
+            // pieces either side of a seam would each round their own corner there and stop
+            // meeting, and what was drawn would no longer be the partition.
             var pieces = readPieces(sectorName);
 
             var regions = PieceRegions.collectDrawableRegions(
                 pieces,
                 NO_INSET,
                 KNOBS.miterSpikeLimit(),
-                SMOOTHING);
+                SMOOTHING,
+                KNOBS.measureBoundSagitta());
 
             assertThat(regions)
                 .as("regions of %s with nothing inset", sectorName)
-                .hasSizeGreaterThanOrEqualTo(pieces.size());
+                .hasSameSizeAs(pieces);
+
+            for (var index = 0; index < pieces.size(); index++) {
+
+                assertThat(regions.get(index).outerRing())
+                    .usingRecursiveFieldByFieldElementComparator()
+                    .containsExactlyElementsOf(pieces.get(index).boundary());
+            }
         }
     }
 }

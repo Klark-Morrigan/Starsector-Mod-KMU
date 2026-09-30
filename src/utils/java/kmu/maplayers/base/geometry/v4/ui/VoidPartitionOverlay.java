@@ -85,11 +85,14 @@ public final class VoidPartitionOverlay {
             Supplier<List<CellGap>> lakeBridges) {
 
         var sites = fixture.getSites();
+
+        // The shore the tiers' lines end on, read once for both of them.
+        var frontier = VoidPartition.collectFrontier(cellEdges);
         var coast = settings.isLakeCoastV4Shown()
-            ? LakeTier.layCoastWalls(lakeReaches, sites, settings.parameters)
+            ? LakeTier.layCoastWalls(lakeReaches, frontier, sites, settings.parameters)
             : NOTHING_LAID;
         var bridges = settings.isLakeBridgesV4Shown()
-            ? LakeTier.layBridgeWalls(lakeBridges.get(), sites, settings.parameters)
+            ? LakeTier.layBridgeWalls(lakeBridges.get(), frontier, sites, settings.parameters)
             : NOTHING_LAID;
 
         lakeCoastLines = coast.lines();
@@ -120,7 +123,7 @@ public final class VoidPartitionOverlay {
             ? collectRegions(partition, settings)
             : List.of();
         landable = settings.isLandableFrontageV4Shown()
-            ? collectLandableRuns(partition, lakeReaches)
+            ? collectLandableRuns(partition, coast.walls())
             : List.of();
     }
 
@@ -192,19 +195,19 @@ public final class VoidPartitionOverlay {
             partition.collectPieces(),
             new EdgeInset(settings.voidInsetRule, settings.parameters.borderInset()),
             settings.parameters.miterSpikeLimit(),
-            settings.resolveBorderSmoothing());
+            settings.resolveBorderSmoothing(),
+            settings.parameters.measureBoundSagitta());
     }
 
     // The runs the open pieces face, as the point runs the painting takes - which cell each is
-    // on being a fact for a reader of the map and not for the stroke. The reaches are handed
-    // over whether the coast is laid or not: with it off no piece has an edge along one, so
-    // they are never asked about.
+    // on being a fact for a reader of the map and not for the stroke. Judged against the coast
+    // walls as laid: with the coast off there are none, and no piece has an edge along one.
     private static List<List<double[]>> collectLandableRuns(
-            VoidPartition partition, List<CellGap> reaches) {
+            VoidPartition partition, List<LabelledWall> coastWalls) {
 
         return LandableFrontage.collectLandableRuns(
                 partition.collectPieces(),
-                piece -> LakeTier.isCaptured(piece, reaches))
+                piece -> LakeTier.isCaptured(piece, coastWalls))
             .stream()
             .map(LandableFrontage.Run::points)
             .toList();

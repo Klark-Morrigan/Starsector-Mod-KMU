@@ -47,27 +47,37 @@ final class LakePartitions {
 
     // The void with the lake coast laid.
     static VoidPartition readCoastPartition(String sector) {
-        return SectorPartitions.readPartition(sector, layCoast(sector, layContinents(sector)));
+        return SectorPartitions.readPartition(sector, layCoastWalls(sector));
     }
 
     // The void with the lake coast laid, and the bridges over it.
     static VoidPartition readBridgedPartition(String sector) {
 
         var continents = layContinents(sector);
-        var walls = new ArrayList<LabelledWall>(layCoast(sector, continents));
+        var walls = new ArrayList<LabelledWall>(layCoastWalls(sector, continents));
 
         walls.addAll(LakeTier.layBridgeWalls(
-                continents.layLakeSpans(), readSites(sector), SectorPartitions.KNOBS)
+                continents.layLakeSpans(), readFrontier(sector), readSites(sector), SectorPartitions.KNOBS)
             .walls());
 
         return SectorPartitions.readPartition(sector, walls);
     }
 
-    private static List<LabelledWall> layCoast(String sector, BridgedContinents continents) {
+    // The lake coast's walls as laid, which is what a piece's edges lie on and what the tier's
+    // capture is judged against.
+    static List<LabelledWall> layCoastWalls(String sector) {
+        return layCoastWalls(sector, layContinents(sector));
+    }
+
+    private static List<LabelledWall> layCoastWalls(String sector, BridgedContinents continents) {
 
         return LakeTier.layCoastWalls(
-                collectReaches(continents), readSites(sector), SectorPartitions.KNOBS)
+                collectReaches(continents), readFrontier(sector), readSites(sector), SectorPartitions.KNOBS)
             .walls();
+    }
+
+    private static List<LabelledWall> readFrontier(String sector) {
+        return VoidPartition.collectFrontier(SectorPartitions.readCellEdges(sector));
     }
 
     private static List<double[]> readSites(String sector) {
