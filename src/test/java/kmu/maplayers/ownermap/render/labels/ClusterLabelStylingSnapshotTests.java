@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap.render.labels;
 
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.StarsectorFont;
 
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
@@ -59,7 +60,7 @@ final class ClusterLabelStylingSnapshotTests {
                 buildViewReading(),
                 buildSpotlightPicks());
 
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters);
+            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, StarsectorFont.VANILLA_INSIGNIA_42);
 
             // Against what the built map itself hands out rather than against what was handed to
             // it: the holders are the occupancy's own, so identity here is what says the snapshot
@@ -85,7 +86,7 @@ final class ClusterLabelStylingSnapshotTests {
                 viewReading,
                 contentInputs);
 
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters);
+            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(styling.reading())
                 .isSameAs(viewReading.reading());
@@ -104,10 +105,27 @@ final class ClusterLabelStylingSnapshotTests {
                     Map.of(),
                     new OwnerPalette(Color.GRAY, Color.GRAY),
                     buildViewReading(),
-                    ContentInputs.createEmpty()));
+                    ContentInputs.createEmpty()),
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(styling.contentInputs().isFiltering())
                 .isFalse();
+        }
+
+        @Test
+        void carriesTheFaceTheSectorSettledItsLabelsOn() {
+            // Settled by the cache that asked for the rebuild, so the names are fitted in the face
+            // they are minted in rather than in one the snapshot chose for itself.
+            var styling = ClusterLabelStylingSnapshot.resolveFrom(
+                buildClusters(
+                    Map.of(),
+                    new OwnerPalette(Color.GRAY, Color.GRAY),
+                    buildViewReading(),
+                    ContentInputs.createEmpty()),
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            assertThat(styling.labelFace())
+                .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_25);
         }
     }
 

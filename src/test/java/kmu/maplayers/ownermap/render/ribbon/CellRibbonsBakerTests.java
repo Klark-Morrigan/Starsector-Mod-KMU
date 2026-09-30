@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.profiling.RecordedCapture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
@@ -360,7 +361,8 @@ final class CellRibbonsBakerTests {
                 HolderGrouping.identity()),
             // No names placed, since where a name falls is pinned by the builder that lays a band
             // inside one cell rather than by which cells a pass reaches.
-            List.of());
+            List.of(),
+            StarsectorFont.VANILLA_INSIGNIA_42);
     }
 
     // Each cell drawing as the system of its own name, each system placed at the same site: the

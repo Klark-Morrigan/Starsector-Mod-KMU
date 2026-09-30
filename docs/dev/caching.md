@@ -608,7 +608,9 @@ since every cluster of a bloc shares one name,
 one shade,
 and one style -
 a bloc with a homeland and three colonies is asked four times and answers once.
-The label font and the name-format choice are likewise read once per rebuild rather than per label.
+The label font and the name-format choice are likewise read once per rebuild rather than per label,
+the font's face itself settled once per sector by
+[`SettledFaces`](../../src/main/java/kmu/maplayers/base/faces/SettledFaces.java).
 
 The map's name labels are the one place KMU mints its own GL text.
 Each [`Label`](../../src/main/java/kmu/maplayers/base/labels/Label.java)

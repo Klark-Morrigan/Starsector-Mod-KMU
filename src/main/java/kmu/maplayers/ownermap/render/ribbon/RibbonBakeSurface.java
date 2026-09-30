@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap.render.ribbon;
 
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.FontAtlas;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.LabelLineBoxes;
@@ -56,12 +57,14 @@ public record RibbonBakeSurface(
      *                       their traced rings are kept in
      * @param geometryCache  the cells' geometry, read for the site each system draws at
      * @param clusterAnchors the cluster names' placements, whose boxes the bands keep out of
+     * @param labelFace      the face the names were settled on, which their drawn lines are measured in
      * @return the map this bake is laid against
      */
     public static RibbonBakeSurface createForPass(
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache,
-            List<ClusterAnchor> clusterAnchors) {
+            List<ClusterAnchor> clusterAnchors,
+            FontAtlas labelFace) {
 
         return new RibbonBakeSurface(
             // The pass's inhabitation scan rather than its holding, so a settled system this layer's
@@ -78,7 +81,8 @@ public record RibbonBakeSurface(
             // a second reading could carve the bands around names the map is not drawing.
             resolveNameBoxes(
                 clusterAnchors,
-                clusters.getBuildInputs().contentInputs().nameFormat()),
+                clusters.getBuildInputs().contentInputs().nameFormat(),
+                labelFace),
             clusters.getPaintedCells().getRingPathCache());
     }
 
@@ -96,7 +100,8 @@ public record RibbonBakeSurface(
     // this call.
     private static List<List<double[]>> resolveNameBoxes(
             List<ClusterAnchor> clusterAnchors,
-            FactionNameFormatChoice nameFormat) {
+            FactionNameFormatChoice nameFormat,
+            FontAtlas labelFace) {
 
         var isBandKeptClearOfNames = nameFormat.areNamesDrawn()
             && KmuOwnerMapRibbonSettings.shouldKeepOwnerMapRibbonsClearOfNames();
@@ -106,7 +111,7 @@ public record RibbonBakeSurface(
         }
         return switch (KmuOwnerMapRibbonSettings.getOwnerMapRibbonNameClearance()) {
             case FITTED_BOX -> ClusterNameBoxes.listNameBoxes(clusterAnchors);
-            case WORDS -> LabelLineBoxes.listLineBoxes(clusterAnchors);
+            case WORDS -> LabelLineBoxes.listLineBoxes(clusterAnchors, labelFace);
         };
     }
 }

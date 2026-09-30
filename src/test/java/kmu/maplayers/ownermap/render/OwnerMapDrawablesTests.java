@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.render;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -185,7 +186,8 @@ final class OwnerMapDrawablesTests {
                 mock(SectorAPI.class),
                 viewMock,
                 ContentInputs.createEmpty(),
-                HolderProviderFake.createHoldingNothing());
+                HolderProviderFake.createHoldingNothing(),
+                StarsectorFont.VANILLA_INSIGNIA_42);
         }
     }
 
@@ -241,7 +243,7 @@ final class OwnerMapDrawablesTests {
                 .thenReturn(clusters);
             seams.openSeam(ClusterAnchorsBuilder.class);
             seams.openSeam(CellRibbonsBaker.class)
-                .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any()))
+                .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any(), any()))
                 .thenReturn(mock(CellRibbonsBaker.class));
 
             drawables.rebuildClustersAndBands(
@@ -249,7 +251,8 @@ final class OwnerMapDrawablesTests {
                 mock(HolderPass.class),
                 viewMock,
                 ContentInputs.createEmpty(),
-                mock(ResolvedHolding.class));
+                mock(ResolvedHolding.class),
+                StarsectorFont.VANILLA_INSIGNIA_42);
         }
     }
 

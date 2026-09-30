@@ -1,6 +1,7 @@
 package kmu.maplayers.base.labels;
 
 import kmlib.math.geometry.Segment;
+import kmlib.starsector.ui.font.FontAtlas;
 import kmlib.starsector.ui.font.measure.LazyFontMeasurer;
 import kmlib.starsector.ui.font.measure.LineWidthMeasurer;
 
@@ -37,14 +38,15 @@ public final class LabelLineBoxes {
     /**
      * The boxes the given placements' drawn lines occupy, measured with the map-label face.
      *
-     * @param anchors the placements to read, in any order
+     * @param anchors   the placements to read, in any order
+     * @param labelFace the face the labels were settled on, which they are drawn in
      * @return one closed ring of {x, y} corners per drawn line. Empty when the face will not load,
      *         which is also when no name draws at all - a line nothing renders is a line nothing
      *         has to keep clear of
      */
-    public static List<List<double[]>> listLineBoxes(List<ClusterAnchor> anchors) {
+    public static List<List<double[]>> listLineBoxes(List<ClusterAnchor> anchors, FontAtlas labelFace) {
 
-        var resolvedFont = LabelFonts.loadMapLabelFont();
+        var resolvedFont = LabelFonts.loadMapLabelFont(labelFace);
 
         return resolvedFont == null
             ? List.of()

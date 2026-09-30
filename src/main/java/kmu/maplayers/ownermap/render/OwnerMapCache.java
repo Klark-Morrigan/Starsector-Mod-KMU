@@ -9,11 +9,14 @@ import kmlib.profiling.ProfileSection;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.FontAtlas;
 
+import kmu.maplayers.base.faces.SettledFaces;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.hover.MapHoverTargets;
 import kmu.maplayers.base.labels.Label;
+import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -364,15 +367,17 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         // render, so in debug mode the production draw lists are not built at all, and the
         // unused view is nulled. The toggle is a KMU setting, so flipping it bumps the content
         // revision and forces this rebuild - which is what swaps the two.
+        var labelFace = settleLabelFace();
+
         if (KmuOwnerMapDiagnosticsSettings.shouldTraceBordersForDebug()) {
-            rebuildDebugView(staleHalves, view, sector);
+            rebuildDebugView(staleHalves, view, sector, labelFace);
         } else {
-            wasHoldingReused = rebuildProductionView(staleHalves, view, sectorIndex, staleSystemKeys);
+            wasHoldingReused = rebuildProductionView(staleHalves, view, sectorIndex, staleSystemKeys, labelFace);
         }
 
         // The name choice comes off this rebuild's own sampling rather than the preference, so
         // what is minted matches what was fitted.
-        drawables.rebuildLabels(staleHalves.contentInputs().nameFormat().areNamesDrawn());
+        drawables.rebuildLabels(staleHalves.contentInputs().nameFormat().areNamesDrawn(), labelFace);
         decider.recordContentRebuilt(staleHalves);
 
         return wasHoldingReused;
@@ -383,14 +388,16 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
     private void rebuildDebugView(
             StaleHalves staleHalves,
             OwnerPaintedView view,
-            SectorAPI sector) {
+            SectorAPI sector,
+            FontAtlas labelFace) {
 
         drawables.rebuildBorderTracingOverlay(
             cellGeometry,
             sector,
             view,
             staleHalves.contentInputs(),
-            diagnosticsHolderProvider);
+            diagnosticsHolderProvider,
+            labelFace);
 
         standingHolding = null;
     }
@@ -402,7 +409,8 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             StaleHalves staleHalves,
             OwnerPaintedView view,
             SectorPassIndex sectorIndex,
-            Set<SystemKey> staleSystemKeys) {
+            Set<SystemKey> staleSystemKeys,
+            FontAtlas labelFace) {
 
         // The two halves of the rule come from different places on purpose. The visibility half
         // is the cut's, because it is what decided which systems got cells - reading it live
@@ -433,7 +441,8 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             pass,
             view,
             staleHalves.contentInputs(),
-            standingHolding);
+            standingHolding,
+            labelFace);
 
         return wasHoldingReused;
     }
@@ -478,9 +487,16 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         // recorded for them.
         IncrementalOwnerRefresh.applyStaleOwnerUpdates(
             machinery.resolveSector(),
-            drawables.toStandingMap(cellGeometry),
+            drawables.toStandingMap(cellGeometry, settleLabelFace()),
             staleSystemKeys,
             holderResolveSource);
+    }
+
+    // The face this sector's labels are fitted, minted and kept clear of in, off this cache's own
+    // machinery rather than the running sector's: the labels name this sector's factions. Settled
+    // once for the sector and asked again per rebuild, which costs a lookup.
+    private FontAtlas settleLabelFace() {
+        return LabelFonts.settleMapLabelFace(SettledFaces.resolveFacesIn(machinery));
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells

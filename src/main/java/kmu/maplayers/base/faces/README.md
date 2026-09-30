@@ -20,8 +20,11 @@ once per sector,
 for each face a KMU text asks for.
 
 The face a text asks for stays with that text -
-`SidebarStyles` and `CellTooltipLook` keep their own constants and the reasons for them -
+`LabelFonts`, `SidebarStyles` and `CellTooltipLook` keep their own constants and the reasons for them -
 and [`SettledFaces`](SettledFaces.java) answers what that face becomes on this sector.
+On a localised install the map labels are the text that moves:
+they ask for `insignia42LTaa`, which the localisation leaves without its script,
+and settle on the next cut down.
 A face that moves is logged once per sector,
 which is the first thing a report of text drawn wrongly is read against.
 
@@ -31,7 +34,7 @@ A text is held to the [kinds of text](ProbedText.java) it is made of,
 read by [`ProbeTexts`](ProbeTexts.java):
 
 - **Faction names**, short and long both,
-  which the hover box and the sidebar body list.
+  which the map labels draw and the hover box and the sidebar body list.
 - **Place names**, every star system's and colony's,
   which the hover box titles and the sidebar body lists.
 - **KMU's own strings**, in the running build's locale,
@@ -53,6 +56,9 @@ Held rather than resolved per paint,
 because settling reads every glyph of every name the sector holds;
 two texts asking for one face against the same kinds share one answer,
 which keeps a row measured in one face from being painted in another.
+The map labels are settled by the owner-map cache off its own sector's machinery
+and handed down to the fit, the mint and the band bake,
+so a name is fitted, drawn and kept clear of in the one face.
 
 With no game loaded the detached machinery answers,
 and every text keeps the face it asks for:

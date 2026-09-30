@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.statics.StaticSeams;
 
+import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
@@ -359,6 +360,9 @@ final class OwnerMapCacheTests {
         seams.openSeam(ClusterLabelStylingSnapshot.class);
         seams.openSeam(LabelsBuilder.class);
 
+        // The label face is settled against the installed atlases, which no test JVM has.
+        seams.openSeam(LabelFonts.class);
+
         debugToggleMock = seams.openSeam(KmuOwnerMapDiagnosticsSettings.class);
         incrementalRefreshMock = seams.openSeam(IncrementalOwnerRefresh.class);
 
@@ -378,7 +382,7 @@ final class OwnerMapCacheTests {
         var ribbonsBakerSeamMock = seams.openSeam(CellRibbonsBaker.class);
 
         ribbonsBakerSeamMock
-            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any()))
+            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any(), any()))
             .thenReturn(ribbonsBakerMock);
     }
 

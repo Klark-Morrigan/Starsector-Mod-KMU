@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
 
@@ -168,7 +169,7 @@ final class NonFactionOwnerLayerIntegrationTests {
                 * invocation.<Float>getArgument(1) * 0.5f);
         fontsMock = mockStatic(LabelFonts.class);
         fontsMock
-            .when(LabelFonts::loadMapLabelFont)
+            .when(() -> LabelFonts.loadMapLabelFont(any()))
             .thenReturn(fontMock);
 
         when(viewMock.resolveOwnerReading(any(), any()))
@@ -326,7 +327,7 @@ final class NonFactionOwnerLayerIntegrationTests {
         ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
             new RevisedCellGeometry(geometryCacheMock, 1),
-            ClusterLabelStylingSnapshot.resolveFrom(buildRelayMap()));
+            ClusterLabelStylingSnapshot.resolveFrom(buildRelayMap(), StarsectorFont.VANILLA_INSIGNIA_42));
 
         return standingAnchors.getAnchors();
     }

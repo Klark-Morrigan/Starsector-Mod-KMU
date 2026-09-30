@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap.render.labels;
 
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.FontAtlas;
 
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
@@ -36,22 +37,26 @@ import java.util.Map;
  *                            category and recede
  * @param contentInputs       the picks the pass was baked under: the spotlight names and shades
  *                            recede by, and the name format they are spelled and fitted in
+ * @param labelFace           the face the sector settled its labels on, which every name is
+ *                            measured in to be fitted and drawn in once minted
  */
 public record ClusterLabelStylingSnapshot(
     Map<SystemKey, SystemOwner> holderBySystemKey,
     OwnerPalette desaturationPalette,
     OwnerCategories categories,
     OwnerReading reading,
-    ContentInputs contentInputs) {
+    ContentInputs contentInputs,
+    FontAtlas labelFace) {
 
     /**
      * The snapshot a production rebuild styles by: the clusters' own retained state, read off
      * the one build whose fills and borders the labels must match.
      *
-     * @param clusters the clusters built this pass
+     * @param clusters  the clusters built this pass
+     * @param labelFace the face the sector settled its labels on
      * @return the styling snapshot those clusters were built under
      */
-    public static ClusterLabelStylingSnapshot resolveFrom(OwnerMapClusters clusters) {
+    public static ClusterLabelStylingSnapshot resolveFrom(OwnerMapClusters clusters, FontAtlas labelFace) {
 
         // The owners off the live occupancy, which the refresh folds, and the rest off the inputs
         // the build was baked under, which stand until the next rebuild.
@@ -62,6 +67,7 @@ public record ClusterLabelStylingSnapshot(
             buildInputs.styling().desaturationPalette(),
             buildInputs.styling().categories(),
             buildInputs.viewReading().reading(),
-            buildInputs.contentInputs());
+            buildInputs.contentInputs(),
+            labelFace);
     }
 }
