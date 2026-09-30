@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry.v4;
 
+import kmlib.math.geometry.Segment;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -169,4 +171,119 @@ class LandableFrontageTests {
                 .containsExactly(0, 1, 2, 3, 4, 5, 6, 7);
         }
     }
+
+    @Nested
+    class CollectLandableFrontage {
+
+        // The square's bottom and right sides on laid lines, so its corner at (100, 0) has a
+        // laid line either side of it; the top and left on cells.
+        private static final int[] LAID_EITHER_SIDE_OF_THE_BOTTOM_RIGHT = {LAID, LAID, 2, 3};
+
+        // Below every run of the square, whose sides are 100 long, so none of them is a point.
+        private static final double RESOLUTION = 10;
+
+        // Above cell 2's run and below cell 3's, once the square is stretched: see the test.
+        private static final double BETWEEN_THE_TWO_RUNS = 50;
+
+        // Cell 7's frontier running through (100, 0), and cell 8's running nowhere near.
+        private static final LabelledWall SHORE_THROUGH_THE_CORNER =
+            new LabelledWall(new Segment(100, -50, 100, 50), 7);
+
+        private static final LabelledWall SHORE_ELSEWHERE =
+            new LabelledWall(new Segment(300, -50, 300, 50), 8);
+
+        @Test
+        void aCornerBetweenTwoLaidLinesOnAShoreIsThatCellsPoint() {
+
+            var frontage = LandableFrontage.collectLandableFrontage(
+                List.of(Face.encloseFace(
+                    new LabelledRing(CORNERS, LAID_EITHER_SIDE_OF_THE_BOTTOM_RIGHT))),
+                piece -> false,
+                List.of(SHORE_ELSEWHERE, SHORE_THROUGH_THE_CORNER),
+                RESOLUTION);
+
+            assertThat(frontage.points())
+                .hasSize(1);
+            assertThat(frontage.points().get(0).cell())
+                .isEqualTo(7);
+            assertThat(frontage.points().get(0).point())
+                .containsExactly(100, 0);
+        }
+
+        @Test
+        void aCornerBetweenTwoLaidLinesOffEveryShoreIsNobodys() {
+            // Two laid lines crossing in open void meet at a corner like any other.
+            assertThat(LandableFrontage.collectLandableFrontage(
+                    List.of(Face.encloseFace(
+                        new LabelledRing(CORNERS, LAID_EITHER_SIDE_OF_THE_BOTTOM_RIGHT))),
+                    piece -> false,
+                    List.of(SHORE_ELSEWHERE),
+                    RESOLUTION)
+                .points())
+                .isEmpty();
+        }
+
+        @Test
+        void aCornerWithACellEdgeOnEitherSideIsARunsEndAndNotAPoint() {
+            // The corner at (100, 100) has the laid right side on one side and cell 2's top on
+            // the other: it is where cell 2's run starts, and a point there would draw the run's
+            // end twice.
+            assertThat(LandableFrontage.collectLandableFrontage(
+                    List.of(Face.encloseFace(
+                        new LabelledRing(CORNERS, LAID_EITHER_SIDE_OF_THE_BOTTOM_RIGHT))),
+                    piece -> false,
+                    List.of(new LabelledWall(new Segment(100, 50, 100, 150), 2)),
+                    RESOLUTION)
+                .points())
+                .isEmpty();
+        }
+
+        @Test
+        void aRunShorterThanTheResolutionIsAPointAtItsMiddle() {
+            // The square's top, on cell 2, is 100 long and its left, on cell 3, is 100 long;
+            // with the square squeezed to 20 wide the top is 20 long, under a resolution of 50,
+            // and comes back as a point at (10, 100) while the left stays a run.
+            var squeezed = List.of(
+                new double[] {0, 0},
+                new double[] {20, 0},
+                new double[] {20, 100},
+                new double[] {0, 100});
+
+            var frontage = LandableFrontage.collectLandableFrontage(
+                List.of(Face.encloseFace(
+                    new LabelledRing(squeezed, LAID_EITHER_SIDE_OF_THE_BOTTOM_RIGHT))),
+                piece -> false,
+                List.of(),
+                BETWEEN_THE_TWO_RUNS);
+
+            assertThat(frontage.runs())
+                .extracting(LandableFrontage.Run::cell)
+                .containsExactly(3);
+            assertThat(frontage.points())
+                .hasSize(1);
+            assertThat(frontage.points().get(0).cell())
+                .isEqualTo(2);
+            assertThat(frontage.points().get(0).point())
+                .containsExactly(10, 100);
+        }
+
+        @Test
+        void aCapturedPieceOffersNothing() {
+
+            var frontage = LandableFrontage.collectLandableFrontage(
+                List.of(Face.encloseFace(
+                    new LabelledRing(CORNERS, LAID_EITHER_SIDE_OF_THE_BOTTOM_RIGHT))),
+                piece -> true,
+                List.of(SHORE_THROUGH_THE_CORNER),
+                RESOLUTION);
+
+            assertThat(frontage.runs())
+                .isEmpty();
+            assertThat(frontage.points())
+                .isEmpty();
+        }
+    }
+
+    // Any negative a tier might lay under.
+    private static final int LAID = -9;
 }

@@ -47,6 +47,10 @@ public final class VoidPartitionOverlay {
     private static final CarriedLines.LaidLines NOTHING_LAID =
         new CarriedLines.LaidLines(List.of(), List.of());
 
+    // What the frontage layer shows while it is off.
+    private static final LandableFrontage.Frontage NO_FRONTAGE =
+        new LandableFrontage.Frontage(List.of(), List.of());
+
     private final ViewerSettings settings;
 
     // What the last refresh read, kept so a frame paints the void the rest of the frame was
@@ -54,6 +58,8 @@ public final class VoidPartitionOverlay {
     private List<RingRegion> regions = List.of();
 
     private List<List<double[]>> landable = List.of();
+
+    private List<double[]> landablePoints = List.of();
 
     private List<List<double[]>> lakeCoastLines = List.of();
 
@@ -105,6 +111,7 @@ public final class VoidPartitionOverlay {
 
             regions = List.of();
             landable = List.of();
+            landablePoints = List.of();
             return;
         }
 
@@ -122,9 +129,12 @@ public final class VoidPartitionOverlay {
         regions = settings.isVoidPiecesV4Shown()
             ? collectRegions(partition, settings)
             : List.of();
-        landable = settings.isLandableFrontageV4Shown()
-            ? collectLandableRuns(partition, coast.walls())
-            : List.of();
+        var frontage = settings.isLandableFrontageV4Shown()
+            ? collectLandableFrontage(partition, coast.walls(), frontier)
+            : NO_FRONTAGE;
+
+        landable = frontage.runs().stream().map(LandableFrontage.Run::points).toList();
+        landablePoints = frontage.points().stream().map(LandableFrontage.Point::point).toList();
     }
 
     /**
@@ -173,7 +183,8 @@ public final class VoidPartitionOverlay {
     }
 
     /**
-     * Draws the runs of cell border facing void nothing has captured.
+     * Draws the runs of cell border facing void nothing has captured, and the points where the
+     * void touches a cell without a run.
      *
      * @param g2 where to draw, in world space
      */
@@ -183,6 +194,7 @@ public final class VoidPartitionOverlay {
             return;
         }
         MapPainting.paintLineRuns(g2, landable, settings.landableFrontageV4Colour);
+        MapPainting.paintPointMarks(g2, landablePoints, settings.landableFrontageV4Colour);
     }
 
     // Shaped and cleaned on the way out rather than held that way, since both the rule and the
@@ -199,17 +211,17 @@ public final class VoidPartitionOverlay {
             settings.parameters.measureBoundSagitta());
     }
 
-    // The runs the open pieces face, as the point runs the painting takes - which cell each is
-    // on being a fact for a reader of the map and not for the stroke. Judged against the coast
-    // walls as laid: with the coast off there are none, and no piece has an edge along one.
-    private static List<List<double[]>> collectLandableRuns(
-            VoidPartition partition, List<LabelledWall> coastWalls) {
+    // What the open pieces face, at the resolution the pieces were walked at. Judged against
+    // the coast walls as laid: with the coast off there are none, and no piece has an edge
+    // along one. Which cell a run or a point is on is a fact for a reader of the map and not
+    // for the stroke, so only the geometry is kept.
+    private LandableFrontage.Frontage collectLandableFrontage(
+            VoidPartition partition, List<LabelledWall> coastWalls, List<LabelledWall> frontier) {
 
-        return LandableFrontage.collectLandableRuns(
-                partition.collectPieces(),
-                piece -> LakeTier.isCaptured(piece, coastWalls))
-            .stream()
-            .map(LandableFrontage.Run::points)
-            .toList();
+        return LandableFrontage.collectLandableFrontage(
+            partition.collectPieces(),
+            piece -> LakeTier.isCaptured(piece, coastWalls),
+            frontier,
+            settings.parameters.measureBoundSagitta());
     }
 }

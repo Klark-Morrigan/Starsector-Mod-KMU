@@ -25,7 +25,7 @@ class CarriedLinesTests {
 
     // Cells drawn with three sides round the circle, so the sagitta is exactly half the cell
     // radius: 100 * (1 - cos 60 degrees) = 50. The shore is looked for within two of those, 100,
-    // and the wall ends half of one past it, 25.
+    // and the wall ends a twentieth of one past it, 2.5.
     private static final SectorGeometryParameters PARAMETERS =
         new SectorGeometryParameters(100, 3, 10, 1, 8);
 
@@ -71,15 +71,15 @@ class CarriedLinesTests {
 
         @Test
         void aLineIsOneWallEndingJustInsideEachShore() {
-            // From (0, 300) down to the left shore at (0, 260) and 25 past it, (0, 235); from
-            // (1000, 300) down to the right shore at (1000, 280) and 25 past, (1000, 255).
+            // From (0, 300) down to the left shore at (0, 260) and 2.5 past it, (0, 257.5);
+            // from (1000, 300) down to the right shore at (1000, 280) and 2.5 past, (1000, 277.5).
             var laid = CarriedLines.layCarriedLines(
                 List.of(LINE), BOTH_SHORES, SITES, PARAMETERS, SOME_TIER);
 
             assertThat(laid.walls())
                 .hasSize(1);
-            assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 235);
-            assertThatPointIs(laid.walls().get(0).segment().readEnd(), 1000, 255);
+            assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 257.5);
+            assertThatPointIs(laid.walls().get(0).segment().readEnd(), 1000, 277.5);
         }
 
         @Test
@@ -88,8 +88,8 @@ class CarriedLinesTests {
             var laid = CarriedLines.layCarriedLines(
                 List.of(LINE), NO_SHORE, SITES, PARAMETERS, SOME_TIER);
 
-            assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 275);
-            assertThatPointIs(laid.walls().get(0).segment().readEnd(), 1000, 275);
+            assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 297.5);
+            assertThatPointIs(laid.walls().get(0).segment().readEnd(), 1000, 297.5);
         }
 
         @Test
@@ -103,7 +103,7 @@ class CarriedLinesTests {
                 PARAMETERS,
                 SOME_TIER);
 
-            assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 275);
+            assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 297.5);
         }
 
         @Test
@@ -116,7 +116,7 @@ class CarriedLinesTests {
                 PARAMETERS,
                 SOME_TIER);
 
-            assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 235);
+            assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 257.5);
         }
 
         @Test

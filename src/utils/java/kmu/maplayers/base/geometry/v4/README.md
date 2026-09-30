@@ -32,7 +32,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | cut them into the base | `SegmentCrossings` | the welded base read back as lines, and the walls | lines meeting only at their ends |
 | weld and order again | `PlanarArrangement` | those lines, at rounding | the graph the faces are walked on |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
-| read the shore | `LandableFrontage` | the pieces, and which of them each tier captured | the open pieces' runs of border, by cell |
+| read the shore | `LandableFrontage` | the pieces, which of them each tier captured, and the frontier | the open pieces' runs of border and single points of contact, by cell |
 | cut the channel | `PieceShaper` | a piece, an `EdgeInset` | its rings pulled off what they face, crossings and all |
 | make it drawable | `PieceRegions` | those rings | bodies and holes, resolved and smoothed |
 
@@ -130,8 +130,13 @@ It reads the side off the piece's own edges:
 a piece is walked with itself on the left, and a reach arrives running with its lake's water on its left,
 so an edge along a reach that runs against it puts the piece in the bay.
 
-TODO: a single point of contact offers no frontage yet.
-A run is edges, so a cell the coast only touches between two reaches has no run, though a bridge may land there.
+A single point of contact is frontage too, as a point.
+Two reaches meeting on a cell are moved onto its shore along one line to one end inside the cell, and each leaves the cell where its own wall crosses the frontier, a little apart:
+the overshoot past the shore over the tangent of the wall's angle to it.
+So the water between them touches the cell along a run a few units long, or, where the two crossings weld into one vertex, at a vertex with a coast wall either side and no cell edge.
+Both are the same contact at the map's resolution:
+a run shorter than the sagitta is a point at its middle, and a vertex of an open piece with laid lines both sides that lies on a cell's frontier is a point on that cell.
+A point is drawn as a disc as wide as a run's stroke.
 
 A run carries both ends of every edge it covers, so consecutive runs share the corner where one cell gives way to the next.
 Carrying only each edge's start leaves a notch at every junction.

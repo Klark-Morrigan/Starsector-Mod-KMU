@@ -1,11 +1,13 @@
 package kmu.maplayers.base.geometry.ui;
 
+import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.v3.CoastFrontages;
 import kmu.maplayers.base.geometry.v4.LakeTier;
 import kmu.maplayers.base.geometry.v4.LandableFrontage;
+import kmu.maplayers.base.geometry.v4.VoidPartition;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,6 +20,7 @@ import java.util.stream.Stream;
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.KNOBS;
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.measureSea;
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.measureVoid;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.readCellEdges;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withinPercentage;
@@ -50,9 +53,10 @@ class LakeBridgesIntegrationTests {
     // the continents, so the sea is not touched at all, and this is only rounding.
     private static final double AREA_SHARE = 1e-9;
 
-    // How far apart two points may stand and still be the same place, which is room for the
-    // rounding in a distance and nothing more.
-    private static final double SAME_POINT = 1e-6;
+    // How far a bridge end may stand from the frontage, in sagittas: one for the end sitting
+    // on the true rim and the frontage on the polygon inside it, and one more for the two
+    // walls of a contact crossing that polygon a little apart.
+    private static final double CONTACT_SLACK_SAGITTAS = 2;
 
     static Stream<String> provideSectorNames() {
         return SectorFixture.listSectorNames().stream();
@@ -86,34 +90,47 @@ class LakeBridgesIntegrationTests {
 
         @ParameterizedTest
         @MethodSource(SECTORS)
-        void everyBridgeLandsOnOpenFrontageOrAtASinglePoint(String sector) {
+        void everyBridgeLandsOnOpenFrontage(String sector) {
             // The rule a bridge is judged by, asked of v4's own frontage: the frontage standing
             // when the bridges go in is what the coast left open, and each end has to stand on
-            // its own cell's stretch of it - to within a sagitta, since an end sits on the
-            // cell's true rim and the frontage on the polygon drawn inside it. The one exception
-            // is a cell the coast only touches between two reaches, which offers a single point
-            // and no stretch; the frontage has no runs for those yet.
+            // it - within two sagittas, since an end sits on the cell's true rim, the frontage on
+            // the polygon drawn inside it, and a contact's two walls cross that polygon a little
+            // apart. On whichever cell v4 says: a point on one cell's circle can lie on another
+            // cell's border once the cells are clipped against each other, and one contact on 366
+            // does. A cell the coast only touches offers a point rather than a stretch, and the
+            // points are what most of those ends stand on - which is pinned, or the points would
+            // be tested against nothing.
             var continents = LakePartitions.layContinents(sector);
             var coastWalls = LakePartitions.layCoastWalls(sector);
-            var open = LandableFrontage.collectLandableRuns(
+            var frontage = LandableFrontage.collectLandableFrontage(
                 LakePartitions.readCoastPartition(sector).collectPieces(),
-                piece -> LakeTier.isCaptured(piece, coastWalls));
-            var points = CoastFrontages.collectLakeFrontages(continents.traceCoasts());
-            var furthest = KNOBS.measureBoundSagitta() + SAME_POINT;
+                piece -> LakeTier.isCaptured(piece, coastWalls),
+                VoidPartition.collectFrontier(readCellEdges(sector)),
+                KNOBS.measureBoundSagitta());
+            var contacts = CoastFrontages.collectLakeFrontages(continents.traceCoasts());
+            var furthest = CONTACT_SLACK_SAGITTAS * KNOBS.measureBoundSagitta();
+            var endsOnAPoint = 0;
 
             for (var bridge : continents.layLakeSpans()) {
                 for (var end : List.of(
                         new BridgeEnd(bridge.fromSite(), bridge.start()),
                         new BridgeEnd(bridge.toSite(), bridge.end()))) {
 
-                    if (isSinglePoint(points.get(end.cell()), end.point())) {
-                        continue;
-                    }
-                    assertThat(measureDistanceToRuns(open, end))
+                    var toARun = measureDistanceToRuns(frontage.runs(), end.point());
+                    var toAPoint = measureDistanceToPoints(frontage.points(), end.point());
+
+                    assertThat(Math.min(toARun, toAPoint))
                         .as("a bridge end on cell %d", end.cell())
                         .isLessThanOrEqualTo(furthest);
+
+                    if (isSinglePoint(contacts.get(end.cell()), end.point()) && toAPoint < toARun) {
+                        endsOnAPoint++;
+                    }
                 }
             }
+
+            assertThat(endsOnAPoint)
+                .isPositive();
         }
 
         @ParameterizedTest
@@ -168,22 +185,30 @@ class LakeBridgesIntegrationTests {
         return false;
     }
 
-    // How far a bridge end stands from the nearest stretch of open frontage on its own cell.
+    // How far a bridge end stands from the nearest stretch of open frontage.
     private static double measureDistanceToRuns(
-            List<LandableFrontage.Run> runs, BridgeEnd end) {
+            List<LandableFrontage.Run> runs, double[] end) {
 
         var nearest = Double.MAX_VALUE;
 
         for (var run : runs) {
-
-            if (run.cell() != end.cell()) {
-                continue;
-            }
             for (var corner = 0; corner + 1 < run.points().size(); corner++) {
 
                 nearest = Math.min(nearest, Segments.computeDistanceToPoint(
-                    run.points().get(corner), run.points().get(corner + 1), end.point()));
+                    run.points().get(corner), run.points().get(corner + 1), end));
             }
+        }
+        return nearest;
+    }
+
+    // How far a bridge end stands from the nearest point of open frontage.
+    private static double measureDistanceToPoints(
+            List<LandableFrontage.Point> points, double[] end) {
+
+        var nearest = Double.MAX_VALUE;
+
+        for (var point : points) {
+            nearest = Math.min(nearest, Points.computeDistance(point.point(), end));
         }
         return nearest;
     }

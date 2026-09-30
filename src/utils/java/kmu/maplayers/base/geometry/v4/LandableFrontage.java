@@ -1,5 +1,8 @@
 package kmu.maplayers.base.geometry.v4;
 
+import kmlib.math.geometry.Points;
+import kmlib.math.geometry.Segments;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -21,8 +24,15 @@ import java.util.function.Predicate;
  * Which pieces a layer captured is that layer's to say - only it knows which side of its lines
  * is which - so this is handed the answer rather than working it out.
  *
- * <p>TODO: a run is edges, so a cell a coast only touches at one point - between two reaches -
- * offers no run at all, though a bridge may land there.
+ * <p><b>A cell a coast only touches is frontage at that one point.</b> Two reaches meeting on a
+ * cell are moved onto its shore along one line to one end inside the cell, and each leaves the
+ * cell where its own wall crosses the frontier - a little apart, by the overshoot past the shore
+ * over the tangent of the wall's angle to it. So the water between them touches the cell along a
+ * run a few units long, or, where the two crossings weld into one vertex, at a vertex with a
+ * coast wall either side and no cell edge at all. Both are the same contact at the map's
+ * resolution: a run shorter than the resolution is a point at its middle, and a vertex of an open
+ * piece with laid lines on both sides that lies on a cell's frontier is a point on that cell.
+ * A bridge may land on either, and does.
  *
  * <p>Inland void or open sea, it does not matter. The sea's shore is what the sea runs around -
  * the holes cut out of it - and a pocket's shore is its outline, and both are frontage the same
@@ -31,7 +41,59 @@ import java.util.function.Predicate;
  */
 public final class LandableFrontage {
 
+    // How far a vertex may sit off a frontier edge and still lie on it, in map units. The
+    // vertex is the cut the walk made through that edge, so it lies on it to rounding; far
+    // below anything drawn, so a vertex merely near a shore is not taken for a point of it.
+    private static final double ON_THE_SHORE = 1e-3;
+
     private LandableFrontage() {
+    }
+
+    /**
+     * Everything the open void faces, as the runs long enough to show at the map's resolution
+     * and the points that are all the rest amounts to.
+     *
+     * @param pieces     the pieces of a partition
+     * @param isCaptured whether the layers laid so far have closed a piece off
+     * @param frontier   every cell edge facing void, labelled with its cell, which says whose a
+     *                   vertex on it is
+     * @param resolution how far the drawn frontier sits from the true one, the sagitta the
+     *                   pieces were walked at; a run shorter than it is a point
+     * @return the runs at least the resolution long, and the points: each shorter run at its
+     *         middle, and each vertex of an open piece with laid lines on both sides that lies
+     *         on a cell's frontier. Piece by piece in the order given; a vertex two open pieces
+     *         share comes back once for each
+     */
+    public static Frontage collectLandableFrontage(
+            List<Face> pieces,
+            Predicate<Face> isCaptured,
+            List<LabelledWall> frontier,
+            double resolution) {
+
+        var runs = new ArrayList<Run>();
+        var points = new ArrayList<Point>();
+
+        for (var piece : pieces) {
+
+            if (isCaptured.test(piece)) {
+                continue;
+            }
+
+            for (var run : collectLandableRuns(piece)) {
+
+                if (measureLength(run.points()) >= resolution) {
+                    runs.add(run);
+                } else {
+                    points.add(new Point(run.cell(), Points.computeMean(run.points())));
+                }
+            }
+            addPointsAlong(points, piece.outline(), frontier);
+
+            for (var hole : piece.holes()) {
+                addPointsAlong(points, hole, frontier);
+            }
+        }
+        return new Frontage(List.copyOf(runs), List.copyOf(points));
     }
 
     /**
@@ -73,6 +135,46 @@ public final class LandableFrontage {
             addRunsAlong(runs, hole);
         }
         return List.copyOf(runs);
+    }
+
+    private static double measureLength(List<double[]> points) {
+
+        var length = 0.0;
+
+        for (var index = 0; index + 1 < points.size(); index++) {
+            length += Points.computeDistance(points.get(index), points.get(index + 1));
+        }
+        return length;
+    }
+
+    // One ring's worth of points: each corner with laid lines either side of it, filed under
+    // the cell whose frontier it lies on. A corner with a cell edge on either side is the end
+    // of a run and already frontage.
+    private static void addPointsAlong(
+            List<Point> points, LabelledRing ring, List<LabelledWall> frontier) {
+
+        var corners = ring.vertices();
+        var labels = ring.edgeLabels();
+
+        for (var corner = 0; corner < corners.size(); corner++) {
+
+            var inbound = labels[(corner + corners.size() - 1) % corners.size()];
+
+            if (EdgeLabels.isCell(inbound) || EdgeLabels.isCell(labels[corner])) {
+                continue;
+            }
+
+            for (var edge : frontier) {
+
+                if (Segments.computeDistanceToPoint(
+                        edge.segment().readStart(), edge.segment().readEnd(), corners.get(corner))
+                        <= ON_THE_SHORE) {
+
+                    points.add(new Point(edge.label(), corners.get(corner)));
+                    break;
+                }
+            }
+        }
     }
 
     // One ring's worth of runs: consecutive corners on the same cell, a corner on anything
@@ -149,5 +251,24 @@ public final class LandableFrontage {
      *               points for a cell offering one edge, and never just one
      */
     public record Run(int cell, List<double[]> points) {
+    }
+
+    /**
+     * One point of border a piece of open void faces, on one cell, with no stretch to it that
+     * the map could show.
+     *
+     * @param cell  whose border it is
+     * @param point where the void touches it
+     */
+    public record Point(int cell, double[] point) {
+    }
+
+    /**
+     * What the open void faces, at the map's resolution.
+     *
+     * @param runs   the stretches long enough to show
+     * @param points the contacts that are not
+     */
+    public record Frontage(List<Run> runs, List<Point> points) {
     }
 }

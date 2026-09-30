@@ -43,9 +43,12 @@ public final class CarriedLines {
     private static final double SHORE_SEARCH_SAGITTAS = 2;
 
     // How far past the shore the wall ends, in sagittas. Enough that the wall crosses the
-    // frontier outright rather than touching it, which the cutting cannot see; and far below a
-    // polygon edge's length, so the end is inside the cell and not out through another edge.
-    private static final double PAST_THE_SHORE_SAGITTAS = 0.5;
+    // frontier outright rather than touching it, which the cutting cannot see, and as little
+    // as that: two lines sharing an end exit the cell where each crosses the frontier, and
+    // those crossings sit apart by this distance over the tangent of the line's angle to the
+    // frontier - so a grazing line turns a shared point into a stretch of border, and the
+    // stretch is kept under the resolution by keeping this small.
+    private static final double PAST_THE_SHORE_SAGITTAS = 0.05;
 
     private CarriedLines() {
     }

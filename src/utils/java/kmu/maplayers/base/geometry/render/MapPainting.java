@@ -160,6 +160,23 @@ public final class MapPainting {
         }
     }
 
+    /**
+     * Marks single points at the weight a line run is drawn at: a filled disc as wide as the
+     * stroke, so a point of frontage reads as the run it would be if it had any length.
+     *
+     * @param g2     what to draw with
+     * @param points the points to mark
+     * @param colour the colour, drawn opaque as a run is
+     */
+    public static void paintPointMarks(Graphics2D g2, List<double[]> points, Color colour) {
+
+        g2.setColor(applyAlpha(colour, MapLook.OPAQUE_ALPHA));
+
+        for (var point : points) {
+            g2.fill(buildCircle(point, MapLook.SPAN_STROKE / DIAMETERS));
+        }
+    }
+
     private static void prepareSpanStroke(Graphics2D g2, Color colour) {
 
         g2.setStroke(new BasicStroke(MapLook.SPAN_STROKE));
