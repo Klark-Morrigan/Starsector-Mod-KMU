@@ -89,30 +89,30 @@ final class VoidV4Section extends PanelSection {
         controls.add(ToggleTree.buildToggleTree(
             refreshes::refreshVoidV4,
             ToggleTree.Row.ofRollUp(
-                0, "allVoidV4Layers", "Every v4 layer",
+                TreeDepths.ROOT, "allVoidV4Layers", "Every v4 layer",
                 VOID_PIECES, LAKE_COAST, LAKE_BRIDGES, LANDABLE_FRONTAGE),
-            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.BRANCH, new ToggleTree.Switch(
                 VOID_PIECES,
                 "Pieces",
                 true,
                 on -> settings.showVoidPiecesV4 = on)),
-            ToggleTree.Row.ofRollUp(1, LAKES_BRANCH, "Lakes", LAKE_COAST, LAKE_BRIDGES),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofRollUp(TreeDepths.BRANCH, LAKES_BRANCH, "Lakes", LAKE_COAST, LAKE_BRIDGES),
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
                 LAKE_COAST,
                 "Coast",
                 false,
                 on -> settings.showLakeCoastV4 = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
                 LAKE_BRIDGES,
                 "Bridges",
                 false,
                 on -> settings.showLakeBridgesV4 = on)),
-            ToggleTree.Row.ofSwitch(3, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.RULE, new ToggleTree.Switch(
                 THIN_LAKE_BRIDGES,
                 "Thin shared-anchor bridges",
                 true,
                 on -> settings.shouldThinLakeBridgesV4 = on)),
-            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.BRANCH, new ToggleTree.Switch(
                 LANDABLE_FRONTAGE,
                 "Landable frontage",
                 false,

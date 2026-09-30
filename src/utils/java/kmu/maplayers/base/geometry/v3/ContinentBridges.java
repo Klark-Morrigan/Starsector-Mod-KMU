@@ -128,6 +128,16 @@ public final class ContinentBridges {
         double coastSlack,
         boolean shouldThinFormations,
         double anchorSeparation) {
+
+        /**
+         * The same rules with the thinning set as given.
+         *
+         * @param shouldThin whether spans sharing an anchor are thinned
+         * @return the rules, every other knob unchanged
+         */
+        public BridgeRules copyWithThinning(boolean shouldThin) {
+            return new BridgeRules(reachMultiple, coastSlack, shouldThin, anchorSeparation);
+        }
     }
 
     /**

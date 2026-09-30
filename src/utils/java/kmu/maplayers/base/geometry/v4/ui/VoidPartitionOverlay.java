@@ -47,6 +47,10 @@ public final class VoidPartitionOverlay {
     private static final CarriedLines.LaidLines NOTHING_LAID =
         new CarriedLines.LaidLines(List.of(), List.of());
 
+    // What the frontage layer shows while it is off.
+    private static final LandableFrontage.Frontage NO_FRONTAGE =
+        new LandableFrontage.Frontage(List.of(), List.of());
+
     private final ViewerSettings settings;
 
     // What the last refresh read, kept so a frame paints the void the rest of the frame was
@@ -54,6 +58,8 @@ public final class VoidPartitionOverlay {
     private List<RingRegion> regions = List.of();
 
     private List<List<double[]>> landable = List.of();
+
+    private List<double[]> landablePoints = List.of();
 
     private List<List<double[]>> lakeCoastLines = List.of();
 
@@ -70,9 +76,10 @@ public final class VoidPartitionOverlay {
      *                    between cell and void already stands; handed in rather than built
      *                    again, since the rebuild that calls this has just built them
      * @param fixture     the sector to read, for the sites the pieces are placed against
-     * @param lakeReaches the lakes' coast reaches, which are the lines the lake coast lays;
-     *                    read off the trace the rebuild that calls this made, so the two
-     *                    constructions are drawn from one coast
+     * @param lakeReaches the lakes' coast reaches, which are the lines the lake coast lays,
+     *                    each running with its lake's water on its left; read off the trace
+     *                    the rebuild that calls this made, so the two constructions are drawn
+     *                    from one coast
      * @param lakeBridges the bridges across the lakes, asked for only while their switch is
      *                    on: the search behind them runs on the first ask, and with the
      *                    other construction's own bridges off nothing else asks
@@ -84,11 +91,14 @@ public final class VoidPartitionOverlay {
             Supplier<List<CellGap>> lakeBridges) {
 
         var sites = fixture.getSites();
+
+        // The shore the tiers' lines end on, read once for both of them.
+        var frontier = VoidPartition.collectFrontier(cellEdges);
         var coast = settings.isLakeCoastV4Shown()
-            ? LakeTier.layCoastWalls(lakeReaches, sites, settings.parameters)
+            ? LakeTier.layCoastWalls(lakeReaches, frontier, sites, settings.parameters)
             : NOTHING_LAID;
         var bridges = settings.isLakeBridgesV4Shown()
-            ? LakeTier.layBridgeWalls(lakeBridges.get(), sites, settings.parameters)
+            ? LakeTier.layBridgeWalls(lakeBridges.get(), frontier, sites, settings.parameters)
             : NOTHING_LAID;
 
         lakeCoastLines = coast.lines();
@@ -98,29 +108,55 @@ public final class VoidPartitionOverlay {
         // it - the laid lines are drawn from the tier, not from the walk. So with neither of
         // those on it is not paid for, even with a tier switched on.
         if (!settings.isVoidPiecesV4Shown() && !settings.isLandableFrontageV4Shown()) {
-
-            regions = List.of();
-            landable = List.of();
+            clearLayers();
             return;
         }
 
         // A tier switched off lays nothing, so the switch takes its lines out of the partition
         // rather than leaving them dividing pieces nobody can see.
+        readLayers(
+            VoidPartition.readVoidPartition(
+                cellEdges, sites, settings.parameters, joinWalls(coast, bridges)),
+            coast.walls(),
+            frontier);
+    }
+
+    // Every tier's walls as one list for the walk, which divides by all of them at once.
+    private static List<LabelledWall> joinWalls(
+            CarriedLines.LaidLines coast, CarriedLines.LaidLines bridges) {
+
         var walls = new ArrayList<LabelledWall>(coast.walls());
 
         walls.addAll(bridges.walls());
 
-        var partition = VoidPartition.readVoidPartition(
-            cellEdges, sites, settings.parameters, walls);
+        return walls;
+    }
 
-        // Each read only for the layer that draws it: the pieces are inset and smoothed, which
-        // is the dearest pass here, and a window showing only the frontage has no use for it.
+    private void clearLayers() {
+
+        regions = List.of();
+        landable = List.of();
+        landablePoints = List.of();
+    }
+
+    // What the window shows of a partition, each layer read only while it is drawn: the
+    // pieces are inset and smoothed, which is the dearest pass here, and a window showing only
+    // the frontage has no use for it.
+    private void readLayers(
+            VoidPartition partition,
+            List<LabelledWall> coastWalls,
+            List<LabelledWall> frontier) {
+
         regions = settings.isVoidPiecesV4Shown()
             ? collectRegions(partition, settings)
             : List.of();
-        landable = settings.isLandableFrontageV4Shown()
-            ? collectLandableRuns(partition)
-            : List.of();
+
+        var frontage = settings.isLandableFrontageV4Shown()
+            ? collectLandableFrontage(partition, coastWalls, frontier)
+            : NO_FRONTAGE;
+
+        landable = frontage.runs().stream().map(LandableFrontage.Run::points).toList();
+        landablePoints = frontage.points().stream().map(LandableFrontage.Point::point).toList();
     }
 
     /**
@@ -169,7 +205,8 @@ public final class VoidPartitionOverlay {
     }
 
     /**
-     * Draws the runs of cell border facing void nothing has captured.
+     * Draws the runs of cell border facing void nothing has captured, and the points where the
+     * void touches a cell without a run.
      *
      * @param g2 where to draw, in world space
      */
@@ -179,6 +216,7 @@ public final class VoidPartitionOverlay {
             return;
         }
         MapPainting.paintLineRuns(g2, landable, settings.landableFrontageV4Colour);
+        MapPainting.paintPointMarks(g2, landablePoints, settings.landableFrontageV4Colour);
     }
 
     // Shaped and cleaned on the way out rather than held that way, since both the rule and the
@@ -191,20 +229,21 @@ public final class VoidPartitionOverlay {
             partition.collectPieces(),
             new EdgeInset(settings.voidInsetRule, settings.parameters.borderInset()),
             settings.parameters.miterSpikeLimit(),
-            settings.resolveBorderSmoothing());
+            settings.resolveBorderSmoothing(),
+            settings.parameters.measureBoundSagitta());
     }
 
-    // Every piece's landable runs as the point runs the painting takes, which cell each is on
-    // being a fact for a reader of the map and not for the stroke.
-    private static List<List<double[]>> collectLandableRuns(VoidPartition partition) {
+    // What the open pieces face, at the resolution the pieces were walked at. Judged against
+    // the coast walls as laid: with the coast off there are none, and no piece has an edge
+    // along one. Which cell a run or a point is on is a fact for a reader of the map and not
+    // for the stroke, so only the geometry is kept.
+    private LandableFrontage.Frontage collectLandableFrontage(
+            VoidPartition partition, List<LabelledWall> coastWalls, List<LabelledWall> frontier) {
 
-        var runs = new ArrayList<List<double[]>>();
-
-        for (var piece : partition.collectPieces()) {
-            for (var run : LandableFrontage.collectLandableRuns(piece)) {
-                runs.add(run.points());
-            }
-        }
-        return List.copyOf(runs);
+        return LandableFrontage.collectLandableFrontage(
+            partition.collectPieces(),
+            piece -> LakeTier.isCaptured(piece, coastWalls),
+            frontier,
+            settings.parameters.measureBoundSagitta());
     }
 }

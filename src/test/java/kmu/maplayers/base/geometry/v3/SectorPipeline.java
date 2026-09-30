@@ -118,10 +118,13 @@ public final class SectorPipeline {
     /**
      * The whole laying for one sector, for a suite that needs more of it than one search.
      *
+     * <p>Public for the suites in the viewer's package that lay this laying's lines into the
+     * other construction, so both constructions' suites read one laying of one map.
+     *
      * @param sector which sector
      * @return the laying, opened once
      */
-    static BridgedContinents layContinentsIn(String sector) {
+    public static BridgedContinents layContinentsIn(String sector) {
         return layContinents(sector);
     }
 

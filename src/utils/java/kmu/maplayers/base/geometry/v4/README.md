@@ -28,16 +28,17 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | the cells' own frontier | `VoidPartition` | each cell's adjacency-tagged edges | the lines between cell and void, and a frame round the sector |
 | cut the base at crossings | `SegmentCrossings` | those lines | lines meeting only at their ends |
 | weld and order the base | `PlanarArrangement` | those lines, at the sagitta | a graph knowing the turn order at each vertex |
-| lay a tier's lines | `LakeTier`, through `CarriedLines` | lines as `CellGap`s, two points and two cells | walls, each end carried through the shore |
+| lay a tier's lines | `LakeTier`, through `CarriedLines` | lines as `CellGap`s, two points and two cells, and the frontier | walls, one straight segment each, its ends moved just inside the shore |
 | cut them into the base | `SegmentCrossings` | the welded base read back as lines, and the walls | lines meeting only at their ends |
 | weld and order again | `PlanarArrangement` | those lines, at rounding | the graph the faces are walked on |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
-| read the shore | `LandableFrontage` | a piece | its runs of border, by cell |
+| read the shore | `LandableFrontage` | the pieces, which of them each tier captured, and the frontier | the open pieces' runs of border and single points of contact, by cell |
 | cut the channel | `PieceShaper` | a piece, an `EdgeInset` | its rings pulled off what they face, crossings and all |
 | make it drawable | `PieceRegions` | those rings | bodies and holes, resolved and smoothed |
 
 The last two are drawing rather than geometry, and the partition does not change under them:
-the shaping is paint over pieces that already exist, and under `EdgeInsetRule.NOWHERE` what it hands back is the piece itself.
+the shaping is paint over pieces that already exist, and under `EdgeInsetRule.NOWHERE` what it hands back is the piece itself, drawn as it is with nothing resolved or smoothed.
+Smoothed, the pieces either side of a seam would each round their own corner there and stop meeting, and the partition would be drawn as something it is not.
 They are in the table because leaving them out is what made the inset look finished when it was not - see [the channel](#the-channel).
 
 With nothing laid, the three rows about laid lines do nothing, and the walk runs on the welded base as it stands.
@@ -49,8 +50,9 @@ Nothing here imports v3, and the layering gate holds it to that.
 The lake coast is v3's trace and the lake bridges are v3's search,
 and both cross as `CellGap`s - the shared package's one value for a straight run between two cells -
 handed over by the viewer, which already depends on both.
-The coast's reaches are read off the trace by `LakeReaches` in the viewer's own package, and the bridges are found by `LakeBridges` beside it:
-v3's search under v3's knobs, bar whether chains and fans are thinned, which is a rule of the tier laying them and so a switch of v4's own.
+The coast's reaches are read off the trace by `LakeReaches` in the viewer's own package.
+The bridges are v3's search under v3's knobs, bar whether chains and fans are thinned:
+that is a rule of the tier laying them and so a switch of v4's own, which v3's laying answers through `layLakeSpans(shouldThinFormations)`.
 A version that imported the other would be a layer on top of it rather than a construction beside it,
 and the package both versions build on would depend on its own dependents.
 
@@ -98,7 +100,10 @@ Drawn from its outline alone, the sea paints over every cell on the map.
 
 The frontier reports each shared corner twice, up to a sagitta apart, and the weld at that tolerance is what closes its rings.
 A tier's line needs none of that:
-its ends are where its tier put them, and the walk cuts it at the shore where its stubs cross.
+its ends are moved onto the shore, just inside it, and the walk cuts it where it crosses.
+Not carried through on a stub past the end:
+the stub's remainder between the crossing and the end was an edge of the piece a few units long at an angle to the line,
+which folded under the channel into a hook at every junction, and with the end floating off the shore closed a sliver just above the floor.
 
 Welded together with the frontier, the line's ends are pulled up to a sagitta sideways after the cutting has run.
 A reach that grazes a cell, which v3's do, passes a polygon corner by less than that,
@@ -119,9 +124,19 @@ There is no measurement, because the question of HOW something lands - how far, 
 It shrinks as the layers go down:
 water a coastline closes off is captured, and a border facing captured water faces nothing anything can still arrive from.
 
-TODO: `LandableFrontage` neither shrinks nor offers single points yet.
-It reads every piece as open, so a bay behind a reach still counts,
-and its runs are edges, so a single point of contact offers nothing.
+Which pieces are captured is each tier's to say, since only the tier knows which side of its lines is which, and `LandableFrontage` is handed the answer.
+The lake tier captures the bay behind every reach, and the water either side of every bridge.
+It reads the side off the piece's own edges:
+a piece is walked with itself on the left, and a reach arrives running with its lake's water on its left,
+so an edge along a reach that runs against it puts the piece in the bay.
+
+A single point of contact is frontage too, as a point.
+Two reaches meeting on a cell are moved onto its shore along one line to one end inside the cell, and each leaves the cell where its own wall crosses the frontier, a little apart:
+the overshoot past the shore over the tangent of the wall's angle to it.
+So the water between them touches the cell along a run a few units long, or, where the two crossings weld into one vertex, at a vertex with a coast wall either side and no cell edge.
+Both are the same contact at the map's resolution:
+a run shorter than the sagitta is a point at its middle, and a vertex of an open piece with laid lines both sides that lies on a cell's frontier is a point on that cell.
+A point is drawn as a disc as wide as a run's stroke.
 
 A run carries both ends of every edge it covers, so consecutive runs share the corner where one cell gives way to the next.
 Carrying only each edge's start leaves a notch at every junction.
@@ -144,6 +159,16 @@ One profile over the cells and the void beside them is what makes the two sides 
 **A piece narrower than two channels is gone, not thin.**
 The miter does not shrink such a piece; it folds the ring over, and the folded ring winds the wrong way.
 The resolve will not catch that - handed a lone ring it takes that ring's winding for the plane's and hands it back as a fill - so the fold is caught while the raw ring is still there to compare against, by `PolygonOffsets.hasInsetCollapsed`.
+
+**A piece narrower than two channels only at its ends keeps its body.**
+A bay behind a reach is a lens, a few units across where the reach meets the shore and as wide as it likes between,
+and the miter folds both its ends into loops that run out to the spike limit and outweigh the body.
+Read as one signed area that is a collapse, so a ring the first reading rejects has its folds spliced out by `PolygonOffsets.removeReversedLoops`, asked for the counter-clockwise remainder, and is judged again on what is left.
+The folds at every corner too tight for the channel are spliced the same way before the resolve, which would otherwise fill each of them as a speck.
+
+**Nothing drawn is smaller than a piece can be.**
+The rounding steps a sharp corner back by more than the corner's own edges, and the loop that leaves comes back from the resolve as a region a few units across.
+`PieceRegions` keeps no region under a sagitta squared, which is the floor the walk keeps no face under.
 
 ## What the resolution decides
 

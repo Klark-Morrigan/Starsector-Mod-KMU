@@ -104,7 +104,7 @@ import javax.swing.SwingUtilities;
  *       cell-to-edge translation, so every fixture row is drawn and nothing exercises the
  *       cache, its diffing, or the incremental refresh.</li>
  *   <li><i>Deciding who owns it</i> - {@code SectorPolitics.resolveDominantHolderBySystemKey},
- *       {@code SystemDominance}, {@code SystemOwner.mapFactionIdBySystemKey},
+ *       {@code SystemDominance}, {@code SystemOwner.mapOwnerIdBySystemKey},
  *       {@code DecivilisedMarkets.isRevealedDecivilised},
  *       {@code FilteredPolitics}, {@code FilterSelection}. Ownership is the fixture's
  *       dominant-owner column, whose score is summed market size rather than the real
@@ -408,13 +408,13 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         //
         // The bridges are the laying's own search under the window's bridge knobs, bar v4's own
         // say on thinning: where the two constructions' thinning agrees v4 lays exactly the set
-        // v3 draws, and whichever of the two asks first is the only one that pays.
+        // v3 draws, and either way the laying searches each set once however often it is asked.
         voidPartition.refresh(
             geometry.cellEdgesByCellKey(),
             fixture,
             LakeReaches.collectLakeReaches(
                 continents.traceCoasts(), settings.parameters.borderInset()),
-            () -> LakeBridges.collectLakeBridges(continents, settings.shouldThinLakeBridgesV4));
+            () -> continents.layLakeSpans(settings.shouldThinLakeBridgesV4));
         repaintMap();
     }
 

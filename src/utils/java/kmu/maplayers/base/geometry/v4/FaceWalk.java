@@ -47,6 +47,16 @@ import java.util.Set;
  */
 public final class FaceWalk {
 
+    /**
+     * How far a corner may sit off a line and still lie on it, in map units, for anything
+     * reading a piece's corners back against the lines they were cut on.
+     *
+     * <p>A corner the walk cut through a line lies on it to rounding, and the laid lines are
+     * joined at rounding; this is far above both and far below anything drawn, so a corner
+     * merely near a line is never taken for a corner on it.
+     */
+    public static final double ON_THE_LINE = 1e-3;
+
     // What a ring enclosed by no piece is filed under - the outside of everything, which is a
     // piece in its own right rather than a hole in something. Named rather than left as a bare
     // -1 because it is compared against real piece numbers.

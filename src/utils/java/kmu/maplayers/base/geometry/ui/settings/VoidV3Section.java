@@ -153,7 +153,7 @@ final class VoidV3Section extends PanelSection {
         var rows = new ArrayList<ToggleTree.Row>();
 
         rows.add(ToggleTree.Row.ofRollUp(
-            0,
+            TreeDepths.ROOT,
             "allVoidLayers",
             "Continent void",
             PUDDLE_BRIDGES, PUDDLE_FILL, PUDDLE_NAMES,
@@ -181,26 +181,26 @@ final class VoidV3Section extends PanelSection {
 
         return List.of(
             ToggleTree.Row.ofRollUp(
-                1,
+                TreeDepths.BRANCH,
                 "puddlePockets", "Puddle pockets", PUDDLE_BRIDGES, PUDDLE_FILL, PUDDLE_NAMES),
             ToggleTree.Row.ofSwitchPair(
-                2,
+                TreeDepths.LEAF,
                 new ToggleTree.Switch(
                 PUDDLE_BRIDGES, "Bridges", false,
                 on -> settings.showContinentPuddleBridges = on),
                 new ToggleTree.Switch(
                 PUDDLE_FILL, "Fill", false,
                 on -> settings.showContinentPuddleFill = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
                 PUDDLE_NAMES, "Names", false,
                 on -> settings.showContinentPuddleNames = on)),
             ToggleTree.Row.ofRollUp(
-                1,
+                TreeDepths.BRANCH,
                 "interiorCoastlines",
                 "Interior coastlines",
                 LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES, LAKE_NAMES),
             ToggleTree.Row.ofSwitchPair(
-                2,
+                TreeDepths.LEAF,
                 new ToggleTree.Switch(
                 LAKE_COASTLINE, "Coastline", false,
                 on -> settings.showContinentLakeCoastline = on),
@@ -208,7 +208,7 @@ final class VoidV3Section extends PanelSection {
                 LAKE_FILL, "Fill", false,
                 on -> settings.showContinentLakeFill = on)),
             ToggleTree.Row.ofSwitchPair(
-                2,
+                TreeDepths.LEAF,
                 new ToggleTree.Switch(
                 LAKE_FRONTAGES, "Bridgeable frontage", false,
                 on -> settings.showContinentLakeFrontages = on),
@@ -216,12 +216,12 @@ final class VoidV3Section extends PanelSection {
                 LAKE_NAMES, "Names", false,
                 on -> settings.showContinentLakeNames = on)),
             ToggleTree.Row.ofRollUp(
-                1,
+                TreeDepths.BRANCH,
                 "exteriorCoastlines",
                 "Exterior coastlines",
                 CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES, COAST_NAMES),
             ToggleTree.Row.ofSwitchPair(
-                2,
+                TreeDepths.LEAF,
                 new ToggleTree.Switch(
                 CONTINENT_COASTLINE, "Coastline", false,
                 on -> settings.showContinentCoastline = on),
@@ -229,7 +229,7 @@ final class VoidV3Section extends PanelSection {
                 CONTINENT_FILL, "Fill", false,
                 on -> settings.showContinentCoastFill = on)),
             ToggleTree.Row.ofSwitchPair(
-                2,
+                TreeDepths.LEAF,
                 new ToggleTree.Switch(
                 CONTINENT_FRONTAGES, "Bridgeable frontage", false,
                 on -> settings.showContinentCoastFrontages = on),
@@ -237,44 +237,44 @@ final class VoidV3Section extends PanelSection {
                 COAST_NAMES, "Names", false,
                 on -> settings.showContinentCoastNames = on)),
             ToggleTree.Row.ofRollUp(
-                1,
+                TreeDepths.BRANCH,
                 "lakeBridges", "Lake bridges", LAKE_BRIDGES, LAKE_POCKET_FILL, LAKE_POCKET_NAMES),
             ToggleTree.Row.ofSwitchPair(
-                2,
+                TreeDepths.LEAF,
                 new ToggleTree.Switch(
                 LAKE_BRIDGES, "Bridges", false,
                 on -> settings.showContinentLakeBridges = on),
                 new ToggleTree.Switch(
                 LAKE_POCKET_FILL, "Fill", false,
                 on -> settings.showContinentLakePocketFill = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
                 LAKE_POCKET_NAMES, "Names", false,
                 on -> settings.showContinentLakePocketNames = on)),
             ToggleTree.Row.ofRollUp(
-                1,
+                TreeDepths.BRANCH,
                 "inletBridges", "Inlet bridges", CONTINENT_BRIDGES, INLET_FILL, INLET_NAMES),
             ToggleTree.Row.ofSwitchPair(
-                2,
+                TreeDepths.LEAF,
                 new ToggleTree.Switch(
                 CONTINENT_BRIDGES, "Bridges", false,
                 on -> settings.showContinentBridges = on),
                 new ToggleTree.Switch(
                 INLET_FILL, "Fill", false,
                 on -> settings.showContinentInletFill = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
                 INLET_NAMES, "Names", false,
                 on -> settings.showContinentInletNames = on)),
 
             // Last, because it is the only set laid against everything above rather than
             // against the coasts alone.
             ToggleTree.Row.ofRollUp(
-                1,
+                TreeDepths.BRANCH,
                 "intercontinentalBridges",
                 "Intercontinental bridges",
                 INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL, INTERCONTINENTAL_SHORES,
                 INTERCONTINENTAL_ENCLOSED_FILL, INTERCONTINENTAL_NAMES),
             ToggleTree.Row.ofSwitchPair(
-                2,
+                TreeDepths.LEAF,
                 new ToggleTree.Switch(
                 INTERCONTINENTAL_BRIDGES, "Bridges", false,
                 on -> settings.showIntercontinentalBridges = on),
@@ -286,14 +286,14 @@ final class VoidV3Section extends PanelSection {
             // readings of one line: the span says a link is a stroke over the void, the shores
             // say it is land with water either side. A reader judging either wants the other
             // out of the way.
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
                 INTERCONTINENTAL_SHORES, "Coastline", false,
                 on -> settings.showIntercontinentalShores = on)),
 
             // Last of the branch, because the enclosed water is defined by what the rest leave:
             // what the links shut in that no other layer paints.
             ToggleTree.Row.ofSwitchPair(
-                2,
+                TreeDepths.LEAF,
                 new ToggleTree.Switch(
                     INTERCONTINENTAL_ENCLOSED_FILL, "Enclosed water", false,
                     on -> settings.showIntercontinentalEnclosedFill = on),
@@ -309,39 +309,39 @@ final class VoidV3Section extends PanelSection {
 
         return List.of(
             ToggleTree.Row.ofPair(
-                1,
+                TreeDepths.BRANCH,
                 ToggleTree.Row.ofRollUp(
-                    1,
+                    TreeDepths.BRANCH,
                     "everyWall",
                     "Walls",
                     LAKE_COASTLINE, CONTINENT_COASTLINE,
                     LAKE_BRIDGES, CONTINENT_BRIDGES, PUDDLE_BRIDGES,
                     INTERCONTINENTAL_BRIDGES),
                 ToggleTree.Row.ofRollUp(
-                    1,
+                    TreeDepths.BRANCH,
                     "everyCoastline",
                     "Coastline",
                     LAKE_COASTLINE, CONTINENT_COASTLINE, INTERCONTINENTAL_SHORES)),
             ToggleTree.Row.ofPair(
-                1,
+                TreeDepths.BRANCH,
                 ToggleTree.Row.ofRollUp(
-                    1,
+                    TreeDepths.BRANCH,
                     "everyFrontage", "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
                 ToggleTree.Row.ofRollUp(
-                    1,
+                    TreeDepths.BRANCH,
                     "everyBridge",
                     "Bridges",
                     PUDDLE_BRIDGES, LAKE_BRIDGES, CONTINENT_BRIDGES, INTERCONTINENTAL_BRIDGES)),
             ToggleTree.Row.ofPair(
-                1,
+                TreeDepths.BRANCH,
                 ToggleTree.Row.ofRollUp(
-                    1,
+                    TreeDepths.BRANCH,
                     "everyFill",
                     "Fill",
                     LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, LAKE_POCKET_FILL, INLET_FILL,
                     INTERCONTINENTAL_FILL, INTERCONTINENTAL_ENCLOSED_FILL),
                 ToggleTree.Row.ofRollUp(
-                    1,
+                    TreeDepths.BRANCH,
                     "everyName",
                     "Names",
                     PUDDLE_NAMES, LAKE_NAMES, COAST_NAMES, LAKE_POCKET_NAMES, INLET_NAMES,
@@ -443,7 +443,7 @@ final class VoidV3Section extends PanelSection {
         // what it changes is the set itself.
         //
         // The label says bridge where the key says span: the key is what saved windows hold,
-        // and the label is what v4's lake bridges, laid off this same search, are called.
+        // and the label uses v4's word for these lines.
         controls.add(rows.buildToggle(
             "shouldThinSpanFormations",
             "Thin shared-anchor bridges",

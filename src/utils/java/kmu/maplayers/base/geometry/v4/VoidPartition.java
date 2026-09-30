@@ -162,8 +162,16 @@ public final class VoidPartition {
         return false;
     }
 
-    // Every edge a cell faces the void across, labelled with the cell it belongs to.
-    private static List<LabelledWall> collectFrontier(Map<?, List<CellEdge>> cellEdges) {
+    /**
+     * Every edge a cell faces the void across, labelled with the cell it belongs to.
+     *
+     * <p>The line between cell and void, which the partition is read off and a tier's lines are
+     * moved onto. Cells are numbered in the order given, which is the order the sites come in.
+     *
+     * @param cellEdges every cell, as its adjacency-tagged edges
+     * @return the frontier, one wall per edge
+     */
+    public static List<LabelledWall> collectFrontier(Map<?, List<CellEdge>> cellEdges) {
 
         var frontier = new ArrayList<LabelledWall>();
         var cell = 0;

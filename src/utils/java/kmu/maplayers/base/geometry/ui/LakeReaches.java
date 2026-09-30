@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.ui;
 
 import kmlib.math.geometry.Points;
+import kmlib.math.geometry.PolygonRegions;
 
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.v3.Coastlines;
@@ -21,8 +22,8 @@ import java.util.List;
  *
  * <p>What crosses is the least that can: a reach as the {@link CellGap} it is, two points and
  * two cells. Fillets do not cross at all - along a fillet the shore already is the coast - and
- * which steps are reaches is v3's own answer, not re-derived here. The lake bridges cross
- * through {@link LakeBridges}, which v3 already finds as gaps.
+ * which steps are reaches is v3's own answer, not re-derived here. The lake bridges need no
+ * reading of their own: v3 already finds them as gaps.
  */
 public final class LakeReaches {
 
@@ -37,27 +38,42 @@ public final class LakeReaches {
      *                rather than a reach. Handed in rather than read off the trace, because a
      *                continent trace is made with no walls and the channel it carries is
      *                zero - under which every handover counts as a reach
-     * @return one gap per reach, in the order the coasts are walked
+     * @return one gap per reach, in the order the coasts are walked, each running with its
+     *         lake's water on its left - which is what says which side of it the coast has
+     *         captured
      */
     public static List<CellGap> collectLakeReaches(
             Coastlines.TracedCoasts traced,
             double channel) {
 
-        var shores = traced.lakes().stream().map(Coastlines.Lake::shore).toList();
         var reaches = new ArrayList<CellGap>();
 
-        for (var reach : Coastlines.collectStraightReaches(shores, channel)) {
+        // Lake by lake, because the side the water is on is each shore's own winding: a shore
+        // wound clockwise has its water on the right of every step, and its reaches are turned
+        // round so that every reach handed over says the same thing.
+        for (var lake : traced.lakes()) {
 
-            var from = reach.from().point();
-            var to = reach.to().point();
+            var shore = lake.shore();
+            var isWaterOnTheLeft = PolygonRegions.computeSignedArea(
+                shore.vertices().stream().map(Coastlines.CoastVertex::point).toList()) > 0;
 
-            reaches.add(new CellGap(
-                reach.from().circle(),
-                reach.to().circle(),
-                from,
-                to,
-                Points.computeDistance(from, to)));
+            for (var reach : Coastlines.collectStraightReaches(List.of(shore), channel)) {
+
+                reaches.add(isWaterOnTheLeft
+                    ? buildGap(reach.from(), reach.to())
+                    : buildGap(reach.to(), reach.from()));
+            }
         }
         return List.copyOf(reaches);
+    }
+
+    private static CellGap buildGap(Coastlines.CoastVertex from, Coastlines.CoastVertex to) {
+
+        return new CellGap(
+            from.circle(),
+            to.circle(),
+            from.point(),
+            to.point(),
+            Points.computeDistance(from.point(), to.point()));
     }
 }
