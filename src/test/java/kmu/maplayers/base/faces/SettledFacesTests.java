@@ -2,118 +2,176 @@ package kmu.maplayers.base.faces;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.ui.font.FaceResolver;
+import kmlib.starsector.factions.FactionNames;
+import kmlib.starsector.markets.SectorMarkets;
+import kmlib.starsector.strings.StarsectorStrings;
+import kmlib.starsector.systems.SectorStarSystems;
+import kmlib.starsector.ui.font.SettledFaceMemo;
 import kmlib.starsector.ui.font.StarsectorFont;
-import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
-import kmlib.testfixtures.starsector.ui.font.GlyphCoverageReaderFake;
+import kmlib.starsector.ui.font.installed.InstalledFaces;
+
+import kmu.KmuMod;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
- * Pins which face a KMU text settles on: the one it asks for where the atlas holds what it draws, the next
- * cut down where it does not, held to the kinds of text it is made of and to nothing else.
+ * Pins how KMU holds its faces: one memo per sector, released with the sector's machinery, reading each
+ * kind of text off the sector or KMU's strings. Which face a text settles on is KMLib's memo's, pinned by
+ * its own suite.
  */
 final class SettledFacesTests {
 
     // "Hegemony" (U+9738 U+4E3B), a faction name as a localised install draws it.
     private static final String LOCALISED_FACTION_NAME = "霸主";
 
-    // A localised install: every atlas holds Latin text, and the middle insignia cut the localised script
-    // besides - so the largest cut, asked for a localised name, has one step to take.
-    private static final FaceResolver LOCALISED_INSTALL_RESOLVER = new FaceResolver(
-        FaceLineHeightReaderFake.createVanillaLineHeights(),
-        GlyphCoverageReaderFake.createLatinOnlyCoverage().coveringEveryCharacter(StarsectorFont.VANILLA_INSIGNIA_25),
-        StarsectorFont.VANILLA_INSIGNIA_15);
+    private final SectorAPI sectorMock = mock(SectorAPI.class);
 
-    // The sector's names: a faction named in the localised script, and everything else Latin.
-    private static final Map<ProbedText, List<String>> LOCALISED_TEXTS = Map.of(
-        ProbedText.FACTION_NAMES, List.of("Tri-Tachyon", LOCALISED_FACTION_NAME),
-        ProbedText.PLACE_NAMES, List.of("Corvus", "Jangala"),
-        ProbedText.MOD_STRINGS, List.of("Political map"));
+    @Nested
+    final class ResolveFacesIn {
 
-    private static SettledFaces createLocalisedFaces(BiFunction<SectorAPI, ProbedText, List<String>> reader) {
-        return new SettledFaces(mock(SectorAPI.class), () -> LOCALISED_INSTALL_RESOLVER, reader);
-    }
+        @Test
+        void holdsOneSetOfFacesPerSectorMachinery() {
+            // Settling reads every name the sector holds, so a second ask on the same sector reuses the first.
+            var machinery = new SectorMapMachinery(null);
 
-    private static SettledFaces createLocalisedFaces() {
-        return createLocalisedFaces((sector, probe) -> LOCALISED_TEXTS.get(probe));
+            assertThat(SettledFaces.resolveFacesIn(machinery))
+                .isSameAs(SettledFaces.resolveFacesIn(machinery));
+        }
+
+        @Test
+        void holdsSeparateFacesForSeparateSectors() {
+            // Two sectors can name different factions, so neither may read faces settled on the other.
+            assertThat(SettledFaces.resolveFacesIn(new SectorMapMachinery(null)))
+                .isNotSameAs(SettledFaces.resolveFacesIn(new SectorMapMachinery(null)));
+        }
     }
 
     @Nested
     final class SettleFace {
 
         @Test
-        void keepsTheRequestedFaceWhereItsAtlasHoldsEveryProbedText() {
+        void answersTheFaceTheMemoSettled() {
 
-            assertThat(createLocalisedFaces()
-                    .settleFace(StarsectorFont.VANILLA_INSIGNIA_42, Set.of(ProbedText.PLACE_NAMES)))
-                .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_42);
-        }
+            @SuppressWarnings("unchecked")
+            SettledFaceMemo<ProbedText> faceMemoMock = mock(SettledFaceMemo.class);
 
-        @Test
-        void stepsDownTheFamilyWhereTheRequestedAtlasLacksAProbedText() {
-            // The map-label case: the largest cut holds no localised glyph, the next one down does.
-            assertThat(createLocalisedFaces()
+            when(faceMemoMock.settleFace(StarsectorFont.VANILLA_INSIGNIA_42, Set.of(ProbedText.FACTION_NAMES)))
+                .thenReturn(StarsectorFont.VANILLA_INSIGNIA_25);
+
+            assertThat(new SettledFaces(faceMemoMock)
                     .settleFace(StarsectorFont.VANILLA_INSIGNIA_42, Set.of(ProbedText.FACTION_NAMES)))
                 .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_25);
         }
+    }
+
+    @Nested
+    final class DisposeMachinery {
 
         @Test
-        void holdsTheFaceToTheKindsItsTextIsMadeOfAndNoOthers() {
-            // The localised name is among the factions, which this text never draws.
-            assertThat(createLocalisedFaces()
-                    .settleFace(
-                        StarsectorFont.VANILLA_INSIGNIA_42,
-                        Set.of(ProbedText.PLACE_NAMES, ProbedText.MOD_STRINGS)))
+        void discardsTheSettledFaces() {
+            // The machinery is released with its sector, and the faces with it.
+            @SuppressWarnings("unchecked")
+            SettledFaceMemo<ProbedText> faceMemoMock = mock(SettledFaceMemo.class);
+
+            new SettledFaces(faceMemoMock).disposeMachinery();
+
+            verify(faceMemoMock).discardFaces();
+        }
+    }
+
+    @Nested
+    final class CreateForSector {
+
+        @Test
+        void keepsTheRequestedFaceWhereThereIsNoSector() {
+            // The detached machinery's faces: no game is loaded, so there is no name to hold a face to.
+            assertThat(SettledFaces.createForSector(null)
+                    .settleFace(StarsectorFont.VANILLA_INSIGNIA_42, ProbedText.EVERY_KIND))
                 .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_42);
         }
 
         @Test
-        void readsEachKindOnceHoweverManyTextsAreHeldToIt() {
-            // Reading a kind walks every name the sector holds, which is the cost holding the faces saves.
-            var factionReads = new int[1];
-            var faces = createLocalisedFaces((sector, probe) -> {
-                if (probe == ProbedText.FACTION_NAMES) {
-                    factionReads[0]++;
-                }
-                return LOCALISED_TEXTS.get(probe);
-            });
+        void readsTheTextsOffTheSectorItSettlesOn() {
 
-            faces.settleFace(StarsectorFont.VANILLA_INSIGNIA_42, Set.of(ProbedText.FACTION_NAMES));
-            faces.settleFace(StarsectorFont.VANILLA_INSIGNIA_15, Set.of(ProbedText.FACTION_NAMES));
-            faces.settleFace(StarsectorFont.VANILLA_INSIGNIA_42, Set.of(ProbedText.FACTION_NAMES));
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Function<ProbedText, List<String>>> readerCaptor = ArgumentCaptor.forClass(Function.class);
 
-            assertThat(factionReads[0])
-                .isEqualTo(1);
+            try (var installedFacesMock = mockStatic(InstalledFaces.class);
+                    var factionNamesMock = mockStatic(FactionNames.class)) {
+
+                factionNamesMock.when(() -> FactionNames.listEveryName(sectorMock))
+                    .thenReturn(List.of(LOCALISED_FACTION_NAME));
+
+                SettledFaces.createForSector(sectorMock);
+
+                installedFacesMock.verify(() -> InstalledFaces.createFaceMemo(readerCaptor.capture()));
+
+                assertThat(readerCaptor.getValue().apply(ProbedText.FACTION_NAMES))
+                    .containsExactly(LOCALISED_FACTION_NAME);
+            }
+        }
+    }
+
+    @Nested
+    final class ReadTexts {
+
+        @Test
+        void readsFactionNamesOffTheSectorsFactions() {
+
+            try (var factionNamesMock = mockStatic(FactionNames.class)) {
+
+                factionNamesMock.when(() -> FactionNames.listEveryName(sectorMock))
+                    .thenReturn(List.of("Tri-Tachyon", LOCALISED_FACTION_NAME));
+
+                assertThat(SettledFaces.readTexts(sectorMock, ProbedText.FACTION_NAMES))
+                    .containsExactly("Tri-Tachyon", LOCALISED_FACTION_NAME);
+            }
         }
 
         @Test
-        void keepsTheRequestedFaceWithoutReadingAnythingWhereThereIsNoSector() {
-            // The detached machinery's faces: no game is loaded, so there is neither a name to hold a face to
-            // nor an install worth asking about.
-            Supplier<FaceResolver> refusingResolverSource = () -> {
-                throw new AssertionError("no resolver should be built without a sector");
-            };
+        void readsPlaceNamesOffTheSectorsSystemsAndColoniesBoth() {
+            // The box titles a system and lists its colonies, so a face held to places holds either.
+            try (var systemsMock = mockStatic(SectorStarSystems.class);
+                    var marketsMock = mockStatic(SectorMarkets.class)) {
 
-            var faces = new SettledFaces(
-                null,
-                refusingResolverSource,
-                (sector, probe) -> {
-                    throw new AssertionError("no text should be read without a sector");
-                });
+                systemsMock.when(() -> SectorStarSystems.listSystemNames(sectorMock))
+                    .thenReturn(List.of("Corvus"));
+                marketsMock.when(() -> SectorMarkets.listMarketNames(sectorMock))
+                    .thenReturn(List.of("Jangala"));
 
-            assertThat(faces.settleFace(StarsectorFont.VANILLA_INSIGNIA_42, Set.of(ProbedText.FACTION_NAMES)))
-                .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_42);
+                assertThat(SettledFaces.readTexts(sectorMock, ProbedText.PLACE_NAMES))
+                    .containsExactly("Corvus", "Jangala");
+            }
+        }
+
+        @Test
+        void readsModStringsOffKmusOwnCategory() {
+
+            try (var stringsMock = mockStatic(StarsectorStrings.class)) {
+
+                stringsMock.when(() -> StarsectorStrings.listCategoryStrings(any(), any()))
+                    .thenReturn(List.of());
+                stringsMock.when(() -> StarsectorStrings.listCategoryStrings(KmuMod.MOD_ID, KmuStringKeys.CATEGORY))
+                    .thenReturn(List.of("Political map"));
+
+                assertThat(SettledFaces.readTexts(sectorMock, ProbedText.MOD_STRINGS))
+                    .containsExactly("Political map");
+            }
         }
     }
 }

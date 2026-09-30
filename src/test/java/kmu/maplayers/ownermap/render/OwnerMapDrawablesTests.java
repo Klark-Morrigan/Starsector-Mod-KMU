@@ -63,14 +63,14 @@ final class OwnerMapDrawablesTests {
         @Test
         void answersYesBeforeAnythingHasBeenBuilt() {
             // What makes a first frame owe a build whatever the revisions happen to say.
-            assertThat(new OwnerMapDrawables().hasNothingBuilt())
+            assertThat(new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42).hasNothingBuilt())
                 .isTrue();
         }
 
         @Test
         void answersNoOnceAPlaceholderStands() {
 
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             drawables.ensureClustersNonNull(viewMock);
 
@@ -87,7 +87,7 @@ final class OwnerMapDrawablesTests {
             // A rebuild that threw before completing leaves the draw lists null, which the renderer
             // would dereference. The placeholder makes the render a harmless no-op until a later
             // frame's retry succeeds.
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             drawables.ensureClustersNonNull(viewMock);
 
@@ -101,7 +101,7 @@ final class OwnerMapDrawablesTests {
         void keepsTheDrawListsAlreadyStanding() {
             // Called on every caught rebuild, so it must not replace a good build with an empty one
             // when a later frame throws.
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             drawables.ensureClustersNonNull(viewMock);
 
@@ -120,7 +120,7 @@ final class OwnerMapDrawablesTests {
         @Test
         void answersNoWhileTheProductionViewIsTheBuiltOne() {
 
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             drawables.ensureClustersNonNull(viewMock);
 
@@ -146,7 +146,7 @@ final class OwnerMapDrawablesTests {
             // The invariant the render path picks a base view by: exactly one of the two is
             // non-null once anything has been built. Posed over a production view already
             // standing, since a frame that flips the dev toggle is exactly that frame.
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             drawables.ensureClustersNonNull(viewMock);
             traceBordersThrough(drawables);
@@ -163,7 +163,7 @@ final class OwnerMapDrawablesTests {
         void namesTheLoopsItTracedRatherThanAnyStyledCells() {
             // The two views are not one quantity, so the line a rebuild writes names whichever was
             // built - a count alone would read as a styled-cell count on the frames it is not.
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             traceBordersThrough(drawables);
 
@@ -186,8 +186,7 @@ final class OwnerMapDrawablesTests {
                 mock(SectorAPI.class),
                 viewMock,
                 ContentInputs.createEmpty(),
-                HolderProviderFake.createHoldingNothing(),
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                HolderProviderFake.createHoldingNothing());
         }
     }
 
@@ -207,7 +206,7 @@ final class OwnerMapDrawablesTests {
         void refusesBeforeAnythingHasBeenBuilt() {
             // There is nothing to patch, so the frame's marks are drained and dropped rather than
             // folded into draw lists that do not exist.
-            assertThat(new OwnerMapDrawables().canFoldHolderChanges())
+            assertThat(new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42).canFoldHolderChanges())
                 .isFalse();
         }
 
@@ -215,7 +214,7 @@ final class OwnerMapDrawablesTests {
         void allowsOverAnUnfilteredProductionBuild() {
             // The incremental re-shape re-derives holders through the normal holding, so it is
             // safe exactly while no spotlight has keyed the cells to something else.
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             buildProductionThrough(drawables, OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
 
@@ -227,7 +226,7 @@ final class OwnerMapDrawablesTests {
         void refusesThePlaceholderAFailedBuildStandsBehind() {
             // The placeholder resolved no theme, no categories and no reading, so a marked system
             // folded into it would be styled against nothing at all.
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             drawables.ensureClustersNonNull(viewMock);
 
@@ -251,8 +250,7 @@ final class OwnerMapDrawablesTests {
                 mock(HolderPass.class),
                 viewMock,
                 ContentInputs.createEmpty(),
-                mock(ResolvedHolding.class),
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                mock(ResolvedHolding.class));
         }
     }
 
@@ -263,7 +261,7 @@ final class OwnerMapDrawablesTests {
         void namesTheStyledCellsOfTheProductionView() {
             // What the render will paint, so a wrong or empty render can be confirmed against what
             // was built.
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             drawables.ensureClustersNonNull(viewMock);
 
@@ -280,7 +278,7 @@ final class OwnerMapDrawablesTests {
             // What a sector removed mid-session leaves behind if this does nothing: the cached
             // names each own a GL buffer, so the drop is what frees them rather than leaving them
             // to LazyLib's finalizer sweep.
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             drawables.ensureClustersNonNull(viewMock);
             drawables.disposeAll();
@@ -299,7 +297,7 @@ final class OwnerMapDrawablesTests {
         void isSafeBeforeAnythingHasBeenBuilt() {
             // Reached for a sector installed on with the map never opened, when there are no draw
             // lists and no GL resources to release yet.
-            var drawables = new OwnerMapDrawables();
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
 
             drawables.disposeAll();
 

@@ -2,6 +2,7 @@ package kmu.maplayers.base.labels;
 
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.ui.font.FontAtlas;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.starsector.ui.font.measure.LazyFontMeasurer;
 import kmlib.starsector.ui.font.measure.LineWidthMeasurer;
 
@@ -46,7 +47,7 @@ public final class LabelLineBoxes {
      */
     public static List<List<double[]>> listLineBoxes(List<ClusterAnchor> anchors, FontAtlas labelFace) {
 
-        var resolvedFont = LabelFonts.loadMapLabelFont(labelFace);
+        var resolvedFont = LazyFontCache.loadByFace(labelFace);
 
         return resolvedFont == null
             ? List.of()

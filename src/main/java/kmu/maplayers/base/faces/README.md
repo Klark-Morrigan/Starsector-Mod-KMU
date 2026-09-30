@@ -14,10 +14,10 @@ and not every atlas it replaces holds its script -
 the Chinese localisation leaves `insignia42LTaa` as vanilla ships it,
 so a text asking for it on that install would draw its Chinese characters as `?`.
 KMLib's `FaceResolver`
-walks a face down its family and on to the game's default until a face holds the text;
-this package is where KMU asks it,
-once per sector,
-for each face a KMU text asks for.
+walks a face down its family and on to the game's default until a face holds the text,
+and KMLib's `SettledFaceMemo` holds its answers;
+this package is where KMU keeps one memo per sector
+and says what each kind of text reads.
 
 The face a text asks for stays with that text -
 `LabelFonts`, `SidebarStyles` and `CellTooltipLook` keep their own constants and the reasons for them -
@@ -31,7 +31,7 @@ which is the first thing a report of text drawn wrongly is read against.
 ## What a face is held to
 
 A text is held to the [kinds of text](ProbedText.java) it is made of,
-read by [`ProbeTexts`](ProbeTexts.java):
+each read through KMLib's sector and string readers:
 
 - **Faction names**, short and long both,
   which the map labels draw and the hover box and the sidebar body list.
@@ -43,7 +43,8 @@ read by [`ProbeTexts`](ProbeTexts.java):
 Kinds rather than one pool,
 because a face held to text it never draws would move for no reason:
 a tab carries a layer's name and nothing else,
-so it is held to KMU's strings alone.
+so it is held to KMU's strings alone,
+while a body listing all three is held to `ProbedText.EVERY_KIND`.
 Every name the sector holds is read, discovered or not,
 since a name the player has yet to see is one the face will draw later.
 

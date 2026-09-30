@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.statics.StaticSeams;
 
+import kmu.maplayers.base.faces.SettledFaces;
 import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
@@ -41,9 +42,11 @@ import java.util.Set;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -104,6 +107,7 @@ final class OwnerMapCacheTests {
     private MockedStatic<DebugBorderTracingBuilder> debugBuilderMock;
     private MockedStatic<OwnerMapBuilder> productionBuilderMock;
     private MockedStatic<IncrementalOwnerRefresh> incrementalRefreshMock;
+    private MockedStatic<LabelFonts> labelFontsMock;
 
     @AfterEach
     void closeSeams() {
@@ -160,6 +164,7 @@ final class OwnerMapCacheTests {
         void buildsTheDrawListsAndNoOverlayWithTheDebugToggleOff() {
 
             var builtClusters = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
+
             openEverySeamARebuildReaches(builtClusters);
 
             var cache = buildCacheOver(emptySectorMachinery);
@@ -174,6 +179,25 @@ final class OwnerMapCacheTests {
                 .isNull();
 
             debugBuilderMock.verifyNoInteractions();
+        }
+
+        @Test
+        void settlesTheLabelFaceAgainstTheFacesOfItsOwnSector() {
+            // Each sector settles its own faces - two sectors can name different factions - so a cache
+            // reading another machinery's faces would size its names for text it never draws.
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            var ownFaces = SettledFaces.resolveFacesIn(emptySectorMachinery);
+
+            // Asked by each pass the face reaches, every ask after the first answered from the sector's memo.
+            labelFontsMock
+                .verify(() -> LabelFonts.settleMapLabelFace(same(ownFaces)), atLeastOnce());
+            labelFontsMock
+                .verify(() -> LabelFonts.settleMapLabelFace(not(same(ownFaces))), never());
         }
 
         @Test
@@ -361,7 +385,7 @@ final class OwnerMapCacheTests {
         seams.openSeam(LabelsBuilder.class);
 
         // The label face is settled against the installed atlases, which no test JVM has.
-        seams.openSeam(LabelFonts.class);
+        labelFontsMock = seams.openSeam(LabelFonts.class);
 
         debugToggleMock = seams.openSeam(KmuOwnerMapDiagnosticsSettings.class);
         incrementalRefreshMock = seams.openSeam(IncrementalOwnerRefresh.class);

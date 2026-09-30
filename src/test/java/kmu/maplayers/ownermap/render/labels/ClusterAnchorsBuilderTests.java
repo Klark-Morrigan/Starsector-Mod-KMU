@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
 import kmlib.testfixtures.profiling.RecordedCapture;
@@ -12,7 +13,6 @@ import kmlib.testfixtures.profiling.RecordedCapture;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
-import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
@@ -217,7 +217,7 @@ final class ClusterAnchorsBuilderTests {
 
     private MockedStatic<KmuOwnerMapDiagnosticsSettings> settingsMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
-    private MockedStatic<LabelFonts> fontsMock;
+    private MockedStatic<LazyFontCache> fontsMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
     private HolderProviderFake holderProvider;
     private MockedStatic<MapVisibilityRules> visibilityRulesMock;
@@ -227,7 +227,7 @@ final class ClusterAnchorsBuilderTests {
 
         settingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class);
         specificationMock = mockStatic(LabelAnchorSpecification.class);
-        fontsMock = mockStatic(LabelFonts.class);
+        fontsMock = mockStatic(LazyFontCache.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
         visibilityRulesMock = mockStatic(MapVisibilityRules.class);
 
@@ -258,7 +258,7 @@ final class ClusterAnchorsBuilderTests {
         // take: the aspect stand-in sizes a band and no name is drawn from it. The placements are
         // counted and read for colour, so which of the two sized them does not move a case.
         fontsMock
-            .when(() -> LabelFonts.loadMapLabelFont(any()))
+            .when(() -> LazyFontCache.loadByFace(any()))
             .thenReturn(null);
 
         // Names drawn and the debug overlay off by default, so a case names only the half of the

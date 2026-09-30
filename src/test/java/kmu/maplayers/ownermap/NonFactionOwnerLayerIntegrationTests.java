@@ -4,13 +4,13 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
-import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
@@ -127,7 +127,7 @@ final class NonFactionOwnerLayerIntegrationTests {
     private MockedStatic<RenderStyleReader> styleReaderMock;
     private MockedStatic<KmuOwnerMapDiagnosticsSettings> diagnosticsSettingsMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
-    private MockedStatic<LabelFonts> fontsMock;
+    private MockedStatic<LazyFontCache> fontsMock;
 
     /** The categories a relay layer divides its cells into - none of them a holder category. */
     private enum RelayCategory implements MapStyleCategory {
@@ -167,9 +167,9 @@ final class NonFactionOwnerLayerIntegrationTests {
         when(fontMock.calcWidth(anyString(), anyFloat()))
             .thenAnswer(invocation -> invocation.<String>getArgument(0).length()
                 * invocation.<Float>getArgument(1) * 0.5f);
-        fontsMock = mockStatic(LabelFonts.class);
+        fontsMock = mockStatic(LazyFontCache.class);
         fontsMock
-            .when(() -> LabelFonts.loadMapLabelFont(any()))
+            .when(() -> LazyFontCache.loadByFace(any()))
             .thenReturn(fontMock);
 
         when(viewMock.resolveOwnerReading(any(), any()))

@@ -24,6 +24,7 @@ import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * What an owner map has built to draw, and how each part of it is rebuilt: one of the two
@@ -59,6 +60,18 @@ final class OwnerMapDrawables {
     // the builder disposes the standing strings whenever it rebuilds this list. Empty unless the
     // "show faction names" toggle is on.
     private final List<Label> factionLabels = new ArrayList<>();
+
+    // The face the sector settled its labels on, asked on each rebuild rather than handed in, since it is
+    // the sector's for as long as these drawables are.
+    private final Supplier<FontAtlas> labelFaceSource;
+
+    /**
+     * @param labelFaceSource answers the face the sector settled its labels on, which every name is
+     *                        fitted, minted and kept clear of in
+     */
+    OwnerMapDrawables(Supplier<FontAtlas> labelFaceSource) {
+        this.labelFaceSource = labelFaceSource;
+    }
 
     /** @return the built production draw lists, or null while the debug overlay has replaced them */
     public OwnerMapClusters getClusters() {
@@ -112,11 +125,10 @@ final class OwnerMapDrawables {
      * The standing map as one value, for the incremental refresh that patches it in place.
      *
      * @param cellGeometry the cells the standing draw lists were shaped from
-     * @param labelFace    the face the sector settled its labels on
      * @return the halves the refresh reads and writes, and the face it re-fits names in
      */
-    public StandingOwnerMap toStandingMap(RevisedCellGeometry cellGeometry, FontAtlas labelFace) {
-        return new StandingOwnerMap(clusters, standingAnchors, factionLabels, cellGeometry, labelFace);
+    public StandingOwnerMap toStandingMap(RevisedCellGeometry cellGeometry) {
+        return new StandingOwnerMap(clusters, standingAnchors, factionLabels, cellGeometry, labelFaceSource.get());
     }
 
     /**
@@ -172,15 +184,13 @@ final class OwnerMapDrawables {
      * @param sector        the sector whose holding the overlay reads
      * @param view          the view the overlay is traced under
      * @param contentInputs the sidebar preferences the rebuild sampled
-     * @param labelFace     the face the sector settled its labels on
      */
     public void rebuildBorderTracingOverlay(
             RevisedCellGeometry cellGeometry,
             SectorAPI sector,
             OwnerPaintedView view,
             ContentInputs contentInputs,
-            HolderProvider diagnosticsHolderProvider,
-            FontAtlas labelFace) {
+            HolderProvider diagnosticsHolderProvider) {
 
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
             cellGeometry.cells(),
@@ -198,7 +208,7 @@ final class OwnerMapDrawables {
             view,
             contentInputs,
             diagnosticsHolderProvider,
-            labelFace);
+            labelFaceSource.get());
     }
 
     /**
@@ -217,16 +227,15 @@ final class OwnerMapDrawables {
      * @param holding       who holds what and who is where, resolved off the pass by this rebuild
      *                      or kept from the one before it - which of the two is the caller's call,
      *                      being a question about what moved since
-     * @param labelFace     the face the sector settled its labels on, which the names are fitted in
-     *                      and the bands keep their words clear by
      */
     public void rebuildClustersAndBands(
             RevisedCellGeometry cellGeometry,
             HolderPass pass,
             OwnerPaintedView view,
             ContentInputs contentInputs,
-            ResolvedHolding holding,
-            FontAtlas labelFace) {
+            ResolvedHolding holding) {
+
+        var labelFace = labelFaceSource.get();
 
         clusters = OwnerMapBuilder.buildClusters(
             cellGeometry.cells(),
@@ -270,9 +279,8 @@ final class OwnerMapDrawables {
      *
      * @param areNamesDrawn whether names are showing at all - the rebuild's own sampling of the
      *                      preference, so what is minted matches what was fitted
-     * @param labelFace     the face the names were fitted in, which they are minted in
      */
-    public void rebuildLabels(boolean areNamesDrawn, FontAtlas labelFace) {
-        LabelsBuilder.rebuildLabels(factionLabels, standingAnchors.getAnchors(), areNamesDrawn, labelFace);
+    public void rebuildLabels(boolean areNamesDrawn) {
+        LabelsBuilder.rebuildLabels(factionLabels, standingAnchors.getAnchors(), areNamesDrawn, labelFaceSource.get());
     }
 }

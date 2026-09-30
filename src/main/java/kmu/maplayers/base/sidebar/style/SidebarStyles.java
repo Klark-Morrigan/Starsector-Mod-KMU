@@ -89,10 +89,7 @@ public final class SidebarStyles {
 
     // What each face has to draw, which is what it is settled against: the body lists factions, systems and
     // colonies among KMU's own words, and a tab carries a layer's name, which is KMU's own.
-    private static final Set<ProbedText> BODY_TEXTS = Set.of(
-        ProbedText.FACTION_NAMES,
-        ProbedText.PLACE_NAMES,
-        ProbedText.MOD_STRINGS);
+    private static final Set<ProbedText> BODY_TEXTS = ProbedText.EVERY_KIND;
 
     private static final Set<ProbedText> TAB_TEXTS = Set.of(ProbedText.MOD_STRINGS);
 

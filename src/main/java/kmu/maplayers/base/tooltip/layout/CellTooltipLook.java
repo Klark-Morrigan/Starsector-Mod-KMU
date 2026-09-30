@@ -44,10 +44,7 @@ final class CellTooltipLook {
     // What each face has to draw, which is what it is settled against: the heading titles a system, the
     // body names factions, systems and colonies among KMU's own words, and the foot is KMU's words alone.
     private static final Set<ProbedText> HEADER_TEXTS = Set.of(ProbedText.PLACE_NAMES, ProbedText.MOD_STRINGS);
-    private static final Set<ProbedText> BODY_TEXTS = Set.of(
-        ProbedText.FACTION_NAMES,
-        ProbedText.PLACE_NAMES,
-        ProbedText.MOD_STRINGS);
+    private static final Set<ProbedText> BODY_TEXTS = ProbedText.EVERY_KIND;
 
     private static final Set<ProbedText> FOOTNOTE_TEXTS = Set.of(ProbedText.MOD_STRINGS);
 

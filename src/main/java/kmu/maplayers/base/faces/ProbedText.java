@@ -1,5 +1,7 @@
 package kmu.maplayers.base.faces;
 
+import java.util.Set;
+
 /**
  * A kind of text a face is settled against: what a text drawn in that face may say, gathered once from
  * the sector and the mod rather than read off each line as it is drawn.
@@ -18,5 +20,11 @@ public enum ProbedText {
     PLACE_NAMES,
 
     /** Every string KMU ships in the running build's locale. */
-    MOD_STRINGS
+    MOD_STRINGS;
+
+    /**
+     * Every kind at once, for a text that lists anything KMU names - the hover box's body and the
+     * sidebar's body both name factions and places among KMU's own words.
+     */
+    public static final Set<ProbedText> EVERY_KIND = Set.of(values());
 }

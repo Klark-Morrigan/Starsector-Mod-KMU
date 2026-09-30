@@ -2,6 +2,7 @@ package kmu.maplayers.base.labels;
 
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
@@ -79,9 +80,9 @@ final class LabelsBuilderTests {
                 buildAcceptedAnchor(List.of("Persean League"), 0, 0, HORIZONTAL_AXIS),
                 buildAcceptedAnchor(List.of("Hegemony"), 500, 0, HORIZONTAL_AXIS));
 
-            try (var fontsMock = mockStatic(LabelFonts.class)) {
+            try (var fontsMock = mockStatic(LazyFontCache.class)) {
 
-                fontsMock.when(() -> LabelFonts.loadMapLabelFont(any()))
+                fontsMock.when(() -> LazyFontCache.loadByFace(any()))
                     .thenReturn(fontMock);
 
                 var capture = RecordedCapture.recordWhile(() ->

@@ -36,8 +36,7 @@ see the [mod README](../../../../../../../README.md) for project context.
   `LabelsBuilder`,
   `LabelRenderer`,
   the shared `LabelFonts`,
-  which settles the face the names ask for against the sector's faction names
-  and loads whichever face that is,
+  which settles the face the names ask for against the sector's faction names,
   and `LabelLineBoxes`,
   which reads the room the drawn lines take.
 - `base.labels.anchor` -
