@@ -47,6 +47,13 @@ final class LakePartitions {
             continents.traceCoasts(), SectorPartitions.KNOBS.borderInset());
     }
 
+    // Every lake as the window hands it to v4: its reaches, and the cells round it.
+    static LakeTier.TracedLakes collectTracedLakes(BridgedContinents continents) {
+
+        return LakeReaches.collectTracedLakes(
+            continents.traceCoasts(), SectorPartitions.KNOBS.borderInset());
+    }
+
     // The void with the lake coast laid.
     static VoidPartition readCoastPartition(String sector) {
 

@@ -5,12 +5,14 @@ import kmlib.math.geometry.PolygonRegions;
 
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.v3.Coastlines;
+import kmu.maplayers.base.geometry.v4.LakeTier;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * v3's traced lake coasts, read as the reaches v4 lays.
+ * v3's traced lakes, read as what v4's lake tier takes: the reaches it lays, and which water is
+ * a lake.
  *
  * <p>Where the two constructions touch. v4 divides the void along lines and does not trace any;
  * v3 traces coasts and is where the smoothing lives that a coastline is for. So v4's lake coast
@@ -21,13 +23,33 @@ import java.util.List;
  * dependents.
  *
  * <p>What crosses is the least that can: a reach as the {@link CellGap} it is, two points and
- * two cells. Fillets do not cross at all - along a fillet the shore already is the coast - and
- * which steps are reaches is v3's own answer, not re-derived here. The lake bridges need no
- * reading of their own: v3 already finds them as gaps.
+ * two cells, and a lake as the set of cells round it. Fillets do not cross at all - along a
+ * fillet the shore already is the coast - and which steps are reaches is v3's own answer, not
+ * re-derived here. The lake bridges need no reading of their own: v3 already finds them as
+ * gaps.
  */
 public final class LakeReaches {
 
     private LakeReaches() {
+    }
+
+    /**
+     * Every lake in a trace as v4's lake tier takes it: the reaches it lays, and the ring of
+     * cells round each lake, which is how a lake whose coast lays nothing is told from a
+     * puddle.
+     *
+     * @param traced  the coasts as v3 traced them
+     * @param channel the width below which a step is a handover, as {@link #collectLakeReaches}
+     *                takes it
+     * @return the lakes, ready to hand over
+     */
+    public static LakeTier.TracedLakes collectTracedLakes(
+            Coastlines.TracedCoasts traced,
+            double channel) {
+
+        return new LakeTier.TracedLakes(
+            collectLakeReaches(traced, channel),
+            traced.lakes().stream().map(Coastlines.Lake::ringCells).toList());
     }
 
     /**

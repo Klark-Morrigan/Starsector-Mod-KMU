@@ -412,7 +412,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         voidPartition.refresh(
             geometry.cellEdgesByCellKey(),
             fixture,
-            LakeReaches.collectLakeReaches(
+            LakeReaches.collectTracedLakes(
                 continents.traceCoasts(), settings.parameters.borderInset()),
             () -> continents.layLakeSpans(settings.shouldThinLakeBridgesV4));
         repaintMap();
@@ -620,6 +620,11 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                     g2, worldToScreen, cellNames, settings.regionNameColour);
             }
             voidSections.paintNames(g2, worldToScreen);
+
+            // v4's after v3's, in the same colour: the two constructions' names are compared
+            // the way their fills are, and with both on the newer is the one left readable.
+            NamedRegions.paintNames(
+                g2, worldToScreen, voidPartition.collectLakeNames(), settings.regionNameColour);
         }
 
         // The one statement of where the sector sits on the canvas. The map is drawn through
@@ -737,6 +742,10 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             // widest thing on the map - every piece of void, undivided - so painted last it
             // would hide whatever it is meant to be compared with.
             voidPartition.paintPieces(g2);
+
+            // Over the pieces they are a reading of, and under v3's fills for the pieces'
+            // reason: the tier's water is the same pieces in the tier's colour.
+            voidPartition.paintLakeFills(g2);
 
             continentCoasts.paintPocketFills(g2);
 

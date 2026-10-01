@@ -1,18 +1,17 @@
 package kmu.maplayers.base.geometry.v4.ui;
 
-import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Points;
 
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
+import kmu.maplayers.base.geometry.v4.LakeTier;
 import kmu.maplayers.base.geometry.v4.SectorPartitions;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -37,9 +36,9 @@ class VoidPartitionOverlayIntegrationTests {
     // sector reads them alike.
     private static final String SECTOR = SectorFixture.listSectorNames().get(0);
 
-    // Pixels across the picture the lines are painted into. Enough that a line drawn at the
-    // map's stroke covers some of them at the scale a whole sector fits in.
-    private static final int PICTURE_SIDE = 1000;
+    // No lake at all: what these cases assert is which switches the overlay reads.
+    private static final LakeTier.TracedLakes NO_LAKES =
+        new LakeTier.TracedLakes(List.of(), List.of());
 
     @Nested
     class Refresh {
@@ -52,7 +51,7 @@ class VoidPartitionOverlayIntegrationTests {
             buildOverlay(true, false).refresh(
                 SectorPartitions.readCellEdges(SECTOR),
                 SectorFixture.loadSector(SECTOR),
-                List.of(),
+                NO_LAKES,
                 countAsks(asks));
 
             assertThat(asks)
@@ -67,7 +66,7 @@ class VoidPartitionOverlayIntegrationTests {
             buildOverlay(true, true).refresh(
                 SectorPartitions.readCellEdges(SECTOR),
                 SectorFixture.loadSector(SECTOR),
-                List.of(),
+                NO_LAKES,
                 countAsks(asks));
 
             assertThat(asks)
@@ -83,7 +82,7 @@ class VoidPartitionOverlayIntegrationTests {
             new VoidPartitionOverlay(settings).refresh(
                 SectorPartitions.readCellEdges(SECTOR),
                 SectorFixture.loadSector(SECTOR),
-                List.of(),
+                NO_LAKES,
                 countAsks(asks));
 
             assertThat(asks)
@@ -213,7 +212,7 @@ class VoidPartitionOverlayIntegrationTests {
         overlay.refresh(
             SectorPartitions.readCellEdges(SECTOR),
             SectorFixture.loadSector(SECTOR),
-            List.of(line),
+            new LakeTier.TracedLakes(List.of(line), List.of()),
             () -> List.of(line));
     }
 
@@ -226,31 +225,8 @@ class VoidPartitionOverlayIntegrationTests {
             from[1] + (to[1] - from[1]) * distance / length};
     }
 
-    // One layer painted into a picture the whole sector fits in, and how many pixels it
-    // touched.
+    // One layer painted into a picture the sector fits in, and how many pixels it touched.
     private static int countPaintedPixels(Consumer<Graphics2D> paintLayer) {
-
-        var around = Bounds.computeEnclosingBounds(SectorFixture.loadSector(SECTOR).getSites());
-        var scale = PICTURE_SIDE
-            / Math.max(around.maxX() - around.minX(), around.maxY() - around.minY());
-        var picture = new BufferedImage(PICTURE_SIDE, PICTURE_SIDE, BufferedImage.TYPE_INT_ARGB);
-        var g2 = picture.createGraphics();
-
-        g2.scale(scale, scale);
-        g2.translate(-around.minX(), -around.minY());
-        paintLayer.accept(g2);
-        g2.dispose();
-
-        var painted = 0;
-
-        for (var x = 0; x < PICTURE_SIDE; x++) {
-            for (var y = 0; y < PICTURE_SIDE; y++) {
-
-                if (picture.getRGB(x, y) != 0) {
-                    painted++;
-                }
-            }
-        }
-        return painted;
+        return PaintedPixels.countPaintedPixels(SECTOR, paintLayer);
     }
 }

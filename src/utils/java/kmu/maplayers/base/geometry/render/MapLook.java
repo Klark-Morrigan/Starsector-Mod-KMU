@@ -84,6 +84,17 @@ public final class MapLook {
     // which of the two closed a piece.
     public static final Color LAKE_BRIDGES_V4 = new Color(0xff, 0x50, 0x40);
 
+    // v4's lake water: every piece inside a lake's coast. Cool where the two lines that close
+    // it are warm, so the water reads as what the lines hold rather than as more of the lines,
+    // and a blue no v3 fill uses, since the two constructions' water is compared side by side.
+    public static final Color LAKE_WATER_V4 = new Color(0x30, 0x80, 0xe0);
+
+    // v4's lake margin: the bay behind each reach, which the coast gave up to the cells. A
+    // paler shade of the water rather than a colour of its own, because it is the same lake
+    // read on the other side of one line, and a reader judging where the coast cut wants the
+    // two to read as halves of one thing.
+    public static final Color LAKE_MARGIN_V4 = new Color(0x90, 0xb8, 0xe8);
+
     // A bridge offered to a sector that already has continent coastlines on it, and kept
     // because it spans open sea rather than void a coast had already taken. Its own colour
     // rather than the coast's: a span and the line that judged it meet all over the map, and

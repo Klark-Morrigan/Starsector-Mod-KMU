@@ -4,6 +4,7 @@ import kmlib.math.geometry.PolygonRegions;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 
 /**
  * One piece of the plane a walk closed: the ring around it, what each edge of that ring lies
@@ -124,6 +125,50 @@ public final class Face {
      */
     public List<LabelledRing> holes() {
         return holes;
+    }
+
+    /**
+     * Every ring that bounds this face: the outline, then the holes.
+     *
+     * <p>For a pass that asks one question of every edge the face has, since a hole's edges
+     * bound it as much as the outline's do and a pass that walked the outline alone would miss
+     * the sea's whole shore.
+     *
+     * @return the outline first, then each hole
+     */
+    public List<LabelledRing> collectRings() {
+
+        var rings = new ArrayList<LabelledRing>(holes.size() + 1);
+
+        rings.add(outline);
+        rings.addAll(holes);
+
+        return rings;
+    }
+
+    /**
+     * The cells this face runs along, each once, ascending.
+     *
+     * <p>What the piece can be named or claimed by. The cells around a piece of void are what
+     * that piece IS: a name anchored on them changes exactly when the cells bounding it change,
+     * where the walk's order over them moves with a knob. Ascending rather than in walk order
+     * for the same reason.
+     *
+     * @return the cell indices; empty for a face bounded by laid lines and the frame alone
+     */
+    public List<Integer> collectCells() {
+
+        var cells = new TreeSet<Integer>();
+
+        for (var ring : collectRings()) {
+            for (var label : ring.edgeLabels()) {
+
+                if (EdgeLabels.isCell(label)) {
+                    cells.add(label);
+                }
+            }
+        }
+        return List.copyOf(cells);
     }
 
     /**

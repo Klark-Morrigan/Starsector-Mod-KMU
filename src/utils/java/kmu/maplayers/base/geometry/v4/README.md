@@ -18,6 +18,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 - [The open sea](#the-open-sea)
 - [Welded once, before anything is laid](#welded-once-before-anything-is-laid)
 - [Frontage](#frontage)
+- [A tier's water](#a-tiers-water)
 - [The channel](#the-channel)
 - [What the resolution decides](#what-the-resolution-decides)
 
@@ -33,6 +34,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | weld and order again | `PlanarArrangement` | those lines, at rounding | the graph the faces are walked on |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
 | read the shore | `LandableFrontage` | the pieces, which of them each tier captured, and the frontier | the open pieces' runs of border and single points of contact, by cell |
+| read a tier's water | `LakeTier` | a piece, the coast walls as laid, and each lake's ring of cells | the piece's kind - lake, margin or untouched - and its name |
 | cut the channel | `PieceShaper` | a piece, an `EdgeInset` | its rings pulled off what they face, crossings and all |
 | make it drawable | `PieceRegions` | those rings | bodies and holes, resolved and smoothed |
 
@@ -50,7 +52,8 @@ Nothing here imports v3, and the layering gate holds it to that.
 The lake coast is v3's trace and the lake bridges are v3's search,
 and both cross as `CellGap`s - the shared package's one value for a straight run between two cells -
 handed over by the viewer, which already depends on both.
-The coast's reaches are read off the trace by `LakeReaches` in the viewer's own package.
+The coast's reaches are read off the trace by `LakeReaches` in the viewer's own package,
+together with each lake's ring of cells, as one `LakeTier.TracedLakes`.
 The bridges are v3's search under v3's knobs, bar whether chains and fans are thinned:
 that is a rule of the tier laying them and so a switch of v4's own, which v3's laying answers through `layLakeSpans(shouldThinFormations)`.
 A version that imported the other would be a layer on top of it rather than a construction beside it,
@@ -140,6 +143,27 @@ A point is drawn as a disc as wide as a run's stroke.
 
 A run carries both ends of every edge it covers, so consecutive runs share the corner where one cell gives way to the next.
 Carrying only each edge's start leaves a notch at every junction.
+
+## A tier's water
+
+A tier's fill is the pieces its lines closed, told apart by what closed them:
+no second walk and no second shape, only the same pieces in the tier's colour.
+So no piece can be filled twice, and every piece the tier closed is filled exactly when the tier reads it as one of its own.
+The water is drawn true, each piece as the walk closed it with no channel, so it meets the next piece along the line that divides them.
+
+The lake tier reads each piece as one of three kinds, off the piece's own edges.
+An edge along a reach that runs with it puts the piece in the lake, and one that runs against it puts the piece in the margin, the bay the coast gave up to the cells.
+Either side of a bridge is the lake, since a bridge divides the lake's water and nothing else.
+A piece with an edge behind a reach is the margin whatever else bounds it: the bay is outside the coast, and no bridge reaches into it.
+
+**A lake whose coast lays nothing is read by its ring of cells.**
+A coast that never leaves the shore is all fillets, so nothing is laid round that lake, and its one piece is bounded by cells alone, as a puddle's is.
+The trace already decided which of those holes it drew a coast for, and the cells round each lake are how it says so:
+a piece no line touches whose cells are exactly a lake's ring is that lake.
+491 has one such lake at the shipped knobs.
+Matched rather than measured, so a second floor cannot come to disagree with the trace's about which hole is a lake.
+
+A piece the tier closed is named from the cells round it, under a prefix for its kind, by `VoidKeys` - the scheme v3's sections are named by, shared so the two constructions' names are comparable.
 
 ## The channel
 

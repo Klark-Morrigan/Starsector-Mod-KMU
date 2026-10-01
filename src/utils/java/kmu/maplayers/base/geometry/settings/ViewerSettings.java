@@ -118,6 +118,10 @@ public final class ViewerSettings {
 
     public static final Color LAKE_BRIDGES_V4_DEFAULT = MapLook.LAKE_BRIDGES_V4;
 
+    public static final Color LAKE_WATER_V4_DEFAULT = MapLook.LAKE_WATER_V4;
+
+    public static final Color LAKE_MARGIN_V4_DEFAULT = MapLook.LAKE_MARGIN_V4;
+
     public static final Color CONTINENT_COASTAL_VOID_DEFAULT = MapLook.CONTINENT_COASTAL_VOID;
 
     public static final Color SITE_COLOUR = MapLook.SITE;
@@ -227,6 +231,22 @@ public final class ViewerSettings {
     // of the tier laying the bridges, and turning it off in one construction to see its
     // formations unthinned must not move what the other lays. On, as v3's is and the map lays.
     public boolean shouldThinLakeBridgesV4 = true;
+
+    // The lake water: every piece inside a lake's coast - the whole lake where nothing crosses
+    // it, or one pocket of it a bridge closed - filled in the tier's own colour. A fill of the
+    // pieces above rather than a layer over them: the same pieces, told apart by what closed
+    // them. Off, for the coast's reason.
+    public boolean showLakeWaterV4;
+
+    // The lake margin: the bay behind each reach, which the coast gave up to the cells. Under a
+    // partition it is a piece like any other, so it has a switch like any other - which is what
+    // the other construction's margin never had, and why it went unlooked at.
+    public boolean showLakeMarginV4;
+
+    // Whether the lake tier's pieces have their names written on them, water and margin alike.
+    // One switch for the tier rather than one per kind, because a piece is named by what closed
+    // it and both were closed by the lake coast; the prefix says which is which.
+    public boolean showLakeNamesV4;
 
     // Which edges of v4's pieces take the border channel. A mode of the layer above rather than
     // a layer of its own: it is one division painted several ways, and the pieces do not change
@@ -448,6 +468,8 @@ public final class ViewerSettings {
 
     public Color lakeCoastV4Colour = LAKE_COAST_V4_DEFAULT;
     public Color lakeBridgesV4Colour = LAKE_BRIDGES_V4_DEFAULT;
+    public Color lakeWaterV4Colour = LAKE_WATER_V4_DEFAULT;
+    public Color lakeMarginV4Colour = LAKE_MARGIN_V4_DEFAULT;
 
     public Color droppedStretchColour = DROPPED_STRETCH_DEFAULT;
     public Color landableFrontageColour = LANDABLE_FRONTAGE_DEFAULT;
@@ -628,6 +650,56 @@ public final class ViewerSettings {
      */
     public boolean isLakeBridgesV4Shown() {
         return showVoidV4 && showLakeBridgesV4;
+    }
+
+    /**
+     * Whether v4's lake water is filled, which is its construction's master and its own switch,
+     * for the reason {@link #isVoidPiecesV4Shown} gives.
+     *
+     * @return true where both are on
+     */
+    public boolean isLakeWaterV4Shown() {
+        return showVoidV4 && showLakeWaterV4;
+    }
+
+    /**
+     * Whether v4's lake margin is filled, which is its construction's master and its own
+     * switch, for the reason {@link #isVoidPiecesV4Shown} gives.
+     *
+     * @return true where both are on
+     */
+    public boolean isLakeMarginV4Shown() {
+        return showVoidV4 && showLakeMarginV4;
+    }
+
+    /**
+     * Whether v4's lake tier writes its pieces' names on them, which is its construction's
+     * master and its own switch, for the reason {@link #isVoidPiecesV4Shown} gives.
+     *
+     * @return true where both are on
+     */
+    public boolean isLakeNamesV4Shown() {
+        return showVoidV4 && showLakeNamesV4;
+    }
+
+    /**
+     * Whether anything on screen is read off v4's walk of the void, and so whether the walk
+     * buys anything.
+     *
+     * <p>Asked of the settings rather than worked out at the overlay, for the reason the
+     * continent roll-up is: the answer is an enumeration of the layers read off the walk, and a
+     * layer added to that list and forgotten here is one that silently never appears. The lines
+     * are not in it - a tier's lines are drawn from the tier, not from the walk.
+     *
+     * @return true where at least one layer of the walk is switched on
+     */
+    public boolean shouldWalkVoidV4() {
+
+        return isVoidPiecesV4Shown()
+            || isLakeWaterV4Shown()
+            || isLakeMarginV4Shown()
+            || isLakeNamesV4Shown()
+            || isLandableFrontageV4Shown();
     }
 
     /**

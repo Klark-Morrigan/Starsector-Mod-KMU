@@ -129,4 +129,49 @@ class FaceTests {
             assertThat(twice.measureArea()).isCloseTo(9500.0, within(AREA_SLACK));
         }
     }
+
+    @Nested
+    class CollectRings {
+
+        @Test
+        void theOutlineComesFirstThenEachHole() {
+
+            var cut = Face.encloseFace(SQUARE).cutOut(HOLE);
+
+            assertThat(cut.collectRings())
+                .containsExactly(SQUARE, HOLE);
+        }
+
+        @Test
+        void aSolidPieceIsItsOutlineAlone() {
+
+            assertThat(Face.encloseFace(SQUARE).collectRings())
+                .containsExactly(SQUARE);
+        }
+    }
+
+    @Nested
+    class CollectCells {
+
+        @Test
+        void everyCellOnTheOutlineAndTheHolesComesBackOnceAscending() {
+            // Cell 3 twice on the outline and once more on the hole: once in the answer, and
+            // in order rather than in the order the walk met them.
+            var piece = Face.encloseFace(new LabelledRing(SQUARE.vertices(), new int[] {3, 1, 3, 2}))
+                .cutOut(new LabelledRing(HOLE.vertices(), new int[] {7, 3, 7, 7}));
+
+            assertThat(piece.collectCells())
+                .containsExactly(1, 2, 3, 7);
+        }
+
+        @Test
+        void aLaidLineIsNoCell() {
+            // The frame and a tier's line name no cell a piece could be called after.
+            var piece = Face.encloseFace(new LabelledRing(
+                SQUARE.vertices(), new int[] {VoidPartition.THE_FRAME, 4, LakeTier.THE_LAKE_COAST, 4}));
+
+            assertThat(piece.collectCells())
+                .containsExactly(4);
+        }
+    }
 }
