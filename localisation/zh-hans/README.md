@@ -8,6 +8,14 @@ and add a row when a new term is settled.
 How bundles are built and checked is in the root README's
 [Localisation](../../README.md#localisation) section.
 
+This reference builds on
+[KMLib's](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md),
+the base every KM mod's Chinese bundle follows:
+the rules, the vanilla words the shared library's own text touches,
+and the terms it draws itself, the compatibility notice above all.
+Read both for the full picture.
+Where both list a term, they agree.
+
 ## Index
 
 - [What this folder holds](#what-this-folder-holds)
@@ -47,39 +55,20 @@ the core localisation replaces them, and without it every Chinese character draw
 
 ## Rules
 
-- **Vanilla's word wins.**
-  Where the game already names a concept, KMU uses the core localisation's word for it,
-  so a player reads the same word in KMU's sidebar as in the game's own screens.
-  The [vanilla terms](#vanilla-terms) below are that evidence.
+[KMLib's rules](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#rules)
+hold for every KM mod's bundle, KMU's included:
+vanilla's word wins, Radio options and proper nouns stay as written,
+full-width punctuation, no em dash, numbered slots where word order moves, and defaults as `[默认值：X]`.
+KMU's own examples of them:
+`Galatia 学院` and `Naraka 星系` for Latin proper nouns,
+`UI palette` for a quoted Radio option,
+`市场条件管理器 (MCM)` for a parenthesised suffix.
+
+KMU adds one:
+
 - **HOI4's word for what KMU borrowed from HOI4.**
   A term the political map takes from Hearts of Iron IV uses HOI4's official Simplified Chinese;
   see [terms borrowed from HOI4](#terms-borrowed-from-hoi4).
-- **Radio options stay English.**
-  LunaLib saves the label of the option picked, not its position,
-  so a translated option would lose the player's setting and break the code reading it.
-  Descriptions quote the English option as it appears, for example `UI palette`.
-- **Proper nouns stay Latin.**
-  Names of places, people and mods keep their English spelling, as the core localisation keeps them:
-  `Galatia 学院`, `Naraka 星系`, `Nexerelin`, `LunaLib`, `Random Assortment of Things`.
-  A Latin word inside Chinese text takes a space on each side (`加载 Mod 错误`),
-  except against full-width punctuation.
-- **Full-width punctuation**, the core localisation's own:
-  `，` `。` `：` `；` `（）` `、`.
-  ASCII stays where the text is markup or a number:
-  LunaLib's `[` `]` highlight marks, `%%` and format slots, and numeric runs such as `(%d/%d)`.
-  A name's parenthesised suffix keeps ASCII parentheses and a leading space,
-  as the core localisation writes names (`通讯中继站 (隐藏)`):
-  `Klark Morrigan 的实用工具 (KMU)`, `市场条件管理器 (MCM)`.
-- **No em dash (`——`).**
-  An aside becomes a comma, a colon or parentheses.
-- **Word order may move; arguments keep their slots.**
-  A sentence whose order differs from English numbers its slots (`%2$s`).
-  Each argument keeps its conversion,
-  and the parity suite fails a dropped or retyped slot.
-  Where the code highlights part of a sentence, the highlighted run must still appear in it word for word.
-- **Defaults read `[默认值：X]`.**
-  `X` is the shipped value as the English file writes it,
-  except a Boolean, which reads `开启` for true and `关闭` for false.
 
 ## Vanilla terms
 
@@ -352,10 +341,10 @@ The ` - ` in a tab name is an ASCII hyphen with a space either side, as in Engli
    Every character must be in the core localisation's font atlases,
    `starsector-core/graphics/fonts/<face>.fnt` on each installed edition,
    or it draws as `?`.
-4. Run the tests with `--rerun`.
+4. Run the tests.
    `LocaleParityIntegrationTests` holds this bundle to the English one,
-   but `test` does not yet take a non-default bundle as an input,
-   so a change made here alone leaves it up to date.
+   and `test` takes every bundle as an input,
+   so a change made here alone re-runs it.
 
 ## Translating the changelog
 
