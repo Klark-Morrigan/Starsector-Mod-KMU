@@ -7,9 +7,9 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
@@ -156,7 +156,7 @@ final class ClusterLabelStylingSnapshotTests {
         return new ViewReading(
             mock(OwnerPaintedView.class),
             OwnerReadingFake.createAnsweringNothing(),
-            HolderGrouping.identity());
+            new OwnerSourceFake());
     }
 
     private static ContentInputs buildSpotlightPicks() {

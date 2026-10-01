@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
+import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
@@ -18,8 +19,6 @@ import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.render.OwnerMapCache;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.politicalmap.PoliticalMapInstaller;
-import kmu.maplayers.politicalmap.holders.DefaultHolderProvider;
-import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.views.FactionsView;
 
@@ -498,8 +497,7 @@ final class SectorMapMachineryIsolationIntegrationTests {
             cache = new OwnerMapCache(
                 resolveMachineryOf(sector),
                 PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
-                DefaultHolderProvider.INSTANCE,
-                DominanceSystemHolderResolve::openResolveOver);
+                CellSeedRule.SEED_DRAWN_SYSTEMS);
         }
 
         // What the cache last drew, without asking it to draw again - for a case claiming a sector

@@ -4,15 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
-import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
+import kmu.maplayers.ownermap.owners.OwnerSource;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
 import java.util.Map;
 import java.util.function.Predicate;
@@ -23,38 +19,38 @@ import java.util.function.Predicate;
  * default exercises that default alone rather than whichever concrete view it borrowed to reach
  * it.
  *
- * <p>The holding source and the picker gate are supplied where a case is about what the pipeline
- * hands a provider, or about which blocs survive the gate; each defaults to the seam's own, which is
- * what a case about anything else wants.
+ * <p>The owner source and the picker gate are supplied where a case is about what the pipeline
+ * hands a source, or about which blocs survive the gate; each defaults to an answer naming nothing,
+ * which is what a case about anything else wants.
  */
 public final class OwnerPaintedViewFake implements OwnerPaintedView {
 
-    private final Map<String, String> nameByBlocId;
-    private final HolderProvider holderProvider;
+    private final OwnerReadingFake readingFake;
+    private final OwnerSource ownerSource;
     private final Predicate<String> selectableBlocGate;
 
     OwnerPaintedViewFake(Map<String, String> nameByBlocId) {
-        this(nameByBlocId, null, null);
+        this(nameByBlocId, new OwnerSourceFake(), null);
     }
 
-    public OwnerPaintedViewFake(Map<String, String> nameByBlocId, HolderProvider holderProvider) {
-        this(nameByBlocId, holderProvider, null);
+    public OwnerPaintedViewFake(Map<String, String> nameByBlocId, OwnerSource ownerSource) {
+        this(nameByBlocId, ownerSource, null);
     }
 
     private OwnerPaintedViewFake(
             Map<String, String> nameByBlocId,
-            HolderProvider holderProvider,
+            OwnerSource ownerSource,
             Predicate<String> selectableBlocGate) {
 
-        this.nameByBlocId = nameByBlocId;
-        this.holderProvider = holderProvider;
+        this.readingFake = OwnerReadingFake.createNaming(nameByBlocId);
+        this.ownerSource = ownerSource;
         this.selectableBlocGate = selectableBlocGate;
     }
 
     /**
      * A fake offering only the blocs a stated gate accepts, for a case about the gate rather than
      * about what surrounds it. A named factory rather than a second two-argument constructor, whose
-     * lambda a reader could not tell from a holder source at the call site.
+     * lambda a reader could not tell from an owner source at the call site.
      *
      * @param nameByBlocId       the canned labels this fake names its blocs from
      * @param selectableBlocGate which of the walked blocs the fake's picker offers
@@ -64,16 +60,21 @@ public final class OwnerPaintedViewFake implements OwnerPaintedView {
             Map<String, String> nameByBlocId,
             Predicate<String> selectableBlocGate) {
 
-        return new OwnerPaintedViewFake(nameByBlocId, null, selectableBlocGate);
+        return new OwnerPaintedViewFake(nameByBlocId, new OwnerSourceFake(), selectableBlocGate);
     }
 
-    // The supplied source, or one holding nothing when a case did not name one. The seam carries
-    // no default of its own, a default there having had to name one mechanic's resolver.
+    /**
+     * @return the reading this fake answers with, naming blocs from its canned map
+     */
+    public OwnerReadingFake readOwnerReading() {
+        return readingFake;
+    }
+
+    // The reading naming blocs from the canned map - null for an unknown bloc, the unresolved-name
+    // case the seam allows - beside the supplied source, or one owning nothing.
     @Override
-    public HolderProvider resolveHolderProvider() {
-        return holderProvider == null
-            ? HolderProviderFake.createHoldingNothing()
-            : holderProvider;
+    public ViewReading resolveViewReading(SectorAPI sector) {
+        return new ViewReading(this, readingFake, ownerSource);
     }
 
     // The supplied gate, or the seam's own default (offer everything) when a case did not name one.
@@ -99,32 +100,6 @@ public final class OwnerPaintedViewFake implements OwnerPaintedView {
     @Override
     public int getContentRevision(MapLayerRefreshBoard board) {
         return 0;
-    }
-
-    @Override
-    public HolderGrouping resolveGrouping() {
-        return HolderGrouping.identity();
-    }
-
-    // Nobody stands together, which is the answer a layer without allies gives.
-    @Override
-    public HolderGrouping resolveContestGrouping() {
-        return HolderGrouping.identity();
-    }
-
-    // No mechanic paints this view, so no system carries a band. Stated rather than defaulted
-    // because the seam has no default: naming one mechanic's planner on it would put that
-    // mechanic in front of every view.
-    @Override
-    public SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs) {
-        return system -> RibbonPlan.NONE;
-    }
-
-    // A reading naming blocs from the canned map, so a case reads a name it chose rather than one a
-    // faction lookup produced - null for an unknown bloc, the unresolved-name case the seam allows.
-    @Override
-    public OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
-        return OwnerReadingFake.createNaming(nameByBlocId);
     }
 
     // The holder layers' categories, which is what every view in the mod declares.

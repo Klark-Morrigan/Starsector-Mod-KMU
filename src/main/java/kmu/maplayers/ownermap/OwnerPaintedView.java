@@ -12,15 +12,13 @@ import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.ownermap.holding.ColonyReadRules;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.OwnerReading;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
+import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.picker.BlocMetrics;
 import kmu.maplayers.ownermap.picker.BlocPickerRead;
 import kmu.maplayers.ownermap.picker.BlocStandingSortMode;
 import kmu.maplayers.ownermap.picker.BlocStatsRead;
 import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 
 import java.util.List;
@@ -28,15 +26,15 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
- * One owner-painted view's rules, read by the shared owner-map pipeline: how the view folds
- * factions into blocs, where each system's owner comes from, what the view answers about its
- * owners and the categories they draw in, and what the view adds to the picker, the sidebar body,
- * and the hover box. Gathering them behind one seam makes a new view an added rules object rather
- * than a fork of the render pipeline.
+ * One owner-painted view's rules, read by the shared owner-map pipeline: where its owners come
+ * from and how each one looks, the categories they draw in, and what the view adds to the picker,
+ * the sidebar body, and the hover box. Gathering them behind one seam makes a new view an added
+ * rules object rather than a fork of the render pipeline.
  *
- * <p>The owner reading is resolved once per rebuild and carried through every stage, so styling
- * and naming stay pure lookups over that one snapshot rather than re-reading a live source per
- * cell.
+ * <p>The core asks a view two things about its owners - which systems each one holds, and how
+ * each one looks - and nothing else in the core knows what an owner is. Both are answered once
+ * per rebuild, in one call, and carried through every stage, so styling, naming and the owner map
+ * itself are pure lookups over one snapshot rather than re-reads of a live source per cell.
  */
 public interface OwnerPaintedView {
 
@@ -86,82 +84,29 @@ public interface OwnerPaintedView {
     int getContentRevision(MapLayerRefreshBoard board);
 
     /**
-     * The holder grouping this view resolves its pass under: the identity grouping for a view
-     * painting every faction as its own bloc, named groups for a view folding several factions into
-     * one. Resolved once per rebuild and threaded through the pipeline, so a live set is sampled a
-     * single time per pass and every stage keys off the same snapshot.
+     * This view's two answers about its owners for one rebuild: the {@link OwnerReading} every
+     * shade, name, crest, recede and category is looked up in, and the {@link OwnerSource} that
+     * says which systems each owner holds - resolved together, under one sampling.
      *
-     * @return the grouping that collapses factions into blocs for this pass
+     * <p>One call rather than two because the two answers have to agree about what an owner is. A
+     * view that folds several factions into one owner reads that fold live, and a source resolving
+     * the holding under one sampling of it while the reading named and coloured owners under
+     * another would paint a fold the holding never made. Answering both at once is what makes one
+     * sampling per rebuild a property of the seam rather than a discipline every view has to keep.
+     *
+     * <p>The tier retains what comes back for every stage after - the label fit and the incremental
+     * refresh included - which is also what keeps the tier from working any of it out for itself
+     * off what an owner key happens to mean.
+     *
+     * <p>Carries no default, deliberately: a default would name one kind of owner's answers in
+     * front of every view, including the views that kind does not paint. Views sharing a kind
+     * answer it once between them where that kind's own seam is declared.
+     *
+     * @param sector the sector the rebuild reads; null for a rebuild over no sector, which the
+     *               answers treat as holding nothing
+     * @return this view, its reading and its source for the rebuild
      */
-    HolderGrouping resolveGrouping();
-
-    /**
-     * Which blocs stand together in a contest this view's bands judge: two blocs this grouping
-     * folds together share a system as allies rather than as rivals.
-     *
-     * <p>Apart from {@link #resolveGrouping}, which decides what a cell is painted as: blocs a view
-     * paints apart can still stand together when a system is contested. Declared rather than
-     * defaulted, since who stands with whom is the layer's own answer; a layer in which nobody does
-     * answers with the identity grouping.
-     *
-     * <p>Asked once per bake, so every band in it is judged against one reading.
-     *
-     * @return the grouping a band judges its contest against
-     */
-    HolderGrouping resolveContestGrouping();
-
-    /**
-     * The source this view resolves its per-system holder from. Supplied per view so the
-     * pipeline reads holders through one seam without naming a concrete resolver, exactly as it
-     * reads {@link #resolveGrouping}.
-     *
-     * <p>Carries no default, deliberately: a default would name one mechanic's resolver in front
-     * of every view, including the views that mechanic does not paint. Views sharing a mechanic
-     * answer it once between them where that mechanic's own seam is declared.
-     *
-     * @return the provider that resolves this view's per-system holder
-     */
-    HolderProvider resolveHolderProvider();
-
-    /**
-     * The mechanic this view's cells are counted by for their presence bands.
-     *
-     * <p>Answered by every view rather than defaulted here, for the reason a shared base for one
-     * mechanic's views exists: a default would have to name that mechanic's planner, and naming it
-     * on this seam would put it in front of every view including the ones that mechanic does not
-     * paint. Views sharing a mechanic answer it once between them, and a view painted by another
-     * answers with its own.
-     *
-     * <p>Per view at all for the same reason the hover box is: a band explains the fill it sits
-     * inside, so counting it by a mechanic other than the one the cell was painted by would lead
-     * the band on a bloc the cell is not painted for, or count a set of colonies the fill's own
-     * score never saw.
-     *
-     * @param inputs everything one bake's bands are settled from, sampled once by the bake - the
-     *               grouping among it, so a band folds factions into blocs exactly as the fill did
-     * @return the planner this view's bands are counted through
-     */
-    SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs);
-
-    /**
-     * The answers about this view's owners - each one's shades, name, crest, recede and category,
-     * and the neutral shades the unowned and receded palettes come from - over one snapshot.
-     *
-     * <p>Resolved once per rebuild, over the sector and the grouping the rebuild's holding was
-     * folded under, and carried through every stage that styles or names an owner: a reading may
-     * rest on a live source, and every shade, name and category one rebuild paints has to come off
-     * the one sampling of it. That is also what keeps the tier from working any of it out for
-     * itself off what the owner key happens to mean.
-     *
-     * <p>Carries no default, for the reason {@link #resolveHolderProvider} carries none: a default
-     * would name one kind of owner's answers in front of every view.
-     *
-     * @param sector   the sector the rebuild reads
-     * @param grouping the grouping the rebuild's holding was folded under, so the reading answers
-     *                 about the owners the holding produced
-     * @return this view's reading of its owners for the rebuild
-     */
-    OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping);
+    ViewReading resolveViewReading(SectorAPI sector);
 
     /**
      * The categories this view's cells divide into: which exist and how each is styled, which one
@@ -227,8 +172,7 @@ public interface OwnerPaintedView {
      * painting layer's own business - so a seam naming a weighting rule would hand every view a
      * knob only some of them spend, and read the settings behind it for the ones that do not. A
      * layer that weighs takes its rule beside this, the way
-     * {@link kmu.maplayers.ownermap.owners.holders.HolderProvider} leaves the same rule
-     * off the holder seam.
+     * {@link OwnerSource} leaves the same rule off the owner seam.
      *
      * <p>The spotlight is optional: the default offers an empty read, so a view with no list to
      * spotlight inherits one rather than overriding with two arguments it would ignore. A view
@@ -273,20 +217,20 @@ public interface OwnerPaintedView {
      * hand over a map from one walk and an index from another, which is precisely the disagreement
      * the paired read exists to make impossible.
      *
-     * <p>The crest and the label are this view's own owner reading's ({@link #resolveOwnerReading}),
-     * taken over the walk's grouping, so the rows name and badge each bloc exactly as the map does.
-     * A bloc with no crest keeps its option and simply draws its name alone. The label is always in
+     * <p>The crest and the label are the handed owner reading's, which the calling view resolves
+     * over the walk's own grouping, so the rows name and badge each bloc exactly as the map does. A
+     * bloc with no crest keeps its option and simply draws its name alone. The label is always in
      * the short form: the picker labels a bloc by its short name regardless of the map's name-format
      * setting, so a long-form map label never widens the sidebar's option rows.
      *
      * <p>It is parameterised on the metrics rather than fixed to one layer's because a
      * view ranks by whatever its own layer is painted from: the identity half of an option is
      * assembled the same way for every view, while the payload half is the calling view's alone. That
-     * also keeps this a default method rather than a static - the label is <em>this</em> view's
-     * reading's, so no view has to reach into a sibling for a name.
+     * also keeps this a default method rather than a static - the gate is <em>this</em> view's, so
+     * no view has to reach into a sibling for it.
      *
      * <p>The vocabulary it bundles is the caller's own modes with {@link BlocStandingSortMode} behind
-     * them, which is why the sector and the grouping are read here for more than the crest. Where a
+     * them, which is why the sector and the grouping are read here beside the reading. Where a
      * bloc stands with the player is one fact read off the sector rather than a number any
      * mechanic's fold computes, so it is offered from the single point every view's read passes
      * through instead of being declared into each vocabulary - which would copy one fact into every
@@ -295,11 +239,12 @@ public interface OwnerPaintedView {
      * @param <S>             the calling view's own metrics type, ranked by that view's vocabulary;
      *                        bounded only by what every option must answer of its metrics, never by
      *                        one layer's numbers
-     * @param sector          the sector a bloc's reading and its standing with the player are read
-     *                        from
-     * @param grouping        the grouping the walk folded under, so the reading, the gate, and a
-     *                        bloc's membership all resolve against the same snapshot the numbers
-     *                        came from
+     * @param sector          the sector a bloc's standing with the player is read from
+     * @param grouping        the grouping the walk folded under, so the gate and a bloc's
+     *                        membership resolve against the same snapshot the numbers came from
+     * @param reading         the view's reading of its owners over that same grouping, which names
+     *                        and badges each row; handed in rather than resolved here so the rows
+     *                        and the numbers come off one sampling
      * @param statsRead       the walk's totals and the systems behind them, in the order it surfaced
      *                        them, which the returned rows preserve
      * @param vocabularyModes the calling layer's own modes - the numbers its rows carry - bundled
@@ -310,10 +255,12 @@ public interface OwnerPaintedView {
     default <S extends BlocMetrics> BlocPickerRead<RankedBloc<S>> buildBlocPickerRead(
             SectorAPI sector,
             HolderGrouping grouping,
+            OwnerReading reading,
             BlocStatsRead<S> statsRead,
             ListSortModes<RankedBloc<S>> vocabularyModes) {
 
-        return BlocPickerAssembly.buildBlocPickerRead(this, sector, grouping, statsRead, vocabularyModes);
+        return BlocPickerAssembly.buildBlocPickerRead(
+            this, sector, grouping, reading, statsRead, vocabularyModes);
     }
 
     /**

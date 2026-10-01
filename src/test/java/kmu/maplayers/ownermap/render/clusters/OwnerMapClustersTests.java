@@ -11,9 +11,9 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
 import kmu.maplayers.ownermap.render.style.HolderCategories;
@@ -145,7 +145,7 @@ final class OwnerMapClustersTests {
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-                    new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), HolderGrouping.identity()),
+                    new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
                     ContentInputs.createEmpty(),
                     Set.of(),
                     Set.of()));

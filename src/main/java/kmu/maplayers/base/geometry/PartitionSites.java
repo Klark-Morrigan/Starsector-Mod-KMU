@@ -51,13 +51,17 @@ public final class PartitionSites {
      * The live sites a partition is built from: every drawn system's {@code {x, y}} hyperspace
      * position, minus the ones currently moving and the ones standing on a point already taken.
      *
-     * <p>The pass's visibility rules reach the drawn-set walk, so a system on the map by an
+     * <p>Which systems seed at all is the layer's rule over the pass. Under the substrate's own
+     * rule the pass's visibility rules reach the drawn-set walk, so a system on the map by an
      * override enters like any other site - subject to losing a contested point to one the map
      * shows in its own right.
      *
      * @param pass             the rebuild's reading of the sector, whose walk this shares; taken as
      *                         the caller's rather than opened here, so a rebuild stays inside the
      *                         one traversal the frame allows it
+     * @param seedRule         which of the pass's systems seed a cell - the layer's statement,
+     *                         {@link CellSeedRule#SEED_DRAWN_SYSTEMS} for a layer with none of its
+     *                         own
      * @param movingSystemKeys the systems currently moving, left out so each seeds no cell and
      *                         clips no neighbour, the cells around it filling the space as if it
      *                         were absent
@@ -66,9 +70,12 @@ public final class PartitionSites {
      */
     public Map<SystemKey, double[]> collectSitesFrom(
             MapVisibilityPass pass,
+            CellSeedRule seedRule,
             Collection<SystemKey> movingSystemKeys) {
 
-        var sites = DrawnSystemPositions.collectLivePositions(pass);
+        var sites = DrawnSystemPositions.collectLivePositions(
+            pass,
+            system -> seedRule.isSeededBy(pass, system));
 
         sites.keySet().removeAll(movingSystemKeys);
         dropSitesLosingTheirPoint(pass, sites);

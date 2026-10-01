@@ -83,11 +83,32 @@ public final class SpotlitBlocs {
             if (!candidateSystemKeys.contains(systemKey)) {
                 continue;
             }
-            if (pass.readHabitationIn(system).blocIds().contains(selectedBlocId)) {
+            if (isBlocPresentIn(pass, selectedBlocId, system)) {
                 presentSystemKeys.add(systemKey);
             }
         }
         return presentSystemKeys;
+    }
+
+    /**
+     * Whether one bloc holds a colony somebody lives on in one star system - the single-system arm
+     * of {@link #findPresentSystemKeys}, for a batch re-deriving a marked system.
+     *
+     * <p>Answered here rather than at that caller so both arms read the same habitation: a
+     * per-system read that took a different projection would spare a cell the sector-wide scan
+     * called empty, or the reverse.
+     *
+     * @param pass   the reading of the sector the answer is taken from
+     * @param blocId the bloc to look for; null yields false (no spotlight)
+     * @param system the system to read; null yields false
+     * @return true when the bloc holds a colony somebody lives on in the system
+     */
+    public static boolean isBlocPresentIn(HolderPass pass, String blocId, StarSystemAPI system) {
+
+        if (!pass.canReadEconomy() || blocId == null || system == null) {
+            return false;
+        }
+        return pass.readHabitationIn(system).blocIds().contains(blocId);
     }
 
     /**

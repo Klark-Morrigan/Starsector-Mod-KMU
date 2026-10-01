@@ -30,7 +30,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>Which of two systems a tie-breaker prefers is exercised next door over the tie-breakers
  * themselves. What is here is the collection applying them - that a losing system really is absent
- * from the sites, and that the loss reaches the log.
+ * from the sites, and that the loss reaches the log - and applying the layer's own rule for which
+ * systems may seed at all.
  */
 class PartitionSitesTests {
 
@@ -60,6 +61,7 @@ class PartitionSitesTests {
                 openPassOver(
                     buildAccessibleSystem("abyss", "425b5", SHARED_X, SHARED_Y),
                     buildAccessibleSystem("abyss", "4379d", SHARED_X, SHARED_Y)),
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
                 NO_MOVING_SYSTEMS);
 
             assertThat(sites)
@@ -77,6 +79,7 @@ class PartitionSitesTests {
                 openPassOver(
                     buildHiddenSystem("abyss", "4379d", SHARED_X, SHARED_Y),
                     buildAccessibleSystem("abyss", "425b5", SHARED_X, SHARED_Y)),
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
                 NO_MOVING_SYSTEMS);
 
             assertThat(sites)
@@ -94,10 +97,12 @@ class PartitionSitesTests {
                 openPassOver(
                     buildAccessibleSystem("abyss", "425b5", SHARED_X, SHARED_Y),
                     buildAccessibleSystem("abyss", "4379d", SHARED_X, SHARED_Y)),
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
                 NO_MOVING_SYSTEMS);
 
             var sites = partitionSites.collectSitesFrom(
                 openPassOver(buildAccessibleSystem("abyss", "4379d", SHARED_X, SHARED_Y)),
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
                 NO_MOVING_SYSTEMS);
 
             assertThat(sites)
@@ -117,7 +122,10 @@ class PartitionSitesTests {
 
             var log = LogAppenderFake.captureLogOf(
                 PartitionSites.class,
-                () -> new PartitionSites().collectSitesFrom(pass, NO_MOVING_SYSTEMS));
+                () -> new PartitionSites().collectSitesFrom(
+                    pass,
+                    CellSeedRule.SEED_DRAWN_SYSTEMS,
+                    NO_MOVING_SYSTEMS));
 
             assertThat(log.getMessages())
                 .hasSize(1);
@@ -138,6 +146,7 @@ class PartitionSitesTests {
                 openPassOver(
                     buildAccessibleSystem("abyss", "425b5", SHARED_X, SHARED_Y),
                     buildAccessibleSystem("abyss", "4379d", SHARED_X, SHARED_Y)),
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
                 NO_MOVING_SYSTEMS);
 
             var log = LogAppenderFake.captureLogOf(
@@ -146,10 +155,46 @@ class PartitionSitesTests {
                     openPassOver(
                         buildAccessibleSystem("abyss", "425b5", SHARED_X, SHARED_Y),
                         buildAccessibleSystem("abyss", "4379d", SHARED_X, SHARED_Y)),
+                    CellSeedRule.SEED_DRAWN_SYSTEMS,
                     NO_MOVING_SYSTEMS));
 
             assertThat(log.getMessages())
                 .isEmpty();
+        }
+
+        @Test
+        void seedsOnlyTheSystemsTheLayersOwnRuleAdmits() {
+            // A layer states which systems seed its cells rather than inheriting the drawn set, so
+            // a rule narrower than the map's leaves a drawn system with no site at all.
+            var kept = new SystemKey("relay", "", "k1");
+
+            var sites = new PartitionSites().collectSitesFrom(
+                openPassOver(
+                    buildAccessibleSystem("relay", "k1", 0f, 0f),
+                    buildAccessibleSystem("dark", "d1", 4000f, 0f)),
+                (pass, system) -> "relay".equals(system.getId()),
+                NO_MOVING_SYSTEMS);
+
+            assertThat(sites)
+                .containsOnlyKeys(kept);
+        }
+
+        @Test
+        void seedsASystemTheMapDoesNotDrawWhereTheLayersOwnRuleAdmitsIt() {
+            // The rule replaces the drawn-set answer rather than narrowing it, so a layer seeding a
+            // cell the map would not show gets one: the hidden system is admitted here with the
+            // override that would otherwise be its only way onto the map switched off.
+            var hidden = new SystemKey("abyss", "", "4379d");
+
+            var sites = new PartitionSites().collectSitesFrom(
+                MapVisibilityPass.over(
+                    buildStarAnchoredSectorOf(buildHiddenSystem("abyss", "4379d", 0f, 0f)),
+                    MapVisibilityRules.BASE),
+                (pass, system) -> true,
+                NO_MOVING_SYSTEMS);
+
+            assertThat(sites)
+                .containsOnlyKeys(hidden);
         }
     }
 

@@ -6,11 +6,9 @@ import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerSource;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
@@ -25,24 +23,22 @@ import java.util.Set;
  * One bake's band source: everything a cell's band is settled from, sampled once, so asking
  * for a cell's band is a call rather than a fresh set of reads.
  *
- * <p>What it holds is what must not vary across a pass: the planner the active view paints by, so
+ * <p>What it holds is what must not vary across a pass: the planner the owner source counts by, so
  * no cell is counted by a different mechanic; one read of the player's proportions, so a slider
- * moved mid-pass cannot leave two cells drawn to different designs; one reading of who stands
- * together in a contest, so a grouping that moves mid-pass cannot leave one cell banded as a contest
- * between two blocs and the cell beside it banded as their joint holding; and the map those bands go
- * on ({@link RibbonBakeSurface}). Sampling them here mirrors how the rest of a rebuild is driven -
- * one snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a band
+ * moved mid-pass cannot leave two cells drawn to different designs; and the map those bands go on
+ * ({@link RibbonBakeSurface}). Sampling them here mirrors how the rest of a rebuild is driven - one
+ * snapshot, then a per-item call over it - and is what lets the incremental re-shape bake a band
  * identical to the one the full rebuild would have.
  *
- * <p>Who stands together is the painting view's answer ({@link OwnerPaintedView#resolveContestGrouping}),
- * so nothing here names what supplies it.
+ * <p>The planner is the source's answer ({@link OwnerSource#resolveRibbonPlanner}) - which mechanic
+ * counts a cell, and who stands together in a contest it judges - so nothing here names what
+ * supplies either. It is asked of the source the build's owners came from, which is what keeps a
+ * band counted under the same sampling of the layer's live inputs the fill was painted under.
  *
- * <p>The reading of the sector the counts are made off arrives rather than being opened here,
- * because how current it has to be is the caller's question and not this one's: a bake in the same
- * frame as the build before it counts off that build's walk of each system, while one on its own
- * cadence opens a fresh reading rather than report a sector as it stood some flips ago. What the
- * caller owes either way is a reading folded by the grouping the fills were painted under, without
- * which a band would plan against blocs no cell was drawn for.
+ * <p>The walk the counts are made off arrives rather than being opened here, because how current it
+ * has to be is the caller's question and not this one's: a bake in the same frame as the build
+ * before it counts off that build's walk of each system, while one on its own cadence opens a fresh
+ * walk rather than report a sector as it stood some flips ago.
  *
  * <p>The surface gates on inhabitation rather than on this layer's holding, because that is the
  * question a band is actually about: a system splits whether or not the mechanic painting the map
@@ -103,51 +99,45 @@ public final class CellRibbonSource {
      * nothing at all where the player has the bands switched off, in which case every cell is
      * answered "no band" without a count, a size read, or a ring traced.
      *
-     * @param pass               the reading of the sector the counts are made off - its walk of
-     *                           each system, under one sampling of the colony rule, folded by the
-     *                           grouping the fills were painted under. Whose reading it is, and so
-     *                           how current it is, is the caller's to decide
-     * @param view               the active view, supplying the mechanic its cells are counted by -
-     *                           the same one they were painted by - and who stands together in a
-     *                           contest
-     * @param surface            the drawn map the bands go on: which cells take one, where each
-     *                           starts, the room it keeps clear of, and the rings already traced.
-     *                           Taken as the one value this reads rather than as the cells and
-     *                           caches holding those answers, so what a band is laid out from is
-     *                           stated in the signature rather than reachable through it
+     * @param walk    the walk of the sector the counts are made off - the rebuild's own, or a
+     *                batch's. Whose walk it is, and so how current it is, is the caller's to decide
+     * @param source  the owner source the build's owners came from, supplying the mechanic its
+     *                cells are counted by - the same one they were painted by
+     * @param surface the drawn map the bands go on: which cells take one, where each starts, the
+     *                room it keeps clear of, and the rings already traced. Taken as the one value
+     *                this reads rather than as the cells and caches holding those answers, so what
+     *                a band is laid out from is stated in the signature rather than reachable
+     *                through it
      * @return the source the pass bakes its bands through
      */
     public static CellRibbonSource createForPass(
-            HolderPass pass,
-            OwnerPaintedView view,
+            SectorWalk walk,
+            OwnerSource source,
             RibbonBakeSurface surface) {
 
-        // Asked before the view's grouping is read, so a pass with the bands switched off reads no
-        // more live state than it reads sizes: nothing it sampled would settle anything.
+        // Asked before the source is, so a pass with the bands switched off reads no more live
+        // state than it reads sizes: nothing it sampled would settle anything.
         if (!KmuOwnerMapRibbonSettings.shouldDrawOwnerMapRibbons()) {
             return createBandlessPass();
         }
         var style = RibbonStyleReader.readRibbonStyle();
 
-        // The colour source, who stands together and the laying rules are sampled here, once, and
-        // handed to whatever planner the view resolves - so every mechanic reads a bloc's shades
-        // through one object, judges a contest against one grouping, and lays its cells by one
-        // rule.
-        var inputs = RibbonPlanInputs.createForPass(
-            pass,
-            new BlocAffiliation(view.resolveContestGrouping()),
+        // The laying rules are sampled here, once, and handed to whatever planner the source
+        // resolves - so every mechanic lays its cells by one rule.
+        var planner = source.resolveRibbonPlanner(
+            walk,
             new RibbonPlanRules(
                 style.lengths(),
                 UncontestedRibbonRuns.readFromLunaSettings()));
 
-        // Off the pass's own index rather than a traversal of this bake's own: the cells were cut
+        // Off the walk's own index rather than a traversal of this bake's own: the cells were cut
         // from that same index, and a second traversal here would put a rebuild over the time the
         // frame allows it.
         return new CellRibbonSource(
-            view.resolveRibbonPlanner(inputs),
+            planner,
             style,
             surface,
-            pass.sectorIndex().readSystemsByKey());
+            walk.sectorIndex().readSystemsByKey());
     }
 
     /**

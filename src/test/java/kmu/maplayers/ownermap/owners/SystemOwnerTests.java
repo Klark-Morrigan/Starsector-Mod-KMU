@@ -7,14 +7,17 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
 /**
  * Pins the two adapters from an owner map onto the geometry: each carries every system's owner ID in
- * the order handed over, and a cell is owned through the system it draws as.
+ * the order handed over, and a cell is owned through the system it draws as. Beside them, the one
+ * rule saying which systems an owner map leaves to nobody.
  */
 final class SystemOwnerTests {
 
@@ -23,6 +26,9 @@ final class SystemOwnerTests {
     private static final SystemKey CORVUS_KEY = new SystemKey("corvus", null, "corvus_anchor");
     private static final SystemKey ASKONIA_KEY = new SystemKey("askonia", null, "askonia_anchor");
     private static final SystemKey POCKET_CELL_KEY = new SystemKey("pocket", null, "pocket_anchor");
+
+    // A system nobody owns, for the unowned selection.
+    private static final SystemKey TERMINUS_KEY = new SystemKey("terminus", null, "terminus_anchor");
 
     @Nested
     class MapOwnerIdBySystemKey {
@@ -71,6 +77,31 @@ final class SystemOwnerTests {
 
             assertThat(cellGrouping.resolveOwnerOf(POCKET_CELL_KEY))
                 .isNull();
+        }
+    }
+
+    @Nested
+    class SelectUnownedSystemKeysAmong {
+
+        @Test
+        void keepsTheCandidatesNobodyOwnsInTheOrderHandedOver() {
+            // The candidate rule a spotlit owner's presence is asked under: a system somebody owns
+            // already draws in that owner's cluster, so only the rest can be spared.
+            var candidates = new LinkedHashSet<SystemKey>();
+
+            candidates.add(POCKET_CELL_KEY);
+            candidates.add(CORVUS_KEY);
+            candidates.add(TERMINUS_KEY);
+
+            assertThat(SystemOwner.selectUnownedSystemKeysAmong(buildOwnerBySystemKey(), candidates))
+                .containsExactly(POCKET_CELL_KEY, TERMINUS_KEY);
+        }
+
+        @Test
+        void answersNothingForNoCandidates() {
+
+            assertThat(SystemOwner.selectUnownedSystemKeysAmong(buildOwnerBySystemKey(), Set.of()))
+                .isEmpty();
         }
     }
 

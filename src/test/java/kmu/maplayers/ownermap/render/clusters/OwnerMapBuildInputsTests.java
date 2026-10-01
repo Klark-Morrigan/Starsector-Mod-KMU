@@ -7,10 +7,10 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
@@ -95,7 +95,7 @@ final class OwnerMapBuildInputsTests {
             var viewReading = new ViewReading(
                 mock(OwnerPaintedView.class),
                 OwnerReadingFake.createAnsweringNothing(),
-                HolderGrouping.identity());
+                new OwnerSourceFake());
             var contentInputs = ContentInputsFixtures.createInertInputs();
 
             var inputs = new OwnerMapBuildInputs(
@@ -209,7 +209,7 @@ final class OwnerMapBuildInputsTests {
                 OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                 DESATURATION_PALETTE,
                 OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-            new ViewReading(mock(OwnerPaintedView.class), reading, HolderGrouping.identity()),
+            new ViewReading(mock(OwnerPaintedView.class), reading, new OwnerSourceFake()),
             contentInputs,
             Set.of(),
             Set.of());

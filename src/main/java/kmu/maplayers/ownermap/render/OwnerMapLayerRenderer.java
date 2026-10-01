@@ -1,13 +1,12 @@
 package kmu.maplayers.ownermap.render;
 
+import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.hover.MapLayerHoverGates;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.MapLayerFrameParts;
 import kmu.maplayers.base.render.SequencedMapLayerRenderer;
 import kmu.maplayers.ownermap.MapLayerViewRegistry;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveSource;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
 
@@ -57,8 +56,9 @@ public final class OwnerMapLayerRenderer {
      * @param previewHighlight          the picker preview over that same machinery
      * @param hoverGates                the layer's own switches for the two kinds of cursor feedback
      * @param bandLayoutSource          where the layer's choosable sub-layers ride, read per pass
-     * @param diagnosticsHolderProvider the holding the diagnostic overlays read
-     * @param holderResolveSource       the per-system holder read the incremental refresh uses
+     * @param seedRule                  which systems seed the layer's cells -
+     *                                  {@link CellSeedRule#SEED_DRAWN_SYSTEMS} for a layer seeding
+     *                                  exactly the systems the map draws
      * @return a renderer for that machinery, its cache empty until the first frame builds it
      */
     public static SequencedMapLayerRenderer<OwnerPaintedView> createForLiveScreen(
@@ -69,16 +69,14 @@ public final class OwnerMapLayerRenderer {
             OwnerMapPreviewHighlight previewHighlight,
             MapLayerHoverGates hoverGates,
             Supplier<OwnerMapBandLayout> bandLayoutSource,
-            HolderProvider diagnosticsHolderProvider,
-            SystemHolderResolveSource holderResolveSource) {
+            CellSeedRule seedRule) {
 
         // The cache and the compositor are made for the same machinery, so the draw lists one builds
         // and the hover the other lights are one sector's.
         var cache = new OwnerMapCache(
             machinery,
             bodyPreferences,
-            diagnosticsHolderProvider,
-            holderResolveSource);
+            seedRule);
 
         return SequencedMapLayerRenderer.createForLiveScreen(
             machinery,

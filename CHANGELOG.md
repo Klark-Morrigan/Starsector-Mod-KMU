@@ -69,18 +69,31 @@ None of these reach a player: every LunaLib field ID and every value saved in se
     - `IncrementalPoliticsRefresh` is `IncrementalOwnerRefresh`.
   - `BlocStyleDecision`, `BlocStyleResolver` and `BlocStyling` take `Owner` for `Bloc`.
   - `DominantHolder` is `SystemOwner`, and `PoliticalMapPreviewHighlightRenderer` is `SpotlightPreviewHighlightRenderer`.
-- **`OwnerPaintedView` asks more of a view:**
-  - `resolveContestGrouping()` is new and required: which blocs stand together in a contest, the identity grouping where nobody does.
-  - `resolveHolderProvider()` has no default.
+- **`OwnerPaintedView` asks a view two things about its owners:**
+  - `resolveViewReading(SectorAPI)` is new and required. It answers a `ViewReading` - the view, its `OwnerReading` and its `OwnerSource` - resolved together under one sampling of whatever the view reads live.
+  - `resolveCategories()` is new and required: which categories cells divide into.
   - `resolveViewRecedeAdjustment(ScreenMemoryScope)` is new, defaulting to receding nothing.
-  - `computeAllianceContentRevision` left the seam for the political map's own refresh signal.
-  - `resolveOwnerReading(SectorAPI, HolderGrouping)` and `resolveCategories()` are new and required, and `shouldUseIndependentStyle`, `resolveBlocStyleAdjustment` and `resolveName` are gone: everything the tier asks about an owner is the reading's, and which categories cells divide into is the declaration's.
+  - `resolveGrouping()`, `resolveHolderProvider()`, `resolveRibbonPlanner(RibbonPlanInputs)`, `shouldUseIndependentStyle`, `resolveBlocStyleAdjustment`, `resolveName` and `computeAllianceContentRevision` are gone from the seam.
+  - `buildBlocPickerRead` takes the view's `OwnerReading` beside the grouping.
+- **A view painting holders implements `kmu.maplayers.ownermap.owners.holders.HolderPaintedView`:** it states `resolveGrouping()`, `resolveContestGrouping()`, `resolveHolderProvider()`, `resolveSystemHolderResolveSource()`, `resolveRibbonPlanner(RibbonPlanInputs)` and `resolveOwnerReading(SectorAPI, HolderGrouping)`, and the interface assembles `resolveViewReading` from them over one sampling of the grouping. `DominancePaintedView` and `ClaimsView` are holder views.
+- **The tier reads no colony; a layer's source does:**
+  - `kmu.maplayers.ownermap.owners.OwnerSource` resolves who owns each system for a rebuild (`resolveOwners`), opens a per-system `SystemOwnerResolve` for an incremental batch (`openSystemResolve`) and answers the band planner for a bake (`resolveRibbonPlanner`), each over the `SectorWalk` the tier hands it - the rebuild's one `SectorPassIndex` and the visibility rules the cells were cut under.
+  - `ResolvedOwners`, in `owners`, is the source's whole-sector answer: the owners, the hatched and unfilled systems, the inhabited systems and the spotlit owner's presence. `ResolvedHolding` is gone.
+  - `HolderOwnerSource` is the source of the layers painting holders. It opens one `HolderPass` per walk and answers every question off it through the layer's `HolderProvider` and `SystemHolderResolve`.
+  - `SystemHolderResolveSource.openResolveOver` takes the batch's `HolderPass`, and `SystemHolderResolve` answers only `resolveHolderIn`.
+  - `OwnerMapBuilder.resolveHolding` is `resolveOwners(OwnerSource, SectorWalk, ContentInputs)`, and `buildClusters` takes the `ViewReading` and the `ResolvedOwners` in place of a pass, a view and a holding.
+  - `OwnerMapCache` takes a `CellSeedRule` in place of the diagnostics provider and the per-system resolve source, and `OwnerMapLayerRenderer.createForLiveScreen` follows. The diagnostic overlays read owners through the active view's own source.
+  - `IncrementalOwnerRefresh.applyStaleOwnerUpdates` takes the batch's `SectorWalk` and no resolve source; the batch asks the source the standing build was resolved by.
+  - `CellRibbonsBaker.createForPass` and `CellRibbonSource.createForPass` take a `SectorWalk`, and the bake asks the build's owner source for its planner.
+  - `DebugBorderTracingBuilder.buildDebugDrawables` takes the resolved owners, and `ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector` is `rebuildClusterAnchorsFromOwners`.
+  - `SystemOccupancy.selectUnheldSystemKeysIn` is `SystemOwner.selectUnownedSystemKeysAmong`, and `SpotlitBlocs.isBlocPresentIn` is new.
+- **Which systems seed a cell is the layer's to state:** `kmu.maplayers.base.geometry.CellSeedRule` is new, with `SEED_DRAWN_SYSTEMS` the substrate's own rule. `CellGeometryCache.updateFromSector` and `PartitionSites.collectSitesFrom` take one, and `DrawnSystemPositions.collectLivePositions` gains an overload taking a membership rule.
 - **The tier asks a layer about its owners:**
   - `kmu.maplayers.ownermap.owners.OwnerReading` answers each owner's shades, name, crest, recede and category, and the shades an unowned or receded cell is derived from, resolved once per rebuild. `HolderOwnerReading` is the political map's.
   - `kmu.maplayers.ownermap.render.style.OwnerCategories` declares which categories exist and how each is styled, each owned category's name style, the full-strength category and the category an unowned cell falls to. `HolderCategories` declares the four `OwnerMapCategory` values.
   - `OwnerPalette` is the tier's pair of shades in place of KMLib's `FactionPalette`, in `MapPalettes`, `MapStyling`, `ResolvedBlocPaint`, `BlocPaletteReader`, `BlocPresence` and the label styling.
   - `SystemOwner` is an owner ID and an `OwnerPalette`: `factionId` is `ownerId`, the two colour components are one `palette`, `resolvePalette` is gone and `mapFactionIdBySystemKey` is `mapOwnerIdBySystemKey`. `resolveForBloc` is `SectorBlocPalettes.resolveOwnerOf`.
-  - `ViewGrouping` is `ViewReading`, carrying the reading beside the view and the grouping. `ClusterLabelStylingSnapshot` carries the categories and the reading in place of it.
+  - `ViewGrouping` is `ViewReading`, carrying the reading and the owner source beside the view. `ClusterLabelStylingSnapshot` carries the categories and the reading in place of it.
   - `OwnerStyleDecision` carries the category an owner draws in rather than whether it takes the independent style, and `OwnerStyleResolver.resolveBlocStyleDecision` and `OwnerStyling.resolveFrom` take the reading and the categories.
   - `RenderStyleReader.readRenderStyle` takes the layer's categories and the sampled preferences, `BlocNameStyles` is a name style per category with `readFromLunaSettings` gone, `FactionlessStyleResolver.resolveCategoryOf` is `isSettledSystem`, `DebugBorderTracingBuilder.buildDebugDrawables` takes the categories and `ClusterAnchorsBuilder.rebuildClusterAnchors` no longer takes a sector.
   - `OwnerMapBuildInputs.wasBuilt()` is new: false for the placeholder a failed first build stands behind, which the incremental refresh does not fold into.

@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.KmuMod;
+import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerStanding;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
@@ -25,8 +26,6 @@ import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.sidebar.OwnerMapBodyControls;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.ownermap.sidebar.SelectableBlocCache;
-import kmu.maplayers.politicalmap.holders.DefaultHolderProvider;
-import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 import kmu.maplayers.politicalmap.render.PoliticalMapBandLayoutReader;
 import kmu.settings.KmuMapKeybindSettings;
 import kmu.util.KmuStringKeys;
@@ -193,8 +192,9 @@ public final class PoliticalMapLayer implements MapLayer {
                 new SpotlightPreviewHighlightRenderer(machinery, LAYER_ID, KmuMod.MAP_STORE_NAMESPACE),
                 SharedOwnerMapHoverGates.INSTANCE,
                 PoliticalMapBandLayoutReader::readChosenLayout,
-                DefaultHolderProvider.INSTANCE,
-                DominanceSystemHolderResolve::openResolveOver));
+                // This layer seeds a cell for every system the map draws, which is the substrate's
+                // own rule - stated here, where the layer composes itself, rather than inherited.
+                CellSeedRule.SEED_DRAWN_SYSTEMS));
     }
 
     // The spotlight picker for the selected view: its selectable blocs under the player's live

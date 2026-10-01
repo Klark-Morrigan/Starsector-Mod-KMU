@@ -1,10 +1,9 @@
 package kmu.maplayers.ownermap.render.labels;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.FontAtlas;
 
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
@@ -23,11 +22,10 @@ import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
+import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
@@ -155,37 +153,31 @@ public final class ClusterAnchorsBuilder {
         return ClusterNameDisturbance.compareFittedNames(standingNames, fittedAnchors);
     }
 
-    // The rebuild for a path with no holder map at hand - the debug border-tracing view,
-    // which builds no production draw lists to borrow one from. Resolves holding from
-    // the sector itself, gated behind the toggle so the economy scan only runs while
-    // someone is actually looking at the anchors. Leaves the caller's pair labelled with what
-    // produced it exactly as the shared path does, so the caller holds one fact about its
-    // placements whichever view built them.
-    public static void rebuildClusterAnchorsFromSector(
+    // The rebuild for a path with no built clusters at hand - the debug border-tracing view,
+    // which builds no production draw lists to borrow an owner map from. Takes the owners that
+    // view traced, so the anchors and the traced borders name one owner per cell, and is gated
+    // behind the toggle so the fit only runs while someone is actually looking at the anchors.
+    // Leaves the caller's pair labelled with what produced it exactly as the shared path does, so
+    // the caller holds one fact about its placements whichever view built them.
+    public static void rebuildClusterAnchorsFromOwners(
             StandingClusterAnchors standingAnchors,
             RevisedCellGeometry cellGeometry,
-            SectorAPI sector,
-            OwnerPaintedView view,
+            Map<SystemKey, SystemOwner> ownerBySystemKey,
+            OwnerReading reading,
+            OwnerCategories categories,
             ContentInputs contentInputs,
-            HolderProvider holderProvider,
             FontAtlas labelFace) {
 
         if (!KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
-            // The economy scan is what the toggle is guarding, so it is skipped - but the
-            // list it leaves empty still has to say what produced it, which costs a settings
-            // read and no sector work at all. Emptying it and labelling it is the one write
-            // the pair takes, so this path's skip cannot leave the two disagreeing.
+            // The fit is what the toggle is guarding, so it is skipped - but the list it leaves
+            // empty still has to say what produced it, which costs a settings read and no fit at
+            // all. Emptying it and labelling it is the one write the pair takes, so this path's
+            // skip cannot leave the two disagreeing.
             standingAnchors.replaceAnchors(
                 List.of(),
                 readFitFingerprint(cellGeometry.revision()));
             return;
         }
-
-        // Sample the view's grouping once and resolve both the holding and the owner reading under
-        // it, so the anchors key off the same snapshot their names and colours are classified
-        // against.
-        var grouping = view.resolveGrouping();
-        var reading = view.resolveOwnerReading(sector, grouping);
 
         // This path builds no drawables to borrow the palette from, so resolve it here - through
         // the same darkening seam the theme reads, so the debug names desaturate exactly as
@@ -194,9 +186,9 @@ public final class ClusterAnchorsBuilder {
             reading.resolveRecedePalette(),
             RenderStyleReader.readGlobalStyle().desaturationDarkening());
 
-        // The debug border-tracing path never filters - it resolves real holders from the
-        // sector - so the pick is dropped from the picks it goes in under and it recedes nothing
-        // and names no synthetic spotlight key. Dropped rather than the whole reading being
+        // The debug border-tracing path never filters - it traces the owners resolved with
+        // nobody spotlit - so the pick is dropped from the picks it goes in under and it recedes
+        // nothing and names no synthetic spotlight key. Dropped rather than the whole reading being
         // replaced, since this path still draws the names in the format the player asked for.
         // What the shared rebuild reports about the names it moved is dropped here rather than
         // passed on: this view replaces the production draw lists outright, so there is nothing
@@ -205,11 +197,9 @@ public final class ClusterAnchorsBuilder {
             standingAnchors,
             cellGeometry,
             new ClusterLabelStylingSnapshot(
-                holderProvider
-                    .resolveHolder(HolderPass.readFromLunaSettings(sector, grouping), null)
-                    .ownerBySystemKey(),
+                ownerBySystemKey,
                 desaturationPalette,
-                view.resolveCategories(),
+                categories,
                 reading,
                 contentInputs.clearFilterPick(),
                 labelFace));

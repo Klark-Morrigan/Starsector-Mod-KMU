@@ -8,7 +8,7 @@ import kmlib.starsector.ui.font.FontAtlas;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.profiling.MapBuildCounters;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellStore;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
@@ -80,12 +80,12 @@ public final class CellRibbonsBaker {
     /**
      * Samples everything one pass's bands are baked from.
      *
-     * @param clusters    the build being baked over; its cells are what a band is read from and
-     *                       written back to, and its view is what the counts are read under
+     * @param clusters       the build being baked over; its cells are what a band is read from and
+     *                       written back to, and the source its owners came from is what the counts
+     *                       are read through
      * @param geometryCache  the cells' geometry, for the system each draws as and its site
-     * @param pass           the reading of the sector the counts are made off, folded by the
-     *                       grouping the cells were painted under; whose reading it is, and so how
-     *                       current it is, is the caller's to decide
+     * @param walk           the walk of the sector the counts are made off; whose walk it is, and
+     *                       so how current it is, is the caller's to decide
      * @param clusterAnchors the cluster names' placements, whose boxes the bands keep out of
      * @param labelFace      the face the names were settled on
      * @return the pass, ready to bake whichever cells the caller names
@@ -93,7 +93,7 @@ public final class CellRibbonsBaker {
     public static CellRibbonsBaker createForPass(
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache,
-            HolderPass pass,
+            SectorWalk walk,
             List<ClusterAnchor> clusterAnchors,
             FontAtlas labelFace) {
 
@@ -105,8 +105,8 @@ public final class CellRibbonsBaker {
             clusters.getPaintedCells(),
             geometryCache.getSystemKeyByCellKey(),
             CellRibbonSource.createForPass(
-                pass,
-                clusters.getBuildInputs().viewReading().view(),
+                walk,
+                clusters.getBuildInputs().viewReading().source(),
                 RibbonBakeSurface.createForPass(clusters, geometryCache, clusterAnchors, labelFace)),
             KmuOwnerMapDiagnosticsSettings.shouldShowOwnerMapRibbonPaths());
     }

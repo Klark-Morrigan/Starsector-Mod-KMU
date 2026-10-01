@@ -1,9 +1,12 @@
 package kmu.maplayers.base.visibility.systems;
 
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
 import kmlib.starsector.systems.SystemKey;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Where each drawn system sits: the read that turns a pass's membership answer into the
@@ -39,6 +42,26 @@ public final class DrawnSystemPositions {
      *         place a cell at. Two systems sharing an ID hold a position each
      */
     public static Map<SystemKey, double[]> collectLivePositions(MapVisibilityPass pass) {
+        return collectLivePositions(pass, pass::isDrawn);
+    }
+
+    /**
+     * The same read under a membership rule of the caller's own, for a partition whose layer states
+     * which systems seed it rather than taking the pass's drawn set.
+     *
+     * <p>The rule replaces the membership answer and nothing else: the systems walked, the order
+     * they come back in and the skipping of a system with no location are the pass's as above, so a
+     * rule decides only whether a system that could hold a site does.
+     *
+     * @param pass       the pass whose reading of the sector supplies the systems; a pass over no
+     *                   sector yields an empty map
+     * @param isAdmitted the rule admitting a system to the map for this read's purposes
+     * @return each admitted system's live hyperspace position keyed by its key, in the sector's
+     *         star-system order, a system with no location skipped
+     */
+    public static Map<SystemKey, double[]> collectLivePositions(
+            MapVisibilityPass pass,
+            Predicate<StarSystemAPI> isAdmitted) {
 
         var positions = new LinkedHashMap<SystemKey, double[]>();
 
@@ -49,7 +72,7 @@ public final class DrawnSystemPositions {
 
             // Where it sits is asked before whether it is drawn, so a system with nowhere to place
             // a cell is never read for the membership answer that could not be used anyway.
-            if (location == null || !pass.isDrawn(system)) {
+            if (location == null || !isAdmitted.test(system)) {
                 continue;
             }
             positions.put(indexed.getKey(), new double[] {location.x, location.y});

@@ -22,6 +22,7 @@ import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
 import kmu.maplayers.ownermap.holding.HolderOwnerReading;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.HolderOwnerSource;
 import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.picker.SelectableBloc;
@@ -218,6 +219,30 @@ final class ClaimsViewTests {
             // rebuild handed in - what it answers is pinned by that reading's own suite.
             assertThat(ClaimsView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), HolderGrouping.identity()))
                 .isInstanceOf(HolderOwnerReading.class);
+        }
+    }
+
+    @Nested
+    class ResolveViewReading {
+
+        @Test
+        void readsBlocsOffTheirFactionsAndFoldsHoldingByClaimant() {
+            // Claims fold strictly by claiming faction, so both answers stand on the identity
+            // grouping whatever the alliance set says.
+            try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+                alliancesMock
+                    .when(NexerelinAlliances::resolveGrouping)
+                    .thenReturn(HolderGroupingFixture.buildGroupOf("hegemony", "persean"));
+
+                var viewReading = ClaimsView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
+
+                assertThat(viewReading.reading())
+                    .isInstanceOf(HolderOwnerReading.class);
+                assertThat(viewReading.source())
+                    .isInstanceOfSatisfying(
+                        HolderOwnerSource.class,
+                        source -> assertThat(source.grouping()).isSameAs(HolderGrouping.identity()));
+            }
         }
     }
 

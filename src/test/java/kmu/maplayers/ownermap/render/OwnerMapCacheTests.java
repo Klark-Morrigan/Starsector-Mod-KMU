@@ -6,6 +6,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.faces.SettledFaces;
+import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
@@ -16,9 +17,7 @@ import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.OwnerPaintedViewFake;
-import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveFake;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveSource;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
@@ -44,6 +43,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.atLeastOnce;
@@ -71,7 +71,7 @@ final class OwnerMapCacheTests {
     // A view answering every question a decision asks of it with a constant, so two frames of one
     // case sample the same inputs and the second owes a rebuild only where a case makes it.
     private static final OwnerPaintedView VIEW =
-        new OwnerPaintedViewFake(Map.of(), HolderProviderFake.createHoldingNothing());
+        new OwnerPaintedViewFake(Map.of(), new OwnerSourceFake());
 
     // The bloc a filtered map is spotlighting, for the case about what a filter defers.
     private static final String HEGEMONY_ID = "hegemony";
@@ -88,10 +88,6 @@ final class OwnerMapCacheTests {
     // has to complete: an empty sector cuts no cells, and every builder past the cut is a seam.
     private final SectorAPI emptySectorMock = StaleOwnerMapFixtures.buildSectorWithSystems();
     private final SectorMapMachinery emptySectorMachinery = new SectorMapMachinery(emptySectorMock);
-
-    // Where the fold opens its holder read, held so a case can say the fold was handed this one.
-    private final SystemHolderResolveSource holderResolveSource =
-        SystemHolderResolveFake.createSourceHoldingNothing();
 
     // What the stood-in debug builder hands back, held so a case can read the same instance off
     // the cache.
@@ -214,10 +210,9 @@ final class OwnerMapCacheTests {
             cache.refreshDrawLists(VIEW, SCREEN);
 
             incrementalRefreshMock.verify(() -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(
-                same(emptySectorMock),
+                argThat(walk -> walk.sector() == emptySectorMock),
                 any(),
-                eq(Set.of(MARKED_CELL)),
-                same(holderResolveSource)));
+                eq(Set.of(MARKED_CELL))));
         }
 
         @Test
@@ -252,7 +247,7 @@ final class OwnerMapCacheTests {
             cache.refreshDrawLists(VIEW, SCREEN);
 
             incrementalRefreshMock.verify(
-                () -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(any(), any(), any(), any()),
+                () -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(any(), any(), any()),
                 never());
 
             assertThat(emptySectorMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
@@ -273,7 +268,7 @@ final class OwnerMapCacheTests {
             cache.refreshDrawLists(VIEW, SCREEN);
 
             incrementalRefreshMock.verify(
-                () -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(any(), any(), any(), any()),
+                () -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(any(), any(), any()),
                 never());
 
             assertThat(emptySectorMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
@@ -362,14 +357,13 @@ final class OwnerMapCacheTests {
         }
     }
 
-    // A cache over the given machinery, drawing under the layer's test keys and reading holding
-    // from sources that hold nothing.
-    private OwnerMapCache buildCacheOver(SectorMapMachinery cacheMachinery) {
+    // A cache over the given machinery, drawing under the layer's test keys and seeding a cell for
+    // every system the map draws.
+    private static OwnerMapCache buildCacheOver(SectorMapMachinery cacheMachinery) {
         return new OwnerMapCache(
             cacheMachinery,
             OwnerMapBodyPreferencesFixtures.createUnderTestKeys(),
-            HolderProviderFake.createHoldingNothing(),
-            holderResolveSource);
+            CellSeedRule.SEED_DRAWN_SYSTEMS);
     }
 
     // Stands in for everything a rebuild reaches past its cut of an empty sector, so the frame
@@ -392,12 +386,12 @@ final class OwnerMapCacheTests {
 
         debugBuilderMock = seams.openSeam(DebugBorderTracingBuilder.class);
         debugBuilderMock
-            .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any(), any(), any()))
+            .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any(), any()))
             .thenReturn(debugOverlay);
 
         productionBuilderMock = seams.openSeam(OwnerMapBuilder.class);
         productionBuilderMock
-            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()))
+            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any()))
             .thenReturn(builtClusters);
 
         // The bake is asked for by the production view on every rebuild, so it has to hand back

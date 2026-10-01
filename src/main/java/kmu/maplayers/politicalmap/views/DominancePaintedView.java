@@ -7,7 +7,9 @@ import kmu.maplayers.ownermap.holding.ColonyReadRules;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderOwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.holders.HolderPaintedView;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
+import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveSource;
 import kmu.maplayers.ownermap.picker.BlocPickerRead;
 import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.render.style.HolderCategories;
@@ -21,6 +23,7 @@ import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
+import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 import kmu.mods.nexerelin.NexerelinAlliances;
 
 import java.util.function.Predicate;
@@ -38,7 +41,7 @@ import java.util.function.Predicate;
  * not paint; here they reach exactly the views whose blocs carry the numbers. A view painted by
  * another mechanic implements the seam directly and pairs its own list with its own vocabulary.
  */
-public interface DominancePaintedView extends OwnerPaintedView {
+public interface DominancePaintedView extends HolderPaintedView {
 
     /**
      * The source the contest-painted views resolve their per-system holder from: each inhabited
@@ -55,6 +58,17 @@ public interface DominancePaintedView extends OwnerPaintedView {
     @Override
     default HolderProvider resolveHolderProvider() {
         return ClaimAugmentedHolderProvider.INSTANCE;
+    }
+
+    /**
+     * The per-system half of the contest: a marked system re-derived by the market contest alone,
+     * under one weighting rule sampled per batch.
+     *
+     * @return the source a batch opens its dominance resolve from
+     */
+    @Override
+    default SystemHolderResolveSource resolveSystemHolderResolveSource() {
+        return DominanceSystemHolderResolve::openResolveOver;
     }
 
     /**
@@ -183,6 +197,7 @@ public interface DominancePaintedView extends OwnerPaintedView {
         return buildBlocPickerRead(
             sector,
             grouping,
+            resolveOwnerReading(sector, grouping),
             DominanceStatsAggregator.aggregateDominanceStats(pass),
             DominanceSortModes.MODES);
     }

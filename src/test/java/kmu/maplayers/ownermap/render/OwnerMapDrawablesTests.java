@@ -1,34 +1,39 @@
 package kmu.maplayers.ownermap.render;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
+import kmu.maplayers.ownermap.ViewReading;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.OwnerSource;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.clusters.ResolvedHolding;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -54,6 +59,10 @@ final class OwnerMapDrawablesTests {
         List.of(new float[] {0, 0}, new float[] {1, 1}),
         List.of(),
         List.of());
+
+    // The walk a rebuild hands its stages. Over no sector: every stage reading it is stood in for.
+    private static final SectorWalk WALK =
+        new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE);
 
     private final OwnerPaintedView viewMock = mock(OwnerPaintedView.class);
 
@@ -160,6 +169,29 @@ final class OwnerMapDrawablesTests {
         }
 
         @Test
+        void tracesTheOwnersTheViewsOwnSourceResolvesWithNobodySpotlit() {
+            // The overlay traces the borders the map would draw, so it asks the layer for owners
+            // through the very source the production build would have - over the rebuild's walk,
+            // and with no pick, since a spotlight's footprint is not a border the map draws.
+            var drawables = new OwnerMapDrawables(() -> StarsectorFont.VANILLA_INSIGNIA_42);
+            var owners = ResolvedOwners.createEmpty();
+            var sourceFake = OwnerSourceFake.createAnswering(owners);
+
+            var builderMock = traceBordersThrough(drawables, sourceFake);
+
+            assertThat(sourceFake.readOwnerWalks())
+                .singleElement()
+                .isSameAs(WALK);
+            assertThat(sourceFake.readSpotlitOwnerIdsAsked())
+                .containsExactly((String) null);
+            builderMock.verify(() -> DebugBorderTracingBuilder.buildDebugDrawables(
+                any(),
+                same(owners),
+                any(),
+                any()));
+        }
+
+        @Test
         void namesTheLoopsItTracedRatherThanAnyStyledCells() {
             // The two views are not one quantity, so the line a rebuild writes names whichever was
             // built - a count alone would read as a styled-cell count on the frames it is not.
@@ -174,19 +206,30 @@ final class OwnerMapDrawablesTests {
         // Builds the debug view over a stood-in trace and a neutralised anchor fit, which is all
         // the holder does with either.
         private void traceBordersThrough(OwnerMapDrawables drawables) {
+            traceBordersThrough(drawables, new OwnerSourceFake());
+        }
 
-            seams.openSeam(DebugBorderTracingBuilder.class)
-                .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any(), any(), any()))
+        // The same over a stated source, handing back the stood-in trace for a case reading what it
+        // was asked.
+        private MockedStatic<DebugBorderTracingBuilder> traceBordersThrough(
+                OwnerMapDrawables drawables,
+                OwnerSource ownerSource) {
+
+            var builderMock = seams.openSeam(DebugBorderTracingBuilder.class);
+
+            builderMock
+                .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any(), any()))
                 .thenReturn(TRACED_OVERLAY);
 
             seams.openSeam(ClusterAnchorsBuilder.class);
 
             drawables.rebuildBorderTracingOverlay(
                 CELL_GEOMETRY,
-                mock(SectorAPI.class),
-                viewMock,
-                ContentInputs.createEmpty(),
-                HolderProviderFake.createHoldingNothing());
+                WALK,
+                new ViewReading(viewMock, OwnerReadingFake.createAnsweringNothing(), ownerSource),
+                ContentInputs.createEmpty());
+
+            return builderMock;
         }
     }
 
@@ -238,7 +281,7 @@ final class OwnerMapDrawablesTests {
         private void buildProductionThrough(OwnerMapDrawables drawables, OwnerMapClusters clusters) {
 
             seams.openSeam(OwnerMapBuilder.class)
-                .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()))
+                .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any()))
                 .thenReturn(clusters);
             seams.openSeam(ClusterAnchorsBuilder.class);
             seams.openSeam(CellRibbonsBaker.class)
@@ -247,10 +290,10 @@ final class OwnerMapDrawablesTests {
 
             drawables.rebuildClustersAndBands(
                 CELL_GEOMETRY,
-                mock(HolderPass.class),
-                viewMock,
+                WALK,
+                new ViewReading(viewMock, OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
-                mock(ResolvedHolding.class));
+                ResolvedOwners.createEmpty());
         }
     }
 

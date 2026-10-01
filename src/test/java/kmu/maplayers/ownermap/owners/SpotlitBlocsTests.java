@@ -101,6 +101,70 @@ final class SpotlitBlocsTests {
     }
 
     @Nested
+    class IsBlocPresentIn {
+
+        @Test
+        void answersYesWhereTheBlocLives() {
+
+            var sector = buildTwoSystemSector();
+
+            assertThat(SpotlitBlocs.isBlocPresentIn(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    SectorOwnershipFixtures.findSystemIn(sector, "corvus")))
+                .isTrue();
+        }
+
+        @Test
+        void answersNoWhereOnlyARivalLives() {
+
+            var sector = buildTwoSystemSector();
+
+            assertThat(SpotlitBlocs.isBlocPresentIn(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    SectorOwnershipFixtures.findSystemIn(sector, "askonia")))
+                .isFalse();
+        }
+
+        @Test
+        void answersNoWithNoBlocSpotlit() {
+
+            var sector = buildTwoSystemSector();
+
+            assertThat(SpotlitBlocs.isBlocPresentIn(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    null,
+                    SectorOwnershipFixtures.findSystemIn(sector, "corvus")))
+                .isFalse();
+        }
+
+        @Test
+        void answersNoForASystemTheSectorNoLongerLists() {
+            // A marked key the sector dropped reaches a batch as no system at all, and nobody can
+            // be living in it.
+            assertThat(SpotlitBlocs.isBlocPresentIn(
+                    SectorOwnershipFixtures.buildHolderPassOver(buildTwoSystemSector()),
+                    SPOTLIT_BLOC_ID,
+                    null))
+                .isFalse();
+        }
+
+        @Test
+        void answersNoBeforeTheEconomyStandsUp() {
+            // The single-system arm answers the mid-load sector exactly as the sector-wide scan does,
+            // so a batch run then cannot spare a cell the rebuild would not.
+            var sector = SectorOwnershipFixtures.buildEconomylessSectorWithSystem("corvus");
+
+            assertThat(SpotlitBlocs.isBlocPresentIn(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    SectorOwnershipFixtures.findSystemIn(sector, "corvus")))
+                .isFalse();
+        }
+    }
+
+    @Nested
     class IsSpotlitBloc {
 
         @Test

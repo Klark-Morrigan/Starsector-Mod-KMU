@@ -53,29 +53,27 @@ It reads the shapes back off the clusters rather than off a shaping pass,
 so the incremental refresh re-bakes the cells it disturbed through the very same call the full rebuild bakes all of them through.
 
 A stage of its own,
-but not a **reading** of its own.
-The reading of the sector a bake counts off arrives from its caller,
+but not a **walk** of its own.
+The walk of the sector a bake counts off arrives from its caller,
 because how current it has to be is the caller's question:
-a bake running in the same frame as the rebuild before it takes that rebuild's reading,
+a bake running in the same frame as the rebuild before it takes that rebuild's walk,
 the sector being unable to move between the two,
 while a bake on its own cadence -
 whenever a cluster name may have moved -
-opens a fresh one rather than reporting the sector as it stood some flips ago.
-Either way the reading has to be folded by the grouping the fills were painted under,
-or a band would plan against blocs no cell was drawn for.
+takes the batch's walk rather than reporting the sector as it stood some flips ago.
+Either way the planner is asked of the owner source the build's owners came from,
+or a band would plan against owners no cell was drawn for.
 
 `CellRibbonSource` is a source rather than a builder
 because the per-cell work is `CellRibbonBuilder`'s;
 what it adds is the pass that work is done under -
-the planner the view resolved,
+the planner the owner source answered,
 the player's sizes,
-who stands together in a contest,
 and the drawn map those bands go on,
 each sampled once so no two cells of one pass are settled differently.
-Who stands together is the painting view's answer (`OwnerPaintedView.resolveContestGrouping`),
-so nothing here names what supplies it;
-a layer in which nobody stands together answers with the identity grouping,
-so no rule below it carries a branch.
+The planner is the source's answer (`OwnerSource.resolveRibbonPlanner`),
+and so is who stands together in a contest it judges,
+so nothing here names what supplies either.
 
 That map is `RibbonBakeSurface`:
 the inhabitation gate,

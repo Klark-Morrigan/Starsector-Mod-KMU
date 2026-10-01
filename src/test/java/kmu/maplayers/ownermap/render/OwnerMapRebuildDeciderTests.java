@@ -10,7 +10,7 @@ import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.ownermap.OwnerPaintedViewFake;
-import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
 
 import org.junit.jupiter.api.AfterEach;
@@ -49,7 +49,7 @@ final class OwnerMapRebuildDeciderTests {
     // nothing here turns on which panel the frame was prepared for.
     // Any view: what the decider answers turns on what moved, never on who is painting.
     private static final OwnerPaintedViewFake VIEW =
-        new OwnerPaintedViewFake(Map.of(), HolderProviderFake.createHoldingNothing());
+        new OwnerPaintedViewFake(Map.of(), new OwnerSourceFake());
 
     private static final ScreenMemoryScope SCREEN = ScreenMemoryScopes.createStandInScreen();
 

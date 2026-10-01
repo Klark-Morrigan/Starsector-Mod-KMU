@@ -1,10 +1,7 @@
 package kmu.maplayers.ownermap.owners.holders;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
@@ -14,27 +11,27 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Where a batch opens its holder read, recording what it was opened over.
+ * Where a batch opens its holder read, recording the pass it was opened over.
  *
  * <p>A batch takes one reading of the sector and answers every question about a marked system from
- * it, so the two facts a case pins are that it opened exactly one and that it opened it over the
- * sector it was handed rather than whichever is loaded. Both are read off what this recorded.
+ * it, so what a case pins is that the holder resolve was opened over the very pass the batch's
+ * other answers came from. That is read off what this recorded.
  *
- * <p>The holding each open answers with is stated by the case, on the resolve this hands back.
+ * <p>The holding each open answers with is stated by the case, on this source.
  */
 public final class SystemHolderResolveSourceFake implements SystemHolderResolveSource {
 
-    private final List<SectorAPI> sectorsOpenedOver = new ArrayList<>();
+    private final List<HolderPass> passesOpenedOver = new ArrayList<>();
     private final List<SystemHolderResolveFake> resolvesHandedOut = new ArrayList<>();
     private final Map<String, SystemOwner> holderBySystemId = new LinkedHashMap<>();
 
     /**
-     * Every sector a batch opened a reading over, in the order it opened them.
+     * Every pass a batch opened a resolve over, in the order it opened them.
      *
-     * @return the recorded sectors; one entry per batch
+     * @return the recorded passes; one entry per batch
      */
-    public List<SectorAPI> readSectorsOpenedOver() {
-        return List.copyOf(sectorsOpenedOver);
+    public List<HolderPass> readPassesOpenedOver() {
+        return List.copyOf(passesOpenedOver);
     }
 
     /**
@@ -60,12 +57,11 @@ public final class SystemHolderResolveSourceFake implements SystemHolderResolveS
     }
 
     @Override
-    public SystemHolderResolve openResolveOver(SectorAPI sector, HolderGrouping grouping) {
-        sectorsOpenedOver.add(sector);
+    public SystemHolderResolve openResolveOver(HolderPass pass) {
+        passesOpenedOver.add(pass);
 
-        var resolve = SystemHolderResolveFake.createOver(
-            HolderPass.readFromLunaSettings(sector, grouping), holderBySystemId);
-        resolvesHandedOut.add(resolve);
-        return resolve;
+        var resolveFake = SystemHolderResolveFake.createHolding(holderBySystemId);
+        resolvesHandedOut.add(resolveFake);
+        return resolveFake;
     }
 }

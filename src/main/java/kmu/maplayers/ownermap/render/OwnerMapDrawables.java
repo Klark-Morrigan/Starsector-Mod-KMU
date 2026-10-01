@@ -1,7 +1,5 @@
 package kmu.maplayers.ownermap.render;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.starsector.ui.font.FontAtlas;
 
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
@@ -12,12 +10,12 @@ import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
+import kmu.maplayers.ownermap.ViewReading;
+import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.clusters.ResolvedHolding;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
@@ -175,74 +173,76 @@ final class OwnerMapDrawables {
     /**
      * Builds the debug border-tracing view, which replaces the production draw lists outright.
      *
-     * <p>It reads holding from the sector rather than through the rebuild's own reading, and
-     * deliberately: the overlay is gated behind a dev toggle and builds no draw lists for the
-     * anchors to borrow a holder map from, so what it costs is paid only while somebody is looking
-     * at it.
+     * <p>The owners it traces are the active view's own, resolved through its source over the
+     * rebuild's walk with nothing spotlit - so the overlay traces the borders the map would draw,
+     * and asks the layer nothing the production build does not. One resolve serves the overlay and
+     * the anchors beside it, so the two cannot disagree about who owns a cell.
      *
      * @param cellGeometry  the cells to trace, carrying the cut they stand at
-     * @param sector        the sector whose holding the overlay reads
-     * @param view          the view the overlay is traced under
+     * @param walk          the rebuild's walk of the sector, which the source reads over
+     * @param viewReading   the view the overlay is traced under, with its reading and source
      * @param contentInputs the sidebar preferences the rebuild sampled
      */
     public void rebuildBorderTracingOverlay(
             RevisedCellGeometry cellGeometry,
-            SectorAPI sector,
-            OwnerPaintedView view,
-            ContentInputs contentInputs,
-            HolderProvider diagnosticsHolderProvider) {
+            SectorWalk walk,
+            ViewReading viewReading,
+            ContentInputs contentInputs) {
+
+        // The overlay never spotlights, so the pick goes in as nobody: it traces the owners the
+        // map has rather than one pick's footprint.
+        var owners = viewReading.source().resolveOwners(walk, null);
+        var categories = viewReading.view().resolveCategories();
 
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
             cellGeometry.cells(),
-            sector,
-            view.resolveCategories(),
-            contentInputs,
-            diagnosticsHolderProvider);
+            owners,
+            categories,
+            contentInputs);
 
         clusters = null;
 
-        ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+        ClusterAnchorsBuilder.rebuildClusterAnchorsFromOwners(
             standingAnchors,
             cellGeometry,
-            sector,
-            view,
+            owners.ownerBySystemKey(),
+            viewReading.reading(),
+            categories,
             contentInputs,
-            diagnosticsHolderProvider,
             labelFaceSource.get());
     }
 
     /**
-     * Builds the production view's three stages, driven off the one reading of the sector the
+     * Builds the production view's three stages, driven off the one walk of the sector the
      * rebuild opened: the fills, the names fitted inside the borders they trace, and the bands laid
      * around wherever those names ended up.
      *
-     * <p>The grouping the pass was opened under is the view's, sampled once, which is the condition
-     * the bake shares this reading on: a pass folded by another grouping would plan bands against
-     * blocs the fills never drew.
+     * <p>The bake is counted through the source the owners came from, over the same walk, which is
+     * the condition it shares this reading on: a band counted under another sampling of the view's
+     * live inputs would plan against owners the fills never drew.
      *
      * @param cellGeometry  the cells to shape, carrying the cut they stand at
-     * @param pass          the rebuild's one reading of the sector
-     * @param view          the view the clusters are built under
+     * @param walk          the rebuild's one walk of the sector
+     * @param viewReading   the view the clusters are built under, with its reading and source
      * @param contentInputs the sidebar preferences the rebuild sampled
-     * @param holding       who holds what and who is where, resolved off the pass by this rebuild
+     * @param owners        who owns what and who is where, resolved over the walk by this rebuild
      *                      or kept from the one before it - which of the two is the caller's call,
      *                      being a question about what moved since
      */
     public void rebuildClustersAndBands(
             RevisedCellGeometry cellGeometry,
-            HolderPass pass,
-            OwnerPaintedView view,
+            SectorWalk walk,
+            ViewReading viewReading,
             ContentInputs contentInputs,
-            ResolvedHolding holding) {
+            ResolvedOwners owners) {
 
         var labelFace = labelFaceSource.get();
 
         clusters = OwnerMapBuilder.buildClusters(
             cellGeometry.cells(),
-            pass,
-            view,
+            viewReading,
             contentInputs,
-            holding);
+            owners);
         borderStageOverlay = null;
 
         // The cells go over carrying the revision they stand at rather than the live
@@ -260,14 +260,14 @@ final class OwnerMapDrawables {
         // reports about the names it moved is dropped here: every cell was just rebuilt
         // from nothing, so all of them owe a band whatever the names did.
         //
-        // Baked through this rebuild's own reading rather than one of its own: the bake runs in
-        // the same frame the fills were painted in, so a fresh reading could only report the
-        // same sector at the cost of walking it again.
+        // Baked over this rebuild's own walk rather than one of its own: the bake runs in the same
+        // frame the fills were painted in, so a fresh walk could only report the same sector at the
+        // cost of walking it again.
         CellRibbonsBaker
             .createForPass(
                 clusters,
                 cellGeometry.cells(),
-                pass,
+                walk,
                 standingAnchors.getAnchors(),
                 labelFace)
             .bakeAllCellRibbons();

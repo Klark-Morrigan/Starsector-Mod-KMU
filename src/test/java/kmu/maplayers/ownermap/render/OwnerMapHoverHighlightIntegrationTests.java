@@ -16,8 +16,8 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
@@ -164,7 +164,7 @@ final class OwnerMapHoverHighlightIntegrationTests {
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-                new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), HolderGrouping.identity()),
+                new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
                 Set.of(),
                 Set.of()));

@@ -17,10 +17,10 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
 import kmu.maplayers.ownermap.render.style.HolderCategories;
@@ -652,7 +652,7 @@ final class PaintedCellBuilderTests {
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         reading,
-                        HolderGrouping.identity()),
+                        new OwnerSourceFake()),
                     ContentInputsFixtures.createInputsRecedingBehind(
                         null, // No bloc spotlighted.
                         ElementStyleAdjustment.NONE),
@@ -728,7 +728,7 @@ final class PaintedCellBuilderTests {
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         buildReadingAdjusting(ElementStyleAdjustment.NONE),
-                        HolderGrouping.identity()),
+                        new OwnerSourceFake()),
                     ContentInputsFixtures.createInputsRecedingBehind(selectedBlocId, recede),
                     Set.of(),
                     Set.of()));
@@ -820,7 +820,7 @@ final class PaintedCellBuilderTests {
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         buildReadingAdjusting(ElementStyleAdjustment.NONE),
-                        HolderGrouping.identity()),
+                        new OwnerSourceFake()),
                     ContentInputsFixtures.createInputsRecedingBehind(
                         null, // No bloc spotlighted.
                         ElementStyleAdjustment.NONE),
@@ -849,7 +849,7 @@ final class PaintedCellBuilderTests {
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         reading,
-                        HolderGrouping.identity()),
+                        new OwnerSourceFake()),
                     ContentInputsFixtures.createInputsRecedingBehind(
                         isFiltering ? "selected-bloc" : null,
                         recede),

@@ -7,6 +7,7 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.picker.BlocMetrics;
 import kmu.maplayers.ownermap.picker.BlocPickerRead;
 import kmu.maplayers.ownermap.picker.BlocStandingReader;
@@ -25,8 +26,8 @@ import java.util.Map;
  * the picker a view offers. Held apart from the view seam so the seam reads as its contract; package
  * private because a view reaches it only through that default, which states what it guarantees.
  *
- * <p>In this package rather than beside the picker types, since it asks the view for its gate and its
- * names, and the picker package stays free of the view seam that builds on it.
+ * <p>In this package rather than beside the picker types, since it asks the view for its gate, and
+ * the picker package stays free of the view seam that builds on it.
  *
  * <p>Final class with a private constructor: pure-function utility, no instance state.
  */
@@ -41,9 +42,10 @@ final class BlocPickerAssembly {
      * contract.
      *
      * @param <S>             the calling view's own metrics type
-     * @param view            the view whose gate picks the rows and whose reading labels them
-     * @param sector          the sector a bloc's reading and its standing are read from
+     * @param view            the view whose gate picks the rows
+     * @param sector          the sector a bloc's standing is read from
      * @param grouping        the grouping the walk folded under
+     * @param reading         the view's reading over that grouping, which labels and badges the rows
      * @param statsRead       the walk's totals and the systems behind them, in walk order
      * @param vocabularyModes the calling layer's own sort modes
      * @return the rows the view offers paired with the vocabulary ranking them, beside the walk's
@@ -53,12 +55,13 @@ final class BlocPickerAssembly {
             OwnerPaintedView view,
             SectorAPI sector,
             HolderGrouping grouping,
+            OwnerReading reading,
             BlocStatsRead<S> statsRead,
             ListSortModes<RankedBloc<S>> vocabularyModes) {
 
         return new BlocPickerRead<>(
             new ListPicker<>(
-                buildSelectableBlocs(view, sector, grouping, statsRead.statsByBlocId()),
+                buildSelectableBlocs(view, grouping, reading, statsRead.statsByBlocId()),
                 composeOfferedSortModes(sector, grouping, vocabularyModes)),
             statsRead.presenceIndex());
     }
@@ -67,18 +70,17 @@ final class BlocPickerAssembly {
     // because the pairing is only ever half an answer - a list of rows with no vocabulary cannot be
     // ranked and no presence beside it cannot be lit - so the whole read is the only thing worth
     // offering a view.
+    //
+    // One reading for every row, the caller's over the walk's own grouping, so the rows name and
+    // badge each bloc exactly as the map built over that grouping does.
     private static <S extends BlocMetrics> List<RankedBloc<S>> buildSelectableBlocs(
             OwnerPaintedView view,
-            SectorAPI sector,
             HolderGrouping grouping,
+            OwnerReading reading,
             Map<String, S> statsByBlocId) {
 
         var isSelectable = view.resolveSelectableBlocGate(grouping);
         var selectableBlocs = new ArrayList<RankedBloc<S>>();
-
-        // One reading for every row, over the walk's own grouping, so the rows name and badge each
-        // bloc exactly as the map built over that grouping does.
-        var reading = view.resolveOwnerReading(sector, grouping);
 
         for (var entry : statsByBlocId.entrySet()) {
             var blocId = entry.getKey();

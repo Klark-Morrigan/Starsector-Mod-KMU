@@ -143,6 +143,7 @@ final class CellGeometryCacheTests {
                         buildAccessibleSystem("a", 0, 0),
                         buildInaccessibleSystem("hidden", 4000, 0)),
                     FORCED_ONTO_MAP),
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
                 NO_MOVING_SYSTEMS,
                 DEFAULT_SEED_INPUTS);
 
@@ -191,6 +192,7 @@ final class CellGeometryCacheTests {
                         buildAccessibleSystem("a", 0, 0),
                         buildAccessibleSystem("b", FAR, 0)),
                     NO_REVEAL),
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
                 NO_MOVING_SYSTEMS,
                 DEFAULT_SEED_INPUTS);
 
@@ -209,6 +211,7 @@ final class CellGeometryCacheTests {
                         buildAccessibleSystem("a", 0, 0),
                         buildAccessibleSystem("b", FAR, 0)),
                     NO_REVEAL),
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
                 NO_MOVING_SYSTEMS,
                 new CellSeedInputs(24, DEFAULT_CELL_RADIUS));
 
@@ -229,6 +232,7 @@ final class CellGeometryCacheTests {
                         buildAccessibleSystem("a", 0, 0),
                         buildAccessibleSystem("b", FAR, 0)),
                     NO_REVEAL),
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
                 NO_MOVING_SYSTEMS,
                 DEFAULT_SEED_INPUTS);
 
@@ -246,6 +250,7 @@ final class CellGeometryCacheTests {
                         buildAccessibleSystem("a", 0, 0),
                         buildAccessibleSystem("b", FAR, 0)),
                     NO_REVEAL),
+                CellSeedRule.SEED_DRAWN_SYSTEMS,
                 NO_MOVING_SYSTEMS,
                 new CellSeedInputs(
                     VoronoiCellBuilder.DEFAULT_CELL_BOUND_SEGMENTS,
@@ -508,6 +513,7 @@ final class CellGeometryCacheTests {
 
         cache.updateFromSector(
             MapVisibilityPass.over(buildStarAnchoredSectorOf(systems), NO_REVEAL),
+            CellSeedRule.SEED_DRAWN_SYSTEMS,
             NO_MOVING_SYSTEMS,
             DEFAULT_SEED_INPUTS);
     }
@@ -522,6 +528,7 @@ final class CellGeometryCacheTests {
 
         cache.updateFromSector(
             MapVisibilityPass.over(buildStarAnchoredSectorOf(systems), NO_REVEAL),
+            CellSeedRule.SEED_DRAWN_SYSTEMS,
             movingSystemKeys,
             DEFAULT_SEED_INPUTS);
     }

@@ -10,9 +10,9 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
 import kmu.maplayers.ownermap.render.style.HolderCategories;
@@ -579,7 +579,7 @@ final class ClusterGroupBuilderTests {
                 new ViewReading(
                     mock(OwnerPaintedView.class),
                     OwnerReadingFake.createAnsweringNothing(),
-                    HolderGrouping.identity()),
+                    new OwnerSourceFake()),
                 ContentInputsFixtures.createInertInputs(),
                 Set.of(),
                 Set.of()));

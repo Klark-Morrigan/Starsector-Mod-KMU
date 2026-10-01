@@ -7,13 +7,14 @@ import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.holding.ColonyReadRules;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderOwnerReading;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.holders.HolderPaintedView;
 import kmu.maplayers.ownermap.owners.holders.HolderProvider;
+import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveSource;
 import kmu.maplayers.ownermap.picker.BlocPickerRead;
 import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.render.style.HolderCategories;
@@ -27,6 +28,7 @@ import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
+import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStringKeys;
@@ -51,7 +53,7 @@ import java.util.Optional;
  * while claiming nothing is listed receded at a count of zero rather than dropped, so the list
  * accounts for every faction the player can see instead of appearing to have forgotten one.
  */
-public final class ClaimsView implements OwnerPaintedView {
+public final class ClaimsView implements HolderPaintedView {
 
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final ClaimsView INSTANCE = new ClaimsView();
@@ -124,6 +126,15 @@ public final class ClaimsView implements OwnerPaintedView {
         // Holder is the claim mechanic itself: every claimed system painted solid in its
         // claimant's colours, rather than the held-plus-claims default the faction view resolves.
         return ClaimsHolderProvider.INSTANCE;
+    }
+
+    @Override
+    public SystemHolderResolveSource resolveSystemHolderResolveSource() {
+        // TODO: re-derive a marked system by the claim mechanic. This is the market contest the
+        //  layer has always handed every view's incremental refresh, so a colony event in a claimed
+        //  system re-derives it to its dominant holder rather than its claimant until the next full
+        //  rebuild. Kept as it was here, the seam having only just become per view.
+        return DominanceSystemHolderResolve::openResolveOver;
     }
 
     @Override
@@ -206,6 +217,7 @@ public final class ClaimsView implements OwnerPaintedView {
         return buildBlocPickerRead(
             sector,
             grouping,
+            resolveOwnerReading(sector, grouping),
             ClaimStatsAggregator.aggregateClaimStats(
                 pass,
                 PassClaimReaders.openClaimReaderOver(pass, claimReaderSource)),

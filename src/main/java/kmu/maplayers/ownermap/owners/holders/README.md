@@ -1,17 +1,9 @@
-# Ownership resolution (`ownermap.owners.holders`)
+# Holder owners (`ownermap.owners.holders`)
 
-Who paints each star system,
-and how each owned system's fill is drawn.
-
-Every owner-painted view reads each system's owner through one seam here.
-So the render pipeline gets ownership from a single source,
-and never names the resolver behind it.
-That is what lets each view work out ownership its own way -
-from what a bloc holds,
-or from that plus systems it does not hold -
-with no branch in the code that shapes,
-borders,
-and labels the result.
+The owner source of a layer painting holders:
+blocs that hold a system through its colonies.
+It answers the tier's [owner seams](../README.md) off one colony pass,
+and leaves the layer to state only the rules that are its own.
 
 Part of [the owner-map tier](../../README.md),
 in Klark Morrigan's Utilities (KMU);
@@ -20,88 +12,81 @@ see the [mod README](../../../../../../../../README.md) for project context.
 ## Index
 
 - [At a glance](#at-a-glance)
-- [The seam](#the-seam)
+- [What a layer states](#what-a-layer-states)
+- [One pass per walk](#one-pass-per-walk)
 - [One system at a time](#one-system-at-a-time)
 - [The three fill states](#the-three-fill-states)
 - [What is not here](#what-is-not-here)
 
 ## At a glance
 
-Each view picks one source.
-The source returns one `HolderResolution`.
-The resolution says who owns each system,
-and which systems draw as a fill exception:
-
 ```mermaid
 flowchart LR
-    V([Selected view]) --> P[HolderProvider:<br/>the view's own source]
-    P --> R[HolderResolution]
-    R --> S[Solid]
-    R --> H[Hatched]
-    R --> U[Unfilled]
+    V([HolderPaintedView]) -->|grouping, sampled once| S[HolderOwnerSource]
+    V --> R[HolderOwnerReading]
+    W([SectorWalk]) --> S
+    S -->|opens| P[HolderPass]
+    P --> H[HolderProvider:<br/>the view's own rule]
+    H --> HR[HolderResolution]
+    HR --> Solid
+    HR --> Hatched
+    HR --> Unfilled
 ```
 
-## The seam
+## What a layer states
 
-"Seam" here means a single swap-in point.
-A layer can offer several *views* of one map,
-each working out ownership its own way,
-but the code that actually draws the map should not have to care which view is running.
-The seam is what keeps the two apart.
+A view painting holders implements `HolderPaintedView`
+and states six parts:
 
-Each view hands the drawing code one object:
-a `HolderProvider`.
-Think of it as the answer to a single question -
-*who owns each star system?* To let it answer,
-the drawing code passes two inputs:
+- the grouping that folds factions into blocs;
+- who stands together in a contest a band judges;
+- its whole-sector holding rule, a `HolderProvider`;
+- where its per-system rule is opened from, a `SystemHolderResolveSource`;
+- how a band is counted, a `SystemRibbonPlanner` over one bake's inputs;
+- how a bloc looks, an `OwnerReading` over a grouping.
 
-- the rebuild's own reading of the sector -
-  a `HolderPass`,
-  carrying which sector is being drawn,
-  the grouping
-  (whether factions stand alone or merge into blocs),
-  the colony rules saying what the player may be shown of a colony
-  and whether a decivilised world counts as somebody living in its system,
-  and the one walk of each system every reader shares,
-- which bloc,
-  if any,
-  the filter is currently highlighting.
+`resolveViewReading` assembles them.
+It samples the grouping once
+and builds the reading and a `HolderOwnerSource` over that one sampling,
+so the owners the source resolves and the names and shades the reading gives them describe one fold.
+A view stating the two answers by hand would have to keep that discipline itself.
 
-The pass is opened where the rebuild begins and handed down,
-so a provider that answers through two mechanics
-reads each system once between them rather than once apiece.
-It carries only what any owner-painted layer needs;
-the rule that picks a winner from what it read
-(weighing markets, say, or a relation between factions) is each provider's own,
-which is what lets this one seam be implemented by layers that have no market weighting behind them at all.
+Every part is declared rather than defaulted:
+each is one layer's rule,
+and a default would put one layer's mechanic in front of every layer painting holders.
 
-The provider hands back one bundle:
-a `HolderResolution`.
-It lists the owner of every owned system,
-and marks the few systems that are drawn as exceptions (the fill states below).
-A system's owner and its fill are worked out together,
-so they travel in the same bundle instead of being fetched twice.
+## One pass per walk
 
-Because the drawing code only ever sees this bundle,
-a new way to work out ownership is just a new provider.
-The drawing code does not change.
+`HolderOwnerSource` opens a `HolderPass` over the walk the tier hands it:
+the walk's own index,
+the walk's visibility rule,
+the layer's habitation knob,
+and the grouping it was built under.
+It asks every question about that walk off that one pass.
+
+- **The holding** is the layer's `HolderProvider`, handed the pass and the spotlit bloc.
+- **What stands where** is `OwnerMapInhabitation`, over the same pass.
+- **Where the spotlit bloc lives** is `SpotlitBlocs`,
+  asked only of the inhabited systems the holding left to nobody.
+- **The band count** is the layer's planner, built over the same pass.
+
+So the holder scan, the habitation scan and the band count read each system once between them,
+and cannot disagree about a colony the habitation rule admits.
+The pass is remembered per walk by identity,
+which is what lets a bake in the same frame as the build count off the build's pass.
 
 ## One system at a time
 
-A provider answers for the whole sector,
-which is what a full rebuild wants and what an incremental refresh cannot afford:
-a refresh re-derives only the systems an event marked,
-and asking the whole sector once per marked system would cost more than the rebuild it replaces.
-So a layer supplies a second answer beside its providers -
-a `SystemHolderResolveSource`,
-which opens a `SystemHolderResolve` over one sector and grouping for the batch.
-The resolve answers one system at a time,
-and hands back the `HolderPass` it read them through,
-so every system in the batch is asked of one reading of the sector.
+A batch's walk is a later reading of the sector,
+so the source opens a fresh pass for it
+and opens the layer's `SystemHolderResolve` over that pass.
+The resolve answers who holds a marked system.
+Whether anybody lives there and whether the spotlit bloc does are answered off the same pass,
+by the same projections the whole-sector scans used,
+so a re-derived system cannot leave the map the rebuild put it on.
 
-Both answers are the layer's.
-This tier holds the questions,
-and never which rule a layer answers them by.
+The holding rule is the layer's to keep in step with its whole-sector rule:
+a resolve that lands a different bloc parts the refreshed cell from the rebuild around it.
 
 ## The three fill states
 
@@ -125,24 +110,22 @@ one default and two exceptions:
 - **Unfilled** (`unfilledSystemKeys`) -
   held for border and label,
   but painting nothing inside the border.
-  A view whose holder source extends a bloc's holdings with systems it does not hold draws those systems this way.
+  A rule that extends a bloc's holdings with systems it does not hold draws those systems this way.
 
 When both exception sets are empty,
 the whole cluster is solid.
 The render split reads that as a fast path,
-so a view that never contests or unfills pays nothing for the split.
+so a rule that never contests or unfills pays nothing for the split.
 
 ## What is not here
 
-- The *sources* -
-  the providers a layer's views pick,
+- The *rules* -
+  the providers and resolves a layer's views state,
   and the mechanics behind them -
   are that layer's own.
-  This package names the question and never an answer to it.
+  This package holds the assembly and never an answer.
+- The *seams* the tier asks through are [`owners`](../README.md)'.
 - The *render split* that turns the three states into triangles,
   hatch,
   and skipped fills is [`render.clusters`](../../render/clusters/README.md).
-  This package decides the states;
-  it does not draw them.
-- The *grouping* that folds a faction into its bloc is `ownermap.holding.HolderGrouping`,
-  supplied by the view.
+- The *colony pass* and the *grouping* are `ownermap.holding`'s.
