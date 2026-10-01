@@ -28,6 +28,7 @@ How bundles are built and checked is in the root README's
   - [Settings](#settings)
   - [Settings tabs](#settings-tabs)
 - [Adding a string](#adding-a-string)
+- [Translating the changelog](#translating-the-changelog)
 
 ## What this folder holds
 
@@ -36,6 +37,7 @@ How bundles are built and checked is in the root README's
 | [strings.json](strings.json) | Every string KMU draws in game: the sidebar, hover boxes, dialogs and notices. |
 | [LunaSettings.csv](LunaSettings.csv) | The LunaLib settings screen: tab names, captions, setting names and descriptions. |
 | [mod_info.json](mod_info.json) | The launcher's mod list entry: `name` and `description` only, merged over the base. |
+| [CHANGELOG.md](CHANGELOG.md) | A full translation of the root [CHANGELOG.md](../../CHANGELOG.md): every version, every section. The Chinese zip ships it, and each release's notes show its section for the version. |
 
 Players of this bundle are expected to have the
 [Chinese core localisation](https://github.com/TruthOriginem/Starsector-Localization-CN)
@@ -354,3 +356,15 @@ The ` - ` in a tab name is an ASCII hyphen with a space either side, as in Engli
    `LocaleParityIntegrationTests` holds this bundle to the English one,
    but `test` does not yet take a non-default bundle as an input,
    so a change made here alone leaves it up to date.
+
+## Translating the changelog
+
+Every entry added to the root [CHANGELOG.md](../../CHANGELOG.md) is added to [this bundle's](CHANGELOG.md) in the same pull request:
+`LocaleParityIntegrationTests` holds the translation to the root one point for point,
+so a pull request adding a point the translation lacks fails.
+How to translate it -
+version headings as written, the same sections and points, one line each -
+and the words its headings take are
+[KMLib's](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#translating-the-changelog),
+which every KM mod's translated changelog follows.
+KMU's own entries use the terms above, the settings named as the Chinese settings screen names them.

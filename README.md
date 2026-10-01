@@ -44,7 +44,8 @@ Each release carries one zip per language, named for it:
 Install one.
 Each is the whole mod;
 they differ only in the text of the settings screen, the Map Layers sidebar, the hover boxes and the notices,
-and in the launcher's mod list entry.
+in the launcher's mod list entry,
+and in the language of the `CHANGELOG.md` inside.
 Settings carry over between them.
 
 ### English
@@ -78,6 +79,10 @@ so install the one made for the game version you run.
 
 The English zip runs on a Chinese install too,
 and draws the Chinese faction, system and colony names on the map in a font that holds them.
+
+What changed in each version is in Chinese too:
+in the Chinese zip's `CHANGELOG.md`,
+and on each release page, collapsed under 简体中文 below the English notes.
 
 ## Features
 
@@ -271,7 +276,8 @@ packages one zip per locale, `KMU-<version>-<locale>.zip`,
 pushes the tag,
 and publishes a GitHub release
 whose body is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version,
-followed by a line naming each locale's zip -
+followed by a list naming each locale's zip
+and each translated locale's section for the version, collapsed -
 so a release with no changelog section fails rather than shipping empty notes.
 
 Two committed files feed the update-check side of that release.
@@ -313,6 +319,12 @@ is KMLib's `writeLocaleFiles`, described in
 [KMLib's Build & Test section](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#build--test).
 
 `LocaleParityIntegrationTests` holds every locale to the default under `test`.
+
+A translated locale also keeps a full translation of [CHANGELOG.md](CHANGELOG.md) in its bundle directory,
+which its zip ships in place of the root one and its release notes show:
+[localisation/zh-hans/CHANGELOG.md](localisation/zh-hans/CHANGELOG.md).
+The parity suite holds it to the root changelog point for point,
+so an entry added to one is added to every translation in the same pull request.
 
 A translated locale keeps a terminology reference in its own bundle directory:
 the words the game's core localisation already uses for vanilla concepts,
