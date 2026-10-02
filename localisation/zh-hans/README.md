@@ -292,6 +292,7 @@ So a word of one axis never stands in for another:
 | --- | --- | --- |
 | Factions (view) | 势力 | vanilla's 势力 |
 | Alliances (view) | 联盟 | Nexerelin's alliances; vanilla also uses 联盟 for the Persean League |
+| Nexerelin (as a search word) | 势力争霸 | the name its Chinese build carries on Fossic; text keeps Nexerelin in Latin, per the rules, so the name stands only where a player searches, as a thread tag |
 | Claims (view) | 宣称 | vanilla's word for a claim, as in 无宣称领土; the view shows vanilla's claims |
 | claim | 宣称 | vanilla's word, as in 无宣称领土 |
 | system claim (the mechanic, a claim on a whole system) | 星系宣称 | from vanilla's 星系 and 宣称; how the Claims view and the forum intro name the mechanic |

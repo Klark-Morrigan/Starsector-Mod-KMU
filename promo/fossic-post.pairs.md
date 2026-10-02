@@ -83,10 +83,11 @@ The [source notes][source-notes] list KMU's value for every input; what each inp
 - EN (back-translation): KMU `<version>` Simplified Chinese edition
   - ZH: KMU `<<version>>` 简体中文版
   - Notes: the 显示名称 of the zip's Mod发布文件 row.
-- EN (back-translation): sector map, map, Political Map, interface, KMU
-  - ZH: 星图, 地图, 政治地图, 界面, KMU
-  - Notes: the 主题标签 input.
-    Interface in [features and screens][kmu-features].
+- EN (back-translation): mod release, sector map, Political Map, Nexerelin, KMU
+  - ZH: mod发布, 星图, 政治地图, 势力争霸, KMU
+  - Notes: the 主题标签 input, five at most: the words a player would search for.
+    Mod release in [KMLib's forum terms][kmlib-forum]; Map in [screens and the map][kmu-screens];
+    Political Map in [features and screens][kmu-features]; Nexerelin in [the political map][kmu-politics].
 
 ## Header
 
