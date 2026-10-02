@@ -11,7 +11,6 @@ import kmlib.starsector.ui.font.SettledFaceMemo;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.installed.InstalledFaces;
 
-import kmu.KmuMod;
 import kmu.maplayers.base.machinery.InstalledMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -82,17 +81,17 @@ public final class SettledFaces implements InstalledMachinery {
             : InstalledFaces.createFaceMemo(probe -> readTexts(sector, probe)));
     }
 
-    // One kind of text off the sector and the running build's strings.
+    // One kind of text off the sector and the strings the game merged, so a translation mod replacing KMU's
+    // strings is what the faces are settled against.
     static List<String> readTexts(SectorAPI sector, ProbedText probe) {
         return switch (probe) {
             case FACTION_NAMES -> FactionNames.listEveryName(sector);
             case PLACE_NAMES -> readPlaceNames(sector);
-            case MOD_STRINGS -> StarsectorStrings.listCategoryStrings(KmuMod.MOD_ID, KmuStringKeys.CATEGORY);
+            case MOD_STRINGS -> StarsectorStrings.listCategoryStrings(KmuStringKeys.CATEGORY);
         };
     }
 
-    // Star systems and colonies both: the box titles a system and lists its colonies, and the sidebar rows
-    // name either.
+    // Star systems and colonies both, a place being named by either.
     private static List<String> readPlaceNames(SectorAPI sector) {
 
         var names = new ArrayList<>(SectorStarSystems.listSystemNames(sector));

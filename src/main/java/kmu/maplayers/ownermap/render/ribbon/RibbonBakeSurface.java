@@ -1,12 +1,11 @@
 package kmu.maplayers.ownermap.render.ribbon;
 
 import kmlib.starsector.systems.SystemKey;
-import kmlib.starsector.ui.font.FontAtlas;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.LabelLineBoxes;
-import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.settings.KmuOwnerMapRibbonSettings;
@@ -53,18 +52,17 @@ public record RibbonBakeSurface(
     /**
      * Reads the map one bake lays its bands on, off the cells it has already shaped and named.
      *
-     * @param clusters    the built cells, read for which systems are settled and for the store
-     *                       their traced rings are kept in
-     * @param geometryCache  the cells' geometry, read for the site each system draws at
-     * @param clusterAnchors the cluster names' placements, whose boxes the bands keep out of
-     * @param labelFace      the face the names were settled on, which their drawn lines are measured in
+     * @param clusters        the built cells, read for which systems are settled and for the store
+     *                        their traced rings are kept in
+     * @param geometryCache   the cells' geometry, read for the site each system draws at
+     * @param standingAnchors the cluster names' placements, whose boxes the bands keep out of, with the
+     *                        face they were fitted in, which their drawn lines are measured in
      * @return the map this bake is laid against
      */
     public static RibbonBakeSurface createForPass(
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache,
-            List<ClusterAnchor> clusterAnchors,
-            FontAtlas labelFace) {
+            StandingClusterAnchors standingAnchors) {
 
         return new RibbonBakeSurface(
             // The pass's inhabitation scan rather than its holding, so a settled system this layer's
@@ -80,9 +78,8 @@ public record RibbonBakeSurface(
             // the boxes a band keeps clear of are the boxes those very names were fitted into, so
             // a second reading could carve the bands around names the map is not drawing.
             resolveNameBoxes(
-                clusterAnchors,
-                clusters.getBuildInputs().contentInputs().nameFormat(),
-                labelFace),
+                standingAnchors,
+                clusters.getBuildInputs().contentInputs().nameFormat()),
             clusters.getPaintedCells().getRingPathCache());
     }
 
@@ -99,9 +96,8 @@ public record RibbonBakeSurface(
     // sees a name occupying. Both come back as world boxes, so the choice reaches no further than
     // this call.
     private static List<List<double[]>> resolveNameBoxes(
-            List<ClusterAnchor> clusterAnchors,
-            FactionNameFormatChoice nameFormat,
-            FontAtlas labelFace) {
+            StandingClusterAnchors standingAnchors,
+            FactionNameFormatChoice nameFormat) {
 
         var isBandKeptClearOfNames = nameFormat.areNamesDrawn()
             && KmuOwnerMapRibbonSettings.shouldKeepOwnerMapRibbonsClearOfNames();
@@ -110,8 +106,8 @@ public record RibbonBakeSurface(
             return List.of();
         }
         return switch (KmuOwnerMapRibbonSettings.getOwnerMapRibbonNameClearance()) {
-            case FITTED_BOX -> ClusterNameBoxes.listNameBoxes(clusterAnchors);
-            case WORDS -> LabelLineBoxes.listLineBoxes(clusterAnchors, labelFace);
+            case FITTED_BOX -> ClusterNameBoxes.listNameBoxes(standingAnchors.getAnchors());
+            case WORDS -> LabelLineBoxes.listLineBoxes(standingAnchors);
         };
     }
 }

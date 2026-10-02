@@ -144,9 +144,9 @@ final class StandingClusterAnchorsTests {
             0);
     }
 
-    // A fingerprint separated from its neighbours by the geometry revision alone: the tuning is
-    // never read here, and a null one keeps the fixture from restating the whole search surface.
+    // A fingerprint separated from its neighbours by the geometry revision alone: neither the tuning
+    // nor the face is read here, and nulls keep the fixture from restating the whole search surface.
     private static AnchorFitFingerprint fitAtRevision(int geometryRevision) {
-        return new AnchorFitFingerprint(null, geometryRevision);
+        return new AnchorFitFingerprint(null, geometryRevision, null);
     }
 }

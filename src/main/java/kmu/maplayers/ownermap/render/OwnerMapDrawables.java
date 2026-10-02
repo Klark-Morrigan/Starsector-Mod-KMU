@@ -59,13 +59,15 @@ final class OwnerMapDrawables {
     // "show faction names" toggle is on.
     private final List<Label> factionLabels = new ArrayList<>();
 
-    // The face the sector settled its labels on, asked on each rebuild rather than handed in, since it is
-    // the sector's for as long as these drawables are.
+    // The face the sector settled its labels on, asked when a rebuild fits names rather than when these
+    // drawables are made: settling reads every faction name, which a holder made before the first
+    // rebuild has no call to pay for. The fit records the face beside its placements, so everything
+    // drawn after it reads the face from there.
     private final Supplier<FontAtlas> labelFaceSource;
 
     /**
      * @param labelFaceSource answers the face the sector settled its labels on, which every name is
-     *                        fitted, minted and kept clear of in
+     *                        fitted in
      */
     OwnerMapDrawables(Supplier<FontAtlas> labelFaceSource) {
         this.labelFaceSource = labelFaceSource;
@@ -123,10 +125,10 @@ final class OwnerMapDrawables {
      * The standing map as one value, for the incremental refresh that patches it in place.
      *
      * @param cellGeometry the cells the standing draw lists were shaped from
-     * @return the halves the refresh reads and writes, and the face it re-fits names in
+     * @return the parts the refresh reads and writes
      */
     public StandingOwnerMap toStandingMap(RevisedCellGeometry cellGeometry) {
-        return new StandingOwnerMap(clusters, standingAnchors, factionLabels, cellGeometry, labelFaceSource.get());
+        return new StandingOwnerMap(clusters, standingAnchors, factionLabels, cellGeometry);
     }
 
     /**
@@ -235,8 +237,6 @@ final class OwnerMapDrawables {
             ContentInputs contentInputs,
             ResolvedOwners owners) {
 
-        var labelFace = labelFaceSource.get();
-
         clusters = OwnerMapBuilder.buildClusters(
             cellGeometry.cells(),
             viewReading,
@@ -251,7 +251,7 @@ final class OwnerMapDrawables {
         ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
             cellGeometry,
-            ClusterLabelStylingSnapshot.resolveFrom(clusters, labelFace));
+            ClusterLabelStylingSnapshot.resolveFrom(clusters, labelFaceSource.get()));
 
         // The bands come last, after the names have places, because they are laid around
         // them: a band is cut by the room the names take, so baking one before the fit
@@ -267,8 +267,7 @@ final class OwnerMapDrawables {
                 clusters,
                 cellGeometry.cells(),
                 walk,
-                standingAnchors.getAnchors(),
-                labelFace)
+                standingAnchors)
             .bakeAllCellRibbons();
     }
 
@@ -280,6 +279,6 @@ final class OwnerMapDrawables {
      *                      preference, so what is minted matches what was fitted
      */
     public void rebuildLabels(boolean areNamesDrawn) {
-        LabelsBuilder.rebuildLabels(factionLabels, standingAnchors.getAnchors(), areNamesDrawn, labelFaceSource.get());
+        LabelsBuilder.rebuildLabels(factionLabels, standingAnchors, areNamesDrawn);
     }
 }

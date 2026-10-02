@@ -3,10 +3,10 @@ package kmu.maplayers.base.labels;
 import kmlib.math.geometry.Segment;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
-import kmlib.starsector.ui.font.FontAtlas;
 import kmlib.starsector.ui.font.installed.LazyFontCache;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
 
@@ -31,9 +31,10 @@ import java.util.List;
  * time, which is what keeps "by construction" honest - a spacing change between the fit and
  * the draw cannot leave the block spilling out of the box it was fitted into. This class adds
  * only the geometry of the stack - each line's own hang point along the block's perpendicular
- * - and the GL strings; it never touches the sector. The label font is the face the
- * rebuild settled through {@link LabelFonts}, loaded and cached by KMLib - the same face whose metrics
- * sized the boxes - and a face that failed to load leaves the labels empty.
+ * - and the GL strings; it never touches the sector. The label font is the face the placements
+ * record they were fitted in, settled through {@link LabelFonts} and loaded and cached by KMLib - so the
+ * face whose metrics sized the boxes is the face the strings are minted in by construction - and a face
+ * that failed to load leaves the labels empty.
  *
  * <p>The {@link DrawableString}s own GL buffers, so a rebuild disposes the previous list's
  * strings before minting the new ones; nothing here runs per frame.
@@ -53,28 +54,31 @@ public final class LabelsBuilder {
     private LabelsBuilder() {
     }
 
-    // Rebuilds the label list in place from the current placements: disposes the standing
+    // Rebuilds the label list in place from the standing placements: disposes the standing
     // strings (they hold GL buffers), clears, and - only when names are drawn at all - mints
-    // one string per planned line. Whether they are is the caller's answer, not a setting read
-    // here: the placements can be built for the debug overlay alone, and only the layer that
-    // asked for them knows whether its names are showing. Profiled and timed on its own so the
-    // label build's cost is visible next to the drawables and anchor builds; a failed font
-    // load leaves the list empty. Runs at rebuild time only, never per frame.
+    // one string per planned line, in the face the placements were fitted in. Whether names are
+    // drawn is the caller's answer, not a setting read here: the placements can be built for the
+    // debug overlay alone, and only the layer that asked for them knows whether its names are
+    // showing. Profiled and timed on its own so the label build's cost is visible next to the
+    // drawables and anchor builds; nothing fitted or a failed font load leaves the list empty.
+    // Runs at rebuild time only, never per frame.
     public static void rebuildLabels(
             List<Label> labels,
-            List<ClusterAnchor> anchors,
-            boolean areNamesDrawn,
-            FontAtlas labelFace) {
+            StandingClusterAnchors standingAnchors,
+            boolean areNamesDrawn) {
 
         disposeAll(labels);
         labels.clear();
-        if (!areNamesDrawn) {
+
+        var fitFingerprint = standingAnchors.getFitFingerprint();
+        if (!areNamesDrawn || fitFingerprint == null) {
             return;
         }
-        var resolvedFont = LazyFontCache.loadByFace(labelFace);
+        var resolvedFont = LazyFontCache.loadByFace(fitFingerprint.labelFace());
         if (resolvedFont == null) {
             return;
         }
+        var anchors = standingAnchors.getAnchors();
         try (var buildScope = ActiveProfiler.resolveProfiler().open(BUILD_SECTION)) {
             // The plan step (each line's text, colour, hang point, slant, and font size)
             // is pure computation; only the mint below touches GL, so the stacking

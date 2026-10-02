@@ -60,8 +60,8 @@ import java.util.Set;
  */
 public final class SidebarStyles {
 
-    // The body face: the insignia body font, the narrower face the body-control labels read in. The tab
-    // face is separate below, since the tabs are both measured and drawn in theirs.
+    // The body face asked for: the insignia body font, the narrower face the body-control labels read in.
+    // The tab face is separate below, since the tabs are both measured and drawn in theirs.
     private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
 
     // The strip's tab box, taken from the sector map's own Sector/System row (com.fs.starfarer.coreui.A.G):
@@ -90,7 +90,6 @@ public final class SidebarStyles {
     // What each face has to draw, which is what it is settled against: the body lists factions, systems and
     // colonies among KMU's own words, and a tab carries a layer's name, which is KMU's own.
     private static final Set<ProbedText> BODY_TEXTS = ProbedText.EVERY_KIND;
-
     private static final Set<ProbedText> TAB_TEXTS = Set.of(ProbedText.MOD_STRINGS);
 
     // Composes only; never instantiated.
@@ -109,7 +108,7 @@ public final class SidebarStyles {
      *
      * @return the atlas the body-control labels draw in
      */
-    public static FontAtlas resolveBodyFont() {
+    public static FontAtlas settleBodyFace() {
         return SettledFaces.resolveFacesForLiveSector().settleFace(BODY_FONT, BODY_TEXTS);
     }
 
@@ -279,10 +278,9 @@ public final class SidebarStyles {
     }
 
     // The accent steps the panel is ruled and framed in, under whichever palette the player pointed it
-    // at. One place
-    // the choice is turned into shades, so the widget style and the tab row cannot come to read it
-    // differently - but two call sites, since a tab style is also built for the layout pass, where no
-    // panel style exists to hand one down from. Both land in the same frame on a live read of one stored
+    // at. One place the choice is turned into shades, so the widget style and the tab row cannot come to
+    // read it differently - but two call sites, since a tab style is also built for the layout pass, where
+    // no panel style exists to hand one down from. Both land in the same frame on a live read of one stored
     // value, so the two agree; what the single seam buys is that they agree by construction rather than
     // by two spellings of the same switch.
     private static AccentColours resolveAccentColours() {
@@ -411,11 +409,11 @@ public final class SidebarStyles {
 
     // The sidebar's look built fresh from the live colours, framed by the given convention: a black body
     // backdrop, the colour scheme's accent steps for the controls, the wash the pointer lifts one of those
-    // controls by and the light a press adds over it, the insignia body face, the given tab
+    // controls by and the light a press adds over it, the body face the sector settled, the given tab
     // style, the collapse handle's chevron shades for the colour the player picked, and the vanilla
     // button sounds its controls answer by at the levels the player set them to. Everything but the
-    // framing is shared by every screen the
-    // sidebar draws on, so a screen choosing its frame chooses nothing else by accident.
+    // framing is shared by every screen the sidebar draws on, so a screen choosing its frame chooses
+    // nothing else by accident.
     //
     // The set is resolved here and spent on both the controls and the frame, so the one scheme reaches
     // every part of the panel. A frame colour taken as an argument beside the set would let the two
@@ -445,7 +443,7 @@ public final class SidebarStyles {
             // channel of its own rather than more wash, since the cell a press lands on is already
             // fully washed by the pointer that pressed it.
             ControlPressLight.createAccentPressLight(accentColours),
-            resolveBodyFont(),
+            settleBodyFace(),
             tabStyle,
             SidebarPalettes.resolveNotchColours(
                 KmuMapSidebarSettings.getMapSidebarChevronColour(),

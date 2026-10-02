@@ -5,11 +5,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
-import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.profiling.RecordedCapture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
@@ -359,8 +359,7 @@ final class CellRibbonsBakerTests {
                 MapVisibilityRules.BASE),
             // No names placed, since where a name falls is pinned by the builder that lays a band
             // inside one cell rather than by which cells a pass reaches.
-            List.of(),
-            StarsectorFont.VANILLA_INSIGNIA_42);
+            new StandingClusterAnchors());
     }
 
     // Each cell drawing as the system of its own name, each system placed at the same site: the

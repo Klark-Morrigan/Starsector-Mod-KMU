@@ -38,7 +38,7 @@ the dark,
 base,
 and bright accents of the player's colour scheme,
 the wash the pointer lifts a body control by and the light a press lifts it further by,
-the insignia body face,
+the body face,
 and the host's own tab style.
 Nothing of it is held between frames -
 every shade reads the running game's colours and the player's live settings -
@@ -461,11 +461,15 @@ Every face is named through KMLib's `StarsectorFont` enum rather than by atlas b
 
 ## Faces, rings and hotkeys
 
-The strip is lettered in `VANILLA_ORBITRON_12_CONDENSED`,
+The strip asks for `VANILLA_ORBITRON_12_CONDENSED`,
 the face the vanilla tabs it sits beneath are set in;
-the buttons in `VANILLA_VICTOR_10`,
-the pixel face the intel screen's map toggles are set in.
-Both are drawn at their installed atlas's own size,
+the buttons for `VANILLA_VICTOR_10`,
+the pixel face the intel screen's map toggles are set in;
+the body for `VANILLA_INSIGNIA_15`.
+Each is the face asked for,
+and what the sector settles it on where the install's atlas cannot draw the text is
+[the faces package's](../../faces/README.md) to answer.
+Both tab faces are drawn at their installed atlas's own size,
 read off the loaded face each time a style is composed.
 A pixel face is crisp at one size only,
 so the button row takes the line height its atlas states -
@@ -481,15 +485,18 @@ every glyph sits on the same 5x5 cell with lowercase included and no descenders,
 so a mixed-case label needs no upper-casing pass
 and the width it is snapped to is the width it draws at.
 
-The ring comes with the face.
-`victor10`'s atlas is hard pixels -
+The ring comes with what the text is drawn over.
+Both tab atlases are hard pixels -
 every one of them fully on or fully off,
 with no anti-aliased edge -
-so over a live visor its strokes have nothing but the map to read against.
-The buttons take `TextHalo.createBlackHairline()`,
-a black copy laid a pixel out on each of the four sides at half strength,
-and the strip takes `TextHalo.NONE`,
-a smooth face at size having weight enough and reading muddier for a ring around it.
+so the face is not what parts the two rows.
+The buttons stand over a live visor,
+where their strokes have nothing but the map to read against,
+and take `TextHalo.createBlackHairline()`,
+a black copy laid a pixel out on each of the four sides at half strength.
+The strip takes `TextHalo.NONE`:
+its tabs are opaque surfaces of their own,
+so its labels already sit on a fill of known shade.
 A ring rather than a drop shadow:
 an offset copy falls to one side,
 announcing a light source the flat chrome has none of,

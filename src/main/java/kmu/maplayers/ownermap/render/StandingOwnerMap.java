@@ -1,7 +1,5 @@
 package kmu.maplayers.ownermap.render;
 
-import kmlib.starsector.ui.font.FontAtlas;
-
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
@@ -24,7 +22,7 @@ import java.util.List;
  * only caller in a position to know: it holds the board the batch came off. A frame that drained
  * nothing - nearly every frame - returns without building one.
  *
- * @param clusters     the built map state - the draw lists, the occupancy, and the styling a
+ * @param clusters        the built map state - the draw lists, the occupancy, and the styling a
  *                        redrawn cell is resolved against
  * @param standingAnchors the cluster-name placements, paired with what they were fitted under so a
  *                        re-fit can carry over the clusters a batch did not move
@@ -36,6 +34,5 @@ public record StandingOwnerMap(
     OwnerMapClusters clusters,
     StandingClusterAnchors standingAnchors,
     List<Label> factionLabels,
-    RevisedCellGeometry cellGeometry,
-    FontAtlas labelFace) {
+    RevisedCellGeometry cellGeometry) {
 }

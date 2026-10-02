@@ -504,22 +504,19 @@ final class IncrementalOwnerRefreshIntegrationTests {
                     territories,
                     cellsMock,
                     walk,
-                    standingAnchors.getAnchors(),
-                    StarsectorFont.VANILLA_INSIGNIA_42)
+                    standingAnchors)
                 .bakeAllCellRibbons();
 
             LabelsBuilder.rebuildLabels(
                 factionLabels,
-                standingAnchors.getAnchors(),
-                contentInputs.nameFormat().areNamesDrawn(),
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                standingAnchors,
+                contentInputs.nameFormat().areNamesDrawn());
 
             return new StandingOwnerMap(
                 territories,
                 standingAnchors,
                 factionLabels,
-                cellGeometry,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                cellGeometry);
         }
 
         // Re-stubs one system's economy listing, which is how a case moves a colony: everything

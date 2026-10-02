@@ -8,23 +8,20 @@ import java.util.Set;
  *
  * <p>A face is settled against the kinds its text is made of, not against the text of one frame, so a
  * name that arrives later - a colony founded mid-session - is drawn in the face its kind already settled
- * on. Kinds rather than one pool, because the faces differ in what they draw: a map label names factions
- * and nothing else, and holding it to every string KMU ships would move it for text it never shows.
+ * on. Kinds rather than one pool, because texts differ in what they draw: a text naming factions and
+ * nothing else, held to every string KMU ships, would move for text it never shows.
  */
 public enum ProbedText {
 
-    /** Every faction's short and long display name, both forms being what a label or a row may name it by. */
+    /** Every faction's short and long display name, a faction being named by either form. */
     FACTION_NAMES,
 
-    /** Every star system's and colony's name, which the hover box and the sidebar rows name places by. */
+    /** Every star system's and colony's name, a place being named by either. */
     PLACE_NAMES,
 
-    /** Every string KMU ships in the running build's locale. */
+    /** Every string KMU ships, as the game merged them for the running build. */
     MOD_STRINGS;
 
-    /**
-     * Every kind at once, for a text that lists anything KMU names - the hover box's body and the
-     * sidebar's body both name factions and places among KMU's own words.
-     */
+    /** Every kind at once, for a text naming factions and places among KMU's own words. */
     public static final Set<ProbedText> EVERY_KIND = Set.of(values());
 }

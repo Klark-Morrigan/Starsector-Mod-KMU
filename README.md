@@ -78,7 +78,9 @@ and replaces files under `starsector-core`, the game's own jars among them,
 so install the one made for the game version you run.
 
 The English zip runs on a Chinese install too,
-and draws the Chinese faction, system and colony names on the map in a font that holds them.
+and draws the Chinese faction names on the map,
+and the faction, system and colony names in the hover boxes and the sidebar,
+in a font that holds them.
 
 What changed in each version is in Chinese too:
 in the Chinese zip's `CHANGELOG.md`,

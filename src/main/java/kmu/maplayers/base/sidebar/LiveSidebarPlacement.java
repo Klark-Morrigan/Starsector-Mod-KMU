@@ -318,6 +318,6 @@ public final class LiveSidebarPlacement {
     private static StripTextMeasurers loadFaceMeasurers(TabStyle tabStyle) {
         return StripTextMeasurers.loadFaceMeasurers(
             tabStyle.face(),
-            SidebarStyles.resolveBodyFont());
+            SidebarStyles.settleBodyFace());
     }
 }

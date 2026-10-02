@@ -1,6 +1,7 @@
 package kmu.maplayers.base.sidebar.style;
 
 import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.sound.PointerArrivalTarget;
 import kmlib.starsector.ui.sound.PointerArrivalVolumes;
@@ -13,7 +14,6 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.testfixtures.starsector.ui.font.FaceLineHeightReaderFake;
 
 import kmu.maplayers.base.faces.ProbedText;
-import kmu.maplayers.base.faces.SettledFaces;
 import kmu.settings.SidebarColourSchemeChoice;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
@@ -22,15 +22,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link SidebarStyles}: which live values each part of the sidebar's look is composed from. The
@@ -63,6 +59,9 @@ final class SidebarStylesTests {
     private static final double INSTALLED_CONDENSED_LINE_HEIGHT = 16d;
     private static final double INSTALLED_PIXEL_LINE_HEIGHT = 10d;
 
+    // What a tab has to draw: a layer's name, which is KMU's own.
+    private static final Set<ProbedText> TAB_TEXTS = Set.of(ProbedText.MOD_STRINGS);
+
     private SidebarLookScope lookScope;
     private SidebarSettingsMock sidebarSettingsMock;
 
@@ -81,40 +80,33 @@ final class SidebarStylesTests {
         lookScope.close();
     }
 
-    // The faces the running sector settled, standing in for the live read: each face asked against the
-    // kinds of text it has to hold answers a face of its own, so one asked against the wrong kinds shows.
-    private static MockedStatic<SettledFaces> settleLiveFaces(
-            StarsectorFont requestedFont,
-            Set<ProbedText> probes,
-            StarsectorFont settledFont) {
-
-        var settledFacesMock = mock(SettledFaces.class);
-
-        when(settledFacesMock.settleFace(requestedFont, probes))
-            .thenReturn(settledFont);
-
-        var facesMock = mockStatic(SettledFaces.class);
-
-        facesMock.when(SettledFaces::resolveFacesForLiveSector)
-            .thenReturn(settledFacesMock);
-
-        return facesMock;
-    }
-
     @Nested
-    class ResolveBodyFont {
+    class SettleBodyFace {
 
         @Test
         void answersTheBodyFaceTheRunningSectorSettledAgainstEveryKind() {
-            // The body lists factions and places among KMU's own words, so it is held to all three.
-            try (var facesMock = settleLiveFaces(
-                    StarsectorFont.VANILLA_INSIGNIA_15,
-                    ProbedText.EVERY_KIND,
-                    StarsectorFont.VANILLA_INSIGNIA_25)) {
+            // The body lists factions and places among KMU's own words, so it is held to all three; a face
+            // settled for any other set of kinds answers as the one asked for and fails the case.
+            lookScope.answerSettledFace(
+                StarsectorFont.VANILLA_INSIGNIA_15,
+                ProbedText.EVERY_KIND,
+                StarsectorFont.VANILLA_INSIGNIA_25);
 
-                assertThat(SidebarStyles.resolveBodyFont())
-                    .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_25);
-            }
+            assertThat(SidebarStyles.settleBodyFace())
+                .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_25);
+        }
+
+        @Test
+        void isTheFaceTheLookHandsThePaintPass() {
+            // A row measured in the face this answers has to be drawn in the same one.
+            lookScope.answerSettledFace(
+                StarsectorFont.VANILLA_INSIGNIA_15,
+                ProbedText.EVERY_KIND,
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            assertThat(SidebarStyles.buildAccentFramedStyle(SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT))
+                    .bodyFont())
+                .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_25);
         }
     }
 
@@ -342,16 +334,17 @@ final class SidebarStylesTests {
     class BuildStripTabStyle {
 
         @Test
-        void lettersTheTabsInTheFaceTheRunningSectorSettledAgainstKmusStrings() {
-            // A tab carries a layer's name, which is KMU's own, and nothing else.
-            try (var facesMock = settleLiveFaces(
-                    StarsectorFont.VANILLA_ORBITRON_12_CONDENSED,
-                    Set.of(ProbedText.MOD_STRINGS),
-                    StarsectorFont.VANILLA_INSIGNIA_21)) {
+        void lettersTheTabsInTheFaceTheRunningSectorSettledAgainstKmusStringsAtItsOwnSize() {
+            // A tab carries a layer's name, which is KMU's own, and nothing else. The size is the settled
+            // atlas's 21 rather than the 16 the face asked for states, since a pixel face is crisp at its
+            // own atlas's size alone.
+            lookScope.answerSettledFace(
+                StarsectorFont.VANILLA_ORBITRON_12_CONDENSED,
+                TAB_TEXTS,
+                StarsectorFont.VANILLA_INSIGNIA_21);
 
-                assertThat(SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).face().atlas())
-                    .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_21);
-            }
+            assertThat(SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT).face())
+                .isEqualTo(new TextFace(StarsectorFont.VANILLA_INSIGNIA_21, 21d));
         }
 
         @Test
@@ -495,6 +488,16 @@ final class SidebarStylesTests {
                 .isEqualTo(StarsectorFont.VANILLA_VICTOR_10);
             assertThat(face.size())
                 .isEqualTo(10d);
+        }
+
+        @Test
+        void lettersTheButtonsInTheFaceTheRunningSectorSettledAgainstKmusStringsAtItsOwnSize() {
+            // The buttons carry layer names too, so they are held to KMU's strings alone, and drawn at the
+            // settled atlas's size rather than the 10 the face asked for states.
+            lookScope.answerSettledFace(StarsectorFont.VANILLA_VICTOR_10, TAB_TEXTS, StarsectorFont.VANILLA_INSIGNIA_15);
+
+            assertThat(SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).face())
+                .isEqualTo(new TextFace(StarsectorFont.VANILLA_INSIGNIA_15, 15d));
         }
 
         @Test

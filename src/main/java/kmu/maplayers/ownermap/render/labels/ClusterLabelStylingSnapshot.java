@@ -18,8 +18,8 @@ import java.util.Map;
 /**
  * Everything one label rebuild resolves a cluster's colour and name from: who owns each system, the
  * shades a desaturated owner recolours to, the painting layer's categories and its reading of its
- * owners, and the picks the pass was baked under - the spotlight the rest of the sector recedes by,
- * and the format a name is spelled in.
+ * owners, the picks the pass was baked under - the spotlight the rest of the sector recedes by, and
+ * the format a name is spelled in - and the face every name is measured in.
  *
  * <p>Held as one value because the parts have to describe the same moment. A rebuild that named
  * owners under this pass's reading while receding them by the last pass's filter would produce
@@ -40,8 +40,8 @@ import java.util.Map;
  *                            category and recede
  * @param contentInputs       the picks the pass was baked under: the spotlight names and shades
  *                            recede by, and the name format they are spelled and fitted in
- * @param labelFace           the face the sector settled its labels on, which every name is
- *                            measured in to be fitted and drawn in once minted
+ * @param labelFace           the face the sector settled its labels on, which the fit measures every
+ *                            name in and records beside its placements for the mint to draw in
  */
 public record ClusterLabelStylingSnapshot(
     Map<SystemKey, SystemOwner> ownerBySystemKey,

@@ -194,8 +194,10 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         return drawables.getBorderStageOverlay();
     }
 
-    // Whether the debug border-tracing overlay is the built view this frame - the one branch the
-    // renderer needs to pick which base view to paint.
+    /**
+     * @return whether the debug border-tracing overlay is the built view this frame - the one branch the
+     *         renderer needs to pick which base view to paint
+     */
     public boolean isDebug() {
         return drawables.isDebug();
     }
@@ -469,9 +471,9 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             staleSystemKeys);
     }
 
-    // The face this sector's labels are fitted, minted and kept clear of in, off this cache's own
-    // machinery rather than the running sector's: the labels name this sector's factions. Settled
-    // once for the sector and asked again by the drawables per rebuild, which costs a lookup.
+    // The face this sector's labels are fitted in, off this cache's own machinery rather than the
+    // running sector's: the labels name this sector's factions. Settled once for the sector and asked
+    // again by each fit, which costs a lookup; the fit records it for the mint and the bake after it.
     private FontAtlas settleLabelFace() {
         return LabelFonts.settleMapLabelFace(SettledFaces.resolveFacesIn(machinery));
     }

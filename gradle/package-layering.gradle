@@ -11,6 +11,7 @@
 // Applied AFTER the shared conventions, since those are what register the task
 // this configures. Applied before them, the name resolves to nothing and the
 // build fails at configuration time.
+
 // Every package tree beside kmu.mods, closed below against the optional mods'
 // own types. Stated as an enumeration because the gate has no exemption clause:
 // a single 'under: kmu' edge would shut kmu.mods off from the very mods its
@@ -44,6 +45,11 @@ enforcePackageLayering {
     forbidImport under: 'kmu.maplayers.base',
                  of: ['kmu.maplayers.ownermap',
                       'kmu.maplayers.politicalmap']
+
+    forbidImport under: 'kmu.maplayers.base.faces',
+                 of: ['kmu.maplayers.base.labels',
+                      'kmu.maplayers.base.sidebar',
+                      'kmu.maplayers.base.tooltip']
 
     forbidImport under: 'kmu.maplayers.ownermap',
                  of: ['kmu.maplayers.politicalmap',

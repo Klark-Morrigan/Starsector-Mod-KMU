@@ -66,26 +66,33 @@ final class CellTooltipLookTests {
         CellTooltipPaletteFake.clearPalette();
     }
 
+    // Faces settled as the localised install settles them, each distinct from the face asked for.
+    private static SettledFaces createSettlingFacesMock() {
+
+        var settledFacesMock = mock(SettledFaces.class);
+
+        when(settledFacesMock.settleFace(
+                StarsectorFont.VANILLA_ORBITRON_20AA,
+                Set.of(ProbedText.PLACE_NAMES, ProbedText.MOD_STRINGS)))
+            .thenReturn(SETTLED_HEADER_FACE);
+        when(settledFacesMock.settleFace(StarsectorFont.VANILLA_INSIGNIA_15, ProbedText.EVERY_KIND))
+            .thenReturn(SETTLED_BODY_FACE);
+        when(settledFacesMock.settleFace(
+                StarsectorFont.VANILLA_ORBITRON_12_CONDENSED,
+                Set.of(ProbedText.MOD_STRINGS)))
+            .thenReturn(SETTLED_FOOTNOTE_FACE);
+
+        return settledFacesMock;
+    }
+
     @Nested
     final class BuildStyle {
 
         @Test
         void settlesEachFaceAgainstTheKindsItsLinesAreMadeOf() {
-
-            var settledFacesMock = mock(SettledFaces.class);
-
-            when(settledFacesMock.settleFace(
-                    StarsectorFont.VANILLA_ORBITRON_20AA,
-                    Set.of(ProbedText.PLACE_NAMES, ProbedText.MOD_STRINGS)))
-                .thenReturn(SETTLED_HEADER_FACE);
-            when(settledFacesMock.settleFace(StarsectorFont.VANILLA_INSIGNIA_15, ProbedText.EVERY_KIND))
-                .thenReturn(SETTLED_BODY_FACE);
-            when(settledFacesMock.settleFace(
-                    StarsectorFont.VANILLA_ORBITRON_12_CONDENSED,
-                    Set.of(ProbedText.MOD_STRINGS)))
-                .thenReturn(SETTLED_FOOTNOTE_FACE);
-
-            var typography = CellTooltipLook.buildStyle(settledFacesMock).typography();
+            // Each settled face answers only for the kinds its lines are made of, so one asked against other
+            // kinds answers as the face asked for and fails the case.
+            var typography = CellTooltipLook.buildStyle(createSettlingFacesMock()).typography();
 
             assertThat(typography.headerStyle().face().atlas())
                 .isEqualTo(SETTLED_HEADER_FACE);
@@ -93,6 +100,28 @@ final class CellTooltipLookTests {
                 .isEqualTo(SETTLED_BODY_FACE);
             assertThat(typography.footnoteStyle().face().atlas())
                 .isEqualTo(SETTLED_FOOTNOTE_FACE);
+        }
+
+        @Test
+        void drawsTheHeadingAndTheBodyAtTheSizeTheirSettledAtlasesState() {
+            // A bitmap face is crisp at its own atlas's size alone, so a face settled elsewhere is drawn at
+            // that atlas's size - 21 and 24 here - rather than at the 20 and 15 the faces asked for state.
+            var typography = CellTooltipLook.buildStyle(createSettlingFacesMock()).typography();
+
+            assertThat(typography.headerStyle().face().size())
+                .isEqualTo(21d);
+            assertThat(typography.paragraphStyle().face().size())
+                .isEqualTo(24d);
+        }
+
+        @Test
+        void drawsTheFootAtTheBodysSettledSize() {
+            // The foot's own atlas reads as fine print beside the body, so it takes the body's size - the
+            // settled body's 24, not the 15 the body face asked for states, nor the foot atlas's own 9.
+            var typography = CellTooltipLook.buildStyle(createSettlingFacesMock()).typography();
+
+            assertThat(typography.footnoteStyle().face().size())
+                .isEqualTo(24d);
         }
     }
 }
