@@ -471,10 +471,12 @@ the [source notes][source-notes] give why the Fossic post opens with it.
   - Notes: non-allied factions in [the political map][kmu-politics].
 - EN: They are also listed on Claims tooltips because vanilla uses them in claim calculations, but are redacted.
   - ZH: 由于原版在宣称计算中会用到它们，它们也会列在宣称提示框中，但会被隐去。
-- EN: Decivilised markets are not revealed until you survey the world yourself (fully, by default; the Show decivilised worlds surveyed at least to setting lowers that to a preliminary survey or a visit to the system), or until another faction's colony stands in the same system, which reveals them at every level.
-  - ZH: 荒蛮市场要等你亲自调查该世界后才会显示（默认需要全面调查；显示调查程度至少达到以下等级的荒蛮世界设置可将其放宽为初步调查或造访该星系）；同一星系中若有其他势力的殖民地，则在任何等级下都会显示。
-  - Notes: Fully surveyed and Preliminary survey in [surveys][kmu-surveys]; Colony in [colonies and markets][kmu-colonies].
-    The setting is named as the Chinese settings screen names it.
+- EN: Decivilised markets are not revealed unless they start so, or until the player performs a full survey on them (adjustable in settings).
+  - ZH: 荒蛮市场不会显示，除非它们一开始就是荒蛮的，或玩家已对其完成全面调查（可在设置中调整）。
+  - Notes: Fully surveyed in [surveys][kmu-surveys]; the grey aside marks a setting, as the other bullets do.
+- EN: These markets are also revealed if there are visible colonies held by other non-allied factions.
+  - ZH: 若其他非同盟势力在该星系持有可见的殖民地，这些市场也会显示。
+  - Notes: non-allied factions in [the political map][kmu-politics].
 - EN: Unowned markets with the Abandoned Station condition follow visibility rules of hidden markets.
   - ZH: 带有废弃空间站条件的无主市场遵循隐藏市场的可见性规则。
   - Notes: Unowned in [vanilla mechanics without a name][kmu-unnamed].
