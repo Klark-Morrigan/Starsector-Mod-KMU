@@ -41,19 +41,6 @@ class LakeBridgesIntegrationTests {
     private static final String SECTORS =
         "kmu.maplayers.base.geometry.ui.LakeBridgesIntegrationTests#provideSectorNames";
 
-    // How many slivers each bridge can close off below the map's resolution: one where each end
-    // meets the shore, as for a coast's reach.
-    private static final int SLIVERS_PER_BRIDGE = 2;
-
-    // How far two sums of the same void may differ by rounding alone, in units squared. The
-    // void is some ten billion units squared, added up piece by piece and in different pieces
-    // either side of the bridges; measured at two millionths on 366, where nothing was lost.
-    private static final double AREA_ROUNDING = 1e-3;
-
-    // How far, in percent, the open sea may move when the bridges go in. The lakes are inside
-    // the continents, so the sea is not touched at all, and this is only rounding.
-    private static final double AREA_SHARE = 1e-9;
-
     // How far a bridge end may stand from the frontage, in sagittas: one for the end sitting
     // on the true rim and the frontage on the polygon inside it, and one more for the two
     // walls of a contact crossing that polygon a little apart.
@@ -153,13 +140,13 @@ class LakeBridgesIntegrationTests {
             // laid onto: the void is the same number either side of them, bar the faces the walk
             // does not keep, which are those under a sagitta squared.
             var bridgeCount = LakePartitions.layContinents(sector).layLakeSpans().size();
-            var sagitta = KNOBS.measureBoundSagitta();
 
             assertThat(measureVoid(LakePartitions.readCoastPartition(sector))
                     - measureVoid(LakePartitions.readBridgedPartition(sector)))
                 .isBetween(
-                    -AREA_ROUNDING,
-                    SLIVERS_PER_BRIDGE * bridgeCount * sagitta * sagitta + AREA_ROUNDING);
+                    -LakePartitions.AREA_ROUNDING,
+                    LakePartitions.measureSliverAllowance(bridgeCount)
+                        + LakePartitions.AREA_ROUNDING);
         }
 
         @ParameterizedTest
@@ -169,7 +156,7 @@ class LakeBridgesIntegrationTests {
             assertThat(measureSea(LakePartitions.readBridgedPartition(sector)))
                 .isCloseTo(
                     measureSea(LakePartitions.readCoastPartition(sector)),
-                    withinPercentage(AREA_SHARE));
+                    withinPercentage(LakePartitions.SEA_SHARE));
         }
     }
 

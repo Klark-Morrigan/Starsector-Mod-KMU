@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.v3;
 
 import kmu.maplayers.base.geometry.NamedRegion;
+import kmu.maplayers.base.geometry.VoidKeys;
 import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 
 import java.util.ArrayList;
@@ -76,7 +77,12 @@ public final class VoidSections {
             named.add(new NamedSection(
                 section,
                 NamedRegion.nameRegion(
-                    VoidSectionIds.nameSection(section, sites, systemIdBySite),
+                    VoidKeys.buildKey(
+                        section.kind().keyPrefix(),
+                        section.cells(),
+                        section.outline(),
+                        sites,
+                        systemIdBySite),
                     section.outline())));
         }
         return List.copyOf(named);

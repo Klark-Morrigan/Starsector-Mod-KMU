@@ -389,8 +389,9 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     }
 
     // v4's own refresh. The two constructions share the fixture, the cell knobs, one traced
-    // coast and one bridge search, and nothing else - and both cross as plain gaps, handed over
-    // here rather than reached for, so v4 stays a walk that knows nothing of who found its lines.
+    // coast and one bridge search, and nothing else - and what crosses is plain values, gaps for
+    // the lines and sets of cells for the lakes, handed over here rather than reached for, so v4
+    // stays a walk that knows nothing of who found its lines.
     @Override
     public void refreshVoidV4() {
 

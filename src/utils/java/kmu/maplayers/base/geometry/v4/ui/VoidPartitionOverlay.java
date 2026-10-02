@@ -14,6 +14,7 @@ import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.v4.CarriedLines;
 import kmu.maplayers.base.geometry.v4.Face;
 import kmu.maplayers.base.geometry.v4.LabelledWall;
+import kmu.maplayers.base.geometry.v4.LakePieces;
 import kmu.maplayers.base.geometry.v4.LakeTier;
 import kmu.maplayers.base.geometry.v4.LandableFrontage;
 import kmu.maplayers.base.geometry.v4.VoidPartition;
@@ -53,6 +54,9 @@ public final class VoidPartitionOverlay {
     // What a tier switched off lays: no walls, and nothing to draw.
     private static final CarriedLines.LaidLines NOTHING_LAID =
         new CarriedLines.LaidLines(List.of(), List.of());
+
+    // What the lake layers show while all of them are off.
+    private static final LakePieces NO_LAKE_PIECES = new LakePieces(List.of(), List.of(), List.of());
 
     // What the frontage layer shows while it is off.
     private static final LandableFrontage.Frontage NO_FRONTAGE =
@@ -161,9 +165,7 @@ public final class VoidPartitionOverlay {
         landablePoints = List.of();
     }
 
-    // The lake tier's own pieces, filled and named. The tier reads each piece once, and each
-    // layer takes the pieces of its kind: the water and the margin are disjoint by
-    // construction, since a piece is of one kind, and a piece of either is named by its kind.
+    // The lake tier's own pieces, filled and named, each layer read only while it is shown.
     //
     // Drawn true: every piece as the walk closed it, with no channel. Here the fill is judged
     // for whether it fills each piece the tier closed exactly once, which a channel would
@@ -174,35 +176,17 @@ public final class VoidPartitionOverlay {
             List<Set<Integer>> lakeRings,
             SectorFixture fixture) {
 
-        var water = new ArrayList<Face>();
-        var margin = new ArrayList<Face>();
-        var names = new ArrayList<NamedRegion>();
-
-        if (settings.isLakeWaterV4Shown()
+        var lake = settings.isLakeWaterV4Shown()
                 || settings.isLakeMarginV4Shown()
-                || settings.isLakeNamesV4Shown()) {
+                || settings.isLakeNamesV4Shown()
+            ? LakePieces.collectLakePieces(pieces, coastWalls, lakeRings, fixture)
+            : NO_LAKE_PIECES;
 
-            for (var piece : pieces) {
-
-                var kind = LakeTier.readKind(piece, coastWalls, lakeRings);
-
-                if (kind == LakeTier.Kind.UNTOUCHED) {
-                    continue;
-                }
-                (kind == LakeTier.Kind.LAKE ? water : margin).add(piece);
-
-                if (settings.isLakeNamesV4Shown()) {
-                    names.add(NamedRegion.nameRegion(
-                        LakeTier.namePiece(
-                            piece, kind, fixture.getSites(), fixture.getSystemIds()),
-                        piece.boundary()));
-                }
-            }
-        }
-
-        lakeWater = settings.isLakeWaterV4Shown() ? collectTrueRegions(water) : List.of();
-        lakeMargin = settings.isLakeMarginV4Shown() ? collectTrueRegions(margin) : List.of();
-        lakeNames = List.copyOf(names);
+        lakeWater = settings.isLakeWaterV4Shown() ? collectTrueRegions(lake.water()) : List.of();
+        lakeMargin = settings.isLakeMarginV4Shown()
+            ? collectTrueRegions(lake.margin())
+            : List.of();
+        lakeNames = settings.isLakeNamesV4Shown() ? lake.names() : List.of();
     }
 
     // What the window shows of the frontage: read only while it is drawn.

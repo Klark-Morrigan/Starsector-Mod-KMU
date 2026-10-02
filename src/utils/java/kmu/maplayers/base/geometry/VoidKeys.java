@@ -24,12 +24,12 @@ import java.util.Locale;
  *
  * <p><b>The cells alone are not quite enough.</b> Two distinct pieces of void can run on the
  * same pair of cells - one on each side of the line between them - and across the two fixtures
- * that happens 5 and 7 times, always on a two-cell ring. So the name carries a side as well:
- * which side of the line joining the two CLOSEST of its cells the piece lies on. Closest,
+ * v3's sections did so 5 and 7 times, always on a two-cell ring. So the name carries a side as
+ * well: which side of the line joining the two CLOSEST of its cells the piece lies on. Closest,
  * because that pair is the narrowest crossing among them and so the place a pocket is pinched
- * or cut, which is the one line that has void on both sides of it. That settles every collision
- * on both fixtures; the side of a wall settles only the ones that have a wall in common, which
- * is 3 of 5 and 5 of 7.
+ * or cut, which is the one line that has void on both sides of it. That settled every one of
+ * those collisions; the side of a wall settled only the ones that had a wall in common, 3 of 5
+ * and 5 of 7.
  *
  * <p>The pair is put in system-id order before the side is read, so which side is which is a
  * property of the two cells and not of what order the sector happened to load them in.
@@ -50,8 +50,8 @@ import java.util.Locale;
  *
  * <p>That reduction can in principle fold two distinct IDs together - two systems whose IDs
  * differ only in punctuation - which would name two pieces of void alike. It is not guarded
- * against here because it cannot be fixed here: a report counting the distinct keys against the
- * pieces is where such a fold would show.
+ * against here because it cannot be fixed here: counting the distinct keys against the pieces
+ * is where such a fold would show.
  *
  * <p><b>The fixture's IDs are not what production will hand this.</b> Its first column is the
  * system's NAME, spaces and all, because a failure reading "Askonia" beats one reading an

@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 /**
  * Unit coverage for what the lake tier decides: which label each of its substeps lays under,
@@ -142,7 +142,7 @@ class LakeTierTests {
 
             assertThat(LakeTier.readKind(
                     buildUpperHalf(LakeTier.THE_LAKE_COAST), List.of(EASTWARD_WALL), NO_LAKES))
-                .isEqualTo(LakeTier.Kind.LAKE);
+                .contains(LakeTier.Kind.LAKE);
         }
 
         @Test
@@ -150,7 +150,7 @@ class LakeTierTests {
 
             assertThat(LakeTier.readKind(
                     buildLowerHalf(LakeTier.THE_LAKE_COAST), List.of(EASTWARD_WALL), NO_LAKES))
-                .isEqualTo(LakeTier.Kind.MARGIN);
+                .contains(LakeTier.Kind.MARGIN);
         }
 
         @Test
@@ -162,7 +162,7 @@ class LakeTierTests {
                         buildUpperHalf(LakeTier.THE_LAKE_COAST), List.of(WESTWARD_WALL), NO_LAKES),
                     LakeTier.readKind(
                         buildLowerHalf(LakeTier.THE_LAKE_COAST), List.of(WESTWARD_WALL), NO_LAKES)))
-                .containsExactly(LakeTier.Kind.MARGIN, LakeTier.Kind.LAKE);
+                .containsExactly(Optional.of(LakeTier.Kind.MARGIN), Optional.of(LakeTier.Kind.LAKE));
         }
 
         @Test
@@ -172,7 +172,7 @@ class LakeTierTests {
                     buildLowerHalf(LakeTier.THE_LAKE_BRIDGES),
                     buildUpperHalf(LakeTier.THE_LAKE_BRIDGES)))
                 .allSatisfy(piece -> assertThat(LakeTier.readKind(piece, List.of(), NO_LAKES))
-                    .isEqualTo(LakeTier.Kind.LAKE));
+                    .contains(LakeTier.Kind.LAKE));
         }
 
         @Test
@@ -184,14 +184,14 @@ class LakeTierTests {
                 new int[] {LakeTier.THE_LAKE_BRIDGES, 1, LakeTier.THE_LAKE_COAST, 3}));
 
             assertThat(LakeTier.readKind(piece, List.of(EASTWARD_WALL), NO_LAKES))
-                .isEqualTo(LakeTier.Kind.MARGIN);
+                .contains(LakeTier.Kind.MARGIN);
         }
 
         @Test
-        void aPieceTheTierNeverTouchedIsUntouched() {
+        void aPieceTheTierNeverTouchedHasNoKind() {
 
             assertThat(LakeTier.readKind(buildLowerHalf(2), List.of(EASTWARD_WALL), NO_LAKES))
-                .isEqualTo(LakeTier.Kind.UNTOUCHED);
+                .isEmpty();
         }
 
         @Test
@@ -200,7 +200,7 @@ class LakeTierTests {
             // cells alone; the trace's ring of cells is what says it is a lake.
             assertThat(LakeTier.readKind(
                     buildLowerHalf(2), List.of(), List.of(Set.of(9), Set.of(0, 1, 2, 3))))
-                .isEqualTo(LakeTier.Kind.LAKE);
+                .contains(LakeTier.Kind.LAKE);
         }
 
         @Test
@@ -208,7 +208,7 @@ class LakeTierTests {
             // Every cell must match: a puddle sharing cells with a lake is not that lake.
             assertThat(LakeTier.readKind(
                     buildLowerHalf(2), List.of(), List.of(Set.of(0, 1, 2))))
-                .isEqualTo(LakeTier.Kind.UNTOUCHED);
+                .isEmpty();
         }
 
         @Test
@@ -228,7 +228,7 @@ class LakeTierTests {
                     new int[] {LakeTier.THE_LAKE_COAST, 3, 2, 1}));
 
             assertThat(LakeTier.readKind(piece, List.of(EASTWARD_WALL), NO_LAKES))
-                .isEqualTo(LakeTier.Kind.MARGIN);
+                .contains(LakeTier.Kind.MARGIN);
         }
     }
 
@@ -264,14 +264,6 @@ class LakeTierTests {
                     FOUR_SITES,
                     SYSTEM_IDS))
                 .startsWith("void_lakemargin--");
-        }
-
-        @Test
-        void aPieceTheTierNeverTouchedIsNotItsToName() {
-
-            assertThatIllegalArgumentException()
-                .isThrownBy(() -> LakeTier.namePiece(
-                    buildLowerHalf(2), LakeTier.Kind.UNTOUCHED, FOUR_SITES, SYSTEM_IDS));
         }
     }
 

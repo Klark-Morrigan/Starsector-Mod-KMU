@@ -8,6 +8,7 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.withinPercentage;
 
 /**
  * Unit coverage for the one mark that is not a line: a point of frontage as a disc.
@@ -58,7 +59,7 @@ class MapPaintingTests {
             assertThat(painted)
                 .isCloseTo(
                     (int) Math.round(Math.PI * RADIUS * RADIUS),
-                    org.assertj.core.api.Assertions.withinPercentage(AREA_SLACK_PERCENT));
+                    withinPercentage(AREA_SLACK_PERCENT));
         }
 
         @Test

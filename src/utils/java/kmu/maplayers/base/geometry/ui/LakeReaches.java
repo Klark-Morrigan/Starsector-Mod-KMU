@@ -64,7 +64,7 @@ public final class LakeReaches {
      *         lake's water on its left - which is what says which side of it the coast has
      *         captured
      */
-    public static List<CellGap> collectLakeReaches(
+    static List<CellGap> collectLakeReaches(
             Coastlines.TracedCoasts traced,
             double channel) {
 

@@ -244,8 +244,8 @@ public final class ViewerSettings {
     public boolean showLakeMarginV4;
 
     // Whether the lake tier's pieces have their names written on them, water and margin alike.
-    // One switch for the tier rather than one per kind, because a piece is named by what closed
-    // it and both were closed by the lake coast; the prefix says which is which.
+    // One switch for the tier rather than one per kind, because both kinds are the lake tier's
+    // water and are judged together; the prefix says which is which.
     public boolean showLakeNamesV4;
 
     // Which edges of v4's pieces take the border channel. A mode of the layer above rather than
@@ -732,17 +732,6 @@ public final class ViewerSettings {
     }
 
     /**
-     * How sharply a drawn line has to turn to be rounded, and what it is rounded to.
-     *
-     * <p>Put back together here rather than at each line, so no two of them can be drawn to
-     * roundings that drifted apart.
-     *
-     * <p>Never chamfered, whatever the sliders say: a chamfer cuts a sharp turn flat, and
-     * what is wanted of one is a rounded tip.
-     *
-     * @return the corner shape every rounded line on the map is drawn to
-     */
-    /**
      * The smoothing profile the cluster borders are drawn through, in the shape the shipped
      * pass takes it.
      *
@@ -772,6 +761,17 @@ public final class ViewerSettings {
                 rounding.roundBelowAngleRadians()));
     }
 
+    /**
+     * How sharply a drawn line has to turn to be rounded, and what it is rounded to.
+     *
+     * <p>Put back together here rather than at each line, so no two of them can be drawn to
+     * roundings that drifted apart.
+     *
+     * <p>Never chamfered, whatever the sliders say: a chamfer cuts a sharp turn flat, and
+     * what is wanted of one is a rounded tip.
+     *
+     * @return the corner shape every rounded line on the map is drawn to
+     */
     public CornerRounding resolveLineRounding() {
         return new CornerRounding(
             roundingRadius,

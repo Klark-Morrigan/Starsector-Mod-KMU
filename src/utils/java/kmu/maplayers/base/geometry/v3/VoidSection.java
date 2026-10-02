@@ -85,29 +85,50 @@ public record VoidSection(
      * is what the difference IS. Every kind is a hole in the same union and is named and owned
      * the same way; they are separated because each is a layer a reader switches on and off on
      * its own, and judging one means seeing it without the others.
+     *
+     * <p>Each carries the prefix its sections' keys start with. The prefix marks a key as a
+     * region rather than a star, and says which kind of region: a section is keyed into the same
+     * map as the cells, so the one thing its name must never do is collide with a system's - and
+     * it is shaped like one of vanilla's own generated IDs so that it reads as a key rather than
+     * as a sentence.
      */
     public enum SectionKind {
 
         /** A hole the cells closed unaided and the lake floor judged too small for a shore. */
-        PUDDLE,
+        PUDDLE("void_puddle"),
 
         /**
          * A hole the cells closed unaided that was drawn a shore. The whole lake, spans and
          * all, where nothing crosses it.
          */
-        LAKE,
+        LAKE("void_lake"),
 
         /** One piece of a lake a span crossed: what that span and the cells shut in. */
-        LAKE_POCKET,
+        LAKE_POCKET("void_lakepocket"),
 
         /** Void a reach of an outer shore shut in behind it, and no span reached first. */
-        COASTAL,
+        COASTAL("void_coast"),
 
         /** A bay an inlet span closed: water inside an outer shore that a span holds. */
-        INLET,
+        INLET("void_inlet"),
 
         /** The sea a run of links shut in between two continents. */
-        INTERCONTINENTAL
+        INTERCONTINENTAL("void_sea");
+
+        private final String keyPrefix;
+
+        SectionKind(String keyPrefix) {
+            this.keyPrefix = keyPrefix;
+        }
+
+        /**
+         * What a section of this kind's key starts with, in key characters.
+         *
+         * @return the prefix
+         */
+        public String keyPrefix() {
+            return keyPrefix;
+        }
     }
 
     // Read off the walls in the order the map's own fills take precedence, because a hole can

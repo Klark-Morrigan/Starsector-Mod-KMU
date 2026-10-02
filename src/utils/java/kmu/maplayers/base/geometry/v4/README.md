@@ -34,7 +34,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | weld and order again | `PlanarArrangement` | those lines, at rounding | the graph the faces are walked on |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
 | read the shore | `LandableFrontage` | the pieces, which of them each tier captured, and the frontier | the open pieces' runs of border and single points of contact, by cell |
-| read a tier's water | `LakeTier` | a piece, the coast walls as laid, and each lake's ring of cells | the piece's kind - lake, margin or untouched - and its name |
+| read a tier's water | `LakePieces`, through `LakeTier` | the pieces, the coast walls as laid, and each lake's ring of cells | the lake pieces and the margin pieces, each named; a piece the tier never touched is in neither |
 | cut the channel | `PieceShaper` | a piece, an `EdgeInset` | its rings pulled off what they face, crossings and all |
 | make it drawable | `PieceRegions` | those rings | bodies and holes, resolved and smoothed |
 
@@ -151,7 +151,7 @@ no second walk and no second shape, only the same pieces in the tier's colour.
 So no piece can be filled twice, and every piece the tier closed is filled exactly when the tier reads it as one of its own.
 The water is drawn true, each piece as the walk closed it with no channel, so it meets the next piece along the line that divides them.
 
-The lake tier reads each piece as one of three kinds, off the piece's own edges.
+The lake tier reads each piece it touched as one of two kinds, off the piece's own edges, and a piece it never touched as no kind at all.
 An edge along a reach that runs with it puts the piece in the lake, and one that runs against it puts the piece in the margin, the bay the coast gave up to the cells.
 Either side of a bridge is the lake, since a bridge divides the lake's water and nothing else.
 A piece with an edge behind a reach is the margin whatever else bounds it: the bay is outside the coast, and no bridge reaches into it.

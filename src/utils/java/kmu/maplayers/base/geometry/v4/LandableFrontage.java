@@ -82,10 +82,8 @@ public final class LandableFrontage {
                     points.add(new Point(run.cell(), Points.computeMean(run.points())));
                 }
             }
-            addPointsAlong(points, piece.outline(), frontier);
-
-            for (var hole : piece.holes()) {
-                addPointsAlong(points, hole, frontier);
+            for (var ring : piece.collectRings()) {
+                addPointsAlong(points, ring, frontier);
             }
         }
         return new Frontage(List.copyOf(runs), List.copyOf(points));
@@ -104,10 +102,8 @@ public final class LandableFrontage {
 
         var runs = new ArrayList<Run>();
 
-        addRunsAlong(runs, piece.outline());
-
-        for (var hole : piece.holes()) {
-            addRunsAlong(runs, hole);
+        for (var ring : piece.collectRings()) {
+            addRunsAlong(runs, ring);
         }
         return List.copyOf(runs);
     }

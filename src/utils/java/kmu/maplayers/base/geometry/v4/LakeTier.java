@@ -7,6 +7,7 @@ import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidKeys;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -38,17 +39,16 @@ import java.util.Set;
  * <p>What is drawn is what is laid - the reaches and the bridges - and not the fillets, which are
  * the shore and are already on screen as the piece's own edge.
  *
- * <p><b>What the tier closes, it names.</b> A piece is named by what closed it, and only the
- * tier knows which side of its own lines is which - so both readings of a piece are asked here
- * rather than read off the labels by whoever needs the answer. A piece is walked with itself on
- * the left of every edge, and a reach is handed over with its lake's water on its left, a
- * direction its wall keeps: an edge along a coast wall that runs WITH the wall puts the piece
- * inside the coast, in the lake, and one that runs AGAINST it puts the piece on the reach's land
- * side, in the bay the coast gave up - the margin. A bridge divides the lake, so either side of
- * one is lake water. The two readings are the fill's, which paints water and margin apart, and
- * the frontage's: the bay behind a reach and the water either side of a bridge are water nothing
- * more can arrive in, and their shore stops being frontage, while the water in front of a reach
- * is where the bridges are still to land.
+ * <p><b>What the tier closes, it says.</b> A piece is named by what closed it, and only the
+ * tier knows which side of its own lines is which - so what a piece is, and whether anything
+ * can still arrive in it, are both answered here rather than read off the labels elsewhere. A
+ * piece is walked with itself on the left of every edge, and a reach is handed over with its
+ * lake's water on its left, a direction its wall keeps: an edge along a coast wall that runs
+ * WITH the wall puts the piece inside the coast, in the lake, and one that runs AGAINST it puts
+ * the piece on the reach's land side, in the bay the coast gave up - the margin. A bridge divides
+ * the lake, so either side of one is lake water. The bay behind a reach and the water either side
+ * of a bridge are closed off; the water in front of a reach is where the bridges are still to
+ * land.
  */
 public final class LakeTier {
 
@@ -67,13 +67,6 @@ public final class LakeTier {
      * coast.
      */
     public static final int THE_LAKE_BRIDGES = -4;
-
-    // What marks a piece's key as this tier's, and which of its two kinds. One prefix for all
-    // the lake's water, crossed or not: a pocket a bridge closed is the lake's water still, and
-    // a reader told "lake" of every piece inside the coast is told what the coast means.
-    private static final String LAKE_KEY_PREFIX = "void_lake";
-
-    private static final String MARGIN_KEY_PREFIX = "void_lakemargin";
 
     private LakeTier() {
     }
@@ -96,24 +89,40 @@ public final class LakeTier {
     }
 
     /**
-     * What the tier says a piece is.
+     * What the tier says a piece of its own is, and what that kind of piece is called.
+     *
+     * <p>A piece the tier never touched has no kind at all rather than a kind of its own, so
+     * nothing can name such a piece as the tier's.
      */
     public enum Kind {
 
         /**
          * Water inside a lake's coast: the whole lake where nothing crosses it, or one pocket
-         * of it a bridge closed.
+         * of it a bridge closed. One prefix for all of it, crossed or not: a pocket a bridge
+         * closed is the lake's water still.
          */
-        LAKE,
+        LAKE("void_lake"),
 
         /**
          * The bay behind a reach: water the coast gave up to the cells, between its line and
          * the shore it stands off from.
          */
-        MARGIN,
+        MARGIN("void_lakemargin");
 
-        /** A piece none of the tier's lines touch. */
-        UNTOUCHED
+        private final String keyPrefix;
+
+        Kind(String keyPrefix) {
+            this.keyPrefix = keyPrefix;
+        }
+
+        /**
+         * What marks a piece's key as this kind of the tier's, in key characters.
+         *
+         * @return the prefix
+         */
+        public String keyPrefix() {
+            return keyPrefix;
+        }
     }
 
     /**
@@ -171,23 +180,23 @@ public final class LakeTier {
      * @param piece     the piece, its edges labelled with what they lie on
      * @param laidWalls this tier's walls as laid; those of other tiers are passed over
      * @param lakeRings the cells round each lake the trace drew a coast for
-     * @return the kind
+     * @return the kind; empty for a piece the tier never touched
      */
-    public static Kind readKind(
+    public static Optional<Kind> readKind(
             Face piece, List<LabelledWall> laidWalls, List<Set<Integer>> lakeRings) {
 
         var edges = readEdges(piece, laidWalls);
 
         if (edges.behindAReach()) {
-            return Kind.MARGIN;
+            return Optional.of(Kind.MARGIN);
         }
         if (edges.onABridge()
                 || edges.inFrontOfAReach()
                 || lakeRings.contains(Set.copyOf(piece.collectCells()))) {
 
-            return Kind.LAKE;
+            return Optional.of(Kind.LAKE);
         }
-        return Kind.UNTOUCHED;
+        return Optional.empty();
     }
 
     /**
@@ -215,24 +224,12 @@ public final class LakeTier {
      * @param sites          the cells' own positions
      * @param systemIdBySite each cell's system ID, index-aligned with the sites
      * @return its key, in the namespace the cells are keyed by
-     * @throws IllegalArgumentException for a piece the tier never touched, which is not its to
-     *                                  name
      */
     public static String namePiece(
             Face piece, Kind kind, List<double[]> sites, List<String> systemIdBySite) {
 
         return VoidKeys.buildKey(
-            readKeyPrefix(kind), piece.collectCells(), piece.boundary(), sites, systemIdBySite);
-    }
-
-    private static String readKeyPrefix(Kind kind) {
-
-        return switch (kind) {
-            case LAKE -> LAKE_KEY_PREFIX;
-            case MARGIN -> MARGIN_KEY_PREFIX;
-            case UNTOUCHED -> throw new IllegalArgumentException(
-                "a piece the lake tier never touched is not its to name");
-        };
+            kind.keyPrefix(), piece.collectCells(), piece.boundary(), sites, systemIdBySite);
     }
 
     // What the tier's lines say along every ring of a piece, holes included, read once for

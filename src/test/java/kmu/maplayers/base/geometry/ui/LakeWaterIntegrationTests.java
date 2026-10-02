@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.NamedRegion;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.v4.Face;
+import kmu.maplayers.base.geometry.v4.LakePieces;
 import kmu.maplayers.base.geometry.v4.LakeTier;
 import kmu.maplayers.base.geometry.v4.VoidPartition;
 import kmu.maplayers.base.geometry.v4.ui.PaintedPixels;
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.KNOBS;
@@ -41,19 +41,12 @@ class LakeWaterIntegrationTests {
     private static final String SECTORS =
         "kmu.maplayers.base.geometry.ui.LakeWaterIntegrationTests#provideSectorNames";
 
-    // How many slivers each bridge can close off below the map's resolution: one where each end
-    // meets the shore, as for a coast's reach.
-    private static final int SLIVERS_PER_BRIDGE = 2;
-
-    // How far two sums of the same water may differ by rounding alone, in units squared.
-    private static final double AREA_ROUNDING = 1e-3;
-
     static Stream<String> provideSectorNames() {
         return SectorFixture.listSectorNames().stream();
     }
 
     @Nested
-    class ReadKind {
+    class CollectLakePieces {
 
         @ParameterizedTest
         @MethodSource(SECTORS)
@@ -62,17 +55,16 @@ class LakeWaterIntegrationTests {
             // alone each lake is one piece - which is also what says no lake was missed, since
             // a lake read as anything else would leave the count short. A lake whose coast lays
             // no reach, which 491 has at these knobs, is in the count by its ring of cells.
-            assertThat(countPieces(LakePartitions.readCoastPartition(sector), sector, LakeTier.Kind.LAKE))
-                .isEqualTo(LakePartitions.layContinents(sector).traceCoasts().lakes().size());
+            assertThat(collectLakePieces(LakePartitions.readCoastPartition(sector), sector).water())
+                .hasSize(LakePartitions.readTracedLakes(sector).rings().size());
         }
 
         @ParameterizedTest
         @MethodSource(SECTORS)
         void eachReachGivesUpOneBay(String sector) {
 
-            assertThat(countPieces(
-                    LakePartitions.readCoastPartition(sector), sector, LakeTier.Kind.MARGIN))
-                .isEqualTo(LakePartitions.collectReaches(LakePartitions.layContinents(sector)).size());
+            assertThat(collectLakePieces(LakePartitions.readCoastPartition(sector), sector).margin())
+                .hasSize(LakePartitions.readTracedLakes(sector).reaches().size());
         }
 
         @ParameterizedTest
@@ -80,14 +72,14 @@ class LakeWaterIntegrationTests {
         void eachBridgeAddsOnePieceOfLakeAndNoMargin(String sector) {
             // A bridge runs from the lake's frontage to its frontage, which is in front of the
             // coast: it divides the water, and the bays behind the reaches are untouched.
-            var continents = LakePartitions.layContinents(sector);
-            var bridged = LakePartitions.readBridgedPartition(sector);
+            var coast = collectLakePieces(LakePartitions.readCoastPartition(sector), sector);
+            var bridged = collectLakePieces(LakePartitions.readBridgedPartition(sector), sector);
 
-            assertThat(countPieces(bridged, sector, LakeTier.Kind.LAKE))
-                .isEqualTo(continents.traceCoasts().lakes().size() + continents.layLakeSpans().size());
-            assertThat(countPieces(bridged, sector, LakeTier.Kind.MARGIN))
-                .isEqualTo(countPieces(
-                    LakePartitions.readCoastPartition(sector), sector, LakeTier.Kind.MARGIN));
+            assertThat(bridged.water())
+                .hasSize(coast.water().size()
+                    + LakePartitions.layContinents(sector).layLakeSpans().size());
+            assertThat(bridged.margin())
+                .hasSameSizeAs(coast.margin());
         }
 
         @ParameterizedTest
@@ -97,13 +89,13 @@ class LakeWaterIntegrationTests {
             // keep - which is what says the extra pieces are the lake divided rather than water
             // from elsewhere read as the lake.
             var bridgeCount = LakePartitions.layContinents(sector).layLakeSpans().size();
-            var sagitta = KNOBS.measureBoundSagitta();
 
-            assertThat(measureArea(LakePartitions.readCoastPartition(sector), sector, LakeTier.Kind.LAKE)
-                    - measureArea(LakePartitions.readBridgedPartition(sector), sector, LakeTier.Kind.LAKE))
+            assertThat(measureWater(LakePartitions.readCoastPartition(sector), sector)
+                    - measureWater(LakePartitions.readBridgedPartition(sector), sector))
                 .isBetween(
-                    -AREA_ROUNDING,
-                    SLIVERS_PER_BRIDGE * bridgeCount * sagitta * sagitta + AREA_ROUNDING);
+                    -LakePartitions.AREA_ROUNDING,
+                    LakePartitions.measureSliverAllowance(bridgeCount)
+                        + LakePartitions.AREA_ROUNDING);
         }
 
         @ParameterizedTest
@@ -113,7 +105,7 @@ class LakeWaterIntegrationTests {
             // piece's own middle can sit in the bite of a crescent.
             var lakes = LakePartitions.layContinents(sector).traceCoasts().lakes();
 
-            assertThat(nameLakePieces(LakePartitions.readBridgedPartition(sector), sector))
+            assertThat(collectLakePieces(LakePartitions.readBridgedPartition(sector), sector).names())
                 .isNotEmpty()
                 .allSatisfy(named -> assertThat(lakes)
                     .as("a lake holding %s", named.name())
@@ -121,22 +113,14 @@ class LakeWaterIntegrationTests {
                             lake.waterEdge(), named.anchor()[0], named.anchor()[1]))
                         .isTrue()));
         }
-    }
-
-    @Nested
-    class NamePiece {
 
         @ParameterizedTest
         @MethodSource(SECTORS)
         void everyPieceTheTierClosedIsNamedApart(String sector) {
             // Two lake pockets on the same cells either side of their narrowest crossing are
             // told apart by the side; a lake piece and a margin on the same cells by the prefix.
-            var names = nameLakePieces(LakePartitions.readBridgedPartition(sector), sector)
-                .stream()
-                .map(NamedRegion::name)
-                .toList();
-
-            assertThat(names)
+            assertThat(collectLakePieces(LakePartitions.readBridgedPartition(sector), sector).names())
+                .extracting(NamedRegion::name)
                 .doesNotHaveDuplicates();
         }
     }
@@ -175,6 +159,10 @@ class LakeWaterIntegrationTests {
             assertThat(overlay.collectLakeNames())
                 .isEmpty();
         }
+    }
+
+    @Nested
+    class CollectLakeNames {
 
         @ParameterizedTest
         @MethodSource(SECTORS)
@@ -185,47 +173,26 @@ class LakeWaterIntegrationTests {
             settings.showLakeNamesV4 = true;
 
             assertThat(refreshOverlay(sector, settings).collectLakeNames())
-                .hasSize(nameLakePieces(LakePartitions.readBridgedPartition(sector), sector).size());
+                .hasSameSizeAs(collectLakePieces(
+                    LakePartitions.readBridgedPartition(sector), sector).names());
         }
     }
 
-    // How many of a partition's pieces the tier reads as the given kind.
-    private static long countPieces(VoidPartition partition, String sector, LakeTier.Kind kind) {
+    // The tier's own pieces of a partition, read as the window reads them.
+    private static LakePieces collectLakePieces(VoidPartition partition, String sector) {
 
-        return partition.collectPieces().stream()
-            .filter(piece -> readKind(piece, sector) == kind)
-            .count();
+        return LakePieces.collectLakePieces(
+            partition.collectPieces(),
+            LakePartitions.layCoastWalls(sector),
+            LakePartitions.readTracedLakes(sector).rings(),
+            loadFixture(sector));
     }
 
-    private static double measureArea(VoidPartition partition, String sector, LakeTier.Kind kind) {
+    private static double measureWater(VoidPartition partition, String sector) {
 
-        return partition.collectPieces().stream()
-            .filter(piece -> readKind(piece, sector) == kind)
+        return collectLakePieces(partition, sector).water().stream()
             .mapToDouble(Face::measureArea)
             .sum();
-    }
-
-    // What the tier reads a piece as, against the coast as laid and the lakes as traced.
-    private static LakeTier.Kind readKind(Face piece, String sector) {
-
-        return LakeTier.readKind(
-            piece,
-            LakePartitions.layCoastWalls(sector),
-            LakePartitions.collectTracedLakes(LakePartitions.layContinents(sector)).rings());
-    }
-
-    // Every piece the tier closed, named as the window names it.
-    private static List<NamedRegion> nameLakePieces(VoidPartition partition, String sector) {
-
-        var fixture = loadFixture(sector);
-
-        return partition.collectPieces().stream()
-            .filter(piece -> readKind(piece, sector) != LakeTier.Kind.UNTOUCHED)
-            .map(piece -> NamedRegion.nameRegion(
-                LakeTier.namePiece(
-                    piece, readKind(piece, sector), fixture.getSites(), fixture.getSystemIds()),
-                piece.boundary()))
-            .toList();
     }
 
     // v4 on with the coast and the bridges laid, at the knobs every suite reads the void at,
@@ -245,14 +212,13 @@ class LakeWaterIntegrationTests {
 
     private static VoidPartitionOverlay refreshOverlay(String sector, ViewerSettings settings) {
 
-        var continents = LakePartitions.layContinents(sector);
         var overlay = new VoidPartitionOverlay(settings);
 
         overlay.refresh(
             readCellEdges(sector),
             loadFixture(sector),
-            LakePartitions.collectTracedLakes(continents),
-            continents::layLakeSpans);
+            LakePartitions.readTracedLakes(sector),
+            LakePartitions.layContinents(sector)::layLakeSpans);
 
         return overlay;
     }
