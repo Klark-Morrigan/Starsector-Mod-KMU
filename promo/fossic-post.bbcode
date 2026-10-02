@@ -3,107 +3,70 @@
 The KMU thread on Fossic (https://www.fossic.org/), the Chinese Starsector forum, in its 原创 board
 (Mod制作发布, forum-71-1.html). It is forum-post.bbcode with the same sections in the same order,
 in Simplified Chinese by localisation/zh-hans/README.md, the terminology reference.
-Fossic is Discuz! X3.5, so the markup differs from the Fractal Softworks post:
-[collapse=title] for [spoiler=], [size=1..7] for point sizes, [*] list items, no [li],
-and [attachimg]id[/attachimg] for an uploaded image.
+How a KM mod's thread on that board works - the board and its review, the posting form, the rules,
+the Discuz markup, images and attachments - is KMLib's docs/dev/fossic-thread.md.
+This file holds only what is KMU's: what its post leaves out or adds, its form values, its links
+and its release checklist.
+
+fossic-post.pairs.md pairs every line of this post with the Fractal Softworks post's for review;
+change it with this file. FossicPostPairingIntegrationTests holds the two together.
 
 Why the post differs from the English one, beyond the language:
-- The download is a forum attachment, by the board's rules (thread-13-1-1.html): the zh-hans zip and,
-  since KMLib has no thread of its own, KMLib's zip too, under 前置. GitHub appears once, as a source line,
-  because github.com is unreliable from China and a player here cannot depend on it.
-- Every image is a forum attachment served from cdn.fossic.cn, never a GitHub link:
-  raw.githubusercontent.com is blocked in mainland China, and the board rules advise against sources
-  players there cannot reach. Each [attachimg]promo/<file>[/attachimg] below names the file under promo/ to
-  upload; after the upload, replace the file name with the attachment id the editor mints. Images are uploaded
-  once and stay across edits, so a release re-uploads only an image that changed.
-  Fossic publishes no size limit, but a per-file and a daily one exist per user group (FAQ, thread-3316-1-1.html),
-  and the PNGs run to 4.3 MB each and 38 MB together. Where the uploader refuses one, ask an admin to raise the
-  limit, as the FAQ says, or upload a smaller copy.
-  The form's 发贴本地化图片 option copies remote images onto the forum's storage (thread-37-1-1.html), but it
-  fetches them from Fossic's side, where GitHub is the unreliable host, so the post does not rely on it.
+- The download is a forum attachment, by the board's rules: the zh-hans zip and, since KMLib has no thread
+  of its own, KMLib's zip too, under 前置. GitHub appears once, as a source line, because github.com is
+  unreliable from China and a player here cannot depend on it.
+- Every image is a forum attachment. Each [attachimg]promo/<file>[/attachimg] below names the file under
+  promo/ to upload; after the upload, replace the file name with the attachment id the editor mints.
 - No shields badges and no TriOS link: both resolve through GitHub, and the counters would count GitHub
-  downloads while the attachment is the main download here. The manual install line, from nexus-post.bbcode,
-  stands in for TriOS.
+  downloads while the attachment is the main download here. The manual install line, from
+  nexus-post.bbcode, stands in for TriOS.
 - The Bad Apple line has no link: Reddit is blocked.
 - The post-release roadmap is left out. It moves as plans do, so it is kept in the Fractal Softworks post
   alone, and this post has that much less to keep current.
-- The post opens with its title rather than the banner, so its first line is text, not an image that may not load.
+- The post opens with its title rather than the banner, so its first line is text, not an image that may
+  not load.
 - The post opens by naming the Chinese core localisation the zip needs, since that is the one thing a
   player on this board must do that a player on the other board need not.
 
-fossic-post.pairs.md pairs every line of this post with the Fractal Softworks post's for review;
-change it with this file.
+What the board's rules ask of this mod in particular:
+- No known conflicting mod, so the form's 冲突Mod and the post name none.
+- Nothing to disclose under the rule on modifying the game, going online or writing outside the game
+  folder: KMU and KMLib make no network calls, and KMLib's one write goes through the game's own
+  common-data store, inside the game folder.
+- Under the rule that feeding another author's work to a large language model is using that work: KMU's
+  research read the code of the mods it works with. LazyLib (its licence file), Nexerelin (MIT), LunaLib
+  (CC BY 4.0) and Fast Rendering (the Unlicense) permit that; Random Assortment of Things states no terms.
 
-The board, Mod制作发布 (forum-71-1.html), is where every original mod starts and is its pre-release board:
-its rule box is 原创Mod预发布规则摘要. The thread type is 【原创Mod发布】, the board's only one.
-There is no pre-release prefix; threads mark it in the title, as [测试] or [早期测试], which the title below does.
-
-The board rules (Mod区管理规定与细则 2.6.0, thread-13-1-1.html) the post keeps:
-- The author posts in person, one thread per mod, and every later release updates this thread.
-- The download is a forum attachment and free: no price on the thread and no reply-to-download.
-  A download permission level is allowed and not used.
-- The form must match the post. They agree on the game version (0.98), safe removal (否, the uninstall
-  procedure) and the dependencies; a release that changes one changes both.
-- A known incompatible mod is named in the form's 冲突Mod and in the post body both. None is known.
-- A mod that, without telling the player, modifies the game itself (config aside), goes online, or reads or
-  writes outside the game folder is banned. KMU and KMLib do none of these: they make no network calls, and
-  KMLib's one write goes through the game's own common-data store, inside the game folder.
-- Using another author's work as input to a large language model counts as using that work, and must follow its
-  licence or have the author's permission. KMU's research read the code of the mods it works with. LazyLib
-  (its licence file), Nexerelin (MIT), LunaLib (CC BY 4.0) and Fast Rendering (the Unlicense) permit that.
-  Random Assortment of Things states no terms, and asking its author is deferred until the question is raised.
-  The AI usage disclaimer stays as written either way.
-- Not recommended, not banned: a mod with no Chinese, one that conflicts with mainstream mods, or one that
-  breaks compatibility. KMU ships Chinese and is made compatible with Nexerelin, Fast Rendering and RAT.
-
-Review (Mod审核规定 5.1.0, thread-6107-1-1.html) is what lists the mod in the Mod索引:
-- A 杂项 mod may take 快速审核 straight after posting: contact 欧瑞捷门, Scythe, 肥龙太刀足 or jn_xyp.
-- The newest version in this thread is the one reviewed. It fails on instability (crashes, broken saves),
-  plagiarism or unlicensed use of others' code and assets, or too little content; balance is not judged.
-- A pass moves the thread to 原创Mod区 (forum-46-1.html) and into the Mod索引. A fail waits 15 days to retry.
-
-Posting form, every input in the form's order, read off the form on 2026-10-01 (* is required):
+Posting form values (what each input takes is in the KMLib doc; * is required):
   标题 *                [0.98a][测试] 政治地图 - 星图图层 - KMU <version>
-                        80 characters at most; the board's titles open with the game version in brackets
-  Mod标识符 *           kmu, the id in mod_info.base.json
-  Mod中文名 *           政治地图 - 星图图层 - KMU, the Chinese of the English name
+  Mod标识符 *           kmu
+  Mod中文名 *           政治地图 - 星图图层 - KMU
   Mod英文名             Political Map - Sector Map Layers - KMU
-  Mod作者 *             Klark Morrigan; the form asks for the forum user name first, comma-separated
-  Mod类别 *             杂项. The board's category guide (thread-5932-1-1.html) puts a function mod that cannot
-                        be removed mid-save in 杂项, and keeps 功能 for removable ones; KMU's save needs the
-                        uninstall procedure. Options: 前置 功能 美化 大型 杂项 内容 独立 战役 势力 Mod扩展
-  Mod适用版本 *         0.98, the gameVersion in mod_info.base.json without its patch suffix
-  Mod更新时间 *         the release date, as YYYY-MM-DD
-  Mod版本 *             the version in mod_info.base.json; the release file row below must match it
-  可安全移除 *          否: a save kept after removal needs the uninstall procedure
-  依赖Mod *             LunaLib, LazyLib and 其它 ticked. 势力争霸(Nexerelin) stays unticked: it is optional
-  其它依赖Mod           KMLib, one per line
-  冲突Mod               empty: none known. A known conflict goes here and in the post body both (thread 13)
+  Mod作者 *             Klark Morrigan
+  Mod类别 *             杂项: a function mod whose kept save needs the uninstall procedure
+  Mod适用版本 *         0.98
+  Mod更新时间 *         the release date
+  Mod版本 *             the version in mod_info.base.json
+  可安全移除 *          否
+  依赖Mod *             LunaLib, LazyLib and 其它; 势力争霸(Nexerelin) unticked, being optional
+  其它依赖Mod           KMLib
+  冲突Mod               empty
   Mod简短介绍 *         在星图界面、情报信息界面和 Random Assortment of Things 的小地图上叠加地图图层。
                         首发的政治地图按势力、联盟（需 Nexerelin）或宣称为星域上色，悬停提示框说明每个星系由谁主导。
                         需要先安装远行星号中文汉化。
-  Mod下载地址           empty: the form itself recommends the attachment
+  Mod下载地址           empty
   网盘提取码/解压密码   empty
   Mod语言 *             中文
-  Mod发布文件           one row, added after the zip is uploaded: file KMU-<version>-zh-hans.zip, 游戏版本 0.98,
-                        Mod版本 as above, 显示名称 KMU <version> 简体中文版. KMLib's zip gets no row: the table
-                        lists this mod's own versions, and each row's Mod版本 must match KMU's mod_info.json.
-                        The 插入Mod文件下载面板到帖子正文中 button then puts the download panel where the post
-                        marks it, under 下载 (thread-19713-1-1.html).
-  Mod允许直链下载 *     是: a mod manager may then fetch the zip without opening the thread
+  Mod发布文件           one row: KMU-<version>-zh-hans.zip, 游戏版本 0.98, Mod版本 as above,
+                        显示名称 KMU <version> 简体中文版. KMLib's zip gets no row
+  Mod允许直链下载 *     是
   Mod索引隐藏           否
-  Mod索引备注           需先安装中文汉化; shown after the version in the Mod索引, so kept short
-  滑块验证 *            the slider captcha
-  附加选项              接收回复通知 on. 禁用编辑器代码 OFF: on, it prints the BBCode as text.
-                        禁用表情 on, so no command syntax is read as a smiley. 禁用链接识别 off, so the source
-                        URL links. 回帖仅作者可见, 回帖倒序排列 and 内容生成图片 off. HTML 代码 is not offered,
-                        [img] 代码 is fixed on, and 解析图片链接, 使用个人签名 and 回帖邮件提醒 are the poster's choice.
-  发贴本地化图片        leave on; harmless, and not relied on (see the image note above)
-  回帖奖励              0 星币: no reward
-  主题标签              星图, 地图, 政治地图, 界面, KMU (5 at most, comma- or space-separated)
-  定时发布              off
+  Mod索引备注           需先安装中文汉化
+  主题标签              星图, 地图, 政治地图, 界面, KMU
+  回帖奖励, 定时发布    none
+  附加选项              as the KMLib doc says
 
-Fossic threads linked below (verified 2026-09-30; Fossic's canonical link form is thread-<tid>-1-1.html):
+Fossic threads linked below (verified 2026-09-30):
   Core localisation   thread-19430-1-1.html   远行星号 0.98a-RC8 中文汉化 (游戏资源 board)
   LazyLib             thread-1676-1-1.html    [前置] LazyLib (Mod搬运发布)
   LunaLib             thread-10267-1-1.html   Lunalib (Mod汉化发布; the older 搬运 thread 8275 redirects here)
@@ -343,7 +306,7 @@ Release checklist, run by hand on every KMU release:
 [*][b]隐藏星系[/b]（没有由恒星、星云或黑洞生成的超空间锚点）不会显示，除非其中有可见的有人居住的市场，或持有激活的星门。
 [*]标记为[b]可发现[/b]的实体（在玩家舰队探测范围之外时不显示在星系地图上）不会显示。由于原版在宣称计算中会用到它们，它们也会列在[color=maroon][b]宣称[/b][/color]提示框中，但会被隐去。
 [*]标记为[b]隐藏[/b]的市场不会显示，除非其他非同盟势力在该星系持有可见的殖民地，或玩家已到访该星系。由于原版在宣称计算中会用到它们，它们也会列在[color=maroon][b]宣称[/b][/color]提示框中，但会被隐去。
-[*][b]荒蛮市场[/b]不会显示，除非它们一开始就是荒蛮的，或玩家已对其完成全面调查。若其他非同盟势力在该星系持有可见的殖民地，这些市场也会显示。
+[*][b]荒蛮市场[/b]要等你亲自调查该世界后才会显示（默认需要全面调查；[b]显示调查程度至少达到以下等级的荒蛮世界[/b]设置可将其放宽为初步调查或造访该星系）；同一星系中若有其他势力的殖民地，则在任何等级下都会显示。
 [*]带有[b]废弃空间站[/b]条件的无主市场遵循[b]隐藏市场[/b]的可见性规则。
 [/list]
 [/collapse]

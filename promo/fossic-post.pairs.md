@@ -44,7 +44,6 @@ and every line of both posts appears once, split at sentence boundaries.
 - **Notes** name the [terminology reference](../localisation/zh-hans/README.md) section holding each term the line uses,
   and say why a line is in only one post.
   Search the linked section for the term to find its row.
-  A term the reference has no row for yet is listed under **Not in the reference**.
 
 Images are forum attachments on Fossic and GitHub links on Fractal Softworks,
 for the reason the [source notes][source-notes] give.
@@ -53,14 +52,15 @@ Links in the Fossic post point at Fossic threads, listed in the same notes.
 ## Posting form
 
 Fossic only: the text inputs of the board's posting form.
-The [source notes][source-notes] list every input, these included, with what each takes and why.
+The [source notes][source-notes] list KMU's value for every input; what each input takes is KMLib's
+[Fossic thread doc](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/fossic-thread.md).
 
 - EN (back-translation): `[0.98a][testing] Political Map - Sector Map Layers - KMU <version>`
   - ZH: `[0.98a][测试] 政治地图 - 星图图层 - KMU <<version>>`
   - Notes: the title.
     The board has no pre-release prefix; its threads mark testing in the title, per the [source notes][source-notes].
     Political Map and Sector Map Layers in [features and screens][kmu-features].
-    Testing in [release and the forum][kmu-release].
+    Testing in [KMLib's forum terms][kmlib-forum].
 - EN: Political Map - Sector Map Layers - KMU
   - ZH: 政治地图 - 星图图层 - KMU
   - Notes: the Mod英文名 and Mod中文名 inputs.
@@ -75,7 +75,7 @@ The [source notes][source-notes] list every input, these included, with what eac
     Paint in [the political map][kmu-politics].
 - EN (back-translation): Needs the Starsector Chinese localisation installed first.
   - ZH: 需要先安装远行星号中文汉化。
-  - Notes: The Chinese core localisation in [release and the forum][kmu-release].
+  - Notes: The Chinese core localisation in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): Install the Chinese localisation first
   - ZH: 需先安装中文汉化
   - Notes: the Mod索引备注 input, shown after the version in Fossic's mod index.
@@ -102,7 +102,7 @@ The [source notes][source-notes] list every input, these included, with what eac
 - EN: This is the pre-release stage intended for public testing and feedback collection.
   - ZH: 本 Mod 目前处于预发布阶段，用于公开测试与收集反馈。
   - Notes: Mod in [game and mods][kmu-mods].
-    Pre-release in [release and the forum][kmu-release].
+    Pre-release in [KMLib's forum terms][kmlib-forum].
 - EN: You can try this mod early and share your experiences, so I can improve it.
   - ZH: 欢迎提前试用并分享你的体验，帮助我改进它。
 
@@ -115,16 +115,16 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - EN (back-translation): This thread is KMU's Simplified Chinese edition, released by the author together with the English one: not a repost, and not a third-party translation.
   - ZH: 本帖是 KMU 的简体中文版，由作者与英文版一同发布，不是搬运，也不是第三方汉化。
   - Notes: 搬运 and 汉化 are the names of Fossic's repost and translation boards.
-    Repost, translation and Simplified Chinese edition in [release and the forum][kmu-release].
+    Repost, translation and Simplified Chinese edition in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): The two editions have the same content and differ only in their text; settings carry over between them.
   - ZH: 两个版本内容相同，只有文字不同，设置可以互通。
 - EN (back-translation): Before use, first install the Starsector Chinese localisation (over starsector-core).
   - ZH: 使用前请先安装远行星号中文汉化（覆盖到 starsector-core）。
   - Notes: the reference's [opening section][kmu-holds] names the core localisation in English only.
-    The Chinese core localisation in [release and the forum][kmu-release]; Starsector in [game and mods][kmu-mods].
+    The Chinese core localisation in [KMLib's forum terms][kmlib-forum]; Starsector in [game and mods][kmu-mods].
 - EN (back-translation): The game's own fonts contain no Chinese characters; the localisation pack swaps in fonts that do.
   - ZH: 游戏自带的字体不含中文字符，汉化包会换上含有中文的字体。
-  - Notes: The localisation pack's short name in [release and the forum][kmu-release].
+  - Notes: The localisation pack's short name in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): Without it the mod loads and runs as usual with no error at all, but every Chinese character KMU shows turns into a question mark.
   - ZH: 没有它，Mod 照常加载运行，不会有任何报错，但 KMU 显示的每个中文字符都会变成问号。
 - EN (back-translation): The launcher cannot check this: the localisation pack is not a mod and has no mod ID, so mod_info.json cannot declare it the way it declares KMLib.
@@ -173,19 +173,20 @@ the [source notes][source-notes] give why the Fossic post opens with it.
   - ZH: 下载
   - Notes: Fossic only: the download is a forum attachment, by the board's rules, per the [source notes][source-notes].
 - EN (back-translation): the download panel
-  - ZH: the download panel, inserted by the posting form from the zip's Mod发布文件 row
-  - Notes: Fossic only; the [source notes][source-notes] give how it is inserted.
+  - ZH: none
+  - Notes: Fossic only, and no text in either post: the posting form inserts the panel from the zip's
+    Mod发布文件 row, where the post marks it.
 - EN (back-translation): KMU `<version>` (Simplified Chinese edition): this thread's attachment `KMU-<version>-zh-hans.zip`. For 0.98a-RC8.
   - ZH: KMU `<<version>>`（简体中文版）：本帖附件 `KMU-<<version>>-zh-hans.zip`。适用于 0.98a-RC8。
   - Notes: Fossic only, as above.
-    Attachment in [release and the forum][kmu-release].
+    Attachment in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): Source and English edition: `https://github.com/Klark-Morrigan/Starsector-Mod-KMU`
   - ZH: 源码与英文版：`https://github.com/Klark-Morrigan/Starsector-Mod-KMU`
   - Notes: Fossic only: GitHub appears once, as a source line, per the [source notes][source-notes].
 - EN: This mod requires LazyLib, LunaLib.
-  - ZH: 前置 / LazyLib / LunaLib, as a heading and a list.
-  - Notes: the Fossic list links each library's Fossic thread.
-    Prerequisite, Fossic's word for a dependency in [release and the forum][kmu-release].
+  - ZH: 前置
+  - Notes: a heading over LazyLib and LunaLib as a list, each linking its Fossic thread.
+    Prerequisite, Fossic's word for a dependency in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): KMLib (Klark Morrigan's Library): this thread's attachment `KMLib-<kmlib-version>-zh-hans.zip`. The KMLib version KMU needs is written in mod_info.json; the attachment here is always the one that goes with the current KMU.
   - ZH: KMLib（Klark Morrigan 的程序库）：本帖附件 `KMLib-<<kmlib-version>>-zh-hans.zip`。KMU 所需的 KMLib 版本写在 mod_info.json 中，本帖附件始终是与当前 KMU 配套的版本。
   - Notes: Fossic only: KMLib has no Fossic thread, so its zip rides in this one, per the [source notes][source-notes].
@@ -200,11 +201,11 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 
 - EN: It's safe to install mid-run,
   - ZH: 可在游戏中途安装；
-  - Notes: Install mid-run in [release and the forum][kmu-release].
+  - Notes: Install mid-run in [KMLib's forum terms][kmlib-forum].
 - EN: and there's a short uninstall procedure you will need to follow if you decide to keep your save after uninstalling the mod.
   - ZH: 若卸载后仍想保留存档，需要先执行一个简短的卸载步骤。
   - Notes: Save in [game and mods][kmu-mods].
-    Uninstall and uninstall procedure in [release and the forum][kmu-release].
+    Uninstall and uninstall procedure in [KMLib's forum terms][kmlib-forum].
 
 ## Compatible mods
 
@@ -217,7 +218,7 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - EN: Sector Map Layers is an overlay for the map screen (Tab, Q), the intel screen (E, 1), the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have Random Assortment of Things installed.
   - ZH: 星图图层是叠加在星图界面 (Tab, Q) 和情报信息界面 (E, 1) 上的叠加层；若安装了 Random Assortment of Things，也会显示在屏幕右下角的小地图上（它替换了原版的雷达）。
   - Notes: Sector Map Layers, map screen and overlay in [features and screens][kmu-features]; Intel in [screens and the map][kmu-screens].
-    Minimap in [features and screens][kmu-features]; radar in [screens and the map][kmu-screens]; vanilla in [release and the forum][kmu-release].
+    Minimap in [features and screens][kmu-features]; radar in [screens and the map][kmu-screens]; vanilla in [KMLib's forum terms][kmlib-forum].
 - EN: Everything is calculated and drawn off of game data, and it gets updated as the state of the sector changes.
   - ZH: 一切都根据游戏数据计算并绘制，并随星域局势的变化而更新。
   - Notes: Sector in [space][kmu-space].
@@ -250,7 +251,7 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - Both: image `promo/sector-1-vanilla.png`
 - EN: Vanilla.
   - ZH: 原版。
-  - Notes: Vanilla in [release and the forum][kmu-release].
+  - Notes: Vanilla in [KMLib's forum terms][kmlib-forum].
 - Both: image `promo/sector-2-modded-light.png`
 - EN: Lightly modded.
   - ZH: 轻度 Mod。
@@ -327,10 +328,9 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - EN: Any given system can be painted by only a single faction, so each system draws a presence ribbon hugging its border that represents each populated colony with the color of the faction holding them.
   - ZH: 每个星系只能由一个势力上色，因此每个星系会沿其边界绘制一条存在色带，以持有各殖民地的势力颜色表示每个有人居住的殖民地。
   - Notes: presence ribbon and border in [the political map][kmu-politics].
-- EN: Ribbons are shortened to represent solidified control when only a single faction or alliance is present is a system, while that presence is in no violation of unconditional claims.
+- EN: Ribbons are shortened to represent solidified control when only a single faction or alliance is present in a system, while that presence is in no violation of unconditional claims.
   - ZH: 当星系中只有一个势力或联盟在场，且这种存在不违反任何无条件宣称时，色带会缩短，以表示稳固的控制。
   - Notes: Present in [the political map][kmu-politics]; unconditional claim in [vanilla mechanics without a name][kmu-unnamed].
-    The English has a typo: "present is a system" for "present in a system".
     Solidified control in [the political map][kmu-politics].
 - EN: Examples
   - ZH: 示例
@@ -471,13 +471,10 @@ the [source notes][source-notes] give why the Fossic post opens with it.
   - Notes: non-allied factions in [the political map][kmu-politics].
 - EN: They are also listed on Claims tooltips because vanilla uses them in claim calculations, but are redacted.
   - ZH: 由于原版在宣称计算中会用到它们，它们也会列在宣称提示框中，但会被隐去。
-- EN: Decivilised markets are not revealed unless they start so, or until the player peforms a full survey on them.
-  - ZH: 荒蛮市场不会显示，除非它们一开始就是荒蛮的，或玩家已对其完成全面调查。
-  - Notes: Fully surveyed in [surveys][kmu-surveys].
-    The English has a typo: "peforms".
-    Both posts predate the Unreleased changelog's change to when a decivilised world is revealed.
-- EN: These markets are also revealed if there are visible colonies held by other non-allied factions.
-  - ZH: 若其他非同盟势力在该星系持有可见的殖民地，这些市场也会显示。
+- EN: Decivilised markets are not revealed until you survey the world yourself (fully, by default; the Show decivilised worlds surveyed at least to setting lowers that to a preliminary survey or a visit to the system), or until another faction's colony stands in the same system, which reveals them at every level.
+  - ZH: 荒蛮市场要等你亲自调查该世界后才会显示（默认需要全面调查；显示调查程度至少达到以下等级的荒蛮世界设置可将其放宽为初步调查或造访该星系）；同一星系中若有其他势力的殖民地，则在任何等级下都会显示。
+  - Notes: Fully surveyed and Preliminary survey in [surveys][kmu-surveys]; Colony in [colonies and markets][kmu-colonies].
+    The setting is named as the Chinese settings screen names it.
 - EN: Unowned markets with the Abandoned Station condition follow visibility rules of hidden markets.
   - ZH: 带有废弃空间站条件的无主市场遵循隐藏市场的可见性规则。
   - Notes: Unowned in [vanilla mechanics without a name][kmu-unnamed].
@@ -513,8 +510,8 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - EN: Provided by KMLib:
   - ZH: 由 KMLib 提供：
 - Both: `kmlib_activate_gate <id>`
-- EN: Activates the gate with that id in the current system.
-  - ZH: 激活当前星系中该 id 的星门。
+- EN: Activates the gate with that `id` in the current system.
+  - ZH: 激活当前星系中该 `id` 的星门。
   - Notes: Gate in [space][kmu-space].
 - Both: `kmlib_colonise [entity-id] [faction-id]`
 - EN: Founds a colony.
@@ -573,7 +570,7 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - EN: Custom terrain is the only thing that has to be serialised into saves as Java class references, and that's why a clean uninstall is required for disabling the mod.
   - ZH: 自定义地形是唯一必须以 Java 类引用的形式序列化进存档的内容，这也是禁用本 Mod 前需要干净卸载的原因。
   - Notes: Save in [game and mods][kmu-mods].
-    Uninstall in [release and the forum][kmu-release].
+    Uninstall in [KMLib's forum terms][kmlib-forum].
 - EN: The game reuses the map widget, and so do many mods.
   - ZH: 游戏会复用星图控件，许多 Mod 也是如此。
 - EN: Those custom placements of the widget get map layers for free, but they should come with no mouseover detection and no controls (borrowing selections from the map screen as the main instance) without a compatibility patch.
@@ -614,7 +611,7 @@ Fossic only.
 
 - EN: While playing with this pre-release, please report if you think it relates to this mod:
   - ZH: 在试用本预发布版的过程中，如果你认为以下情况与本 Mod 有关，请反馈：
-  - Notes: Pre-release in [release and the forum][kmu-release].
+  - Notes: Pre-release in [KMLib's forum terms][kmlib-forum].
 - EN: what kind of visual or technical issues you've got,
   - ZH: 遇到了哪些视觉或技术问题，
 - EN: how's your performance,
@@ -644,7 +641,7 @@ Fossic only.
   - ZH: 也欢迎分享建议、想法和需求，它们会影响本 Mod 的方向与优先级。
 - EN: While I have ideated and planned out some info-layers I want to implement next, and some of their conception - that covers my own vision, and I'd like to hear what's yours.
   - ZH: 我已经构思并规划了接下来想实现的一些信息图层及其大致设计，但那只代表我自己的想法，我也想听听你的。
-  - Notes: Info-layers in [planned layers][kmu-planned].
+  - Notes: Info-layer in [features and screens][kmu-features].
 
 ## Post-release roadmap
 
@@ -657,7 +654,7 @@ The [source notes][source-notes] give why.
 - EN: Faction and alliance tooltips off of the sortable filter list.
 - EN: Filling in wedges and gaps between system cells.
 - EN: Processing non-market entities and showing what's visible on system tooltips.
-- EN: Incorporating some modded entities into the domination algorithm, like watchtowers and artillery implemented in Industial Evolution.
+- EN: Incorporating some modded entities into the domination algorithm, like watchtowers and artillery implemented in Industrial Evolution.
 - EN: A diplomatic map derived from the political map but focused on relations.
 - EN: An Enemies view that paints the map by the lowest relations in a system, and a Friends view that paints only systems with factions above a chosen threshold.
 - EN: Targets player faction relations by default, and applying the faction filter applies the focus to a specific faction.
@@ -712,8 +709,7 @@ The [source notes][source-notes] give why.
 [kmu-settings]: ../localisation/zh-hans/README.md#settings
 [kmu-tabs]: ../localisation/zh-hans/README.md#settings-tabs
 [kmu-console]: ../localisation/zh-hans/README.md#console-commands
-[kmu-planned]: ../localisation/zh-hans/README.md#planned-layers
-[kmu-release]: ../localisation/zh-hans/README.md#release-and-the-forum
+[kmlib-forum]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#forum-terms
 [kmlib-costs]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#what-a-failed-binding-costs
 [kmlib-settings]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#settings
 [kmlib-changelog]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#the-changelog

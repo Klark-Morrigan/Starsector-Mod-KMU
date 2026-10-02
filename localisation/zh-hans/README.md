@@ -1,4 +1,4 @@
-# KMU in Simplified Chinese ()
+# KMU in Simplified Chinese (简体中文)
 
 The terminology reference for KMU's `zh-hans` bundle:
 the words the Chinese core localisation already uses for vanilla concepts,
@@ -37,8 +37,6 @@ Where both list a term, they agree.
   - [Settings](#settings)
   - [Settings tabs](#settings-tabs)
   - [Console commands](#console-commands)
-  - [Planned layers](#planned-layers)
-  - [Release and the forum](#release-and-the-forum)
 - [Adding a string](#adding-a-string)
 - [Translating the changelog](#translating-the-changelog)
 
@@ -62,12 +60,12 @@ the core localisation replaces them, and without it every Chinese character draw
 [KMLib's rules](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#rules)
 hold for every KM mod's bundle, KMU's included:
 vanilla's word wins, Radio options and proper nouns stay as written,
-full-width punctuation, no em dash, numbered slots where word order moves, an ASCII space wherever a highlighted run touches Chinese, and defaults as `[X]` on a line of their own.
+full-width punctuation, no em dash, numbered slots where word order moves, an ASCII space wherever a highlighted run touches Chinese, and defaults as `[默认值：X]` on a line of their own.
 A Radio's description then lists each option's translation after a blank line.
 KMU's own examples of them:
-`Galatia ` and `Naraka ` for Latin proper nouns,
+`Galatia 学院` and `Naraka 星系` for Latin proper nouns,
 `UI palette` for a quoted Radio option,
-` (MCM)` for a parenthesised suffix.
+`市场条件管理器 (MCM)` for a parenthesised suffix.
 
 KMU adds one:
 
@@ -87,124 +85,124 @@ the typeface editions share its text.
 
 ### Screens and the map
 
-| English |  | Source |
+| English | 简体中文 | Source |
 | --- | --- | --- |
-| Map (the screen, its tab) |  | `starfarer_obf.jar` tab bar; "open map" is  |
-| Intel (the screen, its tab) |  | `starfarer_obf.jar` tab bar; the screen is  |
-| Codex |  | `starfarer.api.jar`, "Codex Update" is  |
-| Starscape (map filter) |  | `starfarer_obf.jar` map filter row |
-| Fuel range (map filter) |  | map filter row; its tooltip is  |
-| Names (map filter) |  | map filter row |
-| Exploration (map filter) |  | map filter row |
-| Inhabited (map filter) |  | map filter row |
-| Legend |  | map filter row |
-| System map |  | `starfarer_obf.jar`, "Go to system map" is  |
-| Intel (an item, not the screen) |  | `BlueprintIntel`, among 65 places; the screen is  |
-| Radar |  | story text in `rules.csv` and `market_conditions.csv`; vanilla draws no radar label |
+| Map (the screen, its tab) | 星图 | `starfarer_obf.jar` tab bar; "open map" is 打开星图 |
+| Intel (the screen, its tab) | 情报信息 | `starfarer_obf.jar` tab bar; the screen is 情报信息界面 |
+| Codex | 数据百科 | `starfarer.api.jar`, "Codex Update" is 数据百科更新 |
+| Starscape (map filter) | 星景 | `starfarer_obf.jar` map filter row |
+| Fuel range (map filter) | 续航距离 | map filter row; its tooltip is 显示燃料可用范围 |
+| Names (map filter) | 名称 | map filter row |
+| Exploration (map filter) | 探索状态 | map filter row |
+| Inhabited (map filter) | 有人居住 | map filter row |
+| Legend | 图例 | map filter row |
+| System map | 星系地图 | `starfarer_obf.jar`, "Go to system map" is 进入星系地图 |
+| Intel (an item, not the screen) | 情报 | `BlueprintIntel`, among 65 places; the screen is 情报信息 |
+| Radar | 雷达 | story text in `rules.csv` and `market_conditions.csv`; vanilla draws no radar label |
 
 ### Space
 
-| English |  | Source |
+| English | 简体中文 | Source |
 | --- | --- | --- |
-| Sector |  | Persean Sector is  |
-| Star system |  | `starfarer.api.jar`; in tooltips as `Naraka ` |
-| Unvisited star system |  | `starfarer_obf.jar` map legend |
-| Planet |  | `starfarer.api.jar` |
-| Hyperspace |  | `starfarer_obf.jar` |
-| Nebula |  | `starfarer.api.jar` |
-| Gate |  | `descriptions.csv`, Active Gate is  |
-| Station |  | `starfarer.api.jar`; Jangala Station is `Jangala ` |
-| Orbital Station |  | `industries.csv` |
-| Star (the body) |  | `starfarer.api.jar` planet dialog; `planets.json` names each kind, as  |
-| Black hole |  | `planets.json` `black_hole` |
-| Jump point |  | `JumpPointInteractionDialogPluginImpl` in `starfarer.api.jar` |
-| Slipstream |  | `SlipstreamTerrainPlugin`; also  |
-| Terrain |  | `SlipstreamTerrainPlugin`; "special terrain" is  |
-| Entity |  | `custom_entities.json`, "Unidentified Entity" is  |
-| Fleet |  | `strings.json` `fleetInteractionDialog` |
-| Sensors, sensor range | ,  | `starfarer_obf.jar` fleet tooltip, "Sensor Range" is  |
+| Sector | 星域 | Persean Sector is 英仙座星域 |
+| Star system | 星系 | `starfarer.api.jar`; in tooltips as `Naraka 星系` |
+| Unvisited star system | 未访问过的星系 | `starfarer_obf.jar` map legend |
+| Planet | 行星 | `starfarer.api.jar` |
+| Hyperspace | 超空间 | `starfarer_obf.jar` |
+| Nebula | 星云 | `starfarer.api.jar` |
+| Gate | 星门 | `descriptions.csv`, Active Gate is 激活的星门 |
+| Station | 空间站 | `starfarer.api.jar`; Jangala Station is `Jangala 空间站` |
+| Orbital Station | 轨道空间站 | `industries.csv` |
+| Star (the body) | 恒星 | `starfarer.api.jar` planet dialog; `planets.json` names each kind, as 黄矮星 |
+| Black hole | 黑洞 | `planets.json` `black_hole` |
+| Jump point | 跳跃点 | `JumpPointInteractionDialogPluginImpl` in `starfarer.api.jar` |
+| Slipstream | 滑流 | `SlipstreamTerrainPlugin`; also 超空间滑流 |
+| Terrain | 地形 | `SlipstreamTerrainPlugin`; "special terrain" is 特殊地形 |
+| Entity | 实体 | `custom_entities.json`, "Unidentified Entity" is 不明实体 |
+| Fleet | 舰队 | `strings.json` `fleetInteractionDialog` |
+| Sensors, sensor range | 传感器, 探测范围 | `starfarer_obf.jar` fleet tooltip, "Sensor Range" is 探测范围 |
 
 ### Colonies and markets
 
-| English |  | Source |
+| English | 简体中文 | Source |
 | --- | --- | --- |
-| Colony |  | `starfarer_obf.jar` |
-| Colony size |  | `starfarer_obf.jar` |
-| Size |  | `starfarer_obf.jar` |
-| Market |  | `starfarer_obf.jar` |
-| Market size |  | `starfarer_obf.jar` |
-| Population |  | `starfarer_obf.jar` |
-| Stability |  | `starfarer_obf.jar`, "Stability: %s" is %s |
-| Colony conditions |  | `starfarer_obf.jar` |
-| Planetary conditions |  | `starfarer_obf.jar` |
-| Hidden |  | `starfarer_obf.jar`; "Comm Relay (hidden)" is  () |
-| Outpost |  | `market_conditions.csv` |
-| Decivilized (condition) |  | `market_conditions.csv` |
-| Decivilized Subpopulation (condition) |  | `market_conditions.csv` |
-| Abandoned Station (condition) |  | `market_conditions.csv` |
-| Military Base |  | `industries.csv` |
-| Patrol HQ |  | `industries.csv` |
-| Patrol (the fleet) |  | `rules.csv`;  in 95 places,  in 6 |
-| Industry (a colony building) |  | `IndustryListPanel`, "Industries on %s:";  only where the English means an economic sector |
-| Military (facilities) |  | `HAColonyDefensesFactor` in `starfarer.api.jar` |
-| Militarized (ships only) |  | `hull_mods.csv` `militarized_subsystems`, the Militarized Subsystems hullmod () for civilian hulls; vanilla uses the word for ships alone, so it never names [KMU's militarised station](#the-political-map) |
-| Commodity |  | `CommodityPanel` in `starfarer_obf.jar` |
-| Population center (a large hub) |  | `market_conditions.csv` `population_10`, "a dominant population center"; vanilla uses it for large hubs, as , so it never names [KMU's population center](#the-political-map) |
-| Docked (at a market) |  | `starfarer_obf.jar` refit, "Must be docked at a market" |
-| Can not be colonized |  | `PlanetSurveyPanel`; vanilla has no positive form |
-| Pirate |  | Pirate Station is  |
-| a faction's presence in a system | , by paraphrase | "has no presence in this system" is  |
+| Colony | 殖民地 | `starfarer_obf.jar` |
+| Colony size | 殖民地规模 | `starfarer_obf.jar` |
+| Size | 规模 | `starfarer_obf.jar` |
+| Market | 市场 | `starfarer_obf.jar` |
+| Market size | 市场规模 | `starfarer_obf.jar` |
+| Population | 人口 | `starfarer_obf.jar` |
+| Stability | 稳定性 | `starfarer_obf.jar`, "Stability: %s" is 稳定性：%s |
+| Colony conditions | 殖民地条件 | `starfarer_obf.jar` |
+| Planetary conditions | 行星状况 | `starfarer_obf.jar` |
+| Hidden | 隐藏 | `starfarer_obf.jar`; "Comm Relay (hidden)" is 通讯中继站 (隐藏) |
+| Outpost | 前哨站 | `market_conditions.csv` |
+| Decivilized (condition) | 荒蛮之地 | `market_conditions.csv` |
+| Decivilized Subpopulation (condition) | 法外之地 | `market_conditions.csv` |
+| Abandoned Station (condition) | 废弃空间站 | `market_conditions.csv` |
+| Military Base | 军事基地 | `industries.csv` |
+| Patrol HQ | 巡逻队总部 | `industries.csv` |
+| Patrol (the fleet) | 巡逻队 | `rules.csv`; 巡逻队 in 95 places, 巡逻舰队 in 6 |
+| Industry (a colony building) | 工业设施 | `IndustryListPanel`, "Industries on %s:"; 产业 only where the English means an economic sector |
+| Military (facilities) | 军事设施 | `HAColonyDefensesFactor` in `starfarer.api.jar` |
+| Militarized (ships only) | 军事化 | `hull_mods.csv` `militarized_subsystems`, the Militarized Subsystems hullmod (军事化子系统) for civilian hulls; vanilla uses the word for ships alone, so it never names [KMU's militarised station](#the-political-map) |
+| Commodity | 商品 | `CommodityPanel` in `starfarer_obf.jar` |
+| Population center (a large hub) | 人口中心 | `market_conditions.csv` `population_10`, "a dominant population center"; vanilla uses it for large hubs, as 主要的人口中心, so it never names [KMU's population center](#the-political-map) |
+| Docked (at a market) | 停靠 | `starfarer_obf.jar` refit, "Must be docked at a market" |
+| Can not be colonized | 无法殖民 | `PlanetSurveyPanel`; vanilla has no positive form |
+| Pirate | 海盗 | Pirate Station is 海盗空间站 |
+| a faction's presence in a system | 殖民地, by paraphrase | "has no presence in this system" is 该星系中并没有……的殖民地 |
 
 ### Factions and relations
 
-| English |  | Source |
+| English | 简体中文 | Source |
 | --- | --- | --- |
-| Faction |  | `starfarer.api.jar` |
-| Independent (the faction's name) |  | `independent.faction` `displayName` |
-| Attitude (the relation number) |  | `starfarer_obf.jar` faction screen, "Attitude: " is  |
-| Relationship |  | `starfarer_obf.jar` |
-| Known allies |  | `starfarer_obf.jar` faction screen |
-| Known enemies |  | `starfarer_obf.jar` faction screen |
-| Your faction (the player's) |  | `starfarer_obf.jar` flag picker;  does not occur |
-| Neutral (the faction's name) |  | `neutral.faction` `displayName` |
-| Hegemony |  | `hegemony.faction` `displayName` |
-| Luddic Church |  | `luddic_church.faction` `displayName`; its long name is  |
-| Unclaimed (territory) |  | `PerseanLeagueHostileActivityFactor`, "unclaimed territory" is  |
+| Faction | 势力 | `starfarer.api.jar` |
+| Independent (the faction's name) | 非势力团体 | `independent.faction` `displayName` |
+| Attitude (the relation number) | 关系 | `starfarer_obf.jar` faction screen, "Attitude: " is 关系： |
+| Relationship | 关系 | `starfarer_obf.jar` |
+| Known allies | 已知的盟友 | `starfarer_obf.jar` faction screen |
+| Known enemies | 已知的敌人 | `starfarer_obf.jar` faction screen |
+| Your faction (the player's) | 你的势力 | `starfarer_obf.jar` flag picker, "Select a flag to represent your faction"; vanilla never writes 玩家势力, which KMU keeps for the player faction as a category, as the settings write Mod 玩家势力 for modded player factions |
+| Neutral (the faction's name) | 中立 | `neutral.faction` `displayName` |
+| Hegemony | 霸主 | `hegemony.faction` `displayName` |
+| Luddic Church | 卢德教会 | `luddic_church.faction` `displayName`; its long name is 银河救赎教会 |
+| Unclaimed (territory) | 无宣称 | `PerseanLeagueHostileActivityFactor`, "unclaimed territory" is 无宣称领土 |
 
 The nine reputation levels, from `RepLevel` in `starfarer.api.jar`:
 
 | Vengeful | Hostile | Inhospitable | Suspicious | Neutral | Favorable | Welcoming | Friendly | Cooperative |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-|  |  |  |  |  |  |  |  |  |
+| 仇恨 | 敌对 | 冷淡 | 怀疑 | 中立 | 良好 | 欢迎 | 友好 | 合作 |
 
 ### Surveys
 
-| English |  | Source |
+| English | 简体中文 | Source |
 | --- | --- | --- |
-| Survey |  | "Survey Data" is  |
-| Unsurveyed |  | `starfarer_obf.jar` planet list |
-| Preliminary survey completed |  | `starfarer_obf.jar` planet list |
-| Preliminary survey data |  | `Misc` in `starfarer.api.jar` |
-| Fully surveyed |  | `starfarer_obf.jar` planet list |
-| Full survey data |  | `starfarer_obf.jar`; vanilla uses both  and  for "full" |
+| Survey | 调查 | "Survey Data" is 调查数据 |
+| Unsurveyed | 未被调查 | `starfarer_obf.jar` planet list |
+| Preliminary survey completed | 已初步调查 | `starfarer_obf.jar` planet list |
+| Preliminary survey data | 初步调查数据 | `Misc` in `starfarer.api.jar` |
+| Fully surveyed | 已全面调查 | `starfarer_obf.jar` planet list |
+| Full survey data | 完整调查数据 | `starfarer_obf.jar`; vanilla uses both 全面 and 完整 for "full" |
 
 ### Time
 
-| English |  | Source |
+| English | 简体中文 | Source |
 | --- | --- | --- |
-| Today |  | `Misc` in `starfarer.api.jar` |
-| 1 day ago | 1  | `Misc` |
-| N days ago | N  | `Misc` |
+| Today | 今天 | `Misc` in `starfarer.api.jar` |
+| 1 day ago | 1 天前 | `Misc` |
+| N days ago | N 天前 | `Misc` |
 
 ### Game and mods
 
-| English |  | Source |
+| English | 简体中文 | Source |
 | --- | --- | --- |
-| Mod | Mod | `starfarer_obf.jar`, "Found mod: %s" is  Mod%s |
-| Save (a saved game) |  | "Load last save" is  |
-| Starsector |  | `starfarer_obf.jar` title, "Welcome to Starsector!" is ; most of the game keeps the Latin name |
-| Launcher |  | `StarfarerLauncher` in `starfarer_obf.jar` |
-| Sound volume |  | `starfarer_obf.jar` title settings, "Sound volume:" is  |
+| Mod | Mod | `starfarer_obf.jar`, "Found mod: %s" is 发现 Mod：%s |
+| Save (a saved game) | 存档 | "Load last save" is 读取最近的存档 |
+| Starsector | 远行星号 | `starfarer_obf.jar` title, "Welcome to Starsector!" is 欢迎来到远行星号！; most of the game keeps the Latin name |
+| Launcher | 启动器 | `StarfarerLauncher` in `starfarer_obf.jar` |
+| Sound volume | 音量 | `starfarer_obf.jar` title settings, "Sound volume:" is 音量： |
 
 ## Vanilla mechanics without a name
 
@@ -212,63 +210,67 @@ Mechanics the game runs but never names to the player.
 No vanilla text holds them, in English or Chinese, so there is nothing to pair a translation against.
 KMU names them, and the code column says where vanilla keeps each one.
 
-| English |  | Vanilla code | Note |
+| English | 简体中文 | Vanilla code | Note |
 | --- | --- | --- | --- |
-| territorial, non-territorial (a faction) | ,  | `territorial` in a faction's `punitiveExpeditionData`, read by `Misc.getClaimingFaction` | only a territorial faction claims a system dynamically;  in prose;  is also the word for territory |
-| unconditional claim |  | the `$claimingFaction` memory key, `MemFlags.CLAIMING_FACTION` | wins over any dynamic claim |
-| dynamic claim |  | `Misc.getClaimingFaction`, where no unconditional claim is set | , changing as things change, the opposite of  |
-| sector memory |  | the game's `$` memory keys | where unconditional claims are set; from  |
-| discoverable |  | `SectorEntityToken.isDiscoverable()` | kept off the system map until the player's sensors find it, as the bundle's visibility overrides write it |
-| hyperspace anchor |  | `StarSystemAPI.getHyperspaceAnchor()` | a system's point in hyperspace |
-| unowned (a market the Neutral faction holds) |  | a market owned by the faction `neutral`, named  | a market's ownership only, never a system's, which is unpopulated, decivilised or settled instead; silent on whether anyone lives there; written beside , and with  where it first appears; not , which reads as dominance, and not , vanilla's label for Uninhabited |
+| territorial, non-territorial (a faction) | 领土, 非领土 | `territorial` in a faction's `punitiveExpeditionData`, read by `Misc.getClaimingFaction` | only a territorial faction claims a system dynamically; 非领土势力 in prose; 领土 is also the word for territory |
+| unconditional claim | 无条件宣称 | the `$claimingFaction` memory key, `MemFlags.CLAIMING_FACTION` | wins over any dynamic claim |
+| dynamic claim | 动态宣称 | `Misc.getClaimingFaction`, where no unconditional claim is set | 动态, changing as things change, the opposite of 无条件 |
+| sector memory | 星域记忆 | the game's `$` memory keys | where unconditional claims are set; from 星域 |
+| discoverable | 可发现 | `SectorEntityToken.isDiscoverable()` | kept off the system map until the player's sensors find it, as the bundle's visibility overrides write it |
+| hyperspace anchor | 超空间锚点 | `StarSystemAPI.getHyperspaceAnchor()` | a system's point in hyperspace |
+| unowned (a market the Neutral faction holds) | 无主 | a market owned by the faction `neutral`, named 中立 | a market's ownership only, never a system's, which is unpopulated, decivilised or settled instead; silent on whether anyone lives there; written beside 市场, and with 中立 where it first appears; not 未受控制, which reads as dominance, and not 无主之地, vanilla's label for Uninhabited |
 
 ## KMU terms
 
 KMU's own concepts, settled when the bundle was first written.
 Where a row builds on a vanilla word, the note says which.
+The words of a release and of the Fossic thread are
+[KMLib's forum terms](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#forum-terms),
+which every KM mod's shares.
 
 ### Features and screens
 
-| English |  | Note |
+| English | 简体中文 | Note |
 | --- | --- | --- |
-| Klark Morrigan's Utilities (KMU) (the mod's name) | Klark Morrigan  (KMU) | `KMU` is the brand: kept in every locale, never translated |
+| Klark Morrigan's Utilities (KMU) (the mod's name) | Klark Morrigan 的实用工具 (KMU) | `KMU` is the brand: kept in every locale, never translated |
 | KMU | KMU | the brand, kept in every locale |
-| Sector Map Layers (the feature) |  | from  |
-| map layers |  | also drawn on the intel screen's map, hence  rather than  |
-| Map layers (filter row tick box) |  | sits beside  and  |
-| Political Map |  |  for political, with  as in , since it is a layer |
-| No Layer |  | , none, before : the tab that shows no layer |
-| map screen |  | the screen Tab opens; vanilla's tab reads  |
-| overlay |  | the usual Chinese UI word for a layer drawn over another |
-| overlay control box |  | from , with  for the box holding its controls |
-| sidebar |  | the usual Chinese UI word |
-| tab |  | the usual Chinese UI word;  alone would read as a label |
-| tab bar |  | from , with  for a bar, as in  |
-| filter row |  | the row holding ,  and  |
-| Arrange Map Layers |  | , to put in order, before  |
-| Up / Down (arrange dialog) |  /  | highlighted inside the dialog's hint |
-| uncheck |  | highlighted inside the dialog's hint |
-| Market Condition Manager (MCM) |  (MCM) | from  |
-| market condition |  | from vanilla's , with  since the manager works on markets |
-| suppressed (condition) |  | the plain passive for a condition held down but not removed |
-| world units |  | literal: a distance in game space, kept apart from  |
+| Sector Map Layers (the feature) | 星图图层 | from 星图 |
+| map layers | 地图图层 | also drawn on the intel screen's map, hence 地图 rather than 星图 |
+| Map layers (filter row tick box) | 地图图层 | sits beside 星景 and 续航距离 |
+| Political Map | 政治地图 | 政治 for political, with 地图 as in 地图图层, since it is a layer |
+| No Layer | 无图层 | 无, none, before 图层: the tab that shows no layer |
+| map screen | 星图界面 | the screen Tab opens; vanilla's tab reads 星图 |
+| overlay | 叠加层 | the usual Chinese UI word for a layer drawn over another |
+| overlay control box | 叠加层控制框 | from 叠加层, with 控制框 for the box holding its controls |
+| sidebar | 侧边栏 | the usual Chinese UI word |
+| tab | 标签页 | the usual Chinese UI word; 标签 alone would read as a label |
+| tab bar | 标签栏 | from 标签页, with 栏 for a bar, as in 筛选栏 |
+| filter row | 筛选栏 | the row holding 星景, 续航距离 and 名称 |
+| Arrange Map Layers | 排列地图图层 | 排列, to put in order, before 地图图层 |
+| Up / Down (arrange dialog) | 上移 / 下移 | highlighted inside the dialog's hint |
+| uncheck | 取消勾选 | highlighted inside the dialog's hint |
+| Market Condition Manager (MCM) | 市场条件管理器 (MCM) | from 殖民地条件 |
+| market condition | 市场条件 | from vanilla's 殖民地条件, with 市场 since the manager works on markets |
+| suppressed (condition) | 被压制 | the plain passive for a condition held down but not removed |
+| world units | 世界单位 | literal: a distance in game space, kept apart from 像素 |
 | owned by (a planet's faction) | 属于 | the game's own text has no such phrase; the faction's name follows after a space |
 | list separators (the condition manager's lines) | ` ； ` between groups, ` ， ` between items | an ASCII space either side, so the highlighted counts and names beside them still highlight |
-| screen |  | as in  and  |
-| sector map widget (the map, on whichever screen draws it) |  | from , with , the control word; the settings and the notices already use it |
-| control (a tick box, switch or button) |  | as in , map controls |
-| campaign radar (where Random Assortment of Things puts its minimap) |  | from vanilla's  |
-| minimap (Random Assortment of Things') |  | the usual Chinese word for a minimap, as the settings write it |
-| docked (Random Assortment of Things hiding its minimap) |  | vanilla's word for docking at a market |
-| compatibility mode |  |  as in the Map - Compatibility tab's , with  for mode |
-| compatibility patch |  | , the usual word for a patch, after  |
-| mouseover detection |  | from � |
+| screen | 界面 | as in 星图界面 and 情报信息界面 |
+| sector map widget (the map, on whichever screen draws it) | 星图控件 | from 星图, with 控件, the control word; the settings and the notices already use it; not 地图控件, the Map - Dev header |
+| control (a tick box, switch or button) | 控件 | as in 地图控件, the Map - Dev header for the map controls; not 星图控件, the map itself |
+| campaign radar (where Random Assortment of Things puts its minimap) | 战役雷达 | from vanilla's 雷达 |
+| minimap (Random Assortment of Things') | 小地图 | the usual Chinese word for a minimap, as the settings write it |
+| docked (Random Assortment of Things hiding its minimap) | 停靠 | vanilla's word for docking at a market |
+| compatibility mode | 兼容模式 | 兼容 as in the Map - Compatibility tab's 兼容性, with 模式 for mode |
+| compatibility patch | 兼容补丁 | 补丁, the usual word for a patch, after 兼容 |
+| mouseover detection | 鼠标悬停检测 | from 悬停 |
 | view (of the political map) | 视图 | as in 联盟视图 |
 | filter list, sortable filter list | 筛选列表, 可排序的筛选列表 | the sidebar's list of blocs |
 | faction filter | 势力筛选列表 | 势力 before 筛选列表, the filter list |
 | headline feature | 首发功能 | 首发, the first to ship, with 功能 as in the Features tab |
 | read-only (by design) | 只读 | the standard computing word |
 | underlying mechanics | 底层机制 | 底层, the layer beneath, with 机制 for mechanics |
+| info-layer | 信息图层 | from 图层: a layer that shows information |
 
 ### The political map
 
@@ -363,8 +365,6 @@ Each row was read off HOI4's `localisation/simp_chinese` files by pairing them w
 | --- | --- | --- | --- |
 | core territory | 核心领土 | `MODIFIER_ATTACK_BONUS_AGAINST_A_COUNTRY_ON_ITS_CORES`, `modifiers`: "Attack on their core territory" is 我国对其核心领土进攻 | a system its faction claims unconditionally |
 | core | 核心 | `PEACE_CONFERENCE_PROVINCE_TOOLTIP_CORES`, `peace`: "Cores:" is 核心： | the tooltip marker `（核心）` |
-| non-core | 非核心 | `non_core`, `core` | not used yet |
-| core state | 核心地区 | `TRIGGER_STATE_CORE_OF_COUNTRY`, `triggers`: "Is a core of X" is 是X的核心地区 | not used; KMU's unit is a star system, not a state |
 
 HOI4 names a collection of cores without 的 ("Chinese core states" is 中国核心地区),
 which is how the tooltip heading reads: the faction's name, then 核心领土.
@@ -447,42 +447,6 @@ The ` - ` in a tab name is an ASCII hyphen with a space either side, as in Engli
 | game logs | 游戏日志 | 日志, KMLib's word for a log |
 | colonisable market | 可殖民市场 | vanilla writes only the negative, 无法殖民 |
 | cut-off systems | 被截断的星系 | 截断, to cut off, before vanilla's 星系 |
-
-### Planned layers
-
-The layers a roadmap names before they ship.
-
-| English | 简体中文 | Note |
-| --- | --- | --- |
-| info-layer | 信息图层 | from 图层 |
-| diplomatic map | 外交地图 | 外交, diplomacy, with 地图 as in 政治地图 |
-| Enemies / Friends (views) | 敌人 / 朋友 | the plain words; 敌人 as in vanilla's 已知的敌人 |
-| infrastructure map | 基础设施地图 | 基础设施, the usual word, with 地图 |
-| comm relay network | 通讯中继站网络 | from vanilla's 通讯中继站 |
-| economy map | 经济地图 | 经济, economy, with 地图 |
-| faction management layer | 势力管理图层 | 管理, management, with 图层, since it is a layer |
-| framework (for modders) | 框架 | the usual software word |
-| modder | Mod 作者 | Mod kept Latin as vanilla does, with 作者, author; Fossic's form writes Mod作者 |
-| watchtower, Orbital Artillery, artillery station (Industrial Evolution's) | 观瞄站, 轨道防御平台, 轨道防御平台 | the mod's own Chinese names, read from its 汉化 build V4.1.b for 0.98a, the one on Fossic: `custom_entities.json` `IndEvo_Watchtower` and `IndEvo_ArtilleryStation`, `industries.csv` `IndEvo_Artillery_base`; the translation names the building and the station alike |
-
-### Release and the forum
-
-The words of KMU's release notes and its thread on [Fossic](https://www.fossic.org/), the Chinese Starsector forum.
-
-| English | 简体中文 | Note |
-| --- | --- | --- |
-| vanilla (the base game) | 原版 | the players' word; the game leaves "vanilla" in English |
-| the Chinese core localisation | 远行星号中文汉化, 汉化包 for short | its Fossic thread's name |
-| Simplified Chinese edition | 简体中文版 | the usual way a Chinese edition is named |
-| pre-release | 预发布 | Fossic's word for its pre-release board |
-| testing (a title tag) | 测试 | how Fossic titles mark a pre-release |
-| repost | 搬运 | a Fossic board, for mods posted by someone other than their author |
-| translation (a translated build) | 汉化 | a Fossic board |
-| dependency (a required mod) | 前置 | Fossic's word; its posting form says 依赖Mod |
-| attachment | 附件 | a file uploaded to a forum post |
-| install mid-run | 中途安装 | 中途, partway through |
-| uninstall, uninstall procedure | 卸载, 卸载步骤 | the usual software word, as KMU's strings write it; 步骤 for the steps |
-| changelog | 更新日志 | [KMLib's](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#the-changelog) |
 
 ## Adding a string
 
