@@ -55,10 +55,14 @@ Fossic only: the text inputs of the board's posting form.
 The [source notes][source-notes] list KMU's value for every input; what each input takes is KMLib's
 [Fossic thread doc](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/fossic-thread.md).
 
-- EN (back-translation): `[0.98a][testing] Political Map - Sector Map Layers - KMU <version>`
-  - ZH: `[0.98a][测试] 政治地图 - 星图图层 - KMU <<version>>`
+- EN (back-translation): `[0.98a][testing] Political Map - Sector Map Layers - KMU`
+  - ZH: `[0.98a][测试] 政治地图 - 星图图层 - KMU`
   - Notes: the title.
-    The board has no pre-release prefix; its threads mark testing in the title, per the [source notes][source-notes].
+    The board has no pre-release prefix;
+    its threads mark testing in the title,
+    per the [source notes][source-notes].
+    No mod version: the form's Mod版本 shows it in the board list and the download panel,
+    and a title without it needs no edit per release.
     Political Map and Sector Map Layers in [features and screens][kmu-features].
     Testing in [KMLib's forum terms][kmlib-forum].
 - EN: Political Map - Sector Map Layers - KMU
