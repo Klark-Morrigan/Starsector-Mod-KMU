@@ -176,9 +176,9 @@ the [source notes][source-notes] give why the Fossic post opens with it.
   - ZH: none
   - Notes: Fossic only, and no text in either post: the posting form inserts the panel from the zip's
     Mod发布文件 row, where the post marks it.
-- EN (back-translation): KMU `<version>` (Simplified Chinese edition): this thread's attachment `KMU-<version>-zh-hans.zip`. For 0.98a-RC8.
-  - ZH: KMU `<<version>>`（简体中文版）：本帖附件 `KMU-<<version>>-zh-hans.zip`。适用于 0.98a-RC8。
-  - Notes: Fossic only, as above.
+- EN (back-translation): KMU `<version>` (Simplified Chinese edition): `KMU-<version>-zh-hans.zip`, attached. For 0.98a-RC8.
+  - ZH: KMU `<<version>>`（简体中文版）：`[attach]KMU-<<version>>-zh-hans.zip[/attach]`。适用于 0.98a-RC8。
+  - Notes: Fossic only, as above; the tag puts the attached zip's download link in the line, per the [source notes][source-notes].
     Attachment in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): Source and English edition: `https://github.com/Klark-Morrigan/Starsector-Mod-KMU`
   - ZH: 源码与英文版：`https://github.com/Klark-Morrigan/Starsector-Mod-KMU`
@@ -187,8 +187,8 @@ the [source notes][source-notes] give why the Fossic post opens with it.
   - ZH: 前置
   - Notes: a heading over LazyLib and LunaLib as a list, each linking its Fossic thread.
     Prerequisite, Fossic's word for a dependency in [KMLib's forum terms][kmlib-forum].
-- EN (back-translation): KMLib (Klark Morrigan's Library): this thread's attachment `KMLib-<kmlib-version>-zh-hans.zip`. The KMLib version KMU needs is written in mod_info.json; the attachment here is always the one that goes with the current KMU.
-  - ZH: KMLib（Klark Morrigan 的程序库）：本帖附件 `KMLib-<<kmlib-version>>-zh-hans.zip`。KMU 所需的 KMLib 版本写在 mod_info.json 中，本帖附件始终是与当前 KMU 配套的版本。
+- EN (back-translation): KMLib (Klark Morrigan's Library): `KMLib-<kmlib-version>-zh-hans.zip`, attached. The KMLib version KMU needs is written in mod_info.json; the attachment here is always the one that goes with the current KMU.
+  - ZH: KMLib（Klark Morrigan 的程序库）：`[attach]KMLib-<<kmlib-version>>-zh-hans.zip[/attach]`。KMU 所需的 KMLib 版本写在 mod_info.json 中，本帖附件始终是与当前 KMU 配套的版本。
   - Notes: Fossic only: KMLib has no Fossic thread, so its zip rides in this one, per the [source notes][source-notes].
     The Fractal Softworks post reaches KMLib through TriOS and its download badge.
     The name is KMLib's own Chinese mod list name.
