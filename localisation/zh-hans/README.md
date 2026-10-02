@@ -37,6 +37,7 @@ Where both list a term, they agree.
   - [Settings](#settings)
   - [Settings tabs](#settings-tabs)
   - [Console commands](#console-commands)
+  - [The forum banner](#the-forum-banner)
 - [Adding a string](#adding-a-string)
 - [Translating the changelog](#translating-the-changelog)
 
@@ -450,6 +451,16 @@ The ` - ` in a tab name is an ASCII hyphen with a space either side, as in Engli
 | game logs | 游戏日志 | 日志, KMLib's word for a log |
 | colonisable market | 可殖民市场 | vanilla writes only the negative, 无法殖民 |
 | cut-off systems | 被截断的星系 | 截断, to cut off, before vanilla's 星系 |
+
+### The forum banner
+
+The captions of the "always has been" meme on the Fossic thread's banner,
+drawn in Microsoft YaHei Bold over `promo/always-has-been-zh-hans.png`.
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| map game (the banner's joke) | P社游戏 | players' slang for Paradox grand strategy, the genre "map game" points at; a literal 地图游戏 reads as any game with a map. Written solid, as the slang is, the one exception to spacing Latin inside Chinese |
+| Always has been | 一直都是 | the caption the template carries in Chinese meme use; no full stop, as the English has none |
 
 ## Adding a string
 

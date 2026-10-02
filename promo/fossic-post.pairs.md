@@ -91,9 +91,13 @@ The [source notes][source-notes] list KMU's value for every input; what each inp
 
 ## Header
 
-- Both: image `promo/always-has-been.png`
-  - Notes: the Fractal Softworks post opens with it; the Fossic post puts it after the title.
-    The [source notes][source-notes] give why.
+- EN: image `promo/always-has-been.png`
+  - ZH: image `promo/always-has-been-zh-hans.png`
+  - Notes: captioned "Wait, Starsector is a map game?" and "Always has been" in English,
+    and 等等，远行星号是P社游戏？ and 一直都是 in Chinese; the captions are in the images, not the post text.
+    The Fractal Softworks post opens with it; the Fossic post puts it after the title, and uses its own
+    Chinese variant. The [source notes][source-notes] give why.
+    Starsector in [game and mods][kmu-mods]; Paradox game and always has been in [the forum banner][kmu-banner].
 - EN: Political Map
   - ZH: 政治地图
   - Notes: Political Map in [features and screens][kmu-features].
@@ -713,6 +717,7 @@ The [source notes][source-notes] give why.
 [kmu-settings]: ../localisation/zh-hans/README.md#settings
 [kmu-tabs]: ../localisation/zh-hans/README.md#settings-tabs
 [kmu-console]: ../localisation/zh-hans/README.md#console-commands
+[kmu-banner]: ../localisation/zh-hans/README.md#the-forum-banner
 [kmlib-forum]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#forum-terms
 [kmlib-costs]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#what-a-failed-binding-costs
 [kmlib-settings]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#settings
