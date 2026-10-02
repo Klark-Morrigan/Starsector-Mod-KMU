@@ -68,15 +68,12 @@ The [source notes][source-notes] list KMU's value for every input; what each inp
 - EN: Political Map - Sector Map Layers - KMU
   - ZH: 政治地图 - 星图图层 - KMU
   - Notes: the Mod英文名 and Mod中文名 inputs.
-- EN (back-translation): Overlays map layers on the map screen, the intel screen and Random Assortment of Things' minimap.
-  - ZH: 在星图界面、情报信息界面和 Random Assortment of Things 的小地图上叠加地图图层。
-  - Notes: the Mod简短介绍 input, three sentences.
-    map screen and map layers in [features and screens][kmu-features]; Intel in [screens and the map][kmu-screens].
-    Minimap in [features and screens][kmu-features].
-- EN (back-translation): The headline Political Map paints the sector by faction, alliance (needs Nexerelin) or claim, and hover tooltips show who dominates each system.
-  - ZH: 首发的政治地图按势力、联盟（需 Nexerelin）或宣称为星域上色，悬停提示框说明每个星系由谁主导。
-  - Notes: Factions, Alliances, Claims and domination in [the political map][kmu-politics]; hover tooltip in [hovering and tooltips][kmu-hover].
-    Paint in [the political map][kmu-politics].
+- EN: Political map overlay over the sector map (map screen, intel screen, etc.) painting factions, alliances (with Nexerelin), and system claims.
+  - ZH: 星图上的政治地图叠加层（星图界面、情报信息界面等），为势力、联盟（需 Nexerelin）和星系宣称上色。
+  - Notes: the Mod简短介绍 input, two sentences; this one is Fossic only, written for the form.
+    Political Map, overlay and map screen in [features and screens][kmu-features]; Map and Intel in [screens and the map][kmu-screens].
+    "The sector map" is vanilla's 星图, the map itself, whichever screen shows it.
+    Paint, Factions, Alliances and claim in [the political map][kmu-politics]; system claim in [the political map][kmu-politics] too.
 - EN (back-translation): Needs the Starsector Chinese localisation installed first.
   - ZH: 需要先安装远行星号中文汉化。
   - Notes: The Chinese core localisation in [KMLib's forum terms][kmlib-forum].

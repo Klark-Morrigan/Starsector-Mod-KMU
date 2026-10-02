@@ -294,6 +294,7 @@ So a word of one axis never stands in for another:
 | Alliances (view) | 联盟 | Nexerelin's alliances; vanilla also uses 联盟 for the Persean League |
 | Claims (view) | 宣称 | vanilla's word for a claim, as in 无宣称领土; the view shows vanilla's claims |
 | claim | 宣称 | vanilla's word, as in 无宣称领土 |
+| system claim (the mechanic, a claim on a whole system) | 星系宣称 | from vanilla's 星系 and 宣称; how the Claims view and the forum intro name the mechanic |
 | claim holder | 宣称方 | from 宣称, with 方 for the party holding it |
 | system holder | 星系持有方 | 持有, to hold, with 方 for the party; kept apart from 宣称方 |
 | domination, dominance | 主导 | to prevail; kept apart from 宣称, the claim, and from 控制, a control |
@@ -408,6 +409,7 @@ which is how the tooltip heading reads: the faction's name, then 核心领土.
 | Applies only while X is on | [仅在 X 开启时生效] | bracketed as the English is; 生效, takes effect |
 | The settings below apply only while X is on | 以下设置仅在 [X] 开启时生效 | as above, with X bracketed for the highlight |
 | Visibility overrides (SPOILERS) | 可见性覆盖（剧透） | 覆盖, to override, after 可见性; 剧透, the usual word for a spoiler |
+| (adjustable in settings), (can be disabled in settings) | （可在设置中调整）, （可在设置中关闭） | the forum posts' grey asides, in full-width parentheses; 调整, adjust, and 关闭, switch off, as a setting's 开启 / 关闭 |
 | log verbosity, reflection, log levels | 日志详细程度, 反射, 关闭 / 错误 / 警告 / 信息 / 调试 / 全部 | [KMLib's](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#settings) |
 | UI palette / Chrome grey / Player faction (colour scheme) | 界面配色 / 纯灰 / 你的势力 | 界面, vanilla's word for the UI; 纯灰, the plain grey the description names; 你的势力 as vanilla writes it |
 | Gold / Panel accent (chevron) | 金色 / 面板强调色 | 强调色, the usual design word for an accent colour |
