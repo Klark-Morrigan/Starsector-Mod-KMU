@@ -468,7 +468,8 @@ The ` - ` in a tab name is an ASCII hyphen with a space either side, as in Engli
 ## Translating the changelog
 
 Every entry added to the root [CHANGELOG.md](../../CHANGELOG.md) is added to [this bundle's](CHANGELOG.md) in the same pull request.
-`LocaleParityIntegrationTests` fails a pull request whose translation lacks a point the root has.
+`LocaleParityIntegrationTests` fails a pull request whose translation lacks a point the root has,
+or whose code spans differ from the root's in any section.
 [KMLib's reference](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#translating-the-changelog)
 says how to translate the changelog and which words its headings take.
 Name a setting as the Chinese settings screen names it.

@@ -474,7 +474,7 @@ the [source notes][source-notes] give why the Fossic post opens with it.
   - ZH: 由于原版在宣称计算中会用到它们，它们也会列在宣称提示框中，但会被隐去。
 - EN: Decivilised markets are not revealed unless they start so, or until the player performs a full survey on them (adjustable in settings).
   - ZH: 荒蛮市场不会显示，除非它们一开始就是荒蛮的，或玩家已对其完成全面调查（可在设置中调整）。
-  - Notes: Fully surveyed in [surveys][kmu-surveys]; the grey aside marks a setting, as the other bullets do.
+  - Notes: Fully surveyed in [surveys][kmu-surveys]; the grey aside marks a setting, as the other bullets do, and is in [settings][kmu-settings].
 - EN: These markets are also revealed if there are visible colonies held by other non-allied factions.
   - ZH: 若其他非同盟势力在该星系持有可见的殖民地，这些市场也会显示。
   - Notes: non-allied factions in [the political map][kmu-politics].
