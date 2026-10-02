@@ -672,59 +672,25 @@ Fossic only.
 
 ## Post-release roadmap
 
+Fractal Softworks only: every line below has no Chinese counterpart.
+The [source notes][source-notes] give why.
+
 - EN: Post-release roadmap
-  - ZH: 发布后路线图
 - EN: Vanilla intel integration into the visibility system.
-  - ZH: 将原版情报整合进可见性系统。
-  - Notes: Intel in [screens and the map][kmu-screens] is the screen, 情报信息; 情报 here is the intel itself.
-    - Not in the reference: 情报 (intel).
 - EN: Map layer help tooltips.
-  - ZH: 地图图层的帮助提示框。
-  - Notes:
-    - Not in the reference: 帮助提示框 (help tooltips).
 - EN: Faction and alliance tooltips off of the sortable filter list.
-  - ZH: 从可排序的筛选列表中打开势力与联盟提示框。
 - EN: Filling in wedges and gaps between system cells.
-  - ZH: 填补星系单元之间的楔形空隙与缝隙。
-  - Notes: cell in [the political map][kmu-politics].
 - EN: Processing non-market entities and showing what's visible on system tooltips.
-  - ZH: 处理非市场实体，并在星系提示框中显示可见的内容。
 - EN: Incorporating some modded entities into the domination algorithm, like watchtowers and artillery implemented in Industial Evolution.
-  - ZH: 将部分 Mod 实体纳入主导算法，例如 Industrial Evolution 中的瞭望塔和火炮。
-  - Notes: the English has a typo: "Industial".
-    The Fossic line links IndEvo's Fossic thread.
-    - Not in the reference: 瞭望塔 (watchtower), 火炮 (artillery).
 - EN: A diplomatic map derived from the political map but focused on relations.
-  - ZH: 由政治地图派生、但聚焦于关系的外交地图。
-  - Notes: Relationship in [factions and relations][kmu-factions].
-    - Not in the reference: 外交地图 (diplomatic map).
 - EN: An Enemies view that paints the map by the lowest relations in a system, and a Friends view that paints only systems with factions above a chosen threshold.
-  - ZH: 敌人视图按星系中最低的关系上色；朋友视图只为存在关系高于所选阈值的势力的星系上色。
-  - Notes:
-    - Not in the reference: 敌人 (Enemies view), 朋友 (Friends view).
 - EN: Targets player faction relations by default, and applying the faction filter applies the focus to a specific faction.
-  - ZH: 默认针对玩家势力的关系；应用势力筛选后，焦点转到指定势力。
 - EN: Presence ribbons are painted with relation colors instead of faction colors.
-  - ZH: 存在色带以关系颜色而非势力颜色绘制。
 - EN: The political map is extended with Friends and Enemies filter recede modes - when a faction filter is applied, the rest of the sector paints relations instead of being muted or desaturated.
-  - ZH: 政治地图增加朋友与敌人两种筛选退后模式：应用势力筛选时，星域其余部分改为绘制关系，而不是淡化或去色。
-  - Notes: recede, Rest of the sector, Muted and Desaturated in [the political map][kmu-politics].
 - EN: An infrastructure map focused on non-market entities. For example a comm relay network view that shows detected network coverage.
-  - ZH: 聚焦于非市场实体的基础设施地图，例如显示已探测到的网络覆盖范围的通讯中继站网络视图。
-  - Notes: 通讯中继站 is vanilla's Comm Relay, in Hidden's note in [colonies and markets][kmu-colonies].
-    - Not in the reference: 基础设施地图 (infrastructure map), 通讯中继站网络 (comm relay network).
 - EN: An economy map focused on markets, industries, and commodities.
-  - ZH: 聚焦于市场、产业和商品的经济地图。
-  - Notes:
-    - Not in the reference: 经济地图 (economy map), 产业 (industry), 商品 (commodity).
 - EN: A faction management layer focused on player faction markets and fleets.
-  - ZH: 聚焦于玩家势力市场和舰队的势力管理图层。
-  - Notes:
-    - Not in the reference: 势力管理图层 (faction management layer).
 - EN: A framework for modders defining and supplying their own custom layers based on existing ones or brand new.
-  - ZH: 供 Mod 作者基于现有图层或从零定义并提供自定义图层的框架。
-  - Notes:
-    - Not in the reference: Mod 作者 (modder), 框架 (framework).
 
 ## AI usage disclaimer
 
