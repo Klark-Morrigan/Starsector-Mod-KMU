@@ -36,6 +36,14 @@ sourceSets {
     }
 }
 
+// The Fossic post and its review pairing are documents, not code, but a suite holds the pair in
+// step, so the test task takes the two files as inputs: an edit to either re-runs it.
+tasks.named('test') {
+    inputs.files('promo/fossic-post.bbcode', 'promo/fossic-post.pairs.md')
+        .withPropertyName('fossicPostPairing')
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
 // KMU's own layering edges. Kept beside the build rather than in it: they
 // describe the mod's architecture, not how it is assembled.
 apply from: "${rootDir}/gradle/package-layering.gradle"
