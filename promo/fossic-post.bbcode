@@ -35,10 +35,32 @@ fossic-post.pairs.md pairs every line of this post with the Fractal Softworks po
 change it with this file.
 
 The board, Mod制作发布 (forum-71-1.html), is where every original mod starts and is its pre-release board:
-its rule box is 原创Mod预发布规则摘要, and a mod moves to 原创Mod区 (forum-46-1.html) and the Mod索引 only once
-an admin has reviewed it (thread-6107-1-1.html; a 杂项 mod qualifies for 快速审核 straight away).
-The thread type is 【原创Mod发布】, the board's only one. There is no pre-release prefix; threads mark it in the
-title, as [测试] or [早期测试], which is what the title below does.
+its rule box is 原创Mod预发布规则摘要. The thread type is 【原创Mod发布】, the board's only one.
+There is no pre-release prefix; threads mark it in the title, as [测试] or [早期测试], which the title below does.
+
+The board rules (Mod区管理规定与细则 2.6.0, thread-13-1-1.html) the post keeps:
+- The author posts in person, one thread per mod, and every later release updates this thread.
+- The download is a forum attachment and free: no price on the thread and no reply-to-download.
+  A download permission level is allowed and not used.
+- The form must match the post. They agree on the game version (0.98), safe removal (否, the uninstall
+  procedure) and the dependencies; a release that changes one changes both.
+- A known incompatible mod is named in the form's 冲突Mod and in the post body both. None is known.
+- A mod that, without telling the player, modifies the game itself (config aside), goes online, or reads or
+  writes outside the game folder is banned. KMU and KMLib do none of these: they make no network calls, and
+  KMLib's one write goes through the game's own common-data store, inside the game folder.
+- Using another author's work as input to a large language model counts as using that work, and must follow its
+  licence or have the author's permission. KMU's research read the code of the mods it works with. LazyLib
+  (its licence file), Nexerelin (MIT), LunaLib (CC BY 4.0) and Fast Rendering (the Unlicense) permit that.
+  Random Assortment of Things states no terms, and asking its author is deferred until the question is raised.
+  The AI usage disclaimer stays as written either way.
+- Not recommended, not banned: a mod with no Chinese, one that conflicts with mainstream mods, or one that
+  breaks compatibility. KMU ships Chinese and is made compatible with Nexerelin, Fast Rendering and RAT.
+
+Review (Mod审核规定 5.1.0, thread-6107-1-1.html) is what lists the mod in the Mod索引:
+- A 杂项 mod may take 快速审核 straight after posting: contact 欧瑞捷门, Scythe, 肥龙太刀足 or jn_xyp.
+- The newest version in this thread is the one reviewed. It fails on instability (crashes, broken saves),
+  plagiarism or unlicensed use of others' code and assets, or too little content; balance is not judged.
+- A pass moves the thread to 原创Mod区 (forum-46-1.html) and into the Mod索引. A fail waits 15 days to retry.
 
 Posting form, every input in the form's order, read off the form on 2026-10-01 (* is required):
   标题 *                [0.98a][测试] 政治地图 - 星图图层 - KMU <version>
@@ -96,7 +118,7 @@ Release checklist, run by hand on every KMU release:
   1. Upload KMU-<version>-zh-hans.zip, add its Mod发布文件 row, and remove the previous version's row and file.
      Where KMLib moved, upload KMLib-<version>-zh-hans.zip under 前置 the same way.
   2. Set the form's 标题, Mod版本, Mod适用版本 and Mod更新时间, and the version in the 下载 line.
-  3. Paste the version's section of localisation/zh-hans/CHANGELOG.md into the 更新记录 collapse,
+  3. Paste the version's section of localisation/zh-hans/CHANGELOG.md into the 更新日志 collapse,
      above the previous versions, so the newest is first.
   4. Preview the post once: check [hr] renders and the nested collapses open.
 
@@ -218,7 +240,7 @@ Release checklist, run by hand on every KMU release:
 [/center]
 [/collapse]
 
-地图图层的主要控制界面是可折叠的[b]侧边栏[/b]，其中列出了所有可用图层以及相关的旋钮与开关。
+地图图层的主要控制界面是可折叠的[b]侧边栏[/b]，其中列出了所有可用图层以及相关的控件与开关。
 
 [collapse=可用的地图图层]
 [collapse=政治地图 (P)]
@@ -234,7 +256,7 @@ Release checklist, run by hand on every KMU release:
 [collapse=示例]
 [center]
 [attachimg]promo/domination-factions-unpopulated.png[/attachimg]
-[color=red]未被宣称[/color]的[b]无人星系[/b]只以极淡的线条绘制，仅用于显示星系之间的相接位置。
+[color=red]无宣称[/color]的[b]无人星系[/b]只以极淡的线条绘制，仅用于显示星系之间的相接位置。
 无人星系的这些轮廓可以独立于[b]有人星系[/b]开关；
 有人星系始终绘制，即使星系中没有任何有组织的势力（例如星系内所有殖民地都已[b]荒蛮[/b]）。
 [i][color=lightgrey]你也可以独立于势力星系和荒蛮星系调整它们的外观样式。[/color][/i]
@@ -259,10 +281,10 @@ Release checklist, run by hand on every KMU release:
 提示框会列出不产生主导得分的市场。
 [/center]
 [/collapse]
-[*]持有任何人口中心的势力都会列在一个[b]可排序的筛选列表[/b]中。选中其中任意一个，即可聚焦其在整个星域的存在。[b]中立[/b]与有组织的势力并列其中，选中它即可聚焦所有持有[b]荒蛮[/b]殖民地的星系。
+[*]持有任何有人居住市场的势力都会列在一个[b]可排序的筛选列表[/b]中。选中其中任意一个，即可聚焦其在整个星域的存在。[b]中立[/b]与有组织的势力并列其中，选中它即可聚焦所有持有[b]荒蛮[/b]殖民地的星系。
 [list]
-[*]在主导视图（[color=maroon][b]势力[/b][/color]与[color=maroon][b]联盟[/b][/color]）中，[b]实心填充[/b]表示主导，[b]斜线填充[/b]表示在由他人主导的星系中的存在，[b]不填充[/b]表示对无人星系的宣称。
-[*]在[color=maroon][b]宣称[/b][/color]视图中，所有星系均以实心填充绘制。
+[*]在主导视图（[color=maroon][b]势力[/b][/color]与[color=maroon][b]联盟[/b][/color]）中，[b]实色填充[/b]表示主导，[b]斜线填充[/b]表示在由他人主导的星系中的存在，[b]不填充[/b]表示对无人星系的宣称。
+[*]在[color=maroon][b]宣称[/b][/color]视图中，所有星系均以实色填充绘制。
 [/list]
 
 [collapse=示例]
@@ -285,7 +307,7 @@ Release checklist, run by hand on every KMU release:
 
 [color=maroon][b]政治地图[/b][/color]提供 3 种视图：
 [list]
-[*][color=maroon][b]势力[/b][/color]：根据自定义的[b]主导算法[/b]（可在设置中大幅调整）为势力领土上色。该算法综合考虑市场规模、稳定性、市场是否隐藏、是否有轨道空间站（以及空间站是否军事化），以及生成的巡逻舰队数量（按其规模）。
+[*][color=maroon][b]势力[/b][/color]：根据自定义的[b]主导算法[/b]（可在设置中大幅调整）为势力领土上色。该算法综合考虑市场规模、稳定性、市场是否隐藏、是否有轨道空间站（以及空间站殖民地是否建有轨道空间站），以及生成的巡逻队数量（按其规模）。
 
 [collapse=示例]
 [center]
@@ -303,7 +325,7 @@ Release checklist, run by hand on every KMU release:
 [color=maroon][b]联盟[/b][/color]视图中的提示框会合并在场联盟成员的主导得分。
 [/center]
 [/collapse]
-[*][color=maroon][b]宣称[/b][/color]：根据原版的[b]星系宣称[/b]机制为势力领土上色，包括动态宣称与无条件宣称。[b]无条件宣称[/b]通过星域记忆设置，具有最高权威。[b]除非宣称是无条件的，否则星系宣称会动态判定[/b]：参与经济的最大单个市场胜出，同势力市场（任何类型）的存在和已建成的军事产业会给予加成。[color=red]玩家势力和[b]非领土[/b]势力无法动态宣称。[/color]若按[b]非领土[/b]势力筛选，则会聚焦其在场的未被宣称的星系。
+[*][color=maroon][b]宣称[/b][/color]：根据原版的[b]星系宣称[/b]机制为势力领土上色，包括动态宣称与无条件宣称。[b]无条件宣称[/b]通过星域记忆设置，具有最高权威。[b]除非宣称是无条件的，否则星系宣称会动态判定[/b]：参与经济的最大单个市场胜出，同势力市场（任何类型）的存在和已建成的军事设施会给予加成。[color=red]你的势力和[b]非领土[/b]势力无法动态宣称。[/color]若按[b]非领土[/b]势力筛选，则会聚焦其在场的无宣称星系。
 
 [collapse=示例]
 [center]
@@ -318,8 +340,8 @@ Release checklist, run by hand on every KMU release:
 [collapse=防剧透]
 为避免剧透，地图图层基于一套源自原版的[b]可见性[/b]系统运作[i][color=lightgrey]（每一项都可在设置中调整）[/color][/i]：
 [list]
-[*][b]隐藏星系[/b]（没有由恒星、星云或黑洞生成的超空间锚点）不会显示，除非其中有可见的人口中心，或持有激活的星门。
-[*]标记为[b]可发现[/b]的实体（在玩家舰队传感器范围之外时不显示在星系地图上）不会显示。由于原版在宣称计算中会用到它们，它们也会列在[color=maroon][b]宣称[/b][/color]提示框中，但会被隐去。
+[*][b]隐藏星系[/b]（没有由恒星、星云或黑洞生成的超空间锚点）不会显示，除非其中有可见的有人居住的市场，或持有激活的星门。
+[*]标记为[b]可发现[/b]的实体（在玩家舰队探测范围之外时不显示在星系地图上）不会显示。由于原版在宣称计算中会用到它们，它们也会列在[color=maroon][b]宣称[/b][/color]提示框中，但会被隐去。
 [*]标记为[b]隐藏[/b]的市场不会显示，除非其他非同盟势力在该星系持有可见的殖民地，或玩家已到访该星系。由于原版在宣称计算中会用到它们，它们也会列在[color=maroon][b]宣称[/b][/color]提示框中，但会被隐去。
 [*][b]荒蛮市场[/b]不会显示，除非它们一开始就是荒蛮的，或玩家已对其完成全面调查。若其他非同盟势力在该星系持有可见的殖民地，这些市场也会显示。
 [*]带有[b]废弃空间站[/b]条件的无主市场遵循[b]隐藏市场[/b]的可见性规则。
@@ -339,27 +361,27 @@ Release checklist, run by hand on every KMU release:
 由 [color=maroon][b]KMLib[/b][/color] 提供：
 [list]
 [*][b]kmlib_activate_gate <id>[/b]：激活当前星系中该 id 的星门。
-[*][b]kmlib_colonise [entity-id] [faction-id][/b]：建立殖民地。[b][entity-id][/b] 默认为最近的可殖民市场。[b][faction-id][/b] 默认为玩家势力。
+[*][b]kmlib_colonise [entity-id] [faction-id][/b]：建立殖民地。[b][entity-id][/b] 默认为最近的可殖民市场。[b][faction-id][/b] 默认为你的势力。
 [*][b]kmlib_list_factions [markets|hidden|discoverable|no_markets] [no_holdings] [no_attitude] [to_log][/b]：列出每个势力及其持有：地点数量、隐藏数量、可发现数量，以及所在的星系。默认不应用任何筛选。
 [*][b]kmlib_list_map_spoilers[/b]：以星系、实体、势力的树状结构列出势力所有的星系，并标出被截断的星系和未发现的市场。
 [*][b]kmlib_list_system_entities [gates][/b]：以轨道树列出当前星系的实体，然后是无轨道的实体以及带坐标的舰队。默认不应用 [b][gates][/b] 筛选。
 [*][b]kmlib_spawn <gate|jump_point> [orbit_focus_id] [speed] [jitter=<frac>][/b]：在舰队位置生成星门或跳跃点。[b][orbit_focus_id][/b] 默认为星系中心。[b][speed][/b] 默认由半径推算。[b][jitter][/b] 默认为 0.25。
-[*][b]kmlib_transfer_market [entity-id] [faction-id][/b]：将现有殖民地移交给另一所有者。[b][entity-id][/b] 默认为最近的可殖民市场。[b][faction-id][/b] 默认为玩家势力。
+[*][b]kmlib_transfer_market [entity-id] [faction-id][/b]：将现有殖民地移交给另一所有者。[b][entity-id][/b] 默认为最近的可殖民市场。[b][faction-id][/b] 默认为你的势力。
 [/list]
 [/collapse]
 [collapse=兼容性]
-[color=maroon][b]KMU[/b][/color] 将地图图层作为仅在地图上显示的地形注入地图控件。为了在星景模式下也能显示，星景地形变体被标记为滑流。自定义地形是唯一必须以 Java 类引用的形式序列化进存档的内容，这也是禁用本 Mod 前需要干净卸载的原因。
+[color=maroon][b]KMU[/b][/color] 将地图图层作为仅在地图上显示的地形注入星图控件。为了在星景模式下也能显示，星景地形变体被标记为滑流。自定义地形是唯一必须以 Java 类引用的形式序列化进存档的内容，这也是禁用本 Mod 前需要干净卸载的原因。
 
-游戏会复用地图控件，许多 Mod 也是如此。这些自定义放置的控件会免费获得地图图层，但在没有兼容补丁的情况下，它们没有鼠标悬停检测，也没有控件（图层选择沿用星图界面这一主实例的选择）。
+游戏会复用星图控件，许多 Mod 也是如此。这些自定义放置的星图控件会免费获得地图图层，但在没有兼容补丁的情况下，它们没有鼠标悬停检测，也没有控件（图层选择沿用星图界面这一主实例的选择）。
 
 此外，本 Mod 专门与以下 Mod 做了兼容：
 [list]
 [*][b][url=https://www.fossic.org/thread-21060-1-1.html]Fast Rendering[/url][/b] 及其[b]优化[/b]。
 [*][b][url=https://www.fossic.org/thread-3680-1-1.html]Nexerelin[/url][/b]，以支持其[b]联盟[/b]机制。
-[*][b][url=https://www.fossic.org/thread-11661-1-1.html]Random Assortment of Things[/url][/b] 及其[b]小地图替换[/b]。小地图通过屏幕角落的一个提示框绘制地图控件。本 Mod 附带默认开启的 RAT 兼容模式，将鼠标检测限定在该控件范围内。图层选择沿用星图界面。此外，当地图控件停靠到屏幕外时（停靠是 RAT 在玩家停靠市场或打开任何界面时隐藏地图控件的方式），本 Mod 会将其设为不可见，从而跳过相关渲染，在不显示星图的菜单中应能带来少许性能提升（在超空间中更明显）。
+[*][b][url=https://www.fossic.org/thread-11661-1-1.html]Random Assortment of Things[/url][/b] 及其[b]小地图替换[/b]。小地图通过屏幕角落的一个提示框绘制星图控件。本 Mod 附带默认开启的 RAT 兼容模式，将鼠标检测限定在该星图控件范围内。图层选择沿用星图界面。此外，当星图控件停靠到屏幕外时（停靠是 RAT 在玩家停靠市场或打开任何界面时隐藏星图控件的方式），本 Mod 会将其设为不可见，从而跳过相关渲染，在不显示星图的菜单中应能带来少许性能提升（在超空间中更明显）。
 [/list]
 [/collapse]
-[collapse=更新记录]
+[collapse=更新日志]
 <<paste the version's section of localisation/zh-hans/CHANGELOG.md here, newest version first>>
 [/collapse]
 [hr]
@@ -374,7 +396,7 @@ Release checklist, run by hand on every KMU release:
 
 诊断选项：
 [list]
-[*][color=maroon][b]KMLib[/b][/color] 与 [color=maroon][b]KMU[/b][/color] 开发设置中的 [b]DEBUG[/b] 日志级别，用于写入 Mod 的全部内部日志。
+[*][color=maroon][b]KMLib[/b][/color] 与 [color=maroon][b]KMU[/b][/color] 开发设置中的 [b]DEBUG[/b] 日志详细程度，用于写入 Mod 的全部内部日志。
 [*][color=maroon][b]KMU[/b][/color] 开发设置中的[b]反射[/b]日志开关，用于追踪与原版界面交互时的问题。
 [*][color=maroon][b]KMU[/b][/color] 地图开发设置中的[b]性能分析[/b]开关与级别，配合 [b]kmu_profiling[/b] 控制台指令使用，用于定位性能下降的位置。
 [/list]
