@@ -36,6 +36,7 @@ import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.claims.ClaimStatsRead;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
+import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolve;
 import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
@@ -145,6 +146,29 @@ final class ClaimsViewTests {
             // rather than inheriting the held-plus-claims default.
             assertThat(ClaimsView.INSTANCE.resolveHolderProvider())
                 .isSameAs(ClaimsHolderProvider.INSTANCE);
+        }
+    }
+
+    @Nested
+    class ResolveSystemHolderResolveSource {
+
+        @Test
+        void reDerivesAMarkedSystemByClaimantThroughTheViewsReader() {
+            // A batch re-derives what this view painted - the claimant - through the reader every
+            // claim of this view is read through, rather than by the market contest.
+            var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var openedOver = new ArrayList<SectorPassIndex>();
+            var view = new ClaimsView((visibility, colonies) -> {
+                openedOver.add(colonies);
+                return mock(ClaimReader.class);
+            });
+
+            var resolve = view.resolveSystemHolderResolveSource().openResolveOver(pass);
+
+            assertThat(resolve)
+                .isInstanceOf(ClaimSystemHolderResolve.class);
+            assertThat(openedOver)
+                .containsExactly(pass.sectorIndex());
         }
     }
 

@@ -30,6 +30,7 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
+import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -480,7 +481,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
             // The names off, which is what leaves the bands a function of the map alone.
             var contentInputs = ContentInputs.sampleForView(
                 FactionsView.INSTANCE,
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 MapLayerScreens.resolveLivePicks().memoryScope());
 
             var territories = OwnerMapBuilder.buildClusters(
@@ -555,7 +556,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
         var occupancy = territories.getOccupancy();
 
         return new DrawnMap(
-            new LinkedHashMap<>(occupancy.getHolderBySystemKey()),
+            new LinkedHashMap<>(occupancy.getOwnerBySystemKey()),
             new LinkedHashSet<>(occupancy.getInhabitedSystemKeys()),
             new LinkedHashSet<>(occupancy.getSpotlitPresenceSystemKeys()),
             new LinkedHashMap<>(territories.getStyledCellByCellKey()),

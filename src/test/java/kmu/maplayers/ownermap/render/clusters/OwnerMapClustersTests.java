@@ -76,7 +76,7 @@ final class OwnerMapClustersTests {
                 .isEmpty();
             assertThat(clusters.getStyledClusterGroupByOwnerId())
                 .isEmpty();
-            assertThat(clusters.getOccupancy().getHolderBySystemKey())
+            assertThat(clusters.getOccupancy().getOwnerBySystemKey())
                 .isEmpty();
             assertThat(clusters.getOccupancy().getInhabitedSystemKeys())
                 .isEmpty();
@@ -340,7 +340,7 @@ final class OwnerMapClustersTests {
             assertThat(clusters.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
                 .containsExactlyInAnyOrderElementsOf(buildCellKeys("A", "B", "C"));
 
-            clusters.getOccupancy().recordHolderOf(buildCellKey("B"), readOwnerOf("RIVAL"));
+            clusters.getOccupancy().recordOwnerOf(buildCellKey("B"), readOwnerOf("RIVAL"));
             reindex(clusters, edges);
 
             assertThat(clusters.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
@@ -359,7 +359,7 @@ final class OwnerMapClustersTests {
             var clusters = buildOwnedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
             reindex(clusters, edges);
 
-            clusters.getOccupancy().recordHolderOf(buildCellKey("B"), readOwnerOf("F"));
+            clusters.getOccupancy().recordOwnerOf(buildCellKey("B"), readOwnerOf("F"));
             reindex(clusters, edges);
 
             assertThat(clusters.getClusterIndex().findClusterMembersOf(buildCellKey("A")))

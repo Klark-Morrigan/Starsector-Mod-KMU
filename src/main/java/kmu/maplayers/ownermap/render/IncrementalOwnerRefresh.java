@@ -321,7 +321,7 @@ public final class IncrementalOwnerRefresh {
         var occupancy = clusters.getOccupancy();
         var holder = drawnSystemKey == null
             ? null
-            : occupancy.readHolderOf(drawnSystemKey);
+            : occupancy.readOwnerOf(drawnSystemKey);
 
         // This cell's own holder narrowly, and the whole holding beside it: the shaper compares
         // every neighbour's holder against this one to tell a same-bloc seam from a border, so that
@@ -330,7 +330,7 @@ public final class IncrementalOwnerRefresh {
         var shaped = CellShaper.shapeCell(
             edges,
             ownerId,
-            SystemOwner.mapOwnerIdBySystemKey(occupancy.getHolderBySystemKey()),
+            SystemOwner.mapOwnerIdBySystemKey(occupancy.getOwnerBySystemKey()),
             EdgeInset.asTheMapDraws());
 
         var painted = PaintedCellBuilder.buildPaintedCellForSystem(

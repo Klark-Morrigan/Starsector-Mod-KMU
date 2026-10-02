@@ -1,6 +1,5 @@
 package kmu.maplayers.ownermap.render;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Segment;
@@ -65,8 +64,8 @@ import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.FLIPPED_SYSTEM
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.HEGEMONY;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildHolderOf;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildHoldersOf;
+import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnerOf;
+import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnersOf;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildSectorWithSystems;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildSquareCellFacing;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildTwoAdjacentCells;
@@ -142,7 +141,6 @@ public final class IncrementalOwnerRefreshTests {
         // rather than draining any board of its own, so a case states the batch directly.
         private final Set<SystemKey> staleSystemKeys = new LinkedHashSet<>();
 
-        private MockedStatic<Global> globalMock;
         // The source the standing build was resolved by, which the batch re-derives through, and
         // what each of its resolves answers. Stated rather than derived from a sector: who owns a
         // system is the painting layer's, and this suite is about what the batch does with the
@@ -162,16 +160,13 @@ public final class IncrementalOwnerRefreshTests {
         @BeforeEach
         void openSeamsAndClearTheStaleSet() {
 
-            globalMock = seams.holdSeam(StubbedGlobalLogger.openGlobalAnsweringLoggers());
+            // Loggers only: the batch reads the sector off the walk it is handed, never off Global.
+            seams.holdSeam(StubbedGlobalLogger.openGlobalAnsweringLoggers());
 
             sectorMock = buildSectorWithSystems(
                 FLIPPED_SYSTEM,
                 NEIGHBOUR_SYSTEM,
                 DISTANT_SYSTEM);
-
-            globalMock
-                .when(Global::getSector)
-                .thenReturn(sectorMock);
 
             ownerSourceFake = new OwnerSourceFake();
 
@@ -272,7 +267,7 @@ public final class IncrementalOwnerRefreshTests {
             // states; here the cell carries none, so the re-bake finds nothing to write.
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -300,7 +295,7 @@ public final class IncrementalOwnerRefreshTests {
 
             ownerSourceFake.answerRibbonPlanner(system -> BAND_OF_ONE_RUN);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -338,7 +333,7 @@ public final class IncrementalOwnerRefreshTests {
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -385,7 +380,7 @@ public final class IncrementalOwnerRefreshTests {
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -415,7 +410,7 @@ public final class IncrementalOwnerRefreshTests {
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -451,7 +446,7 @@ public final class IncrementalOwnerRefreshTests {
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -526,8 +521,8 @@ public final class IncrementalOwnerRefreshTests {
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
-            assertResolvesTo(NEIGHBOUR_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
+            assertResolvesTo(NEIGHBOUR_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             markStale(NEIGHBOUR_SYSTEM);
@@ -545,7 +540,7 @@ public final class IncrementalOwnerRefreshTests {
             // would be answered out of a sector the standing cells were never cut from.
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -565,7 +560,7 @@ public final class IncrementalOwnerRefreshTests {
 
             seedBandSizedDistantCell(clusters);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -586,8 +581,8 @@ public final class IncrementalOwnerRefreshTests {
 
             var holderBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
 
-            holderBySystemKey.put(firstCell, buildHolderOf(HEGEMONY));
-            holderBySystemKey.put(twinCell, buildHolderOf(HEGEMONY));
+            holderBySystemKey.put(firstCell, buildOwnerOf(HEGEMONY));
+            holderBySystemKey.put(twinCell, buildOwnerOf(HEGEMONY));
 
             var clusters = OwnerMapClusterFixtures.createClustersOwnedByKeys(
                 holderBySystemKey,
@@ -608,7 +603,7 @@ public final class IncrementalOwnerRefreshTests {
             when(cellGeometry.cells().getSystemKeyByCellKey())
                 .thenReturn(systemKeyByCellKey);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             markStaleKey(twinCell);
             applyOverTheSector(
@@ -639,7 +634,7 @@ public final class IncrementalOwnerRefreshTests {
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -668,7 +663,7 @@ public final class IncrementalOwnerRefreshTests {
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -704,7 +699,7 @@ public final class IncrementalOwnerRefreshTests {
 
             seedDrawnDistantCell(clusters);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -736,7 +731,7 @@ public final class IncrementalOwnerRefreshTests {
                     List.of(),
                     List.of(buildNameOverTheDistantCell())));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -760,8 +755,8 @@ public final class IncrementalOwnerRefreshTests {
 
             seedDrawnDistantCell(clusters);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
-            assertResolvesTo(DISTANT_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
+            assertResolvesTo(DISTANT_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             markStale(DISTANT_SYSTEM);
@@ -836,7 +831,7 @@ public final class IncrementalOwnerRefreshTests {
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -862,7 +857,7 @@ public final class IncrementalOwnerRefreshTests {
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -881,7 +876,7 @@ public final class IncrementalOwnerRefreshTests {
             // each other and neither half may move.
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
@@ -1035,7 +1030,7 @@ public final class IncrementalOwnerRefreshTests {
             OwnerSource ownerSource) {
 
         return OwnerMapClusterFixtures.createClustersOwnedBy(
-            buildHoldersOf(factionIdBySystemId),
+            buildOwnersOf(factionIdBySystemId),
             ownerSource);
     }
 
@@ -1048,7 +1043,7 @@ public final class IncrementalOwnerRefreshTests {
             OwnerSource ownerSource) {
 
         return OwnerMapClusterFixtures.createClustersSpellingNames(
-            buildHoldersOf(factionIdBySystemId),
+            buildOwnersOf(factionIdBySystemId),
             nameFormat,
             ownerSource);
     }

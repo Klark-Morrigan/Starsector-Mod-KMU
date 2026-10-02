@@ -38,6 +38,10 @@ A rebuild opens one `SectorWalk`:
 the `SectorPassIndex` that walks each system once,
 and the visibility rules the cells were cut under.
 It names no colony rule and no owner.
+It keeps whatever reading a source opens over it,
+one per source,
+so the owners, the per-system answers and the band count asked of one walk share one reading
+and the source stays a set of rules.
 
 The source is handed the walk rather than the sector,
 so whatever it opens over it shares the traversal the cut already paid for.

@@ -180,7 +180,7 @@ final class OwnerMapBuilderTests {
 
             assertThat(sourceFake.readOwnerWalks())
                 .isEmpty();
-            assertThat(clusters.getOccupancy().getHolderBySystemKey())
+            assertThat(clusters.getOccupancy().getOwnerBySystemKey())
                 .containsExactly(Map.entry(HELD_SYSTEM, HELD_BY));
         }
 
@@ -196,7 +196,7 @@ final class OwnerMapBuilderTests {
                 UNFILTERED_INPUTS,
                 owners);
 
-            clusters.getOccupancy().recordHolderOf(HELD_SYSTEM, null);
+            clusters.getOccupancy().recordOwnerOf(HELD_SYSTEM, null);
 
             assertThat(owners.ownerBySystemKey())
                 .containsKey(HELD_SYSTEM);

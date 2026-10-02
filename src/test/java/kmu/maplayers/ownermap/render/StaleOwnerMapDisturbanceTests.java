@@ -57,7 +57,7 @@ final class StaleOwnerMapDisturbanceTests {
             // would leave the new cluster group undrawn until some later full rebuild.
             var disturbance = new StaleOwnerMapDisturbance();
 
-            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildHolderOf(HEGEMONY));
+            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildOwnerOf(HEGEMONY));
 
             assertThat(disturbance.hasFlips())
                 .isTrue();
@@ -69,7 +69,7 @@ final class StaleOwnerMapDisturbanceTests {
             // cluster group is exactly the one that has to stop drawing the cell.
             var disturbance = new StaleOwnerMapDisturbance();
 
-            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), buildHolderOf(HEGEMONY), null);
+            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), buildOwnerOf(HEGEMONY), null);
 
             assertThat(disturbance.hasFlips())
                 .isTrue();
@@ -102,8 +102,8 @@ final class StaleOwnerMapDisturbanceTests {
             disturbance.recordFlip(
                 FLIPPED_SYSTEM,
                 List.of(NEIGHBOUR_SYSTEM),
-                buildHolderOf(HEGEMONY),
-                buildHolderOf(TRITACHYON));
+                buildOwnerOf(HEGEMONY),
+                buildOwnerOf(TRITACHYON));
 
             assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM);
@@ -118,8 +118,8 @@ final class StaleOwnerMapDisturbanceTests {
             disturbance.recordFlip(
                 FLIPPED_SYSTEM,
                 List.of(NEIGHBOUR_SYSTEM),
-                buildHolderOf(HEGEMONY),
-                buildHolderOf(TRITACHYON));
+                buildOwnerOf(HEGEMONY),
+                buildOwnerOf(TRITACHYON));
 
             assertThat(disturbance.getAffectedFactionIds())
                 .containsExactly(HEGEMONY, TRITACHYON);
@@ -131,7 +131,7 @@ final class StaleOwnerMapDisturbanceTests {
             // send a faction that never drew this cell through a rebuild for nothing.
             var disturbance = new StaleOwnerMapDisturbance();
 
-            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildHolderOf(TRITACHYON));
+            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildOwnerOf(TRITACHYON));
 
             assertThat(disturbance.getAffectedFactionIds())
                 .containsExactly(TRITACHYON);
@@ -142,7 +142,7 @@ final class StaleOwnerMapDisturbanceTests {
 
             var disturbance = new StaleOwnerMapDisturbance();
 
-            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), buildHolderOf(HEGEMONY), null);
+            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), buildOwnerOf(HEGEMONY), null);
 
             assertThat(disturbance.getAffectedFactionIds())
                 .containsExactly(HEGEMONY);
@@ -159,13 +159,13 @@ final class StaleOwnerMapDisturbanceTests {
             disturbance.recordFlip(
                 FLIPPED_SYSTEM,
                 List.of(NEIGHBOUR_SYSTEM),
-                buildHolderOf(HEGEMONY),
-                buildHolderOf(TRITACHYON));
+                buildOwnerOf(HEGEMONY),
+                buildOwnerOf(TRITACHYON));
             disturbance.recordFlip(
                 NEIGHBOUR_SYSTEM,
                 List.of(FLIPPED_SYSTEM),
-                buildHolderOf(HEGEMONY),
-                buildHolderOf(TRITACHYON));
+                buildOwnerOf(HEGEMONY),
+                buildOwnerOf(TRITACHYON));
 
             assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM);
@@ -209,7 +209,7 @@ final class StaleOwnerMapDisturbanceTests {
             // and becomes settled at once - and the cell is worth redrawing once.
             var disturbance = new StaleOwnerMapDisturbance();
 
-            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildHolderOf(HEGEMONY));
+            disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildOwnerOf(HEGEMONY));
             disturbance.recordRestyle(FLIPPED_SYSTEM);
 
             assertThat(disturbance.getCellKeysToRedraw())
@@ -218,7 +218,7 @@ final class StaleOwnerMapDisturbanceTests {
     }
 
     // Only the faction ID is read here, so the shades are inert placeholders.
-    private static SystemOwner buildHolderOf(String factionId) {
+    private static SystemOwner buildOwnerOf(String factionId) {
         return new SystemOwner(factionId, new OwnerPalette(Color.GRAY, Color.GRAY));
     }
 }

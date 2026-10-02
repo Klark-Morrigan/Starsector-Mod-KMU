@@ -11,9 +11,7 @@ import kmu.maplayers.ownermap.owners.OwnerSource;
  *
  * <p>Every per-owner answer a stage paints from is the reading's. The source rides beside it for
  * the batches that follow the build: a marked system is re-derived through the source the standing
- * build was resolved under, so it lands the same owner its neighbours were painted by. Resolved
- * apart, the two could sample a live input twice and answer about owners a fold the other never
- * made - which is why a view answers both in one call.
+ * build was resolved under, so it lands the same owner its neighbours were painted by.
  *
  * @param view    the view painted
  * @param reading the answers about its owners' looks, resolved once for the build

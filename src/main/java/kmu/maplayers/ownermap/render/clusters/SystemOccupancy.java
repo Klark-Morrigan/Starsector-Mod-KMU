@@ -11,13 +11,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Who is in each star system, as a built map holds it: which bloc holds it, whether anything
+ * Who is in each star system, as a built map owns it: which bloc owns it, whether anything
  * stands in it at all, and - while a bloc is spotlighted - whether the pick is one of the things
  * standing in it.
  *
- * <p>The three travel together because a cell is drawn from all three at once. The holder decides
+ * <p>The three travel together because a cell is drawn from all three at once. The owner decides
  * whether the cell fuses into a cluster group or draws alone; inhabitation tells a settled cell nobody
- * holds from the empty backdrop; and the pick's presence spares such a cell the recede a spotlight
+ * owns from the empty backdrop; and the pick's presence spares such a cell the recede a spotlight
  * sinks the rest of the sector under. Read from two different states of the sector, they produce a
  * cell no single reading of the sector would have drawn - a haven sunk under a spotlight it is the
  * subject of, or a colonised system still drawn as backdrop.
@@ -36,33 +36,33 @@ import java.util.Set;
  */
 public final class SystemOccupancy {
 
-    // Who holds each system. A system with no entry is held by nobody - which is not the same as
+    // Who owns each system. A system with no entry is owned by nobody - which is not the same as
     // nobody living there, and reading it as such is what the inhabited set below exists to stop.
-    private final Map<SystemKey, SystemOwner> holderBySystemKey;
+    private final Map<SystemKey, SystemOwner> ownerBySystemKey;
 
     // Every system something stands in, live colony or known decivilised world.
     private final Set<SystemKey> inhabitedSystemKeys;
 
-    // The settled systems the spotlit bloc lives in that no holder was resolved for. Empty off
-    // filter, and empty on any view whose holding accounts for every inhabited system.
+    // The settled systems the spotlit bloc lives in that no owner was resolved for. Empty off
+    // filter, and empty on any view whose ownership accounts for every inhabited system.
     private final Set<SystemKey> spotlitPresenceSystemKeys;
 
     // The views every reader is answered through, wrapped once here rather than per ask: a getter
     // minting a fresh wrapper would put an allocation inside the per-cell styling loop.
-    private final Map<SystemKey, SystemOwner> readableHolderBySystemKey;
+    private final Map<SystemKey, SystemOwner> readableOwnerBySystemKey;
     private final Set<SystemKey> readableInhabitedSystemKeys;
     private final Set<SystemKey> readableSpotlitPresenceSystemKeys;
 
     private SystemOccupancy(
-            Map<SystemKey, SystemOwner> holderBySystemKey,
+            Map<SystemKey, SystemOwner> ownerBySystemKey,
             Set<SystemKey> inhabitedSystemKeys,
             Set<SystemKey> spotlitPresenceSystemKeys) {
 
-        this.holderBySystemKey = holderBySystemKey;
+        this.ownerBySystemKey = ownerBySystemKey;
         this.inhabitedSystemKeys = inhabitedSystemKeys;
         this.spotlitPresenceSystemKeys = spotlitPresenceSystemKeys;
 
-        readableHolderBySystemKey = Collections.unmodifiableMap(holderBySystemKey);
+        readableOwnerBySystemKey = Collections.unmodifiableMap(ownerBySystemKey);
         readableInhabitedSystemKeys = Collections.unmodifiableSet(inhabitedSystemKeys);
         readableSpotlitPresenceSystemKeys = Collections.unmodifiableSet(spotlitPresenceSystemKeys);
     }
@@ -77,25 +77,25 @@ public final class SystemOccupancy {
      * Insertion-ordered copies, so a walk of any of the three runs in the order the pass resolved
      * it rather than in a hash's.
      *
-     * @param holderBySystemKey         who holds each system; a system nobody holds is absent
+     * @param ownerBySystemKey         who owns each system; a system nobody owns is absent
      * @param inhabitedSystemKeys       every system something stands in
      * @param spotlitPresenceSystemKeys the settled systems the spotlit bloc lives in that nobody
-     *                                  holds; empty off filter
+     *                                  owns; empty off filter
      * @return the occupancy, ready to be read and folded
      */
     public static SystemOccupancy createCopyOf(
-            Map<SystemKey, SystemOwner> holderBySystemKey,
+            Map<SystemKey, SystemOwner> ownerBySystemKey,
             Set<SystemKey> inhabitedSystemKeys,
             Set<SystemKey> spotlitPresenceSystemKeys) {
 
         return new SystemOccupancy(
-            new LinkedHashMap<>(holderBySystemKey),
+            new LinkedHashMap<>(ownerBySystemKey),
             new LinkedHashSet<>(inhabitedSystemKeys),
             new LinkedHashSet<>(spotlitPresenceSystemKeys));
     }
 
     /**
-     * An empty occupancy: nobody holds anything, nothing stands anywhere, no pick lives anywhere.
+     * An empty occupancy: nobody owns anything, nothing stands anywhere, no pick lives anywhere.
      *
      * <p>What a build that never ran carries, and what a build fills in as it resolves. Named here
      * rather than spelt out as three empty collections at each such caller, so "nothing resolved
@@ -108,44 +108,44 @@ public final class SystemOccupancy {
     }
 
     /**
-     * @return who holds each system, keyed by {@link SystemKey}; a system nobody holds is absent
+     * @return who owns each system, keyed by {@link SystemKey}; a system nobody owns is absent
      *         rather than present under a null
      */
-    public Map<SystemKey, SystemOwner> getHolderBySystemKey() {
-        return readableHolderBySystemKey;
+    public Map<SystemKey, SystemOwner> getOwnerBySystemKey() {
+        return readableOwnerBySystemKey;
     }
 
     /**
-     * Who holds one system.
+     * Who owns one system.
      *
      * <p>The read most callers want, and the reason the whole map is not it: a caller asking about
-     * one system would otherwise take the entire holding and look a key up in it, which hands out
+     * one system would otherwise take the entire ownership and look a key up in it, which hands out
      * far more than the question needs and answers one hop further away, through the unmodifiable
-     * view rather than off the holding itself. The map read stays for the folds that really do span
+     * view rather than off the ownership itself. The map read stays for the folds that really do span
      * every system - the cell grouping, the faction-ID projection the shaper compares against, and
      * the label styling snapshot.
      *
-     * <p>Answers null for a system nobody holds, which is what an absent entry means. A caller with
+     * <p>Answers null for a system nobody owns, which is what an absent entry means. A caller with
      * no system to name - a cell drawn as no star - asks nothing rather than probing with a null
      * key.
      *
      * @param systemKey the system to read
-     * @return its holder, or null where nobody holds it
+     * @return its owner, or null where nobody owns it
      */
-    public SystemOwner readHolderOf(SystemKey systemKey) {
-        return holderBySystemKey.get(systemKey);
+    public SystemOwner readOwnerOf(SystemKey systemKey) {
+        return ownerBySystemKey.get(systemKey);
     }
 
     /**
-     * @return every system something is standing in, whoever holds it and whether or not this
-     *         layer's holding accounts for them
+     * @return every system something is standing in, whoever owns it and whether or not this
+     *         layer's ownership accounts for them
      */
     public Set<SystemKey> getInhabitedSystemKeys() {
         return readableInhabitedSystemKeys;
     }
 
     /**
-     * @return the settled systems the spotlit bloc lives in that no holder was resolved for; empty
+     * @return the settled systems the spotlit bloc lives in that no owner was resolved for; empty
      *         off filter
      */
     public Set<SystemKey> getSpotlitPresenceSystemKeys() {
@@ -153,44 +153,44 @@ public final class SystemOccupancy {
     }
 
     /**
-     * Which of the given systems nobody holds.
+     * Which of the given systems nobody owns.
      *
      * <p>The candidate rule for a spotlit bloc's presence, which is only ever asked about systems
-     * the holding could attribute to nobody: one somebody holds already draws in that bloc's
+     * the ownership could attribute to nobody: one somebody owns already draws in that bloc's
      * cluster group, so where the pick also lives there changes nothing. Asked over a caller's own
      * candidates rather than over the whole map, since both callers already know the narrow set
      * they care about - every settled system for a full build, the marked ones for a refresh.
      *
      * @param candidateSystemKeys the systems to filter, in the order they are to be answered in
-     * @return those of them no holder was resolved for
+     * @return those of them no owner was resolved for
      */
-    public Set<SystemKey> selectUnheldSystemKeysAmong(Set<SystemKey> candidateSystemKeys) {
+    public Set<SystemKey> selectUnownedSystemKeysAmong(Set<SystemKey> candidateSystemKeys) {
         // The owner side's own rule rather than a copy of it, so the source that resolves the
-        // whole sector and this fold cannot come to disagree about what "unheld" means.
-        return SystemOwner.selectUnownedSystemKeysAmong(holderBySystemKey, candidateSystemKeys);
+        // whole sector and this fold cannot come to disagree about what "unowned" means.
+        return SystemOwner.selectUnownedSystemKeysAmong(ownerBySystemKey, candidateSystemKeys);
     }
 
     /**
-     * Records who holds one system, or that nobody does.
+     * Records who owns one system, or that nobody does.
      *
-     * <p>Takes the absent holder as a null rather than through a second method, because the two
-     * are one answer from the resolve that produced it: a system holding no counted colony
+     * <p>Takes the absent owner as a null rather than through a second method, because the two
+     * are one answer from the resolve that produced it: a system with no counted colony
      * resolves to nobody, and the caller that has just asked should not have to branch on which
      * kind of answer it got before writing it down.
      *
-     * <p>Reports nothing about what moved, unlike the folds below, because a holder change is not
+     * <p>Reports nothing about what moved, unlike the folds below, because an owner change is not
      * a yes-or-no: what the redraw needs is both sides of the transfer, so the caller reads the
-     * standing holder before it writes and has the pair without being told.
+     * standing owner before it writes and has the pair without being told.
      *
      * @param systemKey the system to record
-     * @param holder    who holds it now, or null when nobody does
+     * @param owner     who owns it now, or null when nobody does
      */
-    public void recordHolderOf(SystemKey systemKey, SystemOwner holder) {
+    public void recordOwnerOf(SystemKey systemKey, SystemOwner owner) {
 
-        if (holder == null) {
-            holderBySystemKey.remove(systemKey);
+        if (owner == null) {
+            ownerBySystemKey.remove(systemKey);
         } else {
-            holderBySystemKey.put(systemKey, holder);
+            ownerBySystemKey.put(systemKey, owner);
         }
     }
 
@@ -206,7 +206,7 @@ public final class SystemOccupancy {
     }
 
     /**
-     * Records whether the spotlit bloc lives in one system no holder was resolved for.
+     * Records whether the spotlit bloc lives in one system no owner was resolved for.
      *
      * @param systemKey the system to record
      * @param isPresent whether the pick owns a counted colony there now

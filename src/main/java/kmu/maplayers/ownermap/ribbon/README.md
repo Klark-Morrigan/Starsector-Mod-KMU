@@ -48,7 +48,7 @@ The grammar it lays down:
 and `RibbonPlanRules` pairs those with the shortening below.
 `RibbonPlanInputs` carries the rules,
 the palette port,
-the `BlocAffiliation` the contest is judged against and the `HolderPass` the bake was handed,
+the `BlocAffiliation` the contest is judged against and the `HolderPass` the layer's source opened over the bake's walk,
 so a planner is handed one object rather than a handful of loose knobs -
 and so every mechanic of a composed planner counts off a single walk of each system
 and judges its contests against one affiliation.

@@ -24,8 +24,8 @@ import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.FLIPPED_SYSTEM
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.HEGEMONY;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildHolderOf;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildHoldersOf;
+import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnerOf;
+import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnersOf;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildSectorWithSystems;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildTwoAdjacentCells;
 
@@ -87,12 +87,12 @@ final class MarkedSystemRederiveTests {
 
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             rederive(clusters, FLIPPED_SYSTEM);
 
-            assertThat(clusters.getOccupancy().getHolderBySystemKey())
-                .containsExactly(Map.entry(buildCellKey(FLIPPED_SYSTEM), buildHolderOf(TRITACHYON)));
+            assertThat(clusters.getOccupancy().getOwnerBySystemKey())
+                .containsExactly(Map.entry(buildCellKey(FLIPPED_SYSTEM), buildOwnerOf(TRITACHYON)));
         }
 
         @Test
@@ -102,7 +102,7 @@ final class MarkedSystemRederiveTests {
             // because half of that is a border drawn down one side only.
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             var disturbance = rederive(clusters, FLIPPED_SYSTEM);
 
@@ -123,7 +123,7 @@ final class MarkedSystemRederiveTests {
 
             rederive(clusters, FLIPPED_SYSTEM);
 
-            assertThat(clusters.getOccupancy().getHolderBySystemKey())
+            assertThat(clusters.getOccupancy().getOwnerBySystemKey())
                 .isEmpty();
         }
 
@@ -134,7 +134,7 @@ final class MarkedSystemRederiveTests {
             // would spend a frame redrawing the map it already had.
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             var disturbance = rederive(clusters, FLIPPED_SYSTEM);
 
@@ -236,7 +236,7 @@ final class MarkedSystemRederiveTests {
                 Set.of(FLIPPED_SYSTEM),
                 Set.of(FLIPPED_SYSTEM));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(SPOTLIT_BLOC));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(SPOTLIT_BLOC));
 
             // The pick does live there, so a presence asked of an owned system would come back
             // true: an empty set is what says it was never asked, the system's answer deciding
@@ -270,7 +270,7 @@ final class MarkedSystemRederiveTests {
         private static OwnerMapClusters buildSettledIn(
                 Map<String, String> factionIdBySystemId) {
             return OwnerMapClusterFixtures.createClustersOwnedBy(
-                buildHoldersOf(factionIdBySystemId));
+                buildOwnersOf(factionIdBySystemId));
         }
 
         // What the resolve answers for one system's owner this batch. Every case states the

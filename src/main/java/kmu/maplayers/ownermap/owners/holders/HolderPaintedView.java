@@ -18,8 +18,7 @@ import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
  *
  * <p>The assembly is the point of the type. A view painting holders samples its grouping once per
  * rebuild here, and the reading and the source are both built over that one sampling, so the owners
- * the source resolves and the names and shades the reading gives them describe one fold. A view
- * stating its two answers by hand would have to keep that discipline itself.
+ * the source resolves and the names and shades the reading gives them describe one fold.
  *
  * <p>Every part is declared rather than defaulted: each is one layer's rule, and a default here would
  * put one layer's mechanic in front of every layer painting holders.

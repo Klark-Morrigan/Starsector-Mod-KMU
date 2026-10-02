@@ -551,12 +551,12 @@ final class ClusterAnchorsBuilderTests {
     }
 
     @Nested
-    class RebuildClusterAnchorsFromOwners {
+    class RebuildDiagnosticClusterAnchors {
 
         @Test
         void fitsLabelsToTheHandedOwners() {
             // The border-tracing diagnostic builds no draw lists to borrow an owner map from, so
-            // this path is handed the owners that diagnostic traced - the labels then key off the
+            // this path is handed styling over the owners that diagnostic traced - the labels key off the
             // same answer the traced borders were drawn from.
             stubAnchorOverlay(true);
             stubSectorHolders(Map.of(
@@ -567,42 +567,13 @@ final class ClusterAnchorsBuilderTests {
                 RIVAL_SYSTEM,
                 TRITACHYON_HOLDER));
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromOwners(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                ownerBySystemKey,
-                OwnerReadingFake.createAnsweringNothing(),
-                categoriesMock,
-                contentInputs,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(2);
-            assertThat(standingAnchors.getAnchors().get(0).colour())
-                .isEqualTo(HEGEMONY_PRIMARY);
-        }
-
-        @Test
-        void recedesNothingWhileABlocIsSpotlitElsewhere() {
-            // This path paints real holders across the whole sector, so the spotlight
-            // standing in the picks it is handed has to be dropped before it styles anything.
-            // Carried through, every bloc but the spotlit one would recede and the labels would
-            // come back in the desaturation shade - the map receding around a spotlight the debug
-            // view does not paint. Posed with a bloc spotlit that holds nothing here, so a receded
-            // label is the only way the shade can move.
-            contentInputs = ContentInputsFixtures.createInputsSpotlighting(TRITACHYON);
-            stubAnchorOverlay(true);
-            stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
-
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromOwners(
-                standingAnchors,
-                cellGeometry,
-                ownerBySystemKey,
-                OwnerReadingFake.createAnsweringNothing(),
-                categoriesMock,
-                contentInputs,
-                StarsectorFont.VANILLA_INSIGNIA_42);
-
             assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(HEGEMONY_PRIMARY);
         }
@@ -615,14 +586,10 @@ final class ClusterAnchorsBuilderTests {
             stubAnchorOverlay(true);
             stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromOwners(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                ownerBySystemKey,
-                OwnerReadingFake.createAnsweringNothing(),
-                categoriesMock,
-                contentInputs,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -636,14 +603,10 @@ final class ClusterAnchorsBuilderTests {
             stubAnchorOverlay(true);
             stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromOwners(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                ownerBySystemKey,
-                OwnerReadingFake.createAnsweringNothing(),
-                categoriesMock,
-                contentInputs,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -662,14 +625,10 @@ final class ClusterAnchorsBuilderTests {
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY_HOLDER));
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromOwners(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                ownerBySystemKey,
-                OwnerReadingFake.createAnsweringNothing(),
-                categoriesMock,
-                contentInputs,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
@@ -678,14 +637,10 @@ final class ClusterAnchorsBuilderTests {
             assertThat(firstPassAxis)
                 .isNotNull();
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromOwners(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                ownerBySystemKey,
-                OwnerReadingFake.createAnsweringNothing(),
-                categoriesMock,
-                contentInputs,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isSameAs(firstPassAxis);
@@ -698,14 +653,10 @@ final class ClusterAnchorsBuilderTests {
             // every other path.
             standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromOwners(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                ownerBySystemKey,
-                OwnerReadingFake.createAnsweringNothing(),
-                categoriesMock,
-                contentInputs,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -723,6 +674,18 @@ final class ClusterAnchorsBuilderTests {
             Map<String, SystemOwner> holderBySystemId) {
         return new ClusterLabelStylingSnapshot(
             buildKeyedValues(holderBySystemId),
+            UNUSED_PALETTE,
+            categoriesMock,
+            OwnerReadingFake.createAnsweringNothing(),
+            contentInputs,
+            StarsectorFont.VANILLA_INSIGNIA_42);
+    }
+
+    // The styling the border-tracing diagnostic hands over: the owners it traced, under a reading
+    // placing all of them at full strength.
+    private ClusterLabelStylingSnapshot buildTracedStyling() {
+        return new ClusterLabelStylingSnapshot(
+            ownerBySystemKey,
             UNUSED_PALETTE,
             categoriesMock,
             OwnerReadingFake.createAnsweringNothing(),

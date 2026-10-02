@@ -42,9 +42,10 @@ import java.util.function.Supplier;
  *
  * <p>Built per rebuild, over one sampling of the groupings: a view that reads its grouping live
  * makes a fresh source each rebuild, and the build retains it, so a batch that follows re-derives
- * a marked system under the very fold its neighbours were painted by. The pass is remembered per
- * walk for the same reason it is opened at all - a bake in the same frame as the build reads the
- * build's pass rather than paying a second habitation fold over the walk it already shares.
+ * a marked system under the very fold its neighbours were painted by. The pass is kept by the walk
+ * it was opened over, for the same reason it is opened at all - a bake in the same frame as the
+ * build reads the build's pass rather than paying a second habitation fold over the walk it already
+ * shares - so the source itself holds nothing from one walk to the next.
  */
 public final class HolderOwnerSource implements OwnerSource {
 
@@ -66,12 +67,6 @@ public final class HolderOwnerSource implements OwnerSource {
     private final HolderProvider holderProvider;
     private final SystemHolderResolveSource holderResolveSource;
     private final Function<RibbonPlanInputs, SystemRibbonPlanner> ribbonPlannerSource;
-
-    // The pass last opened and the walk it was opened over, so every ask about one walk reads one
-    // pass. Identity rather than equality: a walk is one rebuild's or one batch's, and two walks
-    // over one sector are two readings of it.
-    private SectorWalk openedWalk;
-    private HolderPass openedPass;
 
     /**
      * @param grouping            the grouping this source folds factions into blocs under, sampled
@@ -179,22 +174,18 @@ public final class HolderOwnerSource implements OwnerSource {
                 rules));
     }
 
-    // The pass this source reads one walk through, opened on the first ask about that walk and
-    // remembered for the rest of them. The visibility half of the colony rule is the walk's -
-    // the rule the cells were cut under - and the habitation half is this layer's own knob, read
-    // where the pass opens, once for the walk.
+    // The pass this source reads one walk through, opened on the first ask about that walk and kept
+    // by the walk for the rest of them, so the source holds nothing between walks. The visibility
+    // half of the colony rule is the walk's - the rule the cells were cut under - and the habitation
+    // half is this layer's own knob, read where the pass opens, once for the walk.
     private HolderPass openPassOver(SectorWalk walk) {
 
-        if (walk != openedWalk) {
-            openedWalk = walk;
-            openedPass = new HolderPass(
-                walk.sectorIndex(),
-                new ColonyReadRules(
-                    walk.visibilityRules().colonyVisibility(),
-                    DecivilisedColonyHabitation.readFromLunaSettings()),
-                grouping);
-        }
-        return openedPass;
+        return walk.readReadingOpenedBy(this, HolderPass.class, () -> new HolderPass(
+            walk.sectorIndex(),
+            new ColonyReadRules(
+                walk.visibilityRules().colonyVisibility(),
+                DecivilisedColonyHabitation.readFromLunaSettings()),
+            grouping));
     }
 
     // Who holds each system under this layer's rule, and - under a filter - which of the spotlit

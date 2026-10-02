@@ -88,11 +88,8 @@ public interface OwnerPaintedView {
      * shade, name, crest, recede and category is looked up in, and the {@link OwnerSource} that
      * says which systems each owner holds - resolved together, under one sampling.
      *
-     * <p>One call rather than two because the two answers have to agree about what an owner is. A
-     * view that folds several factions into one owner reads that fold live, and a source resolving
-     * the holding under one sampling of it while the reading named and coloured owners under
-     * another would paint a fold the holding never made. Answering both at once is what makes one
-     * sampling per rebuild a property of the seam rather than a discipline every view has to keep.
+     * <p>One call rather than two, so the two answers are resolved under one sampling of whatever
+     * the view reads live and cannot describe two different folds.
      *
      * <p>The tier retains what comes back for every stage after - the label fit and the incremental
      * refresh included - which is also what keeps the tier from working any of it out for itself

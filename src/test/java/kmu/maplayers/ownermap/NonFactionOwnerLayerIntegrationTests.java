@@ -1,23 +1,17 @@
 package kmu.maplayers.ownermap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.SectorEntityToken;
-import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
-import kmlib.testfixtures.starsector.StubbedGlobalLogger;
-import kmlib.testfixtures.starsector.systems.StarSystemFixture;
-import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
-import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
@@ -28,14 +22,12 @@ import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.StyledCell;
-import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.base.visibility.systems.MapSectorFixture;
-import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
@@ -46,9 +38,6 @@ import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
-import kmu.maplayers.ownermap.preferences.NameFormatPreference;
-import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
-import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
 import kmu.maplayers.ownermap.render.OwnerMapCache;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -60,12 +49,8 @@ import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
-import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapLabelSettings;
-import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
-import kmu.settings.KmuOwnerMapGeometrySettings;
-import kmu.settings.KmuOwnerMapRibbonSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -141,11 +126,6 @@ final class NonFactionOwnerLayerIntegrationTests {
 
     private static final double WELD_TOLERANCE = 1.0;
     private static final double MITER_LIMIT = 4.0;
-
-    // The cells' seed knobs for a rebuild cutting its own cells, wide enough that each cell holds
-    // clear of its own inset border.
-    private static final int CELL_BOUND_SEGMENTS = 16;
-    private static final double CELL_RADIUS = 4000.0;
 
     private static final LabelAnchorSpecification ANCHOR_SPECIFICATION =
         new LabelAnchorSpecification(
@@ -332,7 +312,7 @@ final class NonFactionOwnerLayerIntegrationTests {
 
         // A full rebuild runs the cut, the source, the build and the label pass for real, so what
         // it reaches that no test JVM answers is stood in for here, beside what the suite opens.
-        private final StaticSeams seams = new StaticSeams();
+        private OwnerMapRebuildSeams seams;
 
         private final OwnerPaintedView relayViewMock = mock(OwnerPaintedView.class);
         private final RelaySourceFake relaySourceFake = new RelaySourceFake();
@@ -344,31 +324,12 @@ final class NonFactionOwnerLayerIntegrationTests {
         @BeforeEach
         void openTheRebuildSeams() {
 
-            seams.holdSeam(StubbedGlobalLogger.openGlobalAnsweringLoggers());
-            seams.openSeam(KmuLunaSettings.class);
-            seams.openSeam(KmuMapVisibilitySettings.class);
-            seams.openSeam(FilterSelection.class);
-            seams.openSeam(LabelFonts.class);
-
-            // Opened unanswered, so the bands are off: no case here is about them.
-            seams.openSeam(KmuOwnerMapRibbonSettings.class);
-
-            var geometrySettingsMock = seams.openSeam(KmuOwnerMapGeometrySettings.class);
-            geometrySettingsMock
-                .when(KmuOwnerMapGeometrySettings::getOwnerMapCellBoundSegments)
-                .thenReturn(CELL_BOUND_SEGMENTS);
-            geometrySettingsMock
-                .when(KmuOwnerMapGeometrySettings::getOwnerMapCellRadius)
-                .thenReturn(CELL_RADIUS);
-
-            seams.openSeam(MapVisibilityRules.class)
-                .when(MapVisibilityRules::readFromLunaSettings)
-                .thenReturn(MapVisibilityRules.BASE);
+            seams = OwnerMapRebuildSeams.openEverySeamARebuildNeeds();
 
             relaySectorMock = MapSectorFixture.buildStarAnchoredSectorOf(
-                buildReachableSystem(RELAY_WEST, 0f),
-                buildReachableSystem(DARK_SYSTEM, 30000f),
-                buildReachableSystem(RELAY_EAST, 60000f));
+                MapSectorFixture.buildReachableSystemAt(RELAY_WEST, 0f, 0f),
+                MapSectorFixture.buildReachableSystemAt(DARK_SYSTEM, 30000f, 0f),
+                MapSectorFixture.buildReachableSystemAt(RELAY_EAST, 60000f, 0f));
 
             when(relayViewMock.getId())
                 .thenReturn("relays");
@@ -401,7 +362,7 @@ final class NonFactionOwnerLayerIntegrationTests {
                     .isEmpty();
             }
 
-            assertThat(cache.getClusters().getOccupancy().getHolderBySystemKey())
+            assertThat(cache.getClusters().getOccupancy().getOwnerBySystemKey())
                 .extractingFromEntries(entry -> entry.getKey().systemId(), entry -> entry.getValue().ownerId())
                 .containsExactlyInAnyOrder(
                     tuple(RELAY_WEST, RELAY),
@@ -439,32 +400,10 @@ final class NonFactionOwnerLayerIntegrationTests {
         // A cache over this sector's own machinery, drawing no names and seeding under the given
         // rule.
         private OwnerMapCache buildCacheSeeding(CellSeedRule seedRule) {
-
-            var nameFormatMock = mock(NameFormatPreference.class);
-
-            when(nameFormatMock.getSelectedNameFormat(any()))
-                .thenReturn(FactionNameFormatChoice.NONE);
-
-            var preferences = OwnerMapBodyPreferencesFixtures.createUnderTestKeys();
-
             return new OwnerMapCache(
                 new SectorMapMachinery(relaySectorMock),
-                new OwnerMapBodyPreferences(
-                    nameFormatMock,
-                    preferences.uninhabitedOutline(),
-                    preferences.filterRecede()),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 seedRule);
-        }
-
-        // A system reachable from hyperspace, which is what puts it on the drawn set.
-        private static StarSystemAPI buildReachableSystem(String systemId, float x) {
-
-            var systemMock = StarSystemFixture.buildSystemAt(systemId, x, 0f);
-
-            when(systemMock.getJumpPoints())
-                .thenReturn(List.of(mock(SectorEntityToken.class)));
-
-            return systemMock;
         }
     }
 

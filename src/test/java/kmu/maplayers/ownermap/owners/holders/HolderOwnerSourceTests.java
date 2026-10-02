@@ -329,6 +329,23 @@ final class HolderOwnerSourceTests {
         }
 
         @Test
+        void opensAPassOfItsOwnBesideAnotherSourceOverTheSameWalk() {
+            // The walk keeps one pass per source, so a second source - another sampling of the
+            // grouping - never folds under the first one's.
+            var walk = buildWalkUnder(MapVisibilityRules.BASE);
+            var otherGrouping = HolderGroupingFixture.buildGroupOf(HEGEMONY, PERSEAN);
+
+            buildSourceUnder(HolderGrouping.identity()).resolveOwners(walk, null);
+            buildSourceUnder(otherGrouping).openSystemResolve(walk, null);
+
+            assertThat(holderResolveSourceFake.readPassesOpenedOver())
+                .singleElement()
+                .isNotSameAs(providerPasses.get(0))
+                .extracting(HolderPass::grouping)
+                .isSameAs(otherGrouping);
+        }
+
+        @Test
         void resolvesTheOwnerThroughTheLayersOwnResolve() {
 
             holderResolveSourceFake.recordHolderOf("corvus", HEGEMONY_OWNER);

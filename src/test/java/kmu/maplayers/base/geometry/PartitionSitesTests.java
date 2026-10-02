@@ -1,6 +1,5 @@
 package kmu.maplayers.base.geometry;
 
-import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
@@ -18,10 +17,10 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Set;
 
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildReachableSystemAt;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildStarAnchoredSectorOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -212,13 +211,7 @@ class PartitionSitesTests {
             float x,
             float y) {
 
-        // Wired into hyperspace by a jump point, so the access rule admits it.
-        var systemMock = StarSystemFixture.buildSystemAt(id, x, y);
-
-        when(systemMock.getJumpPoints())
-            .thenReturn(List.of(mock(SectorEntityToken.class)));
-
-        return StarSystemFixture.anchorSystemTo(systemMock, anchorEntityId);
+        return StarSystemFixture.anchorSystemTo(buildReachableSystemAt(id, x, y), anchorEntityId);
     }
 
     // A system the map would not show: cut off from hyperspace, no gate, nobody living there. On

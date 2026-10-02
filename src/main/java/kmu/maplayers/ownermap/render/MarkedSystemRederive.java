@@ -130,14 +130,14 @@ final class MarkedSystemRederive {
         // build resolved this system's owner under, so a single-system refresh lands the same owner
         // the bulk pass would.
         var newOwner = ownerResolve.resolveOwnerOf(marked.system());
-        var oldOwner = clusters.getOccupancy().readHolderOf(marked.systemKey());
+        var oldOwner = clusters.getOccupancy().readOwnerOf(marked.systemKey());
 
         // SystemOwner is a record, so equality covers the owner and its palette: a resize that
         // leaves the same winner leaves the drawing identical.
         if (Objects.equals(oldOwner, newOwner)) {
             return;
         }
-        clusters.getOccupancy().recordHolderOf(marked.systemKey(), newOwner);
+        clusters.getOccupancy().recordOwnerOf(marked.systemKey(), newOwner);
         disturbance.recordFlip(
             marked.systemKey(),
             neighbourSystemKeysOf(marked.systemKey()),
@@ -173,7 +173,7 @@ final class MarkedSystemRederive {
             Map<SystemKey, StarSystemAPI> systemByKey) {
 
         var occupancy = clusters.getOccupancy();
-        var unownedSystemKeys = occupancy.selectUnheldSystemKeysAmong(markedSystemKeys);
+        var unownedSystemKeys = occupancy.selectUnownedSystemKeysAmong(markedSystemKeys);
 
         for (var systemKey : markedSystemKeys) {
 

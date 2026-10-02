@@ -397,15 +397,17 @@ Both claim-reading sources get their claims from `FilteredClaims`,
 so which claims a spotlight moves is answered once rather than once per source.
 
 An incremental refresh re-derives one system at a time,
-and every view states `DominanceSystemHolderResolve` for that,
-also in `holders`:
+through a per-system resolve each view states,
+also in `holders`.
+The two dominance views state `DominanceSystemHolderResolve`:
 the market contest asked of one system over the batch's own pass,
 under one weighting rule sampled per batch,
 so a single-system refresh lands the bloc the bulk pass would have.
-The Claims view states it too,
-which is a known gap rather than a choice:
-a colony event in a claimed system re-derives it to its dominant holder rather than its claimant
-until the next full rebuild.
+The Claims view states `ClaimSystemHolderResolve`:
+the claimant of one system,
+read through the same claim reader and folded and coloured by the same rule
+`SectorClaims` applies to the whole sector,
+so a colony event in a claimed system keeps it on its claimant.
 
 ## The claim mechanic
 
@@ -509,7 +511,7 @@ so shelving them under either mechanic would make that mechanic name the other.
 | --- | --- |
 | *(top level)* | the tab (`PoliticalMapLayer`), what it stands up on a sector (`PoliticalMapStanding`, `PoliticalMapInstaller`) |
 | `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), the contest-painted views' shared answers (`DominancePaintedView`), and the alliance-only body controls (`AllianceBodyControls`) |
-| `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and `DominanceSystemHolderResolve` |
+| `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the two per-system resolves, `DominanceSystemHolderResolve` and `ClaimSystemHolderResolve` |
 | `dominance` | the market contest: the pass, `SectorPolitics`, `FilteredPolitics`, `SystemDominance`, the tie-break and the ranking rules, `BlocCandidacy`, the stats and sort modes |
 | `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`) |
 | `dominance/standings` | one hovered system's ranked standings, per group and per faction |

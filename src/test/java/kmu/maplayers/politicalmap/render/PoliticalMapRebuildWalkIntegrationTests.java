@@ -26,6 +26,7 @@ import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
+import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.render.OwnerMapCache;
 import kmu.maplayers.ownermap.render.ribbon.RibbonSettingsFixtures;
@@ -237,7 +238,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             var sector = buildContestedSectorWithAnEmptyNeighbour();
             var cache = new OwnerMapCache(
                 machinery,
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 CellSeedRule.SEED_DRAWN_SYSTEMS);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
@@ -271,7 +272,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             var sector = buildContestedSectorWithAnEmptyNeighbour();
             var cache = new OwnerMapCache(
                 machinery,
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 CellSeedRule.SEED_DRAWN_SYSTEMS);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
@@ -295,7 +296,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
             var cache = new OwnerMapCache(
                 machinery,
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 CellSeedRule.SEED_DRAWN_SYSTEMS);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
@@ -336,7 +337,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
             var cache = new OwnerMapCache(
                 machinery,
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 CellSeedRule.SEED_DRAWN_SYSTEMS);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
@@ -358,7 +359,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
             var cache = new OwnerMapCache(
                 machinery,
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 CellSeedRule.SEED_DRAWN_SYSTEMS);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
@@ -382,7 +383,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
             var cache = new OwnerMapCache(
                 machinery,
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 CellSeedRule.SEED_DRAWN_SYSTEMS);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
@@ -405,7 +406,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
             new OwnerMapCache(
                     machinery,
-                    PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                    OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                     CellSeedRule.SEED_DRAWN_SYSTEMS)
                 .refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
@@ -427,7 +428,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
             var cache = new OwnerMapCache(
                 machinery,
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 CellSeedRule.SEED_DRAWN_SYSTEMS);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
@@ -444,7 +445,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
         new OwnerMapCache(
                 machinery,
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 CellSeedRule.SEED_DRAWN_SYSTEMS)
             .refreshDrawLists(FactionsView.INSTANCE, SCREEN);
     }
@@ -456,7 +457,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
         var cache = new OwnerMapCache(
             machinery,
-            PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+            OwnerMapRebuildSeams.createPreferencesNamingNothing(),
             CellSeedRule.SEED_DRAWN_SYSTEMS);
 
         return captureRefreshesOf(profiler -> {
@@ -473,7 +474,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
         var cache = new OwnerMapCache(
             machinery,
-            PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+            OwnerMapRebuildSeams.createPreferencesNamingNothing(),
             CellSeedRule.SEED_DRAWN_SYSTEMS);
 
         return captureRefreshesOf(profiler -> {

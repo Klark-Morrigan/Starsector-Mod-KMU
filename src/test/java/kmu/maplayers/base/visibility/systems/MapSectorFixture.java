@@ -3,9 +3,12 @@ package kmu.maplayers.base.visibility.systems;
 import com.fs.starfarer.api.campaign.JumpPointAPI;
 import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +64,25 @@ public final class MapSectorFixture {
             anchors.add(buildStarAnchorTo(system));
         }
         return buildSectorOf(buildHyperspaceHolding(anchors.toArray(JumpPointAPI[]::new)), systems);
+    }
+
+    /**
+     * A system at the given position wired into hyperspace by a jump point, so a star-anchored
+     * sector draws it by access.
+     *
+     * @param systemId the system's ID
+     * @param x        its position across
+     * @param y        its position up
+     * @return the system, its jump point a mock nothing reads
+     */
+    public static StarSystemAPI buildReachableSystemAt(String systemId, float x, float y) {
+
+        var systemMock = StarSystemFixture.buildSystemAt(systemId, x, y);
+
+        when(systemMock.getJumpPoints())
+            .thenReturn(List.of(mock(SectorEntityToken.class)));
+
+        return systemMock;
     }
 
     /**

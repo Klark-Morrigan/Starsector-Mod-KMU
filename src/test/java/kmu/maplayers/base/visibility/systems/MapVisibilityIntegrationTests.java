@@ -17,7 +17,6 @@ import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.ModdedSystemAccessRoutes;
 import kmlib.starsector.systems.StarSystems;
 import kmlib.testfixtures.starsector.compatibility.CompatibilityFailureFixture;
-import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
 
@@ -33,6 +32,7 @@ import java.util.List;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildHyperspaceHolding;
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildReachableSystemAt;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildStarAnchorTo;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildStarAnchoredSectorOf;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildUnroutedSectorOf;
@@ -102,7 +102,7 @@ class MapVisibilityIntegrationTests {
         @Test
         void isTrueForReachableSystem() {
 
-            var system = buildReachableSystem("a");
+            var system = buildReachableSystemAt("a", 1f, 1f);
 
             assertThat(isDrawnUnderNoReveal(buildSectorWith(system), system))
                 .isTrue();
@@ -143,7 +143,7 @@ class MapVisibilityIntegrationTests {
             // Reachable by a jump point, but the vanilla map hides its star (an
             // abyssal rogue object), so reachability alone does not admit it. No gate stands in
             // it: a lit one is its own reason to draw, which is the case below.
-            var system = buildReachableSystem("a");
+            var system = buildReachableSystemAt("a", 1f, 1f);
 
             assertThat(isDrawnUnderNoReveal(buildSectorWithHiddenStar(system), system))
                 .isFalse();
@@ -155,7 +155,7 @@ class MapVisibilityIntegrationTests {
             // vanilla map draws no star for this system, so inhabitation was its only route on,
             // and a derelict is not inhabitation - a system hidden by its own design stops being
             // dragged onto the map by a derelict the player has never been near.
-            var system = buildReachableSystem("a");
+            var system = buildReachableSystemAt("a", 1f, 1f);
             var sector = buildSectorWithHiddenStar(system);
 
             hangMarketsOnSystemEntities(system, buildAbandonedStation());
@@ -427,17 +427,6 @@ class MapVisibilityIntegrationTests {
         return buildHyperspaceHolding(anchorMock);
     }
 
-    private static StarSystemAPI buildReachableSystem(String id) {
-        // Wired into hyperspace by a jump point and its star drawn on the map, so
-        // the access rule admits it.
-        var systemMock = StarSystemFixture.buildSystemAt(id, 1f, 1f);
-
-        when(systemMock.getJumpPoints())
-            .thenReturn(List.of(mock(SectorEntityToken.class)));
-
-        return systemMock;
-    }
-
     // A star-hidden system holding one gate and nothing else: no jump point, nobody living there,
     // and no star the vanilla map draws - so the gate is the only thing that can admit it.
     private static StarSystemAPI buildStarHiddenSystemWithGate(String id, SectorEntityToken gate) {
@@ -480,7 +469,7 @@ class MapVisibilityIntegrationTests {
     private static StarSystemAPI buildReachableNebula(String id) {
         // Reachable, but drawn on the map as a nebula cloud rather than a star, so
         // it never appears in the visible-star index - its draw is the nebula flag.
-        var systemMock = buildReachableSystem(id);
+        var systemMock = buildReachableSystemAt(id, 1f, 1f);
 
         when(systemMock.isNebula())
             .thenReturn(true);

@@ -192,24 +192,23 @@ final class OwnerMapDrawables {
         // The overlay never spotlights, so the pick goes in as nobody: it traces the owners the
         // map has rather than one pick's footprint.
         var owners = viewReading.source().resolveOwners(walk, null);
-        var categories = viewReading.view().resolveCategories();
 
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
             cellGeometry.cells(),
             owners,
-            categories,
+            viewReading.view().resolveCategories(),
             contentInputs);
 
         clusters = null;
 
-        ClusterAnchorsBuilder.rebuildClusterAnchorsFromOwners(
+        ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
             standingAnchors,
             cellGeometry,
-            owners.ownerBySystemKey(),
-            viewReading.reading(),
-            categories,
-            contentInputs,
-            labelFaceSource.get());
+            ClusterLabelStylingSnapshot.resolveForTracing(
+                owners.ownerBySystemKey(),
+                viewReading,
+                contentInputs,
+                labelFaceSource.get()));
     }
 
     /**

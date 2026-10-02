@@ -27,8 +27,8 @@ import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
+import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolve;
 import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
-import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStringKeys;
@@ -130,11 +130,10 @@ public final class ClaimsView implements HolderPaintedView {
 
     @Override
     public SystemHolderResolveSource resolveSystemHolderResolveSource() {
-        // TODO: re-derive a marked system by the claim mechanic. This is the market contest the
-        //  layer has always handed every view's incremental refresh, so a colony event in a claimed
-        //  system re-derives it to its dominant holder rather than its claimant until the next full
-        //  rebuild. Kept as it was here, the seam having only just become per view.
-        return DominanceSystemHolderResolve::openResolveOver;
+        // A marked system is re-derived to its claimant, through the claim reader this view reads
+        // every claim through - the market contest the other two views re-derive by would hand a
+        // claimed system to whoever holds it, which is not what this view painted.
+        return ClaimSystemHolderResolve.createSourceReadingThrough(claimReaderSource);
     }
 
     @Override

@@ -13,6 +13,7 @@ import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.ownermap.ContentInputsTests;
+import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.UninhabitedOutlinePreference;
@@ -104,7 +105,7 @@ final class PoliticalMapRebuildStalenessIntegrationTests {
 
         stageASettledSector();
 
-        var preferences = PoliticalMapRebuildSeams.createPreferencesNamingNothing();
+        var preferences = OwnerMapRebuildSeams.createPreferencesNamingNothing();
 
         cache = new OwnerMapCache(
             machinery,

@@ -47,9 +47,8 @@ and states six parts:
 
 `resolveViewReading` assembles them.
 It samples the grouping once
-and builds the reading and a `HolderOwnerSource` over that one sampling,
-so the owners the source resolves and the names and shades the reading gives them describe one fold.
-A view stating the two answers by hand would have to keep that discipline itself.
+and builds the reading and a `HolderOwnerSource` over that one sampling -
+the [one sampling](../README.md#how-an-owner-looks) the seam asks for.
 
 Every part is declared rather than defaulted:
 each is one layer's rule,
@@ -72,8 +71,10 @@ It asks every question about that walk off that one pass.
 
 So the holder scan, the habitation scan and the band count read each system once between them,
 and cannot disagree about a colony the habitation rule admits.
-The pass is remembered per walk by identity,
-which is what lets a bake in the same frame as the build count off the build's pass.
+The walk keeps the pass,
+one per source,
+which is what lets a bake in the same frame as the build count off the build's pass
+while the source itself holds nothing from one walk to the next.
 
 ## One system at a time
 
