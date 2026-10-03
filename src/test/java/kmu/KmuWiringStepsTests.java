@@ -91,7 +91,7 @@ final class KmuWiringStepsTests {
 
             KmuWiringSteps.runGuardedStep(buildThrowingStep(), FAILURE_MESSAGE, () -> integration);
 
-            var failure = CompatibilityFailures.SESSION_RECORD.takeNextUnreported();
+            var failure = CompatibilityFailureFixture.takeNextBindingFailure(CompatibilityFailures.SESSION_RECORD);
 
             assertThat(failure.subject().name())
                 .isEqualTo("Test Mod");

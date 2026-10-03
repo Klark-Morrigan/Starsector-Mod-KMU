@@ -19,6 +19,8 @@ import java.util.function.Function;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -48,8 +50,9 @@ final class DrawnLayerGuardTests {
     private final MapLayer siblingLayerMock = mock(MapLayer.class);
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
     private final MapLayerRenderer siblingRendererMock = mock(MapLayerRenderer.class);
+    private final SwitchedOffLayerReporter switchOffReporterMock = mock(SwitchedOffLayerReporter.class);
 
-    private final DrawnLayerGuard guard = new DrawnLayerGuard(machinery);
+    private final DrawnLayerGuard guard = new DrawnLayerGuard(machinery, switchOffReporterMock);
 
     private MockedStatic<MapLayerRegistry> layerRegistryMock;
 
@@ -176,6 +179,30 @@ final class DrawnLayerGuardTests {
             assertThat(capture.getMessages())
                 .containsExactly("Map layer 'drawing' failed and is switched off on this sector until the"
                     + " next load, or until the map layers are switched off and back on.");
+        }
+
+        @Test
+        void reportsTheLayerItSwitchedOffWithWhatItThrew() {
+            // A layer that only stops drawing leaves the player looking at an empty map, with the
+            // reason in a log nobody reads.
+            var failure = new IllegalStateException("draw list half built");
+
+            guard.runOnDrawnRenderer(layerRenderer -> {
+                throw failure;
+            });
+
+            verify(switchOffReporterMock)
+                .reportLayerSwitchedOff(drawingLayerMock, failure);
+        }
+
+        @Test
+        void reportsALayerOnceThoughItIsDrawnAgain() {
+
+            failTheDrawnLayer();
+            failTheDrawnLayer();
+
+            verify(switchOffReporterMock, times(1))
+                .reportLayerSwitchedOff(eq(drawingLayerMock), any());
         }
     }
 

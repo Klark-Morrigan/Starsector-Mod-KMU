@@ -238,6 +238,8 @@ which every KM mod's shares.
 | Sector Map Layers (the feature) | 星图图层 | from 星图 |
 | map layers | 地图图层 | also drawn on the intel screen's map, hence 地图 rather than 星图 |
 | Map layers (filter row tick box) | 地图图层 | sits beside 星景 and 续航距离 |
+| switched off (a map layer that failed) | 已关闭 | the notice's word; 关闭 as for the map layers switched off and back on (关闭后重新开启) |
+| load a save | 读取存档 | from vanilla's 读取最近的存档 |
 | Political Map | 政治地图 | 政治 for political, with 地图 as in 地图图层, since it is a layer |
 | No Layer | 无图层 | 无, none, before 图层: the tab that shows no layer |
 | map screen | 星图界面 | the screen Tab opens; vanilla's tab reads 星图 |

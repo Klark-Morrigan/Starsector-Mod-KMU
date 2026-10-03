@@ -20,8 +20,9 @@ import java.util.function.Function;
  * nothing under them that catches, so a layer throwing from either would otherwise end the game.
  *
  * <p>A layer that throws is switched off on the sector it threw on, for as long as that sector's
- * machinery stands, and logged once. Why off rather than retried, why logged rather than reported,
- * and how the frame's GL state is left balanced are set out in {@code base/render/README.md}.
+ * machinery stands. It is logged, and the player is told through KMLib's notice. Why off rather than
+ * retried, why the player is told, and how the frame's GL state is left balanced are set out in
+ * {@code base/render/README.md}.
  *
  * <p>Read and written on the game thread alone - the render pass and the UI passes asking for the
  * hover box all run there - so the state needs no publication guarantee of its own.
@@ -34,13 +35,22 @@ public final class DrawnLayerGuard implements InstalledMachinery {
     // hover a switched-off layer leaves parked.
     private final SectorMapMachinery machinery;
 
+    // Tells the player about a layer switched off here.
+    private final SwitchedOffLayerReporter switchOffReporter;
+
     // The layers switched off on this sector. Held by layer rather than by renderer, because
     // resolving the renderer is itself part of what can throw.
     private final Set<MapLayer> switchedOffLayers = new HashSet<>();
 
     // Reached through resolveGuardIn, so the only guards that exist are ones machinery holds.
     DrawnLayerGuard(SectorMapMachinery machinery) {
+        this(machinery, SwitchedOffLayerReporter.createForSession());
+    }
+
+    // The same, telling the player through the reporter given.
+    DrawnLayerGuard(SectorMapMachinery machinery, SwitchedOffLayerReporter switchOffReporter) {
         this.machinery = machinery;
+        this.switchOffReporter = switchOffReporter;
     }
 
     /**
@@ -123,7 +133,8 @@ public final class DrawnLayerGuard implements InstalledMachinery {
     public void disposeMachinery() {
     }
 
-    // Takes the layer off this sector for good, and says so once with the trace that did it.
+    // Takes the layer off this sector for good, logs it with the trace that did it, and tells the
+    // player.
     private void switchLayerOff(MapLayer failedLayer, Throwable failure) {
 
         switchedOffLayers.add(failedLayer);
@@ -136,5 +147,7 @@ public final class DrawnLayerGuard implements InstalledMachinery {
 
         LOG.error("Map layer '" + failedLayer.getId() + "' failed and is switched off on this sector"
             + " until the next load, or until the map layers are switched off and back on.", failure);
+
+        switchOffReporter.reportLayerSwitchedOff(failedLayer, failure);
     }
 }

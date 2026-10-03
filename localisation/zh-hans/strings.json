@@ -18,6 +18,8 @@
     "compatibility_unaffected_starscape_reseat": "关闭星景筛选时的地图，以及你的存档。",
     "compatibility_lost_starscape_terrain": "本次游戏期间，星图的星景筛选开启时，将不会绘制地图图层。",
     "compatibility_unaffected_starscape_terrain": "关闭星景筛选时的地图，以及你的存档。",
+    "compatibility_lost_map_layer": "%s 地图图层已关闭，直到你下次读取存档，或将地图图层关闭后重新开启。",
+    "compatibility_unaffected_map_layer": "其他地图图层、地图本身，以及你的存档。",
 
     "condition_manager_location": "位置：",
     "condition_manager_location_unknown": "未知",
