@@ -124,6 +124,9 @@ the [source notes][source-notes] give why the Fossic post opens with it.
     Repost, translation and Simplified Chinese edition in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): The two editions have the same content and differ only in their text; settings carry over between them.
   - ZH: 两个版本内容相同，只有文字不同，设置可以互通。
+- EN (back-translation): If you find wording that reads unnaturally or terms that do not match, please point it out in this thread.
+  - ZH: 如发现译文不通顺或术语不一致，欢迎在本帖回复指出。
+  - Notes: Fossic only: an invitation to correct the translation, where its readers are.
 - EN (back-translation): Before use, first install the Starsector Chinese localisation (over starsector-core).
   - ZH: 使用前请先安装远行星号中文汉化（覆盖到 starsector-core）。
   - Notes: the reference's [opening section][kmu-holds] names the core localisation in English only.
@@ -677,10 +680,22 @@ The [source notes][source-notes] give why.
 
 - EN: AI usage disclaimer
   - ZH: AI 使用声明
-- EN: this mod has been made with usage of LLMs - for research, brainstorming, code generation, code review, code refactoring.
-  - ZH: 本 Mod 的制作使用了大语言模型（LLM），用于调研、头脑风暴、代码生成、代码审查和代码重构。
+- EN: this mod has been made with usage of LLMs - for research, brainstorming, code generation, code review, code refactoring, translation.
+  - ZH: 本 Mod 的制作使用了大语言模型（LLM），用于调研、头脑风暴、代码生成、代码审查、代码重构和翻译。
 - EN: Each step was performed with human oversight and playtesting, with as much human code review as can be reasonably performed for a mod project.
   - ZH: 每一步都在人工监督和实机测试下完成，并尽 Mod 项目所能进行了人工代码审查。
+- EN: The Simplified Chinese translation has been done using the following technique.
+  - ZH: 简体中文翻译按以下方法完成。
+- EN: Vanilla vocabulary was matched to the Chinese core localisation, and other mods' vocabulary to their own Chinese versions.
+  - ZH: 原版词汇对照中文汉化逐一匹配，其他 Mod 的词汇对照其各自的中文版匹配。
+- EN: Forum vocabulary was collected as well, and all of it was gathered into a translation reference that records the rationale for each term.
+  - ZH: 论坛相关词汇也一并收集，全部汇总为一份翻译参考，并为每个术语注明选词理由。
+- EN: KMLib's and KMU's own vocabulary was translated by the intent behind each term.
+  - ZH: KMLib 与 KMU 自身的词汇依据每个术语背后的含义翻译。
+- EN: The mod author reviewed all the collected vocabulary against those rationales, and the translations were applied in several passes for consistency.
+  - ZH: 收集的全部词汇均经 Mod 作者对照选词理由审阅，译文分多轮应用，以求前后一致。
+  - Notes: the translation paragraph. Translation reference, mod author and core localisation in
+    [KMLib's forum terms][kmlib-forum]; vanilla in the same section.
 
 ## Thanks
 
