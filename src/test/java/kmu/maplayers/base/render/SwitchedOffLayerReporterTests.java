@@ -85,7 +85,7 @@ final class SwitchedOffLayerReporterTests {
         @Test
         void neverThrowsWhereTheReportCannotBeComposed() {
             // The render pass that switched the layer off has nothing under it that catches.
-            StarsectorSettingsFake.clearSettings();
+            failToNameTheLayer();
 
             assertThatNoException()
                 .isThrownBy(() -> reporter.reportLayerSwitchedOff(switchedOffLayerMock, LAYER_FAILURE));
@@ -94,7 +94,7 @@ final class SwitchedOffLayerReporterTests {
         @Test
         void logsAReportThatCannotBeComposed() {
 
-            StarsectorSettingsFake.clearSettings();
+            failToNameTheLayer();
 
             var capture = LogAppenderFake.captureLogOf(
                 SwitchedOffLayerReporter.class,
@@ -104,5 +104,25 @@ final class SwitchedOffLayerReporterTests {
                 .containsExactly("Map layer 'political_map' was switched off but could not be reported to the"
                     + " player. The failure it was for is logged above.");
         }
+
+        @Test
+        void recordsALayerWhoseWordingIsMissing() {
+            // A missing string draws as the sentinel on the notice, which still names the feature in its
+            // own row - a report that reads oddly beats no report.
+            StarsectorSettingsFake.clearSettings();
+
+            reporter.reportLayerSwitchedOff(switchedOffLayerMock, LAYER_FAILURE);
+
+            assertThat(failureRecord.hasUnreported())
+                .isTrue();
+        }
+    }
+
+    // A layer broken badly enough that asking for its own tab name throws, which is the one part of
+    // the report that is the layer's to answer.
+    private void failToNameTheLayer() {
+
+        when(switchedOffLayerMock.resolveTabLabelText())
+            .thenThrow(new IllegalStateException("tab label unreadable"));
     }
 }
