@@ -81,6 +81,8 @@ public final class KmuStringKeys {
     public static final String CONDITION_MANAGER_SUMMARY_HIDDEN = "condition_manager_summary_hidden";
     public static final String CONDITION_MANAGER_SUMMARY_AVAILABLE = "condition_manager_summary_available";
     public static final String CONDITION_MANAGER_SUMMARY_TOTAL = "condition_manager_summary_total";
+    public static final String CONDITION_MANAGER_SUMMARY_GROUP_SEPARATOR = "condition_manager_summary_group_separator";
+    public static final String CONDITION_MANAGER_SUMMARY_ITEM_SEPARATOR = "condition_manager_summary_item_separator";
     public static final String CONDITION_MANAGER_EMPTY = "condition_manager_empty";
     public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE = "condition_manager_tooltip_suppressed_title";
     public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY = "condition_manager_tooltip_suppressed_body";

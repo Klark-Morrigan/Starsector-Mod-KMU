@@ -22,41 +22,42 @@ import java.util.Objects;
  *
  * Separator rules for the count line:
  * - First token starts immediately (no leading character).
- * - " - " separates category groups; ", " separates items within a group.
- * - available and total are always last, each a separate grey highlight.
+ * - The group separator separates category groups; the item separator separates items within a group.
+ *   Both are strings, so each language punctuates in its own way.
+ * - available and total are always last, one grey highlight with the separators between them.
  * - Zero-value tokens are omitted except available and total.
  */
 public final class KmuConditionPickerSummaryParagraphFactory {
+
     private KmuConditionPickerSummaryParagraphFactory() {
     }
 
     /** Accumulates the text and highlight pairs for the count line. */
     private static final class AppendContext {
+
         final StringBuilder sb = new StringBuilder();
         final List<Highlight> highlights = new ArrayList<>();
+
         boolean hasSegment = false;
     }
 
-    /** Pairs a separator with the token text, its highlight colour, and whether the separator is also highlighted. */
+    /** Pairs a separator with the token text and its highlight colour. */
     private static final class TokenSpec {
+
         final String separator;
         final String token;
         final Color colour;
-        final boolean highlightSeparator;
 
-        TokenSpec(String separator, String token, Color colour, boolean highlightSeparator) {
+        TokenSpec(String separator, String token, Color colour) {
+
             this.separator = separator;
             this.token = token;
             this.colour = colour;
-            this.highlightSeparator = highlightSeparator;
-        }
-
-        TokenSpec(String separator, String token, Color colour) {
-            this(separator, token, colour, false);
         }
     }
 
     public static List<HighlightedParagraph> get(KmuConditionPickerModel model) {
+
         Objects.requireNonNull(model, "model");
 
         var visible = model.getVisibleCount();
@@ -78,20 +79,27 @@ public final class KmuConditionPickerSummaryParagraphFactory {
         var availableToken = KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_AVAILABLE, available);
         var totalToken = KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_TOTAL, total);
 
+        // Each separator carries the spacing its language needs around a highlighted count: the game
+        // highlights a run only where the characters beside it are whitespace or ASCII punctuation.
+        var groupSeparator = KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_SUMMARY_GROUP_SEPARATOR);
+        var itemSeparator = KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_SUMMARY_ITEM_SEPARATOR);
+
         var ctx = new AppendContext();
 
         if (visible > 0)
-            appendToken(ctx, new TokenSpec(" ", visibleToken, green));
+            appendToken(ctx, new TokenSpec(itemSeparator, visibleToken, green));
+
         if (suppressed > 0)
-            appendToken(ctx, new TokenSpec(" - ", suppressedToken, red));
+            appendToken(ctx, new TokenSpec(groupSeparator, suppressedToken, red));
+
         if (present > 0)
             // present is white - same as the label base colour, so no highlight slot needed.
-            appendSegment(ctx, new TokenSpec(", ", presentToken, null));
-        if (hidden > 0)
-            appendToken(ctx, new TokenSpec(", ", hiddenToken, lightBlue));
+            appendSegment(ctx, new TokenSpec(itemSeparator, presentToken, null));
 
-        appendToken(ctx, new TokenSpec(" - ", availableToken, grey, true));
-        appendToken(ctx, new TokenSpec(", ", totalToken, grey, true));
+        if (hidden > 0)
+            appendToken(ctx, new TokenSpec(itemSeparator, hiddenToken, lightBlue));
+
+        appendTrailingRun(ctx, groupSeparator, availableToken + itemSeparator + totalToken, grey);
 
         var headerParagraph = new HighlightedParagraph(
             KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_SUMMARY),
@@ -102,26 +110,49 @@ public final class KmuConditionPickerSummaryParagraphFactory {
             ctx.highlights.toArray(new Highlight[0]));
 
         var result = new ArrayList<HighlightedParagraph>();
+
         result.add(headerParagraph);
         result.add(countsParagraph);
+
         return result;
     }
 
-    /** Appends a token and highlights it. Highlights the separator too if {@link TokenSpec#highlightSeparator}. */
+    /** Appends a token and highlights it. */
     private static void appendToken(AppendContext ctx, TokenSpec spec) {
+
         if (ctx.hasSegment) {
             ctx.sb.append(spec.separator);
-            if (spec.highlightSeparator)
-                ctx.highlights.add(new Highlight(spec.separator, spec.colour));
         }
+
         ctx.sb.append(spec.token);
         ctx.highlights.add(new Highlight(spec.token, spec.colour));
         ctx.hasSegment = true;
     }
 
+    // Closes the line with one run in one colour, the separator before it included. The game highlights a
+    // run only when the characters beside it are whitespace or punctuation, so a separator highlighted on
+    // its own would start with a space touching the word before it and never tint. The run starts after
+    // that space instead, at the separator's mark, or at the start of the line when nothing precedes it.
+    private static void appendTrailingRun(AppendContext ctx, String separator, String runText, Color colour) {
+
+        var highlightedText = runText;
+
+        if (ctx.hasSegment) {
+            ctx.sb.append(separator);
+            highlightedText = separator.stripLeading() + runText;
+        }
+
+        ctx.sb.append(runText);
+        ctx.highlights.add(new Highlight(highlightedText, colour));
+        ctx.hasSegment = true;
+    }
+
     /** Appends a token with no highlight - used when the token colour matches the base. */
     private static void appendSegment(AppendContext ctx, TokenSpec spec) {
-        if (ctx.hasSegment) ctx.sb.append(spec.separator);
+
+        if (ctx.hasSegment)
+            ctx.sb.append(spec.separator);
+
         ctx.sb.append(spec.token);
         ctx.hasSegment = true;
     }

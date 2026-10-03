@@ -29,6 +29,8 @@
     "condition_manager_summary_hidden": "%d hidden",
     "condition_manager_summary_available": "%d available",
     "condition_manager_summary_total": "%d total.",
+    "condition_manager_summary_group_separator": " - ",
+    "condition_manager_summary_item_separator": ", ",
 
     "condition_manager_empty": "No market condition specs are available.",
 

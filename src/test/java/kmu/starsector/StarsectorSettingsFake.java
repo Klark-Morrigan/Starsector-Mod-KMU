@@ -96,6 +96,8 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY_HIDDEN, "%d hidden");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY_AVAILABLE, "%d available");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY_TOTAL, "%d total.");
+        stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY_GROUP_SEPARATOR, " - ");
+        stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY_ITEM_SEPARATOR, ", ");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_EMPTY, "No market condition specs are available.");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE, "Suppressed");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY, "This condition is present on the market, but it's suppressed and has no effect.");
