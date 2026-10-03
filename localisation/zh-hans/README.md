@@ -58,7 +58,7 @@ the core localisation replaces them, and without it every Chinese character draw
 [KMLib's rules](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#rules)
 hold for every KM mod's bundle, KMU's included:
 vanilla's word wins, Radio options and proper nouns stay as written,
-full-width punctuation, no em dash, numbered slots where word order moves, and defaults as `[默认值：X]`.
+full-width punctuation, no em dash, numbered slots where word order moves, and defaults as `[默认值：X]` on a line of their own.
 KMU's own examples of them:
 `Galatia 学院` and `Naraka 星系` for Latin proper nouns,
 `UI palette` for a quoted Radio option,
