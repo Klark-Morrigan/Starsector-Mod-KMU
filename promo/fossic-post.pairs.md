@@ -192,6 +192,15 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - EN (back-translation): Source and English edition: `https://github.com/Klark-Morrigan/Starsector-Mod-KMU`
   - ZH: 源码与英文版：`https://github.com/Klark-Morrigan/Starsector-Mod-KMU`
   - Notes: Fossic only: GitHub appears once, as a source line, per the [source notes][source-notes].
+- EN (back-translation): The KMU thread on the Fractal Softworks forum
+  - ZH: Fractal Softworks 论坛上的 KMU 帖子
+  - Notes: Fossic only: the link to the English thread. Its counterpart in the Fractal Softworks post
+    is the Simplified Chinese line, which links this thread once it exists.
+    Forum thread in [KMLib's forum terms][kmlib-forum].
+- EN: Simplified Chinese (简体中文) is available at Fossic.
+  - ZH: none
+  - Notes: Fractal Softworks only: the link to this thread, whose URL fills a placeholder after the first post,
+    per the [source notes][source-notes].
 - EN: This mod requires LazyLib, LunaLib.
   - ZH: 前置
   - Notes: a heading over LazyLib and LunaLib as a list, each linking its Fossic thread.
