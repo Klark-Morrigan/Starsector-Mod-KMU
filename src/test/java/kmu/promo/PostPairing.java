@@ -28,15 +28,15 @@ final class PostPairing {
 
     private static final Pattern CHINESE_CHARACTER = Pattern.compile("[\\p{IsHan}]");
 
-    // The one tag whose attribute the reader sees: a collapsed section's title, kept as a line of text.
-    private static final Pattern COLLAPSE_TITLE = Pattern.compile("\\[collapse=([^\\]]*)\\]");
-
     private static final Pattern IMAGE_PLACEHOLDER = Pattern.compile("\\[attachimg\\][^\\[]*\\[/attachimg\\]");
 
     private static final Pattern PAIRED_CHINESE_LINE = Pattern.compile("^\\s+- ZH: (.*)$", Pattern.MULTILINE);
 
     // The post's sentence ends, with the line break: a list item or a caption is a sentence of its own.
     private static final Pattern SENTENCE_END = Pattern.compile("(?<=[。：；！？])|\\n");
+
+    // The one tag whose attribute the reader sees: a folded section's title, kept as a line of text.
+    private static final Pattern SPOILER_TITLE = Pattern.compile("\\[spoiler=([^\\]]*)\\]");
 
     // A value filled in at release time, as <version> in the notes and <<version>> in the post; the
     // pairing quotes them as written, so both sides lose them before they are compared.
@@ -92,7 +92,7 @@ final class PostPairing {
     }
 
     private static String stripMarkup(String text) {
-        var withTitles = COLLAPSE_TITLE.matcher(text).replaceAll("$1\n");
+        var withTitles = SPOILER_TITLE.matcher(text).replaceAll("$1\n");
         var withoutImages = IMAGE_PLACEHOLDER.matcher(withTitles).replaceAll("");
         var withoutPlaceholders = TEXT_PLACEHOLDER.matcher(withoutImages).replaceAll("");
         return BBCODE_TAG.matcher(withoutPlaceholders).replaceAll("");
