@@ -115,8 +115,7 @@ The [source notes][source-notes] list KMU's value for every input; what each inp
 ## Chinese edition notice
 
 Fossic only.
-The English README's Languages section says the same to an English reader;
-the [source notes][source-notes] give why the Fossic post opens with it.
+The English README's Languages section says the same to an English reader.
 
 - EN (back-translation): This thread is KMU's Simplified Chinese edition, released by the author together with the English one: not a repost, and not a third-party translation.
   - ZH: 本帖是 KMU 的简体中文版，由作者与英文版一同发布，不是搬运，也不是第三方汉化。
@@ -127,20 +126,6 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - EN (back-translation): If you find wording that reads unnaturally or terms that do not match, please point it out in this thread.
   - ZH: 如发现译文不通顺或术语不一致，欢迎在本帖回复指出。
   - Notes: Fossic only: an invitation to correct the translation, where its readers are.
-- EN (back-translation): Before use, first install the Starsector Chinese localisation (over starsector-core).
-  - ZH: 使用前请先安装远行星号中文汉化（覆盖到 starsector-core）。
-  - Notes: the reference's [opening section][kmu-holds] names the core localisation in English only.
-    The Chinese core localisation in [KMLib's forum terms][kmlib-forum]; Starsector in [game and mods][kmu-mods].
-- EN (back-translation): The game's own fonts contain no Chinese characters; the localisation pack swaps in fonts that do.
-  - ZH: 游戏自带的字体不含中文字符，汉化包会换上含有中文的字体。
-  - Notes: The localisation pack's short name in [KMLib's forum terms][kmlib-forum].
-- EN (back-translation): Without it the mod loads and runs as usual with no error at all, but every Chinese character KMU shows turns into a question mark.
-  - ZH: 没有它，Mod 照常加载运行，不会有任何报错，但 KMU 显示的每个中文字符都会变成问号。
-- EN (back-translation): The launcher cannot check this: the localisation pack is not a mod and has no mod ID, so mod_info.json cannot declare it the way it declares KMLib.
-  - ZH: 启动器无法检查这一点：汉化包不是 Mod，没有 Mod ID，因此 mod_info.json 无法像声明 KMLib 那样声明它。
-  - Notes: Launcher in [game and mods][kmu-mods].
-- EN (back-translation): The localisation pack targets one game version at a time; install the one matching the game version you run.
-  - ZH: 汉化包一次只对应一个游戏版本，请安装与你所运行的游戏版本一致的那一版。
 
 ## Questions
 
@@ -161,8 +146,8 @@ the [source notes][source-notes] give why the Fossic post opens with it.
   - Notes: border in [the political map][kmu-politics]; Mod in [game and mods][kmu-mods].
     Border gore in [the political map][kmu-politics].
 - EN: Do you want to play Bad Apple?
-  - ZH: 你是否想放一段 Bad Apple？
-  - Notes: the Fractal Softworks line links a Reddit post and the Fossic line does not; the [source notes][source-notes] give why.
+  - ZH: none
+  - Notes: Fractal Softworks only; the [source notes][source-notes] give why.
 
 ## Download and dependencies
 
@@ -189,8 +174,8 @@ the [source notes][source-notes] give why the Fossic post opens with it.
   - ZH: KMU `<<version>>`（简体中文版）：`[attach]KMU-<<version>>-zh-hans.zip[/attach]`。适用于 0.98a-RC8。
   - Notes: Fossic only, as above; the tag puts the attached zip's download link in the line, per the [source notes][source-notes].
     Attachment in [KMLib's forum terms][kmlib-forum].
-- EN (back-translation): Source and English edition: `https://github.com/Klark-Morrigan/Starsector-Mod-KMU`
-  - ZH: 源码与英文版：`https://github.com/Klark-Morrigan/Starsector-Mod-KMU`
+- EN (back-translation): Source and English edition (links the GitHub repository)
+  - ZH: 源码与英文版
   - Notes: Fossic only: GitHub appears once, as a source line, per the [source notes][source-notes].
 - EN (back-translation): The KMU thread on the Fractal Softworks forum
   - ZH: Fractal Softworks 论坛上的 KMU 帖子
@@ -203,8 +188,13 @@ the [source notes][source-notes] give why the Fossic post opens with it.
     per the [source notes][source-notes].
 - EN: This mod requires LazyLib, LunaLib.
   - ZH: 前置
-  - Notes: a heading over LazyLib and LunaLib as a list, each linking its Fossic thread.
+  - Notes: a heading over the core localisation, LazyLib and LunaLib as a list, each linking its Fossic thread.
     Prerequisite, Fossic's word for a dependency in [KMLib's forum terms][kmlib-forum].
+- EN (back-translation): Starsector Chinese localisation (over starsector-core)
+  - ZH: 远行星号中文汉化（覆盖到 starsector-core）
+  - Notes: Fossic only, heading the list; the [source notes][source-notes] give why.
+    The reference's [opening section][kmu-holds] names the core localisation in English only.
+    The Chinese core localisation in [KMLib's forum terms][kmlib-forum]; Starsector in [game and mods][kmu-mods].
 - EN (back-translation): KMLib (Klark Morrigan's Library): `KMLib-<kmlib-version>-zh-hans.zip`, attached. The KMLib version KMU needs is written in mod_info.json; the attachment here is always the one that goes with the current KMU.
   - ZH: KMLib（Klark Morrigan 的程序库）：`[attach]KMLib-<<kmlib-version>>-zh-hans.zip[/attach]`。KMU 所需的 KMLib 版本写在 mod_info.json 中，本帖附件始终是与当前 KMU 配套的版本。
   - Notes: Fossic only: KMLib has no Fossic thread, so its zip rides in this one, per the [source notes][source-notes].
