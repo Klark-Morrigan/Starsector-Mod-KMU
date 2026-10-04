@@ -455,7 +455,7 @@ The ` - ` in a tab name is an ASCII hyphen with a space either side, as in Engli
 ### The forum banner
 
 The captions of the "always has been" meme on the Fossic thread's banner,
-drawn in Microsoft YaHei Bold over `promo/always-has-been-zh-hans.png`.
+drawn in Microsoft YaHei Bold over `promo/zh-hans/always-has-been.png`.
 
 | English | 简体中文 | Note |
 | --- | --- | --- |

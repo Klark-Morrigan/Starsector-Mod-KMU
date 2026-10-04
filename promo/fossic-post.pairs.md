@@ -91,8 +91,8 @@ The [source notes][source-notes] list KMU's value for every input; what each inp
 
 ## Header
 
-- EN: image `promo/always-has-been.png`
-  - ZH: image `promo/always-has-been-zh-hans.png`
+- EN: image `promo/en/always-has-been.png`
+  - ZH: image `promo/zh-hans/always-has-been.png`
   - Notes: captioned "Wait, Starsector is a map game?" and "Always has been" in English,
     and 等等，远行星号是P社游戏？ and 一直都是 in Chinese; the captions are in the images, not the post text.
     The Fractal Softworks post opens with it; the Fossic post puts it after the title, and uses its own
@@ -240,37 +240,42 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 
 - EN: Examples
   - ZH: 示例
-- Both: image `promo/map-screen.png`
+- EN: image `promo/en/map-screen.png`
+  - ZH: image `promo/zh-hans/map-screen.png`
 - EN: Map screen.
   - ZH: 星图界面。
   - Notes: map screen in [features and screens][kmu-features].
-- Both: image `promo/intel-screen.png`
+- EN: image `promo/en/intel-screen.png`
+  - ZH: image `promo/zh-hans/intel-screen.png`
 - EN: Intel screen.
   - ZH: 情报信息界面。
   - Notes: Intel in [screens and the map][kmu-screens].
-- Both: image `promo/random-assortment-of-things-minimap.png`
+- EN: image `promo/en/random-assortment-of-things-minimap.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Random Assortment of Things minimap.
-  - ZH: Random Assortment of Things 的小地图。
-  - Notes: Minimap in [features and screens][kmu-features].
-
-### Sector examples
-
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Sector examples
   - ZH: 星域示例
-- Both: image `promo/sector-1-vanilla.png`
+- EN: image `promo/en/sector-1-vanilla.png`
+  - ZH: image `promo/zh-hans/sector-1-vanilla-nexerelin.png`
 - EN: Vanilla.
-  - ZH: 原版。
-  - Notes: Vanilla in [KMLib's forum terms][kmlib-forum].
-- Both: image `promo/sector-2-modded-light.png`
+  - ZH: 原版加 Nexerelin。
+  - Notes: the Chinese screenshot is its own, vanilla with Nexerelin, so its caption differs.
+    Vanilla in [KMLib's forum terms][kmlib-forum]; Nexerelin stays Latin, per the [rules][kmu-rules].
+- EN: image `promo/en/sector-2-modded-light.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Lightly modded.
-  - ZH: 轻度 Mod。
-  - Notes: Mod in [game and mods][kmu-mods].
-- Both: image `promo/sector-3-modded-heavy.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+- EN: image `promo/en/sector-3-modded-heavy.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Heavily modded.
-  - ZH: 重度 Mod。
-
-### How to access map layers
-
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: How to access map layers
   - ZH: 如何打开地图图层
 - EN: KMU comes with Sector Map Layers feature turned on by default.
@@ -281,10 +286,12 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - EN: Clicking that button or pressing (M) enables the map layer overlay and its sidebar.
   - ZH: 点击它或按 (M) 即可开启地图图层叠加层及其侧边栏。
   - Notes: overlay and sidebar in [features and screens][kmu-features].
-- Both: image `promo/ui-toggle-map.png`
+- EN: image `promo/en/ui-toggle-map.png`
+  - ZH: image `promo/zh-hans/ui-toggle-map.png`
 - EN: Map screen.
   - ZH: 星图界面。
-- Both: image `promo/ui-toggle-intel.png`
+- EN: image `promo/en/ui-toggle-intel.png`
+  - ZH: image `promo/zh-hans/ui-toggle-intel.png`
 - EN: Intel screen.
   - ZH: 情报信息界面。
 - EN: The main control interface of map layers is the collapsible sidebar that lists all available layers and related knobs and toggles.
@@ -322,7 +329,8 @@ the [source notes][source-notes] give why the Fossic post opens with it.
   - Notes: Non-market entities in [the political map][kmu-politics]; entity in [space][kmu-space].
 - EN: Examples
   - ZH: 示例
-- Both: image `promo/domination-factions-unpopulated.png`
+- EN: image `promo/en/domination-factions-unpopulated.png`
+  - ZH: image `promo/zh-hans/domination-factions-unpopulated.png`
 - EN: Unclaimed unpopulated systems are drawn very faintly just to show where systems touch.
   - ZH: 无宣称的无人星系只以极淡的线条绘制，仅用于显示星系之间的相接位置。
   - Notes: uninhabited systems in [the political map][kmu-politics], which the English calls unpopulated here.
@@ -343,7 +351,8 @@ the [source notes][source-notes] give why the Fossic post opens with it.
     Solidified control in [the political map][kmu-politics].
 - EN: Examples
   - ZH: 示例
-- Both: image `promo/domination-factions-presence-ribbon.png`
+- EN: image `promo/en/domination-factions-presence-ribbon.png`
+  - ZH: image `promo/zh-hans/domination-factions-presence-ribbon.png`
 - EN: Presence ribbons: Samarra draws one showing 3 Hegemony markets and 1 Independent market.
   - ZH: 存在色带：Samarra 的色带显示 3 个霸主市场和 1 个非势力团体市场。
   - Notes: faction names are the core localisation's own, read from its faction files, the same on every edition.
@@ -353,11 +362,13 @@ the [source notes][source-notes] give why the Fossic post opens with it.
   - Notes: System tooltip in [hovering and tooltips][kmu-hover]; balance of power in [the political map][kmu-politics].
 - EN: Examples
   - ZH: 示例
-- Both: image `promo/domination-factions-tooltip-lists-neutral-markets.png`
+- EN: image `promo/en/domination-factions-tooltip-lists-neutral-markets.png`
+  - ZH: image `promo/zh-hans/domination-factions-tooltip-lists-neutral-markets.png`
 - EN: Tooltips list Neutral (unowned) markets.
   - ZH: 提示框会列出中立（无主）市场。
   - Notes: Unowned in [vanilla mechanics without a name][kmu-unnamed].
-- Both: image `promo/domination-factions-tooltip-lists-not-contributing-markets.png`
+- EN: image `promo/en/domination-factions-tooltip-lists-not-contributing-markets.png`
+  - ZH: image `promo/zh-hans/domination-factions-tooltip-lists-not-contributing-markets.png`
 - EN: Tooltips list markets producing no domination score.
   - ZH: 提示框会列出不产生主导得分的市场。
   - Notes: domination and Score in [the political map][kmu-politics].
@@ -382,21 +393,25 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 
 - EN: Examples
   - ZH: 示例
-- Both: image `promo/domination-factions-filter.png`
+- EN: image `promo/en/domination-factions-filter.png`
+  - ZH: image `promo/zh-hans/domination-factions-filter.png`
 - EN: Faction filter, expanded to 2 columns, sorted by faction attitude toward the player.
   - ZH: 势力筛选列表，展开为 2 列，按势力对玩家的关系排序。
   - Notes: Attitude in [factions and relations][kmu-factions]; Columns in [the political map][kmu-politics].
     Faction filter in [features and screens][kmu-features].
-- Both: image `promo/domination-factions-luddic-church.png`
+- EN: image `promo/en/domination-factions-luddic-church.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Factions view filtered by Luddic Church.
-  - ZH: 按卢德教会筛选的势力视图。
-  - Notes: faction names are the core localisation's own.
-    Luddic Church in [factions and relations][kmu-factions].
-- Both: image `promo/domination-factions-pirates.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+- EN: image `promo/en/domination-factions-pirates.png`
+  - ZH: image `promo/zh-hans/domination-factions-pirates.png`
 - EN: Factions view filtered by Pirates.
   - ZH: 按海盗筛选的势力视图。
   - Notes: Pirate in [colonies and markets][kmu-colonies].
-- Both: image `promo/domination-factions-unpopulated-claimed.png`
+- EN: image `promo/en/domination-factions-unpopulated-claimed.png`
+  - ZH: image `promo/zh-hans/domination-factions-unpopulated-claimed.png`
 - EN: Unpopulated systems get no paint in domination views.
   - ZH: 在主导视图中，无人星系不上色。
 - EN: Tia star system is shown as Hegemony-owned because Hegemony holds an unconditional claim for it.
@@ -413,24 +428,33 @@ the [source notes][source-notes] give why the Fossic post opens with it.
     Domination algorithm and militarised in [the political map][kmu-politics]; patrol in [colonies and markets][kmu-colonies].
     "Militarised" is described rather than named: 军事化 is vanilla's word for a ship hullmod.
 - EN: Examples
-  - ZH: 示例
-- Both: image `promo/domination-factions-penelope_star.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+- EN: image `promo/en/domination-factions-penelope_star.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Luddic Church unconditionally claims Penelope's Star but isn't present there,
-  - ZH: 卢德教会无条件宣称了 Penelope's Star，但并不在场；
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: and per domination rules actually present faction (Independent) reads as the holder.
-  - ZH: 按主导规则，实际在场的势力（非势力团体）被视为持有方。
-  - Notes: system holder in [the political map][kmu-politics], shortened to 持有方.
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: The claim is still listed in the tooltip.
-  - ZH: 该宣称仍会列在提示框中。
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Alliances (only visible with Nexerelin installed) - same as Factions but allied factions stand as a single political entity with their holdings combined.
   - ZH: 联盟（仅在安装了 Nexerelin 时可见）：与势力视图相同，但结盟的势力作为单一政治实体出现，其持有合并计算。
   - Notes: Alliances in [the political map][kmu-politics].
     Political entity in [the political map][kmu-politics].
 - EN: Examples
-  - ZH: 示例
-- Both: image `promo/domination-alliances-tooltip.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+- EN: image `promo/en/domination-alliances-tooltip.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Tooltips in the Alliances view combine domination score of present alliance members.
-  - ZH: 联盟视图中的提示框会合并在场联盟成员的主导得分。
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Claims - paints faction territory based on the vanilla system claim mechanic - dynamic or unconditional.
   - ZH: 宣称：根据原版的星系宣称机制为势力领土上色，包括动态宣称与无条件宣称。
   - Notes: Claims in [the political map][kmu-politics].
@@ -449,15 +473,17 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - EN: If you filter by a non-territorial faction, unclaimed systems with their presence will be spotlit.
   - ZH: 若按非领土势力筛选，则会聚焦其在场的无宣称星系。
 - EN: Examples
-  - ZH: 示例
-- Both: image `promo/claims-cored-but-somebody-else-is-present.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+- EN: image `promo/en/claims-cored-but-somebody-else-is-present.png`
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Luddic Church isn't present in Penelope's Star system, holds an unconditional claim on it,
-  - ZH: 卢德教会在 Penelope's Star 星系并不在场，却对其持有无条件宣称，
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: and there's a non-territorial faction (Independent) present.
-  - ZH: 同时有一个非领土势力（非势力团体）在场。
-
-## Spoiler protection
-
+  - ZH: none
+  - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: Spoiler protection
   - ZH: 防剧透
   - Notes: spoilers as in Visibility overrides (SPOILERS) in [settings][kmu-settings].
