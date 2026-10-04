@@ -5,13 +5,13 @@ import kmlib.starsector.compatibility.CompatibilityConsumer;
 import kmu.KmuMod;
 
 /**
- * KMU as the mod a failed binding costs something: the one way KMU names itself to KMLib's
- * compatibility channel.
+ * KMU as the mod a failed binding or a failed feature costs something: the one way KMU names itself
+ * to KMLib's compatibility channel.
  *
  * <p>Every binding KMU takes - a third party's settings, a renderer's internals, the game's own
- * screens - files under KMU's mod ID with a feature key and two sentences out of KMU's strings.
- * Composed once here, so no binding can name the mod differently or read one of its sentences from
- * the other's key.
+ * screens - and every feature it switches off files under KMU's mod ID with a feature key and two
+ * sentences out of KMU's strings. Composed once here, so no report can name the mod differently or
+ * read one of its sentences from the other's key.
  *
  * <p>Final class with a private constructor: pure-function utility, no instances.
  */
@@ -24,8 +24,10 @@ public final class KmuCompatibilityConsumers {
     /**
      * KMU as the consumer of one binding, with its sentences read now.
      *
-     * <p>Reads strings.json, so a caller on a path where the binding holds composes this only once
-     * the binding has failed.
+     * <p>Reads strings.json, so it is composed once per binding and never per frame. Most callers
+     * hand it over as a describer, composed only once the binding has failed. The renderer binding
+     * is the exception: its readers are cached by the consumer's key, so it is composed when the
+     * binding is first taken.
      *
      * @param featureKey    which of KMU's features the binding serves
      * @param lostKey       the strings.json key of what that feature loses
