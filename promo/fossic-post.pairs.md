@@ -402,7 +402,7 @@ the [source notes][source-notes] give why the Fossic post opens with it.
 - EN: image `promo/en/domination-factions-luddic-church.png`
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
-- EN: Factions view filtered by Luddic Church.
+- EN: Alliances view filtered by the Luddic Church alliance.
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: image `promo/en/domination-factions-pirates.png`
