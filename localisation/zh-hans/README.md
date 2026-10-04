@@ -59,6 +59,7 @@ the core localisation replaces them, and without it every Chinese character draw
 hold for every KM mod's bundle, KMU's included:
 vanilla's word wins, Radio options and proper nouns stay as written,
 full-width punctuation, no em dash, numbered slots where word order moves, an ASCII space wherever a highlighted run touches Chinese, and defaults as `[默认值：X]` on a line of their own.
+A Radio's description then lists each option's translation after a blank line.
 KMU's own examples of them:
 `Galatia 学院` and `Naraka 星系` for Latin proper nouns,
 `UI palette` for a quoted Radio option,
@@ -314,6 +315,15 @@ which is how the tooltip heading reads: the faction's name, then 核心领土.
 | Applies only while X is on | [仅在 X 开启时生效] | |
 | The settings below apply only while X is on | 以下设置仅在 [X] 开启时生效 | |
 | Visibility overrides (SPOILERS) | 可见性覆盖（剧透） | |
+| log verbosity, reflection, log levels | 日志详细程度, 反射, 关闭 / 错误 / 警告 / 信息 / 调试 / 全部 | [KMLib's](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#settings) |
+| UI palette / Chrome grey / Player faction (colour scheme) | 界面配色 / 纯灰 / 你的势力 | 界面, vanilla's word for the UI; 纯灰, the plain grey the description names; 你的势力 as vanilla writes it |
+| Gold / Panel accent (chevron) | 金色 / 面板强调色 | 强调色, the usual design word for an accent colour |
+| Primary / Secondary faction color, No color | 势力主色 / 势力副色, 无颜色 | 主色 and 副色, a palette's main and second colour |
+| The name's fitted box / The words themselves | 名称所放入的框 / 文字本身 | as the description words them |
+| Below / Above (nebulae) | 之下 / 之上 | as the descriptions write 星云之下 and 星云之上 |
+| Normal / Fixed (hidden market scaling) | 正常 / 固定 | 固定 as in （固定） |
+| Not surveyed / Seen / Preliminary / Full (survey level) | 未被调查 / 已观测 / 已初步调查 / 已全面调查 | vanilla's planet list for three; 已观测 from KMU's 观测 for seen |
+| Off / Coarse / Fine (profiling) | 关闭 / 粗略 / 精细 | a switch's 关闭; 粗略 and 精细, rough and detailed |
 
 ### Settings tabs
 
