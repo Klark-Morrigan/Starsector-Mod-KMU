@@ -186,7 +186,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
 
             // Item 1 is the counts line; item 0 is the static "Conditions:" header.
             var countsParagraph = KmuConditionPickerSummaryParagraphFactory
-                .get(actionHandler.getModel())
+                .createParagraphs(actionHandler.getModel())
                 .get(1);
 
             summaryLabel.setText(countsParagraph.getText());

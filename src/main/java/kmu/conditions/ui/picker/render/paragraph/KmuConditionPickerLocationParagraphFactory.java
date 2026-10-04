@@ -36,7 +36,13 @@ public final class KmuConditionPickerLocationParagraphFactory {
     private KmuConditionPickerLocationParagraphFactory() {
     }
 
-    public static List<HighlightedParagraph> get(KmuConditionPickerModel model) {
+    /**
+     * Composes the location lines for a model.
+     *
+     * @param model the picker's model
+     * @return the header, then each line the location has something to show for
+     */
+    public static List<HighlightedParagraph> createParagraphs(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
 
         var location = model.getLocation();
@@ -95,7 +101,7 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
         location.getFaction().ifPresent(faction -> {
 
-            buildOwnershipSegment(faction).ifPresent(segments::add);
+            segments.add(buildOwnershipSegment(faction));
 
             highlights.add(new Highlight(
                 faction.getName(),
@@ -111,7 +117,7 @@ public final class KmuConditionPickerLocationParagraphFactory {
             return Optional.empty();
         }
         return Optional.of(new HighlightedParagraph(
-            String.join(" - ", segments),
+            String.join(KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_GROUP_SEPARATOR), segments),
             highlights.toArray(new Highlight[0])));
     }
 
@@ -150,11 +156,13 @@ public final class KmuConditionPickerLocationParagraphFactory {
             new HighlightedParagraph(name, new Highlight(name, highlightColour)));
     }
 
-    private static Optional<String> buildOwnershipSegment(KmuPickerFaction faction) {
-        var text = "owned by " + faction.getName();
-        return Optional.of(faction.getRelationshipDescription()
+    // The relationship rides in ASCII brackets, which every language's line keeps: the game highlights it only
+    // where the characters beside it are whitespace or ASCII punctuation.
+    private static String buildOwnershipSegment(KmuPickerFaction faction) {
+        var text = KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_LOCATION_OWNED_BY, faction.getName());
+        return faction.getRelationshipDescription()
             .map(rel -> text + " (" + rel + ")")
-            .orElse(text));
+            .orElse(text);
     }
 
     private static Optional<String> buildSystemParenthetical(
@@ -168,7 +176,7 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
         return parts.isEmpty()
             ? Optional.empty()
-            : Optional.of(String.join(", ", parts));
+            : Optional.of(String.join(KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_ITEM_SEPARATOR), parts));
     }
 
     // Suppress entity name when it duplicates the type label (e.g. barycenter

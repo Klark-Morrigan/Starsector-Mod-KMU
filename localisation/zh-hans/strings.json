@@ -21,6 +21,7 @@
 
     "condition_manager_location": "位置：",
     "condition_manager_location_unknown": "未知",
+    "condition_manager_location_owned_by": "属于 %s",
 
     "condition_manager_summary": "条件：",
     "condition_manager_summary_visible": "%d 个可见",
@@ -29,8 +30,8 @@
     "condition_manager_summary_hidden": "%d 个隐藏",
     "condition_manager_summary_available": "%d 个可用",
     "condition_manager_summary_total": "共 %d 个。",
-    "condition_manager_summary_group_separator": " ； ",
-    "condition_manager_summary_item_separator": " ， ",
+    "condition_manager_group_separator": " ； ",
+    "condition_manager_item_separator": " ， ",
 
     "condition_manager_empty": "没有可用的市场条件规格。",
 

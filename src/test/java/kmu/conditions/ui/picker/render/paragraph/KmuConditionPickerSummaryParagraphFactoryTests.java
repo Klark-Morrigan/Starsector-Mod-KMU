@@ -69,19 +69,19 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
     }
 
     @Nested
-    class Get {
+    class CreateParagraphs {
 
         @Test
         void returnsTwoLines() {
 
-            assertThat(KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries())))
+            assertThat(KmuConditionPickerSummaryParagraphFactory.createParagraphs(buildModel(listEntries())))
                 .hasSize(2);
         }
 
         @Test
         void returnsConditionsHeaderAsFirstLine() {
 
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(buildModel(listEntries()));
 
             assertThat(paragraphs.get(0).getText())
                 .isEqualTo("Conditions:");
@@ -92,7 +92,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
         @Test
         void conditionsHeaderHasGrayBaseColour() {
 
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(buildModel(listEntries()));
 
             assertThat(paragraphs.get(0).getBaseColour())
                 .isEqualTo(GRAY);
@@ -101,7 +101,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
         @Test
         void summarizesTotalAndPresentConditionsInCountsLine() {
 
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(buildModel(listEntries()));
 
             assertThat(paragraphs.get(1).getText())
                 .isEqualTo("2 visible - 1 suppressed, 3 present, 1 hidden - 1 available, 4 total.");
@@ -110,7 +110,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
         @Test
         void showsOnlyTailWhenAllCountsAreZero() {
 
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(
                 buildModel(Collections.emptyList()));
 
             assertThat(paragraphs.get(1).getText())
@@ -120,7 +120,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
         @Test
         void startsDirectlyWithFirstCountTokenWhenVisibleIsZero() {
             // Entry that is both suppressed and hidden: visible=0 (hidden), suppressed=1
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(
                 buildModel(Collections.singletonList(
                     buildEntry("hot", KmuConditionPickerEntryState.PRESENT, true, true))));
 
@@ -134,7 +134,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
         void exposesCountHighlightsOnCountsLine() {
             // "3 present" has no highlight slot because its colour matches the label base
             // (white). The tail from the dash on is one grey run, so it renders fully grey.
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(buildModel(listEntries()));
 
             assertThat(paragraphs.get(1).getHighlightTexts())
                 .containsExactly(
@@ -145,7 +145,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
         @Test
         void exposesHighlightColoursOnCountsLine() {
             // Colours align one-to-one with highlights above; the tail is grey.
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(buildModel(listEntries()));
 
             assertThat(paragraphs.get(1).getHighlightColours())
                 .containsExactly(GREEN, RED, BLUE, GRAY);
@@ -155,7 +155,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
         void everyRunOfTheCountsLineIsOneTheGameHighlights() {
             // A run opening with a space touches the word before it, which the game refuses
             // to highlight against - the reason the tail starts at its dash.
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModel(listEntries()));
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(buildModel(listEntries()));
 
             assertThat(LabelHighlightRule.findUnhighlightedRuns(paragraphs.get(1)))
                 .isEmpty();
@@ -164,7 +164,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
         @Test
         void highlightsTheWholeTailWhenItIsTheOnlyText() {
 
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(
                 buildModel(Collections.emptyList()));
 
             assertThat(paragraphs.get(1).getHighlightTexts())
@@ -174,7 +174,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
         @Test
         void omitsZeroSuppressedSegment() {
 
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(
                 buildModel(Collections.singletonList(
                     buildEntry("hot", KmuConditionPickerEntryState.PRESENT, false, false))));
 
@@ -185,7 +185,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
         @Test
         void exposesRedHighlightForSuppressedSegment() {
 
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(
                 buildModel(Collections.singletonList(
                     buildEntry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false))));
 

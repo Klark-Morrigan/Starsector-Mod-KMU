@@ -205,6 +205,8 @@ Where a row builds on a vanilla word, the note says which.
 | market condition | 市场条件 | |
 | suppressed (condition) | 被压制 | |
 | world units | 世界单位 | |
+| owned by (a planet's faction) | 属于 | the game's own text has no such phrase; the faction's name follows after a space |
+| list separators (the condition manager's lines) | ` ； ` between groups, ` ， ` between items | an ASCII space either side, so the highlighted counts and names beside them still highlight |
 
 ### The political map
 

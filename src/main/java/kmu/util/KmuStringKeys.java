@@ -74,6 +74,7 @@ public final class KmuStringKeys {
 
     public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
     public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
+    public static final String CONDITION_MANAGER_LOCATION_OWNED_BY = "condition_manager_location_owned_by";
     public static final String CONDITION_MANAGER_SUMMARY = "condition_manager_summary";
     public static final String CONDITION_MANAGER_SUMMARY_VISIBLE = "condition_manager_summary_visible";
     public static final String CONDITION_MANAGER_SUMMARY_SUPPRESSED = "condition_manager_summary_suppressed";
@@ -81,8 +82,8 @@ public final class KmuStringKeys {
     public static final String CONDITION_MANAGER_SUMMARY_HIDDEN = "condition_manager_summary_hidden";
     public static final String CONDITION_MANAGER_SUMMARY_AVAILABLE = "condition_manager_summary_available";
     public static final String CONDITION_MANAGER_SUMMARY_TOTAL = "condition_manager_summary_total";
-    public static final String CONDITION_MANAGER_SUMMARY_GROUP_SEPARATOR = "condition_manager_summary_group_separator";
-    public static final String CONDITION_MANAGER_SUMMARY_ITEM_SEPARATOR = "condition_manager_summary_item_separator";
+    public static final String CONDITION_MANAGER_GROUP_SEPARATOR = "condition_manager_group_separator";
+    public static final String CONDITION_MANAGER_ITEM_SEPARATOR = "condition_manager_item_separator";
     public static final String CONDITION_MANAGER_EMPTY = "condition_manager_empty";
     public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE = "condition_manager_tooltip_suppressed_title";
     public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY = "condition_manager_tooltip_suppressed_body";

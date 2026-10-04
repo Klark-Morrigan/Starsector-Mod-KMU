@@ -2,7 +2,7 @@ package kmu.conditions.ui.picker.render.paragraph;
 
 import com.fs.starfarer.api.util.Misc;
 
-import kmlib.testfixtures.localisation.LocalisationDirectory;
+import kmlib.testfixtures.localisation.ShippedLocales;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 import kmlib.testfixtures.starsector.ui.label.LabelHighlightRule;
 
@@ -17,9 +17,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
-import java.awt.Color;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,14 +30,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class KmuConditionPickerSummaryParagraphFactoryIntegrationTests {
 
     private MockedStatic<Misc> miscMock;
-
-    static List<String> listLocaleTags() {
-
-        return List.copyOf(new LocalisationDirectory(LocalisationDirectory.LOCALISATION_DIRECTORY)
-            .readManifest()
-            .declaredLocalesByTag()
-            .keySet());
-    }
 
     // Every count above zero, so every separator the line can carry is drawn.
     private static KmuConditionPickerModel buildModelHoldingEveryCount() {
@@ -66,31 +56,13 @@ final class KmuConditionPickerSummaryParagraphFactoryIntegrationTests {
             state,
             "Tooltip",
             null,
-            isSuppressed, isHidden);
+            isSuppressed,
+            isHidden);
     }
 
     @BeforeEach
     void mockThemeColours() {
-
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getGrayColor)
-            .thenReturn(Color.GRAY);
-        miscMock
-            .when(Misc::getHighlightColor)
-            .thenReturn(Color.YELLOW);
-        miscMock
-            .when(Misc::getNegativeHighlightColor)
-            .thenReturn(Color.RED);
-        miscMock
-            .when(Misc::getPositiveHighlightColor)
-            .thenReturn(Color.GREEN);
-        miscMock
-            .when(Misc::getTextColor)
-            .thenReturn(Color.WHITE);
-        miscMock
-            .when(Misc::getBasePlayerColor)
-            .thenReturn(Color.BLUE);
+        miscMock = PickerThemeColours.mockThemeColours();
     }
 
     @AfterEach
@@ -101,20 +73,15 @@ final class KmuConditionPickerSummaryParagraphFactoryIntegrationTests {
     }
 
     @Nested
-    class Get {
+    class CreateParagraphs {
 
         @ParameterizedTest
-        @MethodSource(
-            "kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerSummaryParagraphFactoryIntegrationTests"
-                + "#listLocaleTags")
+        @MethodSource("kmlib.testfixtures.localisation.ShippedLocales#listLocaleTags")
         void everyRunOfTheCountsLineHighlightsInEveryLocale(String localeTag) {
 
-            var directory = new LocalisationDirectory(LocalisationDirectory.LOCALISATION_DIRECTORY);
-            var locale = directory.readManifest().declaredLocalesByTag().get(localeTag);
+            ShippedLocales.installLocaleStrings(localeTag);
 
-            StarsectorSettingsFake.installSettings(directory.openBundle(locale).readStringSource());
-
-            var paragraphs = KmuConditionPickerSummaryParagraphFactory.get(buildModelHoldingEveryCount());
+            var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(buildModelHoldingEveryCount());
 
             assertThat(LabelHighlightRule.findUnhighlightedRuns(paragraphs.get(1)))
                 .isEmpty();
