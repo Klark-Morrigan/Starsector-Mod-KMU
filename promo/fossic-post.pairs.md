@@ -180,12 +180,11 @@ The English README's Languages section says the same to an English reader.
 - EN (back-translation): The KMU thread on the Fractal Softworks forum
   - ZH: Fractal Softworks 论坛上的 KMU 帖子
   - Notes: Fossic only: the link to the English thread. Its counterpart in the Fractal Softworks post
-    is the Simplified Chinese line, which links this thread once it exists.
+    is the Simplified Chinese line, which links this thread.
     Forum thread in [KMLib's forum terms][kmlib-forum].
 - EN: Simplified Chinese (简体中文) is available at Fossic.
   - ZH: none
-  - Notes: Fractal Softworks only: the link to this thread, whose URL fills a placeholder after the first post,
-    per the [source notes][source-notes].
+  - Notes: Fractal Softworks only: the link to this thread.
 - EN: This mod requires LazyLib, LunaLib.
   - ZH: 前置
   - Notes: a heading over the core localisation, LazyLib and LunaLib as a list, each linking its Fossic thread.
