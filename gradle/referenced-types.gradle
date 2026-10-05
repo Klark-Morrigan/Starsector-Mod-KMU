@@ -34,4 +34,10 @@ enforceReferencedTypes {
     restrictReferences namespace: gameNamespace,
         allowingPackages: publishedGameApiPackages,
         allowingTypes: stableGameTypes
+
+    // Closed outright: KMU reaches the game's internals through KMLib's walk and
+    // names no reflection type of its own.
+    restrictReferences namespace: gameRefusedNamespace,
+        inSourceSets: ['main'],
+        reason: gameRefusedNamespaceReason
 }

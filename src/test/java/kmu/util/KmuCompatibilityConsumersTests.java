@@ -37,5 +37,20 @@ final class KmuCompatibilityConsumersTests {
             assertThat(consumer.unaffectedFeature())
                 .isEqualTo("the sentence for unaffected_key");
         }
+
+        @Test
+        void fillsTheLostSentencesSlotsWithTheArgumentsGiven() {
+
+            StarsectorSettingsFake.installSettings((category, key) -> "the %s sentence for " + key);
+
+            var consumer = KmuCompatibilityConsumers.describeConsumer(
+                "map-layer-political_map",
+                "lost_key",
+                "unaffected_key",
+                "Political Map");
+
+            assertThat(consumer.lostFeature())
+                .isEqualTo("the Political Map sentence for lost_key");
+        }
     }
 }

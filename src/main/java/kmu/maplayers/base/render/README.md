@@ -155,9 +155,14 @@ so the switch clears where trying again means something -
 the next load,
 or the map layers switched off and back on -
 and never once a frame.
-It is logged with its trace rather than reported to the player:
-every layer registered today is KMU's own,
-and the compatibility notice names third parties.
+It is logged with its trace,
+and the player is told through KMLib's notice as one of KMU's own features that failed.
+A layer that only stops drawing leaves an empty map,
+and a player has no reason to look in the log for why.
+`SwitchedOffLayerReporter` records it once per session and raises the notice on the map where the map can hold one;
+otherwise the campaign's dialog shows it later.
+The report is guarded on its own,
+since composing it reads strings and can fail for the same reason the layer did.
 
 The frame is contained as well as the layer
 because every GL bracket under the pass closes itself in a `finally` -

@@ -72,6 +72,14 @@ public final class KmuStringKeys {
     public static final String COMPATIBILITY_UNAFFECTED_STARSCAPE_TERRAIN =
         "compatibility_unaffected_starscape_terrain";
 
+    /**
+     * What a map layer that threw and was switched off loses. One slot: the layer's tab name.
+     *
+     * <p>Names the two ways to bring it back, since the player can do either and both retry it.
+     */
+    public static final String COMPATIBILITY_LOST_MAP_LAYER = "compatibility_lost_map_layer";
+    public static final String COMPATIBILITY_UNAFFECTED_MAP_LAYER = "compatibility_unaffected_map_layer";
+
     public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
     public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
     public static final String CONDITION_MANAGER_LOCATION_OWNED_BY = "condition_manager_location_owned_by";

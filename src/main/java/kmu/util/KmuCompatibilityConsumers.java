@@ -43,4 +43,27 @@ public final class KmuCompatibilityConsumers {
             KmuStringKeys.get(lostKey),
             KmuStringKeys.get(unaffectedKey));
     }
+
+    /**
+     * The same, where the sentence naming what is lost has slots - one consumer for several
+     * features of one kind, each naming itself in that sentence.
+     *
+     * @param featureKey    which of KMU's features the failure cost
+     * @param lostKey       the strings.json key of what that feature loses, a template
+     * @param unaffectedKey the strings.json key of what it does not
+     * @param lostArguments what fills the lost sentence's slots, in order
+     * @return the consumer the failure is filed under
+     */
+    public static CompatibilityConsumer describeConsumer(
+            String featureKey,
+            String lostKey,
+            String unaffectedKey,
+            Object... lostArguments) {
+
+        return new CompatibilityConsumer(
+            KmuMod.MOD_ID,
+            featureKey,
+            KmuStringKeys.format(lostKey, lostArguments),
+            KmuStringKeys.get(unaffectedKey));
+    }
 }
