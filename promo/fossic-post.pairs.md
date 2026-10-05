@@ -346,9 +346,10 @@ The English README's Languages section says the same to an English reader.
 - EN: image `promo/en/domination-factions-presence-ribbon.png`
   - ZH: image `promo/zh-hans/domination-factions-presence-ribbon.png`
 - EN: Presence ribbons: Samarra draws one showing 3 Hegemony markets and 1 Independent market.
-  - ZH: 存在色带：Samarra 的色带显示 3 个霸主市场和 1 个非势力团体市场。
-  - Notes: faction names are the core localisation's own, read from its faction files, the same on every edition.
-    Hegemony in [factions and relations][kmu-factions].
+  - ZH: 存在色带：Hybrasil 的色带显示 2 个速子科技市场、1 个非势力团体市场、1 个海盗市场和 1 个中立市场。
+  - Notes: the Chinese screenshot is its own, of Hybrasil, so its caption differs.
+    Faction names are the core localisation's own, read from its faction files, the same on every edition.
+    Tri-Tachyon, Independent and Neutral in [factions and relations][kmu-factions]; Pirate in [colonies and markets][kmu-colonies].
 - EN: Expandable system tooltips provide detailed information on how each market affects the balance of power.
   - ZH: 可展开的星系提示框详细说明每个市场如何影响力量平衡。
   - Notes: System tooltip in [hovering and tooltips][kmu-hover]; balance of power in [the political map][kmu-politics].
@@ -388,9 +389,9 @@ The English README's Languages section says the same to an English reader.
 - EN: image `promo/en/domination-factions-filter.png`
   - ZH: image `promo/zh-hans/domination-factions-filter.png`
 - EN: Faction filter, expanded to 2 columns, sorted by faction attitude toward the player.
-  - ZH: 势力筛选列表，展开为 2 列，按势力对玩家的关系排序。
-  - Notes: Attitude in [factions and relations][kmu-factions]; Columns in [the political map][kmu-politics].
-    Faction filter in [features and screens][kmu-features].
+  - ZH: 势力筛选列表，按势力对玩家的关系排序。
+  - Notes: the Chinese screenshot is its own, with the list in 1 column, so its caption leaves the columns out.
+    Attitude in [factions and relations][kmu-factions]; faction filter in [features and screens][kmu-features].
 - EN: image `promo/en/domination-factions-luddic-church.png`
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
