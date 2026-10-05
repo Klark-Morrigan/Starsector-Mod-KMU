@@ -24,11 +24,12 @@ final class PostPairing {
 
     private static final String POST_BEGINS_MARKER = "==== POST BEGINS ====";
 
+    // An attachment ID is the forum's handle on a file, not words of the post, and a re-upload changes it.
+    private static final Pattern ATTACHMENT = Pattern.compile("\\[(attach|attachimg)\\][^\\[]*\\[/\\1\\]");
+
     private static final Pattern BBCODE_TAG = Pattern.compile("\\[/?[a-z*][^\\]]*\\]");
 
     private static final Pattern CHINESE_CHARACTER = Pattern.compile("[\\p{IsHan}]");
-
-    private static final Pattern IMAGE_PLACEHOLDER = Pattern.compile("\\[attachimg\\][^\\[]*\\[/attachimg\\]");
 
     private static final Pattern PAIRED_CHINESE_LINE = Pattern.compile("^\\s+- ZH: (.*)$", Pattern.MULTILINE);
 
@@ -93,8 +94,8 @@ final class PostPairing {
 
     private static String stripMarkup(String text) {
         var withTitles = SPOILER_TITLE.matcher(text).replaceAll("$1\n");
-        var withoutImages = IMAGE_PLACEHOLDER.matcher(withTitles).replaceAll("");
-        var withoutPlaceholders = TEXT_PLACEHOLDER.matcher(withoutImages).replaceAll("");
+        var withoutAttachments = ATTACHMENT.matcher(withTitles).replaceAll("");
+        var withoutPlaceholders = TEXT_PLACEHOLDER.matcher(withoutAttachments).replaceAll("");
         return BBCODE_TAG.matcher(withoutPlaceholders).replaceAll("");
     }
 }
