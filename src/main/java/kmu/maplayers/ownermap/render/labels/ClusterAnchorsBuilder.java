@@ -114,7 +114,7 @@ public final class ClusterAnchorsBuilder {
         // Read ahead of the gate rather than inside it, because the standing pair needs
         // labelling either way: a rebuild that fits nothing still leaves a list behind, and an
         // unlabelled one is indistinguishable from one fitted under rules that still hold.
-        var fitFingerprint = readFitFingerprint(cellGeometry.revision());
+        var fitFingerprint = readFitFingerprint(cellGeometry.revision(), styling);
 
         // Indexed before this pass replaces the pair, since that is where the previous one
         // survives - the two move together, so there is no window where the list is emptied
@@ -132,13 +132,13 @@ public final class ClusterAnchorsBuilder {
 
             return ClusterNameDisturbance.compareFittedNames(standingNames, List.of());
         }
-        // The tuning comes back off the fingerprint rather than from a second read of the
-        // settings, so what the fit ran under and what it reports having run under are one
-        // value and cannot drift apart on a rebuild that straddles a settings change.
+        // The tuning and the face come back off the fingerprint rather than from second reads, so
+        // what the fit ran under and what it reports having run under are one value and cannot
+        // drift apart on a rebuild that straddles a settings change.
         var fittedAnchors = fitClusterAnchors(
             cellGeometry,
             styling,
-            fitFingerprint.specification(),
+            fitFingerprint,
             reusableAnchors);
 
         standingAnchors.replaceAnchors(fittedAnchors, fitFingerprint);
@@ -175,7 +175,7 @@ public final class ClusterAnchorsBuilder {
             // skip cannot leave the two disagreeing.
             standingAnchors.replaceAnchors(
                 List.of(),
-                readFitFingerprint(cellGeometry.revision()));
+                readFitFingerprint(cellGeometry.revision(), styling));
             return;
         }
         rebuildClusterAnchors(standingAnchors, cellGeometry, styling);
@@ -189,12 +189,12 @@ public final class ClusterAnchorsBuilder {
     private static List<ClusterAnchor> fitClusterAnchors(
             RevisedCellGeometry cellGeometry,
             ClusterLabelStylingSnapshot styling,
-            LabelAnchorSpecification spec,
+            AnchorFitFingerprint fitFingerprint,
             Map<ClusterIdentity, ClusterAnchor> reusableAnchors) {
 
         try (var fitScope = ActiveProfiler.resolveProfiler().open(FIT_ANCHORS_SECTION)) {
             return fitClusterAnchorsInScope(
-                cellGeometry, styling, spec, reusableAnchors, fitScope);
+                cellGeometry, styling, fitFingerprint, reusableAnchors, fitScope);
         }
     }
 
@@ -202,9 +202,11 @@ public final class ClusterAnchorsBuilder {
     private static List<ClusterAnchor> fitClusterAnchorsInScope(
             RevisedCellGeometry cellGeometry,
             ClusterLabelStylingSnapshot styling,
-            LabelAnchorSpecification spec,
+            AnchorFitFingerprint fitFingerprint,
             Map<ClusterIdentity, ClusterAnchor> reusableAnchors,
             ProfileScope fitScope) {
+
+        var spec = fitFingerprint.specification();
 
         // The agnostic clustering and border trace group the drawn cells, resolving each to
         // the system it draws as and that system to its bloc ID; the holder map is still
@@ -258,7 +260,7 @@ public final class ClusterAnchorsBuilder {
                 ClusterLabelStyling.newNameEstimatorResolver(
                     styling.reading(),
                     contentInputs,
-                    styling.labelFace())),
+                    fitFingerprint.labelFace())),
             reusableAnchors);
 
         reportFitCosts(fitScope, spec, partition, fit);
@@ -283,13 +285,17 @@ public final class ClusterAnchorsBuilder {
     }
 
     // Mints the fingerprint a fit made now would run under: the live tuning read off the
-    // settings, against the revision the cells it clips and trims within stand at. One point
-    // reads the tuning for both the fit and its fingerprint, so no path can fit under one
-    // reading and report another.
-    private static AnchorFitFingerprint readFitFingerprint(int geometryRevision) {
+    // settings, against the revision the cells it clips and trims within stand at, in the face the
+    // pass settled its names on. One point reads all three for both the fit and its fingerprint, so
+    // no path can fit under one reading and report another.
+    private static AnchorFitFingerprint readFitFingerprint(
+            int geometryRevision,
+            ClusterLabelStylingSnapshot styling) {
+
         return new AnchorFitFingerprint(
             LabelAnchorSpecification.readFromLunaSettings(),
-            geometryRevision);
+            geometryRevision,
+            styling.labelFace());
     }
 
     // Writes what a fit ran onto its scope, apart from the sweep so the sweep reads as the fit

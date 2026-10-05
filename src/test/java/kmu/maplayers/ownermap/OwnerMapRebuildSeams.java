@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.statics.StaticSeams;
 
@@ -25,8 +26,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Everything an owner-map rebuild reaches that no test JVM answers, whatever layer it paints: the
- * logger, and the live LunaLib reads the cut, the visibility gate, the spotlight and the bands are
- * configured by.
+ * logger, the face the labels settle on, and the live LunaLib reads the cut, the visibility gate, the
+ * spotlight and the bands are configured by.
  *
  * <p>Which classes those are is a fact about what the tier's rebuild touches rather than about any
  * one suite's cases, which is why it is answered here. A stage that starts reading a new knob
@@ -66,10 +67,13 @@ public final class OwnerMapRebuildSeams {
         seams.openSeam(KmuMapVisibilitySettings.class);
         seams.openSeam(KmuLunaSettings.class);
 
-        // The label face is settled against the installed atlases and loaded from them, and no test
-        // JVM has either: settled on nothing and loaded as nothing, the names measure off the aspect
-        // stand-in and mint no strings, which is what a face that fails to load does in play.
-        seams.openSeam(LabelFonts.class);
+        // The label face is settled against the installed atlases, which no test JVM has, so it
+        // settles as the face labels ask for. Whether that face then loads is the caller's to say,
+        // the font cache being one of the reads the suites disagree on: one measures names against a
+        // font of its own, the rest draw none.
+        seams.openSeam(LabelFonts.class)
+            .when(() -> LabelFonts.settleMapLabelFace(any()))
+            .thenReturn(StarsectorFont.VANILLA_INSIGNIA_42);
 
         // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory state
         // no test JVM has.

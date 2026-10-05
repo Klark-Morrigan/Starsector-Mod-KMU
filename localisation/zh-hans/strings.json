@@ -21,6 +21,7 @@
 
     "condition_manager_location": "位置：",
     "condition_manager_location_unknown": "未知",
+    "condition_manager_location_owned_by": "属于 %s",
 
     "condition_manager_summary": "条件：",
     "condition_manager_summary_visible": "%d 个可见",
@@ -29,6 +30,8 @@
     "condition_manager_summary_hidden": "%d 个隐藏",
     "condition_manager_summary_available": "%d 个可用",
     "condition_manager_summary_total": "共 %d 个。",
+    "condition_manager_group_separator": " ； ",
+    "condition_manager_item_separator": " ， ",
 
     "condition_manager_empty": "没有可用的市场条件规格。",
 
@@ -40,7 +43,7 @@
     "dialog_close": "关闭",
 
     "map_layer_arrange_title": "排列地图图层",
-    "map_layer_arrange_hint": "用上移和下移调整图层顺序，或取消勾选其复选框，将其标签页从标签栏移除。",
+    "map_layer_arrange_hint": "用 上移 和 下移 调整图层顺序，或 取消勾选 其复选框，将其标签页从标签栏移除。",
     "map_layer_arrange_hint_uncheck": "取消勾选",
     "map_layer_arrange_move_up": "上移",
     "map_layer_arrange_move_down": "下移",
@@ -49,22 +52,22 @@
     "map_layer_tab_no_layer": "无图层",
     "map_layer_ctl_columns_caption": "列",
     "map_layer_ctl_filter_row_toggle": "地图图层",
-    "map_layer_tooltip_filter_row_toggle": "显示在星图上绘制%2$s（%3$s）的%1$s。",
+    "map_layer_tooltip_filter_row_toggle": "显示在星图上绘制 %2$s （ %3$s ） 的 %1$s 。",
     "map_layer_tooltip_filter_row_toggle_uninstall": "此功能由 %s Mod 提供。",
     "map_layer_tooltip_filter_row_toggle_layers": "星图图层",
     "map_layer_tooltip_filter_row_toggle_supplier": "KMU",
     "map_layer_tooltip_filter_row_toggle_settings_mod": "LunaLib",
     "map_layer_tooltip_filter_row_toggle_uninstall_disable": "关闭此功能",
     "map_layer_tooltip_filter_row_toggle_uninstall_save": "保存游戏",
-    "map_layer_tooltip_filter_row_toggle_uninstall_warning": "%1$s 若未事先从存档中%3$s%4$s就禁用 %2$s，读取存档时将会报错。为此，请在 %6$s Mod 设置中%5$s，然后%7$s。",
+    "map_layer_tooltip_filter_row_toggle_uninstall_warning": "%1$s 若未事先从存档中 %3$s %4$s 就禁用 %2$s ，读取存档时将会报错。为此，请在 %6$s Mod 设置中 %5$s ，然后 %7$s 。",
     "map_layer_tooltip_filter_row_toggle_uninstall_warning_label": "警告：",
     "map_layer_tooltip_filter_row_toggle_uninstall_warning_action": "卸载",
     "map_layer_tooltip_filter_row_toggle_view_political_map": "政治地图",
     "map_layer_tooltip_filter_row_toggle_view_factions": "势力",
     "map_layer_tooltip_filter_row_toggle_view_alliances": "联盟",
     "map_layer_tooltip_filter_row_toggle_view_claims": "宣称",
-    "map_layer_tooltip_filter_row_toggle_view_claims_qualified": "星系%s",
-    "map_layer_tooltip_filter_row_toggle_view_separator": "、",
+    "map_layer_tooltip_filter_row_toggle_view_claims_qualified": "星系 %s",
+    "map_layer_tooltip_filter_row_toggle_view_separator": " 、 ",
 
     "map_layer_tooltip_footer_collapse_factions": "折叠为势力",
     "map_layer_tooltip_footer_expand_system_composition": "展开星系构成",

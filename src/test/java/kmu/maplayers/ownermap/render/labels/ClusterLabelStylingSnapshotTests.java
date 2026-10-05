@@ -46,6 +46,9 @@ final class ClusterLabelStylingSnapshotTests {
 
     private static final String SPOTLIT_BLOC_ID = "hegemony";
 
+    // The face a snapshot is handed, for the cases about anything else it carries.
+    private static final StarsectorFont LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_42;
+
     @Nested
     class ResolveFrom {
 
@@ -66,7 +69,7 @@ final class ClusterLabelStylingSnapshotTests {
                 buildViewReading(),
                 buildSpotlightPicks());
 
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, StarsectorFont.VANILLA_INSIGNIA_42);
+            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
 
             // Against what the built map itself hands out rather than against what was handed to
             // it: the holders are the occupancy's own, so identity here is what says the snapshot
@@ -92,7 +95,7 @@ final class ClusterLabelStylingSnapshotTests {
                 viewReading,
                 contentInputs);
 
-            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, StarsectorFont.VANILLA_INSIGNIA_42);
+            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
 
             assertThat(styling.reading())
                 .isSameAs(viewReading.reading());
@@ -112,7 +115,7 @@ final class ClusterLabelStylingSnapshotTests {
                     new OwnerPalette(Color.GRAY, Color.GRAY),
                     buildViewReading(),
                     ContentInputs.createEmpty()),
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                LABEL_FACE);
 
             assertThat(styling.contentInputs().isFiltering())
                 .isFalse();
@@ -161,7 +164,7 @@ final class ClusterLabelStylingSnapshotTests {
                     ownerBySystemKey,
                     viewReading,
                     ContentInputs.createEmpty(),
-                    StarsectorFont.VANILLA_INSIGNIA_42);
+                    LABEL_FACE);
 
                 assertThat(styling.ownerBySystemKey())
                     .isSameAs(ownerBySystemKey);
@@ -185,7 +188,7 @@ final class ClusterLabelStylingSnapshotTests {
                     Map.of(),
                     buildViewReading(),
                     ContentInputs.createEmpty(),
-                    StarsectorFont.VANILLA_INSIGNIA_42);
+                    LABEL_FACE);
 
                 assertThat(styling.desaturationPalette())
                     .isEqualTo(DARKENED_RECEDE_PALETTE);
@@ -206,7 +209,7 @@ final class ClusterLabelStylingSnapshotTests {
                     Map.of(),
                     buildViewReading(),
                     spotlightPicks,
-                    StarsectorFont.VANILLA_INSIGNIA_42);
+                    LABEL_FACE);
 
                 assertThat(styling.contentInputs().isFiltering())
                     .isFalse();

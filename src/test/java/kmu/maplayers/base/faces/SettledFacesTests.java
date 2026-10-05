@@ -10,8 +10,8 @@ import kmlib.starsector.ui.font.SettledFaceMemo;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.installed.InstalledFaces;
 
-import kmu.KmuMod;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.Nested;
@@ -47,7 +47,7 @@ final class SettledFacesTests {
         @Test
         void holdsOneSetOfFacesPerSectorMachinery() {
             // Settling reads every name the sector holds, so a second ask on the same sector reuses the first.
-            var machinery = new SectorMapMachinery(null);
+            var machinery = new SectorMapMachinery(sectorMock);
 
             assertThat(SettledFaces.resolveFacesIn(machinery))
                 .isSameAs(SettledFaces.resolveFacesIn(machinery));
@@ -56,8 +56,48 @@ final class SettledFacesTests {
         @Test
         void holdsSeparateFacesForSeparateSectors() {
             // Two sectors can name different factions, so neither may read faces settled on the other.
-            assertThat(SettledFaces.resolveFacesIn(new SectorMapMachinery(null)))
-                .isNotSameAs(SettledFaces.resolveFacesIn(new SectorMapMachinery(null)));
+            assertThat(SettledFaces.resolveFacesIn(new SectorMapMachinery(sectorMock)))
+                .isNotSameAs(SettledFaces.resolveFacesIn(new SectorMapMachinery(mock(SectorAPI.class))));
+        }
+
+        @Test
+        void readsTheTextsOffTheSectorTheMachineryIsInstalledOn() {
+            // The machinery's own sector rather than the running one, which a second sector is not.
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<Function<ProbedText, List<String>>> readerCaptor = ArgumentCaptor.forClass(Function.class);
+
+            try (var installedFacesMock = mockStatic(InstalledFaces.class);
+                    var factionNamesMock = mockStatic(FactionNames.class)) {
+
+                factionNamesMock.when(() -> FactionNames.listEveryName(sectorMock))
+                    .thenReturn(List.of(LOCALISED_FACTION_NAME));
+
+                SettledFaces.resolveFacesIn(new SectorMapMachinery(sectorMock));
+
+                installedFacesMock.verify(() -> InstalledFaces.createFaceMemo(readerCaptor.capture()));
+
+                assertThat(readerCaptor.getValue().apply(ProbedText.FACTION_NAMES))
+                    .containsExactly(LOCALISED_FACTION_NAME);
+            }
+        }
+    }
+
+    @Nested
+    final class ResolveFacesForLiveSector {
+
+        @Test
+        void answersTheFacesOfTheRunningSectorsMachinery() {
+            // A surface vanilla drives names no sector, so the running one's machinery stands in for it.
+            var liveMachinery = new SectorMapMachinery(sectorMock);
+
+            try (var machineryIndexMock = mockStatic(SectorMapMachineryIndex.class)) {
+
+                machineryIndexMock.when(SectorMapMachineryIndex::resolveMachineryForLiveSector)
+                    .thenReturn(liveMachinery);
+
+                assertThat(SettledFaces.resolveFacesForLiveSector())
+                    .isSameAs(SettledFaces.resolveFacesIn(liveMachinery));
+            }
         }
     }
 
@@ -145,7 +185,7 @@ final class SettledFacesTests {
 
         @Test
         void readsPlaceNamesOffTheSectorsSystemsAndColoniesBoth() {
-            // The box titles a system and lists its colonies, so a face held to places holds either.
+            // A place is named by its system or its colony, so a face held to places holds either.
             try (var systemsMock = mockStatic(SectorStarSystems.class);
                     var marketsMock = mockStatic(SectorMarkets.class)) {
 
@@ -164,9 +204,9 @@ final class SettledFacesTests {
 
             try (var stringsMock = mockStatic(StarsectorStrings.class)) {
 
-                stringsMock.when(() -> StarsectorStrings.listCategoryStrings(any(), any()))
+                stringsMock.when(() -> StarsectorStrings.listCategoryStrings(any()))
                     .thenReturn(List.of());
-                stringsMock.when(() -> StarsectorStrings.listCategoryStrings(KmuMod.MOD_ID, KmuStringKeys.CATEGORY))
+                stringsMock.when(() -> StarsectorStrings.listCategoryStrings(KmuStringKeys.CATEGORY))
                     .thenReturn(List.of("Political map"));
 
                 assertThat(SettledFaces.readTexts(sectorMock, ProbedText.MOD_STRINGS))

@@ -1,12 +1,12 @@
 package kmu.maplayers.base.labels;
 
 import kmlib.math.geometry.Segment;
-import kmlib.starsector.ui.font.FontAtlas;
 import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.starsector.ui.font.measure.LazyFontMeasurer;
 import kmlib.starsector.ui.font.measure.LineWidthMeasurer;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,21 +37,24 @@ public final class LabelLineBoxes {
     }
 
     /**
-     * The boxes the given placements' drawn lines occupy, measured with the map-label face.
+     * The boxes the standing placements' drawn lines occupy, measured in the face they were fitted in.
      *
-     * @param anchors   the placements to read, in any order
-     * @param labelFace the face the labels were settled on, which they are drawn in
-     * @return one closed ring of {x, y} corners per drawn line. Empty when the face will not load,
-     *         which is also when no name draws at all - a line nothing renders is a line nothing
-     *         has to keep clear of
+     * @param standingAnchors the placements to read, with the record of the face they were fitted in
+     * @return one closed ring of {x, y} corners per drawn line. Empty where nothing was fitted, and where
+     *         the face will not load, which is also when no name draws at all - a line nothing renders
+     *         is a line nothing has to keep clear of
      */
-    public static List<List<double[]>> listLineBoxes(List<ClusterAnchor> anchors, FontAtlas labelFace) {
+    public static List<List<double[]>> listLineBoxes(StandingClusterAnchors standingAnchors) {
 
-        var resolvedFont = LazyFontCache.loadByFace(labelFace);
+        var fitFingerprint = standingAnchors.getFitFingerprint();
+        if (fitFingerprint == null) {
+            return List.of();
+        }
+        var resolvedFont = LazyFontCache.loadByFace(fitFingerprint.labelFace());
 
         return resolvedFont == null
             ? List.of()
-            : measureLineBoxes(anchors, new LazyFontMeasurer(resolvedFont));
+            : measureLineBoxes(standingAnchors.getAnchors(), new LazyFontMeasurer(resolvedFont));
     }
 
     // The same boxes over an injected measurement, so the geometry - centre, slant, length, girth

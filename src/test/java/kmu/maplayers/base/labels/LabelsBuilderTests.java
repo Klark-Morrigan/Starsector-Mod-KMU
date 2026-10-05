@@ -5,8 +5,10 @@ import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
+import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 
 import org.junit.jupiter.api.Nested;
@@ -62,6 +64,10 @@ final class LabelsBuilderTests {
     private static final float FONT_HEIGHT = 100f;
     private static final double LINE_SPACING = 1.15;
 
+    // The face the fixture placements were fitted in: a settled one rather than the face labels ask
+    // for, so a mint drawing in the asked-for face cannot pass by coincidence.
+    private static final StarsectorFont SETTLED_LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_25;
+
     @Nested
     class RebuildLabels {
 
@@ -76,7 +82,7 @@ final class LabelsBuilderTests {
                 .thenReturn(mock(DrawableString.class));
 
             var labels = new ArrayList<Label>();
-            var anchors = List.of(
+            var standingAnchors = buildStandingAnchors(
                 buildAcceptedAnchor(List.of("Persean League"), 0, 0, HORIZONTAL_AXIS),
                 buildAcceptedAnchor(List.of("Hegemony"), 500, 0, HORIZONTAL_AXIS));
 
@@ -86,7 +92,7 @@ final class LabelsBuilderTests {
                     .thenReturn(fontMock);
 
                 var capture = RecordedCapture.recordWhile(() ->
-                    LabelsBuilder.rebuildLabels(labels, anchors, true, StarsectorFont.VANILLA_INSIGNIA_42));
+                    LabelsBuilder.rebuildLabels(labels, standingAnchors, true));
 
                 var buildRow = capture.findNode(BUILD_SECTION);
 
@@ -98,11 +104,44 @@ final class LabelsBuilderTests {
         }
 
         @Test
+        void mintsInTheFaceThePlacementsWereFittedIn() {
+            // The boxes were sized to that face's glyphs, so a name minted in any other face would spill
+            // out of or rattle inside the box it was fitted to. A settled face other than the one labels
+            // ask for, so a face written down anywhere on the way would be caught.
+            var labels = new ArrayList<Label>();
+            var standingAnchors = buildStandingAnchors(
+                buildAcceptedAnchor(List.of("Hegemony"), 0, 0, HORIZONTAL_AXIS));
+
+            try (var fontsMock = mockStatic(LazyFontCache.class)) {
+
+                LabelsBuilder.rebuildLabels(labels, standingAnchors, true);
+
+                fontsMock.verify(() -> LazyFontCache.loadByFace(SETTLED_LABEL_FACE));
+            }
+        }
+
+        @Test
+        void mintsNothingWhereNothingWasFitted() {
+            // A session's first frame and a discarded sector both stand at no fit, so there is neither a
+            // name to mint nor a face to mint it in.
+            var labels = new ArrayList<Label>();
+
+            try (var fontsMock = mockStatic(LazyFontCache.class)) {
+
+                LabelsBuilder.rebuildLabels(labels, new StandingClusterAnchors(), true);
+
+                assertThat(labels)
+                    .isEmpty();
+                fontsMock.verifyNoInteractions();
+            }
+        }
+
+        @Test
         void recordsNothingWhereNamesAreNotDrawn() {
             // The mint is skipped outright rather than measured as a call that did nothing, so a
             // reader following a rebuild is not shown a row for a stage that never ran.
             var capture = RecordedCapture.recordWhile(() ->
-                LabelsBuilder.rebuildLabels(new ArrayList<>(), List.of(), false, StarsectorFont.VANILLA_INSIGNIA_42));
+                LabelsBuilder.rebuildLabels(new ArrayList<>(), buildStandingAnchors(), false));
 
             assertThat(capture.hasNode(BUILD_SECTION))
                 .isFalse();
@@ -281,6 +320,17 @@ final class LabelsBuilderTests {
 
             assertThat(LabelsBuilder.planLabels(anchors)).isEmpty();
         }
+    }
+
+    // The placements a fit left behind, fitted in the settled face. The mint reads nothing of the
+    // record but the face, so the rest of it is whatever any fit would carry.
+    private static StandingClusterAnchors buildStandingAnchors(ClusterAnchor... anchors) {
+
+        var standingAnchors = new StandingClusterAnchors();
+
+        standingAnchors.replaceAnchors(List.of(anchors), new AnchorFitFingerprint(null, 0, SETTLED_LABEL_FACE));
+
+        return standingAnchors;
     }
 
     // A placement that accepted a label line, hung at (anchorX, anchorY) with the given

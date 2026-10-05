@@ -1,12 +1,11 @@
 package kmu.maplayers.ownermap.render.ribbon;
 
-import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.LabelLineBoxes;
-import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.settings.KmuOwnerMapRibbonSettings;
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,7 +25,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,7 +37,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>The two readings are seams here. What a name measures to is each reading's own suite's, and
  * measuring the drawn words needs the label face, which no test JVM loads; what belongs here is
- * which of the two the choice reaches for, and that neither is asked where no room is kept.
+ * which of the two the choice reaches for, that the words reading is handed the placements with the
+ * face they were fitted in, and that neither is asked where no room is kept.
  */
 final class RibbonBakeSurfaceTests {
 
@@ -53,9 +51,9 @@ final class RibbonBakeSurfaceTests {
     private static final List<List<double[]>> WORD_BOXES =
         List.of(List.of(new double[] {50.0, 50.0}, new double[] {60.0, 50.0}, new double[] {60.0, 60.0}));
 
-    // The placements the bake is handed, read by identity so a reading can be seen to be asked
-    // about this list and no other.
-    private final List<ClusterAnchor> clusterAnchors = new ArrayList<>();
+    // The placements the bake is handed, with the record of the face they were fitted in, read by
+    // identity so a reading can be seen to be asked about these placements and no others.
+    private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
 
     private final CellGeometryCache geometryCacheMock = mock(CellGeometryCache.class);
 
@@ -76,12 +74,12 @@ final class RibbonBakeSurfaceTests {
 
         fittedBoxesMock = seams.openSeam(ClusterNameBoxes.class);
         fittedBoxesMock
-            .when(() -> ClusterNameBoxes.listNameBoxes(same(clusterAnchors)))
+            .when(() -> ClusterNameBoxes.listNameBoxes(same(standingAnchors.getAnchors())))
             .thenReturn(FITTED_BOXES);
 
         wordBoxesMock = seams.openSeam(LabelLineBoxes.class);
         wordBoxesMock
-            .when(() -> LabelLineBoxes.listLineBoxes(same(clusterAnchors), any()))
+            .when(() -> LabelLineBoxes.listLineBoxes(same(standingAnchors)))
             .thenReturn(WORD_BOXES);
     }
 
@@ -104,7 +102,7 @@ final class RibbonBakeSurfaceTests {
             when(geometryCacheMock.getSiteBySystemKey())
                 .thenReturn(siteBySystemKey);
 
-            var surface = RibbonBakeSurface.createForPass(clusters, geometryCacheMock, clusterAnchors, StarsectorFont.VANILLA_INSIGNIA_42);
+            var surface = RibbonBakeSurface.createForPass(clusters, geometryCacheMock, standingAnchors);
 
             assertThat(surface.inhabitedSystemKeys())
                 .containsExactly(buildCellKey(SETTLED_SYSTEM));
@@ -178,6 +176,6 @@ final class RibbonBakeSurfaceTests {
 
         var clusters = OwnerMapClusterFixtures.createClustersSpellingNames(Map.of(), nameFormat);
 
-        return RibbonBakeSurface.createForPass(clusters, geometryCacheMock, clusterAnchors, StarsectorFont.VANILLA_INSIGNIA_42);
+        return RibbonBakeSurface.createForPass(clusters, geometryCacheMock, standingAnchors);
     }
 }

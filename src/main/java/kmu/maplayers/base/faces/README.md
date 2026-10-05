@@ -58,7 +58,9 @@ because settling reads every glyph of every name the sector holds;
 two texts asking for one face against the same kinds share one answer,
 which keeps a row measured in one face from being painted in another.
 The map labels are settled by the owner-map cache off its own sector's machinery
-and handed down to the fit, the mint and the band bake,
+and handed to the fit,
+which records the face beside its placements;
+the mint and the band bake read it back from there,
 so a name is fitted, drawn and kept clear of in the one face.
 
 With no game loaded the detached machinery answers,

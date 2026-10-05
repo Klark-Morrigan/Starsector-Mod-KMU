@@ -45,7 +45,6 @@ final class CellTooltipLook {
     // body names factions, systems and colonies among KMU's own words, and the foot is KMU's words alone.
     private static final Set<ProbedText> HEADER_TEXTS = Set.of(ProbedText.PLACE_NAMES, ProbedText.MOD_STRINGS);
     private static final Set<ProbedText> BODY_TEXTS = ProbedText.EVERY_KIND;
-
     private static final Set<ProbedText> FOOTNOTE_TEXTS = Set.of(ProbedText.MOD_STRINGS);
 
     // The box's own look, handed to the tooltip widget as its style: a thin bright frame over a near
@@ -62,6 +61,7 @@ final class CellTooltipLook {
     private static final int TIER_2_LEVEL = 2;
     private static final int TIER_3_LEVEL = 3;
 
+    // Composes only; never instantiated.
     private CellTooltipLook() {
     }
 

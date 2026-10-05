@@ -400,7 +400,7 @@ final class OwnerMapCacheTests {
         var ribbonsBakerSeamMock = seams.openSeam(CellRibbonsBaker.class);
 
         ribbonsBakerSeamMock
-            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any(), any()))
+            .when(() -> CellRibbonsBaker.createForPass(any(), any(), any(), any()))
             .thenReturn(ribbonsBakerMock);
     }
 

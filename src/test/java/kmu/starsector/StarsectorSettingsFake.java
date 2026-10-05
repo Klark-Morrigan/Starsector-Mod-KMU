@@ -89,6 +89,7 @@ public final class StarsectorSettingsFake {
         var stringsByKey = new LinkedHashMap<String, String>();
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_LOCATION, "Location:");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_LOCATION_UNKNOWN, "Unknown");
+        stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_LOCATION_OWNED_BY, "owned by %s");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY, "Conditions:");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY_VISIBLE, "%d visible");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY_SUPPRESSED, "%d suppressed");
@@ -96,6 +97,8 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY_HIDDEN, "%d hidden");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY_AVAILABLE, "%d available");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_SUMMARY_TOTAL, "%d total.");
+        stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_GROUP_SEPARATOR, " - ");
+        stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_ITEM_SEPARATOR, ", ");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_EMPTY, "No market condition specs are available.");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE, "Suppressed");
         stringsByKey.put(KmuStringKeys.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY, "This condition is present on the market, but it's suppressed and has no effect.");

@@ -63,7 +63,7 @@ callers then draw and consume nothing.
 Those two faces are why the placement hands the layout a `StripTextMeasurers` pair rather than one measurer.
 A panel is not lettered in a single atlas:
 the band reads in the tab face taken off that injected style,
-and the controls beneath it read in the body face (`SidebarStyles.resolveBodyFont`).
+and the controls beneath it read in the body face (`SidebarStyles.settleBodyFace`).
 Measuring a row through the face it is *not* drawn in sizes it against letters it never wears,
 and the box,
 framed to its widest row,

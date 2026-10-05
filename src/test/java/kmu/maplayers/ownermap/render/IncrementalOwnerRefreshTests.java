@@ -73,6 +73,7 @@ import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildTwoAdjace
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
@@ -107,16 +108,20 @@ public final class IncrementalOwnerRefreshTests {
     // them, so it fits against the geometry it was handed and reports that same revision back.
     private static final int GEOMETRY_REVISION = 7;
 
-    // What the caller's standing placements were fitted under, standing in the pair so the
-    // re-fit can carry over the clusters this fold did not move. Opaque here - the tuning
-    // inside is the fit's own business and no case reads it.
     // What the stubbed planner reports for the marked system: one run, which is all the case
     // reads - that a band was baked at all, rather than what it says.
     private static final RibbonPlan BAND_OF_ONE_RUN =
         new RibbonPlan(List.of(new RibbonSegment(Color.WHITE, 1)));
 
+    // The face the standing names were fitted in: a settled one rather than the face labels ask for,
+    // so a re-fit measuring in the asked-for face cannot pass.
+    private static final StarsectorFont STANDING_LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_25;
+
+    // What the caller's standing placements were fitted under, standing in the pair so the
+    // re-fit can carry over the clusters this fold did not move. The tuning inside is the fit's own
+    // business and no case reads it; the face is what the re-fit has to measure in.
     private static final AnchorFitFingerprint STANDING_FIT =
-        new AnchorFitFingerprint(null, GEOMETRY_REVISION - 1);
+        new AnchorFitFingerprint(null, GEOMETRY_REVISION - 1, STANDING_LABEL_FACE);
 
     @Nested
     class ApplyStaleOwnerUpdates {
@@ -375,7 +380,7 @@ public final class IncrementalOwnerRefreshTests {
             var wordBoxesMock = seams.openSeam(LabelLineBoxes.class);
 
             wordBoxesMock
-                .when(() -> LabelLineBoxes.listLineBoxes(anyList(), any()))
+                .when(() -> LabelLineBoxes.listLineBoxes(any()))
                 .thenReturn(List.of(buildWordsBoxAwayFromTheCell()));
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
@@ -870,6 +875,28 @@ public final class IncrementalOwnerRefreshTests {
         }
 
         @Test
+        void reFitsInTheFaceTheStandingNamesWereFittedIn() {
+            // The fold re-fits some names and carries the rest over, so the re-fitted ones have to be
+            // measured in the face the carried-over ones were, read off their own record.
+            var clusters = buildOwnedBy(Map.of(
+                FLIPPED_SYSTEM,
+                HEGEMONY,
+                NEIGHBOUR_SYSTEM,
+                HEGEMONY), ownerSourceFake);
+
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
+
+            markStale(FLIPPED_SYSTEM);
+            applyTo(clusters);
+
+            anchorsMock.verify(
+                () -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    any(),
+                    any(),
+                    argThat(styling -> styling.labelFace() == STANDING_LABEL_FACE)));
+        }
+
+        @Test
         void leavesTheStandingPairAloneWhenTheHolderDidNotChange() {
             // A resize that leaves the winner alone leaves the placements alone: nothing was
             // re-fitted, so the standing placements and the rules recorded for them still describe
@@ -929,8 +956,7 @@ public final class IncrementalOwnerRefreshTests {
                     clusters,
                     standingAnchors,
                     new ArrayList<Label>(),
-                    cellGeometry,
-                    StarsectorFont.VANILLA_INSIGNIA_42),
+                    cellGeometry),
                 staleSystemKeys);
         }
     }

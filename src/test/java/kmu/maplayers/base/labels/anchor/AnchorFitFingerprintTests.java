@@ -1,5 +1,6 @@
 package kmu.maplayers.base.labels.anchor;
 
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
 
@@ -47,6 +48,9 @@ final class AnchorFitFingerprintTests {
     private static final int MAX_LINES = 3;
     private static final double LINE_SPACING = 1.1;
 
+    // The face two fits share where the case is about anything else.
+    private static final StarsectorFont LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_42;
+
     private static final ClusterBorderTrace BORDER_TRACE =
         new ClusterBorderTrace(WELD_TOLERANCE, MITER_LIMIT);
 
@@ -59,10 +63,12 @@ final class AnchorFitFingerprintTests {
             // the earlier pass's placements are still describable by the later pass's rules.
             var fittedEarlier = new AnchorFitFingerprint(
                 buildBaselineSpecification(),
-                GEOMETRY_REVISION);
+                GEOMETRY_REVISION,
+                LABEL_FACE);
             var fittedLater = new AnchorFitFingerprint(
                 buildBaselineSpecification(),
-                GEOMETRY_REVISION);
+                GEOMETRY_REVISION,
+                LABEL_FACE);
 
             assertThat(fittedEarlier)
                 .isEqualTo(fittedLater);
@@ -76,10 +82,12 @@ final class AnchorFitFingerprintTests {
             // width describes where the search would put it now.
             var fittedAtFourteenOffsets = new AnchorFitFingerprint(
                 buildBaselineSpecification(),
-                GEOMETRY_REVISION);
+                GEOMETRY_REVISION,
+                LABEL_FACE);
             var fittedAtOneOffset = new AnchorFitFingerprint(
                 buildSpecificationWith(BORDER_TRACE, 1, FONT_HEIGHT_TOLERANCE),
-                GEOMETRY_REVISION);
+                GEOMETRY_REVISION,
+                LABEL_FACE);
 
             assertThat(fittedAtFourteenOffsets)
                 .isNotEqualTo(fittedAtOneOffset);
@@ -91,10 +99,12 @@ final class AnchorFitFingerprintTests {
             // this one - a knob the search does not own still changes what it accepted.
             var fittedAtOneUnit = new AnchorFitFingerprint(
                 buildBaselineSpecification(),
-                GEOMETRY_REVISION);
+                GEOMETRY_REVISION,
+                LABEL_FACE);
             var fittedAtSixtyFourUnits = new AnchorFitFingerprint(
                 buildSpecificationWith(BORDER_TRACE, OFFSET_COUNT, 64.0),
-                GEOMETRY_REVISION);
+                GEOMETRY_REVISION,
+                LABEL_FACE);
 
             assertThat(fittedAtOneUnit)
                 .isNotEqualTo(fittedAtSixtyFourUnits);
@@ -107,13 +117,15 @@ final class AnchorFitFingerprintTests {
             // outline even where every other knob held.
             var fittedAgainstTightRings = new AnchorFitFingerprint(
                 buildBaselineSpecification(),
-                GEOMETRY_REVISION);
+                GEOMETRY_REVISION,
+                LABEL_FACE);
             var fittedAgainstLooseRings = new AnchorFitFingerprint(
                 buildSpecificationWith(
                     new ClusterBorderTrace(100.0, MITER_LIMIT),
                     OFFSET_COUNT,
                     FONT_HEIGHT_TOLERANCE),
-                GEOMETRY_REVISION);
+                GEOMETRY_REVISION,
+                LABEL_FACE);
 
             assertThat(fittedAgainstTightRings)
                 .isNotEqualTo(fittedAgainstLooseRings);
@@ -125,13 +137,32 @@ final class AnchorFitFingerprintTests {
             // sites they were trimmed clear of, neither of which any tuning knob mentions.
             var fittedBeforeTheRecut = new AnchorFitFingerprint(
                 buildBaselineSpecification(),
-                GEOMETRY_REVISION);
+                GEOMETRY_REVISION,
+                LABEL_FACE);
             var fittedAfterTheRecut = new AnchorFitFingerprint(
                 buildBaselineSpecification(),
-                GEOMETRY_REVISION + 1);
+                GEOMETRY_REVISION + 1,
+                LABEL_FACE);
 
             assertThat(fittedBeforeTheRecut)
                 .isNotEqualTo(fittedAfterTheRecut);
+        }
+
+        @Test
+        void separatesPassesMeasuredInDifferentFaces() {
+            // A box sized to one face's glyphs is the wrong size for another's, whatever the tuning and
+            // the geometry say.
+            var fittedInTheLargestCut = new AnchorFitFingerprint(
+                buildBaselineSpecification(),
+                GEOMETRY_REVISION,
+                LABEL_FACE);
+            var fittedInTheNextCutDown = new AnchorFitFingerprint(
+                buildBaselineSpecification(),
+                GEOMETRY_REVISION,
+                StarsectorFont.VANILLA_INSIGNIA_25);
+
+            assertThat(fittedInTheLargestCut)
+                .isNotEqualTo(fittedInTheNextCutDown);
         }
     }
 

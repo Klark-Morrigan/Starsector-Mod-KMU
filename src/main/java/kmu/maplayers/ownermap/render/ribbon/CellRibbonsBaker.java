@@ -3,10 +3,9 @@ package kmu.maplayers.ownermap.render.ribbon;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.IterationScope;
 import kmlib.starsector.systems.SystemKey;
-import kmlib.starsector.ui.font.FontAtlas;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -80,22 +79,21 @@ public final class CellRibbonsBaker {
     /**
      * Samples everything one pass's bands are baked from.
      *
-     * @param clusters       the build being baked over; its cells are what a band is read from and
-     *                       written back to, and the source its owners came from is what the counts
-     *                       are read through
-     * @param geometryCache  the cells' geometry, for the system each draws as and its site
-     * @param walk           the walk of the sector the counts are made off; whose walk it is, and
-     *                       so how current it is, is the caller's to decide
-     * @param clusterAnchors the cluster names' placements, whose boxes the bands keep out of
-     * @param labelFace      the face the names were settled on
+     * @param clusters        the build being baked over; its cells are what a band is read from and
+     *                        written back to, and the source its owners came from is what the counts
+     *                        are read through
+     * @param geometryCache   the cells' geometry, for the system each draws as and its site
+     * @param walk            the walk of the sector the counts are made off; whose walk it is, and
+     *                        so how current it is, is the caller's to decide
+     * @param standingAnchors the cluster names' placements, whose boxes the bands keep out of, with the
+     *                        face they were fitted in
      * @return the pass, ready to bake whichever cells the caller names
      */
     public static CellRibbonsBaker createForPass(
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache,
             SectorWalk walk,
-            List<ClusterAnchor> clusterAnchors,
-            FontAtlas labelFace) {
+            StandingClusterAnchors standingAnchors) {
 
         // The cell-to-system lookup is taken here, once, rather than per cell inside the loop: the
         // read hands back a fresh unmodifiable view over the live cells, so asking per cell would
@@ -107,7 +105,7 @@ public final class CellRibbonsBaker {
             CellRibbonSource.createForPass(
                 walk,
                 clusters.getBuildInputs().viewReading().source(),
-                RibbonBakeSurface.createForPass(clusters, geometryCache, clusterAnchors, labelFace)),
+                RibbonBakeSurface.createForPass(clusters, geometryCache, standingAnchors)),
             KmuOwnerMapDiagnosticsSettings.shouldShowOwnerMapRibbonPaths());
     }
 

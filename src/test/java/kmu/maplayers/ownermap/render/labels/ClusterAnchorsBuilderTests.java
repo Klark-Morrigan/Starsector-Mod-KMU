@@ -160,12 +160,16 @@ final class ClusterAnchorsBuilderTests {
         OwnerMapCategory.INDEPENDENT,
         new ElementStyle(FactionPaletteSlot.PRIMARY, FULL_OPACITY));
 
-    // What every path here has to report having produced its list under: the stubbed tuning and
-    // the revision it was handed. Named once because the point is that all four paths answer the
-    // same thing - a case restating the pair would let one of them drift and still read as
-    // asserting the shared rule.
+    // The face the snapshot says the sector settled its labels on: a settled one rather than the face
+    // labels ask for, so a fit measuring in the asked-for face, or recording it, cannot pass.
+    private static final StarsectorFont SETTLED_LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_25;
+
+    // What every path here has to report having produced its list under: the stubbed tuning, the
+    // revision it was handed and the face the snapshot settled. Named once because the point is that
+    // all four paths answer the same thing - a case restating the three would let one of them drift
+    // and still read as asserting the shared rule.
     private static final AnchorFitFingerprint FITTED_UNDER =
-        new AnchorFitFingerprint(ANCHOR_SPECIFICATION, GEOMETRY_REVISION);
+        new AnchorFitFingerprint(ANCHOR_SPECIFICATION, GEOMETRY_REVISION, SETTLED_LABEL_FACE);
 
     // A rebuild standing at a different geometry revision, so the placements a pass left behind
     // were made under rules that no longer hold. One int apart from FITTED_UNDER, since the
@@ -178,7 +182,7 @@ final class ClusterAnchorsBuilderTests {
     // behind, so what they read back is this pass's answer rather than a reading that was
     // already there before they called.
     private static final AnchorFitFingerprint FITTED_UNDER_MOVED_RULES =
-        new AnchorFitFingerprint(ANCHOR_SPECIFICATION, MOVED_GEOMETRY_REVISION);
+        new AnchorFitFingerprint(ANCHOR_SPECIFICATION, MOVED_GEOMETRY_REVISION, SETTLED_LABEL_FACE);
 
     private static final Map<SystemKey, List<CellEdge>> EDGES = buildKeyedValues(listOrderedEdges());
     private static final Map<SystemKey, double[]> SITES = buildKeyedValues(Map.of(
@@ -347,7 +351,7 @@ final class ClusterAnchorsBuilderTests {
                     buildSpotlitPicksDrawingNames(
                         HEGEMONY,
                         new ElementStyleAdjustment(FULL_OPACITY, true)),
-                    StarsectorFont.VANILLA_INSIGNIA_42));
+                    SETTLED_LABEL_FACE));
 
             assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(Color.GREEN);
@@ -403,11 +407,11 @@ final class ClusterAnchorsBuilderTests {
         }
 
         @Test
-        void recordsTheTuningAndGeometryItFittedUnder() {
+        void recordsTheTuningGeometryAndFaceItFittedUnder() {
             // The placements it leaves behind are only reusable if something states the rules
             // they were sized under, and only this rebuild read them - so the pair it leaves
-            // has to name the tuning it fitted with and the geometry it fitted against, not
-            // some later re-read of either.
+            // has to name the tuning it fitted with, the geometry it fitted against and the face it
+            // measured in, not some later re-read of any of them.
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
@@ -415,6 +419,18 @@ final class ClusterAnchorsBuilderTests {
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
+        }
+
+        @Test
+        void measuresTheNamesInTheFaceTheSnapshotSettled() {
+            // The face the boxes are sized to is the one the mint draws in, read back off the record
+            // this fit leaves; measuring in any other would size the boxes for glyphs nothing draws.
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
+                cellGeometry,
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+
+            fontsMock.verify(() -> LazyFontCache.loadByFace(SETTLED_LABEL_FACE));
         }
 
         @Test
@@ -678,7 +694,7 @@ final class ClusterAnchorsBuilderTests {
             categoriesMock,
             OwnerReadingFake.createAnsweringNothing(),
             contentInputs,
-            StarsectorFont.VANILLA_INSIGNIA_42);
+            SETTLED_LABEL_FACE);
     }
 
     // The styling the border-tracing diagnostic hands over: the owners it traced, under a reading
@@ -690,7 +706,7 @@ final class ClusterAnchorsBuilderTests {
             categoriesMock,
             OwnerReadingFake.createAnsweringNothing(),
             contentInputs,
-            StarsectorFont.VANILLA_INSIGNIA_42);
+            SETTLED_LABEL_FACE);
     }
 
     // The one reading this suite needs that no other does: a spotlight up AND the names drawn. The

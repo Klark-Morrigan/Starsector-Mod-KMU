@@ -50,8 +50,8 @@ public final class KmuConditionPickerContainer {
         Objects.requireNonNull(model, "model");
         Objects.requireNonNull(actionConsumer, "actionConsumer");
 
-        var locationParagraphs = KmuConditionPickerLocationParagraphFactory.get(model);
-        var summaryParagraphs = KmuConditionPickerSummaryParagraphFactory.get(model);
+        var locationParagraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(model);
+        var summaryParagraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(model);
 
         var infoRow = KmuConditionPickerInfoRow.render(
             panel,
@@ -95,8 +95,8 @@ public final class KmuConditionPickerContainer {
     public static float computeHeaderHeight(KmuConditionPickerModel model) {
         Objects.requireNonNull(model, "model");
 
-        var locationLines = KmuConditionPickerLocationParagraphFactory.get(model).size();
-        var summaryLines = KmuConditionPickerSummaryParagraphFactory.get(model).size();
+        var locationLines = KmuConditionPickerLocationParagraphFactory.createParagraphs(model).size();
+        var summaryLines = KmuConditionPickerSummaryParagraphFactory.createParagraphs(model).size();
 
         return KmuConditionPickerInfoRow.computeHeight(
             ITEM_TOP_PAD,

@@ -8,7 +8,8 @@ the one feature that derives an expensive drawing from live campaign state
 and then repaints it every frame.
 
 The shared library's caches are a separate and much simpler problem
-(font assets and pure derivations, none of which can go stale);
+(font assets and pure derivations, none of which can go stale,
+and the memo the [settled faces](#settled-faces) are held in);
 they are documented in [KMLib's caching notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md),
 including the `Fingerprints` primitive this document's revision counters fold through.
 
@@ -24,6 +25,7 @@ including the `Fingerprints` primitive this document's revision counters fold th
   - [Cluster-label placements](#cluster-label-placements)
   - [Hover lookups](#hover-lookups)
   - [Sidebar pickers](#sidebar-pickers)
+  - [Settled faces](#settled-faces)
   - [Per-rebuild memos](#per-rebuild-memos)
 - [The four rebuild paths](#the-four-rebuild-paths)
 - [Persistence: none of it is saved](#persistence-none-of-it-is-saved)
@@ -527,7 +529,13 @@ rather than any cluster being asked to notice a change:
 on each placement says which cluster it was fitted to,
 so a split or a merge matches nothing and re-fits by construction,
 and [`AnchorFitFingerprint`](../../src/main/java/kmu/maplayers/base/labels/anchor/AnchorFitFingerprint.java)
-says what the whole pass ran under.
+says what the whole pass ran under:
+the tuning,
+the geometry revision,
+and the face every name was measured in.
+The mint and the band bake read that face back off the fingerprint,
+so a name is fitted,
+drawn and kept clear of in one face by construction.
 The second is the one to keep in mind when adding an input:
 the keep-out sites every box is trimmed clear of are the *whole sector's*,
 so a change no membership reflects still moves every fit,
@@ -596,6 +604,30 @@ or alliance change -
 the same cadence the overlay's own rebuild reconciles on,
 so the picker's numbers and the painted map stay in step with each other even when both lag the economy slightly.
 
+### Settled faces
+
+[`SettledFaces`](../../src/main/java/kmu/maplayers/base/faces/SettledFaces.java)
+holds which face each KMU text draws in on one sector,
+over KMLib's `SettledFaceMemo`.
+Settling a face checks every glyph of every faction,
+system and colony name and every KMU string against each face on its fallback walk,
+and the faces are asked on every draw,
+so each answer is kept for the sector's life:
+one holder per sector,
+in its [installed machinery](../../src/main/java/kmu/maplayers/base/machinery/README.md),
+released with it on load.
+
+It is the one cache here that never refreshes.
+The names are read once,
+so a faction renamed or a colony founded mid-session keeps the face settled before it until the next load,
+against the rule below that every live input needs a revision.
+That is deliberate:
+a name needing a script the settled face lacks is rare,
+and re-reading every name on every change would cost more than the draws it serves.
+A settled face only ever moves to a cut that draws the names it was read against,
+so the cost of a stale one is a single name drawn as `?`,
+never a wrong layout.
+
 ### Per-rebuild memos
 
 Smaller memos live for one rebuild and die with it -
@@ -608,9 +640,9 @@ since every cluster of a bloc shares one name,
 one shade,
 and one style -
 a bloc with a homeland and three colonies is asked four times and answers once.
-The label font and the name-format choice are likewise read once per rebuild rather than per label,
-the font's face itself settled once per sector by
-[`SettledFaces`](../../src/main/java/kmu/maplayers/base/faces/SettledFaces.java).
+The name-format choice is likewise read once per rebuild rather than per label,
+and the label face is asked once per fit and recorded on the fit's fingerprint for everything after it,
+the face itself having been [settled once for the sector](#settled-faces).
 
 The map's name labels are the one place KMU mints its own GL text.
 Each [`Label`](../../src/main/java/kmu/maplayers/base/labels/Label.java)
@@ -747,6 +779,7 @@ on load and on every settings change.
 - The per-frame path must stay int compares.
   Any new live input needs a revision of its own folded into a fingerprint -
   never a per-frame scan to detect change.
+  The settled faces are the one stated exception.
 - An incremental update must read back the same inputs the full build used,
   and go through the same primitives,
   so the two cannot diverge.

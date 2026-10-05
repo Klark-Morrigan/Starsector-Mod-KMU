@@ -53,6 +53,7 @@ import java.util.Set;
  * each of them instead would leave every signature restating what none of them chooses.
  */
 public final class IncrementalOwnerRefresh {
+
     private static final Logger LOG = Global.getLogger(IncrementalOwnerRefresh.class);
 
     private static final ProfileSection APPLY_UPDATES_SECTION =
@@ -211,12 +212,14 @@ public final class IncrementalOwnerRefresh {
         // consumers are off. The name labels then rebuild from the placements so a renamed or
         // relocated cluster's name follows.
         //
-        // Named off the build's own owner reading rather than a fresh one, so the names this batch
-        // re-fits read exactly as the ones it carries over.
+        // Named off the build's own owner reading rather than a fresh one, and measured in the face the
+        // standing names were fitted in, so the names this batch re-fits read exactly as the ones it
+        // carries over.
+        var standingAnchors = standingMap.standingAnchors();
         var nameDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
-            standingMap.standingAnchors(),
+            standingAnchors,
             standingMap.cellGeometry(),
-            ClusterLabelStylingSnapshot.resolveFrom(clusters, standingMap.labelFace()));
+            ClusterLabelStylingSnapshot.resolveFrom(clusters, standingAnchors.getFitFingerprint().labelFace()));
 
         // The name choice off the standing map rather than off the preference: this fold edits the
         // build already on screen, so whether its labels draw is what that build was baked under. A
@@ -224,9 +227,8 @@ public final class IncrementalOwnerRefresh {
         // shaped for, without the rebuild that pick is owed.
         LabelsBuilder.rebuildLabels(
             standingMap.factionLabels(),
-            standingMap.standingAnchors().getAnchors(),
-            clusters.getBuildInputs().contentInputs().nameFormat().areNamesDrawn(),
-            standingMap.labelFace());
+            standingAnchors,
+            clusters.getBuildInputs().contentInputs().nameFormat().areNamesDrawn());
 
         return nameDisturbance;
     }
@@ -265,8 +267,7 @@ public final class IncrementalOwnerRefresh {
                 clusters,
                 geometryCache,
                 walk,
-                standingMap.standingAnchors().getAnchors(),
-                standingMap.labelFace())
+                standingMap.standingAnchors())
             .bakeCellRibbonsOf(cellKeys);
     }
 
