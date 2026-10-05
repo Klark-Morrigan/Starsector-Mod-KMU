@@ -13,7 +13,7 @@ and opens that layer's own controls beneath the tabs.
 The box draws on both screens that show the sector map:
 the full map screen (M) and the map preview (the "visor") embedded in the intel screen.
 
-Part of Klark Morrigan's Utilities;
+Part of Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../README.md) for project context.
 
 ## Index
@@ -350,6 +350,10 @@ and a player who ordered their bar once does not order it again per save.
   what the layers lose when a game release changes the code they reach into,
   as one reporter per loss (`MapLayerGameReach`),
   handed to every probe that reads the game's screens.
+- **[Settled faces](base/faces/README.md)** -
+  the face each KMU text draws in on one sector:
+  the one it asks for where the installed font holds what it draws,
+  and otherwise the first face down KMLib's fallback walk that does.
 - **[Installed machinery](base/machinery/README.md)** -
   one sector's map machinery as a thing a caller can hold,
   since everything the layers draw is derived from one sector

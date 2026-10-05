@@ -11,6 +11,8 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
+import kmu.maplayers.base.faces.SettledFaces;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 
@@ -73,7 +75,8 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         if (titleRows.isEmpty() && body.blocks().isEmpty()) {
             return;
         }
-        var style = CellTooltipLook.buildStyle();
+        var style = CellTooltipLook.buildStyle(
+            SettledFaces.resolveFacesIn(SectorMapMachineryIndex.resolveMachineryFor(sector)));
 
         // The box is assembled against the room it has rather than drawn at whatever height its
         // content came to. A box lists as much as the hovered system holds and is then clamped on

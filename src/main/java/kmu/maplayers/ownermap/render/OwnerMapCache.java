@@ -9,11 +9,14 @@ import kmlib.profiling.ProfileSection;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.FontAtlas;
 
+import kmu.maplayers.base.faces.SettledFaces;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.hover.MapHoverTargets;
 import kmu.maplayers.base.labels.Label;
+import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -139,7 +142,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
     // Everything built to draw, and how each part of it is rebuilt. Held apart from the decision
     // below, which answers when a rebuild is owed and what it carries forward rather than what it
     // produces.
-    private final OwnerMapDrawables drawables = new OwnerMapDrawables();
+    private final OwnerMapDrawables drawables = new OwnerMapDrawables(this::settleLabelFace);
 
     // What a frame owes, and the baselines that question is asked against. Advanced only as each
     // stage below reports itself complete, so a thrown rebuild is asked again next frame.
@@ -481,6 +484,13 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             drawables.toStandingMap(cellGeometry),
             staleSystemKeys,
             holderResolveSource);
+    }
+
+    // The face this sector's labels are fitted, minted and kept clear of in, off this cache's own
+    // machinery rather than the running sector's: the labels name this sector's factions. Settled
+    // once for the sector and asked again by the drawables per rebuild, which costs a lookup.
+    private FontAtlas settleLabelFace() {
+        return LabelFonts.settleMapLabelFace(SettledFaces.resolveFacesIn(machinery));
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells

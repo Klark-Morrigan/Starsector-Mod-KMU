@@ -8,7 +8,7 @@ Everything here is read once per map rebuild and baked into the flat draw packet
 so the renderer downstream stays a pure GL loop with no knowledge of settings.
 
 Part of [the owner-map tier](../../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../../../../README.md) for project context.
 
 ## Index

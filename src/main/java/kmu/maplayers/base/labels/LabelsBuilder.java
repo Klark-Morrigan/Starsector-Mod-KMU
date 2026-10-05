@@ -3,6 +3,8 @@ package kmu.maplayers.base.labels;
 import kmlib.math.geometry.Segment;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
+import kmlib.starsector.ui.font.FontAtlas;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.profiling.MapBuildCounters;
@@ -29,8 +31,8 @@ import java.util.List;
  * time, which is what keeps "by construction" honest - a spacing change between the fit and
  * the draw cannot leave the block spilling out of the box it was fitted into. This class adds
  * only the geometry of the stack - each line's own hang point along the block's perpendicular
- * - and the GL strings; it never touches the sector. The label font is the
- * fixed face loaded and cached by {@link LabelFonts} - the same face whose metrics
+ * - and the GL strings; it never touches the sector. The label font is the face the
+ * rebuild settled through {@link LabelFonts}, loaded and cached by KMLib - the same face whose metrics
  * sized the boxes - and a face that failed to load leaves the labels empty.
  *
  * <p>The {@link DrawableString}s own GL buffers, so a rebuild disposes the previous list's
@@ -61,14 +63,15 @@ public final class LabelsBuilder {
     public static void rebuildLabels(
             List<Label> labels,
             List<ClusterAnchor> anchors,
-            boolean areNamesDrawn) {
+            boolean areNamesDrawn,
+            FontAtlas labelFace) {
 
         disposeAll(labels);
         labels.clear();
         if (!areNamesDrawn) {
             return;
         }
-        var resolvedFont = LabelFonts.loadMapLabelFont();
+        var resolvedFont = LazyFontCache.loadByFace(labelFace);
         if (resolvedFont == null) {
             return;
         }

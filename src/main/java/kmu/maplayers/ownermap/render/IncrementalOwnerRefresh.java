@@ -214,7 +214,7 @@ public final class IncrementalOwnerRefresh {
         var nameDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingMap.standingAnchors(),
             standingMap.cellGeometry(),
-            ClusterLabelStylingSnapshot.resolveFrom(clusters));
+            ClusterLabelStylingSnapshot.resolveFrom(clusters, standingMap.labelFace()));
 
         // The name choice off the standing map rather than off the preference: this fold edits the
         // build already on screen, so whether its labels draw is what that build was baked under. A
@@ -223,7 +223,8 @@ public final class IncrementalOwnerRefresh {
         LabelsBuilder.rebuildLabels(
             standingMap.factionLabels(),
             standingMap.standingAnchors().getAnchors(),
-            clusters.getBuildInputs().contentInputs().nameFormat().areNamesDrawn());
+            clusters.getBuildInputs().contentInputs().nameFormat().areNamesDrawn(),
+            standingMap.labelFace());
 
         return nameDisturbance;
     }
@@ -262,7 +263,8 @@ public final class IncrementalOwnerRefresh {
                 clusters,
                 geometryCache,
                 holderResolve.readHolderPass(),
-                standingMap.standingAnchors().getAnchors())
+                standingMap.standingAnchors().getAnchors(),
+                standingMap.labelFace())
             .bakeCellRibbonsOf(cellKeys);
     }
 

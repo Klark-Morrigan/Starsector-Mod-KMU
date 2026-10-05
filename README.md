@@ -1,10 +1,13 @@
-# Klark Morrigan's Utilities
+# Klark Morrigan's Utilities (KMU)
 
 [Install with **TriOS**](https://trilink.wispborne.com/open.html?mod=%7B%22url%22%3A%22https%3A%2F%2Fgithub.com%2FKlark-Morrigan%2FStarsector-Mod-KMU%2Freleases%2Flatest%2Fdownload%2Fkmu.version%22%2C%22id%22%3A%22kmu%22%7D&dep=%7B%22url%22%3A%22https%3A%2F%2Fraw.githubusercontent.com%2FLazyWizard%2Flazylib%2Fmaster%2Fmod%2Flazylib.version%22%2C%22id%22%3A%22lw_lazylib%22%7D&dep=%7B%22url%22%3A%22https%3A%2F%2Fraw.githubusercontent.com%2FLukas22041%2FLunaLib%2Fmain%2FLunaLib.version%22%2C%22id%22%3A%22lunalib%22%7D&dep=%7B%22url%22%3A%22https%3A%2F%2Fgithub.com%2FKlark-Morrigan%2FStarsector-Mod-KMLib%2Freleases%2Flatest%2Fdownload%2Fkmlib.version%22%2C%22id%22%3A%22kmlib%22%7D).
 
 ## Index
 
 - [Dependencies](#dependencies)
+- [Languages](#languages)
+  - [English](#english)
+  - [Simplified Chinese](#simplified-chinese)
 - [Features](#features)
   - [Map layers](#map-layers)
     - [Political map](#political-map)
@@ -33,6 +36,53 @@
 | [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | *Optional* | Enables `kmu_` commands |
 | [Nexerelin](https://fractalsoftworks.com/forum/index.php?topic=9175) | *Optional* | Adds the **Alliances** view to the **Political Map** |
 | [Random Assortment of Things](https://fractalsoftworks.com/forum/index.php?topic=26260) | *Optional* | The **compatibility mode** is on the `Map - Compatibility` tab |
+
+## Languages
+
+Each release carries one zip per language, named for it:
+`KMU-<version>-en.zip` is English and `KMU-<version>-zh-hans.zip` is Simplified Chinese.
+Install one.
+Each is the whole mod;
+they differ only in the text of the settings screen, the Map Layers sidebar, the hover boxes and the notices,
+in the launcher's mod list entry,
+and in the language of the `CHANGELOG.md` inside.
+Settings carry over between them.
+
+### English
+
+English is the default language:
+the one this README and the changelog are written in,
+the one an install from before there were language zips updates to,
+and the one a launcher field shows where a translation leaves it out.
+
+### Simplified Chinese
+
+The game's own fonts hold no Chinese characters.
+The Chinese zip needs the [Chinese core localisation](https://github.com/TruthOriginem/Starsector-Localization-CN)
+installed over `starsector-core` first:
+it translates the game itself and replaces the game's fonts with ones that hold the characters.
+
+Without it the mod loads and runs, and nothing reports a problem:
+every Chinese character draws as `?`, wherever KMU shows text.
+
+The launcher cannot check for it.
+The core localisation is not a mod:
+it has no mod ID and no entry in the mod list,
+so `mod_info.json` cannot name it the way it names KMLib,
+and the launcher's dependency check passes with it missing.
+This section, the release notes and the Chinese zip's own mod list entry are what say so.
+
+The core localisation is made for one game version at a time,
+stated on its page,
+and replaces files under `starsector-core`, the game's own jars among them,
+so install the one made for the game version you run.
+
+The English zip runs on a Chinese install too,
+and draws the Chinese faction, system and colony names on the map in a font that holds them.
+
+What changed in each version is in Chinese too:
+in the Chinese zip's `CHANGELOG.md`,
+and on each release page, collapsed under 简体中文 below the English notes.
 
 ## Features
 
@@ -226,7 +276,8 @@ packages one zip per locale, `KMU-<version>-<locale>.zip`,
 pushes the tag,
 and publishes a GitHub release
 whose body is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version,
-followed by a line naming each locale's zip -
+followed by a list naming each locale's zip
+and each translated locale's section for the version, collapsed -
 so a release with no changelog section fails rather than shipping empty notes.
 
 Two committed files feed the update-check side of that release.
@@ -268,6 +319,21 @@ is KMLib's `writeLocaleFiles`, described in
 [KMLib's Build & Test section](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#build--test).
 
 `LocaleParityIntegrationTests` holds every locale to the default under `test`.
+
+A translated locale also keeps a full translation of [CHANGELOG.md](CHANGELOG.md) in its bundle directory,
+which its zip ships in place of the root one and its release notes show:
+[localisation/zh-hans/CHANGELOG.md](localisation/zh-hans/CHANGELOG.md).
+The parity suite holds it to the root changelog point for point,
+so an entry added to one is added to every translation in the same pull request.
+
+A translated locale keeps a terminology reference in its own bundle directory:
+the words the game's core localisation already uses for vanilla concepts,
+and the translations settled for KMU's.
+Check it before translating a string, and add to it when a term is settled.
+
+| Locale | Reference |
+| --- | --- |
+| Simplified Chinese (`zh-hans`) | [localisation/zh-hans/README.md](localisation/zh-hans/README.md) |
 
 ### Local linting
 

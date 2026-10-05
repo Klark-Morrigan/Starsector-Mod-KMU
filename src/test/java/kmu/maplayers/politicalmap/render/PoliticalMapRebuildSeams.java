@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.statics.StaticSeams;
 
+import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
@@ -71,6 +72,11 @@ public final class PoliticalMapRebuildSeams {
         seams.openSeam(KmuMapLabelSettings.class);
         seams.openSeam(KmuLunaSettings.class);
         seams.openSeam(KmuOwnerMapDiagnosticsSettings.class);
+
+        // The label face is settled against the installed atlases and loaded from them, and no test
+        // JVM has either: settled on nothing and loaded as nothing, the names measure off the aspect
+        // stand-in and mint no strings, which is what a face that fails to load does in play.
+        seams.openSeam(LabelFonts.class);
 
         // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory state
         // no test JVM has.

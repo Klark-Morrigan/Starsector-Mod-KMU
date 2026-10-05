@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
 import kmlib.testfixtures.profiling.RecordedCapture;
@@ -11,7 +13,6 @@ import kmlib.testfixtures.profiling.RecordedCapture;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
-import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
@@ -216,7 +217,7 @@ final class ClusterAnchorsBuilderTests {
 
     private MockedStatic<KmuOwnerMapDiagnosticsSettings> settingsMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
-    private MockedStatic<LabelFonts> fontsMock;
+    private MockedStatic<LazyFontCache> fontsMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
     private HolderProviderFake holderProvider;
     private MockedStatic<MapVisibilityRules> visibilityRulesMock;
@@ -226,7 +227,7 @@ final class ClusterAnchorsBuilderTests {
 
         settingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class);
         specificationMock = mockStatic(LabelAnchorSpecification.class);
-        fontsMock = mockStatic(LabelFonts.class);
+        fontsMock = mockStatic(LazyFontCache.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
         visibilityRulesMock = mockStatic(MapVisibilityRules.class);
 
@@ -257,7 +258,7 @@ final class ClusterAnchorsBuilderTests {
         // take: the aspect stand-in sizes a band and no name is drawn from it. The placements are
         // counted and read for colour, so which of the two sized them does not move a case.
         fontsMock
-            .when(LabelFonts::loadMapLabelFont)
+            .when(() -> LazyFontCache.loadByFace(any()))
             .thenReturn(null);
 
         // Names drawn and the debug overlay off by default, so a case names only the half of the
@@ -378,7 +379,8 @@ final class ClusterAnchorsBuilderTests {
                     OwnerReadingFake.createAnsweringNothing(),
                     buildSpotlitPicksDrawingNames(
                         HEGEMONY,
-                        new ElementStyleAdjustment(FULL_OPACITY, true))));
+                        new ElementStyleAdjustment(FULL_OPACITY, true)),
+                    StarsectorFont.VANILLA_INSIGNIA_42));
 
             assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(Color.GREEN);
@@ -604,7 +606,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(2);
@@ -637,7 +640,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(HEGEMONY_PRIMARY);
@@ -657,7 +661,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -677,7 +682,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -702,7 +708,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
@@ -717,7 +724,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isSameAs(firstPassAxis);
@@ -736,7 +744,8 @@ final class ClusterAnchorsBuilderTests {
                 sectorMock,
                 viewMock,
                 contentInputs,
-            holderProvider);
+                holderProvider,
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -760,7 +769,8 @@ final class ClusterAnchorsBuilderTests {
             UNUSED_PALETTE,
             categoriesMock,
             OwnerReadingFake.createAnsweringNothing(),
-            contentInputs);
+            contentInputs,
+            StarsectorFont.VANILLA_INSIGNIA_42);
     }
 
     // The one reading this suite needs that no other does: a spotlight up AND the names drawn. The

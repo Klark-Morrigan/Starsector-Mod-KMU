@@ -7,6 +7,10 @@
   "locales": {
     "en": {
       "displayName": "English"
+    },
+    "zh-hans": {
+      "coreLocalisation": "https://github.com/TruthOriginem/Starsector-Localization-CN",
+      "displayName": "简体中文"
     }
   }
 }

@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 import kmlib.testfixtures.statics.StaticSeams;
@@ -383,7 +384,7 @@ public final class IncrementalOwnerRefreshTests {
             var wordBoxesMock = seams.openSeam(LabelLineBoxes.class);
 
             wordBoxesMock
-                .when(() -> LabelLineBoxes.listLineBoxes(anyList()))
+                .when(() -> LabelLineBoxes.listLineBoxes(anyList(), any()))
                 .thenReturn(List.of(buildWordsBoxAwayFromTheCell()));
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
@@ -960,7 +961,8 @@ public final class IncrementalOwnerRefreshTests {
                     clusters,
                     standingAnchors,
                     new ArrayList<Label>(),
-                    cellGeometry),
+                    cellGeometry,
+                    StarsectorFont.VANILLA_INSIGNIA_42),
                 staleSystemKeys,
                 holderResolveSourceFake);
         }

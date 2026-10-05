@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render.ribbon;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.IterationScope;
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.FontAtlas;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
@@ -86,13 +87,15 @@ public final class CellRibbonsBaker {
      *                       grouping the cells were painted under; whose reading it is, and so how
      *                       current it is, is the caller's to decide
      * @param clusterAnchors the cluster names' placements, whose boxes the bands keep out of
+     * @param labelFace      the face the names were settled on
      * @return the pass, ready to bake whichever cells the caller names
      */
     public static CellRibbonsBaker createForPass(
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache,
             HolderPass pass,
-            List<ClusterAnchor> clusterAnchors) {
+            List<ClusterAnchor> clusterAnchors,
+            FontAtlas labelFace) {
 
         // The cell-to-system lookup is taken here, once, rather than per cell inside the loop: the
         // read hands back a fresh unmodifiable view over the live cells, so asking per cell would
@@ -104,7 +107,7 @@ public final class CellRibbonsBaker {
             CellRibbonSource.createForPass(
                 pass,
                 clusters.getBuildInputs().viewReading().view(),
-                RibbonBakeSurface.createForPass(clusters, geometryCache, clusterAnchors)),
+                RibbonBakeSurface.createForPass(clusters, geometryCache, clusterAnchors, labelFace)),
             KmuOwnerMapDiagnosticsSettings.shouldShowOwnerMapRibbonPaths());
     }
 

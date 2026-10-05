@@ -7,7 +7,7 @@ and the seam through which it hands the frame to whichever layer the player has 
 It names no layer and knows nothing of what any of them paints.
 
 Part of [the map layers](../../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../../../README.md) for project context.
 
 ## Index

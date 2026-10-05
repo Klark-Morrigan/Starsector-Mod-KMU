@@ -1,6 +1,8 @@
 package kmu.maplayers.base.labels;
 
 import kmlib.math.geometry.Segment;
+import kmlib.starsector.ui.font.StarsectorFont;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
@@ -78,13 +80,13 @@ final class LabelsBuilderTests {
                 buildAcceptedAnchor(List.of("Persean League"), 0, 0, HORIZONTAL_AXIS),
                 buildAcceptedAnchor(List.of("Hegemony"), 500, 0, HORIZONTAL_AXIS));
 
-            try (var fontsMock = mockStatic(LabelFonts.class)) {
+            try (var fontsMock = mockStatic(LazyFontCache.class)) {
 
-                fontsMock.when(LabelFonts::loadMapLabelFont)
+                fontsMock.when(() -> LazyFontCache.loadByFace(any()))
                     .thenReturn(fontMock);
 
                 var capture = RecordedCapture.recordWhile(() ->
-                    LabelsBuilder.rebuildLabels(labels, anchors, true));
+                    LabelsBuilder.rebuildLabels(labels, anchors, true, StarsectorFont.VANILLA_INSIGNIA_42));
 
                 var buildRow = capture.findNode(BUILD_SECTION);
 
@@ -100,7 +102,7 @@ final class LabelsBuilderTests {
             // The mint is skipped outright rather than measured as a call that did nothing, so a
             // reader following a rebuild is not shown a row for a stage that never ran.
             var capture = RecordedCapture.recordWhile(() ->
-                LabelsBuilder.rebuildLabels(new ArrayList<>(), List.of(), false));
+                LabelsBuilder.rebuildLabels(new ArrayList<>(), List.of(), false, StarsectorFont.VANILLA_INSIGNIA_42));
 
             assertThat(capture.hasNode(BUILD_SECTION))
                 .isFalse();

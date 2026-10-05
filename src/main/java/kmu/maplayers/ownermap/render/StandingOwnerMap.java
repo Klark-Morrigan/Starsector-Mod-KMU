@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.render;
 
+import kmlib.starsector.ui.font.FontAtlas;
+
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
@@ -34,5 +36,6 @@ public record StandingOwnerMap(
     OwnerMapClusters clusters,
     StandingClusterAnchors standingAnchors,
     List<Label> factionLabels,
-    RevisedCellGeometry cellGeometry) {
+    RevisedCellGeometry cellGeometry,
+    FontAtlas labelFace) {
 }

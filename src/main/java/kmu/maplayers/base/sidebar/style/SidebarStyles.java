@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar.style;
 
 import kmlib.starsector.ui.colour.AccentColours;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
+import kmlib.starsector.ui.font.FontAtlas;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.font.installed.InstalledFaces;
@@ -20,10 +21,13 @@ import kmlib.starsector.ui.widgets.tabs.style.TabPalette;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.starsector.ui.widgets.tabs.style.TextHalo;
 
+import kmu.maplayers.base.faces.ProbedText;
+import kmu.maplayers.base.faces.SettledFaces;
 import kmu.settings.KmuMapSidebarSettings;
 import kmu.settings.KmuMapSoundSettings;
 
 import java.awt.Color;
+import java.util.Set;
 
 /**
  * Composes the look bundles a sidebar host wears: the tab style its band is laid out and painted from,
@@ -83,6 +87,12 @@ public final class SidebarStyles {
     // - so the labels need no upper-casing pass to match the row beside them.
     private static final StarsectorFont RAISED_BUTTON_FONT = StarsectorFont.VANILLA_VICTOR_10;
 
+    // What each face has to draw, which is what it is settled against: the body lists factions, systems and
+    // colonies among KMU's own words, and a tab carries a layer's name, which is KMU's own.
+    private static final Set<ProbedText> BODY_TEXTS = ProbedText.EVERY_KIND;
+
+    private static final Set<ProbedText> TAB_TEXTS = Set.of(ProbedText.MOD_STRINGS);
+
     // Composes only; never instantiated.
     private SidebarStyles() {
     }
@@ -94,10 +104,13 @@ public final class SidebarStyles {
      * tab face sizes every body row against letters it never wears, and the panel framed to the widest row
      * inherits that error.
      *
+     * <p>The face the running sector settled the body on, which is the insignia body font wherever the
+     * install's atlas holds what the body lists.
+     *
      * @return the atlas the body-control labels draw in
      */
-    public static StarsectorFont resolveBodyFont() {
-        return BODY_FONT;
+    public static FontAtlas resolveBodyFont() {
+        return SettledFaces.resolveFacesForLiveSector().settleFace(BODY_FONT, BODY_TEXTS);
     }
 
     /**
@@ -240,6 +253,7 @@ public final class SidebarStyles {
     // sounding once however far the list travels, where the arrival levels are set against how many things
     // one sweep of the pointer crosses.
     private static UiSoundCue resolveListScrollCue() {
+
         return UiSoundCue.createIfAudible(
             StarsectorUiSound.LIST_SCROLLED,
             KmuMapSoundSettings.getMapSidebarListScrollVolume());
@@ -258,6 +272,7 @@ public final class SidebarStyles {
     // levels arrive from a stored double narrowed to a float, and a slider parked at its own minimum has
     // no business turning on how that landed.
     private static boolean isEveryArrivalSilenced(PointerArrivalVolumes arrivalVolumes) {
+
         return arrivalVolumes.panelChromeVolume() <= UiSoundCue.SILENT_VOLUME
             && arrivalVolumes.singleOptionControlVolume() <= UiSoundCue.SILENT_VOLUME
             && arrivalVolumes.listedItemVolume() <= UiSoundCue.SILENT_VOLUME;
@@ -279,6 +294,7 @@ public final class SidebarStyles {
     // panel framed in one palette and ruled in another unrepresentable rather than merely avoided: the
     // two framings differ by which step they take, never by which palette.
     private static Color resolveFrameColour(SidebarFraming framing, AccentColours accentColours) {
+
         return switch (framing) {
             case OWN_ACCENT -> accentColours.base();
             case CHROME_DARK -> accentColours.dark();
@@ -290,10 +306,13 @@ public final class SidebarStyles {
     // vanilla counterpart never wears. Both are resolved from the one scheme the panel answers to, so the
     // rows part by which vanilla control they imitate and never by which palette.
     private static TabPalette composeTabPalette(TabChrome chrome, AccentColours accentColours) {
+
         return switch (chrome) {
+
             // A vanilla tab takes no accent at all beyond the rule around the row, which has no vanilla
             // counterpart to copy - so the panel's own base is what the strip is ruled in.
             case STRIP -> TabPalette.createMapTabPalette(accentColours.base());
+
             // A vanilla button takes nothing but its accent, and takes all of it - so the whole set goes
             // over rather than the steps picked out one at a time.
             case RAISED_BUTTON -> TabPalette.createRaisedButtonPalette(accentColours);
@@ -308,7 +327,8 @@ public final class SidebarStyles {
     //
     // Drawn at the size the installed atlas states, read each time a style is composed: a bitmap face is
     // crisp at one size only, both faces here are hard-edged pixel atlases that visibly blur at any other,
-    // and a localised install carries a taller atlas under the same basename than vanilla does.
+    // and a localised install carries a taller atlas under the same basename than vanilla does. The face is
+    // the one the running sector settled the chrome's own on.
     private static TextFace resolveTabFace(TabChrome chrome) {
 
         var font = switch (chrome) {
@@ -316,7 +336,8 @@ public final class SidebarStyles {
             case RAISED_BUTTON -> RAISED_BUTTON_FONT;
         };
 
-        return InstalledFaces.createNativeFace(font);
+        return InstalledFaces.createNativeFace(
+            SettledFaces.resolveFacesForLiveSector().settleFace(font, TAB_TEXTS));
     }
 
     // How a row marks the key it answers to, which the chrome decides for the same reason it decides
@@ -325,6 +346,7 @@ public final class SidebarStyles {
     // beside it, so a row marked one way while wearing the other chrome cannot be composed at all - the
     // mismatch the styled hotkey exists to avoid is unrepresentable rather than merely avoided.
     private static HotkeyStyle resolveHotkeyStyle(TabChrome chrome) {
+
         return switch (chrome) {
             case STRIP -> HotkeyStyle.createUnderlined();
             case RAISED_BUTTON -> HotkeyStyle.createPlain();
@@ -337,6 +359,7 @@ public final class SidebarStyles {
     // labels already have a fill of known shade behind them. Both rows are lettered in hard-edged atlases,
     // so the face is not what parts them here.
     private static TextHalo resolveTextHalo(TabChrome chrome) {
+
         return switch (chrome) {
             case STRIP -> TextHalo.NONE;
             case RAISED_BUTTON -> TextHalo.createBlackHairline();
@@ -348,6 +371,7 @@ public final class SidebarStyles {
     // in rather than one grown to fit it; a raised row copies the intel screen's buttons, which are laid
     // to the row the layout measured and take their channel from inside their own tab.
     private static TabBox resolveTabBox(TabChrome chrome) {
+
         return switch (chrome) {
             case STRIP -> new TabBox(STRIP_TAB_WIDTH, STRIP_TAB_HEIGHT, STRIP_TAB_GAP);
             case RAISED_BUTTON -> TabBox.SNAPPED;
@@ -361,6 +385,7 @@ public final class SidebarStyles {
     // the row imitates and not a free choice; the band height alone is the host's, being the one
     // dimension the two screens genuinely set apart.
     private static TabStyle composeTabStyle(TabChrome chrome, float headerBandHeight) {
+
         return new TabStyle(
             chrome,
             headerBandHeight,
@@ -377,6 +402,7 @@ public final class SidebarStyles {
     // vanilla chrome it stands beside rather than against some one right amount for the mod. Read live so
     // the dial answers while the panel is on screen.
     private static float resolvePixelFaceSharpness(TabChrome chrome) {
+
         return switch (chrome) {
             case STRIP -> (float) KmuMapSidebarSettings.getMapSidebarPixelFontSharpness();
             case RAISED_BUTTON -> (float) KmuMapSidebarSettings.getIntelSidebarPixelFontSharpness();
@@ -419,7 +445,7 @@ public final class SidebarStyles {
             // channel of its own rather than more wash, since the cell a press lands on is already
             // fully washed by the pointer that pressed it.
             ControlPressLight.createAccentPressLight(accentColours),
-            BODY_FONT,
+            resolveBodyFont(),
             tabStyle,
             SidebarPalettes.resolveNotchColours(
                 KmuMapSidebarSettings.getMapSidebarChevronColour(),

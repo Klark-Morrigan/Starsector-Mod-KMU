@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.ribbon;
 
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -26,6 +27,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -79,7 +81,7 @@ final class RibbonBakeSurfaceTests {
 
         wordBoxesMock = seams.openSeam(LabelLineBoxes.class);
         wordBoxesMock
-            .when(() -> LabelLineBoxes.listLineBoxes(same(clusterAnchors)))
+            .when(() -> LabelLineBoxes.listLineBoxes(same(clusterAnchors), any()))
             .thenReturn(WORD_BOXES);
     }
 
@@ -102,7 +104,7 @@ final class RibbonBakeSurfaceTests {
             when(geometryCacheMock.getSiteBySystemKey())
                 .thenReturn(siteBySystemKey);
 
-            var surface = RibbonBakeSurface.createForPass(clusters, geometryCacheMock, clusterAnchors);
+            var surface = RibbonBakeSurface.createForPass(clusters, geometryCacheMock, clusterAnchors, StarsectorFont.VANILLA_INSIGNIA_42);
 
             assertThat(surface.inhabitedSystemKeys())
                 .containsExactly(buildCellKey(SETTLED_SYSTEM));
@@ -176,6 +178,6 @@ final class RibbonBakeSurfaceTests {
 
         var clusters = OwnerMapClusterFixtures.createClustersSpellingNames(Map.of(), nameFormat);
 
-        return RibbonBakeSurface.createForPass(clusters, geometryCacheMock, clusterAnchors);
+        return RibbonBakeSurface.createForPass(clusters, geometryCacheMock, clusterAnchors, StarsectorFont.VANILLA_INSIGNIA_42);
     }
 }

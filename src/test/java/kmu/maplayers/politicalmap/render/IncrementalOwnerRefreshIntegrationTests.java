@@ -8,6 +8,7 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.statics.StaticSeams;
 
@@ -489,26 +490,29 @@ final class IncrementalOwnerRefreshIntegrationTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                ClusterLabelStylingSnapshot.resolveFrom(territories));
+                ClusterLabelStylingSnapshot.resolveFrom(territories, StarsectorFont.VANILLA_INSIGNIA_42));
 
             CellRibbonsBaker
                 .createForPass(
                     territories,
                     cellsMock,
                     pass,
-                    standingAnchors.getAnchors())
+                    standingAnchors.getAnchors(),
+                    StarsectorFont.VANILLA_INSIGNIA_42)
                 .bakeAllCellRibbons();
 
             LabelsBuilder.rebuildLabels(
                 factionLabels,
                 standingAnchors.getAnchors(),
-                contentInputs.nameFormat().areNamesDrawn());
+                contentInputs.nameFormat().areNamesDrawn(),
+                StarsectorFont.VANILLA_INSIGNIA_42);
 
             return new StandingOwnerMap(
                 territories,
                 standingAnchors,
                 factionLabels,
-                cellGeometry);
+                cellGeometry,
+                StarsectorFont.VANILLA_INSIGNIA_42);
         }
 
         // Re-stubs one system's economy listing, which is how a case moves a colony: everything

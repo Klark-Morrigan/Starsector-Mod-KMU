@@ -12,7 +12,7 @@ made when the layers are installed on a sector,
 released when they are removed.
 
 Part of [the map layers](../../README.md),
-in Klark Morrigan's Utilities;
+in Klark Morrigan's Utilities (KMU);
 see the [mod README](../../../../../../../README.md) for project context.
 
 ## Index

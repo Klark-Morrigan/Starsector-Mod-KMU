@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
+import kmlib.starsector.ui.font.FontAtlas;
 
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.geometry.SystemClusters;
@@ -166,7 +167,8 @@ public final class ClusterAnchorsBuilder {
             SectorAPI sector,
             OwnerPaintedView view,
             ContentInputs contentInputs,
-            HolderProvider holderProvider) {
+            HolderProvider holderProvider,
+            FontAtlas labelFace) {
 
         if (!KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
             // The economy scan is what the toggle is guarding, so it is skipped - but the
@@ -209,7 +211,8 @@ public final class ClusterAnchorsBuilder {
                 desaturationPalette,
                 view.resolveCategories(),
                 reading,
-                contentInputs.clearFilterPick()));
+                contentInputs.clearFilterPick(),
+                labelFace));
     }
 
     // The sweep itself, measured as its own row: past the gate the skipped path never reaches, and
@@ -288,7 +291,8 @@ public final class ClusterAnchorsBuilder {
                     styling.desaturationPalette()),
                 ClusterLabelStyling.newNameEstimatorResolver(
                     styling.reading(),
-                    contentInputs)),
+                    contentInputs,
+                    styling.labelFace())),
             reusableAnchors);
 
         reportFitCosts(fitScope, spec, partition, fit);

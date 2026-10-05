@@ -2,12 +2,13 @@ package kmu.maplayers.ownermap.render.labels;
 
 import kmlib.colour.Colours;
 import kmlib.starsector.systems.SystemKey;
+import kmlib.starsector.ui.font.FontAtlas;
+import kmlib.starsector.ui.font.installed.LazyFontCache;
 import kmlib.starsector.ui.font.measure.LazyFontMeasurer;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
-import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
@@ -141,9 +142,10 @@ final class ClusterLabelStyling {
     // would size the boxes the fit accepted for a spelling the labels are not minted in.
     static Function<String, LabelLengthEstimator> newNameEstimatorResolver(
             OwnerReading reading,
-            ContentInputs contentInputs) {
+            ContentInputs contentInputs,
+            FontAtlas labelFace) {
 
-        var font = LabelFonts.loadMapLabelFont();
+        var font = LazyFontCache.loadByFace(labelFace);
         var nameFormat = contentInputs.nameFormat();
 
         return memoisePerBlocId(blocId -> resolveNameEstimator(

@@ -10,7 +10,11 @@ import kmlib.starsector.ui.text.TextStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLineGaps;
 import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 
+import kmu.maplayers.base.faces.ProbedText;
+import kmu.maplayers.base.faces.SettledFaces;
 import kmu.settings.KmuMapTooltipSettings;
+
+import java.util.Set;
 
 /**
  * How every map-layer hover box is set: the face each kind of line draws in, the frame around them
@@ -36,6 +40,13 @@ final class CellTooltipLook {
     // narrowness is what sets the line apart from the body; the size is not, so it is drawn at the
     // body's rather than at the atlas's own, which reads as fine print beside the body's content.
     private static final StarsectorFont FOOTNOTE_FONT = StarsectorFont.VANILLA_ORBITRON_12_CONDENSED;
+
+    // What each face has to draw, which is what it is settled against: the heading titles a system, the
+    // body names factions, systems and colonies among KMU's own words, and the foot is KMU's words alone.
+    private static final Set<ProbedText> HEADER_TEXTS = Set.of(ProbedText.PLACE_NAMES, ProbedText.MOD_STRINGS);
+    private static final Set<ProbedText> BODY_TEXTS = ProbedText.EVERY_KIND;
+
+    private static final Set<ProbedText> FOOTNOTE_TEXTS = Set.of(ProbedText.MOD_STRINGS);
 
     // The box's own look, handed to the tooltip widget as its style: a thin bright frame over a near
     // opaque black fill, so the content reads over the map without blocking it entirely.
@@ -64,7 +75,9 @@ final class CellTooltipLook {
      * <p>The heading and the body name no size: each face is a bitmap atlas crisp at exactly one size,
      * and the box has no fit of its own to squeeze text into, so a line speaking in the box's own voice
      * takes the native size and is drawn 1:1 rather than scaled. That size is the installed atlas's own,
-     * read each paint, since a localised install carries a taller atlas under the same basename.
+     * read each paint, since a localised install carries a taller atlas under the same basename. Each face
+     * is the one the sector settled it on, which is the face it asks for wherever the install's atlas holds
+     * what it draws.
      *
      * <p>Two kinds of line are scaled off their atlas anyway, both knowingly. The note at the foot,
      * because its atlas is rasterised small enough that beside the body it reads as fine print rather
@@ -82,18 +95,21 @@ final class CellTooltipLook {
      * leader line does: how heavy a solid run looks beside text is a judgement made on screen, at
      * whatever scale the game is run at.
      *
+     * @param settledFaces the faces settled on the sector the box describes
      * @return the box's look for this paint
      */
-    static CursorTooltipStyle buildStyle() {
+    static CursorTooltipStyle buildStyle(SettledFaces settledFaces) {
 
-        var bodyFace = InstalledFaces.createNativeFace(BODY_FONT);
+        var bodyFace = InstalledFaces.createNativeFace(settledFaces.settleFace(BODY_FONT, BODY_TEXTS));
+        var headerFace = InstalledFaces.createNativeFace(settledFaces.settleFace(HEADER_FONT, HEADER_TEXTS));
+        var footnoteAtlas = settledFaces.settleFace(FOOTNOTE_FONT, FOOTNOTE_TEXTS);
 
         return CursorTooltipStyle.createStyle(
                 TooltipStyle
                     .createStyle(
-                        TextStyle.createStyle(InstalledFaces.createNativeFace(HEADER_FONT)),
+                        TextStyle.createStyle(headerFace),
                         TextStyle.createStyle(bodyFace))
-                    .footnotedIn(TextStyle.createStyle(new TextFace(FOOTNOTE_FONT, bodyFace.size())))
+                    .footnotedIn(TextStyle.createStyle(new TextFace(footnoteAtlas, bodyFace.size())))
                     .shrunkPerLevel(KmuMapTooltipSettings.getMapTooltipNestingLevelShrink())
                     .stackedAt(buildLineGaps()),
                 OPACITY,

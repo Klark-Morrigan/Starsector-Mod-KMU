@@ -18,8 +18,11 @@ public final class KmuMod {
     /** The mod ID: its LunaLib settings key, and the owner its scoped library loggers name. */
     public static final String MOD_ID = "kmu";
 
-    /** The mod's display name. */
-    public static final String MOD_NAME = "Klark Morrigan's Utilities";
+    /**
+     * The mod's display name, as the launcher shows it. The abbreviation is part of the name - it is
+     * the mod's brand - so it is never dropped or translated.
+     */
+    public static final String MOD_NAME = "Klark Morrigan's Utilities (KMU)";
 
     /**
      * The prefix this mod's sidebar spotlight, sort and column stores save their keys under, so a

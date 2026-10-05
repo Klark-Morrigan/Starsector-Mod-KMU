@@ -2,6 +2,8 @@ package kmu.maplayers.ownermap.render;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.ui.font.FontAtlas;
+
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
@@ -22,6 +24,7 @@ import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * What an owner map has built to draw, and how each part of it is rebuilt: one of the two
@@ -57,6 +60,18 @@ final class OwnerMapDrawables {
     // the builder disposes the standing strings whenever it rebuilds this list. Empty unless the
     // "show faction names" toggle is on.
     private final List<Label> factionLabels = new ArrayList<>();
+
+    // The face the sector settled its labels on, asked on each rebuild rather than handed in, since it is
+    // the sector's for as long as these drawables are.
+    private final Supplier<FontAtlas> labelFaceSource;
+
+    /**
+     * @param labelFaceSource answers the face the sector settled its labels on, which every name is
+     *                        fitted, minted and kept clear of in
+     */
+    OwnerMapDrawables(Supplier<FontAtlas> labelFaceSource) {
+        this.labelFaceSource = labelFaceSource;
+    }
 
     /** @return the built production draw lists, or null while the debug overlay has replaced them */
     public OwnerMapClusters getClusters() {
@@ -110,10 +125,10 @@ final class OwnerMapDrawables {
      * The standing map as one value, for the incremental refresh that patches it in place.
      *
      * @param cellGeometry the cells the standing draw lists were shaped from
-     * @return the four halves the refresh reads and writes
+     * @return the halves the refresh reads and writes, and the face it re-fits names in
      */
     public StandingOwnerMap toStandingMap(RevisedCellGeometry cellGeometry) {
-        return new StandingOwnerMap(clusters, standingAnchors, factionLabels, cellGeometry);
+        return new StandingOwnerMap(clusters, standingAnchors, factionLabels, cellGeometry, labelFaceSource.get());
     }
 
     /**
@@ -192,7 +207,8 @@ final class OwnerMapDrawables {
             sector,
             view,
             contentInputs,
-            diagnosticsHolderProvider);
+            diagnosticsHolderProvider,
+            labelFaceSource.get());
     }
 
     /**
@@ -219,6 +235,8 @@ final class OwnerMapDrawables {
             ContentInputs contentInputs,
             ResolvedHolding holding) {
 
+        var labelFace = labelFaceSource.get();
+
         clusters = OwnerMapBuilder.buildClusters(
             cellGeometry.cells(),
             pass,
@@ -234,7 +252,7 @@ final class OwnerMapDrawables {
         ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingAnchors,
             cellGeometry,
-            ClusterLabelStylingSnapshot.resolveFrom(clusters));
+            ClusterLabelStylingSnapshot.resolveFrom(clusters, labelFace));
 
         // The bands come last, after the names have places, because they are laid around
         // them: a band is cut by the room the names take, so baking one before the fit
@@ -250,7 +268,8 @@ final class OwnerMapDrawables {
                 clusters,
                 cellGeometry.cells(),
                 pass,
-                standingAnchors.getAnchors())
+                standingAnchors.getAnchors(),
+                labelFace)
             .bakeAllCellRibbons();
     }
 
@@ -262,6 +281,6 @@ final class OwnerMapDrawables {
      *                      preference, so what is minted matches what was fitted
      */
     public void rebuildLabels(boolean areNamesDrawn) {
-        LabelsBuilder.rebuildLabels(factionLabels, standingAnchors.getAnchors(), areNamesDrawn);
+        LabelsBuilder.rebuildLabels(factionLabels, standingAnchors.getAnchors(), areNamesDrawn, labelFaceSource.get());
     }
 }
