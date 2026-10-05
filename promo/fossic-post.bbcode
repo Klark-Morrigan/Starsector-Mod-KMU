@@ -101,7 +101,7 @@ Release checklist, run by hand on every KMU release:
 [align=center][color=maroon][size=6][b]政治地图[/b][/size][/color]
 [color=maroon][size=3][b]星图图层[/b][/size][/color]的首发功能
 
-[attachimg]promo/zh-hans/always-has-been.png[/attachimg]
+[attachimg]111033[/attachimg]
 
 [color=red][i]本 Mod 目前处于[size=3][b]预发布[/b][/size]阶段，用于公开测试与收集反馈。
 欢迎提前试用并分享你的体验，帮助我改进它。[/i][/color]
@@ -145,12 +145,12 @@ Release checklist, run by hand on every KMU release:
 [spoiler=示例][align=center][table]
 [tr][td]
 [align=center]
-[attachimg]promo/zh-hans/map-screen.png[/attachimg]
+[attachimg]111042[/attachimg]
 星图界面。
 [/align]
 [/td][td]
 [align=center]
-[attachimg]promo/zh-hans/intel-screen.png[/attachimg]
+[attachimg]111041[/attachimg]
 情报信息界面。
 [/align]
 [/td][/tr]
@@ -158,15 +158,15 @@ Release checklist, run by hand on every KMU release:
 
 一切都根据游戏数据计算并绘制，并随星域局势的变化而更新。地图图层不会修改用于绘制它的任何数据，因此地图图层在设计上是[b]只读[/b]的。
 
-[spoiler=星域示例][align=center][attachimg]promo/zh-hans/sector-1-vanilla-nexerelin.png[/attachimg]
+[spoiler=星域示例][align=center][attachimg]111043[/attachimg]
 原版加 Nexerelin。[/align][/spoiler]
 [spoiler=如何打开地图图层]
 [color=maroon][b]KMU[/b][/color] 的[color=maroon][b]星图图层[/b][/color]功能[color=green]默认开启[/color]。读取存档或开始新游戏后，打开[b]星图界面[/b]或[b]情报信息界面[/b]，地图筛选栏中会多出一个[b]地图图层[/b]按钮。点击它或按 [b](M)[/b] 即可开启地图图层叠加层及其侧边栏。
 [align=center]
-[attachimg]promo/zh-hans/ui-toggle-map.png[/attachimg]
+[attachimg]111045[/attachimg]
 星图界面。
 
-[attachimg]promo/zh-hans/ui-toggle-intel.png[/attachimg]
+[attachimg]111044[/attachimg]
 情报信息界面。[/align][/spoiler]
 
 地图图层的主要控制界面是可折叠的[b]侧边栏[/b]，其中列出了所有可用图层以及相关的控件与开关。
@@ -181,7 +181,7 @@ Release checklist, run by hand on every KMU release:
 [*]带有[b]废弃空间站[/b]条件的市场视为无人居住，不为地图上色。
 [*]所有非市场实体都不为地图上色。
 [/list]
-[spoiler=示例][align=center][attachimg]promo/zh-hans/domination-factions-unpopulated.png[/attachimg]
+[spoiler=示例][align=center][attachimg]111039[/attachimg]
 [color=red]无宣称[/color]的[b]无人星系[/b]只以极淡的线条绘制，仅用于显示星系之间的相接位置。
 无人星系的这些轮廓可以独立于[b]有人星系[/b]开关；
 有人星系始终绘制，即使星系中没有任何有组织的势力（例如星系内所有殖民地都已[b]荒蛮[/b]）。
@@ -189,16 +189,16 @@ Release checklist, run by hand on every KMU release:
 [list]
 [*]每个星系只能由一个势力上色，因此每个星系会沿其边界绘制一条[b]存在色带[/b]，以持有各殖民地的势力颜色表示每个有人居住的殖民地。当星系中只有一个势力或联盟在场，且这种存在不违反任何[b]无条件宣称[/b]时，色带会缩短，以表示[b]稳固的控制[/b]。
 
-[spoiler=示例][align=center][attachimg]promo/zh-hans/domination-factions-presence-ribbon.png[/attachimg]
+[spoiler=示例][align=center][attachimg]111036[/attachimg]
 存在色带：[b]Samarra[/b] 的色带显示 3 个[b]霸主[/b]市场和 1 个[b]非势力团体[/b]市场。[/align][/spoiler]
 [/list]
 [list]
 [*]可展开的[b]星系提示框[/b]详细说明每个市场如何影响力量平衡。
 
-[spoiler=示例][align=center][attachimg]promo/zh-hans/domination-factions-tooltip-lists-neutral-markets.png[/attachimg]
+[spoiler=示例][align=center][attachimg]111037[/attachimg]
 提示框会列出[b]中立[/b]（无主）市场。
 
-[attachimg]promo/zh-hans/domination-factions-tooltip-lists-not-contributing-markets.png[/attachimg]
+[attachimg]111038[/attachimg]
 提示框会列出不产生主导得分的市场。[/align][/spoiler]
 [/list]
 [list]
@@ -207,13 +207,13 @@ Release checklist, run by hand on every KMU release:
 [*]在主导视图（[color=maroon][b]势力[/b][/color]与[color=maroon][b]联盟[/b][/color]）中，[b]实色填充[/b]表示主导，[b]斜线填充[/b]表示在由他人主导的星系中的存在，[b]不填充[/b]表示对无人星系的宣称。
 [*]在[color=maroon][b]宣称[/b][/color]视图中，所有星系均以实色填充绘制。
 [/list]
-[spoiler=示例][align=center][attachimg]promo/zh-hans/domination-factions-filter.png[/attachimg]
+[spoiler=示例][align=center][attachimg]111034[/attachimg]
 势力筛选列表，展开为 2 列，按势力对玩家的[b]关系[/b]排序。
 
-[attachimg]promo/zh-hans/domination-factions-pirates.png[/attachimg]
+[attachimg]111035[/attachimg]
 按[b]海盗[/b]筛选的[color=maroon][b]势力[/b][/color]视图。
 
-[attachimg]promo/zh-hans/domination-factions-unpopulated-claimed.png[/attachimg]
+[attachimg]111040[/attachimg]
 在主导视图中，[b]无人星系[/b]不上色。
 [b]Tia[/b] 星系显示为[b]霸主[/b]所有，因为[b]霸主[/b]对它[color=red]持有无条件宣称[/color]。[/align][/spoiler]
 [/list]
