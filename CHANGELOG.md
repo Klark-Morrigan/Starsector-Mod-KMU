@@ -39,6 +39,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Game updates:** where an update changes the screens the map layers reach into, the notice names the one thing that stops working, such as the tick box going missing.
   - **LunaLib:** where it stops telling KMU about settings changes, a changed setting may not apply until you restart the game.
   - **Nexerelin alliances:** a release that changes how it keeps alliances no longer stops the game. The political map treats every faction as standing alone for the rest of the session.
+  - **Nexerelin colony transfers:** a release that moves what KMU listens to no longer stops the game loading. A colony that changes hands takes a few seconds longer to show on the political map.
 
 ### For developers
 
