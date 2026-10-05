@@ -70,13 +70,10 @@ The [source notes][source-notes] list KMU's value for every input; what each inp
   - Notes: the Mod英文名 and Mod中文名 inputs.
 - EN: Political map overlay over the sector map (map screen, intel screen, etc.) painting factions, alliances (with Nexerelin), and system claims.
   - ZH: 星图上的政治地图叠加层（星图界面、情报信息界面等），为势力、联盟（需 Nexerelin）和星系宣称上色。
-  - Notes: the Mod简短介绍 input, two sentences; this one is Fossic only, written for the form.
+  - Notes: the Mod简短介绍 input; this one is Fossic only, written for the form.
     Political Map, overlay and map screen in [features and screens][kmu-features]; Map and Intel in [screens and the map][kmu-screens].
     "The sector map" is vanilla's 星图, the map itself, whichever screen shows it.
     Paint, Factions, Alliances and claim in [the political map][kmu-politics]; system claim in [the political map][kmu-politics] too.
-- EN (back-translation): Needs the Starsector Chinese localisation installed first.
-  - ZH: 需要先安装远行星号中文汉化。
-  - Notes: The Chinese core localisation in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): Install the Chinese localisation first
   - ZH: 需先安装中文汉化
   - Notes: the Mod索引备注 input, shown after the version in Fossic's mod index.
