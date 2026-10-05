@@ -152,8 +152,7 @@ Release checklist, run by hand on every KMU release:
 
 [spoiler=星域示例][align=center][attachimg]111043[/attachimg]
 原版加 Nexerelin。[/align][/spoiler]
-[spoiler=如何打开地图图层]
-[color=maroon][b]KMU[/b][/color] 的[color=maroon][b]星图图层[/b][/color]功能[color=green]默认开启[/color]。读取存档或开始新游戏后，打开[b]星图界面[/b]或[b]情报信息界面[/b]，地图筛选栏中会多出一个[b]地图图层[/b]按钮。点击它或按 [b](M)[/b] 即可开启地图图层叠加层及其侧边栏。
+[spoiler=如何打开地图图层][color=maroon][b]KMU[/b][/color] 的[color=maroon][b]星图图层[/b][/color]功能[color=green]默认开启[/color]。读取存档或开始新游戏后，打开[b]星图界面[/b]或[b]情报信息界面[/b]，地图筛选栏中会多出一个[b]地图图层[/b]按钮。点击它或按 [b](M)[/b] 即可开启地图图层叠加层及其侧边栏。
 [align=center]
 [attachimg]111045[/attachimg]
 星图界面。
@@ -163,8 +162,7 @@ Release checklist, run by hand on every KMU release:
 
 地图图层的主要控制界面是可折叠的[b]侧边栏[/b]，其中列出了所有可用图层以及相关的控件与开关。
 
-[spoiler=可用的地图图层]
-[spoiler=政治地图 (P)]
+[spoiler=可用的地图图层][spoiler=政治地图 (P)]
 [list]
 [*]关注[b]有人居住的殖民地[/b]（市场）及其归属。
 [list]
@@ -214,24 +212,19 @@ Release checklist, run by hand on every KMU release:
 [*][color=maroon][b]势力[/b][/color]：根据自定义的[b]主导算法[/b]（可在设置中大幅调整）为势力领土上色。该算法综合考虑市场规模、稳定性、市场是否隐藏、是否有轨道空间站（以及空间站殖民地是否建有轨道空间站），以及生成的巡逻队数量（按其规模）。
 [*][color=maroon][b]联盟[/b][/color]（仅在安装了 [b]Nexerelin[/b] 时可见）：与[color=maroon][b]势力[/b][/color]视图相同，但结盟的势力作为单一政治实体出现，其持有合并计算。
 [*][color=maroon][b]宣称[/b][/color]：根据原版的[b]星系宣称[/b]机制为势力领土上色，包括动态宣称与无条件宣称。[b]无条件宣称[/b]通过星域记忆设置，具有最高权威。[b]除非宣称是无条件的，否则星系宣称会动态判定[/b]：参与经济的最大单个市场胜出，同势力市场（任何类型）的存在和已建成的军事设施会给予加成。[color=red]你的势力和[b]非领土[/b]势力无法动态宣称。[/color]若按[b]非领土[/b]势力筛选，则会聚焦其在场的无宣称星系。
-[/list]
-[/spoiler]
-[/spoiler]
-[spoiler=防剧透]
-为避免剧透，地图图层基于一套源自原版的[b]可见性[/b]系统运作[i][color=lightgrey]（每一项都可在设置中调整）[/color][/i]：
+[/list][/spoiler][/spoiler]
+[spoiler=防剧透]为避免剧透，地图图层基于一套源自原版的[b]可见性[/b]系统运作[i][color=lightgrey]（每一项都可在设置中调整）[/color][/i]：
 [list]
 [*][b]隐藏星系[/b]（没有由恒星、星云或黑洞生成的超空间锚点）不会显示，除非其中有可见的有人居住的市场，或持有激活的星门。
 [*]标记为[b]可发现[/b]的实体（在玩家舰队探测范围之外时不显示在星系地图上）不会显示。由于原版在宣称计算中会用到它们，它们也会列在[color=maroon][b]宣称[/b][/color]提示框中，但会被隐去。
 [*]标记为[b]隐藏[/b]的市场不会显示，除非其他非同盟势力在该星系持有可见的殖民地，或玩家已到访该星系。由于原版在宣称计算中会用到它们，它们也会列在[color=maroon][b]宣称[/b][/color]提示框中，但会被隐去。
 [*][b]荒蛮市场[/b]不会显示，除非它们一开始就是荒蛮的，或玩家已对其完成全面调查[i][color=lightgrey]（可在设置中调整）[/color][/i]。若其他非同盟势力在该星系持有可见的殖民地，这些市场也会显示。
 [*]带有[b]废弃空间站[/b]条件的无主市场遵循[b]隐藏市场[/b]的可见性规则。
-[/list]
-[/spoiler]
+[/list][/spoiler]
 
 本 Mod 附带一整套 [b]LunaLib[/b] 设置，可调整外观、音量、按键以及底层机制。
 
-[spoiler=控制台指令]
-若安装了 [b][url=https://www.fossic.org/thread-14602-1-1.html]Console Commands[/url][/b]，可以使用以下指令。
+[spoiler=控制台指令]若安装了 [b][url=https://www.fossic.org/thread-14602-1-1.html]Console Commands[/url][/b]，可以使用以下指令。
 
 由 [color=maroon][b]KMU[/b][/color] 提供：
 [list]
@@ -247,8 +240,7 @@ Release checklist, run by hand on every KMU release:
 [*][b]kmlib_spawn <gate|jump_point> [orbit_focus_id] [speed] [jitter=<frac>][/b]：在舰队位置生成星门或跳跃点。[b][orbit_focus_id][/b] 默认为星系中心。[b][speed][/b] 默认由半径推算。[b][jitter][/b] 默认为 0.25。
 [*][b]kmlib_transfer_market [entity-id] [faction-id][/b]：将现有殖民地移交给另一所有者。[b][entity-id][/b] 默认为最近的可殖民市场。[b][faction-id][/b] 默认为你的势力。
 [/list][/spoiler]
-[spoiler=兼容性]
-[color=maroon][b]KMU[/b][/color] 将地图图层作为仅在地图上显示的地形注入星图控件。为了在星景模式下也能显示，星景地形变体被标记为滑流。自定义地形是唯一必须以 Java 类引用的形式序列化进存档的内容，这也是禁用本 Mod 前需要干净卸载的原因。
+[spoiler=兼容性][color=maroon][b]KMU[/b][/color] 将地图图层作为仅在地图上显示的地形注入星图控件。为了在星景模式下也能显示，星景地形变体被标记为滑流。自定义地形是唯一必须以 Java 类引用的形式序列化进存档的内容，这也是禁用本 Mod 前需要干净卸载的原因。
 
 游戏会复用星图控件，许多 Mod 也是如此。这些自定义放置的星图控件会免费获得地图图层，但在没有兼容补丁的情况下，它们没有鼠标悬停检测，也没有控件（图层选择沿用星图界面这一主实例的选择）。
 
@@ -257,8 +249,7 @@ Release checklist, run by hand on every KMU release:
 [*][b][url=https://www.fossic.org/thread-21060-1-1.html]Fast Rendering[/url][/b] [b]v0.9.1rc1[/b] 及更高版本，它会自行应答星图的光标读取。在更早的版本上，星图不再跟随光标，并会有通知说明应更新到哪个版本。
 [*][b][url=https://www.fossic.org/thread-3680-1-1.html]Nexerelin[/url][/b]，以支持其[b]联盟[/b]机制。
 [*][b][url=https://www.fossic.org/thread-11661-1-1.html]Random Assortment of Things[/url][/b] 及其[b]小地图替换[/b]。小地图通过屏幕角落的一个提示框绘制星图控件。本 Mod 附带默认开启的 RAT 兼容模式，将鼠标检测限定在该星图控件范围内。图层选择沿用星图界面。此外，当星图控件停靠到屏幕外时（停靠是 RAT 在玩家停靠市场或打开任何界面时隐藏星图控件的方式），本 Mod 会将其设为不可见，从而跳过相关渲染，在不显示星图的菜单中应能带来少许性能提升（在超空间中更明显）。
-[/list]
-[/spoiler]
+[/list][/spoiler]
 
 [hr]
 在试用本预发布版的过程中，如果你认为以下情况与本 Mod 有关，请反馈：
@@ -280,8 +271,7 @@ Release checklist, run by hand on every KMU release:
 也欢迎分享建议、想法和需求，它们会影响本 Mod 的方向与优先级。我已经构思并规划了接下来想实现的一些信息图层及其大致设计，但那只代表我自己的想法，我也想听听你的。
 
 [hr]
-[spoiler=AI 使用声明]
-本 Mod 的制作使用了大语言模型（LLM），用于调研、头脑风暴、代码生成、代码审查、代码重构和翻译。每一步都在人工监督和实机测试下完成，并尽 Mod 项目所能进行了人工代码审查。
+[spoiler=AI 使用声明]本 Mod 的制作使用了大语言模型（LLM），用于调研、头脑风暴、代码生成、代码审查、代码重构和翻译。每一步都在人工监督和实机测试下完成，并尽 Mod 项目所能进行了人工代码审查。
 
 简体中文翻译按以下方法完成。原版词汇对照中文汉化逐一匹配，其他 Mod 的词汇对照其各自的中文版匹配。论坛相关词汇也一并收集，全部汇总为一份翻译参考，并为每个术语注明选词理由。KMLib 与 KMU 自身的词汇依据每个术语背后的含义翻译。收集的全部词汇均经 Mod 作者对照选词理由审阅，译文分多轮应用，以求前后一致。
 [/spoiler]
