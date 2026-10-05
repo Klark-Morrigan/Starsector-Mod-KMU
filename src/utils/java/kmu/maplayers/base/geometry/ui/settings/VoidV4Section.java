@@ -7,6 +7,7 @@ import kmu.desktop.ui.swing.ToggleTree;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JPanel;
@@ -44,6 +45,20 @@ final class VoidV4Section extends PanelSection {
     // separate to see.
     private static final String THIN_LAKE_BRIDGES = "shouldThinLakeBridgesV4";
 
+    // The pieces those lines closed: the water inside the coast, the margin it gave up, and
+    // the tier's names, which ship with its first fill so the fill is judged with them.
+    private static final String LAKE_WATER = "showLakeWaterV4";
+
+    private static final String LAKE_MARGIN = "showLakeMarginV4";
+
+    private static final String LAKE_NAMES = "showLakeNamesV4";
+
+    // Every layer of the lake tier, in the order its branch lists them: what both the branch's
+    // roll-up and the root's cover. Named once, so a key added to the branch cannot be left out
+    // of the root, where it would silently go unswitched.
+    private static final List<String> LAKE_LAYERS =
+        List.of(LAKE_COAST, LAKE_BRIDGES, LAKE_WATER, LAKE_MARGIN, LAKE_NAMES);
+
     // Not a layer, so not in the roll-up above it: it changes how the pieces are drawn rather
     // than whether they are, and a roll-up that turned it on with the layers would claim to have
     // switched on something there is no separate thing to see.
@@ -73,6 +88,19 @@ final class VoidV4Section extends PanelSection {
             SettingRows.buildSectionBody(this::addRows));
     }
 
+    // What the root's roll-up covers: every layer of the tree, in the tree's order. Not the
+    // rules, which change how a layer is laid rather than whether it is shown.
+    private static String[] listEveryLayerKey() {
+
+        var keys = new ArrayList<String>();
+
+        keys.add(VOID_PIECES);
+        keys.addAll(LAKE_LAYERS);
+        keys.add(LANDABLE_FRONTAGE);
+
+        return keys.toArray(String[]::new);
+    }
+
     // v4's layers, in the same shape v3's are: a tree with a roll-up at its root, the pieces
     // first, then a branch per tier in the order the tiers go down, and the frontage last,
     // after everything it is a diagnostic of.
@@ -89,14 +117,14 @@ final class VoidV4Section extends PanelSection {
         controls.add(ToggleTree.buildToggleTree(
             refreshes::refreshVoidV4,
             ToggleTree.Row.ofRollUp(
-                TreeDepths.ROOT, "allVoidV4Layers", "Every v4 layer",
-                VOID_PIECES, LAKE_COAST, LAKE_BRIDGES, LANDABLE_FRONTAGE),
+                TreeDepths.ROOT, "allVoidV4Layers", "Every v4 layer", listEveryLayerKey()),
             ToggleTree.Row.ofSwitch(TreeDepths.BRANCH, new ToggleTree.Switch(
                 VOID_PIECES,
                 "Pieces",
                 true,
                 on -> settings.showVoidPiecesV4 = on)),
-            ToggleTree.Row.ofRollUp(TreeDepths.BRANCH, LAKES_BRANCH, "Lakes", LAKE_COAST, LAKE_BRIDGES),
+            ToggleTree.Row.ofRollUp(
+                TreeDepths.BRANCH, LAKES_BRANCH, "Lakes", LAKE_LAYERS.toArray(String[]::new)),
             ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
                 LAKE_COAST,
                 "Coast",
@@ -112,6 +140,18 @@ final class VoidV4Section extends PanelSection {
                 "Thin shared-anchor bridges",
                 true,
                 on -> settings.shouldThinLakeBridgesV4 = on)),
+
+            // The fills after the lines, in the order of 1.6's substeps, and paired as v3's
+            // fill and names are: the two halves of one lake share a line, and the names sit
+            // under them.
+            ToggleTree.Row.ofSwitchPair(
+                TreeDepths.LEAF,
+                new ToggleTree.Switch(
+                    LAKE_WATER, "Water", false, on -> settings.showLakeWaterV4 = on),
+                new ToggleTree.Switch(
+                    LAKE_MARGIN, "Margin", false, on -> settings.showLakeMarginV4 = on)),
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
+                LAKE_NAMES, "Names", false, on -> settings.showLakeNamesV4 = on)),
             ToggleTree.Row.ofSwitch(TreeDepths.BRANCH, new ToggleTree.Switch(
                 LANDABLE_FRONTAGE,
                 "Landable frontage",
@@ -154,6 +194,20 @@ final class VoidV4Section extends PanelSection {
             "Lake bridges",
             ViewerSettings.LAKE_BRIDGES_V4_DEFAULT,
             colour -> settings.lakeBridgesV4Colour = colour,
+            refreshes::repaintMap));
+
+        controls.add(ColourRows.buildColour(
+            "lakeWaterV4Colour",
+            "Lake water",
+            ViewerSettings.LAKE_WATER_V4_DEFAULT,
+            colour -> settings.lakeWaterV4Colour = colour,
+            refreshes::repaintMap));
+
+        controls.add(ColourRows.buildColour(
+            "lakeMarginV4Colour",
+            "Lake margin",
+            ViewerSettings.LAKE_MARGIN_V4_DEFAULT,
+            colour -> settings.lakeMarginV4Colour = colour,
             refreshes::repaintMap));
 
         controls.add(ColourRows.buildColour(

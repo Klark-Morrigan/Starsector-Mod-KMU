@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.v3;
+package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.Points;
 
@@ -7,28 +7,29 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * What a section of void is called, in the namespace the cells are keyed by.
+ * What a piece of void is called, in the namespace the cells are keyed by.
  *
- * <p>A section has to be keyed exactly as a cell is, because that is what makes it one: the
+ * <p>A piece has to be keyed exactly as a cell is, because that is what makes it one: the
  * cluster trace keys its members and its coincident neighbours by cell ID, and an edge names
- * what lies across it by the same id. So a section's name is a {@code String} in the system-id
- * namespace, held apart from a real star's only by a prefix nothing else uses.
+ * what lies across it by the same id. So a piece's name is a {@code String} in the system-id
+ * namespace, held apart from a real star's only by a prefix nothing else uses. Which prefix is
+ * the caller's to say - it names the kind of piece, and the kinds are each construction's own.
  *
- * <p>Named from the CELLS AROUND IT rather than from anything about the run that produced it.
- * The boundary walk hands the holes back in whatever order it met them, and that order moves
- * with a knob, a fixture edit, or a tie in a sort - so a name taken from it would rename half
- * the map for a reason nobody could see. The cells around a piece of void are what that piece
- * of void IS: a name anchored to them is untouched by a politics refresh, and changes exactly
- * when the cells bounding it change, which is when the region genuinely differs.
+ * <p>Named from the CELLS AROUND IT rather than from anything about the walk that produced it.
+ * A walk hands the pieces back in whatever order it met them, and that order moves with a knob,
+ * a fixture edit, or a tie in a sort - so a name taken from it would rename half the map for a
+ * reason nobody could see. The cells around a piece of void are what that piece of void IS: a
+ * name anchored to them is untouched by a politics refresh, and changes exactly when the cells
+ * bounding it change, which is when the region genuinely differs.
  *
  * <p><b>The cells alone are not quite enough.</b> Two distinct pieces of void can run on the
  * same pair of cells - one on each side of the line between them - and across the two fixtures
- * that happens 5 and 7 times, always on a two-cell ring. So the name carries a side as well:
- * which side of the line joining the two CLOSEST of its cells the piece lies on. Closest,
+ * v3's sections did so 5 and 7 times, always on a two-cell ring. So the name carries a side as
+ * well: which side of the line joining the two CLOSEST of its cells the piece lies on. Closest,
  * because that pair is the narrowest crossing among them and so the place a pocket is pinched
- * or cut, which is the one line that has void on both sides of it. That settles every collision
- * on both fixtures; the side of a wall settles only the ones that have a wall in common, which
- * is 3 of 5 and 5 of 7.
+ * or cut, which is the one line that has void on both sides of it. That settled every one of
+ * those collisions; the side of a wall settled only the ones that had a wall in common, 3 of 5
+ * and 5 of 7.
  *
  * <p>The pair is put in system-id order before the side is read, so which side is which is a
  * property of the two cells and not of what order the sector happened to load them in.
@@ -37,7 +38,7 @@ import java.util.Locale;
  *
  * <p>A star's own ID is generated rather than written by hand - vanilla procgen makes it
  * {@code "system_" + genUID()} - so the IDs this is built out of are word characters and
- * nothing else. A section's key is held to the same shape: lowercase, digits and underscore,
+ * nothing else. A piece's key is held to the same shape: lowercase, digits and underscore,
  * with the parts joined by a hyphen. Nothing parses these keys, so the point is not that they
  * can be taken apart again; it is that a key travels into maps, logs, reports and settings, and
  * one carrying a space or a punctuation mark is a key that eventually meets something that
@@ -49,26 +50,15 @@ import java.util.Locale;
  *
  * <p>That reduction can in principle fold two distinct IDs together - two systems whose IDs
  * differ only in punctuation - which would name two pieces of void alike. It is not guarded
- * against here because it cannot be fixed here: the report counts the distinct keys against the
- * sections, and that count is where such a fold would show.
+ * against here because it cannot be fixed here: counting the distinct keys against the pieces
+ * is where such a fold would show.
  *
  * <p><b>The fixture's IDs are not what production will hand this.</b> Its first column is the
  * system's NAME, spaces and all, because a failure reading "Askonia" beats one reading an
  * opaque handle - so the keys this produces over a fixture are longer and more mangled than the
  * ones it will produce over a sector. That is the fixture's doing, not the scheme's.
  */
-public final class VoidSectionIds {
-
-    // Marks the key as a region rather than a star, and says which kind of region. A section is
-    // keyed into the same map as the cells, so the one thing its name must never do is collide
-    // with a system's - and it is shaped like one of vanilla's own generated IDs so that it
-    // reads as a key rather than as a sentence.
-    private static final String PUDDLE_PREFIX = "void_puddle";
-    private static final String LAKE_PREFIX = "void_lake";
-    private static final String LAKE_POCKET_PREFIX = "void_lakepocket";
-    private static final String COASTAL_PREFIX = "void_coast";
-    private static final String INLET_PREFIX = "void_inlet";
-    private static final String INTERCONTINENTAL_PREFIX = "void_sea";
+public final class VoidKeys {
 
     // Doubled, so the joiner stands out from the underscores INSIDE a part. A single hyphen
     // would already be unambiguous - one cannot survive the reduction below - but a key is read
@@ -80,9 +70,9 @@ public final class VoidSectionIds {
 
     private static final String RIGHT = "r";
 
-    // What stands in for the side when a section runs on a single sampled cell, which leaves
-    // no pair to take a side of. Marked rather than left off, so a name that could not be told
-    // apart from another's reads as such instead of looking settled.
+    // What stands in for the side when a piece runs on a single cell, which leaves no pair to
+    // take a side of. Marked rather than left off, so a name that could not be told apart from
+    // another's reads as such instead of looking settled.
     private static final String NO_PAIR = "x";
 
     // Two cells is what it takes to have a line between them.
@@ -94,25 +84,31 @@ public final class VoidSectionIds {
 
     private static final String REPLACEMENT = "_";
 
-    private VoidSectionIds() {
+    private VoidKeys() {
     }
 
     /**
-     * Names one section.
+     * Names one piece of void.
      *
-     * @param section        the section
+     * @param prefix         what marks the key as this kind of piece rather than a star: in key
+     *                       characters already, since it is a constant of the caller's
+     * @param cells          the cells the piece runs on, in any order
+     * @param outline        its closed boundary, whose middle says which side of its narrowest
+     *                       crossing it lies on
      * @param sites          the sites, to find which two of its cells sit closest together
      * @param systemIdBySite each site's system ID, index-aligned with {@code sites}
      * @return its key, in the system-id namespace
      */
-    static String nameSection(
-            VoidSection section,
+    public static String buildKey(
+            String prefix,
+            List<Integer> cells,
+            List<double[]> outline,
             List<double[]> sites,
             List<String> systemIdBySite) {
 
-        var parts = new ArrayList<String>(section.cells().size() + 1);
+        var parts = new ArrayList<String>(cells.size() + 1);
 
-        for (var cell : section.cells()) {
+        for (var cell : cells) {
             parts.add(reduceToKeyCharacters(systemIdBySite.get(cell)));
         }
 
@@ -120,21 +116,9 @@ public final class VoidSectionIds {
         // order they read in - two keys listing the same cells cannot come out ordered
         // differently because their original IDs sorted another way.
         parts.sort(String::compareTo);
-        parts.add(readSideOfClosestPair(section, sites, systemIdBySite));
+        parts.add(readSideOfClosestPair(cells, outline, sites, systemIdBySite));
 
-        return readPrefix(section.kind()) + PART_JOINER + String.join(PART_JOINER, parts);
-    }
-
-    private static String readPrefix(VoidSection.SectionKind kind) {
-
-        return switch (kind) {
-            case PUDDLE -> PUDDLE_PREFIX;
-            case LAKE -> LAKE_PREFIX;
-            case LAKE_POCKET -> LAKE_POCKET_PREFIX;
-            case COASTAL -> COASTAL_PREFIX;
-            case INLET -> INLET_PREFIX;
-            case INTERCONTINENTAL -> INTERCONTINENTAL_PREFIX;
-        };
+        return prefix + PART_JOINER + String.join(PART_JOINER, parts);
     }
 
     /**
@@ -146,26 +130,27 @@ public final class VoidSectionIds {
      * @param part the ID to reduce
      * @return it in key characters only
      */
-    static String reduceToKeyCharacters(String part) {
+    public static String reduceToKeyCharacters(String part) {
         return part.toLowerCase(Locale.ROOT).replaceAll(KEY_CHARACTERS, REPLACEMENT);
     }
 
-    // Which side of its own narrowest crossing the section lies on, read at its middle. The
+    // Which side of its own narrowest crossing the piece lies on, read at its middle. The
     // middle rather than any one point of the outline: the outline runs to both ends of that
     // crossing, so a point taken off it can sit on the line itself.
     private static String readSideOfClosestPair(
-            VoidSection section,
+            List<Integer> cells,
+            List<double[]> outline,
             List<double[]> sites,
             List<String> systemIdBySite) {
 
-        if (section.cells().size() < PAIR) {
+        if (cells.size() < PAIR) {
             return NO_PAIR;
         }
-        var pair = findClosestPair(section.cells(), sites, systemIdBySite);
+        var pair = findClosestPair(cells, sites, systemIdBySite);
 
         var from = sites.get(pair[0]);
         var to = sites.get(pair[1]);
-        var middle = Points.computeMean(section.outline());
+        var middle = Points.computeMean(outline);
 
         var across = (to[0] - from[0]) * (middle[1] - from[1])
             - (to[1] - from[1]) * (middle[0] - from[0]);
@@ -173,7 +158,7 @@ public final class VoidSectionIds {
         return across >= 0 ? LEFT : RIGHT;
     }
 
-    // The two of a section's cells whose sites sit closest together, in system-id order.
+    // The two of a piece's cells whose sites sit closest together, in system-id order.
     //
     // Closest sites IS the narrowest crossing: every cell reaches the same distance, so the
     // void between two of them is their separation less two reaches, and the pair that

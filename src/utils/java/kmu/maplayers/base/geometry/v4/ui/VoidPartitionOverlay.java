@@ -5,12 +5,16 @@ import kmlib.math.geometry.RingRegion;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.EdgeInset;
+import kmu.maplayers.base.geometry.EdgeInsetRule;
+import kmu.maplayers.base.geometry.NamedRegion;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.v4.CarriedLines;
+import kmu.maplayers.base.geometry.v4.Face;
 import kmu.maplayers.base.geometry.v4.LabelledWall;
+import kmu.maplayers.base.geometry.v4.LakePieces;
 import kmu.maplayers.base.geometry.v4.LakeTier;
 import kmu.maplayers.base.geometry.v4.LandableFrontage;
 import kmu.maplayers.base.geometry.v4.VoidPartition;
@@ -19,11 +23,12 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
- * What v4 has to show: the pieces of void, the lines each tier laid to divide them, and the
- * stretches of cell border facing them.
+ * What v4 has to show: the pieces of void, the lines each tier laid to divide them, the water
+ * each tier's lines closed, and the stretches of cell border facing them.
  *
  * <p>What is drawn is the walk's own reading - the faces the frontier and the laid lines close
  * into. A tier's lines go into that walk rather than over it: switching the lake coast on does
@@ -32,6 +37,9 @@ import java.util.function.Supplier;
  * before it with lines in, rather than a second reading laid on top. The lines themselves
  * arrive found - the coast traced, the bridges searched for - which is the point: the smoothing
  * and the search are the other construction's, and v4 only decides where the lines go.
+ *
+ * <p>A tier's water is the same pieces again, told apart by what closed them: no second walk
+ * and no second shape, only a second colour over the pieces the tier says are its own.
  *
  * <p>The frontage is drawn beside the pieces rather than under them, because it is a
  * diagnostic of them: it is on screen so that where a bridge may land can be looked at beside
@@ -47,6 +55,9 @@ public final class VoidPartitionOverlay {
     private static final CarriedLines.LaidLines NOTHING_LAID =
         new CarriedLines.LaidLines(List.of(), List.of());
 
+    // What the lake layers show while all of them are off.
+    private static final LakePieces NO_LAKE_PIECES = new LakePieces(List.of(), List.of(), List.of());
+
     // What the frontage layer shows while it is off.
     private static final LandableFrontage.Frontage NO_FRONTAGE =
         new LandableFrontage.Frontage(List.of(), List.of());
@@ -56,6 +67,12 @@ public final class VoidPartitionOverlay {
     // What the last refresh read, kept so a frame paints the void the rest of the frame was
     // drawn from rather than a reading taken while painting.
     private List<RingRegion> regions = List.of();
+
+    private List<RingRegion> lakeWater = List.of();
+
+    private List<RingRegion> lakeMargin = List.of();
+
+    private List<NamedRegion> lakeNames = List.of();
 
     private List<List<double[]>> landable = List.of();
 
@@ -75,11 +92,13 @@ public final class VoidPartitionOverlay {
      * @param cellEdges   each cell as its adjacency-tagged edges, which is where the line
      *                    between cell and void already stands; handed in rather than built
      *                    again, since the rebuild that calls this has just built them
-     * @param fixture     the sector to read, for the sites the pieces are placed against
-     * @param lakeReaches the lakes' coast reaches, which are the lines the lake coast lays,
-     *                    each running with its lake's water on its left; read off the trace
-     *                    the rebuild that calls this made, so the two constructions are drawn
-     *                    from one coast
+     * @param fixture     the sector to read, for the sites the pieces are placed against and
+     *                    the system IDs a piece is named from
+     * @param lakes       the lakes as the trace hands them over: the coast reaches, which are
+     *                    the lines the lake coast lays, each running with its lake's water on
+     *                    its left, and the cells round each lake; read off the trace the
+     *                    rebuild that calls this made, so the two constructions are drawn from
+     *                    one coast
      * @param lakeBridges the bridges across the lakes, asked for only while their switch is
      *                    on: the search behind them runs on the first ask, and with the
      *                    other construction's own bridges off nothing else asks
@@ -87,7 +106,7 @@ public final class VoidPartitionOverlay {
     public void refresh(
             Map<?, List<CellEdge>> cellEdges,
             SectorFixture fixture,
-            List<CellGap> lakeReaches,
+            LakeTier.TracedLakes lakes,
             Supplier<List<CellGap>> lakeBridges) {
 
         var sites = fixture.getSites();
@@ -95,7 +114,7 @@ public final class VoidPartitionOverlay {
         // The shore the tiers' lines end on, read once for both of them.
         var frontier = VoidPartition.collectFrontier(cellEdges);
         var coast = settings.isLakeCoastV4Shown()
-            ? LakeTier.layCoastWalls(lakeReaches, frontier, sites, settings.parameters)
+            ? LakeTier.layCoastWalls(lakes.reaches(), frontier, sites, settings.parameters)
             : NOTHING_LAID;
         var bridges = settings.isLakeBridgesV4Shown()
             ? LakeTier.layBridgeWalls(lakeBridges.get(), frontier, sites, settings.parameters)
@@ -104,21 +123,25 @@ public final class VoidPartitionOverlay {
         lakeCoastLines = coast.lines();
         lakeBridgeLines = bridges.lines();
 
-        // The walk is what the pieces and the frontage are read off, and nothing else needs
-        // it - the laid lines are drawn from the tier, not from the walk. So with neither of
-        // those on it is not paid for, even with a tier switched on.
-        if (!settings.isVoidPiecesV4Shown() && !settings.isLandableFrontageV4Shown()) {
+        // The walk is what the pieces, the tiers' water and the frontage are read off, and
+        // nothing else needs it - the laid lines are drawn from the tier, not from the walk.
+        // So with none of those on it is not paid for, even with a tier switched on.
+        if (!settings.shouldWalkVoidV4()) {
             clearLayers();
             return;
         }
 
         // A tier switched off lays nothing, so the switch takes its lines out of the partition
         // rather than leaving them dividing pieces nobody can see.
-        readLayers(
-            VoidPartition.readVoidPartition(
-                cellEdges, sites, settings.parameters, joinWalls(coast, bridges)),
-            coast.walls(),
-            frontier);
+        var partition = VoidPartition.readVoidPartition(
+            cellEdges, sites, settings.parameters, joinWalls(coast, bridges));
+
+        regions = settings.isVoidPiecesV4Shown()
+            ? collectRegions(partition, settings)
+            : List.of();
+
+        readLakeLayers(partition.collectPieces(), coast.walls(), lakes.rings(), fixture);
+        readFrontage(partition, coast.walls(), frontier);
     }
 
     // Every tier's walls as one list for the walk, which divides by all of them at once.
@@ -135,21 +158,42 @@ public final class VoidPartitionOverlay {
     private void clearLayers() {
 
         regions = List.of();
+        lakeWater = List.of();
+        lakeMargin = List.of();
+        lakeNames = List.of();
         landable = List.of();
         landablePoints = List.of();
     }
 
-    // What the window shows of a partition, each layer read only while it is drawn: the
-    // pieces are inset and smoothed, which is the dearest pass here, and a window showing only
-    // the frontage has no use for it.
-    private void readLayers(
+    // The lake tier's own pieces, filled and named, each layer read only while it is shown.
+    //
+    // Drawn true: every piece as the walk closed it, with no channel. Here the fill is judged
+    // for whether it fills each piece the tier closed exactly once, which a channel would
+    // hide - and each piece meets the next along the line that divides them.
+    private void readLakeLayers(
+            List<Face> pieces,
+            List<LabelledWall> coastWalls,
+            List<Set<Integer>> lakeRings,
+            SectorFixture fixture) {
+
+        var lake = settings.isLakeWaterV4Shown()
+                || settings.isLakeMarginV4Shown()
+                || settings.isLakeNamesV4Shown()
+            ? LakePieces.collectLakePieces(pieces, coastWalls, lakeRings, fixture)
+            : NO_LAKE_PIECES;
+
+        lakeWater = settings.isLakeWaterV4Shown() ? collectTrueRegions(lake.water()) : List.of();
+        lakeMargin = settings.isLakeMarginV4Shown()
+            ? collectTrueRegions(lake.margin())
+            : List.of();
+        lakeNames = settings.isLakeNamesV4Shown() ? lake.names() : List.of();
+    }
+
+    // What the window shows of the frontage: read only while it is drawn.
+    private void readFrontage(
             VoidPartition partition,
             List<LabelledWall> coastWalls,
             List<LabelledWall> frontier) {
-
-        regions = settings.isVoidPiecesV4Shown()
-            ? collectRegions(partition, settings)
-            : List.of();
 
         var frontage = settings.isLandableFrontageV4Shown()
             ? collectLandableFrontage(partition, coastWalls, frontier)
@@ -176,6 +220,40 @@ public final class VoidPartitionOverlay {
                 settings.voidPiecesV4Colour,
                 settings.voidFillOpacity,
                 settings.voidPiecesV4Colour));
+    }
+
+    /**
+     * Fills the lake tier's water and its margin, each in its own colour.
+     *
+     * @param g2 where to draw, in world space
+     */
+    public void paintLakeFills(Graphics2D g2) {
+
+        if (settings.isLakeWaterV4Shown()) {
+            MapPainting.paintRegionFills(
+                g2,
+                lakeWater,
+                settings.resolveWaterLook(settings.lakeWaterV4Colour, settings.lakeWaterV4Colour));
+        }
+        if (settings.isLakeMarginV4Shown()) {
+            MapPainting.paintRegionFills(
+                g2,
+                lakeMargin,
+                settings.resolveWaterLook(
+                    settings.lakeMarginV4Colour, settings.lakeMarginV4Colour));
+        }
+    }
+
+    /**
+     * The lake tier's pieces with their names, for the window to write on them.
+     *
+     * <p>Handed up rather than written here, because names are written in screen space over the
+     * finished map, by the window that owns the transform.
+     *
+     * @return one named region per piece the tier closed; empty while the names are off
+     */
+    public List<NamedRegion> collectLakeNames() {
+        return settings.isLakeNamesV4Shown() ? lakeNames : List.of();
     }
 
     /**
@@ -228,6 +306,18 @@ public final class VoidPartitionOverlay {
         return PieceRegions.collectDrawableRegions(
             partition.collectPieces(),
             new EdgeInset(settings.voidInsetRule, settings.parameters.borderInset()),
+            settings.parameters.miterSpikeLimit(),
+            settings.resolveBorderSmoothing(),
+            settings.parameters.measureBoundSagitta());
+    }
+
+    // Pieces drawn as the walk closed them: the same sequence under NOWHERE, which hands each
+    // piece back as itself, so drawing a tier's water inset later is a change of rule here.
+    private List<RingRegion> collectTrueRegions(List<Face> pieces) {
+
+        return PieceRegions.collectDrawableRegions(
+            pieces,
+            new EdgeInset(EdgeInsetRule.NOWHERE, settings.parameters.borderInset()),
             settings.parameters.miterSpikeLimit(),
             settings.resolveBorderSmoothing(),
             settings.parameters.measureBoundSagitta());

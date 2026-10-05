@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry.ui;
 import kmlib.math.geometry.Points;
 
 import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.v3.Coastlines;
 import kmu.maplayers.base.geometry.v4.LakeTier;
 
 import org.junit.jupiter.api.Nested;
@@ -26,10 +27,12 @@ import static org.assertj.core.api.Assertions.withinPercentage;
  * <p>Here rather than beside either construction, because it reads both and the layering keeps
  * each of them from reading the other - in tests as in the code.
  *
- * <p><b>Three things are pinned.</b> Which steps of a coast cross as reaches, since the channel
- * that decides it is the one knob a caller can get wrong without anything failing; which way
- * each reach runs, since that is what says which side the coast captured; and what the reaches
- * do once laid, since a line that divides water may not take any of it away.
+ * <p><b>Four things are pinned.</b> That each lake crosses with its own ring of cells, since
+ * that is all that tells a lake whose coast lays nothing from a puddle; which steps of a coast
+ * cross as reaches, since the channel that decides it is the one knob a caller can get wrong
+ * without anything failing; which way each reach runs, since that is what says which side the
+ * coast captured; and what the reaches do once laid, since a line that divides water may not
+ * take any of it away.
  */
 class LakeReachesIntegrationTests {
 
@@ -40,17 +43,35 @@ class LakeReachesIntegrationTests {
     // walls, so the channel on its walls is zero.
     private static final double NO_CHANNEL = 0;
 
-    // How many slivers each reach can close off below the map's resolution: one where each end
-    // meets the shore, which is where a reach runs close enough to it to shut in a face thinner
-    // than the walk keeps.
-    private static final int SLIVERS_PER_REACH = 2;
-
-    // How far, in percent, the open sea may move when the lake coasts go in. The lakes are
-    // inside the continents, so the sea is not touched at all, and this is only rounding.
-    private static final double AREA_SHARE = 1e-9;
-
     static Stream<String> provideSectorNames() {
         return SectorFixture.listSectorNames().stream();
+    }
+
+    @Nested
+    class CollectTracedLakes {
+
+        @ParameterizedTest
+        @MethodSource(SECTORS)
+        void eachLakeHandsOverItsOwnRingOfCells(String sector) {
+            // One ring per lake, in the trace's order, each the lake's own: what tells a lake
+            // whose coast lays nothing from a puddle on the v4 side.
+            var lakes = LakePartitions.layContinents(sector).traceCoasts().lakes();
+
+            assertThat(LakePartitions.readTracedLakes(sector).rings())
+                .containsExactlyElementsOf(
+                    lakes.stream().map(Coastlines.Lake::ringCells).toList());
+        }
+
+        @ParameterizedTest
+        @MethodSource(SECTORS)
+        void theReachesAreTheOnesTheCoastLays(String sector) {
+
+            var continents = LakePartitions.layContinents(sector);
+
+            assertThat(LakePartitions.readTracedLakes(sector).reaches())
+                .containsExactlyElementsOf(LakeReaches.collectLakeReaches(
+                    continents.traceCoasts(), KNOBS.borderInset()));
+        }
     }
 
     @Nested
@@ -62,7 +83,7 @@ class LakeReachesIntegrationTests {
             // The two things that make a step of a coast a reach rather than a fillet or a
             // handover: it leaves one cell and arrives on another, and it crosses void wide
             // enough to have two sides.
-            var reaches = LakePartitions.collectReaches(LakePartitions.layContinents(sector));
+            var reaches = LakePartitions.readTracedLakes(sector).reaches();
 
             assertThat(reaches)
                 .isNotEmpty()
@@ -85,7 +106,7 @@ class LakeReachesIntegrationTests {
             var continents = LakePartitions.layContinents(sector);
 
             assertThat(LakeReaches.collectLakeReaches(continents.traceCoasts(), NO_CHANNEL))
-                .hasSizeGreaterThan(LakePartitions.collectReaches(continents).size());
+                .hasSizeGreaterThan(LakePartitions.readTracedLakes(sector).reaches().size());
         }
 
         @ParameterizedTest
@@ -122,13 +143,11 @@ class LakeReachesIntegrationTests {
             // and after them is the same number - bar the faces the walk does not keep, which
             // are those under a sagitta squared. A reach can shut one in at each end, where it
             // meets the shore; a leak, a lake walked as a tree of no area, costs millions.
-            var reachCount =
-                LakePartitions.collectReaches(LakePartitions.layContinents(sector)).size();
-            var sagitta = KNOBS.measureBoundSagitta();
+            var reachCount = LakePartitions.readTracedLakes(sector).reaches().size();
 
             assertThat(measureVoid(readPartition(sector, NOTHING_LAID))
                     - measureVoid(LakePartitions.readCoastPartition(sector)))
-                .isBetween(0.0, SLIVERS_PER_REACH * reachCount * sagitta * sagitta);
+                .isBetween(0.0, LakePartitions.measureSliverAllowance(reachCount));
         }
 
         @ParameterizedTest
@@ -138,7 +157,7 @@ class LakeReachesIntegrationTests {
             assertThat(measureSea(LakePartitions.readCoastPartition(sector)))
                 .isCloseTo(
                     measureSea(readPartition(sector, NOTHING_LAID)),
-                    withinPercentage(AREA_SHARE));
+                    withinPercentage(LakePartitions.SEA_SHARE));
         }
     }
 }

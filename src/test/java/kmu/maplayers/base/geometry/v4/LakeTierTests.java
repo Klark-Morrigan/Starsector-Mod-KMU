@@ -9,16 +9,20 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Unit coverage for what the lake tier decides: which label each of its substeps lays under,
- * and which pieces its lines captured.
+ * which kind each piece its lines closed is, which of them are captured, and what they are
+ * called.
  *
- * <p>How a line becomes walls is {@link CarriedLinesTests}'s. The capture is pinned on the two
- * halves of a square a reach runs across, since which half is the bay is the whole of the
- * question, and a sign read the wrong way round passes every count while capturing the lake.
+ * <p>How a line becomes walls is {@link CarriedLinesTests}'s. The kind and the capture are
+ * pinned on the two halves of a square a reach runs across, since which half is the bay is the
+ * whole of the question, and a sign read the wrong way round passes every count while filling
+ * the bays as the lake.
  */
 class LakeTierTests {
 
@@ -29,6 +33,10 @@ class LakeTierTests {
 
     private static final CellGap LINE =
         new CellGap(0, 1, new double[] {0, 300}, new double[] {1000, 300}, 1000);
+
+    // No lake's ring of cells is any of the squares here, so a piece the lines do not touch
+    // is untouched.
+    private static final List<Set<Integer>> NO_LAKES = List.of();
 
     // No shore to move the ends onto; where they end is CarriedLinesTests' subject.
     private static final List<LabelledWall> NO_SHORE = List.of();
@@ -123,6 +131,139 @@ class LakeTierTests {
 
             assertThat(LakeTier.isCaptured(buildLowerHalf(2), List.of(EASTWARD_WALL)))
                 .isFalse();
+        }
+    }
+
+    @Nested
+    class ReadKind {
+
+        @Test
+        void theWaterInFrontOfAReachIsTheLake() {
+
+            assertThat(LakeTier.readKind(
+                    buildUpperHalf(LakeTier.THE_LAKE_COAST), List.of(EASTWARD_WALL), NO_LAKES))
+                .contains(LakeTier.Kind.LAKE);
+        }
+
+        @Test
+        void theBayBehindAReachIsTheMargin() {
+
+            assertThat(LakeTier.readKind(
+                    buildLowerHalf(LakeTier.THE_LAKE_COAST), List.of(EASTWARD_WALL), NO_LAKES))
+                .contains(LakeTier.Kind.MARGIN);
+        }
+
+        @Test
+        void aReachTurnedRoundSwapsTheTwo() {
+            // The side is read off the reach's direction, so a reach handed over the wrong way
+            // round fills the bay as the lake and the lake as the margin.
+            assertThat(List.of(
+                    LakeTier.readKind(
+                        buildUpperHalf(LakeTier.THE_LAKE_COAST), List.of(WESTWARD_WALL), NO_LAKES),
+                    LakeTier.readKind(
+                        buildLowerHalf(LakeTier.THE_LAKE_COAST), List.of(WESTWARD_WALL), NO_LAKES)))
+                .containsExactly(Optional.of(LakeTier.Kind.MARGIN), Optional.of(LakeTier.Kind.LAKE));
+        }
+
+        @Test
+        void eitherSideOfABridgeIsTheLake() {
+            // A bridge divides the lake's water, and neither half stops being the lake.
+            assertThat(List.of(
+                    buildLowerHalf(LakeTier.THE_LAKE_BRIDGES),
+                    buildUpperHalf(LakeTier.THE_LAKE_BRIDGES)))
+                .allSatisfy(piece -> assertThat(LakeTier.readKind(piece, List.of(), NO_LAKES))
+                    .contains(LakeTier.Kind.LAKE));
+        }
+
+        @Test
+        void anEdgeBehindAReachMakesTheMarginWhateverElseBoundsIt() {
+            // The lower half with a bridge along its bottom as well as the reach along its
+            // top: the bay is outside the coast, so no bridge can make it the lake.
+            var piece = Face.encloseFace(new LabelledRing(
+                LOWER_HALF,
+                new int[] {LakeTier.THE_LAKE_BRIDGES, 1, LakeTier.THE_LAKE_COAST, 3}));
+
+            assertThat(LakeTier.readKind(piece, List.of(EASTWARD_WALL), NO_LAKES))
+                .contains(LakeTier.Kind.MARGIN);
+        }
+
+        @Test
+        void aPieceTheTierNeverTouchedHasNoKind() {
+
+            assertThat(LakeTier.readKind(buildLowerHalf(2), List.of(EASTWARD_WALL), NO_LAKES))
+                .isEmpty();
+        }
+
+        @Test
+        void aPieceNoLineTouchesIsTheLakeWhenItsCellsAreALakesRing() {
+            // A lake whose coast is all fillets lays nothing, so its one piece is bounded by
+            // cells alone; the trace's ring of cells is what says it is a lake.
+            assertThat(LakeTier.readKind(
+                    buildLowerHalf(2), List.of(), List.of(Set.of(9), Set.of(0, 1, 2, 3))))
+                .contains(LakeTier.Kind.LAKE);
+        }
+
+        @Test
+        void aRingThatOnlyOverlapsThePiecesCellsIsAnotherHole() {
+            // Every cell must match: a puddle sharing cells with a lake is not that lake.
+            assertThat(LakeTier.readKind(
+                    buildLowerHalf(2), List.of(), List.of(Set.of(0, 1, 2))))
+                .isEmpty();
+        }
+
+        @Test
+        void aHoleAlongAReachCountsAsMuchAsTheOutline() {
+            // The upper half's ring turned into a hole of a piece round it, its edge along the
+            // reach now walked west - against the wall - as a hole is walked: the piece round
+            // it is on the bay's side.
+            var piece = Face.encloseFace(new LabelledRing(
+                    List.of(
+                        new double[] {-100, -100},
+                        new double[] {200, -100},
+                        new double[] {200, 200},
+                        new double[] {-100, 200}),
+                    new int[] {5, 5, 5, 5}))
+                .cutOut(new LabelledRing(
+                    List.of(UPPER_HALF.get(1), UPPER_HALF.get(0), UPPER_HALF.get(3), UPPER_HALF.get(2)),
+                    new int[] {LakeTier.THE_LAKE_COAST, 3, 2, 1}));
+
+            assertThat(LakeTier.readKind(piece, List.of(EASTWARD_WALL), NO_LAKES))
+                .contains(LakeTier.Kind.MARGIN);
+        }
+    }
+
+    @Nested
+    class NamePiece {
+
+        private static final List<String> SYSTEM_IDS = List.of("alpha", "beta", "gamma", "delta");
+
+        private static final List<double[]> FOUR_SITES = List.of(
+            new double[] {0, 0},
+            new double[] {1000, 0},
+            new double[] {1000, 1000},
+            new double[] {0, 1000});
+
+        @Test
+        void theLakesWaterIsNamedAsTheLake() {
+
+            assertThat(LakeTier.namePiece(
+                    buildUpperHalf(LakeTier.THE_LAKE_COAST),
+                    LakeTier.Kind.LAKE,
+                    FOUR_SITES,
+                    SYSTEM_IDS))
+                .startsWith("void_lake--");
+        }
+
+        @Test
+        void theMarginIsNamedApartFromTheLake() {
+            // The same cells either side of one reach: the prefix is what keeps the two apart
+            // where the side of the pair might not.
+            assertThat(LakeTier.namePiece(
+                    buildLowerHalf(LakeTier.THE_LAKE_COAST),
+                    LakeTier.Kind.MARGIN,
+                    FOUR_SITES,
+                    SYSTEM_IDS))
+                .startsWith("void_lakemargin--");
         }
     }
 
