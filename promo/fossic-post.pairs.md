@@ -79,7 +79,11 @@ The [source notes][source-notes] list KMU's value for every input; what each inp
   - Notes: the Mod索引备注 input, shown after the version in Fossic's mod index.
 - EN (back-translation): KMU `<version>` Simplified Chinese edition
   - ZH: KMU `<<version>>` 简体中文版
-  - Notes: the 显示名称 of the zip's Mod发布文件 row.
+  - Notes: the 显示名称 of KMU's Mod发布文件 row.
+- EN (back-translation): KMLib `<kmlib-version>` (KMU prerequisite)
+  - ZH: KMLib `<<kmlib-version>>`（KMU 前置）
+  - Notes: the 显示名称 of KMLib's Mod发布文件 row, which carries KMU's version, per the [source notes][source-notes].
+    Prerequisite in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): mod release, sector map, Political Map, Nexerelin, KMU
   - ZH: mod发布, 星图, 政治地图, 势力争霸, KMU
   - Notes: the 主题标签 input, five at most: the words a player would search for.
@@ -162,11 +166,13 @@ The English README's Languages section says the same to an English reader.
   - Notes: Fossic only: the download is a forum attachment, by the board's rules, per the [source notes][source-notes].
 - EN (back-translation): the download panel
   - ZH: none
-  - Notes: Fossic only, and no text in either post: the posting form shows the panel from the zip's
-    Mod发布文件 row.
-- EN (back-translation): `KMU-<version>-zh-hans.zip`, attached. For 0.98a-RC8.
-  - ZH: `[attach]111031[/attach]`。适用于 0.98a-RC8。
-  - Notes: Fossic only, as above; the tag shows as the zip's download link, per the [source notes][source-notes].
+  - Notes: Fossic only, and no text in either post: the posting form shows the panel from the zips'
+    Mod发布文件 rows.
+- EN (back-translation): KMU's zip is in the download panel above. For 0.98a-RC8.
+  - ZH: KMU 的压缩包见上方的下载面板。适用于 0.98a-RC8。
+  - Notes: Fossic only, as above; the panel carries the version, so the line needs no edit per release,
+    per the [source notes][source-notes].
+    Download panel and zip in [KMLib's forum terms][kmlib-forum].
     Attachment in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): Source and English edition (links the GitHub repository)
   - ZH: 源码与英文版
@@ -189,10 +195,12 @@ The English README's Languages section says the same to an English reader.
   - Notes: Fossic only, heading the list; the [source notes][source-notes] give why.
     The reference's [opening section][kmu-holds] names the core localisation in English only.
     The Chinese core localisation in [KMLib's forum terms][kmlib-forum]; Starsector in [game and mods][kmu-mods].
-- EN (back-translation): `KMLib-<kmlib-version>-zh-hans.zip`, attached. The KMLib version KMU needs is written in mod_info.json; the attachment here is always the one that goes with the current KMU.
-  - ZH: `[attach]111030[/attach]`。KMU 所需的 KMLib 版本写在 mod_info.json 中，本帖附件始终是与当前 KMU 配套的版本。
-  - Notes: Fossic only: KMLib has no Fossic thread, so its zip rides in this one, per the [source notes][source-notes].
+- EN (back-translation): KMLib (Klark Morrigan's Library): see the download panel above. The KMLib version KMU needs is written in mod_info.json; the KMLib in the download panel is always the one that goes with the current KMU.
+  - ZH: KMLib（Klark Morrigan 的程序库）：见上方的下载面板。KMU 所需的 KMLib 版本写在 mod_info.json 中，下载面板中的 KMLib 始终是与当前 KMU 配套的版本。
+  - Notes: Fossic only: KMLib has no Fossic thread, so its zip rides in this one as a second panel row,
+    per the [source notes][source-notes].
     The Fractal Softworks post reaches KMLib through TriOS and its download badge.
+    The name is KMLib's own Chinese mod list name.
 - EN (back-translation): Installation: unzip each mod into the starsector/mods folder, then enable them in the game launcher.
   - ZH: 安装：把每个 Mod 解压到 starsector/mods 文件夹，然后在游戏启动器中启用它们。
   - Notes: Fossic only, standing in for TriOS, per the [source notes][source-notes].

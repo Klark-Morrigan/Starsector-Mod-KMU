@@ -12,13 +12,15 @@ fossic-post.pairs.md pairs every line of this post with the Fractal Softworks po
 change it with this file. FossicPostPairingIntegrationTests holds the two together.
 
 Why the post differs from the English one, beyond the language:
-- The download is a forum attachment, by the board's rules: the zh-hans zip and, since KMLib has no thread
-  of its own, KMLib's zip too, under 前置. GitHub appears once, as a source line, because github.com is
-  unreliable from China and a player here cannot depend on it.
-- Every image and zip is a forum attachment, named in the post by its attachment ID. fossic-post.pairs.md gives
-  the file under promo/zh-hans/ behind each image's ID. A re-uploaded file gets a new ID, which replaces the old
-  one in both files. A zip's [attach] tag shows as its download link, file name included, in its own line,
-  where an untagged attachment would show only in the list under the post.
+- The download is a forum attachment, by the board's rules. Both zips are reached through the download panel
+  the form builds from its Mod发布文件 rows, so the body names no version or attachment and needs no edit
+  per release. KMLib has no thread of its own, so its zip rides here as a second row. That row carries KMU's
+  version, not KMLib's: every row is a release of this thread's mod, and the form holds its version to
+  KMU's mod_info.json. KMLib's own version goes in the row's 显示名称.
+  GitHub appears once, as a source line, because github.com is unreliable from China and a player here
+  cannot depend on it.
+- Every image is a forum attachment, named in the post by its attachment ID. fossic-post.pairs.md gives the file
+  under promo/zh-hans/ behind each ID. A re-uploaded file gets a new ID, which replaces the old one in both files.
 - No shields badges and no TriOS link: both resolve through GitHub, and the counters would count GitHub
   downloads while the attachment is the main download here. The manual install line, from
   nexus-post.bbcode, stands in for TriOS.
@@ -62,8 +64,9 @@ Posting form values (what each input takes is in the KMLib doc; * is required):
   Mod下载地址           empty
   网盘提取码/解压密码   empty
   Mod语言 *             中文
-  Mod发布文件           one row: KMU-<version>-zh-hans.zip, 游戏版本 0.98, Mod版本 as above,
-                        显示名称 KMU <version> 简体中文版. KMLib's zip gets no row
+  Mod发布文件           two rows, KMU's first, both 游戏版本 0.98 and Mod版本 as above:
+                        KMU-<version>-zh-hans.zip, 显示名称 KMU <version> 简体中文版;
+                        KMLib-<kmlib-version>-zh-hans.zip, 显示名称 KMLib <kmlib-version>（KMU 前置）
   Mod允许直链下载 *     是
   Mod索引隐藏           否
   Mod索引备注           需先安装中文汉化
@@ -87,9 +90,9 @@ Once, after the first post: put this thread's URL into forum-post.bbcode and nex
 of their <<the KMU thread on Fossic ...>> placeholders, so the English posts link here.
 
 Release checklist, run by hand on every KMU release:
-  1. Upload KMU-<version>-zh-hans.zip, put its ID in the 下载 line's [attach] tag, add its Mod发布文件 row,
-     and remove the previous version's row and file. Where KMLib moved, upload KMLib-<version>-zh-hans.zip
-     and put its ID in the 前置 line's tag the same way.
+  1. Upload KMU-<version>-zh-hans.zip, add its Mod发布文件 row above KMLib's, and remove the previous version's
+     row and file. Set KMLib's row to the new KMU version too. Where KMLib moved, upload its zip, point the row
+     at it with the new 显示名称, and remove the previous KMLib file.
   2. Set the form's Mod版本, Mod适用版本 and Mod更新时间.
   3. The editor has no preview: save a draft (保存草稿) and open it once.
      Check [hr] renders and the nested spoilers open.
@@ -115,7 +118,7 @@ Release checklist, run by hand on every KMU release:
 [hr]
 [size=4][b]下载[/b][/size]
 [list]
-[*][attach]111031[/attach]。适用于 0.98a-RC8。
+[*][b]KMU[/b] 的压缩包见上方的下载面板。适用于 0.98a-RC8。
 [*][url=https://github.com/Klark-Morrigan/Starsector-Mod-KMU]源码与英文版[/url]
 [*][url=https://fractalsoftworks.com/forum/index.php?topic=36029.0][b]Fractal Softworks 论坛[/b]上的 KMU 帖子[/url]
 [/list]
@@ -124,7 +127,7 @@ Release checklist, run by hand on every KMU release:
 [*][b][url=https://www.fossic.org/thread-19430-1-1.html]远行星号中文汉化[/url][/b]（覆盖到 starsector-core）
 [*][b][url=https://www.fossic.org/thread-1676-1-1.html]LazyLib[/url][/b]
 [*][b][url=https://www.fossic.org/thread-10267-1-1.html]LunaLib[/url][/b]
-[*][attach]111030[/attach]。KMU 所需的 KMLib 版本写在 mod_info.json 中，本帖附件始终是与当前 KMU 配套的版本。
+[*][b]KMLib[/b]（Klark Morrigan 的程序库）：见上方的下载面板。KMU 所需的 KMLib 版本写在 mod_info.json 中，下载面板中的 KMLib 始终是与当前 KMU 配套的版本。
 [/list]
 安装：把每个 Mod 解压到 [b]starsector/mods[/b] 文件夹，然后在游戏启动器中启用它们。
 
