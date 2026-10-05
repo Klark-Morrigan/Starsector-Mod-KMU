@@ -154,9 +154,6 @@ The English README's Languages section says the same to an English reader.
 - EN: Install with TriOS (badge, English zip)
   - ZH: none
   - Notes: Fractal Softworks only; the [source notes][source-notes] give why, and the manual install line below stands in for it.
-- EN: Install with TriOS (简体中文) (badge, Chinese zip)
-  - ZH: none
-  - Notes: Fractal Softworks only, as above.
 - EN: KMU downloads (badge, links the GitHub release)
   - ZH: none
   - Notes: Fractal Softworks only, as above.
