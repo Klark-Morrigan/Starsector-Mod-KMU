@@ -61,116 +61,141 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Start-up binding:** each piece of KMU's start-up wiring already ran behind its own boundary, which now also catches a link error - the form a moved or renamed binding arrives in. KMU's Nexerelin listener implements one of Nexerelin's own interfaces, so a release reshaping it ended every load.
 
+#### Public contracts changed (**breaking**)
+
+None of these reach a player: every LunaLib field ID and every value saved in sector memory keeps its spelling, so settings and saves carry over. They reach a mod building a map layer on KMU's framework.
+
+##### Tiers and packages
+
+The framework has three tiers: `kmu.maplayers.base`, the substrate; `kmu.maplayers.ownermap`, new, the pipeline for any layer painting systems by an owner key, importing neither the political map nor `kmu.mods`; and `kmu.maplayers.politicalmap`, KMU's political map as one layer on it.
+
+| Before | After |
+| --- | --- |
+| `kmu.maplayers.politicalmap.base` and its `holding`, `owners`, `owners.holders`, `picker`, `preferences`, `render`, `ribbon`, `sidebar` and `tooltip` | The same packages under `kmu.maplayers.ownermap` |
+| The political map's own parts under `kmu.maplayers.politicalmap.base` | `kmu.maplayers.politicalmap`: `PoliticalMapLayer`, `PoliticalMapInstaller` and `PoliticalMapStanding` in the package, and its rules in `dominance`, `claims`, `views`, `holders`, `tooltip`, `refresh` and `render` |
+
+##### Renames
+
+Tier types and members are named for owners and groups, not for the political map or alliances.
+
+| Before | After |
+| --- | --- |
+| `PoliticalMapView` and `PoliticalMapViewRegistry` | `OwnerPaintedView` and `MapLayerViewRegistry` |
+| `PoliticalMapOverlayRenderer`, `PoliticalMapCache`, `PoliticalMapDrawables`, `PoliticalMapRebuildDecider`, `PoliticalMapBandLayout`, `PoliticalMapCategory`, `PoliticalMapBodyControls`, `PoliticalMapInhabitation` and `PoliticalMapHoverHighlightSource` | `OwnerMap` in place of `PoliticalMap` in each name |
+| `PoliticalMapTerritories` | `OwnerMapClusters` |
+| `TerritoryBuilder`, `TerritoryBuildInputs` and `FactionTerritoryBuilder` | `OwnerMapBuilder`, `OwnerMapBuildInputs` and `ClusterGroupBuilder` |
+| `StandingPoliticalMap`, `StalePoliticsDisturbance` and `IncrementalPoliticsRefresh` | `StandingOwnerMap`, `StaleOwnerMapDisturbance` and `IncrementalOwnerRefresh` |
+| `BlocStyleDecision`, `BlocStyleResolver` and `BlocStyling` | `Owner` in place of `Bloc` in each name |
+| `DominantHolder` and `PoliticalMapPreviewHighlightRenderer` | `SystemOwner` and `SpotlightPreviewHighlightRenderer` |
+| `KmuPoliticalMapDiagnosticsSettings`, `KmuPoliticalMapGeometrySettings`, `KmuPoliticalMapHighlightSettings` and `KmuPoliticalMapRibbonSettings` | `OwnerMap` in place of `PoliticalMap` in each name |
+| `KmuPoliticalMapTerritorySettings` | `KmuOwnerMapStyleSettings` |
+| `getPoliticalMap*` | `getOwnerMap*` |
+| `getPoliticalMapAllianceMutedOpacityModifier` and `shouldDecivilisedSystemsDrawTerritory` | `getOwnerMapMutedOpacityModifier` and `shouldCountDecivilisedSystemsAsPopulated` |
+| The nineteen `KmuStringKeys.POLITICAL_MAP_*` constants and their `strings.json` keys | `OWNER_MAP_*` |
+| `HolderGrouping.allianceNameByBlocId`, `resolveAllianceName`, `isAlliance` and `hasAnyAlliance` | `groupNameByBlocId`, `resolveGroupName`, `isGroupedBloc` and `hasAnyGroupedBloc` |
+| `ContentInputs.allianceRecedeAdjustment` | `viewRecedeAdjustment` |
+| `SystemOccupancy.getHolderBySystemKey`, `readHolderOf`, `recordHolderOf` and `selectUnheldSystemKeysAmong` | `getOwnerBySystemKey`, `readOwnerOf`, `recordOwnerOf` and `selectUnownedSystemKeysAmong` |
+| `SystemOccupancy.selectUnheldSystemKeysIn` | `SystemOwner.selectUnownedSystemKeysAmong` |
+| `ClusterLabelStylingSnapshot.holderBySystemKey` | `ownerBySystemKey` |
+| `DominancePass.over` and `MarketProximityTieBreak.forSystem` | `createOver` and `createForSystem` |
+
+##### Views
+
+A view answers who owns each system through one reading, sampled once, so its parts cannot disagree.
+
+| Before | After |
+| --- | --- |
+| `OwnerPaintedView`'s `resolveGrouping()`, `resolveHolderProvider()`, `resolveRibbonPlanner(RibbonPlanInputs)`, `shouldUseIndependentStyle`, `resolveBlocStyleAdjustment`, `resolveName` and `computeAllianceContentRevision` | `resolveViewReading(SectorAPI)`, required: a `ViewReading` of the view, its `OwnerReading` and its `OwnerSource` |
+| None | `resolveCategories()`, required: the categories cells divide into |
+| None | `resolveViewRecedeAdjustment(ScreenMemoryScope)`, defaulting to receding nothing |
+| `buildBlocPickerRead` with the grouping | Also takes the view's `OwnerReading` |
+| A view painting holders | Implements `kmu.maplayers.ownermap.owners.holders.HolderPaintedView`, whose `resolveGrouping()`, `resolveContestGrouping()`, `resolveHolderProvider()`, `resolveSystemHolderResolveSource()`, `resolveRibbonPlanner(RibbonPlanInputs)` and `resolveOwnerReading(SectorAPI, HolderGrouping)` it assembles into `resolveViewReading`. `DominancePaintedView` and `ClaimsView` are holder views. |
+| `ViewGrouping` | `ViewReading`, carrying the reading and the owner source |
+
+##### Owner sources
+
+The tier reads no colony: a layer's `OwnerSource` does, over the `SectorWalk` the tier hands it.
+
+| Before | After |
+| --- | --- |
+| None | `kmu.maplayers.ownermap.owners.OwnerSource`: `resolveOwners`, `openSystemResolve` and `resolveRibbonPlanner`. `SectorWalk.readReadingOpenedBy` keeps one reading per source per walk. |
+| `ResolvedHolding` | `ResolvedOwners`, in `owners`: the owners, the hatched and unfilled systems, the inhabited systems and the spotlit owner's presence |
+| None | `HolderOwnerSource`, the holder layers' source, over one `HolderPass` per walk |
+| `SystemHolderResolveSource.openResolveOver` | Takes the batch's `HolderPass`, and `SystemHolderResolve` answers only `resolveHolderIn` |
+| `ClaimsView` re-deriving a marked system by its holder | `ClaimSystemHolderResolve`, by its claimant, through `SectorClaims.resolveClaimingHolderIn` |
+| `OwnerMapBuilder.resolveHolding` | `resolveOwners(OwnerSource, SectorWalk, ContentInputs)`, and `buildClusters` takes the `ViewReading` and the `ResolvedOwners` |
+| `OwnerMapCache` with a diagnostics provider and a per-system resolve source | A `CellSeedRule`, and `OwnerMapLayerRenderer.createForLiveScreen` follows |
+| `IncrementalOwnerRefresh.applyStaleOwnerUpdates` with a resolve source | The batch's `SectorWalk` |
+| `CellRibbonsBaker.createForPass` and `CellRibbonSource.createForPass` | Take a `SectorWalk` |
+| `DebugBorderTracingBuilder.buildDebugDrawables` | Takes the resolved owners and the categories |
+| `ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector` | `rebuildDiagnosticClusterAnchors`, styled by `ClusterLabelStylingSnapshot.resolveForTracing` |
+| None | `SpotlitBlocs.isBlocPresentIn` |
+| None | `kmu.maplayers.base.geometry.CellSeedRule`, with `SEED_DRAWN_SYSTEMS`. `CellGeometryCache.updateFromSector` and `PartitionSites.collectSitesFrom` take one, and `DrawnSystemPositions.collectLivePositions` gains an overload taking a membership rule. |
+
+##### Owner reading and styling
+
+The tier asks a layer about its owners rather than reading factions.
+
+| Before | After |
+| --- | --- |
+| None | `kmu.maplayers.ownermap.owners.OwnerReading`: each owner's shades, name, crest, recede and category. `HolderOwnerReading` is the political map's. |
+| None | `kmu.maplayers.ownermap.render.style.OwnerCategories`: which categories exist and how each is styled. `HolderCategories` declares the four `OwnerMapCategory` values. |
+| KMLib's `FactionPalette` in `MapPalettes`, `MapStyling`, `ResolvedBlocPaint`, `BlocPaletteReader`, `BlocPresence` and the label styling | `OwnerPalette` |
+| `SystemOwner.factionId`, its two colour components and `mapFactionIdBySystemKey` | `ownerId`, one `palette` and `mapOwnerIdBySystemKey`. `resolvePalette` is gone. |
+| `SystemOwner.resolveForBloc` | `SectorBlocPalettes.resolveOwnerOf` |
+| `ClusterLabelStylingSnapshot` carrying a `ViewGrouping` | Carries the categories and the reading |
+| `OwnerStyleDecision` saying whether an owner takes the independent style | The category the owner draws in. `OwnerStyleResolver.resolveBlocStyleDecision` and `OwnerStyling.resolveFrom` take the reading and the categories. |
+| `RenderStyleReader.readRenderStyle` | Takes the layer's categories and the sampled preferences |
+| `BlocNameStyles.readFromLunaSettings` | Gone: `BlocNameStyles` is a name style per category |
+| `FactionlessStyleResolver.resolveCategoryOf` | `isSettledSystem` |
+| `ClusterAnchorsBuilder.rebuildClusterAnchors` with a sector | No sector |
+| None | `OwnerMapBuildInputs.wasBuilt()`: false for the placeholder a failed first build stands behind |
+
+##### Frame sequence
+
+Every painting layer runs one frame sequence, and the framework owns it.
+
+| Before | After |
+| --- | --- |
+| `PoliticalMapLayerRenderer` | `kmu.maplayers.base.render.SequencedMapLayerRenderer`, over a layer's `MapLayerFrameParts`: a stand-down read, a `MapFrameCache`, a `MapFrameCompositor`, its `MapLayerHoverGates` and its box |
+| `OwnerMapLayerRenderer.createForLiveScreen` | Composes the owner map's parts into one renderer |
+| `OwnerMapCache.refresh` | `refreshDrawLists`, and `resolveHoverTargets` is new |
+| `MapLayerRegistry.resolveDrawnMapRenderer` | `DrawnLayerGuard.resolveGuardIn(machinery)`, in `kmu.maplayers.base.render`, which switches off a layer that throws |
+
+##### Layer state and preferences
+
+A layer owns its state, so two layers cannot share it by accident.
+
+| Before | After |
+| --- | --- |
+| `MapLayerViewRegistry`'s static members and `getActiveView()` | An instance over the layer's save key, views, default view and host tab, answering `resolveActiveViewOn(ScreenLayerPicks)` |
+| Per-sector pieces a layer holds | `SectorMapMachinery.resolveLayerMachinery(layerId, type, make)` |
+| `SelectableBlocCache.resolveBlocCacheIn` | Takes the layer ID |
+| `FilterSelectionHeal.healStaleSelectionAgainstActiveView` | Takes the sector and the registry. `healStaleSelectionAgainstLiveSector(registry)` serves a caller with no sector. |
+| `OwnerMapBodyControls.buildViewSelector` | Takes the sector its body was built for |
+| `PoliticalMapLayer` as a singleton | Constructed with its views |
+| `NameFormatPreference`, `UninhabitedOutlinePreference` and `RecedePreferences` as statics, with `RecedePreferences.FILTER` and `ALLIANCE_NON_ALLIED` | Instances over keys a layer names, handed over as `OwnerMapBodyPreferences` to `OwnerMapLayerRenderer.createForLiveScreen`, `OwnerMapCache`, `OwnerMapRebuildDecider` and `ContentInputs.sampleForView` |
+| `FactionNameFormatChoice.fromKeyOrDefault` | KMLib's `PersistedChoices.fromKey` over a `PersistedChoice` |
+| `MapLayerSectorWatcher` shared between layers | Abstract: each layer installs its own subclass, since the engine removes transient scripts by exact class |
+
+##### Hover, transfers and the political map
+
+Political map pieces that moved onto the framework, merged, or answer a richer question.
+
+| Before | After |
+| --- | --- |
+| `PoliticalMapHoverGates` | `kmu.maplayers.base.hover.MapLayerHoverGates` per layer, and `SharedOwnerMapHoverGates` for the owner map's switches. `MapLayerHoverGates.isCursorReadNeeded()` is a default method. |
+| `PoliticalMapMarketTransferListener` implementing Nexerelin's `InvasionListener` | Implements KMU's own `kmu.starsector.listeners.MarketTransferListener`, told of every colony Nexerelin transfers on its sector |
+| `HolderPass.openClaimReaderThrough` | The political map's `PassClaimReaders.openClaimReaderOver` |
+| `ColonyQualifierFacts.isHoldingTheClaim` | `leadingFinding`: a worded finding stated ahead of the rest, or null. `SystemColonyReading.readQualifierFacts` assembles one. |
+| `FactionTooltipLine.buildCountedFactionLine` | Takes whether the faction was weighed |
+| `SystemStandingsTooltip` and `SystemClaimContestTooltip` | Merged into `SystemDominationTooltip` and `SystemClaimTooltip` |
+| `LiveVisibilityClaimBreakdownReader` | Gone: the claim box opens its reader over the hover's own sector |
+| `DominancePass.readFromLunaSettings` | Gone |
+| `FilteredPolitics.resolveFilteredHolder` | Returns a `HolderResolution` |
+| `CellTooltipQualifier`'s canonical constructor | Takes a `findingColour` between `findingText` and `trailingWordText`, set with `drawsFindingIn(Color)`. Left unset, the finding reads in the box's gold. |
+
 </details>
-
-### Public contracts changed (**breaking**)
-
-None of these reach a player: every LunaLib field ID and every value saved in sector memory keeps its spelling, so settings and saves carry over untouched. They reach a mod building a map layer on KMU's framework.
-
-- **The map layers framework has three tiers:**
-  - `kmu.maplayers.base` - the substrate.
-  - `kmu.maplayers.ownermap` - new: the pipeline any layer painting systems by an owner key builds on - a faction, a group of factions, or any other value the layer keys a system by. It may import neither the political map nor `kmu.mods`.
-  - `kmu.maplayers.politicalmap` - KMU's political map, one layer on the tier.
-- **Packages moved:**
-  - Everything under `kmu.maplayers.politicalmap.base` is under `kmu.maplayers.ownermap`:
-    - `holding`, `owners` and `owners.holders` - reading a sector, and the owners read off it.
-    - `picker` and `preferences` - the bloc picker's model, and a layer's per-save body choices.
-    - `render`, with `clusters`, `hover`, `labels`, `ribbon` and `style`.
-    - `ribbon`, `sidebar` and `tooltip`.
-  - Except the political map's own parts, which are in `kmu.maplayers.politicalmap`:
-    - `PoliticalMapLayer`, `PoliticalMapInstaller` and `PoliticalMapStanding`, in the package itself.
-    - Its rules, in `dominance` (with `standings` and `weighting`), `claims`, `views`, `holders`, `tooltip`, `refresh` and `render`.
-- **Tier types renamed with the move:**
-  - `PoliticalMapView` is `OwnerPaintedView`, and `PoliticalMapViewRegistry` is `MapLayerViewRegistry`.
-  - These take `OwnerMap` for `PoliticalMap`:
-    - `PoliticalMapOverlayRenderer`, `PoliticalMapCache`, `PoliticalMapDrawables` and `PoliticalMapRebuildDecider`.
-    - `PoliticalMapBandLayout`, `PoliticalMapCategory`, `PoliticalMapBodyControls`, `PoliticalMapInhabitation` and `PoliticalMapHoverHighlightSource`.
-  - The cluster build:
-    - `PoliticalMapTerritories` is `OwnerMapClusters`.
-    - `TerritoryBuilder` is `OwnerMapBuilder`, and `TerritoryBuildInputs` is `OwnerMapBuildInputs`.
-    - `FactionTerritoryBuilder` is `ClusterGroupBuilder`.
-  - The refresh:
-    - `StandingPoliticalMap` is `StandingOwnerMap`, and `StalePoliticsDisturbance` is `StaleOwnerMapDisturbance`.
-    - `IncrementalPoliticsRefresh` is `IncrementalOwnerRefresh`.
-  - `BlocStyleDecision`, `BlocStyleResolver` and `BlocStyling` take `Owner` for `Bloc`.
-  - `DominantHolder` is `SystemOwner`, and `PoliticalMapPreviewHighlightRenderer` is `SpotlightPreviewHighlightRenderer`.
-- **`OwnerPaintedView` asks a view two things about its owners:**
-  - `resolveViewReading(SectorAPI)` is new and required. It answers a `ViewReading` - the view, its `OwnerReading` and its `OwnerSource` - resolved together under one sampling of whatever the view reads live.
-  - `resolveCategories()` is new and required: which categories cells divide into.
-  - `resolveViewRecedeAdjustment(ScreenMemoryScope)` is new, defaulting to receding nothing.
-  - `resolveGrouping()`, `resolveHolderProvider()`, `resolveRibbonPlanner(RibbonPlanInputs)`, `shouldUseIndependentStyle`, `resolveBlocStyleAdjustment`, `resolveName` and `computeAllianceContentRevision` are gone from the seam.
-  - `buildBlocPickerRead` takes the view's `OwnerReading` beside the grouping.
-- **A view painting holders implements `kmu.maplayers.ownermap.owners.holders.HolderPaintedView`:** it states `resolveGrouping()`, `resolveContestGrouping()`, `resolveHolderProvider()`, `resolveSystemHolderResolveSource()`, `resolveRibbonPlanner(RibbonPlanInputs)` and `resolveOwnerReading(SectorAPI, HolderGrouping)`, and the interface assembles `resolveViewReading` from them over one sampling of the grouping. `DominancePaintedView` and `ClaimsView` are holder views.
-- **The tier reads no colony; a layer's source does:**
-  - `kmu.maplayers.ownermap.owners.OwnerSource` resolves who owns each system for a rebuild (`resolveOwners`), opens a per-system `SystemOwnerResolve` for an incremental batch (`openSystemResolve`) and answers the band planner for a bake (`resolveRibbonPlanner`), each over the `SectorWalk` the tier hands it - the rebuild's one `SectorPassIndex` and the visibility rules the cells were cut under. `SectorWalk.readReadingOpenedBy` keeps whatever reading a source opens over the walk, one per source, so a source holds nothing between walks.
-  - `ResolvedOwners`, in `owners`, is the source's whole-sector answer: the owners, the hatched and unfilled systems, the inhabited systems and the spotlit owner's presence. `ResolvedHolding` is gone.
-  - `HolderOwnerSource` is the source of the layers painting holders. It opens one `HolderPass` per walk, kept by the walk, and answers every question off it through the layer's `HolderProvider` and `SystemHolderResolve`.
-  - `SystemHolderResolveSource.openResolveOver` takes the batch's `HolderPass`, and `SystemHolderResolve` answers only `resolveHolderIn`.
-  - `ClaimsView` re-derives a marked system through `ClaimSystemHolderResolve`, by its claimant: `SectorClaims.resolveClaimingHolderIn` answers one system by the rule `resolveClaimingHolderBySystemKey` applies to the whole sector.
-  - `OwnerMapBuilder.resolveHolding` is `resolveOwners(OwnerSource, SectorWalk, ContentInputs)`, and `buildClusters` takes the `ViewReading` and the `ResolvedOwners` in place of a pass, a view and a holding.
-  - `OwnerMapCache` takes a `CellSeedRule` in place of the diagnostics provider and the per-system resolve source, and `OwnerMapLayerRenderer.createForLiveScreen` follows. The diagnostic overlays read owners through the active view's own source.
-  - `IncrementalOwnerRefresh.applyStaleOwnerUpdates` takes the batch's `SectorWalk` and no resolve source; the batch asks the source the standing build was resolved by.
-  - `CellRibbonsBaker.createForPass` and `CellRibbonSource.createForPass` take a `SectorWalk`, and the bake asks the build's owner source for its planner.
-  - `DebugBorderTracingBuilder.buildDebugDrawables` takes the resolved owners and the categories. `ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector` is `rebuildDiagnosticClusterAnchors`, taking the styling `ClusterLabelStylingSnapshot.resolveForTracing` resolves for the traced owners.
-  - `SystemOccupancy` reads in owners: `getHolderBySystemKey`, `readHolderOf`, `recordHolderOf` and `selectUnheldSystemKeysAmong` are `getOwnerBySystemKey`, `readOwnerOf`, `recordOwnerOf` and `selectUnownedSystemKeysAmong`. `SystemOccupancy.selectUnheldSystemKeysIn` is `SystemOwner.selectUnownedSystemKeysAmong`, and `SpotlitBlocs.isBlocPresentIn` is new.
-  - `ClusterLabelStylingSnapshot.holderBySystemKey` is `ownerBySystemKey`.
-- **Which systems seed a cell is the layer's to state:** `kmu.maplayers.base.geometry.CellSeedRule` is new, with `SEED_DRAWN_SYSTEMS` the substrate's own rule. `CellGeometryCache.updateFromSector` and `PartitionSites.collectSitesFrom` take one, and `DrawnSystemPositions.collectLivePositions` gains an overload taking a membership rule.
-- **The tier asks a layer about its owners:**
-  - `kmu.maplayers.ownermap.owners.OwnerReading` answers each owner's shades, name, crest, recede and category, and the shades an unowned or receded cell is derived from, resolved once per rebuild. `HolderOwnerReading` is the political map's.
-  - `kmu.maplayers.ownermap.render.style.OwnerCategories` declares which categories exist and how each is styled, each owned category's name style, the full-strength category and the category an unowned cell falls to. `HolderCategories` declares the four `OwnerMapCategory` values.
-  - `OwnerPalette` is the tier's pair of shades in place of KMLib's `FactionPalette`, in `MapPalettes`, `MapStyling`, `ResolvedBlocPaint`, `BlocPaletteReader`, `BlocPresence` and the label styling.
-  - `SystemOwner` is an owner ID and an `OwnerPalette`: `factionId` is `ownerId`, the two colour components are one `palette`, `resolvePalette` is gone and `mapFactionIdBySystemKey` is `mapOwnerIdBySystemKey`. `resolveForBloc` is `SectorBlocPalettes.resolveOwnerOf`.
-  - `ViewGrouping` is `ViewReading`, carrying the reading and the owner source beside the view. `ClusterLabelStylingSnapshot` carries the categories and the reading in place of it.
-  - `OwnerStyleDecision` carries the category an owner draws in rather than whether it takes the independent style, and `OwnerStyleResolver.resolveBlocStyleDecision` and `OwnerStyling.resolveFrom` take the reading and the categories.
-  - `RenderStyleReader.readRenderStyle` takes the layer's categories and the sampled preferences, `BlocNameStyles` is a name style per category with `readFromLunaSettings` gone, `FactionlessStyleResolver.resolveCategoryOf` is `isSettledSystem` and `ClusterAnchorsBuilder.rebuildClusterAnchors` no longer takes a sector.
-  - `OwnerMapBuildInputs.wasBuilt()` is new: false for the placeholder a failed first build stands behind, which the incremental refresh does not fold into.
-- **The frame sequence is the framework's:**
-  - `PoliticalMapLayerRenderer` is gone. `kmu.maplayers.base.render.SequencedMapLayerRenderer` runs the frame every painting layer runs - the stand-down, the refresh, the cursor read per pass, the paint per band and the hover box - over the `MapLayerFrameParts` a layer supplies: a stand-down read, a `MapFrameCache`, a `MapFrameCompositor`, its `MapLayerHoverGates` and its box.
-  - `OwnerMapLayerRenderer.createForLiveScreen` composes the owner map's parts into one and returns it.
-  - `OwnerMapCache` is the owner map's `MapFrameCache`: `refresh` is `refreshDrawLists`, and `resolveHoverTargets` is new.
-- **A layer's state is its own:**
-  - `MapLayerViewRegistry` is an instance a layer builds over its own save key, views, default view and host tab, in place of static members. `getActiveView()` is gone: `resolveActiveViewOn(ScreenLayerPicks)` answers for the screen a frame read once.
-  - Per-sector pieces a layer holds go through `SectorMapMachinery.resolveLayerMachinery(layerId, type, make)`.
-  - `SelectableBlocCache.resolveBlocCacheIn` takes the layer ID.
-  - `FilterSelectionHeal.healStaleSelectionAgainstActiveView` takes the sector and the registry it heals against; `healStaleSelectionAgainstLiveSector(registry)` is the entry for a caller holding no sector.
-  - `OwnerMapBodyControls.buildViewSelector` takes the sector its body was built for, which a view switch heals the spotlights against.
-  - `PoliticalMapLayer` is constructed with its views rather than being a singleton.
-- **Body preferences are the layer's:**
-  - `NameFormatPreference`, `UninhabitedOutlinePreference` and `RecedePreferences` are instances over keys a layer names, handed to the tier together as `OwnerMapBodyPreferences`.
-    - Their static members are gone, and so are the `RecedePreferences.FILTER` and `ALLIANCE_NON_ALLIED` sets.
-    - `OwnerMapLayerRenderer.createForLiveScreen`, `OwnerMapCache`, `OwnerMapRebuildDecider` and `ContentInputs.sampleForView` take them.
-  - `ContentInputs.allianceRecedeAdjustment` is `viewRecedeAdjustment`.
-  - `FactionNameFormatChoice.fromKeyOrDefault` is gone: the choice is a KMLib `PersistedChoice`, read back through `PersistedChoices.fromKey`.
-- **Groups and mechanics in the tier's own words:**
-  - `HolderGrouping`:
-    - `allianceNameByBlocId` is `groupNameByBlocId`, and `resolveAllianceName` is `resolveGroupName`.
-    - `isAlliance` is `isGroupedBloc`, and `hasAnyAlliance` is `hasAnyGroupedBloc`.
-  - `HolderPass.openClaimReaderThrough` is the political map's `PassClaimReaders.openClaimReaderOver`.
-  - `ColonyQualifierFacts.isHoldingTheClaim` is `leadingFinding`: a finding the painting layer states ahead of every other, already worded, or null. `SystemColonyReading.readQualifierFacts` assembles one.
-  - `FactionTooltipLine.buildCountedFactionLine` takes whether the faction was weighed, drawing an unweighed one quietly.
-- **Polls, hover gates and colony transfers:**
-  - `MapLayerSectorWatcher` is abstract. A layer installs its own subclass, because the engine removes transient scripts by exact class and a shared class let one layer's poll evict another's.
-  - Hover gates:
-    - `PoliticalMapHoverGates` is gone: a layer answers its own cursor switches through `kmu.maplayers.base.hover.MapLayerHoverGates`, and `SharedOwnerMapHoverGates` answers it from the one shared set of owner-map hover switches.
-    - `MapLayerHoverGates.isCursorReadNeeded()` is a default method.
-  - Colony transfers:
-    - `PoliticalMapMarketTransferListener` implements KMU's own `kmu.starsector.listeners.MarketTransferListener` rather than Nexerelin's `InvasionListener`.
-    - A listener of that type registered on a sector is told of every colony Nexerelin transfers there.
-- **The political map's hover boxes and dominance pass:**
-  - `SystemStandingsTooltip` and `SystemClaimContestTooltip` are gone, each merged into its one subclass, `SystemDominationTooltip` and `SystemClaimTooltip`. `LiveVisibilityClaimBreakdownReader` is gone too: the claim box opens its reader over the hover's own sector.
-  - `DominancePass.over` is `createOver`, and `MarketProximityTieBreak.forSystem` is `createForSystem`. `DominancePass.readFromLunaSettings` is gone.
-  - `FilteredPolitics.resolveFilteredHolder` returns a `HolderResolution`.
-- **Settings readers and string keys:**
-  - Readers:
-    - `KmuPoliticalMapDiagnosticsSettings`, `KmuPoliticalMapGeometrySettings`, `KmuPoliticalMapHighlightSettings` and `KmuPoliticalMapRibbonSettings` take `OwnerMap` for `PoliticalMap`.
-    - `KmuPoliticalMapTerritorySettings` is `KmuOwnerMapStyleSettings`.
-  - Getters:
-    - `getPoliticalMap*` are `getOwnerMap*`.
-    - Except `getPoliticalMapAllianceMutedOpacityModifier`, which is `getOwnerMapMutedOpacityModifier`.
-    - And `shouldDecivilisedSystemsDrawTerritory`, which is `shouldCountDecivilisedSystemsAsPopulated`.
-  - The nineteen `KmuStringKeys.POLITICAL_MAP_*` constants the tier labels its controls with are `OWNER_MAP_*`, with their `strings.json` keys.
-- **A hover-box status may colour its own finding:** `CellTooltipQualifier` carries a `findingColour`, set with `drawsFindingIn(Color)`, for a finding whose colour is itself the fact - a relation level, say. Left unset, the finding reads in the box's gold. The canonical constructor takes it between `findingText` and `trailingWordText`.
-- **A pass reaches the drawn layer through its sector's guard:** `MapLayerRegistry.resolveDrawnMapRenderer` is gone. `DrawnLayerGuard.resolveGuardIn(machinery)`, in `kmu.maplayers.base.render`, hands a pass's work the drawn layer's renderer on that sector, and switches off there a layer that throws from it.
 
 ## [0.1.2] - 2026-09-16
 
