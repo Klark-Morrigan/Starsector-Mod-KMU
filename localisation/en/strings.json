@@ -20,6 +20,8 @@
     "compatibility_unaffected_starscape_terrain": "On the map with the Starscape filter off, and on your save.",
     "compatibility_lost_map_layer": "The %s map layer is switched off until you next load a save, or switch the map layers off and back on.",
     "compatibility_unaffected_map_layer": "On the other map layers, the map itself, and your save.",
+    "compatibility_lost_nexerelin_colony_transfers": "A colony that changes hands may take a few seconds to show its new faction on the Political Map this session.",
+    "compatibility_unaffected_nexerelin_colony_transfers": "On the transfer itself, and on your save.",
 
     "condition_manager_location": "Location:",
     "condition_manager_location_unknown": "Unknown",

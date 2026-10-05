@@ -80,6 +80,16 @@ public final class KmuStringKeys {
     public static final String COMPATIBILITY_LOST_MAP_LAYER = "compatibility_lost_map_layer";
     public static final String COMPATIBILITY_UNAFFECTED_MAP_LAYER = "compatibility_unaffected_map_layer";
 
+    /**
+     * What a session loses where the relay for Nexerelin's colony transfers did not install. A delay
+     * rather than a missing repaint, because the political map's own poll still finds the new holder
+     * within seconds; the relay only makes it immediate.
+     */
+    public static final String COMPATIBILITY_LOST_NEXERELIN_COLONY_TRANSFERS =
+        "compatibility_lost_nexerelin_colony_transfers";
+    public static final String COMPATIBILITY_UNAFFECTED_NEXERELIN_COLONY_TRANSFERS =
+        "compatibility_unaffected_nexerelin_colony_transfers";
+
     public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
     public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
     public static final String CONDITION_MANAGER_LOCATION_OWNED_BY = "condition_manager_location_owned_by";

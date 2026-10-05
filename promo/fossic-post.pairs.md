@@ -614,8 +614,10 @@ The English README's Languages section says the same to an English reader.
   - Notes: Compatibility patch and mouseover detection in [features and screens][kmu-features].
 - EN: Additionally, the mod has been made specifically compatible with:
   - ZH: 此外，本 Mod 专门与以下 Mod 做了兼容：
-- EN: Fast Rendering and its optimisations.
-  - ZH: Fast Rendering 及其优化。
+- EN: Fast Rendering from v0.9.1rc1 on, which answers the map's cursor read itself.
+  - ZH: Fast Rendering v0.9.1rc1 及更高版本，它会自行应答星图的光标读取。
+- EN: On an older release the map stops following the cursor, and a notice names the release to update to.
+  - ZH: 在更早的版本上，星图不再跟随光标，并会有通知说明应更新到哪个版本。
 - EN: Nexerelin to support its alliance mechanics.
   - ZH: Nexerelin，以支持其联盟机制。
   - Notes: Alliances in [the political map][kmu-politics].
@@ -735,6 +737,8 @@ The [source notes][source-notes] give why.
   - ZH: 感谢 LazyLib、LunaLib、Console Commands 的开发者与维护者提供了本 Mod 所依赖的功能。
 - EN: To developers and maintainers of Nexerelin for bringing the politics of the sector to life.
   - ZH: 感谢 Nexerelin 的开发者与维护者让星域的政治变得鲜活。
+- EN: To Genir for implementing a more stable compatibility solution in Fast Rendering.
+  - ZH: 感谢 Genir 在 Fast Rendering 中实现了更稳定的兼容方案。
 - EN (back-translation): To the 远星汉化组 (the Chinese localisation team): this Chinese edition's fonts and vanilla terms come from their localisation.
   - ZH: 感谢远星汉化组：本中文版所用的字体和原版术语都出自他们的汉化。
   - Notes: Fossic only; the line states its own reason.
