@@ -1,7 +1,5 @@
 package kmu.maplayers.ownermap.render.clusters;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.math.geometry.CornerRounding;
 import kmlib.starsector.systems.SystemKey;
 
@@ -16,13 +14,11 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.holding.OwnerMapInhabitation;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
 import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
@@ -39,6 +35,7 @@ import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -48,7 +45,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -70,8 +66,8 @@ import static org.mockito.Mockito.when;
  * {@link kmu.maplayers.base.render.clusters.ClusterBorderTraceIntegrationTests}, the smoothing
  * passes by their own suites - so it runs for real here and is only ever counted, never measured.
  * Cells are hand-built 2000-unit squares, comfortably clear of the fixed border channel, so which
- * cells touch is plain to read. The sector reads (holding, decivilisation) and the two settings
- * reads are stubbed: the builder resolves them itself by design, and none of them answers outside
+ * cells touch is plain to read. The owners and the settled systems arrive stated, as the source's
+ * answer the overlay is handed; the two settings reads are stubbed, none of them answering outside
  * the game.
  */
 final class DebugBorderTracingBuilderTests {
@@ -142,17 +138,16 @@ final class DebugBorderTracingBuilderTests {
             buildEdgeFacing(30100, 100, 30000, 100, null),
             buildEdgeFacing(30000, 100, 30000, 0, null)));
 
-    // The sector is never read: every question the builder asks of it is stubbed at the resolver
-    // that would have walked it, so this stands only for the argument those stubs match on.
-    private final SectorAPI sectorMock = mock(SectorAPI.class);
+    // The owners the overlay is to trace and the systems it is to treat as settled, stated per case
+    // and handed over whole: the builder is given the owners rather than resolving them.
+    private Map<String, SystemOwner> ownerBySystemId = Map.of();
+    private Set<SystemKey> inhabitedSystemKeys = Set.of();
+
     private MockedStatic<KmuMapLabelSettings> settingsMock;
-    private HolderProviderFake holderProvider;
-    private MockedStatic<OwnerMapInhabitation> inhabitationMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
-    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
 
     @BeforeEach
-    void openTheSectorAndSettingsSeams() {
+    void openTheSettingsSeams() {
         settingsMock = mockStatic(KmuMapLabelSettings.class);
 
         settingsMock
@@ -162,27 +157,15 @@ final class DebugBorderTracingBuilderTests {
             .when(KmuMapLabelSettings::getMapBorderMiterLimit)
             .thenReturn(MITER_SPIKE_LIMIT);
 
-        visibilityRulesMock = mockStatic(MapVisibilityRules.class);
-        inhabitationMock = mockStatic(OwnerMapInhabitation.class);
-
-        // This overlay opens its own pass, which samples the reveal toggles; no LunaLib answers
-        // outside the game, so the no-reveal view stands in for the read.
-        visibilityRulesMock
-            .when(MapVisibilityRules::readFromLunaSettings)
-            .thenReturn(MapVisibilityRules.BASE);
         styleReaderMock = mockStatic(RenderStyleReader.class);
 
         // An empty sector by default, so a case names only the cells it is about.
-        stubHolders(Map.of());
-        stubInhabitedSystems();
         stubTheme(buildNoSmoothing(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
     }
 
     @AfterEach
-    void closeTheSectorAndSettingsSeams() {
+    void closeTheSettingsSeams() {
         styleReaderMock.close();
-        inhabitationMock.close();
-        visibilityRulesMock.close();
         settingsMock.close();
     }
 
@@ -199,10 +182,9 @@ final class DebugBorderTracingBuilderTests {
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
-                sectorMock,
+                stateOwners(),
                 HolderCategories.INSTANCE,
-                OUTLINE_DRAWN,
-                holderProvider);
+                OUTLINE_DRAWN);
 
             // One loop rather than two: the shared edge is a same-bloc seam, exactly as in the
             // production trace this stage is supposed to be showing.
@@ -221,10 +203,9 @@ final class DebugBorderTracingBuilderTests {
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM),
-                sectorMock,
+                stateOwners(),
                 HolderCategories.INSTANCE,
-                OUTLINE_DRAWN,
-                holderProvider);
+                OUTLINE_DRAWN);
 
             assertThat(drawables.baseLoops()).hasSize(1);
             assertThat(drawables.despikedLoops()).hasSize(1);
@@ -237,8 +218,7 @@ final class DebugBorderTracingBuilderTests {
             stubTheme(buildRoundingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(HELD_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
-                holderProvider);
+                listCellsFor(HELD_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
 
             // Rounding feeds off whatever the previous stage left, so with sanding off it rounds
             // the base - and the skipped stage stays empty rather than standing in for it.
@@ -252,8 +232,7 @@ final class DebugBorderTracingBuilderTests {
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
-                holderProvider);
+                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
 
             // The decivilised world's cell resolves to the decivilised bundle and draws; the
             // uninhabited one resolves to the bundle the player switched off and is skipped,
@@ -266,8 +245,7 @@ final class DebugBorderTracingBuilderTests {
             stubInhabitedSystems(DECIVILISED_SYSTEM);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
-                holderProvider);
+                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
 
             assertThat(drawables.isEmpty()).isTrue();
         }
@@ -278,8 +256,7 @@ final class DebugBorderTracingBuilderTests {
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(HELD_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
-                holderProvider);
+                listCellsFor(HELD_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
 
             // One loop with both factionless outlines on: the cell is grouped, so the factionless
             // pass steps over it instead of stroking a second ring inside its cluster border.
@@ -297,8 +274,7 @@ final class DebugBorderTracingBuilderTests {
                 .thenReturn(buildDrawnSystemKeys(Map.of(HELD_SYSTEM, HELD_SYSTEM)));
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    geometryCacheMock, sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
-                holderProvider);
+                    geometryCacheMock, stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
 
             // A bloc whose cells carry no edges traces nothing, and the overlay drops it rather
             // than capturing an empty stage entry the renderer would walk.
@@ -311,8 +287,7 @@ final class DebugBorderTracingBuilderTests {
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(TINY_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
-                holderProvider);
+                listCellsFor(TINY_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
 
             // The cell is narrower than twice the border inset, so insetting leaves no polygon
             // at all - dropped rather than flattened into a degenerate run.
@@ -333,10 +308,9 @@ final class DebugBorderTracingBuilderTests {
 
             DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(DECIVILISED_SYSTEM),
-                sectorMock,
+                stateOwners(),
                 HolderCategories.INSTANCE,
-                contentInputs,
-                holderProvider);
+                contentInputs);
 
             styleReaderMock.verify(() -> RenderStyleReader.readRenderStyle(
                 same(HolderCategories.INSTANCE),
@@ -349,8 +323,7 @@ final class DebugBorderTracingBuilderTests {
             stubTheme(buildBothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM), sectorMock, HolderCategories.INSTANCE, OUTLINE_DRAWN,
-                holderProvider);
+                listCellsFor(DECIVILISED_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
 
             // A lone convex cell has no needle protrusions to sand, so its two stages are the raw
             // inset and its rounded corners - the sanding gate being on does not invent a third.
@@ -437,28 +410,27 @@ final class DebugBorderTracingBuilderTests {
             .thenReturn(renderStyle);
     }
 
-    // The holding the overlay is to trace. Handed over rather than stubbed at a resolver: the
-    // builder reads through the tier's own seam, so a case states the answer instead of naming
-    // whatever mechanic would have worked it out.
-    private void stubHolders(Map<String, SystemOwner> ownerBySystemId) {
-        holderProvider = HolderProviderFake.createHolding(buildKeyedValues(ownerBySystemId));
+    // The owners the overlay is to trace. Stated rather than resolved: what owns a system is the
+    // layer's source's answer, so a case states the answer instead of naming whatever mechanic would
+    // have worked it out.
+    private void stubHolders(Map<String, SystemOwner> statedOwnerBySystemId) {
+        ownerBySystemId = statedOwnerBySystemId;
     }
 
-    // The systems the overlay is to treat as settled. Stubbed at the layer's
-    // inhabitation seam rather than at the market scan behind it, since that seam is where the
-    // overlay's own pass is read - and opening one reaches LunaLib for the colony rule, which the
-    // test JVM cannot load.
-    //
-    // Matched on the sector the pass was opened over rather than on the pass itself, the overlay
-    // opening its own so no case here holds the instance. That is the half worth pinning: the
-    // overlay resolves its holding and its inhabitation from one pass, and one opened over a
-    // second sector would classify cells against a sector the trace above never read. A stub
-    // matching any pass at all would go on answering for it.
+    // The systems the overlay is to treat as settled, which arrive on the same answer the owners
+    // do - so the overlay classifies its factionless cells off the very resolve it traced.
     private void stubInhabitedSystems(String... systemIds) {
-        inhabitationMock
-            .when(() -> OwnerMapInhabitation.readInhabitedSystemKeys(
-                argThat(pass -> pass != null && pass.sector() == sectorMock)))
-            .thenReturn(buildKeyedSystemKeys(List.of(systemIds)));
+        inhabitedSystemKeys = buildKeyedSystemKeys(List.of(systemIds));
+    }
+
+    // The source's whole answer as this case stated it, nothing contested, unfilled or spotlit.
+    private ResolvedOwners stateOwners() {
+        return new ResolvedOwners(
+            buildKeyedValues(ownerBySystemId),
+            Set.of(),
+            Set.of(),
+            inhabitedSystemKeys,
+            Set.of());
     }
 
     // A bundle the overlay reads only for its outer element: fill and seam never reach the

@@ -10,6 +10,7 @@ import kmlib.starsector.ui.label.NameFitSpecification;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
@@ -17,6 +18,8 @@ import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.labels.anchor.specifications.LeanScoring;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.theme.CategoryStyle;
@@ -24,22 +27,28 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.base.visibility.systems.MapSectorFixture;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.OwnerSource;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.render.OwnerMapCache;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.clusters.ResolvedHolding;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
+import kmu.maplayers.ownermap.ribbon.RibbonPlan;
+import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
+import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.settings.KmuMapLabelSettings;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
@@ -51,6 +60,7 @@ import org.lazywizard.lazylib.ui.LazyFont;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +77,7 @@ import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -87,6 +98,11 @@ import static org.mockito.Mockito.when;
  * <p>The build runs for real over hand-built 2000-unit square cells; what is stood in for is only
  * what no JVM outside the game answers - the settings behind the border trace, the global theme
  * tier and the label tuning, and the label font.
+ *
+ * <p>The rebuild cases go one stage further out: the cache cuts its own cells over a staged sector
+ * and asks the layer's own source for its owners, so what they pin is that the core reads no colony
+ * for a layer that never asked it to, and cuts cells by the layer's seed rule rather than another
+ * layer's.
  */
 final class NonFactionOwnerLayerIntegrationTests {
 
@@ -172,8 +188,6 @@ final class NonFactionOwnerLayerIntegrationTests {
             .when(() -> LazyFontCache.loadByFace(any()))
             .thenReturn(fontMock);
 
-        when(viewMock.resolveOwnerReading(any(), any()))
-            .thenReturn(new RelayReadingFake());
         when(viewMock.resolveCategories())
             .thenReturn(new RelayCategoriesFake());
 
@@ -293,6 +307,106 @@ final class NonFactionOwnerLayerIntegrationTests {
         }
     }
 
+    @Nested
+    class RefreshDrawLists {
+
+        // A full rebuild runs the cut, the source, the build and the label pass for real, so what
+        // it reaches that no test JVM answers is stood in for here, beside what the suite opens.
+        private OwnerMapRebuildSeams seams;
+
+        private final OwnerPaintedView relayViewMock = mock(OwnerPaintedView.class);
+        private final RelaySourceFake relaySourceFake = new RelaySourceFake();
+
+        // Three reachable systems far enough apart that each is cut a cell of its own: two carrying
+        // a relay, one dark.
+        private SectorAPI relaySectorMock;
+
+        @BeforeEach
+        void openTheRebuildSeams() {
+
+            seams = OwnerMapRebuildSeams.openEverySeamARebuildNeeds();
+
+            relaySectorMock = MapSectorFixture.buildStarAnchoredSectorOf(
+                MapSectorFixture.buildReachableSystemAt(RELAY_WEST, 0f, 0f),
+                MapSectorFixture.buildReachableSystemAt(DARK_SYSTEM, 30000f, 0f),
+                MapSectorFixture.buildReachableSystemAt(RELAY_EAST, 60000f, 0f));
+
+            when(relayViewMock.getId())
+                .thenReturn("relays");
+            when(relayViewMock.resolveViewRecedeAdjustment(any()))
+                .thenReturn(ElementStyleAdjustment.NONE);
+            when(relayViewMock.resolveCategories())
+                .thenReturn(new RelayCategoriesFake());
+            when(relayViewMock.resolveViewReading(any()))
+                .thenReturn(new ViewReading(relayViewMock, new RelayReadingFake(), relaySourceFake));
+        }
+
+        @AfterEach
+        void closeTheRebuildSeams() {
+            seams.closeEverySeam();
+        }
+
+        @Test
+        void paintsEachSystemByTheLayersOwnRuleWithNoHolderPassOpened() {
+            // The core asks the layer which systems each owner holds and reads no colony itself, so
+            // a layer keyed by a rule with nothing to do with colonies rebuilds without a holder
+            // pass ever being opened - one opened anyway would be the core reading colonies for a
+            // layer that never asked it to.
+            var cache = buildCacheSeeding(CellSeedRule.SEED_DRAWN_SYSTEMS);
+
+            try (var passConstructionMock = mockConstruction(HolderPass.class)) {
+
+                cache.refreshDrawLists(relayViewMock, ScreenMemoryScopes.createStandInScreen());
+
+                assertThat(passConstructionMock.constructed())
+                    .isEmpty();
+            }
+
+            assertThat(cache.getClusters().getOccupancy().getOwnerBySystemKey())
+                .extractingFromEntries(entry -> entry.getKey().systemId(), entry -> entry.getValue().ownerId())
+                .containsExactlyInAnyOrder(
+                    tuple(RELAY_WEST, RELAY),
+                    tuple(DARK_SYSTEM, NO_RELAY),
+                    tuple(RELAY_EAST, RELAY));
+        }
+
+        @Test
+        void handsTheSourceTheWalkOfItsOwnSector() {
+            // The walk the cut was taken from, so the owners are resolved for the sector the cells
+            // stand on rather than whichever is running.
+            buildCacheSeeding(CellSeedRule.SEED_DRAWN_SYSTEMS)
+                .refreshDrawLists(relayViewMock, ScreenMemoryScopes.createStandInScreen());
+
+            assertThat(relaySourceFake.walks)
+                .singleElement()
+                .extracting(SectorWalk::sector)
+                .isSameAs(relaySectorMock);
+        }
+
+        @Test
+        void cutsCellsOnlyForTheSystemsTheLayersSeedRuleAdmits() {
+            // The layer states which systems seed its cells, so a rule narrower than the drawn set
+            // leaves a drawn system with no cell - which a cut inheriting another layer's rule
+            // would have given one.
+            var cache = buildCacheSeeding((pass, system) -> !DARK_SYSTEM.equals(system.getId()));
+
+            cache.refreshDrawLists(relayViewMock, ScreenMemoryScopes.createStandInScreen());
+
+            assertThat(cache.getClusters().getStyledCellByCellKey().keySet())
+                .extracting(SystemKey::systemId)
+                .containsExactlyInAnyOrder(RELAY_WEST, RELAY_EAST);
+        }
+
+        // A cache over this sector's own machinery, drawing no names and seeding under the given
+        // rule.
+        private OwnerMapCache buildCacheSeeding(CellSeedRule seedRule) {
+            return new OwnerMapCache(
+                new SectorMapMachinery(relaySectorMock),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
+                seedRule);
+        }
+    }
+
     // The map the relay layer's rule resolves: both relay systems to one owner, the dark system to
     // the other, the settled system to nobody though something stands there.
     private OwnerMapClusters buildRelayMap() {
@@ -302,8 +416,10 @@ final class NonFactionOwnerLayerIntegrationTests {
         ownerBySystemKey.put(buildCellKey(RELAY_EAST), new SystemOwner(RELAY, RELAY_PALETTE));
         ownerBySystemKey.put(buildCellKey(DARK_SYSTEM), new SystemOwner(NO_RELAY, NO_RELAY_PALETTE));
 
-        var holding = new ResolvedHolding(
-            new HolderResolution(ownerBySystemKey, Set.of(), Set.of()),
+        var owners = new ResolvedOwners(
+            ownerBySystemKey,
+            Set.of(),
+            Set.of(),
             Set.of(
                 buildCellKey(RELAY_WEST),
                 buildCellKey(RELAY_EAST),
@@ -313,10 +429,9 @@ final class NonFactionOwnerLayerIntegrationTests {
 
         return OwnerMapBuilder.buildClusters(
             geometryCacheMock,
-            HolderPass.over(sectorMock, ColonyReadRulesFixtures.UNDER_THE_FOG, HolderGrouping.identity()),
-            viewMock,
+            new ViewReading(viewMock, new RelayReadingFake(), OwnerSourceFake.createAnswering(owners)),
             ContentInputsFixtures.createInputsSpellingNames(FactionNameFormatChoice.FULL),
-            holding);
+            owners);
     }
 
     // That map's names, fitted the way a production rebuild fits them.
@@ -372,6 +487,47 @@ final class NonFactionOwnerLayerIntegrationTests {
             systemKeyByCellKey.put(cellKey, cellKey);
         }
         return systemKeyByCellKey;
+    }
+
+    /**
+     * The relay layer's owner source: a system carries a relay or it does not, read off its ID alone
+     * over the walk the tier hands it - no colony, no faction, no grouping.
+     */
+    private static final class RelaySourceFake implements OwnerSource {
+
+        private final List<SectorWalk> walks = new ArrayList<>();
+
+        @Override
+        public ResolvedOwners resolveOwners(SectorWalk walk, String spotlitOwnerId) {
+
+            walks.add(walk);
+
+            var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
+
+            for (var systemKey : walk.sectorIndex().readSystemsByKey().keySet()) {
+                ownerBySystemKey.put(
+                    systemKey,
+                    systemKey.systemId().startsWith("relay")
+                        ? new SystemOwner(RELAY, RELAY_PALETTE)
+                        : new SystemOwner(NO_RELAY, NO_RELAY_PALETTE));
+            }
+            return new ResolvedOwners(
+                ownerBySystemKey,
+                Set.of(),
+                Set.of(),
+                ownerBySystemKey.keySet(),
+                Set.of());
+        }
+
+        @Override
+        public SystemOwnerResolve openSystemResolve(SectorWalk walk, String spotlitOwnerId) {
+            throw new UnsupportedOperationException("no case here re-derives a system");
+        }
+
+        @Override
+        public SystemRibbonPlanner resolveRibbonPlanner(SectorWalk walk, RibbonPlanRules rules) {
+            return system -> RibbonPlan.NONE;
+        }
     }
 
     /** The relay layer's answers about its two owners, none of them read off a faction. */

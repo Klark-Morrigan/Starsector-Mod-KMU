@@ -6,6 +6,7 @@ import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.SectorBlocPalettes;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -104,6 +105,55 @@ final class SectorClaimsIntegrationTests {
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     buildHolderPassOver(sectorMock), claimReaderFake)).isEmpty();
+        }
+    }
+
+    @Nested
+    class ResolveClaimingHolderIn {
+
+        @Test
+        void returnsNullForNoSystem() {
+
+            var pass = buildHolderPassOver(null);
+
+            assertThat(SectorClaims.resolveClaimingHolderIn(
+                    null, pass, new ClaimReaderFake(), buildPalettesOver(pass))).isNull();
+        }
+
+        @Test
+        void returnsNullForAnUnclaimedSystem() {
+
+            var pass = buildHolderPassOver(buildSectorWithSystems(
+                    List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("unclaimed")));
+
+            assertThat(SectorClaims.resolveClaimingHolderIn(
+                    pass.readSystems().get(0), pass, new ClaimReaderFake(), buildPalettesOver(pass))).isNull();
+        }
+
+        @Test
+        void foldsTheClaimantIntoTheBlocTheSectorWideResolvePaints() {
+            // The single-system arm a batch re-derives through, so a marked system lands on the very
+            // bloc and shades the whole-sector resolve painted it in.
+            var grouping = new HolderGrouping(
+                    Map.of("hegemony", "alliance-1"),
+                    Map.of("alliance-1", "hegemony"),
+                    Map.of("alliance-1", "Allied Powers"));
+            var pass = HolderPass.over(
+                    buildSectorWithSystems(
+                            List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("claimed")),
+                    UNDER_THE_FOG,
+                    grouping);
+            var claimReaderFake = new ClaimReaderFake();
+            claimReaderFake.setClaim("claimed", "hegemony");
+
+            assertThat(SectorClaims.resolveClaimingHolderIn(
+                    pass.readSystems().get(0), pass, claimReaderFake, buildPalettesOver(pass)))
+                    .isEqualTo(new SystemOwner(
+                            "alliance-1", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+        }
+
+        private static SectorBlocPalettes buildPalettesOver(HolderPass pass) {
+            return new SectorBlocPalettes(pass.sector(), pass.grouping());
         }
     }
 }

@@ -2,47 +2,27 @@ package kmu.maplayers.politicalmap.render;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.statics.StaticSeams;
 
-import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
-import kmu.maplayers.ownermap.preferences.NameFormatPreference;
-import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
-import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
+import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
-import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapLabelSettings;
-import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
-import kmu.settings.KmuOwnerMapGeometrySettings;
 import kmu.settings.KmuOwnerMapRibbonSettings;
 
 import org.mockito.MockedStatic;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
- * Everything a real political-map rebuild reaches that no test JVM answers, stood in for in one
- * place: the logger, and the live LunaLib reads each stage of the rebuild is configured by.
- *
- * <p>Which classes those are is a fact about what a rebuild touches rather than about any one
- * suite's cases, which is why it is answered here. A stage that starts reading a new knob otherwise
- * breaks every suite driving a whole rebuild at once, each in its own copy of the same arrangement.
- *
- * <p>Four seams are handed back rather than answered here, because they are what those suites
- * legitimately disagree on: which sector the game is running, whether the bands are on, what the
- * player is allowed to see, and which bloc is spotlighted. The last is handed back for the suites
- * whose subject is what a rebuild is owed, since a pick moved between two frames is how such a case
- * is posed at all. Everything else answers the same way for any rebuild, so a caller states only
- * what it varies.
+ * Everything a real political-map rebuild reaches that no test JVM answers: what any layer's rebuild
+ * reaches, from {@link OwnerMapRebuildSeams}, beside the weighting rule only this layer reads and the
+ * label, diagnostics and theme reads a rebuild drawing no names answers one way.
  *
  * <p>The suites that stage a rebuild's inputs rather than run one - the incremental fold's, which
  * hand-builds its cells and paints each category apart - deliberately do not take this. They would
@@ -51,96 +31,33 @@ import static org.mockito.Mockito.when;
  */
 public final class PoliticalMapRebuildSeams {
 
-    // The cells' seed knobs, wide enough that a cell holds clear of its own inset border.
-    private static final int CELL_BOUND_SEGMENTS = 16;
-    private static final double CELL_RADIUS = 4000.0;
-
-    private final StaticSeams seams = new StaticSeams();
-
-    private final MockedStatic<Global> globalSeam;
-    private final MockedStatic<KmuOwnerMapRibbonSettings> ribbonSettingsSeam;
-    private final MockedStatic<MapVisibilityRules> visibilityRulesSeam;
-    private final MockedStatic<FilterSelection> filterSelectionSeam;
+    private final OwnerMapRebuildSeams ownerMapSeams = OwnerMapRebuildSeams.openEverySeamARebuildNeeds();
 
     private PoliticalMapRebuildSeams() {
 
-        globalSeam = seams.holdSeam(StubbedGlobalLogger.openGlobalAnsweringLoggers());
-
-        // The dev reveal, the anchor tuning and the dev overlays, all LunaLib-backed: no rebuild
-        // claim turns on any of the three, so the seam's own answers stand for them.
-        seams.openSeam(KmuMapVisibilitySettings.class);
-        seams.openSeam(KmuMapLabelSettings.class);
-        seams.openSeam(KmuLunaSettings.class);
-        seams.openSeam(KmuOwnerMapDiagnosticsSettings.class);
-
-        // The label face is settled against the installed atlases and loaded from them, and no test
-        // JVM has either: settled on nothing and loaded as nothing, the names measure off the aspect
-        // stand-in and mint no strings, which is what a face that fails to load does in play.
-        seams.openSeam(LabelFonts.class);
-
-        // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory state
-        // no test JVM has.
-        filterSelectionSeam = seams.openSeam(FilterSelection.class);
-
-        var geometrySettingsSeam = seams.openSeam(KmuOwnerMapGeometrySettings.class);
-        geometrySettingsSeam
-            .when(KmuOwnerMapGeometrySettings::getOwnerMapCellBoundSegments)
-            .thenReturn(CELL_BOUND_SEGMENTS);
-        geometrySettingsSeam
-            .when(KmuOwnerMapGeometrySettings::getOwnerMapCellRadius)
-            .thenReturn(CELL_RADIUS);
-
-        // Opened unanswered, so the bands are off unless a caller says otherwise: a rebuild whose
-        // claim is not about the bands should not be paying to bake them.
-        ribbonSettingsSeam = seams.openSeam(KmuOwnerMapRibbonSettings.class);
-
-        visibilityRulesSeam = seams.openSeam(MapVisibilityRules.class);
-        visibilityRulesSeam
-            .when(MapVisibilityRules::readFromLunaSettings)
-            .thenReturn(MapVisibilityRules.BASE);
+        // The anchor tuning and the dev overlays, both LunaLib-backed: no rebuild claim turns on
+        // either, so the seam's own answers stand for them.
+        ownerMapSeams.openFurtherSeam(KmuMapLabelSettings.class);
+        ownerMapSeams.openFurtherSeam(KmuOwnerMapDiagnosticsSettings.class);
 
         // The weighting rule the fills and the bands are both resolved under, read live off LunaLib
         // in production - left to the settings seam it would weigh every colony at nothing and leave
         // the sector unheld, which is the one state that makes a holder assertion vacuous.
-        var dominanceRulesSeam = seams.openSeam(DominanceRules.class);
-        dominanceRulesSeam
+        ownerMapSeams.openFurtherSeam(DominanceRules.class)
             .when(DominanceRules::readFromLunaSettings)
             .thenReturn(DominancePassFixtures.buildStabilityWeightedRules());
 
         // One style bundle for every category, so a difference in what was drawn can only have come
         // from the geometry or the holding.
-        var renderStyleSeam = seams.openSeam(RenderStyleReader.class);
-        renderStyleSeam
+        ownerMapSeams.openFurtherSeam(RenderStyleReader.class)
             .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
             .thenReturn(OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
                 OwnerMapClusterFixtures.createInertCategoryStyle()));
     }
 
     /**
-     * The body preferences a rebuild under these seams is built with: the names off, which keeps the
-     * label mint and the anchor fit off a rebuild that has no font to measure with, and every other
-     * choice as an untouched save reads it.
-     *
-     * @return a layer's preferences, over test keys, drawing no names
-     */
-    public static OwnerMapBodyPreferences createPreferencesNamingNothing() {
-
-        var nameFormatMock = mock(NameFormatPreference.class);
-
-        when(nameFormatMock.getSelectedNameFormat(any()))
-            .thenReturn(FactionNameFormatChoice.NONE);
-
-        var preferences = OwnerMapBodyPreferencesFixtures.createUnderTestKeys();
-
-        return new OwnerMapBodyPreferences(
-            nameFormatMock,
-            preferences.uninhabitedOutline(),
-            preferences.filterRecede());
-    }
-
-    /**
-     * Stands in for every class a rebuild reaches, answering each the one way a rebuild wants unless
-     * it is one of the four handed back below.
+     * Stands in for every class a political rebuild reaches, answering each the one way a rebuild
+     * wants unless it is one of the four handed back below.
      *
      * @return the open arrangement, which its holder closes on the way out
      */
@@ -150,40 +67,35 @@ public final class PoliticalMapRebuildSeams {
 
     /** Closes every seam this opened. */
     public void closeEverySeam() {
-        seams.closeEverySeam();
+        ownerMapSeams.closeEverySeam();
     }
 
     /**
-     * @return the seam standing in for the running game, for a caller to say which sector that is -
-     *         commonly the one it installed on, and pointedly not it, for a case posing a stage that
-     *         must read its own sector rather than whichever is loaded
+     * @return the seam standing in for the running game, as {@link OwnerMapRebuildSeams} hands it
      */
     public MockedStatic<Global> resolveGlobalSeam() {
-        return globalSeam;
+        return ownerMapSeams.resolveGlobalSeam();
     }
 
     /**
-     * @return the seam standing in for the band settings, for a caller whose claim is about the
-     *         bands and so needs them switched on at sizes that draw
+     * @return the seam standing in for the band settings, as {@link OwnerMapRebuildSeams} hands it
      */
     public MockedStatic<KmuOwnerMapRibbonSettings> resolveRibbonSettingsSeam() {
-        return ribbonSettingsSeam;
+        return ownerMapSeams.resolveRibbonSettingsSeam();
     }
 
     /**
-     * @return the seam standing in for the player's visibility settings, for a caller posing a gate
-     *         flipped between two rebuilds
+     * @return the seam standing in for the player's visibility settings, as
+     *         {@link OwnerMapRebuildSeams} hands it
      */
     public MockedStatic<MapVisibilityRules> resolveVisibilityRulesSeam() {
-        return visibilityRulesSeam;
+        return ownerMapSeams.resolveVisibilityRulesSeam();
     }
 
     /**
-     * @return the seam standing in for the spotlight pick, for a caller posing a bloc picked or
-     *         cleared between two frames
+     * @return the seam standing in for the spotlight pick, as {@link OwnerMapRebuildSeams} hands it
      */
     public MockedStatic<FilterSelection> resolveFilterSelectionSeam() {
-        return filterSelectionSeam;
+        return ownerMapSeams.resolveFilterSelectionSeam();
     }
-
 }

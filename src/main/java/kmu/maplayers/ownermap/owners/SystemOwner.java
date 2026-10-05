@@ -5,7 +5,9 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.CellGrouping;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The owner a star system is painted by on an owner map, paired with the two shades its cell can
@@ -64,5 +66,32 @@ public record SystemOwner(
             Map<SystemKey, SystemKey> systemKeyByCellKey,
             Map<SystemKey, SystemOwner> ownerBySystemKey) {
         return new CellGrouping(systemKeyByCellKey, mapOwnerIdBySystemKey(ownerBySystemKey));
+    }
+
+    /**
+     * Which of the given systems nobody owns, under an owner map.
+     *
+     * <p>The candidate rule for a spotlit owner's presence, which is only ever asked about systems
+     * the map attributes to nobody: one somebody owns already draws in that owner's cluster group,
+     * so where the pick also lives there changes nothing. Stated once here, so a source resolving
+     * the whole sector and the refresh folding one system cannot come to disagree about what
+     * "unowned" means.
+     *
+     * @param ownerBySystemKey    who owns each system; a system nobody owns is absent
+     * @param candidateSystemKeys the systems to filter, in the order they are to be answered in
+     * @return those of them no owner was resolved for
+     */
+    public static Set<SystemKey> selectUnownedSystemKeysAmong(
+            Map<SystemKey, SystemOwner> ownerBySystemKey,
+            Set<SystemKey> candidateSystemKeys) {
+
+        var unownedSystemKeys = new LinkedHashSet<SystemKey>();
+
+        for (var systemKey : candidateSystemKeys) {
+            if (!ownerBySystemKey.containsKey(systemKey)) {
+                unownedSystemKeys.add(systemKey);
+            }
+        }
+        return unownedSystemKeys;
     }
 }

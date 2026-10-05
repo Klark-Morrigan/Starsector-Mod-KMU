@@ -5,7 +5,6 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.OwnerStyleResolver;
 import kmu.maplayers.ownermap.render.style.OwnerStyling;
@@ -31,7 +30,8 @@ import java.util.Set;
  * come off the holding resolve, and a fill split reads them beside the paint.
  *
  * @param styling             the resolved paint scheme every cell and cluster group is styled from
- * @param viewReading         the view painted and the owner reading it was styled by
+ * @param viewReading         the view painted, the owner reading it was styled by, and the source
+ *                            its owners came from, which a batch re-derives a marked system through
  * @param contentInputs       the sidebar picks the build sampled, as its one reading of them
  * @param unfilledSystemKeys  the owned systems drawn with no fill: held by their owner for border
  *                            and label but painting nothing inside its one frontier, so the
@@ -52,11 +52,11 @@ public record OwnerMapBuildInputs(
      * The inert inputs a build that never ran carries - what the empty placeholder the render path
      * falls back on after a failed first build is built under.
      *
-     * <p>Each snapshot's own placeholder, named by the record that owns it, plus no reading, the
-     * identity grouping and two empty sets. It carries the active view rather than naming a
-     * concrete one, keeping the model view-agnostic. The null reading is the honest record of a
-     * build that never resolved one, and {@link #wasBuilt()} is what every reader that would reach
-     * it asks first.
+     * <p>Each snapshot's own placeholder, named by the record that owns it, plus no reading, no
+     * source and two empty sets. It carries the active view rather than naming a concrete one,
+     * keeping the model view-agnostic. The null reading and source are the honest record of a build
+     * that never resolved either, and {@link #wasBuilt()} is what every reader that would reach them
+     * asks first.
      *
      * @param view the view being drawn when the build failed
      * @return the placeholder inputs
@@ -64,7 +64,7 @@ public record OwnerMapBuildInputs(
     public static OwnerMapBuildInputs createEmpty(OwnerPaintedView view) {
         return new OwnerMapBuildInputs(
             MapStyling.createEmpty(),
-            new ViewReading(view, null, HolderGrouping.identity()),
+            new ViewReading(view, null, null),
             ContentInputs.createEmpty(),
             Set.of(),
             Set.of());

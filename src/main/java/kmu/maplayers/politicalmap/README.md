@@ -333,14 +333,16 @@ which a picker of painters opts into and any other picker leaves alone.
 
 ## The ownership sources
 
-Three providers answer the [ownership seam](../ownermap/owners/holders/README.md),
+Every view of this layer paints holders,
+so each states its holding rule to the tier's [holder source](../ownermap/owners/holders/README.md),
+which answers the tier's owner seams off one colony pass.
+Three providers are those rules,
 all of them this layer's own and all in `holders`:
 
 - **`DefaultHolderProvider`** -
   held systems from the live economy.
   No view resolves through it bare:
-  the source below wraps it for the Factions and Alliances views,
-  and the layer hands it to the tier as the holding the diagnostic overlays read.
+  the source below wraps it for the Factions and Alliances views.
   Off filter,
   each system goes to its single strongest owner,
   with no exceptions.
@@ -394,12 +396,18 @@ all of them this layer's own and all in `holders`:
 Both claim-reading sources get their claims from `FilteredClaims`,
 so which claims a spotlight moves is answered once rather than once per source.
 
-An incremental refresh re-derives one system at a time through the tier's per-system seam,
-which this layer answers with `DominanceSystemHolderResolve`,
-also in `holders`:
-the market contest asked of one system,
+An incremental refresh re-derives one system at a time,
+through a per-system resolve each view states,
+also in `holders`.
+The two dominance views state `DominanceSystemHolderResolve`:
+the market contest asked of one system over the batch's own pass,
 under one weighting rule sampled per batch,
 so a single-system refresh lands the bloc the bulk pass would have.
+The Claims view states `ClaimSystemHolderResolve`:
+the claimant of one system,
+read through the same claim reader and folded and coloured by the same rule
+`SectorClaims` applies to the whole sector,
+so a colony event in a claimed system keeps it on its claimant.
 
 ## The claim mechanic
 
@@ -503,7 +511,7 @@ so shelving them under either mechanic would make that mechanic name the other.
 | --- | --- |
 | *(top level)* | the tab (`PoliticalMapLayer`), what it stands up on a sector (`PoliticalMapStanding`, `PoliticalMapInstaller`) |
 | `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), the contest-painted views' shared answers (`DominancePaintedView`), and the alliance-only body controls (`AllianceBodyControls`) |
-| `holders` | the layer's answers to the tier's holder seams: the three [ownership sources](#the-ownership-sources) and `DominanceSystemHolderResolve` |
+| `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the two per-system resolves, `DominanceSystemHolderResolve` and `ClaimSystemHolderResolve` |
 | `dominance` | the market contest: the pass, `SectorPolitics`, `FilteredPolitics`, `SystemDominance`, the tie-break and the ranking rules, `BlocCandidacy`, the stats and sort modes |
 | `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`) |
 | `dominance/standings` | one hovered system's ranked standings, per group and per faction |
@@ -639,10 +647,15 @@ all of them where `PoliticalMapLayer` builds its renderer:
   It goes to the tier's compositor and deliberately not to the frame sequence:
   the sequence taking it would state that every layer has a picker with a hover preview,
   which is false.
-- **`DefaultHolderProvider`** and **`DominanceSystemHolderResolve`**,
-  in `holders` -
-  the holding the diagnostic overlays read,
-  and the per-system resolve an incremental refresh uses.
+- **`CellSeedRule.SEED_DRAWN_SYSTEMS`**,
+  the substrate's -
+  which systems seed a cell.
+  This layer seeds one for every system the map draws,
+  and states it rather than inheriting it.
+
+Who owns each system is not handed to the renderer at all:
+every view answers it through `resolveViewReading`,
+which the tier asks per rebuild and the diagnostic overlays share.
 
 ### Hover tooltips
 

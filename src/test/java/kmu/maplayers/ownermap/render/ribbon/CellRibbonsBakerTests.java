@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.profiling.RecordedCapture;
@@ -10,15 +11,15 @@ import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.profiling.MapBuildCounters;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.RibbonSegment;
-import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 import kmu.settings.KmuOwnerMapRibbonSettings;
 
@@ -36,13 +37,11 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -69,8 +68,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>A bake per bake rather than one reused, because that is how a rebuild drives it - each one
  * samples the settings and the names afresh - so a case that reused one would be posing an
- * arrangement production never has. The reading of the sector each is handed is opened here for
- * the same reason it is opened by a rebuild: whose reading it is belongs to the caller, and every
+ * arrangement production never has. The walk of the sector each is handed is opened here for
+ * the same reason it is opened by a rebuild: whose walk it is belongs to the caller, and every
  * case here is about what the bake does with the cells rather than about how current its counts
  * are.
  */
@@ -108,23 +107,17 @@ final class CellRibbonsBakerTests {
     // overlay over its answer. No case here turns on it, so the stub's own false is the answer.
     private MockedStatic<KmuOwnerMapDiagnosticsSettings> diagnosticsSettingsMock;
 
-    // The map-layer knobs stand in for the same reason, a bake opening a pass that samples the dev
-    // reveal off them. No case here turns on the reveal, so the stub's own false is the answer.
-    private MockedStatic<KmuMapVisibilitySettings> mapLayerSettingsMock;
-
     @BeforeEach
     void stubBandSettings() {
 
         settingsMock = mockStatic(KmuOwnerMapRibbonSettings.class);
         diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class);
-        mapLayerSettingsMock = mockStatic(KmuMapVisibilitySettings.class);
 
         RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
     }
 
     @AfterEach
     void releaseBandSettings() {
-        mapLayerSettingsMock.close();
         diagnosticsSettingsMock.close();
         settingsMock.close();
     }
@@ -297,9 +290,11 @@ final class CellRibbonsBakerTests {
     private static OwnerMapClusters buildTwoDrawnCells() {
 
         return drawCells(
-            OwnerMapClusterFixtures.createClustersOwnedBy(Map.of(
-                BANDED_SYSTEM_ID, buildHolder(),
-                OTHER_BANDED_SYSTEM_ID, buildHolder())),
+            OwnerMapClusterFixtures.createClustersOwnedBy(
+                Map.of(
+                    BANDED_SYSTEM_ID, buildHolder(),
+                    OTHER_BANDED_SYSTEM_ID, buildHolder()),
+                buildSourcePlanningEveryCell()),
             BANDED_CELL,
             OTHER_BANDED_CELL);
     }
@@ -312,13 +307,24 @@ final class CellRibbonsBakerTests {
         return drawCells(
             OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(BANDED_SYSTEM_ID, buildHolder()),
-                Set.of(BANDED_SYSTEM_ID, UNHELD_SETTLED_SYSTEM_ID)),
+                Set.of(BANDED_SYSTEM_ID, UNHELD_SETTLED_SYSTEM_ID),
+                buildSourcePlanningEveryCell()),
             BANDED_CELL,
             UNHELD_SETTLED_CELL);
     }
 
-    // Records each named cell as drawn, at the one band-sized shape this suite poses, and answers
-    // the view with the planner every case counts through.
+    // The source the clusters retain, answering with the planner every case counts through - the
+    // source the build's owners came from being where a bake reads its mechanic, so a planner
+    // stated anywhere else would leave the pass counting through one that plans nothing.
+    private static OwnerSourceFake buildSourcePlanningEveryCell() {
+
+        var sourceFake = new OwnerSourceFake();
+        sourceFake.answerRibbonPlanner(system -> ANY_PLAN);
+
+        return sourceFake;
+    }
+
+    // Records each named cell as drawn, at the one band-sized shape this suite poses.
     private static OwnerMapClusters drawCells(
             OwnerMapClusters clusters,
             SystemKey... cellKeys) {
@@ -328,13 +334,6 @@ final class CellRibbonsBakerTests {
                 cellKey,
                 OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
         }
-
-        // The mechanic the pass counts by, answered off the view the clusters already carry -
-        // which is where a bake reads it from, so a stub anywhere else would leave the pass
-        // counting through whatever the fixture's mock returns by default.
-        when(clusters.getBuildInputs().viewReading().view().resolveRibbonPlanner(any()))
-            .thenReturn(system -> ANY_PLAN);
-
         return clusters;
     }
 
@@ -342,8 +341,8 @@ final class CellRibbonsBakerTests {
         bakeThrough(clusters).bakeAllCellRibbons();
     }
 
-    // A fresh bake over the given clusters, as a rebuild mints one per bake, over a reading of
-    // the sector opened here as its caller opens one.
+    // A fresh bake over the given clusters, as a rebuild mints one per bake, over a walk of the
+    // sector opened here as its caller opens one.
     //
     // The geometry and the sector are derived from the cells the clusters actually drew rather
     // than named here, so a case adding a cell gets it placed and listed without a second fixture
@@ -355,10 +354,9 @@ final class CellRibbonsBakerTests {
         return CellRibbonsBaker.createForPass(
             clusters,
             buildGeometryPlacing(drawnCellKeys),
-            HolderPass.over(
-                buildSectorOf(drawnCellKeys),
-                UNDER_THE_FOG,
-                HolderGrouping.identity()),
+            new SectorWalk(
+                new SectorPassIndex(buildSectorOf(drawnCellKeys)),
+                MapVisibilityRules.BASE),
             // No names placed, since where a name falls is pinned by the builder that lays a band
             // inside one cell rather than by which cells a pass reaches.
             List.of(),

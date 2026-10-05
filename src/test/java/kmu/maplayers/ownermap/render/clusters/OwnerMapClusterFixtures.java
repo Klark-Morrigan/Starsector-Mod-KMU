@@ -16,10 +16,11 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.OwnerSource;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
@@ -37,7 +38,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Shared fixtures for the tests that build or read a {@link OwnerMapClusters}: an inert
@@ -106,12 +106,42 @@ public final class OwnerMapClusterFixtures {
      */
     public static OwnerMapClusters createClustersOwnedByKeys(
             Map<SystemKey, SystemOwner> ownerBySystemKey) {
+        return createClustersOwnedByKeys(ownerBySystemKey, new OwnerSourceFake());
+    }
+
+    /**
+     * The same clusters retaining a stated owner source, for a suite whose subject is what a later
+     * pass asks the source the build was resolved by - a batch re-deriving a marked system, or a
+     * bake counting a band.
+     *
+     * @param ownerBySystemId who holds each system
+     * @param ownerSource     the source the build retains
+     * @return a live clusters, ready to have draw records written into it
+     */
+    public static OwnerMapClusters createClustersOwnedBy(
+            Map<String, SystemOwner> ownerBySystemId,
+            OwnerSource ownerSource) {
+        return createClustersOwnedByKeys(buildKeyedValues(ownerBySystemId), ownerSource);
+    }
+
+    /**
+     * The keyed form of {@link #createClustersOwnedBy(Map, OwnerSource)}, for a pair of systems
+     * sharing a vanilla ID.
+     *
+     * @param ownerBySystemKey who holds each system, addressed as the build addresses it
+     * @param ownerSource      the source the build retains
+     * @return a live clusters, ready to have draw records written into it
+     */
+    public static OwnerMapClusters createClustersOwnedByKeys(
+            Map<SystemKey, SystemOwner> ownerBySystemKey,
+            OwnerSource ownerSource) {
 
         return createClustersUnder(
             ContentInputsFixtures.createInputsSpotlighting(null), // No bloc spotlighted.
             ownerBySystemKey,
             ownerBySystemKey.keySet(),
-            Set.of());
+            Set.of(),
+            ownerSource);
     }
 
     /**
@@ -131,11 +161,28 @@ public final class OwnerMapClusterFixtures {
     public static OwnerMapClusters createClustersSettledIn(
             Map<String, SystemOwner> ownerBySystemId,
             Set<String> inhabitedSystemIds) {
-        return createClustersSpotlighting(
-            null, // No bloc spotlighted.
-            ownerBySystemId,
-            inhabitedSystemIds,
-            Set.of());
+        return createClustersSettledIn(ownerBySystemId, inhabitedSystemIds, new OwnerSourceFake());
+    }
+
+    /**
+     * The same clusters retaining a stated owner source.
+     *
+     * @param ownerBySystemId    who holds each system
+     * @param inhabitedSystemIds every system something stands in
+     * @param ownerSource        the source the build retains
+     * @return a live clusters, ready to have draw records written into it
+     */
+    public static OwnerMapClusters createClustersSettledIn(
+            Map<String, SystemOwner> ownerBySystemId,
+            Set<String> inhabitedSystemIds,
+            OwnerSource ownerSource) {
+
+        return createClustersUnder(
+            ContentInputsFixtures.createInputsSpotlighting(null), // No bloc spotlighted.
+            buildKeyedValues(ownerBySystemId),
+            buildKeyedSystemKeys(inhabitedSystemIds),
+            Set.of(),
+            ownerSource);
     }
 
     /**
@@ -162,7 +209,8 @@ public final class OwnerMapClusterFixtures {
             ContentInputsFixtures.createInputsSpotlighting(selectedBlocId),
             buildKeyedValues(ownerBySystemId),
             buildKeyedSystemKeys(inhabitedSystemIds),
-            buildKeyedSystemKeys(spotlitPresenceSystemIds));
+            buildKeyedSystemKeys(spotlitPresenceSystemIds),
+            new OwnerSourceFake());
     }
 
     /**
@@ -181,6 +229,21 @@ public final class OwnerMapClusterFixtures {
     public static OwnerMapClusters createClustersSpellingNames(
             Map<String, SystemOwner> ownerBySystemId,
             FactionNameFormatChoice nameFormat) {
+        return createClustersSpellingNames(ownerBySystemId, nameFormat, new OwnerSourceFake());
+    }
+
+    /**
+     * The same clusters retaining a stated owner source.
+     *
+     * @param ownerBySystemId who holds each system
+     * @param nameFormat      how this build's cluster labels spell their holders' names
+     * @param ownerSource     the source the build retains
+     * @return a live clusters, ready to have draw records written into it
+     */
+    public static OwnerMapClusters createClustersSpellingNames(
+            Map<String, SystemOwner> ownerBySystemId,
+            FactionNameFormatChoice nameFormat,
+            OwnerSource ownerSource) {
 
         var ownerBySystemKey = buildKeyedValues(ownerBySystemId);
 
@@ -188,18 +251,20 @@ public final class OwnerMapClusterFixtures {
             ContentInputsFixtures.createInputsSpellingNames(nameFormat),
             ownerBySystemKey,
             ownerBySystemKey.keySet(),
-            Set.of());
+            Set.of(),
+            ownerSource);
     }
 
     // The one construction every builder above lands on, differing only in the picks it was baked
-    // under and who is where. Held in one place so a slot no builder varies - the inert theme, the
-    // stand-in view - cannot come to read one way through one entry point and another through the
-    // next.
+    // under, who is where and the source the build retains. Held in one place so a slot no builder
+    // varies - the inert theme, the stand-in view - cannot come to read one way through one entry
+    // point and another through the next.
     private static OwnerMapClusters createClustersUnder(
             ContentInputs contentInputs,
             Map<SystemKey, SystemOwner> ownerBySystemKey,
             Set<SystemKey> inhabitedSystemKeys,
-            Set<SystemKey> spotlitPresenceSystemKeys) {
+            Set<SystemKey> spotlitPresenceSystemKeys,
+            OwnerSource ownerSource) {
 
         return new OwnerMapClusters(
             SystemOccupancy.createCopyOf(
@@ -214,9 +279,9 @@ public final class OwnerMapClusterFixtures {
                     NEUTRAL_PALETTE, // Desaturation palette.
                     NEUTRAL_PALETTE), // Presence palette.
                 new ViewReading(
-                    mockViewStandingNobodyTogether(),
+                    mock(OwnerPaintedView.class),
                     OwnerReadingFake.createAnsweringNothing(),
-                    HolderGrouping.identity()),
+                    ownerSource),
                 contentInputs,
                 Set.of(), // No unfilled systems.
                 Set.of())); // No contested systems.
@@ -265,7 +330,7 @@ public final class OwnerMapClusterFixtures {
                     NEUTRAL_PALETTE, // Neutral palette.
                     NEUTRAL_PALETTE, // Desaturation palette.
                     NEUTRAL_PALETTE), // Presence palette.
-                new ViewReading(view, reading, HolderGrouping.identity()),
+                new ViewReading(view, reading, new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
                 Set.of(),
                 Set.of()));
@@ -366,18 +431,5 @@ public final class OwnerMapClusterFixtures {
     // needs to exist, since the draw pass skips it on sight.
     private static UiElementPaint createHiddenPaint() {
         return new UiElementPaint(null, 0f);
-    }
-
-    // The view a clusters built above carries, answering nothing a case does not stub - bar who
-    // stands together in a contest, which a band baked over it always asks: nobody, so every bloc
-    // it meets is a rival.
-    private static OwnerPaintedView mockViewStandingNobodyTogether() {
-
-        var viewMock = mock(OwnerPaintedView.class);
-
-        when(viewMock.resolveContestGrouping())
-            .thenReturn(HolderGrouping.identity());
-
-        return viewMock;
     }
 }

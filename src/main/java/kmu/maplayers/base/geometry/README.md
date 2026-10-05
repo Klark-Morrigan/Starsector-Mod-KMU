@@ -126,6 +126,15 @@ Since hyperspace positions are fixed for the life of a save,
 the cells are built once and reconciled by diffing the drawn set -
 adding or removing a site provably only disturbs cells within twice the cell radius of it.
 
+Which systems seed a cell at all is the drawing layer's [`CellSeedRule`](CellSeedRule.java),
+asked once per system over the cut's own pass.
+`SEED_DRAWN_SYSTEMS` seeds exactly the systems the map draws.
+A layer names it rather than inheriting it,
+so a layer seeding some other set says so where it composes itself.
+The rule replaces the drawn-set answer rather than narrowing it,
+and it is fixed for the life of the cache:
+a layer has one partition whichever of its views is painting.
+
 [`CellSeedInputs`](CellSeedInputs.java) is what the diff cannot absorb:
 the frontier resolution each cell is cut with and how far it reaches into empty space.
 Both are per-cell,

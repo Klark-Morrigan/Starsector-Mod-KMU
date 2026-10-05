@@ -53,15 +53,16 @@ public final class SpotlitBlocs {
      * here weighs a market, which means no weighting rule has to be sampled to answer it.
      *
      * <p>Answered over a caller-supplied candidate set rather than the whole sector, because the
-     * only systems it can change anything for are the handful the holder map left out. Walking
-     * every system would re-read the economy the holding resolve just walked, for an answer
-     * discarded at all but a few of them.
+     * only systems it can change anything for are the handful the holder map left out. Each
+     * candidate is looked up by its key off the pass's own index, so the read costs the candidates
+     * rather than a walk of every system in the sector.
      *
      * @param pass                the rebuild's reading of the sector, whose walk of each system
      *                            this read shares; a pass over no sector yields an empty set
      * @param selectedBlocId      the spotlighted bloc's ID; null yields an empty set (no filter)
      * @param candidateSystemKeys the systems to test - those this pass resolved no holder for
-     * @return the candidates the spotlighted bloc holds a colony somebody lives on in
+     * @return the candidates the spotlighted bloc holds a colony somebody lives on in, in the
+     *         candidates' own order
      */
     public static Set<SystemKey> findPresentSystemKeys(
             HolderPass pass,
@@ -70,24 +71,40 @@ public final class SpotlitBlocs {
 
         var presentSystemKeys = new LinkedHashSet<SystemKey>();
 
-        // A read that can decide nothing returns before the walk: off filter there is no pick to
-        // look for, and with no candidates every system the walk reached would be discarded.
+        // A read that can decide nothing returns before the lookup: off filter there is no pick to
+        // look for, and the index would be built for nothing.
         if (!pass.canReadEconomy() || selectedBlocId == null || candidateSystemKeys.isEmpty()) {
             return presentSystemKeys;
         }
-        for (StarSystemAPI system : pass.readSystems()) {
+        var systemByKey = pass.sectorIndex().readSystemsByKey();
 
-            // Membership is tested before the colony read, so a system outside the candidate
-            // set costs a set probe rather than a read of its colonies.
-            var systemKey = SystemKey.readKeyOf(system);
-            if (!candidateSystemKeys.contains(systemKey)) {
-                continue;
-            }
-            if (pass.readHabitationIn(system).blocIds().contains(selectedBlocId)) {
+        for (var systemKey : candidateSystemKeys) {
+            if (isBlocPresentIn(pass, selectedBlocId, systemByKey.get(systemKey))) {
                 presentSystemKeys.add(systemKey);
             }
         }
         return presentSystemKeys;
+    }
+
+    /**
+     * Whether one bloc holds a colony somebody lives on in one star system - the single-system arm
+     * of {@link #findPresentSystemKeys}, for a batch re-deriving a marked system.
+     *
+     * <p>Answered here rather than at that caller so both arms read the same habitation: a
+     * per-system read that took a different projection would spare a cell the sector-wide scan
+     * called empty, or the reverse.
+     *
+     * @param pass   the reading of the sector the answer is taken from
+     * @param blocId the bloc to look for; null yields false (no spotlight)
+     * @param system the system to read; null yields false
+     * @return true when the bloc holds a colony somebody lives on in the system
+     */
+    public static boolean isBlocPresentIn(HolderPass pass, String blocId, StarSystemAPI system) {
+
+        if (!pass.canReadEconomy() || blocId == null || system == null) {
+            return false;
+        }
+        return pass.readHabitationIn(system).blocIds().contains(blocId);
     }
 
     /**

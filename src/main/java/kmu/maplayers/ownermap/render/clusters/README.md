@@ -140,51 +140,35 @@ which also decides which of the two factionless categories a cell falls in.
 One classification drives both,
 so a cell cannot take the settled style yet miss the recede that style draws under.
 
-That classification reads the pass's **inhabited-system set**,
-not the holder map.
-`OwnerMapBuilder` scans it once per rebuild through `OwnerMapInhabitation.readInhabitedSystemKeys` -
-the same rule that decided the system seeds a cell at all -
+That classification reads the rebuild's **inhabited-system set**,
+not the owner map.
+`OwnerMapBuilder` does not read it itself:
+the layer's [owner source](../../owners/README.md) answers it once per rebuild beside the owners,
+over the same walk of the sector the cells were cut from,
 and `OwnerMapClusters` retains it,
 so the incremental re-shape classifies against exactly what the full build used.
-Deriving emptiness from the holder map instead would make every view
-whose holding rule admits only some factions report its unheld systems as empty space.
+Deriving emptiness from the owner map instead would make every view
+whose rule leaves some settled systems unowned report them as empty space.
 
 The presence exception rides beside it as the **spotlit-presence set**,
-read through `SpotlitBlocs.findPresentSystemKeys` -
-the same presence rule a filtered resolve keeps a spotlit bloc visible by,
-so "the pick lives here" means one thing across the map.
-Both read it off the colonies somebody lives on rather than off any mechanic that weighs markets,
-since a bloc whose only foothold in a system is a colony the economy does not list weighs nothing there
-and lives there all the same.
+which the same source answers in the same call:
+the settled systems the spotlit owner lives in that nobody owns.
+One source answering both is what lets presence be a partition of the set emptiness is asked of,
+so a cell cannot be called empty space while the spotlight keeps an owner's fill over it.
+How a layer painting holders reads the two -
+off one habitation reading per system,
+asked only of the settled systems its holding left out -
+is that source's business,
+described with [`HolderOwnerSource`](../../owners/holders/README.md).
 
-Both come off one value,
-`HolderPass.readHabitationIn` -
-the colonies somebody lives on,
-with the blocs folded from those very colonies.
-The classification asks its emptiness where the presence read asks its bloc set,
-so presence is a partition of the set emptiness is asked of
-and a cell cannot be called empty space while the spotlight keeps a bloc's fill over it.
-Two call sites picking the same projection would be a convention a later edit could break;
-one value handed to both is not.
-
-It is asked only of the inhabited systems the holding left out,
-since a system somebody holds already draws in that bloc's cluster group -
-and which view is painting decides whether anything is left.
-A view whose rule leaves settled systems unheld can leave the bloc's own colonies there,
-and this read is what spares their cells.
-A view whose filtered resolve keeps every system the bloc is present in
-has already covered this read,
-so what is left over is the systems it is absent from
-and the read costs the set arithmetic and returns empty.
-
-Both sets sit with the holder map in **`SystemOccupancy`** -
+Both sets sit with the owner map in **`SystemOccupancy`** -
 who is in each system -
 rather than beside the `ContentInputs` the build was baked under or the contested set it derived,
 both of which are fixed once the build ends,
 because all three of these move between rebuilds:
 a colony founded or lost changes what stands in a system,
 and the pick founding one changes where the pick lives,
-in neither case moving a holder the map would notice.
+in neither case moving an owner the map would notice.
 The incremental refresh folds each marked system's answer into that one type,
 so the three facts a cell is styled from are read off one state of the sector rather than three.
 

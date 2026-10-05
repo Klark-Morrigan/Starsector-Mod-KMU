@@ -17,6 +17,7 @@ import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
 import kmu.maplayers.ownermap.holding.HolderOwnerReading;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.HolderOwnerSource;
 import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.picker.SelectableBloc;
@@ -36,6 +37,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
+import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 
@@ -207,6 +209,55 @@ final class FactionsViewTests {
             // rebuild handed in - what it answers is pinned by that reading's own suite.
             assertThat(FactionsView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), HolderGrouping.identity()))
                 .isInstanceOf(HolderOwnerReading.class);
+        }
+    }
+
+    @Nested
+    class ResolveViewReading {
+
+        @Test
+        void readsBlocsOffTheirFactionsAndFoldsHoldingByFaction() {
+            // The two answers the core asks for, both over the identity grouping this view paints
+            // by - the holder reading every layer painting holders shares, and the holder source
+            // folding every faction as its own bloc.
+            try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+                alliancesMock
+                    .when(NexerelinAlliances::resolveGrouping)
+                    .thenReturn(HolderGrouping.identity());
+
+                var viewReading = FactionsView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
+
+                assertThat(viewReading.reading())
+                    .isInstanceOf(HolderOwnerReading.class);
+                assertThat(viewReading.source())
+                    .isInstanceOfSatisfying(
+                        HolderOwnerSource.class,
+                        source -> assertThat(source.grouping()).isSameAs(HolderGrouping.identity()));
+            }
+        }
+    }
+
+    @Nested
+    class ResolveSystemHolderResolveSource {
+
+        @Test
+        void reDerivesAMarkedSystemByTheMarketContest() {
+            // The per-system half of the contest this view paints by, so a refreshed cell lands the
+            // bloc the whole-sector resolve would. The weighting rule reaches LunaLib, so the pass it
+            // builds is handed over already resolved.
+            var holding = new HolderPass(
+                new SectorPassIndex(null),
+                UNDER_THE_FOG,
+                HolderGrouping.identity());
+
+            try (var passMock = mockStatic(DominancePass.class)) {
+                passMock
+                    .when(() -> DominancePass.readRulesFromLunaSettings(any(HolderPass.class)))
+                    .thenReturn(new DominancePass(mock(DominanceRules.class), holding));
+
+                assertThat(FactionsView.INSTANCE.resolveSystemHolderResolveSource().openResolveOver(holding))
+                    .isInstanceOf(DominanceSystemHolderResolve.class);
+            }
         }
     }
 

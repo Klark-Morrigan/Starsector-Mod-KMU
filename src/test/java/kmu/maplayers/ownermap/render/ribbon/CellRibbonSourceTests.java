@@ -6,26 +6,25 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
 import kmlib.profiling.SilentProfiler;
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
-import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
+import kmu.maplayers.ownermap.owners.OwnerSource;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
+import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
-import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuOwnerMapRibbonSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
@@ -36,7 +35,6 @@ import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +42,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -73,11 +70,11 @@ import static org.mockito.Mockito.when;
  * anything - a cell answered after its ring was walked has already paid the cost the gate exists
  * to save.
  *
- * <p>The contest-grouping cases are about the pass rather than about any one cell: who the bands
- * judge as standing together is asked of the view once, before the first cell is counted, so two
- * cells in one bake can never be banded against two readings of who stands with whom. The
- * switched-off pass is held to the same bar it is held to everywhere else here - it asks nothing, the
- * grouping no more than a size.
+ * <p>The pass cases are about the pass rather than about any one cell: the mechanic a band is
+ * counted by is asked of the owner source once, before the first cell is counted, so two cells in
+ * one bake can never be counted against two samplings of it. The switched-off pass is held to the
+ * same bar it is held to everywhere else here - it asks nothing, the mechanic no more than a
+ * size.
  *
  * <p>The diagnostic trace is pinned against the same gate rather than against its own, because
  * what makes the overlay worth looking at is that it answers for exactly the cells the band pass
@@ -107,11 +104,6 @@ final class CellRibbonSourceTests {
     // pass: a path standing for one cell is no answer for another's.
     private static final SystemKey OTHER_CELL = buildCellKey("other");
 
-    // Two factions a case stands together, for the contest-grouping cases. Named rather than any pair
-    // because the fixture's fold has to be asked back about the same IDs it was built from.
-    private static final String HEGEMONY = "hegemony";
-    private static final String ASTRAL_ARMADA = "astral_armada";
-
     private static final Color BAND_COLOUR = new Color(140, 160, 220);
 
     // A plan with a run in it, so a cell that reaches the geometry comes back carrying a band and
@@ -129,22 +121,16 @@ final class CellRibbonSourceTests {
     // read from a stub rather than from a LunaLib the test JVM has no game to load.
     private MockedStatic<KmuOwnerMapRibbonSettings> settingsMock;
 
-    // The map-layer knobs stand in for the same reason, the bake opening a pass that samples the
-    // dev reveal off them. No case here turns on the reveal, so the stub's own false is the answer.
-    private MockedStatic<KmuMapVisibilitySettings> mapLayerSettingsMock;
-
     @BeforeEach
     void stubBandSettings() {
 
         settingsMock = mockStatic(KmuOwnerMapRibbonSettings.class);
-        mapLayerSettingsMock = mockStatic(KmuMapVisibilitySettings.class);
 
         RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
     }
 
     @AfterEach
     void releaseBandSettings() {
-        mapLayerSettingsMock.close();
         settingsMock.close();
     }
 
@@ -367,9 +353,9 @@ final class CellRibbonSourceTests {
     class CreateForPass {
 
         @Test
-        void handsThePlayersUncontestedAnswerToTheMechanicTheViewCountsBy() {
+        void handsThePlayersUncontestedAnswerToTheSourcesMechanic() {
             // The one place the uncontested knob reaches the counting: it is sampled by the pass
-            // and carried in the inputs every planner is built from. Read anywhere else, or not
+            // and carried in the rules every planner is built from. Read anywhere else, or not
             // read at all, it would show only as a setting a player moves to no effect. Answered
             // off rather than on, which is not the shipped default, so an answer that ignored the
             // setting could not pass.
@@ -377,61 +363,61 @@ final class CellRibbonSourceTests {
                 .when(KmuOwnerMapRibbonSettings::shouldShortenOwnerMapUncontestedRibbonRuns)
                 .thenReturn(false);
 
-            assertThat(captureInputsJudgedAgainst(HolderGrouping.identity())
-                    .rules()
-                    .uncontestedRuns())
+            var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
+
+            buildThrough(sourceFake, new CellRingPathCache());
+
+            assertThat(sourceFake.readRibbonPlanRules())
+                .singleElement()
+                .extracting(RibbonPlanRules::uncontestedRuns)
                 .isEqualTo(new UncontestedRibbonRuns(false));
         }
 
         @Test
-        void handsTheViewsContestGroupingToTheMechanicTheViewCountsBy() {
-            // The one place who stands together reaches a band. Read anywhere else, or not read at
-            // all, two allies sharing a system would band against each other at full contested
-            // length while the box over the cell files them as standing together.
-            assertThat(captureInputsJudgedAgainst(
-                        HolderGroupingFixture.buildGroupOf(HEGEMONY, ASTRAL_ARMADA))
-                    .affiliation()
-                    .areBlocsAllied(HEGEMONY, ASTRAL_ARMADA))
-                .isTrue();
+        void asksTheSourceForItsMechanicOverTheHandedWalk() {
+            // The bake counts off the walk its caller opened - the rebuild's own in the same frame,
+            // a batch's on its own cadence - so a planner asked over any other would count a sector
+            // the cells were not cut from.
+            var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
+            var walk = buildWalkOverTheStandingSystems();
+
+            CellRibbonSource.createForPass(
+                walk,
+                sourceFake,
+                buildSurfaceKeeping(new CellRingPathCache()));
+
+            assertThat(sourceFake.readRibbonPlannerWalks())
+                .singleElement()
+                .isSameAs(walk);
         }
 
         @Test
-        void alliesNobodyWhereTheViewGroupsNothing() {
-            // A layer in which nobody stands together answers with the identity grouping: a band
-            // there judges its contest as one in which no two blocs stand together, and no layer
-            // needs a branch to get there.
-            assertThat(captureInputsJudgedAgainst(HolderGrouping.identity())
-                    .affiliation()
-                    .areBlocsAllied(HEGEMONY, ASTRAL_ARMADA))
-                .isFalse();
-        }
-
-        @Test
-        void asksTheViewWhoStandsTogetherOnceHoweverManyCellsAreBaked() {
-            // Sampled with the sizes and the laying rules, and for the same reason: a grouping that
-            // moved while a bake was running would otherwise leave one cell banded as a contest
-            // between two blocs and the cell beside it banded as their joint holding.
-            var viewMock = buildViewMock(system -> ANY_PLAN);
-            var ribbonSource = buildThrough(viewMock, new CellRingPathCache());
+        void asksTheSourceForItsMechanicOnceHoweverManyCellsAreBaked() {
+            // Sampled with the sizes and the laying rules, and for the same reason: a mechanic
+            // whose inputs moved while a bake was running would otherwise leave one cell banded as a
+            // contest between two blocs and the cell beside it banded as their joint holding.
+            var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
+            var ribbonSource = buildThrough(sourceFake, new CellRingPathCache());
 
             ribbonSource.buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
             ribbonSource.buildCellRibbon(OTHER_CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
 
-            verify(viewMock, times(1))
-                .resolveContestGrouping();
+            assertThat(sourceFake.readRibbonPlannerWalks())
+                .hasSize(1);
         }
 
         @Test
-        void asksTheViewNothingWhileTheBandsAreSwitchedOff() {
-            // A switched-off pass reads no live state at all, the grouping no more than the sizes:
+        void asksTheSourceNothingWhileTheBandsAreSwitchedOff() {
+            // A switched-off pass reads no live state at all, the mechanic no more than the sizes:
             // nothing it sampled would settle anything, every cell being answered at the gate.
             switchBandsOff();
 
-            var viewMock = buildViewMock(system -> ANY_PLAN);
+            var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
 
-            buildThrough(viewMock, new CellRingPathCache());
+            buildThrough(sourceFake, new CellRingPathCache());
 
-            verifyNoInteractions(viewMock);
+            assertThat(sourceFake.readRibbonPlannerWalks())
+                .isEmpty();
         }
     }
 
@@ -457,68 +443,36 @@ final class CellRibbonSourceTests {
     }
 
     // The same pass writing its traced rings into a store the case holds, for the cases about
-    // which cells are walked at all. Nothing groups factions in those, what a band reports a
-    // contest as being settled elsewhere.
+    // which cells are walked at all.
     private static CellRibbonSource buildCachingInto(
             SystemRibbonPlanner planner,
             CellRingPathCache ringPathCache) {
 
-        return buildThrough(buildViewMock(planner), ringPathCache);
+        return buildThrough(buildSourcePlanning(planner), ringPathCache);
     }
 
-    // A pass whose view names the given grouping as who stands together, read back for what it
-    // handed its planner - the shape of every case about what one bake samples once.
-    private static RibbonPlanInputs captureInputsJudgedAgainst(HolderGrouping contestGrouping) {
+    // The source the pass asks for its mechanic, answering with the given planner. Built apart from
+    // the pass so a case can hold on to it and read what it was asked.
+    private static OwnerSourceFake buildSourcePlanning(SystemRibbonPlanner planner) {
 
-        var viewMock = buildViewMock(system -> ANY_PLAN);
+        var sourceFake = new OwnerSourceFake();
+        sourceFake.answerRibbonPlanner(planner);
 
-        when(viewMock.resolveContestGrouping())
-            .thenReturn(contestGrouping);
-
-        buildThrough(viewMock, new CellRingPathCache());
-
-        return captureInputsHandedTo(viewMock);
-    }
-
-    // The inputs the pass built its planner from, which is where everything sampled once per bake
-    // arrives. Read back through the view because that is the one hand-off the source makes.
-    private static RibbonPlanInputs captureInputsHandedTo(OwnerPaintedView viewMock) {
-
-        var inputsCaptor = ArgumentCaptor.forClass(RibbonPlanInputs.class);
-
-        verify(viewMock)
-            .resolveRibbonPlanner(inputsCaptor.capture());
-
-        return inputsCaptor.getValue();
-    }
-
-    // The view the pass asks for its mechanic, answering with the given planner and with nobody
-    // standing together. Built apart from the pass so a case can hold on to it and read what it was
-    // handed.
-    private static OwnerPaintedView buildViewMock(SystemRibbonPlanner planner) {
-
-        var viewMock = mock(OwnerPaintedView.class);
-
-        when(viewMock.resolveRibbonPlanner(any()))
-            .thenReturn(planner);
-        when(viewMock.resolveContestGrouping())
-            .thenReturn(HolderGrouping.identity());
-
-        return viewMock;
+        return sourceFake;
     }
 
     private static CellRibbonSource buildThrough(
-            OwnerPaintedView viewMock,
+            OwnerSource ownerSource,
             CellRingPathCache ringPathCache) {
 
         return CellRibbonSource.createForPass(
-            buildPassOverTheStandingSystems(),
-            viewMock,
+            buildWalkOverTheStandingSystems(),
+            ownerSource,
             buildSurfaceKeeping(ringPathCache));
     }
 
     // Two settled systems - one placed, one with no site recorded - and one system nobody lives in.
-    private static HolderPass buildPassOverTheStandingSystems() {
+    private static SectorWalk buildWalkOverTheStandingSystems() {
 
         // The systems are built before the stubbing rather than inside it: each is itself a mock,
         // and building one while another stubbing is open reads to Mockito as an unfinished stub.
@@ -536,7 +490,7 @@ final class CellRibbonSourceTests {
         when(sectorMock.getStarSystems())
             .thenReturn(systems);
 
-        return HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
+        return new SectorWalk(new SectorPassIndex(sectorMock), MapVisibilityRules.BASE);
     }
 
     private static RibbonBakeSurface buildSurfaceKeeping(CellRingPathCache ringPathCache) {

@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render;
 
+import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.hover.MapLayerHoverGates;
 import kmu.maplayers.base.hover.MapLayerHoverGatesFake;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -8,8 +9,6 @@ import kmu.maplayers.base.render.SequencedMapLayerRenderer;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.ownermap.MapLayerViewRegistry;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveFake;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlightFake;
 
@@ -111,7 +110,6 @@ final class OwnerMapLayerRendererTests {
             new OwnerMapPreviewHighlightFake(),
             hoverGates,
             BandLayoutFixtures::buildGeometryBelowAndReadoutsAbove,
-            HolderProviderFake.createHoldingNothing(),
-            SystemHolderResolveFake.createSourceHoldingNothing());
+            CellSeedRule.SEED_DRAWN_SYSTEMS);
     }
 }

@@ -15,23 +15,19 @@ import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.holding.OwnerMapInhabitation;
 import kmu.maplayers.ownermap.owners.OwnerReading;
-import kmu.maplayers.ownermap.owners.SpotlitBlocs;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.owners.OwnerSource;
+import kmu.maplayers.ownermap.owners.ResolvedOwners;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
 
 /**
- * Runs one full owner-map rebuild: resolves who holds each system, reads the theme,
+ * Runs one full owner-map rebuild: asks the layer's source who owns each system, reads the theme,
  * shapes the cached cells into merged clusters, and drives the two per-item builders over
  * every cell and every owned bloc to produce a fresh {@link OwnerMapClusters}.
  *
@@ -42,12 +38,15 @@ import java.util.function.Supplier;
  * get a result identical to a full rebuild.
  *
  * <p>Two entry points, because a rebuild has two halves that go stale for different reasons. The
- * holding - who holds what, who is where - is a reading of the sector, and is owed again only when
+ * owners - who owns what, who is where - are a reading of the sector, and are owed again only when
  * the sector or the rule reading it moved. The build - the paint scheme and the shaping it is spent
  * on - is owed on any style pick as well. Resolved apart from built, a rebuild a style pick owes is
- * handed the holding the last one resolved rather than walking the economy for an answer it already
+ * handed the owners the last one resolved rather than asking the source for an answer it already
  * has. Which of the two is stale is the caller's to decide: this resolves what it is asked to and
  * builds from what it is handed.
+ *
+ * <p>Nothing here reads a colony. What the owners are made of is the layer's source's business,
+ * reached over the walk the rebuild opened; this sees only the answer.
  *
  * <p>Each stage is a method below, apart because their order is the whole of the arrangement - a
  * stage that ran before the one it reads would key off a snapshot nothing else in the pass shares -
@@ -56,28 +55,17 @@ import java.util.function.Supplier;
  */
 public final class OwnerMapBuilder {
 
-    // The four stages that write a log line of their own. Each writes its line on every call: a
-    // rebuild happens when something changed rather than on a clock, so the trace a reader follows
-    // through the log wants every one of them, fast ones included.
-    private static final ProfileSection RESOLVE_HOLDERS_SECTION = ProfileSection.registerSection(
-        "ownerMap.resolveHolders", RebuildStepTerms.LOGGED_EVERY_CALL);
-
-    private static final ProfileSection FIND_INHABITED_SECTION = ProfileSection.registerSection(
-        "ownerMap.findInhabited", RebuildStepTerms.LOGGED_EVERY_CALL);
-
-    private static final ProfileSection FIND_SPOTLIT_PRESENCE_SECTION =
-        ProfileSection.registerSection(
-            "ownerMap.findSpotlitPresence", RebuildStepTerms.LOGGED_EVERY_CALL);
-
-    // The shaping and everything spent on the shapes, logged as one line: the two profiled steps
-    // below it are parts of this call rather than the whole of it.
+    // The shaping and everything spent on the shapes, logged as one line on every call: a rebuild
+    // happens when something changed rather than on a clock, and the two profiled steps below it
+    // are parts of this call rather than the whole of it.
     private static final ProfileSection SHAPE_AND_STYLE_SECTION = ProfileSection.registerSection(
         "ownerMap.shapeAndStyleCells", RebuildStepTerms.LOGGED_EVERY_CALL);
 
     // The whole of each half and the two steps of the shaping worth a row of their own, read in the
-    // report rather than the log: what they cost is read against the stage around them. The holding
-    // has a row of its own so a rebuild that carried it over reads as missing that row, rather than
-    // as three scans that each happened to cost nothing.
+    // report rather than the log: what they cost is read against the stage around them. The owners
+    // have a row of their own so a rebuild that carried them over reads as missing that row, rather
+    // than as a source's scans that each happened to cost nothing - and whatever the source profiles
+    // of its own lands beneath it.
     private static final ProfileSection RESOLVE_HOLDING_SECTION =
         ProfileSection.registerSection("ownerMap.resolveHolding");
 
@@ -95,63 +83,28 @@ public final class OwnerMapBuilder {
     }
 
     /**
-     * Reads the sector for who holds what and who is where: the half of a rebuild that goes stale
+     * Asks the layer's source who owns what and who is where: the half of a rebuild that goes stale
      * only when the sector moves or the rule reading it does, and so the half a rebuild owed by a
      * style pick alone is handed rather than made to repeat.
      *
-     * <p>Three readings, in this order because each is asked of what the one before left: who holds
-     * each system, then what stands in each, then where the spotlit pick lives among the settled
-     * systems nobody holds. All three off the one handed pass, so each system is walked once for
-     * the three and the answers cannot disagree about a colony the dev toggle admits.
+     * <p>Measured on a row of its own, under which whatever the source profiles lands, so a rebuild
+     * that kept its owners reads as missing this row.
      *
-     * @param pass          the rebuild's one reading of the sector, opened under the view's grouping
-     * @param view          the view whose rule resolves holding
+     * @param source        the view's owner source for this rebuild
+     * @param walk          the rebuild's one walk of the sector, which the source opens whatever
+     *                      reading it needs over
      * @param contentInputs the sidebar preferences the rebuild sampled, of which only the spotlight
-     *                      reaches the holding
-     * @return what the three readings found, ready to be built from - now or by a later rebuild
-     *         that owes no new reading
+     *                      reaches the owners
+     * @return what the source found, ready to be built from - now or by a later rebuild that owes no
+     *         new reading
      */
-    public static ResolvedHolding resolveHolding(
-            HolderPass pass,
-            OwnerPaintedView view,
+    public static ResolvedOwners resolveOwners(
+            OwnerSource source,
+            SectorWalk walk,
             ContentInputs contentInputs) {
 
-        var profiler = ActiveProfiler.resolveProfiler();
-
-        try (var holdingScope = profiler.open(RESOLVE_HOLDING_SECTION)) {
-
-            var resolution = resolveHolders(profiler, pass, view, contentInputs);
-
-            // What stands in each system, read once for the whole pass. Independent of the holding
-            // and deliberately so: the holding answers who this view gives a system to, and a view
-            // whose rule admits only some markets leaves inhabited systems with no holder, for
-            // reasons the layer's own holding rule sets. Only this read tells those apart from
-            // empty space.
-            var inhabitedSystemKeys = measureSystemScan(
-                profiler,
-                FIND_INHABITED_SECTION,
-                () -> OwnerMapInhabitation.readInhabitedSystemKeys(pass));
-
-            // Where the spotlit bloc is living outside anything this build attributed to it, so
-            // the factionless cells over its own colonies are spared the recede. Asked only of the
-            // inhabited systems the holding left out, and which view is painting decides whether
-            // that set holds anything for it: a view whose rule leaves settled systems unheld can
-            // leave the bloc's own colonies there, and this read is what spares their cells. A
-            // view that resolves holding through a filtered resolve already keys every system the
-            // bloc is present in and can be coloured for, so its leftovers are systems the bloc is
-            // absent from and the read comes back empty for the cost of the set arithmetic.
-            //
-            // Asked of the same habitation the scan above classified by, so a cell spared here is
-            // never one that scan called empty space.
-            var spotlitPresenceSystemKeys = measureSystemScan(
-                profiler,
-                FIND_SPOTLIT_PRESENCE_SECTION,
-                () -> SpotlitBlocs.findPresentSystemKeys(
-                    pass,
-                    contentInputs.selectedBlocId(),
-                    selectUnheldSystemKeysAmong(resolution, inhabitedSystemKeys)));
-
-            return new ResolvedHolding(resolution, inhabitedSystemKeys, spotlitPresenceSystemKeys);
+        try (var holdingScope = ActiveProfiler.resolveProfiler().open(RESOLVE_HOLDING_SECTION)) {
+            return source.resolveOwners(walk, contentInputs.selectedBlocId());
         }
     }
 
@@ -159,99 +112,55 @@ public final class OwnerMapBuilder {
     // cluster-filled (owned) and per-cell (decivilised/uninhabited) draw lists, baking in each
     // cell's colours, opacities, and widths resolved from the current settings, then
     // flattens each to GL-ready vertex runs. Reads the settings once per category, not
-    // per cell. The active view supplies the owner reading each cell is styled and named by,
-    // resolved here once over the grouping the handed pass was opened under; both are retained on
-    // the clusters so an incremental re-shape classifies against the same view and reading.
+    // per cell. The view's reading arrives with it, retained on the clusters so an incremental
+    // re-shape classifies against the same view, reading and source.
     //
-    // The reading of the sector arrives rather than being opened here, so this build's walk of
-    // each system is the same walk the geometry and the band bake either side of it make. It is
-    // the rebuild's, and is discarded with it. The sidebar preferences arrive for the same reason:
-    // the rebuild sampled them once when it decided it was owed, so reading them again here could
-    // paint the map under a pick the decision never saw. The holding arrives for a third: it may
-    // be the reading a previous rebuild made, kept because nothing it read has moved since.
+    // The reading arrives rather than being resolved here because the owners were resolved through
+    // the source that came with it, both over one sampling of the view's live inputs - a reading
+    // resolved again here could name and colour a fold the owners were never resolved under. The
+    // sidebar preferences arrive for a like reason: the rebuild sampled them once when it decided it
+    // was owed, so reading them again here could paint the map under a pick the decision never saw.
+    // The owners arrive for a third: they may be the answer a previous rebuild got, kept because
+    // nothing they read has moved since.
     public static OwnerMapClusters buildClusters(
             CellGeometryCache geometryCache,
-            HolderPass pass,
-            OwnerPaintedView view,
+            ViewReading viewReading,
             ContentInputs contentInputs,
-            ResolvedHolding holding) {
+            ResolvedOwners owners) {
 
         var profiler = ActiveProfiler.resolveProfiler();
 
         try (var rebuildScope = profiler.open(REBUILD_SECTION)) {
 
-            var resolution = holding.resolution();
-
-            // The layer's answers about its owners, resolved once for the whole build over the
-            // pass's own grouping rather than a second sampling of the view's (a view's grouping
-            // can be a live read of the game), so the holding this build resolved and every shade,
-            // name and category painted over it are one reading.
-            var reading = view.resolveOwnerReading(pass.sector(), pass.grouping());
-            var styling = readMapStyling(view.resolveCategories(), reading, contentInputs);
+            var styling = readMapStyling(
+                viewReading.view().resolveCategories(),
+                viewReading.reading(),
+                contentInputs);
 
             var clusters = new OwnerMapClusters(
-                // Copied out of the holding rather than adopted: the incremental refresh folds
-                // into what the clusters hold, and a holding handed to a later rebuild has to
-                // still say what it said.
+                // Copied out of the owners rather than adopted: the incremental refresh folds
+                // into what the clusters hold, and owners handed to a later rebuild have to still
+                // say what they said.
                 SystemOccupancy.createCopyOf(
-                    resolution.ownerBySystemKey(),
-                    holding.inhabitedSystemKeys(),
-                    holding.spotlitPresenceSystemKeys()),
+                    owners.ownerBySystemKey(),
+                    owners.inhabitedSystemKeys(),
+                    owners.spotlitPresenceSystemKeys()),
                 new OwnerMapBuildInputs(
                     styling,
-                    new ViewReading(view, reading, pass.grouping()),
+                    viewReading,
                     contentInputs,
-                    // The owned systems this resolution paints no fill for - held by their bloc
-                    // but drawn empty inside its one border. Filled only by a view whose holder
-                    // source extends holdings with systems a bloc does not hold, and empty
-                    // otherwise.
-                    resolution.unfilledSystemKeys(),
+                    // The owned systems this resolution paints no fill for - owned for border and
+                    // label but drawn empty inside the one frontier. Filled only by a source that
+                    // extends what an owner holds with systems it does not, and empty otherwise.
+                    owners.unfilledSystemKeys(),
                     // The one thing this build derived about the spotlight: which of the spotlit
-                    // bloc's systems it is present in without winning.
-                    resolution.contestedSystemKeys()));
+                    // owner's systems it is present in without winning.
+                    owners.contestedSystemKeys()));
 
             shapeAndStyleCells(profiler, clusters, geometryCache);
 
             return clusters;
         }
-    }
-
-    // Who holds each system under this view, and - under a filter - which of the spotlit systems
-    // are contested. The holder scan walks the whole economy, the priciest content step, so it is
-    // profiled on its own and names what it resolved on the call, which is the reading its duration
-    // has to be judged against. The contested set is reported here because the whole spotlit
-    // footprint shares one key, leaving that set the only record of the held/contested split.
-    private static HolderResolution resolveHolders(
-            Profiler profiler,
-            HolderPass pass,
-            OwnerPaintedView view,
-            ContentInputs contentInputs) {
-
-        try (var holdersScope = profiler.open(RESOLVE_HOLDERS_SECTION)) {
-
-            var resolution = view
-                .resolveHolderProvider()
-                .resolveHolder(pass, contentInputs.selectedBlocId());
-
-            holdersScope.tagCall("owned=" + resolution.ownerBySystemKey().size()
-                + " filtering=" + contentInputs.isFiltering()
-                + " contested=" + resolution.contestedSystemKeys().size()
-                + " unfilled=" + resolution.unfilledSystemKeys().size());
-
-            return resolution;
-        }
-    }
-
-    // The settled systems the holding gave to nobody, which is the only place a spotlit pick can
-    // be living unattributed. Asked through the occupancy's own rule rather than restated here, so
-    // a full build and an incremental refresh cannot disagree about what "unheld" means.
-    private static Set<SystemKey> selectUnheldSystemKeysAmong(
-            HolderResolution resolution,
-            Set<SystemKey> inhabitedSystemKeys) {
-
-        return SystemOccupancy.selectUnheldSystemKeysIn(
-            resolution.ownerBySystemKey(),
-            inhabitedSystemKeys);
     }
 
     // The paint scheme this build styles every cell from: the whole theme read once through the
@@ -380,26 +289,6 @@ public final class OwnerMapBuilder {
                 geometryCache.getCellEdgesByCellKey(),
                 cellGrouping,
                 EdgeInset.asTheMapDraws());
-        }
-    }
-
-    // One profiled sector scan yielding a set of system keys, naming what it selected on the call.
-    // The two such scans report identically rather than each spelling out a section and a reading
-    // of its own - two chances for one of them to state its cost differently from the other.
-    private static Set<SystemKey> measureSystemScan(
-            Profiler profiler,
-            ProfileSection section,
-            Supplier<Set<SystemKey>> scan) {
-
-        try (var scanScope = profiler.open(section)) {
-
-            var systemKeys = scan.get();
-
-            // What it selected rather than what it examined: the systems it went over are counted
-            // by the readers it scans through, and appear on this row by the roll-up alone.
-            scanScope.tagCall("systems=" + systemKeys.size());
-
-            return systemKeys;
         }
     }
 

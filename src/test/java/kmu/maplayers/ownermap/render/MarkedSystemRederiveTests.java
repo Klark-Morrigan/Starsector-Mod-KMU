@@ -1,24 +1,19 @@
 package kmu.maplayers.ownermap.render;
 
-import kmlib.testfixtures.statics.StaticSeams;
+import kmlib.starsector.systems.SectorPassIndex;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.holding.OwnerMapInhabitation;
-import kmu.maplayers.ownermap.owners.SpotlitBlocs;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveFake;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,15 +24,12 @@ import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.FLIPPED_SYSTEM
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.HEGEMONY;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildHolderOf;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildHoldersOf;
+import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnerOf;
+import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnersOf;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildSectorWithSystems;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildTwoAdjacentCells;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.matchSystemArg;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 
 /**
  * Pins what a drained batch reads back into the built map, and what it records that as having
@@ -50,9 +42,10 @@ import static org.mockito.ArgumentMatchers.eq;
  * until something unrelated rebuilds it, and a redraw recorded without the fold behind it spends a
  * frame arriving at the cell it already had.
  *
- * <p>A unit test, so the three reads are mocked at their static seams - the holder resolve, the
- * inhabitation read, and the spotlit presence read. Each is pinned by its own suite; what belongs
- * here is which of them is asked about what, and what is done with the answers.
+ * <p>A unit test, so the three reads are answered by the batch's resolve as a case states them -
+ * who owns a system, whether anything stands in it, and whether the spotlit owner lives there. What
+ * a layer answers them by is its own; what belongs here is which of them is asked about what, and
+ * what is done with the answers.
  */
 final class MarkedSystemRederiveTests {
 
@@ -63,55 +56,30 @@ final class MarkedSystemRederiveTests {
     @Nested
     class RederiveMarkedSystems {
 
-        // The classes this arrangement stands in for, closed on the way out.
-        private final StaticSeams seams = new StaticSeams();
-
         // The two adjacent cells every case poses over, built once so the neighbours a flip
         // disturbs are read off one arrangement.
         private final CellGeometryCache cellGeometry = buildTwoAdjacentCells();
 
-        private MockedStatic<OwnerMapInhabitation> inhabitationMock;
-        private MockedStatic<SpotlitBlocs> presenceMock;
-
-        // The batch's own holder read, over a real pass across a stubbed sector rather than a
-        // stand-in, so the systems a case marks are the ones it resolves - and so the presence read
-        // it hands on is the one the seam below answers for. What each system resolves to is
-        // stated per case: who holds one is the painting layer's, and no tier case may name it.
-        private final Map<String, SystemOwner> holderBySystemId = new LinkedHashMap<>();
-        private SystemHolderResolveFake holderResolve;
+        // The batch's walk, over a real index across a stubbed sector rather than a stand-in, so
+        // the systems a case marks are the ones the batch finds behind their keys. What each system
+        // resolves to is stated per case on the source: who owns one is the painting layer's, and
+        // no tier case may name it.
+        private SectorWalk walk;
+        private OwnerSourceFake ownerSourceFake;
 
         @BeforeEach
-        void openSeamsAndBuildThePass() {
+        void openTheWalkAndTheSource() {
 
-            holderBySystemId.clear();
-            holderResolve = SystemHolderResolveFake.createOver(
-                HolderPass.readFromLunaSettings(
-                    buildSectorWithSystems(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM, DISTANT_SYSTEM),
-                    HolderGrouping.identity()),
-                holderBySystemId);
+            walk = new SectorWalk(
+                new SectorPassIndex(
+                    buildSectorWithSystems(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM, DISTANT_SYSTEM)),
+                MapVisibilityRules.BASE);
 
             // Every fixture below marks systems its clusters already count as settled, so the
-            // seam answers "still settled" and a case about inhabitation says so by re-stubbing it.
-            // That keeps the holder cases free of a second fact moving underneath them.
-            inhabitationMock = seams.openSeam(OwnerMapInhabitation.class);
-            inhabitationMock
-                .when(() -> OwnerMapInhabitation.isSystemInhabited(any(), any()))
-                .thenReturn(true);
-
-            // Off filter the presence read answers empty, which is what the seam's own default
-            // gives; a spotlight case stubs where the pick lives.
-            presenceMock = seams.openSeam(SpotlitBlocs.class);
-            presenceMock
-                .when(() -> SpotlitBlocs.findPresentSystemKeys(
-                    any(HolderPass.class),
-                    any(),
-                    any()))
-                .thenReturn(Set.of());
-        }
-
-        @AfterEach
-        void closeSeams() {
-            seams.closeEverySeam();
+            // source answers "still settled" and a case about inhabitation says so by stating it.
+            // That keeps the owner cases free of a second fact moving underneath them.
+            ownerSourceFake = new OwnerSourceFake();
+            ownerSourceFake.answerEverySystemInhabited();
         }
 
         @Test
@@ -119,12 +87,12 @@ final class MarkedSystemRederiveTests {
 
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             rederive(clusters, FLIPPED_SYSTEM);
 
-            assertThat(clusters.getOccupancy().getHolderBySystemKey())
-                .containsExactly(Map.entry(buildCellKey(FLIPPED_SYSTEM), buildHolderOf(TRITACHYON)));
+            assertThat(clusters.getOccupancy().getOwnerBySystemKey())
+                .containsExactly(Map.entry(buildCellKey(FLIPPED_SYSTEM), buildOwnerOf(TRITACHYON)));
         }
 
         @Test
@@ -134,7 +102,7 @@ final class MarkedSystemRederiveTests {
             // because half of that is a border drawn down one side only.
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(TRITACHYON));
 
             var disturbance = rederive(clusters, FLIPPED_SYSTEM);
 
@@ -155,7 +123,7 @@ final class MarkedSystemRederiveTests {
 
             rederive(clusters, FLIPPED_SYSTEM);
 
-            assertThat(clusters.getOccupancy().getHolderBySystemKey())
+            assertThat(clusters.getOccupancy().getOwnerBySystemKey())
                 .isEmpty();
         }
 
@@ -166,7 +134,7 @@ final class MarkedSystemRederiveTests {
             // would spend a frame redrawing the map it already had.
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(HEGEMONY));
 
             var disturbance = rederive(clusters, FLIPPED_SYSTEM);
 
@@ -268,23 +236,21 @@ final class MarkedSystemRederiveTests {
                 Set.of(FLIPPED_SYSTEM),
                 Set.of(FLIPPED_SYSTEM));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(SPOTLIT_BLOC));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(SPOTLIT_BLOC));
+
+            // The pick does live there, so a presence asked of an owned system would come back
+            // true: an empty set is what says it was never asked, the system's answer deciding
+            // nothing once somebody owns it.
+            assertPickLivesIn(FLIPPED_SYSTEM);
 
             rederive(clusters, FLIPPED_SYSTEM);
 
             assertThat(clusters.getOccupancy().getSpotlitPresenceSystemKeys())
                 .isEmpty();
-
-            // Asked of nothing at all, since the one marked system is now held: the read walks the
-            // sector to find its candidates, so handing it a system it cannot change anything for
-            // is a walk paid for an answer that is discarded.
-            presenceMock.verify(() -> SpotlitBlocs.findPresentSystemKeys(
-                any(HolderPass.class),
-                eq(SPOTLIT_BLOC),
-                eq(Set.of())));
         }
 
-        // Runs the re-derive over the two-cell geometry every case shares.
+        // Runs the re-derive over the two-cell geometry every case shares, through one resolve the
+        // source opens over the batch's walk under the clusters' own spotlight.
         private StaleOwnerMapDisturbance rederive(
                 OwnerMapClusters clusters,
                 String... markedSystemIds) {
@@ -292,7 +258,10 @@ final class MarkedSystemRederiveTests {
             return MarkedSystemRederive.rederiveMarkedSystems(
                 clusters,
                 cellGeometry,
-                holderResolve,
+                walk,
+                ownerSourceFake.openSystemResolve(
+                    walk,
+                    clusters.getBuildInputs().contentInputs().selectedBlocId()),
                 Set.copyOf(buildCellKeys(markedSystemIds)));
         }
 
@@ -301,35 +270,26 @@ final class MarkedSystemRederiveTests {
         private static OwnerMapClusters buildSettledIn(
                 Map<String, String> factionIdBySystemId) {
             return OwnerMapClusterFixtures.createClustersOwnedBy(
-                buildHoldersOf(factionIdBySystemId));
+                buildOwnersOf(factionIdBySystemId));
         }
 
-        // What the holder resolve answers for one system this batch. Every case stubs the
-        // systems it marks; an unstubbed one comes back null, which reads as a system that lost its
-        // holder rather than as a missing stub.
-        private void assertResolvesTo(String systemId, SystemOwner holder) {
-            holderBySystemId.put(systemId, holder);
+        // What the resolve answers for one system's owner this batch. Every case states the
+        // systems it marks; an unstated one comes back null, which reads as a system that lost its
+        // owner rather than as a missing statement.
+        private void assertResolvesTo(String systemId, SystemOwner owner) {
+            ownerSourceFake.recordOwnerOf(systemId, owner);
         }
 
-        // What the inhabitation read answers for one system, against the seam's own "still
-        // settled" default.
+        // What the resolve answers for one system's inhabitation, against the "still settled"
+        // default.
         private void assertSettledIs(String systemId, boolean isInhabited) {
-            inhabitationMock
-                .when(() -> OwnerMapInhabitation.isSystemInhabited(
-                    any(),
-                    matchSystemArg(systemId)))
-                .thenReturn(isInhabited);
+            ownerSourceFake.recordInhabitationOf(systemId, isInhabited);
         }
 
-        // Where the presence read finds the pick living. Its rule is its own suite's; what a case
+        // Where the resolve finds the pick living. The rule behind it is the layer's; what a case
         // here states is the answer the batch folds.
         private void assertPickLivesIn(String systemId) {
-            presenceMock
-                .when(() -> SpotlitBlocs.findPresentSystemKeys(
-                    any(HolderPass.class),
-                    eq(SPOTLIT_BLOC),
-                    any()))
-                .thenReturn(Set.of(buildCellKey(systemId)));
+            ownerSourceFake.recordSpotlitPresenceIn(systemId);
         }
     }
 }

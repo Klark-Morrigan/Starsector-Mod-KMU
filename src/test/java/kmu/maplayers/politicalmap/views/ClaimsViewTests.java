@@ -22,6 +22,7 @@ import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
 import kmu.maplayers.ownermap.holding.HolderOwnerReading;
 import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.HolderOwnerSource;
 import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.picker.SelectableBloc;
@@ -35,6 +36,7 @@ import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.claims.ClaimStatsRead;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
+import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolve;
 import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
@@ -148,6 +150,29 @@ final class ClaimsViewTests {
     }
 
     @Nested
+    class ResolveSystemHolderResolveSource {
+
+        @Test
+        void reDerivesAMarkedSystemByClaimantThroughTheViewsReader() {
+            // A batch re-derives what this view painted - the claimant - through the reader every
+            // claim of this view is read through, rather than by the market contest.
+            var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var openedOver = new ArrayList<SectorPassIndex>();
+            var view = new ClaimsView((visibility, colonies) -> {
+                openedOver.add(colonies);
+                return mock(ClaimReader.class);
+            });
+
+            var resolve = view.resolveSystemHolderResolveSource().openResolveOver(pass);
+
+            assertThat(resolve)
+                .isInstanceOf(ClaimSystemHolderResolve.class);
+            assertThat(openedOver)
+                .containsExactly(pass.sectorIndex());
+        }
+    }
+
+    @Nested
     class ResolveRibbonPlanner {
 
         @Test
@@ -218,6 +243,30 @@ final class ClaimsViewTests {
             // rebuild handed in - what it answers is pinned by that reading's own suite.
             assertThat(ClaimsView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), HolderGrouping.identity()))
                 .isInstanceOf(HolderOwnerReading.class);
+        }
+    }
+
+    @Nested
+    class ResolveViewReading {
+
+        @Test
+        void readsBlocsOffTheirFactionsAndFoldsHoldingByClaimant() {
+            // Claims fold strictly by claiming faction, so both answers stand on the identity
+            // grouping whatever the alliance set says.
+            try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+                alliancesMock
+                    .when(NexerelinAlliances::resolveGrouping)
+                    .thenReturn(HolderGroupingFixture.buildGroupOf("hegemony", "persean"));
+
+                var viewReading = ClaimsView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
+
+                assertThat(viewReading.reading())
+                    .isInstanceOf(HolderOwnerReading.class);
+                assertThat(viewReading.source())
+                    .isInstanceOfSatisfying(
+                        HolderOwnerSource.class,
+                        source -> assertThat(source.grouping()).isSameAs(HolderGrouping.identity()));
+            }
         }
     }
 

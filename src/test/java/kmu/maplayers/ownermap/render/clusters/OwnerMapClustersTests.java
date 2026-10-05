@@ -11,9 +11,9 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
 import kmu.maplayers.ownermap.render.style.HolderCategories;
@@ -76,7 +76,7 @@ final class OwnerMapClustersTests {
                 .isEmpty();
             assertThat(clusters.getStyledClusterGroupByOwnerId())
                 .isEmpty();
-            assertThat(clusters.getOccupancy().getHolderBySystemKey())
+            assertThat(clusters.getOccupancy().getOwnerBySystemKey())
                 .isEmpty();
             assertThat(clusters.getOccupancy().getInhabitedSystemKeys())
                 .isEmpty();
@@ -145,7 +145,7 @@ final class OwnerMapClustersTests {
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-                    new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), HolderGrouping.identity()),
+                    new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
                     ContentInputs.createEmpty(),
                     Set.of(),
                     Set.of()));
@@ -340,7 +340,7 @@ final class OwnerMapClustersTests {
             assertThat(clusters.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
                 .containsExactlyInAnyOrderElementsOf(buildCellKeys("A", "B", "C"));
 
-            clusters.getOccupancy().recordHolderOf(buildCellKey("B"), readOwnerOf("RIVAL"));
+            clusters.getOccupancy().recordOwnerOf(buildCellKey("B"), readOwnerOf("RIVAL"));
             reindex(clusters, edges);
 
             assertThat(clusters.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
@@ -359,7 +359,7 @@ final class OwnerMapClustersTests {
             var clusters = buildOwnedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
             reindex(clusters, edges);
 
-            clusters.getOccupancy().recordHolderOf(buildCellKey("B"), readOwnerOf("F"));
+            clusters.getOccupancy().recordOwnerOf(buildCellKey("B"), readOwnerOf("F"));
             reindex(clusters, edges);
 
             assertThat(clusters.getClusterIndex().findClusterMembersOf(buildCellKey("A")))

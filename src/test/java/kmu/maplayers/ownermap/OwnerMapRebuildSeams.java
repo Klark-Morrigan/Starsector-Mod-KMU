@@ -1,0 +1,177 @@
+package kmu.maplayers.ownermap;
+
+import com.fs.starfarer.api.Global;
+
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+import kmlib.testfixtures.statics.StaticSeams;
+
+import kmu.maplayers.base.labels.LabelFonts;
+import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
+import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.preferences.NameFormatPreference;
+import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
+import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
+import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapVisibilitySettings;
+import kmu.settings.KmuOwnerMapGeometrySettings;
+import kmu.settings.KmuOwnerMapRibbonSettings;
+
+import org.mockito.MockedStatic;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+/**
+ * Everything an owner-map rebuild reaches that no test JVM answers, whatever layer it paints: the
+ * logger, and the live LunaLib reads the cut, the visibility gate, the spotlight and the bands are
+ * configured by.
+ *
+ * <p>Which classes those are is a fact about what the tier's rebuild touches rather than about any
+ * one suite's cases, which is why it is answered here. A stage that starts reading a new knob
+ * otherwise breaks every suite driving a whole rebuild at once, each in its own copy of the same
+ * arrangement.
+ *
+ * <p>Only the seams every layer's rebuild reaches are opened. The label tuning, the theme and the
+ * diagnostics toggles are left to the caller, because the suites driving a rebuild disagree on them:
+ * one fits names against a real font and theme, another draws none. A layer's own rules - the
+ * weighting a contest layer reads - are opened by that layer's fixture through
+ * {@link #openFurtherSeam}, so they close with everything else.
+ *
+ * <p>Four seams are handed back, because they are what those suites legitimately disagree on: which
+ * sector the game is running, whether the bands are on, what the player is allowed to see, and which
+ * bloc is spotlighted. Everything else answers the same way for any rebuild, so a caller states only
+ * what it varies.
+ */
+public final class OwnerMapRebuildSeams {
+
+    // The cells' seed knobs, wide enough that a cell holds clear of its own inset border.
+    private static final int CELL_BOUND_SEGMENTS = 16;
+    private static final double CELL_RADIUS = 4000.0;
+
+    private final StaticSeams seams = new StaticSeams();
+
+    private final MockedStatic<Global> globalSeam;
+    private final MockedStatic<KmuOwnerMapRibbonSettings> ribbonSettingsSeam;
+    private final MockedStatic<MapVisibilityRules> visibilityRulesSeam;
+    private final MockedStatic<FilterSelection> filterSelectionSeam;
+
+    private OwnerMapRebuildSeams() {
+
+        globalSeam = seams.holdSeam(StubbedGlobalLogger.openGlobalAnsweringLoggers());
+
+        // The dev reveal and the settings behind the knob reads, both LunaLib-backed: no rebuild
+        // case turns on either, so the seam's own answers stand for them.
+        seams.openSeam(KmuMapVisibilitySettings.class);
+        seams.openSeam(KmuLunaSettings.class);
+
+        // The label face is settled against the installed atlases and loaded from them, and no test
+        // JVM has either: settled on nothing and loaded as nothing, the names measure off the aspect
+        // stand-in and mint no strings, which is what a face that fails to load does in play.
+        seams.openSeam(LabelFonts.class);
+
+        // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory state
+        // no test JVM has.
+        filterSelectionSeam = seams.openSeam(FilterSelection.class);
+
+        var geometrySettingsSeam = seams.openSeam(KmuOwnerMapGeometrySettings.class);
+        geometrySettingsSeam
+            .when(KmuOwnerMapGeometrySettings::getOwnerMapCellBoundSegments)
+            .thenReturn(CELL_BOUND_SEGMENTS);
+        geometrySettingsSeam
+            .when(KmuOwnerMapGeometrySettings::getOwnerMapCellRadius)
+            .thenReturn(CELL_RADIUS);
+
+        // Opened unanswered, so the bands are off unless a caller says otherwise: a rebuild whose
+        // case is not about the bands should not be paying to bake them.
+        ribbonSettingsSeam = seams.openSeam(KmuOwnerMapRibbonSettings.class);
+
+        visibilityRulesSeam = seams.openSeam(MapVisibilityRules.class);
+        visibilityRulesSeam
+            .when(MapVisibilityRules::readFromLunaSettings)
+            .thenReturn(MapVisibilityRules.BASE);
+    }
+
+    /**
+     * The body preferences a rebuild under these seams is built with: the names off, which keeps the
+     * label mint and the anchor fit off a rebuild that has no font to measure with, and every other
+     * choice as an untouched save reads it.
+     *
+     * @return a layer's preferences, over test keys, drawing no names
+     */
+    public static OwnerMapBodyPreferences createPreferencesNamingNothing() {
+
+        var nameFormatMock = mock(NameFormatPreference.class);
+
+        when(nameFormatMock.getSelectedNameFormat(any()))
+            .thenReturn(FactionNameFormatChoice.NONE);
+
+        var preferences = OwnerMapBodyPreferencesFixtures.createUnderTestKeys();
+
+        return new OwnerMapBodyPreferences(
+            nameFormatMock,
+            preferences.uninhabitedOutline(),
+            preferences.filterRecede());
+    }
+
+    /**
+     * Stands in for every class any layer's rebuild reaches, answering each the one way a rebuild
+     * wants unless it is one of the four handed back below.
+     *
+     * @return the open arrangement, which its holder closes on the way out
+     */
+    public static OwnerMapRebuildSeams openEverySeamARebuildNeeds() {
+        return new OwnerMapRebuildSeams();
+    }
+
+    /**
+     * Opens one more seam beside these, closed with them - for a layer's own fixture standing in for
+     * the rules only that layer reads.
+     *
+     * @param <T>         the class's type
+     * @param seamedClass the class to stand in for
+     * @return the open seam, for the caller to answer
+     */
+    public <T> MockedStatic<T> openFurtherSeam(Class<T> seamedClass) {
+        return seams.openSeam(seamedClass);
+    }
+
+    /** Closes every seam this opened. */
+    public void closeEverySeam() {
+        seams.closeEverySeam();
+    }
+
+    /**
+     * @return the seam standing in for the running game, for a caller to say which sector that is -
+     *         commonly the one it installed on, and pointedly not it, for a case posing a stage that
+     *         must read its own sector rather than whichever is loaded
+     */
+    public MockedStatic<Global> resolveGlobalSeam() {
+        return globalSeam;
+    }
+
+    /**
+     * @return the seam standing in for the band settings, for a caller whose case is about the
+     *         bands and so needs them switched on at sizes that draw
+     */
+    public MockedStatic<KmuOwnerMapRibbonSettings> resolveRibbonSettingsSeam() {
+        return ribbonSettingsSeam;
+    }
+
+    /**
+     * @return the seam standing in for the player's visibility settings, for a caller posing a gate
+     *         flipped between two rebuilds
+     */
+    public MockedStatic<MapVisibilityRules> resolveVisibilityRulesSeam() {
+        return visibilityRulesSeam;
+    }
+
+    /**
+     * @return the seam standing in for the spotlight pick, for a caller posing a bloc picked or
+     *         cleared between two frames
+     */
+    public MockedStatic<FilterSelection> resolveFilterSelectionSeam() {
+        return filterSelectionSeam;
+    }
+}

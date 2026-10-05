@@ -1,7 +1,5 @@
 package kmu.maplayers.ownermap.render.labels;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
@@ -27,15 +25,11 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderProviderFake;
 import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
@@ -192,12 +186,7 @@ final class ClusterAnchorsBuilderTests {
         NEIGHBOUR_SYSTEM, new double[] {3000, 1000},
         RIVAL_SYSTEM, new double[] {21000, 1000}));
 
-    // The sector is never walked: the one question the debug path asks of it - who holds what - is
-    // stubbed at the resolver, and the reading it is handed to is a canned one, so this stands for
-    // the argument those stubs match on.
-    private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final CellGeometryCache geometryCacheMock = mock(CellGeometryCache.class);
-    private final OwnerPaintedView viewMock = mock(OwnerPaintedView.class);
     private final OwnerCategories categoriesMock = mock(OwnerCategories.class);
 
     // The cells every case hands over, carrying the revision they stand at. Paired once because
@@ -219,8 +208,8 @@ final class ClusterAnchorsBuilderTests {
     private MockedStatic<LabelAnchorSpecification> specificationMock;
     private MockedStatic<LazyFontCache> fontsMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
-    private HolderProviderFake holderProvider;
-    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
+    // The owners the debug path is handed; nobody's unless a case says otherwise.
+    private Map<SystemKey, SystemOwner> ownerBySystemKey = Map.of();
 
     @BeforeEach
     void openTheSettingsHolderAndFontSeams() {
@@ -229,17 +218,6 @@ final class ClusterAnchorsBuilderTests {
         specificationMock = mockStatic(LabelAnchorSpecification.class);
         fontsMock = mockStatic(LazyFontCache.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
-        visibilityRulesMock = mockStatic(MapVisibilityRules.class);
-
-        // A source holding nothing by default, so a case names only the holding it is about
-        // and a case about the gate has one to assert was never resolved.
-        holderProvider = HolderProviderFake.createHoldingNothing();
-
-        // The debug path opens its own pass, which samples the reveal toggles; no LunaLib
-        // answers outside the game, so the no-reveal view stands in for the read.
-        visibilityRulesMock
-            .when(MapVisibilityRules::readFromLunaSettings)
-            .thenReturn(MapVisibilityRules.BASE);
 
         // The live tuning and name styling arrive as the data the rebuild reads them into, so a
         // case states its gate and its styling and nothing about the dozens of knobs behind them.
@@ -267,16 +245,6 @@ final class ClusterAnchorsBuilderTests {
         useNameFormat(FactionNameFormatChoice.FULL);
         stubAnchorOverlay(false);
 
-        // A view that groups every faction as its own bloc, over a reading placing every owner at
-        // full strength and adjusting none, so a case's observed colour comes from the owner and
-        // the filter alone.
-        when(viewMock.resolveGrouping())
-            .thenReturn(HolderGrouping.identity());
-        when(viewMock.resolveOwnerReading(any(), any()))
-            .thenReturn(OwnerReadingFake.createAnsweringNothing());
-        when(viewMock.resolveCategories())
-            .thenReturn(categoriesMock);
-
         when(geometryCacheMock.getCellEdgesByCellKey())
             .thenReturn(EDGES);
         when(geometryCacheMock.getSiteBySystemKey())
@@ -288,7 +256,6 @@ final class ClusterAnchorsBuilderTests {
     @AfterEach
     void closeTheSettingsHolderAndFontSeams() {
 
-        visibilityRulesMock.close();
         styleReaderMock.close();
         fontsMock.close();
         specificationMock.close();
@@ -584,13 +551,13 @@ final class ClusterAnchorsBuilderTests {
     }
 
     @Nested
-    class RebuildClusterAnchorsFromSector {
+    class RebuildDiagnosticClusterAnchors {
 
         @Test
-        void fitsLabelsToTheSectorsOwnHolders() {
-            // The border-tracing diagnostic builds no draw lists to borrow a holder map from, so
-            // this path resolves one itself - under the view's own grouping, so the labels key off
-            // the same snapshot their names and colours are classified against.
+        void fitsLabelsToTheHandedOwners() {
+            // The border-tracing diagnostic builds no draw lists to borrow an owner map from, so
+            // this path is handed styling over the owners that diagnostic traced - the labels key off the
+            // same answer the traced borders were drawn from.
             stubAnchorOverlay(true);
             stubSectorHolders(Map.of(
                 HELD_SYSTEM,
@@ -600,49 +567,13 @@ final class ClusterAnchorsBuilderTests {
                 RIVAL_SYSTEM,
                 TRITACHYON_HOLDER));
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
-                viewMock,
-                contentInputs,
-                holderProvider,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(2);
-            assertThat(standingAnchors.getAnchors().get(0).colour())
-                .isEqualTo(HEGEMONY_PRIMARY);
-
-            // The pass this path opens groups nothing: the diagnostic never filters, so every
-            // faction is its own bloc and the labels key off the same snapshot their colours do.
-            assertThat(holderProvider.readResolvedPasses())
-                .singleElement()
-                .satisfies(pass -> assertThat(pass.grouping())
-                    .isEqualTo(HolderGrouping.identity()));
-        }
-
-        @Test
-        void recedesNothingWhileABlocIsSpotlitElsewhere() {
-            // This path paints real holders across the whole sector, so the spotlight
-            // standing in the picks it is handed has to be dropped before it styles anything.
-            // Carried through, every bloc but the spotlit one would recede and the labels would
-            // come back in the desaturation shade - the map receding around a spotlight the debug
-            // view does not paint. Posed with a bloc spotlit that holds nothing here, so a receded
-            // label is the only way the shade can move.
-            contentInputs = ContentInputsFixtures.createInputsSpotlighting(TRITACHYON);
-            stubAnchorOverlay(true);
-            stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
-
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-                standingAnchors,
-                cellGeometry,
-                sectorMock,
-                viewMock,
-                contentInputs,
-                holderProvider,
-                StarsectorFont.VANILLA_INSIGNIA_42);
-
             assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(HEGEMONY_PRIMARY);
         }
@@ -655,14 +586,10 @@ final class ClusterAnchorsBuilderTests {
             stubAnchorOverlay(true);
             stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
-                viewMock,
-                contentInputs,
-                holderProvider,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -676,14 +603,10 @@ final class ClusterAnchorsBuilderTests {
             stubAnchorOverlay(true);
             stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
-                viewMock,
-                contentInputs,
-                holderProvider,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -702,14 +625,10 @@ final class ClusterAnchorsBuilderTests {
                 NEIGHBOUR_SYSTEM,
                 HEGEMONY_HOLDER));
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
-                viewMock,
-                contentInputs,
-                holderProvider,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
@@ -718,42 +637,31 @@ final class ClusterAnchorsBuilderTests {
             assertThat(firstPassAxis)
                 .isNotNull();
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
-                viewMock,
-                contentInputs,
-                holderProvider,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isSameAs(firstPassAxis);
         }
 
         @Test
-        void skipsTheEconomyScanWhileTheOverlayIsOff() {
-            // Resolving holders walks the whole economy, so the toggle gates the read itself and
-            // not just the drawing - the cost is only paid while someone is looking at the
-            // overlay. The standing labels still go, as on every other path.
+        void skipsTheFitWhileTheOverlayIsOff() {
+            // The fit is the cost here, so the toggle gates it and not just the drawing - it is only
+            // paid while someone is looking at the overlay. The standing labels still go, as on
+            // every other path.
             standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
 
-            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+            ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                sectorMock,
-                viewMock,
-                contentInputs,
-                holderProvider,
-                StarsectorFont.VANILLA_INSIGNIA_42);
+                buildTracedStyling());
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
 
-            assertThat(holderProvider.readResolvedPasses())
-                .isEmpty();
-
-            // Skipping the scan does not excuse the list from being labelled: this path's
+            // Skipping the fit does not excuse the list from being labelled: this path's
             // caller is left holding the same labelled placements the shared path's is.
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -766,6 +674,18 @@ final class ClusterAnchorsBuilderTests {
             Map<String, SystemOwner> holderBySystemId) {
         return new ClusterLabelStylingSnapshot(
             buildKeyedValues(holderBySystemId),
+            UNUSED_PALETTE,
+            categoriesMock,
+            OwnerReadingFake.createAnsweringNothing(),
+            contentInputs,
+            StarsectorFont.VANILLA_INSIGNIA_42);
+    }
+
+    // The styling the border-tracing diagnostic hands over: the owners it traced, under a reading
+    // placing all of them at full strength.
+    private ClusterLabelStylingSnapshot buildTracedStyling() {
+        return new ClusterLabelStylingSnapshot(
+            ownerBySystemKey,
             UNUSED_PALETTE,
             categoriesMock,
             OwnerReadingFake.createAnsweringNothing(),
@@ -802,13 +722,9 @@ final class ClusterAnchorsBuilderTests {
             .thenReturn(isOverlayShown);
     }
 
-    // The holders the debug path's own resolve answers, matched on the grouping the view hands it
-    // so a pass that classified under some other snapshot would find no stub.
-    // The holding this path is to fit labels to. Handed over rather than stubbed at a resolver,
-    // the builder reading through the tier's own seam - and recorded, so a case can pin the pass
-    // the builder opened rather than inferring it from which stub answered.
+    // The owners this path is to fit labels to, handed over as the debug overlay hands its own.
     private void stubSectorHolders(Map<String, SystemOwner> holderBySystemId) {
-        holderProvider = HolderProviderFake.createHolding(buildKeyedValues(holderBySystemId));
+        ownerBySystemKey = buildKeyedValues(holderBySystemId);
     }
 
     // A placement left over from an earlier pass, for the cases that ask whether the standing list

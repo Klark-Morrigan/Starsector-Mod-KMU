@@ -1,7 +1,6 @@
 package kmu.maplayers.ownermap.render;
 
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
@@ -13,9 +12,8 @@ import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolve;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveSource;
 import kmu.maplayers.ownermap.render.clusters.ClusterGroupBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellBuilder;
@@ -67,46 +65,44 @@ public final class IncrementalOwnerRefresh {
     private final OwnerMapClusters clusters;
     private final CellGeometryCache geometryCache;
 
-    // The batch's one reading of the sector, behind the holder read that stands on it. Every
-    // question asked about a marked system - its holder, the spotlit bloc's presence in it, and the
-    // counts its band reports - is answered off this single walk of it; a reading opened per system
-    // would pay a settings read and a colony walk for each.
-    private final SystemHolderResolve holderResolve;
+    // The batch's one walk of the sector. Every question asked about a marked system - its owner,
+    // whether anybody lives there, the spotlit owner's presence in it, and the counts its band
+    // reports - is answered off this single walk of it, through the source the standing build was
+    // resolved by; a reading opened per system would pay a settings read and a colony walk for each.
+    private final SectorWalk walk;
 
-    private IncrementalOwnerRefresh(
-            StandingOwnerMap standingMap,
-            SystemHolderResolve holderResolve) {
+    private IncrementalOwnerRefresh(StandingOwnerMap standingMap, SectorWalk walk) {
 
         this.standingMap = standingMap;
         this.clusters = standingMap.clusters();
         this.geometryCache = standingMap.cellGeometry().cells();
-        this.holderResolve = holderResolve;
+        this.walk = walk;
     }
 
     // Folds the changes of the systems a colony resize marked stale into the standing clusters,
-    // the placements, and the name labels: re-derive what was marked over one reading of the
-    // sector, then redraw whatever that disturbed.
+    // the placements, and the name labels: re-derive what was marked over one walk of the sector,
+    // then redraw whatever that disturbed.
     //
-    // Both the sector and the marked systems arrive from the caller rather than being resolved
-    // here. This entry point is static and is handed the standing map whole, so the batch holds no
-    // machinery to ask either of - and the caller that assembles that map is exactly the one
-    // that does hold it, so what it drains and what it reads the colonies of are one sector's by
-    // construction. It is also what answers for the frames with nothing marked, which is nearly all
-    // of them: having drained the board itself, it knows there is nothing to fold before it
-    // assembles anything for one.
+    // Both the walk and the marked systems arrive from the caller rather than being resolved here.
+    // This entry point is static and is handed the standing map whole, so the batch holds no
+    // machinery to ask either of - and the caller that assembles that map is exactly the one that
+    // does hold it, so what it drains and what it walks are one sector's by construction. It is
+    // also what answers for the frames with nothing marked, which is nearly all of them: having
+    // drained the board itself, it knows there is nothing to fold before it assembles anything for
+    // one.
+    //
+    // Who owns a marked system is asked of the source the standing build was resolved by, never of
+    // the view afresh: that source carries the one sampling of the layer's live inputs every
+    // neighbour was painted under, so a refreshed cell lands the owner a full rebuild of the same
+    // moment would have.
     public static void applyStaleOwnerUpdates(
-            SectorAPI sector,
+            SectorWalk walk,
             StandingOwnerMap standingMap,
-            Set<SystemKey> staleSystemKeys,
-            SystemHolderResolveSource holderResolveSource) {
+            Set<SystemKey> staleSystemKeys) {
 
         try (var refreshScope = ActiveProfiler.resolveProfiler().open(APPLY_UPDATES_SECTION)) {
 
-            var holderResolve = holderResolveSource.openResolveOver(
-                sector,
-                standingMap.clusters().getBuildInputs().viewReading().grouping());
-
-            new IncrementalOwnerRefresh(standingMap, holderResolve)
+            new IncrementalOwnerRefresh(standingMap, walk)
                 .applyMarkedOwnerUpdates(staleSystemKeys);
         }
     }
@@ -118,10 +114,16 @@ public final class IncrementalOwnerRefresh {
         // resize changes what is in systems already on the map, never map membership.
         var markedSystemKeys = selectDrawnSystemKeys(staleSystemKeys);
 
+        var buildInputs = clusters.getBuildInputs();
+        var ownerResolve = buildInputs.viewReading().source().openSystemResolve(
+            walk,
+            buildInputs.contentInputs().selectedBlocId());
+
         var disturbance = MarkedSystemRederive.rederiveMarkedSystems(
             clusters,
             geometryCache,
-            holderResolve,
+            walk,
+            ownerResolve,
             markedSystemKeys);
 
         redrawDisturbedCells(markedSystemKeys, disturbance);
@@ -251,18 +253,18 @@ public final class IncrementalOwnerRefresh {
     // One bake of the named cells' bands, which every batch ends on. Held in one place because a
     // second copy of the pass construction could bake from a different snapshot of the same map.
     //
-    // Baked off the batch's own reading of the sector. The batch is one frame's work and the
-    // sector cannot move within it, so a reading opened here could only report what that one
-    // already holds, at the cost of walking every system a second time. Its grouping is the
-    // clusters' - the batch opened it from exactly that - which is the condition a shared
-    // reading has to meet before bands are planned through it.
+    // Baked off the batch's own walk of the sector. The batch is one frame's work and the sector
+    // cannot move within it, so a walk opened here could only report what that one already holds,
+    // at the cost of walking every system a second time. The bake counts through the same source
+    // the re-derive asked, which is the condition a shared walk has to meet before bands are
+    // planned over it.
     private void bakeBandsOf(Collection<SystemKey> cellKeys) {
 
         CellRibbonsBaker
             .createForPass(
                 clusters,
                 geometryCache,
-                holderResolve.readHolderPass(),
+                walk,
                 standingMap.standingAnchors().getAnchors(),
                 standingMap.labelFace())
             .bakeCellRibbonsOf(cellKeys);
@@ -319,7 +321,7 @@ public final class IncrementalOwnerRefresh {
         var occupancy = clusters.getOccupancy();
         var holder = drawnSystemKey == null
             ? null
-            : occupancy.readHolderOf(drawnSystemKey);
+            : occupancy.readOwnerOf(drawnSystemKey);
 
         // This cell's own holder narrowly, and the whole holding beside it: the shaper compares
         // every neighbour's holder against this one to tell a same-bloc seam from a border, so that
@@ -328,7 +330,7 @@ public final class IncrementalOwnerRefresh {
         var shaped = CellShaper.shapeCell(
             edges,
             ownerId,
-            SystemOwner.mapOwnerIdBySystemKey(occupancy.getHolderBySystemKey()),
+            SystemOwner.mapOwnerIdBySystemKey(occupancy.getOwnerBySystemKey()),
             EdgeInset.asTheMapDraws());
 
         var painted = PaintedCellBuilder.buildPaintedCellForSystem(

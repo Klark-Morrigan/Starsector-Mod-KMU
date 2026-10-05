@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
@@ -27,9 +28,11 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.IncrementalOwnerRefresh;
 import kmu.maplayers.ownermap.render.IncrementalOwnerRefreshTests;
@@ -46,7 +49,6 @@ import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
-import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 import kmu.maplayers.politicalmap.views.FactionsView;
 import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
@@ -435,10 +437,9 @@ final class IncrementalOwnerRefreshIntegrationTests {
             staleSystemKeys.addAll(buildCellKeys(markedSystemIds));
 
             IncrementalOwnerRefresh.applyStaleOwnerUpdates(
-                sectorMock,
+                openWalkOverTheSector(),
                 standingMap,
-                staleSystemKeys,
-                DominanceSystemHolderResolve::openResolveOver);
+                staleSystemKeys);
 
             // Compared structurally rather than by equality: a cell's draw record, a bloc's traced
             // territory and a band's runs are baked geometry, held as float arrays, which compare
@@ -456,16 +457,23 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 .isEqualTo(readDrawnMap(buildMapByFullRebuild().clusters()));
         }
 
+        // A walk of the sector as it stands, under the player's live visibility rules - what the
+        // plugin's cache opens a rebuild or a batch over.
+        private SectorWalk openWalkOverTheSector() {
+            return new SectorWalk(
+                new SectorPassIndex(sectorMock),
+                MapVisibilityRules.readFromLunaSettings());
+        }
+
         // One full rebuild of the whole map over the sector as it currently stands, in the order
         // the plugin's cache drives it: the territories, then the names fitted over them, then the
         // bands laid around those names, then the labels minted from them.
         private StandingOwnerMap buildMapByFullRebuild() {
 
-            // The rebuild's one reading of the sector, opened here as the plugin's cache opens it
-            // and handed to both the build and the bake beneath it.
-            var pass = HolderPass.readFromLunaSettings(
-                sectorMock,
-                FactionsView.INSTANCE.resolveGrouping());
+            // The rebuild's one walk of the sector and the view's reading for it, opened here as the
+            // plugin's cache opens them and handed to the owners, the build and the bake beneath it.
+            var walk = openWalkOverTheSector();
+            var viewReading = FactionsView.INSTANCE.resolveViewReading(sectorMock);
 
             // The rebuild's one sampling of the sidebar picks, taken here as the plugin's cache
             // takes it and carried through every stage below, so the fills, the fit, the bands and
@@ -473,15 +481,14 @@ final class IncrementalOwnerRefreshIntegrationTests {
             // The names off, which is what leaves the bands a function of the map alone.
             var contentInputs = ContentInputs.sampleForView(
                 FactionsView.INSTANCE,
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
                 MapLayerScreens.resolveLivePicks().memoryScope());
 
             var territories = OwnerMapBuilder.buildClusters(
                 cellsMock,
-                pass,
-                FactionsView.INSTANCE,
+                viewReading,
                 contentInputs,
-                OwnerMapBuilder.resolveHolding(pass, FactionsView.INSTANCE, contentInputs));
+                OwnerMapBuilder.resolveOwners(viewReading.source(), walk, contentInputs));
 
             var standingAnchors = new StandingClusterAnchors();
             var factionLabels = new ArrayList<Label>();
@@ -496,7 +503,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 .createForPass(
                     territories,
                     cellsMock,
-                    pass,
+                    walk,
                     standingAnchors.getAnchors(),
                     StarsectorFont.VANILLA_INSIGNIA_42)
                 .bakeAllCellRibbons();
@@ -549,7 +556,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
         var occupancy = territories.getOccupancy();
 
         return new DrawnMap(
-            new LinkedHashMap<>(occupancy.getHolderBySystemKey()),
+            new LinkedHashMap<>(occupancy.getOwnerBySystemKey()),
             new LinkedHashSet<>(occupancy.getInhabitedSystemKeys()),
             new LinkedHashSet<>(occupancy.getSpotlitPresenceSystemKeys()),
             new LinkedHashMap<>(territories.getStyledCellByCellKey()),

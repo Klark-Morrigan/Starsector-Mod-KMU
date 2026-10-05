@@ -150,7 +150,7 @@ public final class OwnerMapClusters implements
 
         return SystemOwner.mapCellGrouping(
             systemKeyByCellKey,
-            occupancy.getHolderBySystemKey());
+            occupancy.getOwnerBySystemKey());
     }
 
     /**

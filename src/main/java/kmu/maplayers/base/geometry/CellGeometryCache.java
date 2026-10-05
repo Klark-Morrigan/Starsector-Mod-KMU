@@ -126,6 +126,9 @@ public final class CellGeometryCache {
      * @param pass             the rebuild's reading of the sector, whose walk of each system this
      *                         update shares and whose rules the drawn set is taken under; a pass
      *                         over no sector seeds nothing
+     * @param seedRule         which of the pass's systems seed a cell - the layer's statement,
+     *                         {@link CellSeedRule#SEED_DRAWN_SYSTEMS} for a layer with none of its
+     *                         own
      * @param movingSystemKeys the systems currently moving, passed to {@link PartitionSites} to be
      *                         left out of the site set
      * @param seedInputs       what to seed each cell with - its frontier resolution and its
@@ -134,6 +137,7 @@ public final class CellGeometryCache {
      */
     public void updateFromSector(
             MapVisibilityPass pass,
+            CellSeedRule seedRule,
             Collection<SystemKey> movingSystemKeys,
             CellSeedInputs seedInputs) {
 
@@ -141,7 +145,7 @@ public final class CellGeometryCache {
         // cost are one duration, and the counts it is read against are added to the same scope
         // rather than printed beside a clock read of this method's own.
         try (var updateScope = ActiveProfiler.resolveProfiler().open(UPDATE_SECTION)) {
-            updateCellsInScope(pass, movingSystemKeys, seedInputs, updateScope);
+            updateCellsInScope(pass, seedRule, movingSystemKeys, seedInputs, updateScope);
         }
     }
 
@@ -178,11 +182,12 @@ public final class CellGeometryCache {
     // rather than through a line of this class's own.
     private void updateCellsInScope(
             MapVisibilityPass pass,
+            CellSeedRule seedRule,
             Collection<SystemKey> movingSystemKeys,
             CellSeedInputs seedInputs,
             ProfileScope updateScope) {
 
-        var newSites = partitionSites.collectSitesFrom(pass, movingSystemKeys);
+        var newSites = partitionSites.collectSitesFrom(pass, seedRule, movingSystemKeys);
 
         reseedIfSeedInputsMoved(seedInputs);
 

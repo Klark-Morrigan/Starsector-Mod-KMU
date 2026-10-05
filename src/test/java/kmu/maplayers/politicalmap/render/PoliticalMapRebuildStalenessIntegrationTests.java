@@ -6,18 +6,18 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
+import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.ownermap.ContentInputsTests;
+import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.UninhabitedOutlinePreference;
 import kmu.maplayers.ownermap.render.OwnerMapCache;
-import kmu.maplayers.politicalmap.holders.DefaultHolderProvider;
-import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 import kmu.maplayers.politicalmap.views.FactionsView;
 
 import org.junit.jupiter.api.AfterEach;
@@ -105,7 +105,7 @@ final class PoliticalMapRebuildStalenessIntegrationTests {
 
         stageASettledSector();
 
-        var preferences = PoliticalMapRebuildSeams.createPreferencesNamingNothing();
+        var preferences = OwnerMapRebuildSeams.createPreferencesNamingNothing();
 
         cache = new OwnerMapCache(
             machinery,
@@ -113,8 +113,7 @@ final class PoliticalMapRebuildStalenessIntegrationTests {
                 preferences.nameFormat(),
                 outlinePreferenceMock,
                 preferences.filterRecede()),
-            DefaultHolderProvider.INSTANCE,
-            DominanceSystemHolderResolve::openResolveOver);
+            CellSeedRule.SEED_DRAWN_SYSTEMS);
         cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
     }
 

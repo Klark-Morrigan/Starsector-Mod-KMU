@@ -17,6 +17,7 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.holding.HolderGrouping;
 import kmu.maplayers.ownermap.holding.HolderOwnerReading;
+import kmu.maplayers.ownermap.owners.holders.HolderOwnerSource;
 import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedBloc;
 import kmu.maplayers.ownermap.picker.SelectableBloc;
@@ -32,6 +33,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
+import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuOwnerMapStyleSettings;
 
 import org.junit.jupiter.api.Nested;
@@ -216,6 +218,30 @@ final class AlliancesViewTests {
             // rebuild handed in - what it answers is pinned by that reading's own suite.
             assertThat(AlliancesView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING))
                 .isInstanceOf(HolderOwnerReading.class);
+        }
+    }
+
+    @Nested
+    class ResolveViewReading {
+
+        @Test
+        void readsBlocsOffTheirFactionsAndFoldsHoldingByTheLiveAllianceSet() {
+            // The view paints by the live alliance set, so the source folds factions into the very
+            // alliance blocs that set names.
+            try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+                alliancesMock
+                    .when(NexerelinAlliances::resolveGrouping)
+                    .thenReturn(ALLIANCE_GROUPING);
+
+                var viewReading = AlliancesView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
+
+                assertThat(viewReading.reading())
+                    .isInstanceOf(HolderOwnerReading.class);
+                assertThat(viewReading.source())
+                    .isInstanceOfSatisfying(
+                        HolderOwnerSource.class,
+                        source -> assertThat(source.grouping()).isSameAs(ALLIANCE_GROUPING));
+            }
         }
     }
 

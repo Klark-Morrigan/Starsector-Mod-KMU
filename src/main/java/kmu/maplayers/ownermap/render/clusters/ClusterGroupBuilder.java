@@ -85,7 +85,7 @@ public final class ClusterGroupBuilder {
             blocId,
             clusters
                 .getOccupancy()
-                .readHolderOf(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0))));
+                .readOwnerOf(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0))));
 
         var style = blocPaint.style();
         var fillColour = blocPaint.pickColourOf(style.fill());

@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
+import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
@@ -14,12 +15,11 @@ import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.ownermap.MapLayerViewRegistry;
+import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.render.OwnerMapCache;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.politicalmap.PoliticalMapInstaller;
-import kmu.maplayers.politicalmap.holders.DefaultHolderProvider;
-import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.views.FactionsView;
 
@@ -199,10 +199,10 @@ final class SectorMapMachineryIsolationIntegrationTests {
 
             // The shared ID is held by a different faction in each, so the cell they both have an ID
             // for still paints each sector's own holder.
-            assertThat(firstTerritories.getOccupancy().getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
+            assertThat(firstTerritories.getOccupancy().getOwnerBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
                 .isEqualTo(HEGEMONY_ID);
 
-            assertThat(secondTerritories.getOccupancy().getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
+            assertThat(secondTerritories.getOccupancy().getOwnerBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
                 .isEqualTo(TRITACHYON_ID);
         }
 
@@ -229,12 +229,12 @@ final class SectorMapMachineryIsolationIntegrationTests {
                     mockMarketInSystem(SHARED_SYSTEM_ID),
                     PREVIOUS_COLONY_SIZE);
 
-            assertThat(firstMap.rebuild().getOccupancy().getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
+            assertThat(firstMap.rebuild().getOccupancy().getOwnerBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
                 .isEqualTo(PERSEAN_ID);
 
             var untouchedTerritories = secondMap.readTerritories();
 
-            assertThat(untouchedTerritories.getOccupancy().getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
+            assertThat(untouchedTerritories.getOccupancy().getOwnerBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
                 .isEqualTo(TRITACHYON_ID);
 
             assertThat(untouchedTerritories.getStyledCellByCellKey())
@@ -497,9 +497,8 @@ final class SectorMapMachineryIsolationIntegrationTests {
 
             cache = new OwnerMapCache(
                 resolveMachineryOf(sector),
-                PoliticalMapRebuildSeams.createPreferencesNamingNothing(),
-                DefaultHolderProvider.INSTANCE,
-                DominanceSystemHolderResolve::openResolveOver);
+                OwnerMapRebuildSeams.createPreferencesNamingNothing(),
+                CellSeedRule.SEED_DRAWN_SYSTEMS);
         }
 
         // What the cache last drew, without asking it to draw again - for a case claiming a sector

@@ -55,18 +55,18 @@ final class StaleOwnerMapFixtures {
     // A holder of the given faction. Only the faction ID is read by what these suites assert, so
     // the shades are one shared placeholder pair - which is also what makes two holders of one
     // faction compare equal, as the re-derive's own no-change test needs them to.
-    static SystemOwner buildHolderOf(String factionId) {
+    static SystemOwner buildOwnerOf(String factionId) {
         return new SystemOwner(factionId, new OwnerPalette(Color.GRAY, Color.GRAY));
     }
 
     // The holders of the given systems, keyed by system, for a case stating who holds what before
     // the batch runs.
-    static Map<String, SystemOwner> buildHoldersOf(Map<String, String> factionIdBySystemId) {
+    static Map<String, SystemOwner> buildOwnersOf(Map<String, String> factionIdBySystemId) {
 
         var holderBySystemId = new LinkedHashMap<String, SystemOwner>();
 
         for (var entry : factionIdBySystemId.entrySet()) {
-            holderBySystemId.put(entry.getKey(), buildHolderOf(entry.getValue()));
+            holderBySystemId.put(entry.getKey(), buildOwnerOf(entry.getValue()));
         }
         return holderBySystemId;
     }

@@ -1,7 +1,5 @@
 package kmu.maplayers.ownermap.render.clusters;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.systems.SystemKey;
 
@@ -16,11 +14,8 @@ import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.holding.OwnerMapInhabitation;
+import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
 import kmu.maplayers.ownermap.render.style.FactionlessStyleResolver;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
@@ -33,11 +28,10 @@ import java.util.Set;
  * loops captured at every smoothing stage, so the diagnostic renderer can show what each
  * pass did to the geometry.
  *
- * <p>Self-contained: it resolves its own holding and factionless visibility from the
- * sector and builds none of the production draw lists, so while the debug toggle is on it
- * fully replaces the normal build rather than deriving from it. The one holder scan it
- * runs is the same one the normal build would have - the normal build is skipped in debug
- * mode - so it is no extra cost, just done here instead.
+ * <p>It builds none of the production draw lists, so while the debug toggle is on it fully
+ * replaces the normal build rather than deriving from it. The owners it traces are handed over,
+ * resolved through the active view's own source - the resolve the normal build would have made,
+ * the normal build being skipped in debug mode - so it is no extra cost, just spent here instead.
  *
  * <p>It traces the same inset rings the production
  * {@link kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder} does and runs
@@ -60,32 +54,24 @@ public final class DebugBorderTracingBuilder {
     private DebugBorderTracingBuilder() {
     }
 
-    // Resolves holding from the sector and traces every owned cluster (plus the drawn
-    // factionless cells) into the three stage lists. Independent of the production
-    // drawables, so the plugin builds this instead of them in debug mode, not alongside.
+    // Traces every owned cluster (plus the drawn factionless cells) into the three stage lists.
+    // Independent of the production drawables, so the plugin builds this instead of them in debug
+    // mode, not alongside.
     public static ClusterBorderStageOverlay buildDebugDrawables(
             CellGeometryCache geometryCache,
-            SectorAPI sector,
+            ResolvedOwners owners,
             OwnerCategories categories,
-            ContentInputs contentInputs,
-            HolderProvider holderProvider) {
-
-        // This overlay's own reading of the sector: it never filters and groups nothing, so it
-        // opens a plain identity pass rather than being handed one - there is no rebuild above it
-        // to inherit from. Held in a local because both reads below take it, which is what makes
-        // the overlay's holding and its inhabitation answer off one walk of each system.
-        var pass = HolderPass.readFromLunaSettings(sector, HolderGrouping.identity());
-        var ownerBySystemKey = holderProvider.resolveHolder(pass, null).ownerBySystemKey();
+            ContentInputs contentInputs) {
 
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
         // as and that system to its owner ID.
         var cellGrouping = SystemOwner.mapCellGrouping(
             geometryCache.getSystemKeyByCellKey(),
-            ownerBySystemKey);
+            owners.ownerBySystemKey());
 
-        // The same inhabitation read the production build classifies its factionless cells by,
-        // through the same seam, so the overlay shows the cells the map would show.
-        var inhabitedSystemKeys = OwnerMapInhabitation.readInhabitedSystemKeys(pass);
+        // The same inhabitation answer the production build classifies its factionless cells by,
+        // off the same source, so the overlay shows the cells the map would show.
+        var inhabitedSystemKeys = owners.inhabitedSystemKeys();
 
         // The same trace and the same theme the production build reads, so a stage captured here is
         // the geometry the normal render would have drawn rather than one this builder assembled

@@ -35,6 +35,7 @@
 - **政治地图重绘被征服殖民地时出现的故障不再导致游戏崩溃**。Nexerelin 会在其自身移交流程的末尾通知 KMU 殖民地易手，通知发自入侵、叛乱或移交对话框内部，而这些地方本身不捕获异常，因此政治地图重绘该殖民地时的失败会传到引擎，并以指向 Nexerelin 的错误使游戏崩溃。现在该失败会被捕获并记录，Nexerelin 在通知其监听器之后的所有操作仍会照常执行。该殖民地会在几秒后地图的下一次检查时重绘。
 - **地图图层中的故障不再导致游戏崩溃**。此前星图的绘制过程及其上方的星系提示框都不捕获失败，因此正在绘制的图层中的任何故障都会在地图打开时使游戏崩溃。现在出错的图层会停止绘制，直到你下次读取存档，或将 *功能* 中的 **启用地图图层** 关闭后再重新开启，该故障及其堆栈跟踪会记录在 `starsector.log` 中。地图、侧边栏和其他图层会继续绘制。
 - **改变了地图界面的游戏更新不再通过地图图层复选框或排列对话框导致游戏崩溃**。两者都通过深入游戏自身的界面代码来确定自己的位置，而更改了这些代码的游戏版本可能会在此处以两者都未捕获的方式失败，在地图打开时使游戏崩溃。现在复选框不会出现在该界面上，并在 `starsector.log` 中记录一行，排列对话框则会关闭。
+- **在政治地图的 *宣称* 视图中，在被宣称的星系中建立或失去殖民地后，该星系保持其宣称方的颜色**。地图会在几秒内自行重绘发生变化的星系，而在 *宣称* 视图中，这次重绘依据的是谁持有该星系而非谁宣称它，因此该星系在下一次完整重绘之前一直显示持有者的颜色。
 - **开启 *开发* 中的 **反射探测追踪** 后会重新输出所有关于游戏界面的警告**。此前地图图层复选框和星图自身状态的警告被遗漏，因此在其中之一出错后再开启追踪，不会增加任何解释原因的记录。
 
 ### 公共契约变更（**破坏性**）
@@ -76,16 +77,18 @@
   - `buildBlocPickerRead` 在分组之外还接受视图的 `OwnerReading`。
 - **绘制持有者的视图实现 `kmu.maplayers.ownermap.owners.holders.HolderPaintedView`**：它声明 `resolveGrouping()`、`resolveContestGrouping()`、`resolveHolderProvider()`、`resolveSystemHolderResolveSource()`、`resolveRibbonPlanner(RibbonPlanInputs)` 和 `resolveOwnerReading(SectorAPI, HolderGrouping)`，该接口在分组的同一次采样下由它们组装出 `resolveViewReading`。`DominancePaintedView` 和 `ClaimsView` 都是持有者视图。
 - **该层不再读取殖民地，由图层的来源读取**：
-  - `kmu.maplayers.ownermap.owners.OwnerSource` 为重建解析每个星系的所有者（`resolveOwners`），为增量批次打开逐星系的 `SystemOwnerResolve`（`openSystemResolve`），并为烘焙提供条带规划器（`resolveRibbonPlanner`），每项都基于该层交给它的 `SectorWalk`——重建唯一的 `SectorPassIndex`，以及切分单元时所用的可见性规则。
+  - `kmu.maplayers.ownermap.owners.OwnerSource` 为重建解析每个星系的所有者（`resolveOwners`），为增量批次打开逐星系的 `SystemOwnerResolve`（`openSystemResolve`），并为烘焙提供色带规划器（`resolveRibbonPlanner`），每项都基于该层交给它的 `SectorWalk`——重建唯一的 `SectorPassIndex`，以及切分单元时所用的可见性规则。`SectorWalk.readReadingOpenedBy` 保存来源在该遍历上打开的读取结果，每个来源一份，因此来源在两次遍历之间不持有任何状态。
   - `owners` 中的 `ResolvedOwners` 是来源对整个星域的回答：所有者、斜线填充和不填充的星系、有人居住的星系，以及聚焦所有者的存在位置。`ResolvedHolding` 已移除。
-  - `HolderOwnerSource` 是绘制持有者的图层所用的来源。它每次遍历打开一个 `HolderPass`，并通过图层的 `HolderProvider` 和 `SystemHolderResolve` 基于该通道回答所有问题。
+  - `HolderOwnerSource` 是绘制持有者的图层所用的来源。它每次遍历打开一个 `HolderPass`，由该遍历保存，并通过图层的 `HolderProvider` 和 `SystemHolderResolve` 基于该通道回答所有问题。
   - `SystemHolderResolveSource.openResolveOver` 接受批次的 `HolderPass`，`SystemHolderResolve` 只回答 `resolveHolderIn`。
+  - `ClaimsView` 通过 `ClaimSystemHolderResolve` 按宣称方重新推导被标记的星系：`SectorClaims.resolveClaimingHolderIn` 按 `resolveClaimingHolderBySystemKey` 应用于整个星域的同一规则回答单个星系。
   - `OwnerMapBuilder.resolveHolding` 改为 `resolveOwners(OwnerSource, SectorWalk, ContentInputs)`，`buildClusters` 接受 `ViewReading` 和 `ResolvedOwners`，取代通道、视图和持有结果。
   - `OwnerMapCache` 接受一个 `CellSeedRule`，取代诊断用提供者和逐星系解析来源，`OwnerMapLayerRenderer.createForLiveScreen` 随之改变。诊断叠加层通过当前视图自身的来源读取所有者。
   - `IncrementalOwnerRefresh.applyStaleOwnerUpdates` 接受批次的 `SectorWalk`，不再接受解析来源；批次向现有构建解析时所用的来源询问。
   - `CellRibbonsBaker.createForPass` 和 `CellRibbonSource.createForPass` 接受 `SectorWalk`，烘焙向构建的所有者来源索取规划器。
-  - `DebugBorderTracingBuilder.buildDebugDrawables` 接受已解析的所有者，`ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector` 改为 `rebuildClusterAnchorsFromOwners`。
-  - `SystemOccupancy.selectUnheldSystemKeysIn` 改为 `SystemOwner.selectUnownedSystemKeysAmong`，`SpotlitBlocs.isBlocPresentIn` 为新增。
+  - `DebugBorderTracingBuilder.buildDebugDrawables` 接受已解析的所有者和类别。`ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector` 改为 `rebuildDiagnosticClusterAnchors`，接受 `ClusterLabelStylingSnapshot.resolveForTracing` 为所追踪的所有者解析出的样式。
+  - `SystemOccupancy` 以所有者表述：`getHolderBySystemKey`、`readHolderOf`、`recordHolderOf` 和 `selectUnheldSystemKeysAmong` 改为 `getOwnerBySystemKey`、`readOwnerOf`、`recordOwnerOf` 和 `selectUnownedSystemKeysAmong`。`SystemOccupancy.selectUnheldSystemKeysIn` 改为 `SystemOwner.selectUnownedSystemKeysAmong`，`SpotlitBlocs.isBlocPresentIn` 为新增。
+  - `ClusterLabelStylingSnapshot.holderBySystemKey` 改为 `ownerBySystemKey`。
 - **哪些星系生成单元由图层自行声明**：`kmu.maplayers.base.geometry.CellSeedRule` 为新增，`SEED_DRAWN_SYSTEMS` 是底层自身的规则。`CellGeometryCache.updateFromSector` 和 `PartitionSites.collectSitesFrom` 接受该规则，`DrawnSystemPositions.collectLivePositions` 新增一个接受成员规则的重载。
 - **该层向图层询问其所有者**：
   - `kmu.maplayers.ownermap.owners.OwnerReading` 回答每个所有者的色调、名称、徽记、退后和类别，以及无主或已退后单元所依据的色调，每次重建解析一次。`HolderOwnerReading` 是政治地图的实现。
@@ -94,7 +97,7 @@
   - `SystemOwner` 由一个所有者 ID 和一个 `OwnerPalette` 组成：`factionId` 改为 `ownerId`，两个颜色分量合并为一个 `palette`，`resolvePalette` 已移除，`mapFactionIdBySystemKey` 改为 `mapOwnerIdBySystemKey`。`resolveForBloc` 改为 `SectorBlocPalettes.resolveOwnerOf`。
   - `ViewGrouping` 改为 `ViewReading`，在视图之外还携带读取结果和所有者来源。`ClusterLabelStylingSnapshot` 改为携带类别和读取结果以取代它。
   - `OwnerStyleDecision` 携带所有者绘制时所用的类别，而非其是否采用非势力团体样式；`OwnerStyleResolver.resolveBlocStyleDecision` 和 `OwnerStyling.resolveFrom` 接受读取结果和类别。
-  - `RenderStyleReader.readRenderStyle` 接受图层的类别和采样的偏好设置；`BlocNameStyles` 为每个类别一个名称样式，`readFromLunaSettings` 已移除；`FactionlessStyleResolver.resolveCategoryOf` 改为 `isSettledSystem`；`DebugBorderTracingBuilder.buildDebugDrawables` 接受类别；`ClusterAnchorsBuilder.rebuildClusterAnchors` 不再接受星域参数。
+  - `RenderStyleReader.readRenderStyle` 接受图层的类别和采样的偏好设置；`BlocNameStyles` 为每个类别一个名称样式，`readFromLunaSettings` 已移除；`FactionlessStyleResolver.resolveCategoryOf` 改为 `isSettledSystem`；`ClusterAnchorsBuilder.rebuildClusterAnchors` 不再接受星域参数。
   - `OwnerMapBuildInputs.wasBuilt()` 为新增：对首次构建失败后所用的占位对象返回 false，增量刷新不会合并到该占位对象中。
 - **帧序列归框架所有**：
   - `PoliticalMapLayerRenderer` 已移除。`kmu.maplayers.base.render.SequencedMapLayerRenderer` 基于图层提供的 `MapLayerFrameParts`（让位读取、一个 `MapFrameCache`、一个 `MapFrameCompositor`、该图层的 `MapLayerHoverGates` 及其悬停框）运行每个着色图层都要运行的帧：让位、刷新、每个渲染过程的光标读取、每个层带的着色，以及悬停框。

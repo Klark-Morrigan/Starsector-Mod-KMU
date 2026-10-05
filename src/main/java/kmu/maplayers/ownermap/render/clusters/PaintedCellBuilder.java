@@ -86,7 +86,7 @@ public final class PaintedCellBuilder {
         // clear of whether the holder map happens to tolerate a null-key get.
         var holder = systemKey == null
             ? null
-            : occupancy.readHolderOf(systemKey);
+            : occupancy.readOwnerOf(systemKey);
         return holder == null
             ? buildFactionlessCell(occupancy, buildInputs, systemKey, shaped)
             : buildOwnedCell(buildInputs, holder, shaped);
