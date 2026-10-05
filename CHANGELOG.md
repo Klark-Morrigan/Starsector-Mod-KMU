@@ -23,26 +23,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **A fault while the political map repaints a conquered colony no longer ends the game.** The map repaints the colony at its next check a few seconds later.
 - **A game update that changes the map screens no longer ends the game through the map-layers tick box or the arrange dialog.** The tick box stays off that screen, and the arrange dialog closes.
 - **On the political map's *Claims* view, a colony founded or lost in a claimed system keeps the system in its claimant's colours**, rather than its holder's until the next full redraw.
-- **The Market Condition Manager's counts line draws its available and total counts in grey**, as intended.
 - Switching on *Dev* **Reflection probe traces** repeats every warning about the game's screens, including the map-layers tick box's and the sector map's.
 
 ### Added
 
 - **Simplified Chinese (简体中文).** A second zip, `KMU-<version>-zh-hans.zip`, carries the settings screen, the Map Layers sidebar, the hover boxes, the in-game notices and the mod list entry in Simplified Chinese. Install the [Chinese localisation](https://github.com/TruthOriginem/Starsector-Localization-CN) over `starsector-core` first: the game's own fonts hold no Chinese characters, so without it every one draws as `?`. Settings picked from a list keep their options in English, so your settings carry over between the two zips. The release notes and the zip's `CHANGELOG.md` are in Chinese too.
 - *Map - Politics - Visuals* setting **Decivilised systems - Should draw territory**, on by default. Switched off, a revealed decivilised world no longer counts as anyone living in its system: the system draws as uninhabited, its owner leaves the layer's picker, and it adds no presence band or colony size to the stats. The world is still found, listed and named in the star system tooltip. - Requested by **NoticeMeSenpai** [at **USC**](https://discord.com/channels/187635036525166592/1549091275167240272/1549750490617741395).
-- **Map labels, hover boxes and the Map Layers sidebar draw in a font that holds their text.** Where a font cannot draw a name or a word - a language pack's fonts leaving some characters out - the text draws in a smaller cut of the same font or in the game's default font, rather than as question marks. With the Chinese localisation installed, the faction names on the map step down one cut. On an English install nothing changes.
 
 ### Changed
 
-- **The mod list names the mod Klark Morrigan's Utilities (KMU).** Update checkers show the same name.
-- **Each language ships as its own zip**, such as `KMU-<version>-en.zip`. The release notes say which is which, and update checkers keep working across the change.
 - A **decivilised world** is revealed by another faction's colony in its system at every level of *Map - Visibility* **Show decivilised worlds surveyed at least to**. That setting governs only your own survey: at *Seen* a visit to the system is enough, and at *Preliminary* or *Full* you must survey the world itself.
 - **Show decivilised worlds surveyed at least to** ships at *Full* rather than *Seen*, unless you have set it yourself. A decivilised world is named once you survey it or someone lives in its system; flying past is not enough.
+- **Each language ships as its own zip**, such as `KMU-<version>-en.zip`. The release notes say which is which, and update checkers keep working across the change.
 - **When another mod or a game update breaks something KMU relies on, KMU loses only that feature and a notice says so.** It names the mod or the game with both versions, says what stops working, and suggests updating, downgrading or waiting. Each notice shows once per session.
-  - **Nexerelin alliances:** a release that changes how it keeps alliances no longer stops the game. The political map treats every faction as standing alone for the rest of the session.
-  - **LunaLib:** where it stops telling KMU about settings changes, a changed setting may not apply until you restart the game.
   - **Game updates:** where an update changes the screens the map layers reach into, the notice names the one thing that stops working, such as the tick box going missing.
-- **A mod that changes what KMU binds to at start-up no longer stops the game loading.** Only the affected piece is lost, with a line in `starsector.log`. For Nexerelin, that is the political map's repaint when a colony changes hands mid-campaign.
+  - **LunaLib:** where it stops telling KMU about settings changes, a changed setting may not apply until you restart the game.
+  - **Nexerelin alliances:** a release that changes how it keeps alliances no longer stops the game. The political map treats every faction as standing alone for the rest of the session.
 
 ### For developers
 
@@ -56,13 +52,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Conquered colony repaint:** Nexerelin tells its listeners of a transfer from inside an invasion, a rebellion or a transfer dialog with no catch of its own. The repaint's failure is caught and logged, and Nexerelin's work after telling its listeners still runs.
 - **Map-layers tick box and arrange dialog:** both reach into the game's screen code, and a changed game build could fail there in a way neither caught. The failure is logged in `starsector.log`.
 - **Claims view repaint:** the incremental repaint went by the system's holder rather than its claimant.
-- **Counts line:** the game does not highlight a run that touches the word before it, and each separator started with a space. The grey starts at the dash.
+- **The Market Condition Manager's counts line draws its available and total counts in grey.** The game does not highlight a run that touches the word before it, and each separator started with a space, so the grey starts at the dash.
 - **Reflection probe traces:** the tick box's and the sector map's warnings were left out of the re-arm.
 - **A commented-out row in `data/config/kmu/installations.csv` is ignored**: a row whose entity type starts with `#` stays out of the table, the way the game's own tables comment a row out.
-
-#### Changed
-
-- **Start-up binding:** each piece of KMU's start-up wiring already ran behind its own boundary, which now also catches a link error - the form a moved or renamed binding arrives in. KMU's Nexerelin listener implements one of Nexerelin's own interfaces, so a release reshaping it ended every load.
 
 #### Public contracts changed (**breaking**)
 
