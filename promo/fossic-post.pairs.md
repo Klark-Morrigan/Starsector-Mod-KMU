@@ -26,7 +26,6 @@ Change this file with either post.
 - [Settings](#settings)
 - [Console commands](#console-commands)
 - [Compatibility](#compatibility)
-- [Changelog](#changelog)
 - [Feedback](#feedback)
 - [Post-release roadmap](#post-release-roadmap)
 - [AI usage disclaimer](#ai-usage-disclaimer)
@@ -629,16 +628,6 @@ The English README's Languages section says the same to an English reader.
   - Notes: Hyperspace in [space][kmu-space].
     Dock in [features and screens][kmu-features].
 
-## Changelog
-
-Fossic only.
-
-- EN (back-translation): Changelog
-  - ZH: 更新日志
-  - Notes: the board asks for updates in the mod's own thread; the release checklist in the [source notes][source-notes] fills it.
-- EN (back-translation): the version's section of the Chinese changelog, newest version first
-  - ZH: a paste placeholder
-
 ## Feedback
 
 - EN: While playing with this pre-release, please report if you think it relates to this mod:
@@ -759,4 +748,3 @@ The [source notes][source-notes] give why.
 [kmlib-forum]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#forum-terms
 [kmlib-costs]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#what-a-failed-binding-costs
 [kmlib-settings]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#settings
-[kmlib-changelog]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#the-changelog
