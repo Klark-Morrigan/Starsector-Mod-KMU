@@ -3,83 +3,77 @@
 The KMU thread on Fossic (https://www.fossic.org/), the Chinese Starsector forum, in its 原创 board
 (Mod制作发布, forum-71-1.html). It is forum-post.bbcode with the same sections in the same order,
 in Simplified Chinese by localisation/zh-hans/README.md, the terminology reference.
-Fossic is Discuz! X3.5, so the markup differs from the Fractal Softworks post:
-[collapse=title] for [spoiler=], [size=1..7] for point sizes, [*] list items, no [li],
-and [attachimg]id[/attachimg] for an uploaded image.
-
-Why the post differs from the English one, beyond the language:
-- The download is a forum attachment, by the board's rules (thread-13-1-1.html): the zh-hans zip and,
-  since KMLib has no thread of its own, KMLib's zip too, under 前置. GitHub appears once, as a source line,
-  because github.com is unreliable from China and a player here cannot depend on it.
-- Every image is a forum attachment served from cdn.fossic.cn, never a GitHub link:
-  raw.githubusercontent.com is blocked in mainland China, and the board rules advise against sources
-  players there cannot reach. Each [attachimg]promo/<file>[/attachimg] below names the file under promo/ to
-  upload; after the upload, replace the file name with the attachment id the editor mints. Images are uploaded
-  once and stay across edits, so a release re-uploads only an image that changed.
-  Fossic publishes no size limit, but a per-file and a daily one exist per user group (FAQ, thread-3316-1-1.html),
-  and the PNGs run to 4.3 MB each and 38 MB together. Where the uploader refuses one, ask an admin to raise the
-  limit, as the FAQ says, or upload a smaller copy.
-  The form's 发贴本地化图片 option copies remote images onto the forum's storage (thread-37-1-1.html), but it
-  fetches them from Fossic's side, where GitHub is the unreliable host, so the post does not rely on it.
-- No shields badges and no TriOS link: both resolve through GitHub, and the counters would count GitHub
-  downloads while the attachment is the main download here. The manual install line, from nexus-post.bbcode,
-  stands in for TriOS.
-- The Bad Apple line has no link: Reddit is blocked.
-- The post opens with its title rather than the banner, so its first line is text, not an image that may not load.
-- The post opens by naming the Chinese core localisation the zip needs, since that is the one thing a
-  player on this board must do that a player on the other board need not.
+How a KM mod's thread on that board works - the board and its review, the posting form, the rules,
+the Discuz markup, images and attachments - is KMLib's docs/dev/fossic-thread.md.
+This file holds only what is KMU's: what its post leaves out or adds, its form values, its links
+and its release checklist.
 
 fossic-post.pairs.md pairs every line of this post with the Fractal Softworks post's for review;
-change it with this file.
+change it with this file. FossicPostPairingIntegrationTests holds the two together.
 
-The board, Mod制作发布 (forum-71-1.html), is where every original mod starts and is its pre-release board:
-its rule box is 原创Mod预发布规则摘要, and a mod moves to 原创Mod区 (forum-46-1.html) and the Mod索引 only once
-an admin has reviewed it (thread-6107-1-1.html; a 杂项 mod qualifies for 快速审核 straight away).
-The thread type is 【原创Mod发布】, the board's only one. There is no pre-release prefix; threads mark it in the
-title, as [测试] or [早期测试], which is what the title below does.
+Why the post differs from the English one, beyond the language:
+- The download is a forum attachment, by the board's rules: the zh-hans zip and, since KMLib has no thread
+  of its own, KMLib's zip too, under 前置. GitHub appears once, as a source line, because github.com is
+  unreliable from China and a player here cannot depend on it.
+- Every image and zip is a forum attachment. Each [attachimg]promo/zh-hans/<file>[/attachimg] below names the image
+  under promo/zh-hans/ to upload, and each [attach]<zip>[/attach] the release zip; after the upload, replace the name
+  with the attachment ID the editor inserts. A zip's tag puts its download link in the line that names it,
+  where an untagged attachment would show only in the list under the post.
+- No shields badges and no TriOS link: both resolve through GitHub, and the counters would count GitHub
+  downloads while the attachment is the main download here. The manual install line, from
+  nexus-post.bbcode, stands in for TriOS.
+- The Bad Apple question is left out: its video is on Reddit and YouTube, both blocked in mainland China.
+- A screenshot with no Chinese version yet is left out, with its caption, as an accepted gap; the sector
+  example is the one Chinese screenshot of its own, vanilla with Nexerelin.
+- The post-release roadmap is left out. It moves as plans do, so it is kept in the Fractal Softworks post
+  alone, and this post has that much less to keep current.
+- The post opens with its title rather than the banner, so its first line is text, not an image that may
+  not load. The banner is its own Chinese variant, promo/zh-hans/always-has-been.png from always-has-been.psd:
+  "map game" becomes P社游戏, the players' word for the genre the joke points at.
+- The Chinese core localisation the zip needs heads the 前置 list, since that is the one thing a player on
+  this board must do that a player on the other board need not. It is named there once, where a player
+  installing the mod looks for what else to install.
 
-Posting form, every input in the form's order, read off the form on 2026-10-01 (* is required):
-  标题 *                [0.98a][测试] 政治地图 - 星图图层 - KMU <version>
-                        80 characters at most; the board's titles open with the game version in brackets
-  Mod标识符 *           kmu, the id in mod_info.base.json
-  Mod中文名 *           政治地图 - 星图图层 - KMU, the Chinese of the English name
+What the board's rules ask of this mod in particular:
+- No known conflicting mod, so the form's 冲突Mod and the post name none.
+- Nothing to disclose under the rule on modifying the game, going online or writing outside the game
+  folder: KMU and KMLib make no network calls, and KMLib's one write goes through the game's own
+  common-data store, inside the game folder.
+- Under the rule that feeding another author's work to a large language model is using that work: KMU's
+  research read the code of the mods it works with. LazyLib (its licence file), Nexerelin (MIT), LunaLib
+  (CC BY 4.0) and Fast Rendering (the Unlicense) permit that; Random Assortment of Things states no terms.
+
+Posting form values (what each input takes is in the KMLib doc; * is required):
+  标题 *                [0.98a][测试] 政治地图 - 星图图层 - KMU
+  Mod标识符 *           kmu
+  Mod中文名 *           政治地图 - 星图图层 - KMU
   Mod英文名             Political Map - Sector Map Layers - KMU
-  Mod作者 *             Klark Morrigan; the form asks for the forum user name first, comma-separated
-  Mod类别 *             杂项. The board's category guide (thread-5932-1-1.html) puts a function mod that cannot
-                        be removed mid-save in 杂项, and keeps 功能 for removable ones; KMU's save needs the
-                        uninstall procedure. Options: 前置 功能 美化 大型 杂项 内容 独立 战役 势力 Mod扩展
-  Mod适用版本 *         0.98, the gameVersion in mod_info.base.json without its patch suffix
-  Mod更新时间 *         the release date, as YYYY-MM-DD
-  Mod版本 *             the version in mod_info.base.json; the release file row below must match it
-  可安全移除 *          否: a save kept after removal needs the uninstall procedure
-  依赖Mod *             LunaLib, LazyLib and 其它 ticked. 势力争霸(Nexerelin) stays unticked: it is optional
-  其它依赖Mod           KMLib, one per line
-  冲突Mod               empty: none known. A known conflict goes here and in the post body both (thread 13)
-  Mod简短介绍 *         在星图界面、情报信息界面和 Random Assortment of Things 的小地图上叠加地图图层。
-                        首发的政治地图按势力、联盟（需 Nexerelin）或宣称为星域上色，悬停提示框说明每个星系由谁主导。
+  Mod作者 *             Klark Morrigan
+  Mod类别 *             杂项: the category guide (thread 5932) keeps 功能 for mods removable mid-save, and KMU's
+                        kept save needs the uninstall procedure, as 可安全移除 否 says
+  Mod适用版本 *         0.98
+  Mod更新时间 *         the release date
+  Mod版本 *             the version in mod_info.base.json
+  可安全移除 *          否
+  依赖Mod *             LunaLib, LazyLib and 其它; 势力争霸(Nexerelin) unticked, being optional
+  其它依赖Mod           KMLib
+  冲突Mod               empty
+  Mod简短介绍 *         星图上的政治地图叠加层（星图界面、情报信息界面等），为势力、联盟（需 Nexerelin）和星系宣称上色。
                         需要先安装远行星号中文汉化。
-  Mod下载地址           empty: the form itself recommends the attachment
+  Mod下载地址           empty
   网盘提取码/解压密码   empty
   Mod语言 *             中文
-  Mod发布文件           one row, added after the zip is uploaded: file KMU-<version>-zh-hans.zip, 游戏版本 0.98,
-                        Mod版本 as above, 显示名称 KMU <version> 简体中文版. KMLib's zip gets no row: the table
-                        lists this mod's own versions, and each row's Mod版本 must match KMU's mod_info.json.
-                        The 插入Mod文件下载面板到帖子正文中 button then puts the download panel where the post
-                        marks it, under 下载 (thread-19713-1-1.html).
-  Mod允许直链下载 *     是: a mod manager may then fetch the zip without opening the thread
+  Mod发布文件           one row: KMU-<version>-zh-hans.zip, 游戏版本 0.98, Mod版本 as above,
+                        显示名称 KMU <version> 简体中文版. KMLib's zip gets no row
+  Mod允许直链下载 *     是
   Mod索引隐藏           否
-  Mod索引备注           需先安装中文汉化; shown after the version in the Mod索引, so kept short
-  滑块验证 *            the slider captcha
-  附加选项              接收回复通知 on. 禁用编辑器代码 OFF: on, it prints the BBCode as text.
-                        禁用表情 on, so no command syntax is read as a smiley. 禁用链接识别 off, so the source
-                        URL links. 回帖仅作者可见, 回帖倒序排列 and 内容生成图片 off. HTML 代码 is not offered,
-                        [img] 代码 is fixed on, and 解析图片链接, 使用个人签名 and 回帖邮件提醒 are the poster's choice.
-  发贴本地化图片        leave on; harmless, and not relied on (see the image note above)
-  回帖奖励              0 星币: no reward
-  主题标签              星图, 地图, 政治地图, 界面, KMU (5 at most, comma- or space-separated)
-  定时发布              off
+  Mod索引备注           需先安装中文汉化
+  主题标签              mod发布, 星图, 政治地图, 势力争霸, KMU
+  回帖奖励              empty, as the KMLib doc says
+  定时发布              none
+  附加选项              as the KMLib doc says
 
-Fossic threads linked below (verified 2026-09-30; Fossic's canonical link form is thread-<tid>-1-1.html):
+Fossic threads linked below (verified 2026-09-30):
   Core localisation   thread-19430-1-1.html   远行星号 0.98a-RC8 中文汉化 (游戏资源 board)
   LazyLib             thread-1676-1-1.html    [前置] LazyLib (Mod搬运发布)
   LunaLib             thread-10267-1-1.html   Lunalib (Mod汉化发布; the older 搬运 thread 8275 redirects here)
@@ -90,136 +84,95 @@ Fossic threads linked below (verified 2026-09-30; Fossic's canonical link form i
                                               the 汉化 build is thread-15662-1-1.html, whose replies report issues
   Industrial Evolution thread-9754-1-1.html   工业革命 (Mod汉化发布)
 
+Once, after the first post: put this thread's URL into forum-post.bbcode and nexus-post.bbcode, in place
+of their <<the KMU thread on Fossic ...>> placeholders, so the English posts link here.
+
 Release checklist, run by hand on every KMU release:
-  1. Upload KMU-<version>-zh-hans.zip, add its Mod发布文件 row, and remove the previous version's row and file.
-     Where KMLib moved, upload KMLib-<version>-zh-hans.zip under 前置 the same way.
-  2. Set the form's 标题, Mod版本, Mod适用版本 and Mod更新时间, and the version in the 下载 line.
-  3. Paste the version's section of localisation/zh-hans/CHANGELOG.md into the 更新记录 collapse,
+  1. Upload KMU-<version>-zh-hans.zip, put its ID in the 下载 line's [attach] tag, add its Mod发布文件 row,
+     and remove the previous version's row and file. Where KMLib moved, upload KMLib-<version>-zh-hans.zip
+     and put its ID in the 前置 line's tag the same way.
+  2. Set the form's Mod版本, Mod适用版本 and Mod更新时间, and the version in the 下载 line.
+  3. Paste the version's section of localisation/zh-hans/CHANGELOG.md into the 更新日志 spoiler,
      above the previous versions, so the newest is first.
-  4. Preview the post once: check [hr] renders and the nested collapses open.
+  4. The editor has no preview: save a draft (保存草稿) and open it once.
+     Check [hr] renders and the nested spoilers open.
 
 ==== POST BEGINS ====
-[center]
-[color=maroon][size=6][b]政治地图[/b][/size][/color]
+[align=center][color=maroon][size=6][b]政治地图[/b][/size][/color]
 [color=maroon][size=3][b]星图图层[/b][/size][/color]的首发功能
 
-[attachimg]promo/always-has-been.png[/attachimg]
+[attachimg]promo/zh-hans/always-has-been.png[/attachimg]
 
 [color=red][i]本 Mod 目前处于[size=3][b]预发布[/b][/size]阶段，用于公开测试与收集反馈。
 欢迎提前试用并分享你的体验，帮助我改进它。[/i][/color]
-[/center]
-[hr]
-[b]本帖是 KMU 的简体中文版[/b]，由作者与英文版一同发布，不是搬运，也不是第三方汉化。两个版本内容相同，只有文字不同，设置可以互通。
 
-[color=red][b]使用前请先安装[url=https://www.fossic.org/thread-19430-1-1.html]远行星号中文汉化[/url][/b]（覆盖到 starsector-core）。[/color]游戏自带的字体不含中文字符，汉化包会换上含有中文的字体。没有它，Mod 照常加载运行，不会有任何报错，但 KMU 显示的每个中文字符都会变成问号。
-启动器无法检查这一点：汉化包不是 Mod，没有 Mod ID，因此 mod_info.json 无法像声明 KMLib 那样声明它。汉化包一次只对应一个游戏版本，请安装与你所运行的游戏版本一致的那一版。
-[hr]
-[center]
+[i][b]本帖是 KMU 的简体中文版[/b]，由作者与英文版一同发布，不是搬运，也不是第三方汉化。
+两个版本内容相同，只有文字不同，设置可以互通。如发现译文不通顺或术语不一致，欢迎在本帖回复指出。[/i]
+[/align]
+[hr][align=center]
 你是否苦于[b]跟不上各势力的扩张与消长[/b]？
 你是否想在出发之前就知道[b]哪些星系已被宣称、被谁宣称[/b]？
 你是否想用自己的征服[b]为星图上色[/b]？
 你是否只是想看看你 Mod 列表里的各路势力[b]制造出的边界地狱[/b]？
-你是否想[b]放一段 Bad Apple[/b]？
-[/center]
+[/align]
 [hr]
 [size=4][b]下载[/b][/size]
 <<the download panel: the form's 插入Mod文件下载面板到帖子正文中 button inserts it here>>
 [list]
-[*]KMU <<version>>（简体中文版）：本帖附件 KMU-<<version>>-zh-hans.zip。适用于 0.98a-RC8。
-[*]源码与英文版：https://github.com/Klark-Morrigan/Starsector-Mod-KMU
+[*]KMU <<version>>（简体中文版）：[attach]KMU-<<version>>-zh-hans.zip[/attach]。适用于 0.98a-RC8。
+[*][url=https://github.com/Klark-Morrigan/Starsector-Mod-KMU]源码与英文版[/url]
+[*][url=https://fractalsoftworks.com/forum/index.php?topic=36029.0][b]Fractal Softworks 论坛[/b]上的 KMU 帖子[/url]
 [/list]
-
 [size=4][b]前置[/b][/size]
 [list]
+[*][b][url=https://www.fossic.org/thread-19430-1-1.html]远行星号中文汉化[/url][/b]（覆盖到 starsector-core）
 [*][b][url=https://www.fossic.org/thread-1676-1-1.html]LazyLib[/url][/b]
 [*][b][url=https://www.fossic.org/thread-10267-1-1.html]LunaLib[/url][/b]
-[*][b]KMLib[/b]（Klark Morrigan 的程序库）：本帖附件 KMLib-<<kmlib-version>>-zh-hans.zip。KMU 所需的 KMLib 版本写在 mod_info.json 中，本帖附件始终是与当前 KMU 配套的版本。
+[*][b]KMLib[/b]（Klark Morrigan 的程序库）：[attach]KMLib-<<kmlib-version>>-zh-hans.zip[/attach]。KMU 所需的 KMLib 版本写在 mod_info.json 中，本帖附件始终是与当前 KMU 配套的版本。
 [/list]
-
 安装：把每个 Mod 解压到 [b]starsector/mods[/b] 文件夹，然后在游戏启动器中启用它们。
-[hr]
-[center]
+
+[hr][align=center]
 [b][color=green]可在游戏中途安装[/color][/b]；
 若卸载后仍想保留存档，需要先执行一个简短的[b][color=green]卸载步骤[/color][/b]。
-[/center]
-[hr]
-[center]
+[/align]
+[hr][align=center]
 本 Mod 已与 [b][url=https://www.fossic.org/thread-3680-1-1.html]Nexerelin[/url][/b]、[b][url=https://www.fossic.org/thread-21060-1-1.html]Fast Rendering[/url][/b]、[b][url=https://www.fossic.org/thread-11661-1-1.html]Random Assortment of Things[/url][/b] 做了兼容。
-[/center]
+[/align]
 [hr]
 [color=maroon][b]星图图层[/b][/color]是叠加在星图界面 [b](Tab, Q)[/b] 和情报信息界面 [b](E, 1)[/b] 上的叠加层；若安装了 [b]Random Assortment of Things[/b]，也会显示在屏幕右下角的小地图上（它替换了原版的雷达）。
 
-[collapse=示例]
-[center]
-[table]
-[tr]
-[td]
-[center]
-[attachimg]promo/map-screen.png[/attachimg]
+[spoiler=示例][align=center][table]
+[tr][td]
+[align=center]
+[attachimg]promo/zh-hans/map-screen.png[/attachimg]
 星图界面。
-[/center]
-[/td]
-[td]
-[center]
-[attachimg]promo/intel-screen.png[/attachimg]
+[/align]
+[/td][td]
+[align=center]
+[attachimg]promo/zh-hans/intel-screen.png[/attachimg]
 情报信息界面。
-[/center]
-[/td]
-[td]
-[center]
-[attachimg]promo/random-assortment-of-things-minimap.png[/attachimg]
-[b]Random Assortment of Things[/b] 的小地图。
-[/center]
-[/td]
-[/tr]
-[/table]
-[/center]
-[/collapse]
+[/align]
+[/td][/tr]
+[/table][/align][/spoiler]
 
 一切都根据游戏数据计算并绘制，并随星域局势的变化而更新。地图图层不会修改用于绘制它的任何数据，因此地图图层在设计上是[b]只读[/b]的。
 
-[collapse=星域示例]
-[center]
-[table]
-[tr]
-[td]
-[center]
-[attachimg]promo/sector-1-vanilla.png[/attachimg]
-原版。
-[/center]
-[/td]
-[td]
-[center]
-[attachimg]promo/sector-2-modded-light.png[/attachimg]
-轻度 Mod。
-[/center]
-[/td]
-[td]
-[center]
-[attachimg]promo/sector-3-modded-heavy.png[/attachimg]
-重度 Mod。
-[/center]
-[/td]
-[/tr]
-[/table]
-[/center]
-[/collapse]
-[collapse=如何打开地图图层]
+[spoiler=星域示例][align=center][attachimg]promo/zh-hans/sector-1-vanilla-nexerelin.png[/attachimg]
+原版加 Nexerelin。[/align][/spoiler]
+[spoiler=如何打开地图图层]
 [color=maroon][b]KMU[/b][/color] 的[color=maroon][b]星图图层[/b][/color]功能[color=green]默认开启[/color]。读取存档或开始新游戏后，打开[b]星图界面[/b]或[b]情报信息界面[/b]，地图筛选栏中会多出一个[b]地图图层[/b]按钮。点击它或按 [b](M)[/b] 即可开启地图图层叠加层及其侧边栏。
-
-[center]
-[attachimg]promo/ui-toggle-map.png[/attachimg]
+[align=center]
+[attachimg]promo/zh-hans/ui-toggle-map.png[/attachimg]
 星图界面。
 
-[attachimg]promo/ui-toggle-intel.png[/attachimg]
-情报信息界面。
-[/center]
-[/collapse]
+[attachimg]promo/zh-hans/ui-toggle-intel.png[/attachimg]
+情报信息界面。[/align][/spoiler]
 
-地图图层的主要控制界面是可折叠的[b]侧边栏[/b]，其中列出了所有可用图层以及相关的旋钮与开关。
+地图图层的主要控制界面是可折叠的[b]侧边栏[/b]，其中列出了所有可用图层以及相关的控件与开关。
 
-[collapse=可用的地图图层]
-[collapse=政治地图 (P)]
+[spoiler=可用的地图图层]
+[spoiler=政治地图 (P)]
 [list]
 [*]关注[b]有人居住的殖民地[/b]（市场）及其归属。
 [list]
@@ -228,138 +181,96 @@ Release checklist, run by hand on every KMU release:
 [*]带有[b]废弃空间站[/b]条件的市场视为无人居住，不为地图上色。
 [*]所有非市场实体都不为地图上色。
 [/list]
-
-[collapse=示例]
-[center]
-[attachimg]promo/domination-factions-unpopulated.png[/attachimg]
-[color=red]未被宣称[/color]的[b]无人星系[/b]只以极淡的线条绘制，仅用于显示星系之间的相接位置。
+[spoiler=示例][align=center][attachimg]promo/zh-hans/domination-factions-unpopulated.png[/attachimg]
+[color=red]无宣称[/color]的[b]无人星系[/b]只以极淡的线条绘制，仅用于显示星系之间的相接位置。
 无人星系的这些轮廓可以独立于[b]有人星系[/b]开关；
 有人星系始终绘制，即使星系中没有任何有组织的势力（例如星系内所有殖民地都已[b]荒蛮[/b]）。
-[i][color=lightgrey]你也可以独立于势力星系和荒蛮星系调整它们的外观样式。[/color][/i]
-[/center]
-[/collapse]
+[i][color=lightgrey]你也可以独立于势力星系和荒蛮星系调整它们的外观样式。[/color][/i][/align][/spoiler][/list]
+[list]
 [*]每个星系只能由一个势力上色，因此每个星系会沿其边界绘制一条[b]存在色带[/b]，以持有各殖民地的势力颜色表示每个有人居住的殖民地。当星系中只有一个势力或联盟在场，且这种存在不违反任何[b]无条件宣称[/b]时，色带会缩短，以表示[b]稳固的控制[/b]。
 
-[collapse=示例]
-[center]
-[attachimg]promo/domination-factions-presence-ribbon.png[/attachimg]
-存在色带：[b]Samarra[/b] 的色带显示 3 个[b]霸主[/b]市场和 1 个[b]非势力团体[/b]市场。
-[/center]
-[/collapse]
+[spoiler=示例][align=center][attachimg]promo/zh-hans/domination-factions-presence-ribbon.png[/attachimg]
+存在色带：[b]Samarra[/b] 的色带显示 3 个[b]霸主[/b]市场和 1 个[b]非势力团体[/b]市场。[/align][/spoiler]
+[/list]
+[list]
 [*]可展开的[b]星系提示框[/b]详细说明每个市场如何影响力量平衡。
 
-[collapse=示例]
-[center]
-[attachimg]promo/domination-factions-tooltip-lists-neutral-markets.png[/attachimg]
+[spoiler=示例][align=center][attachimg]promo/zh-hans/domination-factions-tooltip-lists-neutral-markets.png[/attachimg]
 提示框会列出[b]中立[/b]（无主）市场。
 
-[attachimg]promo/domination-factions-tooltip-lists-not-contributing-markets.png[/attachimg]
-提示框会列出不产生主导得分的市场。
-[/center]
-[/collapse]
-[*]持有任何人口中心的势力都会列在一个[b]可排序的筛选列表[/b]中。选中其中任意一个，即可聚焦其在整个星域的存在。[b]中立[/b]与有组织的势力并列其中，选中它即可聚焦所有持有[b]荒蛮[/b]殖民地的星系。
-[list]
-[*]在主导视图（[color=maroon][b]势力[/b][/color]与[color=maroon][b]联盟[/b][/color]）中，[b]实心填充[/b]表示主导，[b]斜线填充[/b]表示在由他人主导的星系中的存在，[b]不填充[/b]表示对无人星系的宣称。
-[*]在[color=maroon][b]宣称[/b][/color]视图中，所有星系均以实心填充绘制。
+[attachimg]promo/zh-hans/domination-factions-tooltip-lists-not-contributing-markets.png[/attachimg]
+提示框会列出不产生主导得分的市场。[/align][/spoiler]
 [/list]
-
-[collapse=示例]
-[center]
-[attachimg]promo/domination-factions-filter.png[/attachimg]
+[list]
+[*]持有任何有人居住市场的势力都会列在一个[b]可排序的筛选列表[/b]中。选中其中任意一个，即可聚焦其在整个星域的存在。[b]中立[/b]与有组织的势力并列其中，选中它即可聚焦所有持有[b]荒蛮[/b]殖民地的星系。
+[list]
+[*]在主导视图（[color=maroon][b]势力[/b][/color]与[color=maroon][b]联盟[/b][/color]）中，[b]实色填充[/b]表示主导，[b]斜线填充[/b]表示在由他人主导的星系中的存在，[b]不填充[/b]表示对无人星系的宣称。
+[*]在[color=maroon][b]宣称[/b][/color]视图中，所有星系均以实色填充绘制。
+[/list]
+[spoiler=示例][align=center][attachimg]promo/zh-hans/domination-factions-filter.png[/attachimg]
 势力筛选列表，展开为 2 列，按势力对玩家的[b]关系[/b]排序。
 
-[attachimg]promo/domination-factions-luddic-church.png[/attachimg]
-按[b]卢德教会[/b]筛选的势力视图。
+[attachimg]promo/zh-hans/domination-factions-pirates.png[/attachimg]
+按[b]海盗[/b]筛选的[color=maroon][b]势力[/b][/color]视图。
 
-[attachimg]promo/domination-factions-pirates.png[/attachimg]
-按[b]海盗[/b]筛选的势力视图。
-
-[attachimg]promo/domination-factions-unpopulated-claimed.png[/attachimg]
+[attachimg]promo/zh-hans/domination-factions-unpopulated-claimed.png[/attachimg]
 在主导视图中，[b]无人星系[/b]不上色。
-[b]Tia[/b] 星系显示为[b]霸主[/b]所有，因为[b]霸主[/b]对它[color=red]持有无条件宣称[/color]。
-[/center]
-[/collapse]
+[b]Tia[/b] 星系显示为[b]霸主[/b]所有，因为[b]霸主[/b]对它[color=red]持有无条件宣称[/color]。[/align][/spoiler]
 [/list]
-
 [color=maroon][b]政治地图[/b][/color]提供 3 种视图：
 [list]
-[*][color=maroon][b]势力[/b][/color]：根据自定义的[b]主导算法[/b]（可在设置中大幅调整）为势力领土上色。该算法综合考虑市场规模、稳定性、市场是否隐藏、是否有轨道空间站（以及空间站是否军事化），以及生成的巡逻舰队数量（按其规模）。
-
-[collapse=示例]
-[center]
-[attachimg]promo/domination-factions-penelope_star.png[/attachimg]
-[b]卢德教会[/b][color=red]无条件宣称[/color]了 [b]Penelope's Star[/b]，但[color=red]并不在场[/color]；
-按主导规则，实际在场的势力（[b]非势力团体[/b]）被视为持有方。
-该宣称仍会列在提示框中。
-[/center]
-[/collapse]
+[*][color=maroon][b]势力[/b][/color]：根据自定义的[b]主导算法[/b]（可在设置中大幅调整）为势力领土上色。该算法综合考虑市场规模、稳定性、市场是否隐藏、是否有轨道空间站（以及空间站殖民地是否建有轨道空间站），以及生成的巡逻队数量（按其规模）。
 [*][color=maroon][b]联盟[/b][/color]（仅在安装了 [b]Nexerelin[/b] 时可见）：与[color=maroon][b]势力[/b][/color]视图相同，但结盟的势力作为单一政治实体出现，其持有合并计算。
-
-[collapse=示例]
-[center]
-[attachimg]promo/domination-alliances-tooltip.png[/attachimg]
-[color=maroon][b]联盟[/b][/color]视图中的提示框会合并在场联盟成员的主导得分。
-[/center]
-[/collapse]
-[*][color=maroon][b]宣称[/b][/color]：根据原版的[b]星系宣称[/b]机制为势力领土上色，包括动态宣称与无条件宣称。[b]无条件宣称[/b]通过星域记忆设置，具有最高权威。[b]除非宣称是无条件的，否则星系宣称会动态判定[/b]：参与经济的最大单个市场胜出，同势力市场（任何类型）的存在和已建成的军事产业会给予加成。[color=red]玩家势力和[b]非领土[/b]势力无法动态宣称。[/color]若按[b]非领土[/b]势力筛选，则会聚焦其在场的未被宣称的星系。
-
-[collapse=示例]
-[center]
-[attachimg]promo/claims-cored-but-somebody-else-is-present.png[/attachimg]
-[b]卢德教会[/b]在 [b]Penelope's Star[/b] 星系并不在场，却对其[color=red]持有无条件宣称[/color]，
-同时有一个[color=red]非领土[/color]势力（[b]非势力团体[/b]）在场。
-[/center]
-[/collapse]
+[*][color=maroon][b]宣称[/b][/color]：根据原版的[b]星系宣称[/b]机制为势力领土上色，包括动态宣称与无条件宣称。[b]无条件宣称[/b]通过星域记忆设置，具有最高权威。[b]除非宣称是无条件的，否则星系宣称会动态判定[/b]：参与经济的最大单个市场胜出，同势力市场（任何类型）的存在和已建成的军事设施会给予加成。[color=red]你的势力和[b]非领土[/b]势力无法动态宣称。[/color]若按[b]非领土[/b]势力筛选，则会聚焦其在场的无宣称星系。
 [/list]
-[/collapse]
-[/collapse]
-[collapse=防剧透]
+[/spoiler]
+[/spoiler]
+[spoiler=防剧透]
 为避免剧透，地图图层基于一套源自原版的[b]可见性[/b]系统运作[i][color=lightgrey]（每一项都可在设置中调整）[/color][/i]：
 [list]
-[*][b]隐藏星系[/b]（没有由恒星、星云或黑洞生成的超空间锚点）不会显示，除非其中有可见的人口中心，或持有激活的星门。
-[*]标记为[b]可发现[/b]的实体（在玩家舰队传感器范围之外时不显示在星系地图上）不会显示。由于原版在宣称计算中会用到它们，它们也会列在[color=maroon][b]宣称[/b][/color]提示框中，但会被隐去。
+[*][b]隐藏星系[/b]（没有由恒星、星云或黑洞生成的超空间锚点）不会显示，除非其中有可见的有人居住的市场，或持有激活的星门。
+[*]标记为[b]可发现[/b]的实体（在玩家舰队探测范围之外时不显示在星系地图上）不会显示。由于原版在宣称计算中会用到它们，它们也会列在[color=maroon][b]宣称[/b][/color]提示框中，但会被隐去。
 [*]标记为[b]隐藏[/b]的市场不会显示，除非其他非同盟势力在该星系持有可见的殖民地，或玩家已到访该星系。由于原版在宣称计算中会用到它们，它们也会列在[color=maroon][b]宣称[/b][/color]提示框中，但会被隐去。
-[*][b]荒蛮市场[/b]不会显示，除非它们一开始就是荒蛮的，或玩家已对其完成全面调查。若其他非同盟势力在该星系持有可见的殖民地，这些市场也会显示。
+[*][b]荒蛮市场[/b]不会显示，除非它们一开始就是荒蛮的，或玩家已对其完成全面调查[i][color=lightgrey]（可在设置中调整）[/color][/i]。若其他非同盟势力在该星系持有可见的殖民地，这些市场也会显示。
 [*]带有[b]废弃空间站[/b]条件的无主市场遵循[b]隐藏市场[/b]的可见性规则。
 [/list]
-[/collapse]
+[/spoiler]
 
 本 Mod 附带一整套 [b]LunaLib[/b] 设置，可调整外观、音量、按键以及底层机制。
 
-[collapse=控制台指令]
+[spoiler=控制台指令]
 若安装了 [b][url=https://www.fossic.org/thread-14602-1-1.html]Console Commands[/url][/b]，可以使用以下指令。
 
 由 [color=maroon][b]KMU[/b][/color] 提供：
 [list]
 [*][b]kmu_profiling [tree|flat|walks] [namespace=<prefix>] [top=<count>] [perframe] [reset][/b]：按需将完整或指定范围的性能测量写入游戏日志。超出预算的调用会自动记录，无需此指令。[color=red]需要在设置中启用性能分析。[/color]
 [/list]
-
 由 [color=maroon][b]KMLib[/b][/color] 提供：
 [list]
 [*][b]kmlib_activate_gate <id>[/b]：激活当前星系中该 id 的星门。
-[*][b]kmlib_colonise [entity-id] [faction-id][/b]：建立殖民地。[b][entity-id][/b] 默认为最近的可殖民市场。[b][faction-id][/b] 默认为玩家势力。
+[*][b]kmlib_colonise [entity-id] [faction-id][/b]：建立殖民地。[b][entity-id][/b] 默认为最近的可殖民市场。[b][faction-id][/b] 默认为你的势力。
 [*][b]kmlib_list_factions [markets|hidden|discoverable|no_markets] [no_holdings] [no_attitude] [to_log][/b]：列出每个势力及其持有：地点数量、隐藏数量、可发现数量，以及所在的星系。默认不应用任何筛选。
 [*][b]kmlib_list_map_spoilers[/b]：以星系、实体、势力的树状结构列出势力所有的星系，并标出被截断的星系和未发现的市场。
 [*][b]kmlib_list_system_entities [gates][/b]：以轨道树列出当前星系的实体，然后是无轨道的实体以及带坐标的舰队。默认不应用 [b][gates][/b] 筛选。
 [*][b]kmlib_spawn <gate|jump_point> [orbit_focus_id] [speed] [jitter=<frac>][/b]：在舰队位置生成星门或跳跃点。[b][orbit_focus_id][/b] 默认为星系中心。[b][speed][/b] 默认由半径推算。[b][jitter][/b] 默认为 0.25。
-[*][b]kmlib_transfer_market [entity-id] [faction-id][/b]：将现有殖民地移交给另一所有者。[b][entity-id][/b] 默认为最近的可殖民市场。[b][faction-id][/b] 默认为玩家势力。
-[/list]
-[/collapse]
-[collapse=兼容性]
-[color=maroon][b]KMU[/b][/color] 将地图图层作为仅在地图上显示的地形注入地图控件。为了在星景模式下也能显示，星景地形变体被标记为滑流。自定义地形是唯一必须以 Java 类引用的形式序列化进存档的内容，这也是禁用本 Mod 前需要干净卸载的原因。
+[*][b]kmlib_transfer_market [entity-id] [faction-id][/b]：将现有殖民地移交给另一所有者。[b][entity-id][/b] 默认为最近的可殖民市场。[b][faction-id][/b] 默认为你的势力。
+[/list][/spoiler]
+[spoiler=兼容性]
+[color=maroon][b]KMU[/b][/color] 将地图图层作为仅在地图上显示的地形注入星图控件。为了在星景模式下也能显示，星景地形变体被标记为滑流。自定义地形是唯一必须以 Java 类引用的形式序列化进存档的内容，这也是禁用本 Mod 前需要干净卸载的原因。
 
-游戏会复用地图控件，许多 Mod 也是如此。这些自定义放置的控件会免费获得地图图层，但在没有兼容补丁的情况下，它们没有鼠标悬停检测，也没有控件（图层选择沿用星图界面这一主实例的选择）。
+游戏会复用星图控件，许多 Mod 也是如此。这些自定义放置的星图控件会免费获得地图图层，但在没有兼容补丁的情况下，它们没有鼠标悬停检测，也没有控件（图层选择沿用星图界面这一主实例的选择）。
 
 此外，本 Mod 专门与以下 Mod 做了兼容：
 [list]
 [*][b][url=https://www.fossic.org/thread-21060-1-1.html]Fast Rendering[/url][/b] 及其[b]优化[/b]。
 [*][b][url=https://www.fossic.org/thread-3680-1-1.html]Nexerelin[/url][/b]，以支持其[b]联盟[/b]机制。
-[*][b][url=https://www.fossic.org/thread-11661-1-1.html]Random Assortment of Things[/url][/b] 及其[b]小地图替换[/b]。小地图通过屏幕角落的一个提示框绘制地图控件。本 Mod 附带默认开启的 RAT 兼容模式，将鼠标检测限定在该控件范围内。图层选择沿用星图界面。此外，当地图控件停靠到屏幕外时（停靠是 RAT 在玩家停靠市场或打开任何界面时隐藏地图控件的方式），本 Mod 会将其设为不可见，从而跳过相关渲染，在不显示星图的菜单中应能带来少许性能提升（在超空间中更明显）。
+[*][b][url=https://www.fossic.org/thread-11661-1-1.html]Random Assortment of Things[/url][/b] 及其[b]小地图替换[/b]。小地图通过屏幕角落的一个提示框绘制星图控件。本 Mod 附带默认开启的 RAT 兼容模式，将鼠标检测限定在该星图控件范围内。图层选择沿用星图界面。此外，当星图控件停靠到屏幕外时（停靠是 RAT 在玩家停靠市场或打开任何界面时隐藏星图控件的方式），本 Mod 会将其设为不可见，从而跳过相关渲染，在不显示星图的菜单中应能带来少许性能提升（在超空间中更明显）。
 [/list]
-[/collapse]
-[collapse=更新记录]
+[/spoiler]
+[spoiler=更新日志]
 <<paste the version's section of localisation/zh-hans/CHANGELOG.md here, newest version first>>
-[/collapse]
+[/spoiler]
+
 [hr]
 在试用本预发布版的过程中，如果你认为以下情况与本 Mod 有关，请反馈：
 [list]
@@ -369,43 +280,23 @@ Release checklist, run by hand on every KMU release:
 [*]是否发现 Mod 不兼容，或地图忽略了某些 Mod 内容，
 [*]地图是否剧透了你认为不该显示的内容。
 [/list]
-
 诊断选项：
 [list]
-[*][color=maroon][b]KMLib[/b][/color] 与 [color=maroon][b]KMU[/b][/color] 开发设置中的 [b]DEBUG[/b] 日志级别，用于写入 Mod 的全部内部日志。
+[*][color=maroon][b]KMLib[/b][/color] 与 [color=maroon][b]KMU[/b][/color] 开发设置中的 [b]DEBUG[/b] 日志详细程度，用于写入 Mod 的全部内部日志。
 [*][color=maroon][b]KMU[/b][/color] 开发设置中的[b]反射[/b]日志开关，用于追踪与原版界面交互时的问题。
 [*][color=maroon][b]KMU[/b][/color] 地图开发设置中的[b]性能分析[/b]开关与级别，配合 [b]kmu_profiling[/b] 控制台指令使用，用于定位性能下降的位置。
 [/list]
-
 你可以尝试把这个 Mod 玩坏，也可以像平时一样正常游玩。
 
 也欢迎分享建议、想法和需求，它们会影响本 Mod 的方向与优先级。我已经构思并规划了接下来想实现的一些信息图层及其大致设计，但那只代表我自己的想法，我也想听听你的。
+
 [hr]
-[collapse=发布后路线图]
-[list]
-[*]将原版情报整合进可见性系统。
-[*]地图图层的[b]帮助提示框[/b]。
-[*]从可排序的筛选列表中打开[b]势力与联盟提示框[/b]。
-[*]填补星系单元之间的楔形空隙与缝隙。
-[*]处理[b]非市场实体[/b]，并在星系提示框中显示可见的内容。
-[*]将部分 [b]Mod 实体[/b]纳入主导算法，例如 [b][url=https://www.fossic.org/thread-9754-1-1.html]Industrial Evolution[/url][/b] 中的瞭望塔和火炮。
-[*]由[b]政治地图[/b]派生、但聚焦于关系的[b]外交地图[/b]。
-[list]
-[*][b]敌人[/b]视图按星系中最低的关系上色；[b]朋友[/b]视图只为存在关系高于所选阈值的势力的星系上色。
-[*]默认针对玩家势力的关系；应用[b]势力筛选[/b]后，焦点转到指定势力。
-[*][b]存在色带[/b]以关系颜色而非势力颜色绘制。
-[*][b]政治地图[/b]增加[b]朋友[/b]与[b]敌人[/b]两种筛选退后模式：应用势力筛选时，星域其余部分改为绘制关系，而不是淡化或去色。
-[/list]
-[*]聚焦于非市场实体的[b]基础设施地图[/b]，例如显示已探测到的网络覆盖范围的[b]通讯中继站网络[/b]视图。
-[*]聚焦于市场、产业和商品的[b]经济地图[/b]。
-[*]聚焦于玩家势力市场和舰队的[b]势力管理图层[/b]。
-[*]供 Mod 作者基于现有图层或从零定义并提供自定义图层的[b]框架[/b]。
-[/list]
-[/collapse]
-[collapse=AI 使用声明]
-本 Mod 的制作使用了大语言模型（LLM），用于调研、头脑风暴、代码生成、代码审查和代码重构。每一步都在人工监督和实机测试下完成，并尽 Mod 项目所能进行了人工代码审查。
-[/collapse]
-[center]
+[spoiler=AI 使用声明]
+本 Mod 的制作使用了大语言模型（LLM），用于调研、头脑风暴、代码生成、代码审查、代码重构和翻译。每一步都在人工监督和实机测试下完成，并尽 Mod 项目所能进行了人工代码审查。
+
+简体中文翻译按以下方法完成。原版词汇对照中文汉化逐一匹配，其他 Mod 的词汇对照其各自的中文版匹配。论坛相关词汇也一并收集，全部汇总为一份翻译参考，并为每个术语注明选词理由。KMLib 与 KMU 自身的词汇依据每个术语背后的含义翻译。收集的全部词汇均经 Mod 作者对照选词理由审阅，译文分多轮应用，以求前后一致。
+[/spoiler]
+[align=center]
 [size=3][b]致谢：[/b][/size]
 感谢 [b]Fractal Softworks[/b] 团队带来《远行星号》并持续改进它。
 感谢 [b]Mod 社区[/b]创作了众多精彩而富有启发的 Mod，让我一次次回到这个游戏。
@@ -413,4 +304,4 @@ Release checklist, run by hand on every KMU release:
 感谢 [b]Nexerelin[/b] 的开发者与维护者让星域的政治变得鲜活。
 感谢[b]远星汉化组[/b]：本中文版所用的字体和原版术语都出自他们的汉化。
 感谢 [b]Fractal Softworks 论坛[/b]、[b]r/Starsector[/b] 和各 [b]Discord[/b] 社区的朋友们给予的反馈与支持。
-[/center]
+[/align]
