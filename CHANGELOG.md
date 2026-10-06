@@ -6,12 +6,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## Index
 
 - [Unreleased](#unreleased)
+- [0.2.1](#021---2026-10-06)
 - [0.2.0](#020---2026-10-05)
 - [0.1.2](#012---2026-09-16)
 - [0.1.1](#011---2026-09-15)
 - [0.1.0](#010---2026-09-14)
 
 ## [Unreleased]
+
+## [0.2.1] - 2026-10-06
+
+### Fixed
+
+- **JSON fields carrying object-holding arrays in `mod_info.json` are put at the bottom of the file**. There are third-party mod installers that naively read the first occurrence of the `id` field whether it's at the root or in records nested under `dependencies`. _Reported by **NH4CI** [at **Fossic**](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=21517&pid=405627)._
+
+### Dependency changes
+
+- Updated for [KMLib 0.5.1](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/tag/0.5.1).
 
 ## [0.2.0] - 2026-10-05
 

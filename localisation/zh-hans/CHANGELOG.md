@@ -5,12 +5,23 @@
 ## 索引
 
 - [未发布](#unreleased)
+- [0.2.1](#021---2026-10-06)
 - [0.2.0](#020---2026-10-05)
 - [0.1.2](#012---2026-09-16)
 - [0.1.1](#011---2026-09-15)
 - [0.1.0](#010---2026-09-14)
 
 ## [Unreleased]
+
+## [0.2.1] - 2026-10-06
+
+### 修复
+
+- **`mod_info.json` 中含有对象数组的 JSON 字段会放在文件末尾**。有些第三方 Mod 安装工具只是简单地读取第一次出现的 `id` 字段，而不管它位于根层级，还是位于 `dependencies` 下嵌套的记录中。由 **NH4CI** 在 [**Fossic**](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=21517&pid=405627) 报告。
+
+### 依赖变更
+
+- 已适配 [KMLib 0.5.1](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/tag/0.5.1)。
 
 ## [0.2.0] - 2026-10-05
 
