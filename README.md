@@ -339,23 +339,30 @@ Check it before translating a string, and add to it when a term is settled.
 
 ### Local linting
 
-Two delegating CI workflows lint the repo's non-Gradle surface on every pull request:
-[ci-yaml.yml](.github/workflows/ci-yaml.yml) calls Common-Automation's reusable `ci-yaml.yml`
-(actionlint, action-validator, yamllint, ansible-lint) and [ci-bash.yml](.github/workflows/ci-bash.yml) calls its reusable `ci-bash.yml` (shellcheck, check-sh-executable, bats).
-Each step auto-skips when its surface is absent.
+Two workflows lint the repo's non-Gradle surface on every pull request,
+each calling Common-Automation's reusable workflow of the same name:
+[ci-yaml.yml](.github/workflows/ci-yaml.yml) and [ci-bash.yml](.github/workflows/ci-bash.yml).
+Common-Automation's README lists the tools each one runs:
+[ci-yaml](https://github.com/Klark-Morrigan/Common-Automation/blob/master/README.md#reusable-workflow-ci-yaml)
+and [ci-bash](https://github.com/Klark-Morrigan/Common-Automation/blob/master/README.md#reusable-workflow-ci-bash).
 The Gradle build and tests are NOT part of these workflows -
 they run through Gradle
 (see [Build And Release](#build-and-release));
 these gates cover only YAML / Actions / Bash.
 
-KMU's workflows run on its self-hosted runner,
+The Gradle gate runs on KMU's self-hosted runner,
 labelled `kmu-runner`
 (provisioned with `STARSECTOR_HOME` + JDK).
+The two lint gates run where the `CI_YAML_RUNNER` and `CI_BASH_RUNNER` repository variables send them,
+and on a hosted `ubuntu-latest` runner when those are unset.
 [.github/actionlint.yaml](.github/actionlint.yaml)
-declares that label so actionlint stops flagging `runs-on` as an unknown runner.
+declares the `kmu-runner` label so actionlint stops flagging `runs-on` as an unknown runner.
 
 Three sibling shims reproduce that CI surface locally through Git Bash + Docker,
-each delegating to Common-Automation's orchestrator:
+each delegating to Common-Automation's runner scripts,
+so they require a Common-Automation checkout as a SIBLING directory (`..\Common-Automation`).
+[Common-Automation's README](https://github.com/Klark-Morrigan/Common-Automation/blob/master/README.md#running-checks-and-tests-locally)
+lists what each half runs:
 
 - [scripts/run-ci-yaml-and-bash.sh](scripts/run-ci-yaml-and-bash.sh)
   (with the [run-ci-yaml-and-bash.bat](scripts/run-ci-yaml-and-bash.bat) launcher for `cmd` / PowerShell) is the MAIN entry -
@@ -363,18 +370,10 @@ each delegating to Common-Automation's orchestrator:
   the full local equivalent of ci-yaml.yml + ci-bash.yml.
   This is what most contributors run.
 - [scripts/run-lint-yaml-and-bash.sh](scripts/run-lint-yaml-and-bash.sh)
-  (with its [.bat](scripts/run-lint-yaml-and-bash.bat) launcher) runs the lint half only
-  (shellcheck, actionlint, action-validator, yamllint, ansible-lint);
+  (with its [.bat](scripts/run-lint-yaml-and-bash.bat) launcher) runs the lint half only;
   no bats.
 - [scripts/run-tests-bash.sh](scripts/run-tests-bash.sh)
   (with its [.bat](scripts/run-tests-bash.bat) launcher) runs the bats tests only.
-
-All three are thin shims over Common-Automation's engine,
-so they require a Common-Automation checkout as a SIBLING directory (`..\Common-Automation`).
-The Gradle build and tests stay separate -
-they live in Gradle
-(see [Build And Release](#build-and-release));
-these shims cover only the YAML / Actions / Bash surface.
 
 [scripts/fix-permissions.sh](scripts/fix-permissions.sh)
 (and its [.bat](scripts/fix-permissions.bat)) re-stages the executable bit on tracked `*.sh` files,
