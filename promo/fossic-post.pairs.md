@@ -26,7 +26,6 @@ Change this file with either post.
 - [Settings](#settings)
 - [Console commands](#console-commands)
 - [Compatibility](#compatibility)
-- [Changelog](#changelog)
 - [Feedback](#feedback)
 - [Post-release roadmap](#post-release-roadmap)
 - [AI usage disclaimer](#ai-usage-disclaimer)
@@ -47,6 +46,7 @@ and every line of both posts appears once, split at sentence boundaries.
 
 Images are forum attachments on Fossic and GitHub links on Fractal Softworks,
 for the reason the [source notes][source-notes] give.
+Each Chinese image line gives the attachment ID the Fossic post uses for that file.
 Links in the Fossic post point at Fossic threads, listed in the same notes.
 
 ## Posting form
@@ -68,21 +68,22 @@ The [source notes][source-notes] list KMU's value for every input; what each inp
 - EN: Political Map - Sector Map Layers - KMU
   - ZH: 政治地图 - 星图图层 - KMU
   - Notes: the Mod英文名 and Mod中文名 inputs.
-- EN: Political map overlay over the sector map (map screen, intel screen, etc.) painting factions, alliances (with Nexerelin), and system claims.
-  - ZH: 星图上的政治地图叠加层（星图界面、情报信息界面等），为势力、联盟（需 Nexerelin）和星系宣称上色。
-  - Notes: the Mod简短介绍 input, two sentences; this one is Fossic only, written for the form.
+- EN: Political map overlay over the sector map (map screen, intel screen, etc.) painting factions, alliances (Nexerelin), and system claims.
+  - ZH: 星图上的政治地图叠加层（星图界面、情报信息界面等），为势力、联盟（Nexerelin）和星系宣称上色。
+  - Notes: the Mod简短介绍 input; this one is Fossic only, written for the form.
     Political Map, overlay and map screen in [features and screens][kmu-features]; Map and Intel in [screens and the map][kmu-screens].
     "The sector map" is vanilla's 星图, the map itself, whichever screen shows it.
     Paint, Factions, Alliances and claim in [the political map][kmu-politics]; system claim in [the political map][kmu-politics] too.
-- EN (back-translation): Needs the Starsector Chinese localisation installed first.
-  - ZH: 需要先安装远行星号中文汉化。
-  - Notes: The Chinese core localisation in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): Install the Chinese localisation first
   - ZH: 需先安装中文汉化
   - Notes: the Mod索引备注 input, shown after the version in Fossic's mod index.
 - EN (back-translation): KMU `<version>` Simplified Chinese edition
   - ZH: KMU `<<version>>` 简体中文版
-  - Notes: the 显示名称 of the zip's Mod发布文件 row.
+  - Notes: the 显示名称 of KMU's Mod发布文件 row.
+- EN (back-translation): KMLib `<kmlib-version>` (KMU prerequisite)
+  - ZH: KMLib `<<kmlib-version>>`（KMU 前置）
+  - Notes: the 显示名称 of KMLib's Mod发布文件 row, which carries KMU's version, per the [source notes][source-notes].
+    Prerequisite in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): mod release, sector map, Political Map, Nexerelin, KMU
   - ZH: mod发布, 星图, 政治地图, 势力争霸, KMU
   - Notes: the 主题标签 input, five at most: the words a player would search for.
@@ -92,7 +93,7 @@ The [source notes][source-notes] list KMU's value for every input; what each inp
 ## Header
 
 - EN: image `promo/en/always-has-been.png`
-  - ZH: image `promo/zh-hans/always-has-been.png`
+  - ZH: image `promo/zh-hans/always-has-been.png`, attachment 111033
   - Notes: captioned "Wait, Starsector is a map game?" and "Always has been" in English,
     and 等等，远行星号是P社游戏？ and 一直都是 in Chinese; the captions are in the images, not the post text.
     The Fractal Softworks post opens with it; the Fossic post puts it after the title, and uses its own
@@ -154,9 +155,6 @@ The English README's Languages section says the same to an English reader.
 - EN: Install with TriOS (badge, English zip)
   - ZH: none
   - Notes: Fractal Softworks only; the [source notes][source-notes] give why, and the manual install line below stands in for it.
-- EN: Install with TriOS (简体中文) (badge, Chinese zip)
-  - ZH: none
-  - Notes: Fractal Softworks only, as above.
 - EN: KMU downloads (badge, links the GitHub release)
   - ZH: none
   - Notes: Fractal Softworks only, as above.
@@ -168,11 +166,13 @@ The English README's Languages section says the same to an English reader.
   - Notes: Fossic only: the download is a forum attachment, by the board's rules, per the [source notes][source-notes].
 - EN (back-translation): the download panel
   - ZH: none
-  - Notes: Fossic only, and no text in either post: the posting form inserts the panel from the zip's
-    Mod发布文件 row, where the post marks it.
-- EN (back-translation): KMU `<version>` (Simplified Chinese edition): `KMU-<version>-zh-hans.zip`, attached. For 0.98a-RC8.
-  - ZH: KMU `<<version>>`（简体中文版）：`[attach]KMU-<<version>>-zh-hans.zip[/attach]`。适用于 0.98a-RC8。
-  - Notes: Fossic only, as above; the tag puts the attached zip's download link in the line, per the [source notes][source-notes].
+  - Notes: Fossic only, and no text in either post: the posting form shows the panel from the zips'
+    Mod发布文件 rows.
+- EN (back-translation): KMU's zip is in the download panel above. For 0.98a-RC8.
+  - ZH: KMU 的压缩包见上方的下载面板。适用于 0.98a-RC8。
+  - Notes: Fossic only, as above; the panel carries the version, so the line needs no edit per release,
+    per the [source notes][source-notes].
+    Download panel and zip in [KMLib's forum terms][kmlib-forum].
     Attachment in [KMLib's forum terms][kmlib-forum].
 - EN (back-translation): Source and English edition (links the GitHub repository)
   - ZH: 源码与英文版
@@ -180,12 +180,11 @@ The English README's Languages section says the same to an English reader.
 - EN (back-translation): The KMU thread on the Fractal Softworks forum
   - ZH: Fractal Softworks 论坛上的 KMU 帖子
   - Notes: Fossic only: the link to the English thread. Its counterpart in the Fractal Softworks post
-    is the Simplified Chinese line, which links this thread once it exists.
+    is the Simplified Chinese line, which links this thread.
     Forum thread in [KMLib's forum terms][kmlib-forum].
 - EN: Simplified Chinese (简体中文) is available at Fossic.
   - ZH: none
-  - Notes: Fractal Softworks only: the link to this thread, whose URL fills a placeholder after the first post,
-    per the [source notes][source-notes].
+  - Notes: Fractal Softworks only: the link to this thread.
 - EN: This mod requires LazyLib, LunaLib.
   - ZH: 前置
   - Notes: a heading over the core localisation, LazyLib and LunaLib as a list, each linking its Fossic thread.
@@ -195,9 +194,10 @@ The English README's Languages section says the same to an English reader.
   - Notes: Fossic only, heading the list; the [source notes][source-notes] give why.
     The reference's [opening section][kmu-holds] names the core localisation in English only.
     The Chinese core localisation in [KMLib's forum terms][kmlib-forum]; Starsector in [game and mods][kmu-mods].
-- EN (back-translation): KMLib (Klark Morrigan's Library): `KMLib-<kmlib-version>-zh-hans.zip`, attached. The KMLib version KMU needs is written in mod_info.json; the attachment here is always the one that goes with the current KMU.
-  - ZH: KMLib（Klark Morrigan 的程序库）：`[attach]KMLib-<<kmlib-version>>-zh-hans.zip[/attach]`。KMU 所需的 KMLib 版本写在 mod_info.json 中，本帖附件始终是与当前 KMU 配套的版本。
-  - Notes: Fossic only: KMLib has no Fossic thread, so its zip rides in this one, per the [source notes][source-notes].
+- EN (back-translation): KMLib (Klark Morrigan's Library): see the download panel above. The KMLib version KMU needs is written in mod_info.json; the KMLib in the download panel is always the one that goes with the current KMU.
+  - ZH: KMLib（Klark Morrigan 的程序库）：见上方的下载面板。KMU 所需的 KMLib 版本写在 mod_info.json 中，下载面板中的 KMLib 始终是与当前 KMU 配套的版本。
+  - Notes: Fossic only: KMLib has no Fossic thread, so its zip rides in this one as a second panel row,
+    per the [source notes][source-notes].
     The Fractal Softworks post reaches KMLib through TriOS and its download badge.
     The name is KMLib's own Chinese mod list name.
 - EN (back-translation): Installation: unzip each mod into the starsector/mods folder, then enable them in the game launcher.
@@ -240,12 +240,12 @@ The English README's Languages section says the same to an English reader.
 - EN: Examples
   - ZH: 示例
 - EN: image `promo/en/map-screen.png`
-  - ZH: image `promo/zh-hans/map-screen.png`
+  - ZH: image `promo/zh-hans/map-screen.png`, attachment 111042
 - EN: Map screen.
   - ZH: 星图界面。
   - Notes: map screen in [features and screens][kmu-features].
 - EN: image `promo/en/intel-screen.png`
-  - ZH: image `promo/zh-hans/intel-screen.png`
+  - ZH: image `promo/zh-hans/intel-screen.png`, attachment 111041
 - EN: Intel screen.
   - ZH: 情报信息界面。
   - Notes: Intel in [screens and the map][kmu-screens].
@@ -258,7 +258,7 @@ The English README's Languages section says the same to an English reader.
 - EN: Sector examples
   - ZH: 星域示例
 - EN: image `promo/en/sector-1-vanilla.png`
-  - ZH: image `promo/zh-hans/sector-1-vanilla-nexerelin.png`
+  - ZH: image `promo/zh-hans/sector-1-vanilla-nexerelin.png`, attachment 111043
 - EN: Vanilla.
   - ZH: 原版加 Nexerelin。
   - Notes: the Chinese screenshot is its own, vanilla with Nexerelin, so its caption differs.
@@ -286,11 +286,11 @@ The English README's Languages section says the same to an English reader.
   - ZH: 点击它或按 (M) 即可开启地图图层叠加层及其侧边栏。
   - Notes: overlay and sidebar in [features and screens][kmu-features].
 - EN: image `promo/en/ui-toggle-map.png`
-  - ZH: image `promo/zh-hans/ui-toggle-map.png`
+  - ZH: image `promo/zh-hans/ui-toggle-map.png`, attachment 111045
 - EN: Map screen.
   - ZH: 星图界面。
 - EN: image `promo/en/ui-toggle-intel.png`
-  - ZH: image `promo/zh-hans/ui-toggle-intel.png`
+  - ZH: image `promo/zh-hans/ui-toggle-intel.png`, attachment 111044
 - EN: Intel screen.
   - ZH: 情报信息界面。
 - EN: The main control interface of map layers is the collapsible sidebar that lists all available layers and related knobs and toggles.
@@ -329,7 +329,7 @@ The English README's Languages section says the same to an English reader.
 - EN: Examples
   - ZH: 示例
 - EN: image `promo/en/domination-factions-unpopulated.png`
-  - ZH: image `promo/zh-hans/domination-factions-unpopulated.png`
+  - ZH: image `promo/zh-hans/domination-factions-unpopulated.png`, attachment 111039
 - EN: Unclaimed unpopulated systems are drawn very faintly just to show where systems touch.
   - ZH: 无宣称的无人星系只以极淡的线条绘制，仅用于显示星系之间的相接位置。
   - Notes: uninhabited systems in [the political map][kmu-politics], which the English calls unpopulated here.
@@ -351,23 +351,24 @@ The English README's Languages section says the same to an English reader.
 - EN: Examples
   - ZH: 示例
 - EN: image `promo/en/domination-factions-presence-ribbon.png`
-  - ZH: image `promo/zh-hans/domination-factions-presence-ribbon.png`
+  - ZH: image `promo/zh-hans/domination-factions-presence-ribbon.png`, attachment 111036
 - EN: Presence ribbons: Samarra draws one showing 3 Hegemony markets and 1 Independent market.
-  - ZH: 存在色带：Samarra 的色带显示 3 个霸主市场和 1 个非势力团体市场。
-  - Notes: faction names are the core localisation's own, read from its faction files, the same on every edition.
-    Hegemony in [factions and relations][kmu-factions].
+  - ZH: 存在色带：Hybrasil 的色带显示 2 个速子科技市场、1 个非势力团体市场、1 个海盗市场和 1 个中立市场。
+  - Notes: the Chinese screenshot is its own, of Hybrasil, so its caption differs.
+    Faction names are the core localisation's own, read from its faction files, the same on every edition.
+    Tri-Tachyon, Independent and Neutral in [factions and relations][kmu-factions]; Pirate in [colonies and markets][kmu-colonies].
 - EN: Expandable system tooltips provide detailed information on how each market affects the balance of power.
   - ZH: 可展开的星系提示框详细说明每个市场如何影响力量平衡。
   - Notes: System tooltip in [hovering and tooltips][kmu-hover]; balance of power in [the political map][kmu-politics].
 - EN: Examples
   - ZH: 示例
 - EN: image `promo/en/domination-factions-tooltip-lists-neutral-markets.png`
-  - ZH: image `promo/zh-hans/domination-factions-tooltip-lists-neutral-markets.png`
+  - ZH: image `promo/zh-hans/domination-factions-tooltip-lists-neutral-markets.png`, attachment 111037
 - EN: Tooltips list Neutral (unowned) markets.
   - ZH: 提示框会列出中立（无主）市场。
   - Notes: Unowned in [vanilla mechanics without a name][kmu-unnamed].
 - EN: image `promo/en/domination-factions-tooltip-lists-not-contributing-markets.png`
-  - ZH: image `promo/zh-hans/domination-factions-tooltip-lists-not-contributing-markets.png`
+  - ZH: image `promo/zh-hans/domination-factions-tooltip-lists-not-contributing-markets.png`, attachment 111038
 - EN: Tooltips list markets producing no domination score.
   - ZH: 提示框会列出不产生主导得分的市场。
   - Notes: domination and Score in [the political map][kmu-politics].
@@ -393,11 +394,11 @@ The English README's Languages section says the same to an English reader.
 - EN: Examples
   - ZH: 示例
 - EN: image `promo/en/domination-factions-filter.png`
-  - ZH: image `promo/zh-hans/domination-factions-filter.png`
+  - ZH: image `promo/zh-hans/domination-factions-filter.png`, attachment 111034
 - EN: Faction filter, expanded to 2 columns, sorted by faction attitude toward the player.
-  - ZH: 势力筛选列表，展开为 2 列，按势力对玩家的关系排序。
-  - Notes: Attitude in [factions and relations][kmu-factions]; Columns in [the political map][kmu-politics].
-    Faction filter in [features and screens][kmu-features].
+  - ZH: 势力筛选列表，按势力对玩家的关系排序。
+  - Notes: the Chinese screenshot is its own, with the list in 1 column, so its caption leaves the columns out.
+    Attitude in [factions and relations][kmu-factions]; faction filter in [features and screens][kmu-features].
 - EN: image `promo/en/domination-factions-luddic-church.png`
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
@@ -405,12 +406,12 @@ The English README's Languages section says the same to an English reader.
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
 - EN: image `promo/en/domination-factions-pirates.png`
-  - ZH: image `promo/zh-hans/domination-factions-pirates.png`
+  - ZH: image `promo/zh-hans/domination-factions-pirates.png`, attachment 111035
 - EN: Factions view filtered by Pirates.
   - ZH: 按海盗筛选的势力视图。
   - Notes: Pirate in [colonies and markets][kmu-colonies].
 - EN: image `promo/en/domination-factions-unpopulated-claimed.png`
-  - ZH: image `promo/zh-hans/domination-factions-unpopulated-claimed.png`
+  - ZH: image `promo/zh-hans/domination-factions-unpopulated-claimed.png`, attachment 111040
 - EN: Unpopulated systems get no paint in domination views.
   - ZH: 在主导视图中，无人星系不上色。
 - EN: Tia star system is shown as Hegemony-owned because Hegemony holds an unconditional claim for it.
@@ -635,16 +636,6 @@ The English README's Languages section says the same to an English reader.
   - Notes: Hyperspace in [space][kmu-space].
     Dock in [features and screens][kmu-features].
 
-## Changelog
-
-Fossic only.
-
-- EN (back-translation): Changelog
-  - ZH: 更新日志
-  - Notes: the board asks for updates in the mod's own thread; the release checklist in the [source notes][source-notes] fills it.
-- EN (back-translation): the version's section of the Chinese changelog, newest version first
-  - ZH: a paste placeholder
-
 ## Feedback
 
 - EN: While playing with this pre-release, please report if you think it relates to this mod:
@@ -765,4 +756,3 @@ The [source notes][source-notes] give why.
 [kmlib-forum]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#forum-terms
 [kmlib-costs]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#what-a-failed-binding-costs
 [kmlib-settings]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#settings
-[kmlib-changelog]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#the-changelog

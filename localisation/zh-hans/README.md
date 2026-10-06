@@ -167,6 +167,7 @@ the typeface editions share its text.
 | Your faction (the player's) | 你的势力 | `starfarer_obf.jar` flag picker, "Select a flag to represent your faction"; vanilla never writes 玩家势力, which KMU keeps for the player faction as a category, as the settings write Mod 玩家势力 for modded player factions |
 | Neutral (the faction's name) | 中立 | `neutral.faction` `displayName` |
 | Hegemony | 霸主 | `hegemony.faction` `displayName` |
+| Tri-Tachyon | 速子科技 | `tritachyon.faction` `displayName`; its long name is 三一速子科技公司 |
 | Luddic Church | 卢德教会 | `luddic_church.faction` `displayName`; its long name is 银河救赎教会 |
 | Unclaimed (territory) | 无宣称 | `PerseanLeagueHostileActivityFactor`, "unclaimed territory" is 无宣称领土 |
 
