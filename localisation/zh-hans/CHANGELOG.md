@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### 依赖变更
+
+- 已适配 [KMLib 0.5.1](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/tag/0.5.1)。
+
 ## [0.2.0] - 2026-10-05
 
 ### 修复
