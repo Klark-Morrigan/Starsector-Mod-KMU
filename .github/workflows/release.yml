@@ -15,7 +15,7 @@
 #
 # Pinned to a KMLib tag rather than a branch so an unrelated KMLib commit
 # cannot change how KMU releases after the fact. This pin and the kmlib
-# dependency version in mod_info.json move together, in the same commit -
+# dependency version in mod_info.base.json move together, in the same commit -
 # see KMLib's docs/dev/versioning.md.
 #
 # The pipeline refuses to release when that kmlib pin names a KMLib version

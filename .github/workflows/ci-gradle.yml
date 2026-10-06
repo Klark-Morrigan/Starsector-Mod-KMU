@@ -2,7 +2,7 @@
 # _ci-gradle engine, the JVM counterpart to ci-bash.yml / ci-yaml.yml. It
 # triggers on PRs only: the release path re-runs the build through KMLib's
 # reusable mod-release workflow, which calls the same _ci-gradle engine with
-# arguments derived from mod_info.json rather than routing back through this
+# arguments derived from mod_info.base.json rather than routing back through this
 # caller. Shell/bats tests are handled by ci-bash.yml; this file is purely
 # the Gradle build.
 #
@@ -36,7 +36,7 @@ jobs:
     uses: Klark-Morrigan/Common-Java/.github/workflows/_ci-gradle.yml@master
     with:
       runner: '["self-hosted", "kmu-runner"]'
-      gradle-tasks: test jar
+      gradle-tasks: coverage jar
       checkout-path: Starsector-Mod-KMU
       working-directory: Starsector-Mod-KMU
       sibling-checkouts: >-
