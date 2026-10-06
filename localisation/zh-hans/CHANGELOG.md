@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### 修复
+
+- **`mod_info.json` 中含有对象数组的 JSON 字段会放在文件末尾**。有些第三方 Mod 安装工具只是简单地读取第一次出现的 `id` 字段，而不管它位于根层级，还是位于 `dependencies` 下嵌套的记录中。由 **NH4CI** 在 [**Fossic**](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=21517&pid=405627) 报告。
+
 ### 依赖变更
 
 - 已适配 [KMLib 0.5.1](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/tag/0.5.1)。
