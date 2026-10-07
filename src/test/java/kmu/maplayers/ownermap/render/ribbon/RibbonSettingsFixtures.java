@@ -28,7 +28,7 @@ public final class RibbonSettingsFixtures {
 
     // The uncontested runs left at their authored length, which is not the shipped answer: a suite
     // reaching for these reads a band back against the segment lengths above, and the shortening
-    // would silently redraw every uncontested cell at one width a colony. A suite about the
+    // would silently redraw every uncontested cell at one width a holding. A suite about the
     // shortening states it on the case, where the answer it is posing is visible beside it.
     private static final boolean UNCONTESTED_RUNS_SHORTENED = false;
 

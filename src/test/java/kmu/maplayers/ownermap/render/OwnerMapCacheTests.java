@@ -73,10 +73,10 @@ final class OwnerMapCacheTests {
     private static final OwnerPaintedView VIEW =
         new OwnerPaintedViewFake(Map.of(), new OwnerSourceFake());
 
-    // The bloc a filtered map is spotlighting, for the case about what a filter defers.
+    // The owner a filtered map is spotlighting, for the case about what a filter defers.
     private static final String HEGEMONY_ID = "hegemony";
 
-    // The system a colony event marked stale between two frames.
+    // The system a change marked stale between two frames.
     private static final SystemKey MARKED_CELL = buildCellKey("marked");
 
     // The machinery the throwing cases' cache belongs to, installed on no sector - which is what
@@ -179,7 +179,7 @@ final class OwnerMapCacheTests {
 
         @Test
         void settlesTheLabelFaceAgainstTheFacesOfItsOwnSector() {
-            // Each sector settles its own faces - two sectors can name different factions - so a cache
+            // Each sector settles its own faces - two sectors can name different owners - so a cache
             // reading another machinery's faces would size its names for text it never draws.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
 
@@ -198,7 +198,7 @@ final class OwnerMapCacheTests {
 
         @Test
         void foldsAMarkedSystemIntoTheStandingMapOnAFrameOwingNoRebuild() {
-            // The colony event's path: nothing a decision reads moved, so no rebuild is owed, and
+            // The marked change's path: nothing a decision reads moved, so no rebuild is owed, and
             // the one system marked since is handed to the fold rather than left for a rebuild
             // nothing is going to run.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
@@ -338,7 +338,7 @@ final class OwnerMapCacheTests {
                 .isNull();
             assertThat(cache.getClusterAnchors())
                 .isEmpty();
-            assertThat(cache.getFactionLabels())
+            assertThat(cache.getOwnerLabels())
                 .isEmpty();
         }
 
@@ -352,7 +352,7 @@ final class OwnerMapCacheTests {
 
             assertThat(cache.getClusters())
                 .isNull();
-            assertThat(cache.getFactionLabels())
+            assertThat(cache.getOwnerLabels())
                 .isEmpty();
         }
     }

@@ -329,6 +329,12 @@ So a word of one axis never stands in for another:
 | non-allied factions | 非同盟势力 | 非, not, before 同盟, allied, and vanilla's 势力 |
 | Allied with / Friendly with | 与……结盟 / 与……友好 | 友好 is the reputation level |
 | bloc | 集团 | a faction, or an alliance standing as one |
+| owner (the key an owner-painted map layer paints a system by) | 所有者 | the plain word for the one a thing belongs to; a faction, a bloc or any other key, which is why it is not 势力 |
+| holder (an owner holding a system through its colonies) | 持有者 | 持有, to hold, with 者 for the one doing it; the kind of owner, kept apart from 星系持有方, one system's holder |
+| tier (of the map layers framework, in the changelog) | 层 | the plain word for a layer of a structure, as in 三层; kept apart from 图层, a map layer |
+| seam (a place the framework asks a map layer to fill, in the changelog) | 接缝 | the plain word for where two parts meet |
+| caption (the words beside a sidebar control, in the changelog) | 标题 | the plain word for a control's heading text |
+| radio (a row of options with one lit, in the changelog) | 单选框 | the usual UI word for a one-of-many control |
 | spotlight | 聚焦 | to focus on, which spotlighting a bloc does |
 | recede | 退后 | to step back, which a receded bloc does on the map |
 | Muted / Desaturated | 淡化 / 去色 | 淡化, to fade, and 去色, to strip colour, the usual image-editing word |

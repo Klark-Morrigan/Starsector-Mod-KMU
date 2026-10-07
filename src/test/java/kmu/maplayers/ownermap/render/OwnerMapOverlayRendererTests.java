@@ -147,7 +147,7 @@ final class OwnerMapOverlayRendererTests {
         }
 
         @Test
-        void emitsThePresenceBandsAndTheFactionNamesForTheBandAboveTheNebulae() {
+        void emitsThePresenceBandsAndTheOwnerNamesForTheBandAboveTheNebulae() {
             // The two sub-layers that are read rather than merely seen, and the reason the band
             // exists: text stops being readable under the fog well before a fill stops reading as
             // cluster group, and a band that says how a system is split fails the same way.
@@ -267,7 +267,7 @@ final class OwnerMapOverlayRendererTests {
 
         @Test
         void emitsThePickerPreviewForTheBandBeneathTheNebulae() {
-            // The preview brightens the fills for a whole bloc, so it rides with them for the
+            // The preview brightens the fills for a whole owner, so it rides with them for the
             // reason the cursor's highlight does: left beneath while the fills went above, it
             // would be painted over and light nothing.
             //
@@ -444,7 +444,7 @@ final class OwnerMapOverlayRendererTests {
         }
 
         @Test
-        void emitsThePresenceBandsAndTheFactionNamesBeneathTheNebulaeWhereLowered() {
+        void emitsThePresenceBandsAndTheOwnerNamesBeneathTheNebulaeWhereLowered() {
             // The two readouts moved the other way. They are the sub-layers a player is most likely
             // to move - the fog is the reason they were placed above in the first place - so a
             // routing fault here is one the shipped split would never show.
@@ -565,7 +565,7 @@ final class OwnerMapOverlayRendererTests {
         }
 
         @Test
-        void leavesThePresenceBandsAndTheFactionNamesOutOfTheBandTheyWereLoweredFrom() {
+        void leavesThePresenceBandsAndTheOwnerNamesOutOfTheBandTheyWereLoweredFrom() {
             // The same absence for the two readouts, which the shipped split pins only the other way
             // round. A band left emitting on its old side as well as its new one is drawn twice over
             // the same cell, and the presence bands are translucent.
@@ -672,7 +672,7 @@ final class OwnerMapOverlayRendererTests {
             .thenReturn(false);
         when(cacheMock.getClusters())
             .thenReturn(clustersMock);
-        when(cacheMock.getFactionLabels())
+        when(cacheMock.getOwnerLabels())
             .thenReturn(List.of());
 
         return cacheMock;

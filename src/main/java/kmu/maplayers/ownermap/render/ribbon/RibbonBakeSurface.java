@@ -6,7 +6,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.settings.KmuOwnerMapRibbonSettings;
 
@@ -23,7 +23,7 @@ import java.util.Set;
  * named, and none may vary between the cells of a single bake: two cells laid against two
  * placements of one name would keep clear of different rooms, and two laid against two readings of
  * the cells would disagree about which of them is even settled. Carried as one value, baking every
- * cell and baking the handful a colony flip disturbed are the same operation over the same map
+ * cell and baking the handful a marked flip disturbed are the same operation over the same map
  * rather than two calls that have to be handed matching pieces.
  *
  * <p>The inhabited set sits with the sites because the two answer one refusal between them: nobody
@@ -66,7 +66,7 @@ public record RibbonBakeSurface(
 
         return new RibbonBakeSurface(
             // The pass's inhabitation scan rather than its holding, so a settled system this layer's
-            // holding rule gives to nobody is still offered a band. It is the same set the factionless
+            // holding rule gives to nobody is still offered a band. It is the same set the unowned
             // cell beneath it is classified from, so a cell drawn as settled and a cell offered a band
             // are one set.
             clusters.getOccupancy().getInhabitedSystemKeys(),
@@ -97,7 +97,7 @@ public record RibbonBakeSurface(
     // this call.
     private static List<List<double[]>> resolveNameBoxes(
             StandingClusterAnchors standingAnchors,
-            FactionNameFormatChoice nameFormat) {
+            OwnerNameFormatChoice nameFormat) {
 
         var isBandKeptClearOfNames = nameFormat.areNamesDrawn()
             && KmuOwnerMapRibbonSettings.shouldKeepOwnerMapRibbonsClearOfNames();

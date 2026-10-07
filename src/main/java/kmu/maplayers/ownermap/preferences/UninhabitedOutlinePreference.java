@@ -7,10 +7,10 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
 /**
- * Whether uninhabited systems draw their outline, persisted per save and per screen. Off by default, so
- * only faction-held, independent, and decivilised systems draw until the player asks for the unowned ones
- * too. View-agnostic: the outline is a property of the map's factionless category, which every view
- * paints the same way.
+ * Whether uninhabited systems draw their outline, persisted per save and per screen. Off by
+ * default, so only held, independent, and decivilised systems draw until the player asks for the
+ * unowned ones too. View-agnostic: the outline is a property of the map's unowned category, which
+ * every view paints the same way.
  *
  * <p>One per layer, over a key the layer names, so two owner-painted layers offering the checkbox
  * store their choices apart.

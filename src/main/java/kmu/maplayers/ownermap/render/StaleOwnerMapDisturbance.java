@@ -10,7 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * What a drained batch of stale systems disturbed: the cells that must redraw, and the factions
+ * What a drained batch of stale systems disturbed: the cells that must redraw, and the owners
  * whose clusters must rebuild.
  *
  * <p>Two kinds of change land here. A <em>flip</em> - a system changing hands - writes both sets
@@ -27,41 +27,44 @@ import java.util.Set;
  */
 final class StaleOwnerMapDisturbance {
 
-    // The factions whose cluster group outlines this batch moved: both sides of every transfer.
+    // The owners whose cluster group outlines this batch moved: both sides of every transfer.
     // Insertion-ordered so the rebuild below runs in a fixed order rather than a hash's.
-    private final Set<String> affectedFactionIds = new LinkedHashSet<>();
+    private final Set<String> affectedOwnerIds = new LinkedHashSet<>();
 
     // The cells this batch obliges to redraw: each flipped system and every neighbour whose
-    // shared edge flipped between a same-faction seam and a cluster border, plus each system
+    // shared edge flipped between a same-owner seam and a cluster border, plus each system
     // whose cell draws in a different style than it did.
     private final Set<SystemKey> cellKeysToRedraw = new LinkedHashSet<>();
 
-    /** @return the factions whose cluster group outlines moved, in first-recorded order */
-    Set<String> getAffectedFactionIds() {
-        return Collections.unmodifiableSet(affectedFactionIds);
+    /** @return the owners whose cluster group outlines moved, in first-recorded order */
+    Set<String> getAffectedOwnerIds() {
+
+        return Collections.unmodifiableSet(affectedOwnerIds);
     }
 
     /** @return the cells that must redraw against the updated holders, in first-recorded order */
     Set<SystemKey> getCellKeysToRedraw() {
+
         return Collections.unmodifiableSet(cellKeysToRedraw);
     }
 
     /**
-     * Whether this batch moved any holding at all. Read off the factions because every flip
+     * Whether this batch moved any holding at all. Read off the owners because every flip
      * names at least one - a system that changed hands either lost a holder, gained one, or
-     * both - so a batch with no faction to rebuild had no flip in it, and the clustering,
+     * both - so a batch with no owner to rebuild had no flip in it, and the clustering,
      * cluster group and name work below the cell redraw is skipped.
      *
      * @return whether any flip was recorded
      */
     boolean hasFlips() {
-        return !affectedFactionIds.isEmpty();
+
+        return !affectedOwnerIds.isEmpty();
     }
 
     /**
      * Records one system changing hands: the cells its flip obliges to redraw, and the
-     * factions on either side of the transfer. Either holder may be absent - a system taking its
-     * first colony has no old one, a decivilised one has no new one - and only the sides that
+     * owners on either side of the transfer. Either holder may be absent - a system taking its
+     * first settlement has no old one, an emptied one has no new one - and only the sides that
      * exist have a cluster group to rebuild.
      *
      * @param systemKey           the system that changed hands, whose own cell redraws
@@ -76,26 +79,29 @@ final class StaleOwnerMapDisturbance {
             SystemOwner newHolder) {
 
         if (oldHolder != null) {
-            affectedFactionIds.add(oldHolder.ownerId());
+            affectedOwnerIds.add(oldHolder.ownerId());
         }
+
         if (newHolder != null) {
-            affectedFactionIds.add(newHolder.ownerId());
+            affectedOwnerIds.add(newHolder.ownerId());
         }
+
         cellKeysToRedraw.add(systemKey);
         cellKeysToRedraw.addAll(neighbourSystemKeys);
     }
 
     /**
      * Records one system's cell drawing in a different style than it was: what stands in it
-     * changed, or the spotlit bloc arrived in it or left it, while its holder stayed as it was.
+     * changed, or the spotlit owner arrived in it or left it, while its holder stayed as it was.
      *
      * <p>Its own cell and nothing more. A cell's shape is settled by which of its edges are
      * same-owner seams and neither of those facts moves one, so no neighbour changes shape, no
-     * bloc's outline moves, and the batch owes no rebuild on this system's account.
+     * owner's outline moves, and the batch owes no rebuild on this system's account.
      *
      * @param systemKey the system whose cell must redraw
      */
     void recordRestyle(SystemKey systemKey) {
+
         cellKeysToRedraw.add(systemKey);
     }
 }

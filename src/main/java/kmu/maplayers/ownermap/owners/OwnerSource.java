@@ -10,8 +10,8 @@ import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
  * <p>A view answers it beside its owner reading, the two resolved under one sampling of whatever
  * live inputs the view has ({@link kmu.maplayers.ownermap.OwnerPaintedView#resolveViewReading}).
  * The tier hands the source the rebuild's walk of the sector and gets back everything the build
- * reads the sector for; what the source opens over that walk - a colony reading, a relay scan,
- * nothing at all - is its own, and the tier reads no colony.
+ * reads the sector for; what the source opens over that walk - a settlement reading, a relay scan,
+ * nothing at all - is its own, and the tier reads nothing of who owns a system.
  *
  * <p>Three asks, because three parts of the pipeline spend the source's rule. The whole-sector
  * answer is a rebuild's. The per-system resolve is an incremental batch's, reopened over the

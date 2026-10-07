@@ -3,7 +3,7 @@ package kmu.mods.nexerelin;
 import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.mods.nexerelin.alliances.AllianceFingerprint;
 import kmu.mods.nexerelin.alliances.AllianceGroupingFactory;
 

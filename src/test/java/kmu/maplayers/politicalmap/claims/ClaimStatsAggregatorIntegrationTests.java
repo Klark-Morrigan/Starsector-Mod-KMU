@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.claims;
 
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,18 +12,18 @@ import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildAbandonedStationMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildEconomylessSectorWithSystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildHolderPassOver;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWithSystems;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.findSystemIn;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.listSystemMarkets;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildAbandonedStationMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildEconomylessSectorWithSystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildHolderPassOver;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWithSystems;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.findSystemIn;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -66,7 +66,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             claimReaderFake.setClaim("system-b", "hegemony");
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(2, 0)));
         }
 
@@ -86,7 +86,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(1, 8)));
         }
 
@@ -104,7 +104,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
@@ -123,7 +123,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             claimReaderFake.setClaim("shared-system", "hegemony");
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new ClaimStats(1, 0)),
                     entry("tritachyon", new ClaimStats(0, 4)));
@@ -151,7 +151,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         HolderPass.over(sectorMock, UNDER_THE_FOG, grouping),
                         claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("alliance-1", new ClaimStats(1, 3)));
         }
 
@@ -164,7 +164,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         new ClaimReaderFake())
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .isEmpty();
         }
 
@@ -178,7 +178,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
@@ -187,7 +187,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(null),
                         new ClaimReaderFake())
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .isEmpty();
         }
 
@@ -208,7 +208,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         new ClaimReaderFake())
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(0, 4)));
         }
 
@@ -231,7 +231,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         new ClaimReaderFake())
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(0, 9)));
         }
 
@@ -251,7 +251,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         new ClaimReaderFake())
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .isEmpty();
         }
 
@@ -306,7 +306,7 @@ final class ClaimStatsAggregatorIntegrationTests {
                 buildHolderPassOver(sectorMock),
                 claimReaderFake);
 
-            assertThat(read.statsByBlocId())
+            assertThat(read.statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new ClaimStats(2, 0)),
                     entry("tritachyon", new ClaimStats(1, 0)));

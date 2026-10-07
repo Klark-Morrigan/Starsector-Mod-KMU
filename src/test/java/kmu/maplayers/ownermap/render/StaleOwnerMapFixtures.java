@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
  * brings those systems back into step with the sector, and the redraw that follows it.
  *
  * <p>One home for them because both pose their cases over the same arrangement - two adjacent
- * cells, one of which flips - and a square cell or a faction ID that drifted between the suites
+ * cells, one of which flips - and a square cell or an owner ID that drifted between the suites
  * would let the redraw be pinned against geometry the re-derive never sees.
  */
 final class StaleOwnerMapFixtures {
@@ -52,20 +52,20 @@ final class StaleOwnerMapFixtures {
     private StaleOwnerMapFixtures() {
     }
 
-    // A holder of the given faction. Only the faction ID is read by what these suites assert, so
+    // A holder of the given owner. Only the owner ID is read by what these suites assert, so
     // the shades are one shared placeholder pair - which is also what makes two holders of one
-    // faction compare equal, as the re-derive's own no-change test needs them to.
-    static SystemOwner buildOwnerOf(String factionId) {
-        return new SystemOwner(factionId, new OwnerPalette(Color.GRAY, Color.GRAY));
+    // owner compare equal, as the re-derive's own no-change test needs them to.
+    static SystemOwner buildOwnerOf(String ownerId) {
+        return new SystemOwner(ownerId, new OwnerPalette(Color.GRAY, Color.GRAY));
     }
 
     // The holders of the given systems, keyed by system, for a case stating who holds what before
     // the batch runs.
-    static Map<String, SystemOwner> buildOwnersOf(Map<String, String> factionIdBySystemId) {
+    static Map<String, SystemOwner> buildOwnersOf(Map<String, String> ownerIdBySystemId) {
 
         var holderBySystemId = new LinkedHashMap<String, SystemOwner>();
 
-        for (var entry : factionIdBySystemId.entrySet()) {
+        for (var entry : ownerIdBySystemId.entrySet()) {
             holderBySystemId.put(entry.getKey(), buildOwnerOf(entry.getValue()));
         }
         return holderBySystemId;

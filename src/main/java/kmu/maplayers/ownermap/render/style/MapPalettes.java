@@ -87,7 +87,7 @@ public final class MapPalettes {
             ElementPaintSelection paintSelection,
             OwnerPalette palette) {
 
-        if (!(paintSelection instanceof FactionPaletteSlot slot)) {
+        if (!(paintSelection instanceof OwnerPaletteSlot slot)) {
             return null;
         }
         return switch (slot) {
@@ -122,7 +122,7 @@ public final class MapPalettes {
      * Resolves the one uniform palette every desaturated owner recolours to: the painting layer's
      * recede shades, each scaled toward black by {@code darkeningStrength}. On the layers painting
      * holders those shades are Independent's, and Independent's authored colour and the mid-grey
-     * genuine independent space paints in are the same grey, so painting a desaturated faction in
+     * genuine independent space paints in are the same grey, so painting a desaturated owner in
      * them unchanged would make it read as independent-held space; darkening sinks the receded fills
      * to a distinctly darker grey that sits behind it, separated by value rather than a hue neither
      * grey has. The strength is the fraction of brightness removed - 0 leaves the shades untouched,

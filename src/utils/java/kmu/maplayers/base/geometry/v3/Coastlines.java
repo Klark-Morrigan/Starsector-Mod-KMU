@@ -232,42 +232,42 @@ public final class Coastlines {
      * those walls. Rebuilt separately by each asker, they can be built from knobs that have
      * since moved.
      *
-     * @param coasts      one coast per run of connected cells
-     * @param silhouettes the stretches of coast the cells make, in walk order, before any
-     *                    smoothing. Carried rather than walked again by whatever wants them:
-     *                    the walk is not cheap, and a second one is a second answer that can
-     *                    disagree with the coast it is supposed to describe
-     * @param dropped     the stretches selection chose not to pass through, over both
-     *                    kinds of coast, which is the one thing about a finished line that
-     *                    cannot be read back off it: a stretch the walk never offered and a
-     *                    stretch a rule threw away are both simply absent from it
-     * @param union       the discs it was walked and placed against, which are the same discs:
+     * @param coasts       one coast per run of connected cells
+     * @param silhouettes  the stretches of coast the cells make, in walk order, before any
+     *                     smoothing. Carried rather than walked again by whatever wants them:
+     *                     the walk is not cheap, and a second one is a second answer that can
+     *                     disagree with the coast it is supposed to describe
+     * @param dropped      the stretches selection chose not to pass through, over both
+     *                     kinds of coast, which is the one thing about a finished line that
+     *                     cannot be read back off it: a stretch the walk never offered and a
+     *                     stretch a rule threw away are both simply absent from it
+     * @param union        the discs it was walked and placed against, which are the same discs:
      *                     a coast is a border, and everything measured from a border has to be
      *                     measured from the one that border was built at
      * @param walls        the bridges it was walled by, and the channel they were laid at.
-     *                    Carried for whatever lays more walls alongside them: found again
-     *                    from the knobs, they are a second answer that can differ from the
-     *                    one the coast was actually walked against
-     * @param islands     the cells the walk found alone in the void, which are on no silhouette
-     *                    because they have no coast: a cell touching nothing draws its own
-     *                    border and encloses nothing further. Handed on rather than forgotten,
-     *                    since a shape with no coast is still a shape a span can reach - and
-     *                    read off the walk that dropped them rather than worked out again, so
-     *                    nothing can come to disagree with it about what is alone
-     * @param lakes       the void the cells closed around unaided - inland water, ringed by
-     *                    land the whole way round. Out of the same walk and the same
-     *                    smoothing as the coasts above, because a lake shore and an outer
-     *                    shore are the same kind of line looked at from opposite sides
-     * @param puddles     the holes the floor judged too small to be lakes. Kept rather than
-     *                    discarded, because being too small for a shore does not stop them
-     *                    being water: what a puddle earns instead is being filled up, from
-     *                    the cell-pair spans laid across it
+     *                     Carried for whatever lays more walls alongside them: found again
+     *                     from the knobs, they are a second answer that can differ from the
+     *                     one the coast was actually walked against
+     * @param islands      the cells the walk found alone in the void, which are on no silhouette
+     *                     because they have no coast: a cell touching nothing draws its own
+     *                     border and encloses nothing further. Handed on rather than forgotten,
+     *                     since a shape with no coast is still a shape a span can reach - and
+     *                     read off the walk that dropped them rather than worked out again, so
+     *                     nothing can come to disagree with it about what is alone
+     * @param lakes        the void the cells closed around unaided - inland water, ringed by
+     *                     land the whole way round. Out of the same walk and the same
+     *                     smoothing as the coasts above, because a lake shore and an outer
+     *                     shore are the same kind of line looked at from opposite sides
+     * @param puddles      the holes the floor judged too small to be lakes. Kept rather than
+     *                     discarded, because being too small for a shore does not stop them
+     *                     being water: what a puddle earns instead is being filled up, from
+     *                     the cell-pair spans laid across it
      * @param walledShores one shore per hole a laid wall closed, smoothed exactly as a lake
-     *                    shore is. Apart from the lakes rather than among them, because what
-     *                    shut the water in is the whole difference between the two: a lake is
-     *                    the cells' own doing and this is a wall's, and the constructions that
-     *                    fill such water already answer for it. Empty wherever no wall was
-     *                    laid, which is every coast traced without them
+     *                     shore is. Apart from the lakes rather than among them, because what
+     *                     shut the water in is the whole difference between the two: a lake is
+     *                     the cells' own doing and this is a wall's, and the constructions that
+     *                     fill such water already answer for it. Empty wherever no wall was
+     *                     laid, which is every coast traced without them
      */
     public record TracedCoasts(
         List<Coast> coasts,

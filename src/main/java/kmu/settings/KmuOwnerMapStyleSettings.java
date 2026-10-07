@@ -82,28 +82,28 @@ public final class KmuOwnerMapStyleSettings {
     private static final String PRESENCE_LIGHTENING_FIELD =
         "kmu_map_politics_visuals_styleMutators_presenceLightening";
 
-    private static final FactionPaletteChoice DEFAULT_FACTION_OUTER_BORDER_COLOUR =
-        FactionPaletteChoice.PRIMARY;
+    private static final OwnerPaletteChoice DEFAULT_FACTION_OUTER_BORDER_COLOUR =
+        OwnerPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_OUTER_BORDER_OPACITY = 1.0;
     private static final double DEFAULT_FACTION_OUTER_BORDER_WIDTH = 3.0;
-    private static final FactionPaletteChoice DEFAULT_FACTION_INNER_BORDER_COLOUR =
-        FactionPaletteChoice.PRIMARY;
+    private static final OwnerPaletteChoice DEFAULT_FACTION_INNER_BORDER_COLOUR =
+        OwnerPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_INNER_BORDER_OPACITY = 0.1;
     private static final double DEFAULT_FACTION_INNER_BORDER_WIDTH = 10.0;
-    private static final FactionPaletteChoice DEFAULT_FACTION_FILL_COLOUR =
-        FactionPaletteChoice.PRIMARY;
+    private static final OwnerPaletteChoice DEFAULT_FACTION_FILL_COLOUR =
+        OwnerPaletteChoice.PRIMARY;
     private static final double DEFAULT_FACTION_FILL_OPACITY = 0.4;
     private static final double DEFAULT_FACTION_NAME_OPACITY = 1.0;
-    private static final FactionPaletteChoice DEFAULT_INDEPENDENT_OUTER_BORDER_COLOUR =
-        FactionPaletteChoice.PRIMARY;
+    private static final OwnerPaletteChoice DEFAULT_INDEPENDENT_OUTER_BORDER_COLOUR =
+        OwnerPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_OUTER_BORDER_OPACITY = 0.5;
     private static final double DEFAULT_INDEPENDENT_OUTER_BORDER_WIDTH = 3.0;
-    private static final FactionPaletteChoice DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR =
-        FactionPaletteChoice.PRIMARY;
+    private static final OwnerPaletteChoice DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR =
+        OwnerPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_INNER_BORDER_OPACITY = 0.1;
     private static final double DEFAULT_INDEPENDENT_INNER_BORDER_WIDTH = 10.0;
-    private static final FactionPaletteChoice DEFAULT_INDEPENDENT_FILL_COLOUR =
-        FactionPaletteChoice.PRIMARY;
+    private static final OwnerPaletteChoice DEFAULT_INDEPENDENT_FILL_COLOUR =
+        OwnerPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_FILL_OPACITY = 0.2;
     private static final double DEFAULT_INDEPENDENT_NAME_OPACITY = 1.0;
     // On, so the shipped map draws what it drew before the switch existed. A decivilised world is
@@ -135,7 +135,7 @@ public final class KmuOwnerMapStyleSettings {
      * @return which faction palette colour the outer (national) border draws in, or NONE to hide
      *         it; the primary (bright) colour by default
      */
-    public static FactionPaletteChoice getFactionOuterBorderColour() {
+    public static OwnerPaletteChoice getFactionOuterBorderColour() {
         return KmuLunaSettings.readChoice(
             FACTION_OUTER_BORDER_COLOR_FIELD,
             DEFAULT_FACTION_OUTER_BORDER_COLOUR);
@@ -159,7 +159,7 @@ public final class KmuOwnerMapStyleSettings {
      * @return which faction palette colour the inner (province seam) borders draw in, or NONE to
      *         hide them; the primary (bright) colour by default
      */
-    public static FactionPaletteChoice getFactionInnerBorderColour() {
+    public static OwnerPaletteChoice getFactionInnerBorderColour() {
         return KmuLunaSettings.readChoice(
             FACTION_INNER_BORDER_COLOR_FIELD,
             DEFAULT_FACTION_INNER_BORDER_COLOUR);
@@ -186,7 +186,7 @@ public final class KmuOwnerMapStyleSettings {
      * @return which faction palette colour the territory fill draws in, or NONE to leave it
      *         unfilled; the primary (bright) colour by default
      */
-    public static FactionPaletteChoice getFactionFillColour() {
+    public static OwnerPaletteChoice getFactionFillColour() {
         return KmuLunaSettings.readChoice(FACTION_FILL_COLOR_FIELD, DEFAULT_FACTION_FILL_COLOUR);
     }
 
@@ -207,7 +207,7 @@ public final class KmuOwnerMapStyleSettings {
      * @return which independent palette colour the outer (national) border draws in, or NONE to
      *         hide it; the primary (bright) colour by default
      */
-    public static FactionPaletteChoice getIndependentOuterBorderColour() {
+    public static OwnerPaletteChoice getIndependentOuterBorderColour() {
         return KmuLunaSettings.readChoice(
             INDEPENDENT_OUTER_BORDER_COLOR_FIELD,
             DEFAULT_INDEPENDENT_OUTER_BORDER_COLOUR);
@@ -237,7 +237,7 @@ public final class KmuOwnerMapStyleSettings {
      * @return which independent palette colour the inner (province seam) borders draw in, or NONE
      *         to hide them; the primary (bright) colour by default
      */
-    public static FactionPaletteChoice getIndependentInnerBorderColour() {
+    public static OwnerPaletteChoice getIndependentInnerBorderColour() {
         return KmuLunaSettings.readChoice(
             INDEPENDENT_INNER_BORDER_COLOR_FIELD,
             DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR);
@@ -267,7 +267,7 @@ public final class KmuOwnerMapStyleSettings {
      * @return which independent palette colour the territory fill draws in, or NONE to leave it
      *         unfilled; the primary (bright) colour by default
      */
-    public static FactionPaletteChoice getIndependentFillColour() {
+    public static OwnerPaletteChoice getIndependentFillColour() {
         return KmuLunaSettings.readChoice(
             INDEPENDENT_FILL_COLOR_FIELD,
             DEFAULT_INDEPENDENT_FILL_COLOUR);

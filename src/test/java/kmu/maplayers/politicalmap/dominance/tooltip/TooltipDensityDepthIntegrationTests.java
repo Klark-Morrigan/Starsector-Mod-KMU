@@ -6,8 +6,8 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.factions.SystemColonyReading;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
@@ -30,9 +30,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.FULL_STABILITY;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.buildEmptySector;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.FULL_STABILITY;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.buildEmptySector;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

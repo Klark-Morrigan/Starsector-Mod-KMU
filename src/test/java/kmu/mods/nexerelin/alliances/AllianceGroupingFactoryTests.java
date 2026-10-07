@@ -2,7 +2,7 @@ package kmu.mods.nexerelin.alliances;
 
 import kmlib.starsector.factions.alliances.AllianceRecord;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

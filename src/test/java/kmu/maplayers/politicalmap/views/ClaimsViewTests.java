@@ -17,17 +17,17 @@ import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
-import kmu.maplayers.ownermap.holding.HolderOwnerReading;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.HolderOwnerSource;
-import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.picker.SelectableBloc;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
+import kmu.maplayers.ownermap.owners.holders.base.HolderOwnerSource;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
+import kmu.maplayers.ownermap.owners.holders.factions.FactionOwnerReading;
+import kmu.maplayers.ownermap.owners.holders.factions.HolderCategories;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.RankedOwner;
+import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
@@ -51,10 +51,10 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.buildRulesUnder;
-import static kmu.maplayers.ownermap.picker.BlocPresenceIndexFixtures.buildIndexOf;
-import static kmu.maplayers.ownermap.picker.SelectableBlocFixtures.stubNamedFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.buildRulesUnder;
+import static kmu.maplayers.ownermap.owners.holders.factions.SelectableOwnerFixtures.stubNamedFaction;
+import static kmu.maplayers.ownermap.picker.OwnerPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -118,7 +118,7 @@ final class ClaimsViewTests {
     }
 
     @Nested
-    class ResolveContestGrouping {
+    class ResolveContestAffiliation {
 
         @Test
         void readsTheLiveAllianceSet() {
@@ -131,8 +131,12 @@ final class ClaimsViewTests {
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(allianceSet);
 
-                assertThat(ClaimsView.INSTANCE.resolveContestGrouping())
-                    .isSameAs(allianceSet);
+                var affiliation = ClaimsView.INSTANCE.resolveContestAffiliation();
+
+                assertThat(affiliation.areOwnersAllied("hegemony", "persean"))
+                    .isTrue();
+                assertThat(affiliation.areOwnersAllied("hegemony", "tritachyon"))
+                    .isFalse();
             }
         }
     }
@@ -239,10 +243,10 @@ final class ClaimsViewTests {
 
         @Test
         void readsEachBlocOffTheFactionItPaintsAs() {
-            // The holder reading every layer painting holders shares, taken over the grouping the
-            // rebuild handed in - what it answers is pinned by that reading's own suite.
+            // The reading of the kind of owner this view paints - what it answers is pinned by that
+            // reading's own suite.
             assertThat(ClaimsView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), HolderGrouping.identity()))
-                .isInstanceOf(HolderOwnerReading.class);
+                .isInstanceOf(FactionOwnerReading.class);
         }
     }
 
@@ -261,7 +265,7 @@ final class ClaimsViewTests {
                 var viewReading = ClaimsView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
 
                 assertThat(viewReading.reading())
-                    .isInstanceOf(HolderOwnerReading.class);
+                    .isInstanceOf(FactionOwnerReading.class);
                 assertThat(viewReading.source())
                     .isInstanceOfSatisfying(
                         HolderOwnerSource.class,
@@ -326,8 +330,8 @@ final class ClaimsViewTests {
                 assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
-                    .containsExactly(new RankedBloc<>(
-                        new SelectableBloc(
+                    .containsExactly(new RankedOwner<>(
+                        new SelectableOwner(
                             "hegemony",
                             "Hegemony",
                             "graphics/hegemony_crest.png"),
@@ -352,7 +356,7 @@ final class ClaimsViewTests {
                 assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
-                    .extracting(RankedBloc::itemId)
+                    .extracting(RankedOwner::itemId)
                     .containsExactly("luddic_path");
             }
         }
@@ -378,7 +382,7 @@ final class ClaimsViewTests {
                 assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
-                    .extracting(RankedBloc::itemId)
+                    .extracting(RankedOwner::itemId)
                     .containsExactlyInAnyOrder("hegemony", "tritachyon");
             }
         }
@@ -406,7 +410,7 @@ final class ClaimsViewTests {
                 assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
-                    .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
+                    .extracting(RankedOwner::itemId, RankedOwner::isDimmed)
                     .containsExactly(
                         tuple("hegemony", false),
                         tuple("tritachyon", true));
@@ -439,7 +443,7 @@ final class ClaimsViewTests {
                 assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
-                    .extracting(RankedBloc::itemId)
+                    .extracting(RankedOwner::itemId)
                     .containsExactly("hegemony", "tritachyon", "persean");
             }
         }
@@ -552,7 +556,7 @@ final class ClaimsViewTests {
                     .when(MapVisibilityRules::readFromLunaSettings)
                     .thenReturn(MapVisibilityRules.BASE);
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock).picker().items())
+                assertThat(ClaimsView.INSTANCE.resolveOwnerPickerRead(sectorMock).picker().items())
                     .isEmpty();
             }
         }
@@ -586,6 +590,6 @@ final class ClaimsViewTests {
     // alone: the claimed-system index beside them is left empty rather than stubbed to systems those
     // cases never ask about.
     private static ClaimStatsRead buildReadOf(Map<String, ClaimStats> statsByBlocId) {
-        return new ClaimStatsRead(statsByBlocId, BlocPresenceIndex.EMPTY);
+        return new ClaimStatsRead(statsByBlocId, OwnerPresenceIndex.EMPTY);
     }
 }

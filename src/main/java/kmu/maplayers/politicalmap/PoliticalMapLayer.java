@@ -25,7 +25,7 @@ import kmu.maplayers.ownermap.render.hover.SpotlightPreviewHighlightRenderer;
 import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.sidebar.OwnerMapBodyControls;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
-import kmu.maplayers.ownermap.sidebar.SelectableBlocCache;
+import kmu.maplayers.ownermap.sidebar.SelectableOwnerCache;
 import kmu.maplayers.politicalmap.render.PoliticalMapBandLayoutReader;
 import kmu.settings.KmuMapKeybindSettings;
 import kmu.util.KmuStringKeys;
@@ -60,7 +60,9 @@ public final class PoliticalMapLayer implements MapLayer {
     // This layer's body preferences, each under the sector-memory key its choice has always been
     // saved under - frozen, since renaming one silently resets every save's choice to the default.
     private static final OwnerMapBodyPreferences BODY_PREFERENCES = new OwnerMapBodyPreferences(
-        new NameFormatPreference("$kmu_political_name_format"),
+        new NameFormatPreference(
+            "$kmu_political_name_format",
+            KmuStringKeys.POLITICAL_MAP_CTL_FACTION_NAMES),
         new UninhabitedOutlinePreference("$kmu_political_uninhabited_outline"),
         new RecedePreferences(
             "$kmu_political_filter_recede_mute",
@@ -218,7 +220,7 @@ public final class PoliticalMapLayer implements MapLayer {
         // the map is open. The machinery goes over whole for the same reason the target does: the
         // memo, the picker's own writers and the recede control below must not end up naming two
         // different sectors, which passing a board beside it would allow.
-        var blocCache = SelectableBlocCache.resolveBlocCacheIn(machinery, LAYER_ID);
+        var blocCache = SelectableOwnerCache.resolveOwnerCacheIn(machinery, LAYER_ID);
 
         // The asking panel's screen goes to the picker's stores as well as to the controls above it,
         // so a spotlight, a sort or a column count picked here is that panel's own. It travels under
@@ -230,7 +232,7 @@ public final class PoliticalMapLayer implements MapLayer {
             new SelectionSlot(
                 new ScreenSelectionSlot(KmuMod.MAP_STORE_NAMESPACE, target.memoryScope()),
                 selectedView.getId()),
-            blocCache.resolveBlocPickerRead(selectedView).picker(),
+            blocCache.resolveOwnerPickerRead(selectedView).picker(),
             RecedeControl.buildControls(
                 BODY_PREFERENCES.filterRecede(),
                 KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),

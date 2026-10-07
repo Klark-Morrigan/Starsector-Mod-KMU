@@ -460,15 +460,15 @@ public final class CrowdedAnchors {
      * arguments through three calls made a parameter list nothing could read.
      *
      * @param settledFeet where the spans that are done have their feet. What forces a move is
-     *                   read against these alone, because a crowd has to leave one span where it
-     *                   is - the first to want a place holds it
-     * @param takenFeet  where every other span on the map currently has a foot, settled or not.
-     *                   Somewhere to land has to be free of all of them: a point another span
-     *                   is standing on is a crowd whichever of the two was there first
-     * @param otherSpans those same spans as lines, since moving a foot swings the whole span
-     *                   and the new line has to cross none of them
-     * @param union      the cells, to keep a moved span from cutting back through one
-     * @param separation how far along the frontage the move is asked to reach
+     *                    read against these alone, because a crowd has to leave one span where it
+     *                    is - the first to want a place holds it
+     * @param takenFeet   where every other span on the map currently has a foot, settled or not.
+     *                    Somewhere to land has to be free of all of them: a point another span
+     *                    is standing on is a crowd whichever of the two was there first
+     * @param otherSpans  those same spans as lines, since moving a foot swings the whole span
+     *                    and the new line has to cross none of them
+     * @param union       the cells, to keep a moved span from cutting back through one
+     * @param separation  how far along the frontage the move is asked to reach
      */
     private record MoveContext(
         List<double[]> settledFeet,

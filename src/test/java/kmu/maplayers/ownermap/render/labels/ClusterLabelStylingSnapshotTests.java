@@ -17,7 +17,7 @@ import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
+import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 
 import org.junit.jupiter.api.Nested;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
  */
 final class ClusterLabelStylingSnapshotTests {
 
-    private static final String SPOTLIT_BLOC_ID = "hegemony";
+    private static final String SPOTLIT_OWNER_ID = "hegemony";
 
     // The face a snapshot is handed, for the cases about anything else it carries.
     private static final StarsectorFont LABEL_FACE = StarsectorFont.VANILLA_INSIGNIA_42;
@@ -58,11 +58,10 @@ final class ClusterLabelStylingSnapshotTests {
             var holderBySystemKey = Map.of(
                 buildCellKey("corvus"),
                 new SystemOwner(
-                    SPOTLIT_BLOC_ID,
+                    SPOTLIT_OWNER_ID,
                     new OwnerPalette(Color.BLUE, Color.DARK_GRAY)));
 
             var desaturationPalette = new OwnerPalette(Color.LIGHT_GRAY, Color.GRAY);
-
             var clusters = buildClusters(
                 holderBySystemKey,
                 desaturationPalette,
@@ -151,13 +150,15 @@ final class ClusterLabelStylingSnapshotTests {
 
             var ownerBySystemKey = Map.of(
                 buildCellKey("corvus"),
-                new SystemOwner(SPOTLIT_BLOC_ID, new OwnerPalette(Color.BLUE, Color.DARK_GRAY)));
+                new SystemOwner(SPOTLIT_OWNER_ID, new OwnerPalette(Color.BLUE, Color.DARK_GRAY)));
+
             var viewReading = buildViewReading();
 
             when(viewReading.view().resolveCategories())
-                .thenReturn(HolderCategories.INSTANCE);
+                .thenReturn(OwnerCategoriesFake.SHARED_FAKE);
 
             try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
+
                 stubInertGlobalStyle(styleReaderMock);
 
                 var styling = ClusterLabelStylingSnapshot.resolveForTracing(
@@ -171,7 +172,7 @@ final class ClusterLabelStylingSnapshotTests {
                 assertThat(styling.reading())
                     .isSameAs(viewReading.reading());
                 assertThat(styling.categories())
-                    .isSameAs(HolderCategories.INSTANCE);
+                    .isSameAs(OwnerCategoriesFake.SHARED_FAKE);
                 assertThat(styling.labelFace())
                     .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_42);
             }
@@ -182,6 +183,7 @@ final class ClusterLabelStylingSnapshotTests {
             // The diagnostic builds no drawables to borrow the palette from, so it is resolved
             // through the theme's darkening, exactly as a production build resolves it.
             try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
+
                 stubInertGlobalStyle(styleReaderMock);
 
                 var styling = ClusterLabelStylingSnapshot.resolveForTracing(
@@ -198,11 +200,12 @@ final class ClusterLabelStylingSnapshotTests {
         @Test
         void dropsThePickButKeepsTheNameFormat() {
             // The diagnostic traces owners with nobody spotlit, so a pick carried through would
-            // recede every bloc but one around a spotlight it does not paint - while the names are
+            // recede every owner but one around a spotlight it does not paint - while the names are
             // still spelled the way the player asked.
             var spotlightPicks = buildSpotlightPicks();
 
             try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
+
                 stubInertGlobalStyle(styleReaderMock);
 
                 var styling = ClusterLabelStylingSnapshot.resolveForTracing(
@@ -219,6 +222,7 @@ final class ClusterLabelStylingSnapshotTests {
         }
 
         private static void stubInertGlobalStyle(MockedStatic<RenderStyleReader> styleReaderMock) {
+
             styleReaderMock
                 .when(RenderStyleReader::readGlobalStyle)
                 .thenReturn(ThemeFixtures.createInertGlobalStyle());
@@ -236,7 +240,7 @@ final class ClusterLabelStylingSnapshotTests {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     null,
-                    HolderCategories.INSTANCE,
+                    OwnerCategoriesFake.SHARED_FAKE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     desaturationPalette,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE),
@@ -249,6 +253,7 @@ final class ClusterLabelStylingSnapshotTests {
     // The view is a seam the snapshot never reads, so a mock stands in for whichever concrete view
     // was being painted; the reading is the one it carries on.
     private static ViewReading buildViewReading() {
+
         return new ViewReading(
             mock(OwnerPaintedView.class),
             OwnerReadingFake.createAnsweringNothing(),
@@ -256,6 +261,7 @@ final class ClusterLabelStylingSnapshotTests {
     }
 
     private static ContentInputs buildSpotlightPicks() {
-        return ContentInputsFixtures.createInputsSpotlighting(SPOTLIT_BLOC_ID);
+
+        return ContentInputsFixtures.createInputsSpotlighting(SPOTLIT_OWNER_ID);
     }
 }

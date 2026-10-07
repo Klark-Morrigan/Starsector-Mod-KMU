@@ -338,7 +338,7 @@ final class OwnerMapDrawablesTests {
                 .isNull();
             assertThat(drawables.getClusterAnchors())
                 .isEmpty();
-            assertThat(drawables.getFactionLabels())
+            assertThat(drawables.getOwnerLabels())
                 .isEmpty();
         }
 
@@ -352,7 +352,7 @@ final class OwnerMapDrawablesTests {
 
             assertThat(drawables.getClusters())
                 .isNull();
-            assertThat(drawables.getFactionLabels())
+            assertThat(drawables.getOwnerLabels())
                 .isEmpty();
         }
     }

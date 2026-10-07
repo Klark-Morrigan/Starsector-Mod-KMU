@@ -32,9 +32,9 @@ import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
-import kmu.maplayers.ownermap.tooltip.SystemStatusRow;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.factions.SystemColonyReading;
+import kmu.maplayers.ownermap.owners.holders.factions.SystemStatusRow;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltipTests;
@@ -78,9 +78,9 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelTex
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
-import static kmu.maplayers.ownermap.holding.HolderGroupingFixture.buildGroupOf;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubDispositionToward;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubDispositionToward;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 import static kmu.maplayers.politicalmap.claims.tooltip.ListedClaimContestFixture.buildUnroutedContest;
 
 import static org.assertj.core.api.Assertions.assertThat;

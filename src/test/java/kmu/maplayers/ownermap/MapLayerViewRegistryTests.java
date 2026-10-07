@@ -205,8 +205,8 @@ final class MapLayerViewRegistryTests {
         @Test
         void isTheGivenScreensOwnPick() {
             // The point of the screen being on the signature: a player who sets one panel to the
-            // grouped view and leaves the other on factions gets both, rather than the second panel
-            // following the first.
+            // grouped view and leaves the other on single owners gets both, rather than the second
+            // panel following the first.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);

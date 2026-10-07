@@ -3,8 +3,8 @@ package kmu.maplayers.ownermap.owners;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
-import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.StandInCategory;
 
 import java.awt.Color;
 import java.util.Map;
@@ -61,7 +61,7 @@ public record OwnerReadingFake(
     public static OwnerReadingFake createNaming(Map<String, String> nameByOwnerId) {
 
         return new OwnerReadingFake(
-            OwnerMapCategory.FACTION,
+            StandInCategory.OWNED,
             ElementStyleAdjustment.NONE,
             nameByOwnerId,
             Map.of(),
@@ -118,7 +118,7 @@ public record OwnerReadingFake(
     }
 
     @Override
-    public String resolveName(String ownerId, FactionNameFormatChoice nameFormat) {
+    public String resolveName(String ownerId, OwnerNameFormatChoice nameFormat) {
         return nameByOwnerId.get(ownerId);
     }
 

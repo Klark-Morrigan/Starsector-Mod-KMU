@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.dominance;
 
-import kmu.maplayers.ownermap.owners.SpotlitBlocs;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics.SelectedBlocPresence;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
@@ -144,7 +144,7 @@ class FilteredPoliticsTests {
         void returnsFalseForARealFactionId() {
             // The synthetic key uses a sentinel a real ID cannot carry, so no faction is ever
             // mistaken for the spotlighted bloc and wrongly kept at full strength.
-            assertThat(SpotlitBlocs.isSpotlitBloc("hegemony"))
+            assertThat(SpotlitOwners.isSpotlitOwner("hegemony"))
                 .isFalse();
         }
     }

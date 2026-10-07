@@ -55,9 +55,9 @@ public final class IntercontinentalPockets {
     /**
      * Finds the water the links shut in between the continents.
      *
-     * @param traced     the continent coasts, which carry the sites everything here is measured
-     *                   against. Taken off the trace rather than handed in beside it, so the
-     *                   cells a link names are the cells the walk is walked over
+     * @param traced   the continent coasts, which carry the sites everything here is measured
+     *                 against. Taken off the trace rather than handed in beside it, so the
+     *                 cells a link names are the cells the walk is walked over
      * @param links    the links, as {@link IntercontinentalBridges} laid them
      * @param standing the spans already down that a sea can come to rest against, which are the
      *                 inlet spans the links were themselves judged against

@@ -9,7 +9,7 @@ import kmlib.starsector.factions.alliances.AllianceRecord;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

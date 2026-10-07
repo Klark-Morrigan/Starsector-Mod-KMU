@@ -40,7 +40,7 @@ final class UncontestedRibbonRunsTests {
 
         @Test
         void leavesThePartingAtItsAuthoredLengthWhereTheRunsAreShortened() {
-            // The parting says the same thing on an uncontested cell as on any other - one colony
+            // The parting says the same thing on an uncontested cell as on any other - one market
             // ends, the next begins - so the shortening has no business with it.
             var lengths = new UncontestedRibbonRuns(true)
                 .resolveRunLengths(AUTHORED_LENGTHS);

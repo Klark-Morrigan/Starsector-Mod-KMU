@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
-import kmu.maplayers.ownermap.holding.ContestSide;
-import kmu.maplayers.ownermap.holding.ContestSides;
+import kmu.maplayers.ownermap.owners.holders.alliances.ContestSide;
+import kmu.maplayers.ownermap.owners.holders.alliances.ContestSides;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 
 import java.util.ArrayList;

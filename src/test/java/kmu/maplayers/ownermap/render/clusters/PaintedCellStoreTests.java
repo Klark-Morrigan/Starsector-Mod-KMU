@@ -233,8 +233,9 @@ final class PaintedCellStoreTests {
 
         @Test
         void clearsAStandingBandWhenTheCellStopsDrawingOne() {
-            // The re-bake that finds nothing left to report - a rival's last colony in the system
-            // has gone. Without the clear, the cell would keep drawing the band it no longer earns.
+            // The re-bake that finds nothing left to report - a rival's last settlement in the
+            // system has gone. Without the clear, the cell would keep drawing the band it no
+            // longer earns.
             var store = new PaintedCellStore();
 
             store.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());

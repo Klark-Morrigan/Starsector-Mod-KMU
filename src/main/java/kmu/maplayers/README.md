@@ -151,15 +151,15 @@ Read this table left to right as "what the substrate calls it" -> "what the owne
 
 | `base` says | `ownermap` says | `politicalmap` says | Means |
 | --- | --- | --- | --- |
-| **owner** | **owner** (`SystemOwner`), grouped into a **bloc** | **holder** | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` and to the tier - whatever key a layer paints a system by. The political map's owner is a holder: a faction ID under the factions view, an alliance ID under alliances, a claimant under claims |
-| **unowned** | factionless, uninhabited, decivilised | the same | a cell no owner is attributed to. It never fuses, and draws its own lone outline. Unowned is not the same as empty: a view whose owner rule admits only some markets (claims, for the reasons its own package sets out) leaves settled systems unowned, so the factionless split is read from the pass's inhabited-system set, not from the absent owner |
+| **owner** | **owner** (`SystemOwner`); a **bloc** in `owners/holders` | **holder** | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` and to the tier - whatever key a layer paints a system by. The political map's owner is a holder: a faction ID under the factions view, an alliance ID under alliances, a claimant under claims |
+| **unowned** | unowned, settled or empty | factionless, uninhabited, decivilised | a cell no owner is attributed to. It never fuses, and draws its own lone outline. Unowned is not the same as empty: a view whose owner rule admits only some markets (claims, for the reasons its own package sets out) leaves settled systems unowned, so the settled split is read from the source's inhabited-system set, not from the absent owner |
 | **cluster** (`StyledCluster`) | cluster | one body of a **territory** | the merged shape connected same-owner cells form, inside one traced border. A lone cell is a cluster of one |
-| **cluster group** (`StyledClusterGroup`) | cluster group | **territory** | everything one owner paints: its clusters, plus the paints they all share. "Territory" is the political word for *all* of a bloc's cells, which may be several disjoint clusters - so a territory is a cluster group, never a cluster |
+| **cluster group** (`StyledClusterGroup`) | cluster group | **territory** | everything one owner paints: its clusters, plus the paints they all share. "Territory" is the political word for *all* of an owner's cells, which may be several disjoint clusters - so a territory is a cluster group, never a cluster |
 | **cluster border** | border | national border, frontier | the inset ring around a cluster. Neither `base` nor the tier calls it national - nothing about a border is political |
 | **interior seam** | seam | province line | the fused edge between two same-owner cells, drawn faint or not at all |
 | **fill state** | fill state | held / contested / drawn-empty | how a cell inside one cluster paints: `SOLID`, `HATCHED`, `UNFILLED`. The layer decides which system is which; `base` only paints it |
-| **`ElementPaintSelection`** | `FactionPaletteSlot` | the same | the player's colour pick, held opaquely by the theme and *unresolved*: it names where to look, not a colour, since one theme serves every bloc. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `FactionPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaintSelection` - its "No color" would otherwise read as drawable |
-| **shade** | **shade** | **shade** | the concrete `Color` a selection resolves to once a bloc's palette is in hand. Never a synonym for the selection: `MapPalettes` is where the one becomes the other |
+| **`ElementPaintSelection`** | `OwnerPaletteSlot` | the same | the player's colour pick, held opaquely by the theme and *unresolved*: it names where to look, not a colour, since one theme serves every owner. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `OwnerPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaintSelection` - its "No color" would otherwise read as drawable |
+| **shade** | **shade** | **shade** | the concrete `Color` a selection resolves to once an owner's palette is in hand. Never a synonym for the selection: `MapPalettes` is where the one becomes the other |
 
 Keeping the other columns' words out of `base` is a build gate too,
 for the reason the arrow above is one.
@@ -186,12 +186,19 @@ plus the words that name one layer -
 and the mechanics a layer decides its owners by,
 with the mod one of them comes from:
 *claim*,
-*claims*,
-*alliance*,
-*alliances* and *nexerelin*.
+*claims* and *nexerelin*.
 A tier named after one of its layers is that layer with extra callers,
 which is exactly what a second painting layer could not build on.
-Why *bloc* stays open there,
+
+The tier's core is closed one step further,
+to the words that say what a holder is:
+*faction*,
+*colony*,
+*bloc*
+and *alliance*.
+Its holder answers under `owners/holders` keep them,
+and among those only `alliances` says *alliance*.
+Why,
 and how the tier's save keys,
 knobs and labels keep clear of a layer's spelling,
 are [the tier's own register](ownermap/README.md#the-words-it-keeps).
@@ -234,7 +241,7 @@ despite looking alike:
   A **holder** is the political map's kind of owner,
   a computed political fact
   (dominant faction by market weight, or claimant, or alliance).
-  The tier's `holding` package and its `Holder*` types read owners that way -
+  The tier's [`owners/holders`](ownermap/owners/holders/README.md) subtree reads owners that way -
   off colonies,
   as factions folded into blocs -
   which is one kind of owner rather than the tier's definition of one.

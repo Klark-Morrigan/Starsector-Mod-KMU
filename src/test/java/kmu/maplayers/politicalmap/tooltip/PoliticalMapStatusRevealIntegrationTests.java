@@ -15,7 +15,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;

@@ -1,0 +1,127 @@
+package kmu.maplayers.ownermap.owners.holders.factions;
+
+import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
+
+import kmlib.starsector.factions.FactionCrests;
+import kmlib.starsector.factions.FactionNameForm;
+import kmlib.starsector.factions.FactionNames;
+import kmlib.starsector.factions.StarsectorFactionColours;
+
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.base.theme.MapStyleCategory;
+import kmu.maplayers.ownermap.ContentInputs;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+
+import java.awt.Color;
+
+/**
+ * The owner reading of a layer painting one faction as one owner: everything the tier asks about an
+ * owner is read off the faction whose ID it is.
+ *
+ * <p>A faction's shades and crest are its own authored ones, and its name is its own in the player's
+ * chosen form. Independent space draws in the independent category, and so does a faction the recede
+ * has desaturated, since desaturation means "read as backdrop". Nothing recedes of the layer's own
+ * accord: with every owner a lone faction, there is no figure for a backdrop to sit behind.
+ *
+ * <p>Holds the sector the rebuild sampled, so every answer is a lookup over that one snapshot.
+ */
+public final class FactionOwnerReading
+        implements OwnerReading {
+
+    private final SectorAPI sector;
+    private final SectorBlocPalettes palettes;
+
+    /**
+     * @param sector the sector a faction's shades, name and crest are read from; null yields no
+     *               shades, no names and no crests, and the fallback neutrals
+     */
+    public FactionOwnerReading(SectorAPI sector) {
+
+        this.sector = sector;
+        this.palettes = new SectorBlocPalettes(sector, HolderGrouping.identity());
+    }
+
+    @Override
+    public OwnerPalette resolvePalette(String ownerId) {
+
+        return palettes.readBlocPalette(ownerId);
+    }
+
+    // The faction's own name in the player's chosen form - its abbreviated display name for Short,
+    // its long-form title for Full. A faction that will not resolve carries no name, and a blank one
+    // is left for the caller to treat as unresolved.
+    @Override
+    public String resolveName(String ownerId, OwnerNameFormatChoice nameFormat) {
+
+        var faction = sector == null
+            ? null
+            : sector.getFaction(ownerId);
+
+        return FactionNames.resolveName(
+            faction,
+            nameFormat == OwnerNameFormatChoice.SHORT
+                ? FactionNameForm.SHORT
+                : FactionNameForm.LONG);
+    }
+
+    // A faction with no authored crest keeps its row and draws its name alone.
+    @Override
+    public String resolveCrestPath(String ownerId) {
+
+        return sector == null
+            ? null
+            : FactionCrests.resolveCrestPath(sector.getFaction(ownerId));
+    }
+
+    // Nothing recedes of the layer's own accord: receding every faction would sink the whole sector
+    // at once, which reads as the layer having failed rather than as an answer.
+    @Override
+    public ElementStyleAdjustment resolveStyleAdjustment(
+            String ownerId,
+            ContentInputs contentInputs) {
+
+        return ElementStyleAdjustment.NONE;
+    }
+
+    // Genuine independent space always takes the independent category. A faction the recede has
+    // desaturated takes it too: desaturation means "read as backdrop", so the faction adopts the
+    // independent borders and seams paired with the desaturation palette the same adjustment carries,
+    // rather than sitting at full border weight with only its colour greyed. Muting never moves the
+    // category; it only dims the active style.
+    //
+    // The test reads the passed adjustment - every reason to recede already unioned into it - rather
+    // than a toggle of its own, so the bundle and the palette can never disagree about whether a
+    // faction is desaturated.
+    @Override
+    public MapStyleCategory resolveCategory(String ownerId, ElementStyleAdjustment adjustment) {
+
+        var isIndependent = Factions.INDEPENDENT.equals(ownerId)
+            || adjustment.shouldDesaturate();
+
+        return isIndependent
+            ? OwnerMapCategory.INDEPENDENT
+            : OwnerMapCategory.FACTION;
+    }
+
+    // The neutral faction's own colour, which is what a system nobody holds has always painted in.
+    @Override
+    public Color resolveUnownedColour() {
+
+        return StarsectorFactionColours.resolveNeutralColour(sector);
+    }
+
+    // Independent's own two shades, which the tier darkens into the receded backdrop so it sits below
+    // genuine independent space - a spotlit faction, even Independent at full strength, therefore
+    // reads distinctly against it.
+    @Override
+    public OwnerPalette resolveRecedePalette() {
+
+        return SectorBlocPalettes.adoptFactionPalette(
+            StarsectorFactionColours.resolvePalette(sector, Factions.INDEPENDENT));
+    }
+}

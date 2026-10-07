@@ -16,12 +16,12 @@ import java.util.function.Supplier;
  * layer's owner source, so whatever reading the source opens shares the walk every other stage
  * of the rebuild is answered from.
  *
- * <p>The index names no colony rule and no owner - it is the sector's systems and what each
+ * <p>The index names no holding rule and no owner - it is the sector's systems and what each
  * holds, walked once. The visibility rules beside it are the substrate's own: what the player may
- * be shown of a colony, and whether a system is forced onto the map. They are the rules the cells
- * were cut under, carried here so a source reading colonies reads them under the very rule that
- * decided which systems got cells - a source sampling the rules for itself could resolve owners
- * for a sector the standing geometry was not cut for.
+ * be shown of what stands in a system, and whether a system is forced onto the map. They are the
+ * rules the cells were cut under, carried here so a source reads the sector under the very rule
+ * that decided which systems got cells - a source sampling the rules for itself could resolve
+ * owners for a sector the standing geometry was not cut for.
  *
  * <p>It also keeps whatever readings a source opens over it, so the owners, the per-system answers
  * and the band count asked of one walk read one reading between them - and the source stays a
@@ -48,8 +48,8 @@ public final class SectorWalk {
      *
      * @param sectorIndex     the one walk of each system every reader shares; an index over no
      *                        sector walks nothing
-     * @param visibilityRules the rules the cells were cut under, which every colony read through
-     *                        this walk is taken under
+     * @param visibilityRules the rules the cells were cut under, which every read of the sector
+     *                        through this walk is taken under
      */
     public SectorWalk(SectorPassIndex sectorIndex, MapVisibilityRules visibilityRules) {
         this.sectorIndex = Objects.requireNonNull(sectorIndex, "sectorIndex");

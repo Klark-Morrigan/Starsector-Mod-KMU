@@ -54,13 +54,13 @@ final class OwnerMapDrawables {
     // and this holder is what owns them across the rebuilds that reuse them.
     private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
 
-    // The cached faction-name labels, built from the placements above. Each owns a GL buffer, so
+    // The cached owner-name labels, built from the placements above. Each owns a GL buffer, so
     // the builder disposes the standing strings whenever it rebuilds this list. Empty unless the
-    // "show faction names" toggle is on.
-    private final List<Label> factionLabels = new ArrayList<>();
+    // names toggle is on.
+    private final List<Label> ownerLabels = new ArrayList<>();
 
     // The face the sector settled its labels on, asked when a rebuild fits names rather than when these
-    // drawables are made: settling reads every faction name, which a holder made before the first
+    // drawables are made: settling reads every owner name, which a holder made before the first
     // rebuild has no call to pay for. The fit records the face beside its placements, so everything
     // drawn after it reads the face from there.
     private final Supplier<FontAtlas> labelFaceSource;
@@ -88,9 +88,9 @@ final class OwnerMapDrawables {
         return standingAnchors.getAnchors();
     }
 
-    /** @return the cached faction-name labels */
-    public List<Label> getFactionLabels() {
-        return factionLabels;
+    /** @return the cached owner-name labels */
+    public List<Label> getOwnerLabels() {
+        return ownerLabels;
     }
 
     /**
@@ -128,7 +128,7 @@ final class OwnerMapDrawables {
      * @return the parts the refresh reads and writes
      */
     public StandingOwnerMap toStandingMap(RevisedCellGeometry cellGeometry) {
-        return new StandingOwnerMap(clusters, standingAnchors, factionLabels, cellGeometry);
+        return new StandingOwnerMap(clusters, standingAnchors, ownerLabels, cellGeometry);
     }
 
     /**
@@ -164,8 +164,8 @@ final class OwnerMapDrawables {
      */
     public void disposeAll() {
 
-        LabelsBuilder.disposeAll(factionLabels);
-        factionLabels.clear();
+        LabelsBuilder.disposeAll(ownerLabels);
+        ownerLabels.clear();
 
         standingAnchors.discardAnchors();
         clusters = null;
@@ -279,6 +279,6 @@ final class OwnerMapDrawables {
      *                      preference, so what is minted matches what was fitted
      */
     public void rebuildLabels(boolean areNamesDrawn) {
-        LabelsBuilder.rebuildLabels(factionLabels, standingAnchors, areNamesDrawn);
+        LabelsBuilder.rebuildLabels(ownerLabels, standingAnchors, areNamesDrawn);
     }
 }

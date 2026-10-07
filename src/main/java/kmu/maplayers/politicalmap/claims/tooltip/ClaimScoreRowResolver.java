@@ -10,7 +10,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.ownermap.tooltip.ColonyQualifier;
+import kmu.maplayers.ownermap.owners.holders.factions.ColonyQualifier;
 import kmu.maplayers.ownermap.tooltip.TermTooltipLine;
 import kmu.util.KmuStringKeys;
 

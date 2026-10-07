@@ -29,7 +29,7 @@ import kmu.maplayers.ownermap.OwnerPaintedView;
  *
  * @param nameFormat         how cluster labels spell their holders' names
  * @param uninhabitedOutline whether never-settled space strokes its outline
- * @param filterRecede       how the rest of the sector recedes behind a spotlighted bloc
+ * @param filterRecede       how the rest of the sector recedes behind a spotlighted owner
  */
 public record OwnerMapBodyPreferences(
     NameFormatPreference nameFormat,

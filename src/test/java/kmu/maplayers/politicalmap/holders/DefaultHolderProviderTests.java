@@ -4,11 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
 
@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

@@ -18,7 +18,7 @@ import kmu.maplayers.base.render.MapOverlayBand;
  * or replace - and a rider is followed by reading the band its owner landed in.
  *
  * @param fillBand   where the cluster and lone-cell fills paint, the contested hatch inside them
- * @param borderBand where the cluster boundaries, province seams, and factionless outlines paint.
+ * @param borderBand where the cluster boundaries, province seams, and unowned outlines paint.
  *                   Never lower than {@code fillBand}, whatever was asked for
  * @param ribbonBand where the per-cell presence bands paint
  * @param labelBand  where the cluster names paint

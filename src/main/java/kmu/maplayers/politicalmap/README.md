@@ -227,12 +227,12 @@ A vocabulary states only its numbers,
 the key and label each is offered under,
 and the order ties break down them.
 What a mode then is,
-is `BlocMetricSortMode`;
+is `OwnerMetricSortMode`;
 how its declaration becomes a ranking -
 the chosen metric first,
 the rest of the chain behind it,
 then the name and the bloc ID -
-is `BlocSortModeComposer`.
+is `OwnerSortModeComposer`.
 So the numbers stay one layer's while the shape of the ordering,
 and the tail that keeps a fully-level pair from reshuffling,
 are the same under every view.
@@ -278,7 +278,7 @@ the player's own bloc above everything measured,
 an unreadable one below -
 then the low end of the range,
 then the high,
-and then goes straight to `BlocSortModeComposer.appendSharedTail`,
+and then goes straight to `OwnerSortModeComposer.appendSharedTail`,
 which exists for a primary key the metric assembly cannot express.
 The case ordering is part of that primary key,
 so the player's bloc leads under the default direction and trails under the flip
@@ -328,7 +328,7 @@ no claim on Claims,
 no dominance weight on the two the contest paints -
 so it is one rule read against whichever number that layer paints by.
 The bloc's metrics carry the answer,
-through `PaintingBlocMetrics`,
+through `PaintingOwnerMetrics`,
 which a picker of painters opts into and any other picker leaves alone.
 
 ## The ownership sources
@@ -762,7 +762,7 @@ Below the holder the split is `ContestSides` -
 the one placement every surface reporting a contest routes its blocks through,
 over the `BlocAffiliation` the bands judge their contest by -
 the live alliance set,
-which every view of this layer answers `resolveContestGrouping()` with
+which every view of this layer answers `resolveContestAffiliation()` with
 and the box takes through an injected `HolderGroupingSource` sampled per hover -
 so no two surfaces over one system can put a bloc on different sides of it,
 and a box cannot disagree with the band beneath it about who is a rival.
@@ -1461,7 +1461,7 @@ The body controls are the tier's `ownermap/sidebar`
 the shared sub-options,
 the view selector,
 the recede toggles (`RecedeControl`)
-and the memo behind the spotlight picker (`SelectableBlocCache`).
+and the memo behind the spotlight picker (`SelectableOwnerCache`).
 The box they sit in and the picker itself are reached through [the sidebar](../base/sidebar/README.md)
 (the picker is KMLib's,
 bound to this mod's save slots there).

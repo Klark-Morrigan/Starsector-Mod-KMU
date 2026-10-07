@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.dominance.standings;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;

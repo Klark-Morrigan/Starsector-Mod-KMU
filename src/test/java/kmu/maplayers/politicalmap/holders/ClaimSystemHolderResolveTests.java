@@ -6,10 +6,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.claims.SectorClaims;
 
 import org.junit.jupiter.api.Nested;
@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.awt.Color;
 import java.util.ArrayList;
 
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

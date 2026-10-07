@@ -2,12 +2,10 @@ package kmu.maplayers.ownermap.render;
 
 import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
+import kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,8 +25,7 @@ final class CellCutInputsTests {
     // The reading two cuts share where the case is about one of the other inputs.
     private static final int GEOMETRY_REVISION = 7;
     private static final CellSeedInputs SEED_INPUTS = new CellSeedInputs(48, 4000.0);
-    private static final MapVisibilityRules DEV_TOGGLES =
-        new MapVisibilityRules(BASE_FOG, false);
+    private static final MapVisibilityRules DEV_TOGGLES = MapVisibilityRules.BASE;
 
     @Nested
     class Equality {
@@ -80,18 +77,18 @@ final class CellCutInputsTests {
                 .isNotEqualTo(new CellCutInputs(
                     GEOMETRY_REVISION,
                     SEED_INPUTS,
-                    new MapVisibilityRules(BASE_FOG, true)));
+                    MapVisibilityRulesFixtures.FORCED_UNDER_THE_FOG));
         }
 
         @Test
         void separatesReadingsAcrossAnUndiscoveredMarketsFlip() {
-            // The second reveal reaches the cells through inhabitation: an undiscovered colony
+            // The second reveal reaches the cells through inhabitation: an undiscovered market
             // counted makes its system drawn, which seeds a cell that was not there before.
             assertThat(new CellCutInputs(GEOMETRY_REVISION, SEED_INPUTS, DEV_TOGGLES))
                 .isNotEqualTo(new CellCutInputs(
                     GEOMETRY_REVISION,
                     SEED_INPUTS,
-                    new MapVisibilityRules(UNDER_THE_REVEAL, false)));
+                    MapVisibilityRulesFixtures.UNFORCED_UNDER_THE_REVEAL));
         }
     }
 }

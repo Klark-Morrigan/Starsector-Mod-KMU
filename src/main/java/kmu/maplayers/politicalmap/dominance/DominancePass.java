@@ -6,10 +6,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.markets.colonies.Colonies;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.maplayers.ownermap.holding.ColonyReadRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.holding.SystemHabitation;
+import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHabitation;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;

@@ -12,17 +12,17 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
-import kmu.maplayers.ownermap.holding.HolderOwnerReading;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.HolderOwnerSource;
-import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.picker.SelectableBloc;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
+import kmu.maplayers.ownermap.owners.holders.base.HolderOwnerSource;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
+import kmu.maplayers.ownermap.owners.holders.factions.FactionOwnerReading;
+import kmu.maplayers.ownermap.owners.holders.factions.HolderCategories;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.RankedOwner;
+import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
@@ -49,9 +49,9 @@ import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.picker.BlocPresenceIndexFixtures.buildIndexOf;
-import static kmu.maplayers.ownermap.picker.SelectableBlocFixtures.stubNamedFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.factions.SelectableOwnerFixtures.stubNamedFaction;
+import static kmu.maplayers.ownermap.picker.OwnerPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -94,7 +94,7 @@ final class FactionsViewTests {
     }
 
     @Nested
-    class ResolveContestGrouping {
+    class ResolveContestAffiliation {
 
         @Test
         void readsTheLiveAllianceSet() {
@@ -107,8 +107,12 @@ final class FactionsViewTests {
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(allianceSet);
 
-                assertThat(FactionsView.INSTANCE.resolveContestGrouping())
-                    .isSameAs(allianceSet);
+                var affiliation = FactionsView.INSTANCE.resolveContestAffiliation();
+
+                assertThat(affiliation.areOwnersAllied("hegemony", "persean"))
+                    .isTrue();
+                assertThat(affiliation.areOwnersAllied("hegemony", "tritachyon"))
+                    .isFalse();
             }
         }
     }
@@ -205,10 +209,10 @@ final class FactionsViewTests {
 
         @Test
         void readsEachBlocOffTheFactionItPaintsAs() {
-            // The holder reading every layer painting holders shares, taken over the grouping the
-            // rebuild handed in - what it answers is pinned by that reading's own suite.
+            // The reading of the kind of owner this view paints - what it answers is pinned by that
+            // reading's own suite.
             assertThat(FactionsView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), HolderGrouping.identity()))
-                .isInstanceOf(HolderOwnerReading.class);
+                .isInstanceOf(FactionOwnerReading.class);
         }
     }
 
@@ -228,7 +232,7 @@ final class FactionsViewTests {
                 var viewReading = FactionsView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
 
                 assertThat(viewReading.reading())
-                    .isInstanceOf(HolderOwnerReading.class);
+                    .isInstanceOf(FactionOwnerReading.class);
                 assertThat(viewReading.source())
                     .isInstanceOfSatisfying(
                         HolderOwnerSource.class,
@@ -337,8 +341,8 @@ final class FactionsViewTests {
                 assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG)
                         .picker()
                         .items())
-                    .containsExactly(new RankedBloc<>(
-                        new SelectableBloc(
+                    .containsExactly(new RankedOwner<>(
+                        new SelectableOwner(
                             "hegemony",
                             "Hegemony",
                             "graphics/hegemony_crest.png"),
@@ -363,8 +367,8 @@ final class FactionsViewTests {
                 assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG)
                         .picker()
                         .items())
-                    .containsExactly(new RankedBloc<>(
-                        new SelectableBloc("luddic_path", "Path", null),
+                    .containsExactly(new RankedOwner<>(
+                        new SelectableOwner("luddic_path", "Path", null),
                         ANY_STATS));
             }
         }
@@ -392,7 +396,7 @@ final class FactionsViewTests {
                 assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG)
                         .picker()
                         .items())
-                    .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
+                    .extracting(RankedOwner::itemId, RankedOwner::isDimmed)
                     .containsExactly(
                         tuple("hegemony", false),
                         tuple("crusader_plan", true));
@@ -468,6 +472,6 @@ final class FactionsViewTests {
     // alone: the presence index beside them is left empty rather than stubbed to systems those
     // cases never ask about.
     private static DominanceStatsRead buildReadOf(Map<String, DominanceStats> statsByBlocId) {
-        return new DominanceStatsRead(statsByBlocId, BlocPresenceIndex.EMPTY);
+        return new DominanceStatsRead(statsByBlocId, OwnerPresenceIndex.EMPTY);
     }
 }

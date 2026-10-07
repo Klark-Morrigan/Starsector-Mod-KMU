@@ -12,8 +12,8 @@ import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.VertexRuns;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.style.FactionlessStyleResolver;
-import kmu.maplayers.ownermap.render.style.ResolvedBlocPaint;
+import kmu.maplayers.ownermap.render.style.ResolvedOwnerPaint;
+import kmu.maplayers.ownermap.render.style.UnownedStyleResolver;
 
 import java.util.List;
 
@@ -24,14 +24,14 @@ import java.util.List;
  *
  * <p>An <em>owned</em> cell contributes only its interior seams: its fill and cluster border
  * are per cluster, drawn from the tessellated cluster in {@link StyledCluster}, because a
- * bloc's cells fuse into one frontier. Keeping the seams is what lets a footprint read as its
- * constituent cells rather than one smooth blob - the spotlighted bloc included, where the
+ * owner's cells fuse into one frontier. Keeping the seams is what lets a footprint read as its
+ * constituent cells rather than one smooth blob - the spotlighted owner included, where the
  * solid-to-hatched transition is such a border like any other.
  *
- * <p>A <em>factionless</em> cell (inhabited but unheld, or uninhabited) does not fuse, so it has
- * no cluster to inherit from and keeps its own fill and outline. It names no faction palette
+ * <p>A <em>unowned</em> cell (inhabited but unheld, or uninhabited) does not fuse, so it has
+ * no cluster to inherit from and keeps its own fill and outline. It names no owner's palette
  * either, so both its palette slots hold the shared neutral colour - until the pass recedes it,
- * which a settled factionless cell takes as readily as a bloc does.
+ * which a settled unowned cell takes as readily as an owner does.
  *
  * <p>The ring is reported rather than left for the caller to pass alongside because the two forms
  * lay their ink on different rings - a fused cell on its raw extent, a lone cell on the rounded one
@@ -48,20 +48,20 @@ public final class PaintedCellBuilder {
 
     /**
      * Builds one cell's draw record and the ring it was laid on, or null when the cell draws
-     * nothing at all: an inset-collapsed cell, or a factionless cell with neither its fill nor its
+     * nothing at all: an inset-collapsed cell, or an unowned cell with neither its fill nor its
      * outline drawn.
      *
      * <p>Takes the system the cell draws as rather than the cell itself, since everything read
      * here - the holder, the palette, whether the cell is decivilised - is known per system
      * and not per cell.
      *
-     * @param clusters the build the cell belongs to, read for who is in its system and for the
-     *                    inputs the build was baked under - the theme, the filter state, and the
-     *                    view its holding was grouped by
-     * @param systemKey   the system the cell draws as, or null for a cell with no star of its
-     *                    own, which draws as plain uninhabited - it has no holder to
-     *                    colour it and nothing standing in it
-     * @param shaped      the cell's inset shape
+     * @param clusters  the build the cell belongs to, read for who is in its system and for the
+     *                  inputs the build was baked under - the theme, the filter state, and the
+     *                  view its holding was grouped by
+     * @param systemKey the system the cell draws as, or null for a cell with no star of its
+     *                  own, which draws as plain uninhabited - it has no holder to
+     *                  colour it and nothing standing in it
+     * @param shaped    the cell's inset shape
      * @return the cell's draw record and the ring it was laid on, or null when it puts no ink on
      *         the map
      */
@@ -88,7 +88,7 @@ public final class PaintedCellBuilder {
             ? null
             : occupancy.readOwnerOf(systemKey);
         return holder == null
-            ? buildFactionlessCell(occupancy, buildInputs, systemKey, shaped)
+            ? buildUnownedCell(occupancy, buildInputs, systemKey, shaped)
             : buildOwnedCell(buildInputs, holder, shaped);
     }
 
@@ -96,24 +96,24 @@ public final class PaintedCellBuilder {
     // cluster's, drawn from the cluster's own shape, so this form has no slot for either, and its
     // painted ring is the raw inset extent - what bounds the ink is the cluster's own border rather
     // than anything resolved per cell. The paint comes from the pass's one reading of what this
-    // bloc draws in, so the seams paint exactly as the cluster paints its fill and border.
+    // owner draws in, so the seams paint exactly as the cluster paints its fill and border.
     private static PaintedCell buildOwnedCell(
             OwnerMapBuildInputs buildInputs,
             SystemOwner holder,
             ShapedCell shaped) {
 
-        var blocPaint = buildInputs.resolveBlocPaintOf(holder.ownerId(), holder);
-        var style = blocPaint.style();
+        var ownerPaint = buildInputs.resolveOwnerPaintOf(holder.ownerId(), holder);
+        var style = ownerPaint.style();
 
         return new PaintedCell(
             new StyledCell.FusedCell(
                 VertexRuns.flattenEdgesOfClass(shaped, false),
-                blocPaint.pickPaintOf(style.inner()),
+                ownerPaint.pickPaintOf(style.inner()),
                 (float) style.innerWidth()),
             shaped.fillPolygon());
     }
 
-    // A lone cell: its own fill and outline, and no seam - a factionless cell fuses with nothing,
+    // A lone cell: its own fill and outline, and no seam - an unowned cell fuses with nothing,
     // so it has no sibling to divide from. Its outline's corners are rounded with the same corner
     // settings and gate the cluster borders use, so a lone unheld system reads as smoothly as a
     // cluster when rounding is on and stays a sharp Voronoi cell when it is off; the fill is
@@ -122,7 +122,7 @@ public final class PaintedCellBuilder {
     // cell puts ink, there being no cluster border to bound it - so it comes back as the ring
     // rather than being recomputed anywhere downstream. Drops the cell when neither element puts
     // ink down - a cell is kept for its fill as readily as for its outline.
-    private static PaintedCell buildFactionlessCell(
+    private static PaintedCell buildUnownedCell(
             SystemOccupancy occupancy,
             OwnerMapBuildInputs buildInputs,
             SystemKey systemKey,
@@ -137,7 +137,7 @@ public final class PaintedCellBuilder {
         // here: an inhabited system this layer's holding does not account for is not the empty
         // backdrop, whatever the absent holder alone would suggest. Which category that makes
         // the cell is the layer's own declaration.
-        var isSettled = FactionlessStyleResolver.isSettledSystem(
+        var isSettled = UnownedStyleResolver.isSettledSystem(
             occupancy.getInhabitedSystemKeys(),
             systemKey);
 
@@ -146,38 +146,38 @@ public final class PaintedCellBuilder {
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
             return null;
         }
-        // A factionless cell has no holder palette, so both slots hold the shared neutral colour:
+        // An unowned cell has no holder palette, so both slots hold the shared neutral colour:
         // whichever slot an element names, it paints neutral - unless the recede desaturates the
         // cell, in which case it recolours off the pass's desaturation palette exactly as a
-        // receded bloc does.
-        // The spotlit bloc's own presence spares the cell the recede, so a pick's colonies are not
-        // sunk merely because this layer's holding could not attribute them to it. The cell keeps
-        // its neutral factionless paint either way - full strength is the whole of what presence
-        // buys it here. A cell drawn as no system names nowhere anyone could be living, so the
-        // absent system skips the set rather than probing one that may be immutable and
-        // null-hostile.
-        var isSpotlitBlocPresent = systemKey != null
+        // receded owner does.
+        // The spotlit owner's own presence spares the cell the recede, so what a pick has standing
+        // there is not sunk merely because this layer's holding could not attribute it to the
+        // pick. The cell keeps its neutral unowned paint either way - full strength is the
+        // whole of what presence buys it here. A cell drawn as no system names nowhere anyone
+        // could be living, so the absent system skips the set rather than probing one that may be
+        // immutable and null-hostile.
+        var isSpotlitOwnerPresent = systemKey != null
             && occupancy.getSpotlitPresenceSystemKeys().contains(systemKey);
 
-        // Only the filter's recede reaches a factionless cell: a recede the view applies of its own
-        // accord describes blocs, which such a cell is not.
-        var adjustment = FactionlessStyleResolver.resolveRecedeOf(
+        // Only the filter's recede reaches an unowned cell: a recede the view applies of its own
+        // accord describes owners, which such a cell is not.
+        var adjustment = UnownedStyleResolver.resolveRecedeOf(
             isSettled,
             buildInputs.contentInputs().filterRecedeAdjustment(),
-            isSpotlitBlocPresent);
+            isSpotlitOwnerPresent);
 
         // A spared cell paints the lifted neutral rather than the plain one: the recede it was
         // spared only stopped it sinking, and the grey it would have kept is the value the
         // background around it sank from - close enough to read as the same surface. The two
         // palettes are the pass's own, so the lift and the sink are one decision apart.
-        var ownPalette = isSpotlitBlocPresent
+        var ownPalette = isSpotlitOwnerPresent
             ? mapStyling.presencePalette()
             : mapStyling.neutralPalette();
 
         // Stated over the shades rather than resolved off a holder, there being nobody to ask: the
-        // desaturation swap and the per-element reads are the bloc path's all the same, so a lone
-        // cell's fill and outline are painted by the very rule a bloc's are.
-        var cellPaint = ResolvedBlocPaint.resolveFrom(
+        // desaturation swap and the per-element reads are the owner path's all the same, so a lone
+        // cell's fill and outline are painted by the very rule an owner's are.
+        var cellPaint = ResolvedOwnerPaint.resolveFrom(
             style,
             adjustment,
             ownPalette,
@@ -204,7 +204,7 @@ public final class PaintedCellBuilder {
             outline);
     }
 
-    // The ring a factionless cell strokes and fills from: its inset outline, corner-rounded when
+    // The ring an unowned cell strokes and fills from: its inset outline, corner-rounded when
     // the sector-wide gate is on so it matches the cluster borders, raw when it is off. The cell
     // is a single convex inset polygon (all its edges are cluster border), so it needs no
     // chaining or envelope resolve - only the corner rounding.

@@ -4,11 +4,11 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.picker.BlocMetricSortMode;
-import kmu.maplayers.ownermap.picker.BlocSortModeComposer;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.picker.SharedBlocSortModes;
-import kmu.maplayers.ownermap.picker.SizedBlocMetrics;
+import kmu.maplayers.ownermap.owners.holders.factions.SharedBlocSortModes;
+import kmu.maplayers.ownermap.owners.holders.factions.SizedBlocMetrics;
+import kmu.maplayers.ownermap.picker.OwnerMetricSortMode;
+import kmu.maplayers.ownermap.picker.OwnerSortModeComposer;
+import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.function.ToIntFunction;
 
 /**
  * The claims view's sort vocabulary: the metrics its filter picker ranks its blocs by, one per row of
- * the sort selector. Every mode here ranks {@link RankedBloc} over {@link ClaimStats} alone, so the
+ * the sort selector. Every mode here ranks {@link RankedOwner} over {@link ClaimStats} alone, so the
  * domination metrics the held layers rank by - which describe a market contest this layer never
  * paints - cannot be offered here, and neither vocabulary can be widened by the other's numbers.
  *
@@ -26,7 +26,7 @@ import java.util.function.ToIntFunction;
  *
  * <p>What a vocabulary states of itself is only its numbers, the key and label each is offered under,
  * and the order ties break down them: claims, then market size. What a mode then <em>is</em> is
- * {@link BlocMetricSortMode}'s, and the ranking it lays out is {@link BlocSortModeComposer}'s, so every
+ * {@link OwnerMetricSortMode}'s, and the ranking it lays out is {@link OwnerSortModeComposer}'s, so every
  * mode of every vocabulary answers the picker identically and breaks a tie the same way.
  *
  * <p>{@link #MARKET_SIZE} is asked for rather than declared: its number is measured the same way under
@@ -57,25 +57,25 @@ public final class ClaimSortModes {
     // vocabulary's: per-scope sort storage keys each view's stored mode separately, so the two never
     // resolve against the same slot and a shared spelling stays a readability win rather than a
     // collision.
-    public static final ListSortMode<RankedBloc<ClaimStats>> NAME =
-        new BlocMetricSortMode<>(
+    public static final ListSortMode<RankedOwner<ClaimStats>> NAME =
+        new OwnerMetricSortMode<>(
             "name",
             KmuStringKeys.POLITICAL_MAP_CTL_SORT_NAME,
             null,
             CANONICAL_METRIC_CHAIN);
 
-    public static final ListSortMode<RankedBloc<ClaimStats>> CLAIMS =
-        new BlocMetricSortMode<>(
+    public static final ListSortMode<RankedOwner<ClaimStats>> CLAIMS =
+        new OwnerMetricSortMode<>(
             "claims",
             KmuStringKeys.POLITICAL_MAP_CTL_SORT_CLAIMS,
             CLAIMS_METRIC,
             CANONICAL_METRIC_CHAIN);
 
-    public static final ListSortMode<RankedBloc<ClaimStats>> MARKET_SIZE =
+    public static final ListSortMode<RankedOwner<ClaimStats>> MARKET_SIZE =
         SharedBlocSortModes.declareMarketSizeMode(CANONICAL_METRIC_CHAIN);
 
     /** The mode a fresh save and any unrecognised stored key fall back to, so an ordering always exists. */
-    public static final ListSortMode<RankedBloc<ClaimStats>> DEFAULT = CLAIMS;
+    public static final ListSortMode<RankedOwner<ClaimStats>> DEFAULT = CLAIMS;
 
     /**
      * This mechanic's half of the claims view's sort vocabulary - every mode declared here in selector
@@ -87,7 +87,7 @@ public final class ClaimSortModes {
      * can rank them one value and has the stored-sort resolution read the same pair the selector
      * draws.
      */
-    public static final ListSortModes<RankedBloc<ClaimStats>> MODES =
+    public static final ListSortModes<RankedOwner<ClaimStats>> MODES =
         new ListSortModes<>(
             List.of(NAME, CLAIMS, MARKET_SIZE),
             DEFAULT);

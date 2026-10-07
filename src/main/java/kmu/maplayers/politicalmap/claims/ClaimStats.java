@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.claims;
 
-import kmu.maplayers.ownermap.picker.PaintingBlocMetrics;
-import kmu.maplayers.ownermap.picker.SizedBlocMetrics;
+import kmu.maplayers.ownermap.owners.holders.factions.SizedBlocMetrics;
+import kmu.maplayers.ownermap.picker.PaintingOwnerMetrics;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 
 /**
@@ -32,7 +32,8 @@ import kmu.maplayers.politicalmap.dominance.DominanceStats;
  */
 public record ClaimStats(
     int claims,
-    int marketSize) implements PaintingBlocMetrics, SizedBlocMetrics {
+    int marketSize)
+        implements PaintingOwnerMetrics, SizedBlocMetrics {
 
     /** A bloc claiming nothing and holding nothing; the identity a per-system fold begins from. */
     public static final ClaimStats EMPTY = new ClaimStats(0, 0);

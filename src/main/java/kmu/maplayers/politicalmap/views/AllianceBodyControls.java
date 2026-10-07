@@ -29,6 +29,7 @@ public final class AllianceBodyControls {
      *         (lit when they are recoloured to the desaturation profile)
      */
     public static List<ControlSpec> buildControls(BodyControlTarget target) {
+
         return RecedeControl.buildControls(
             AlliancesView.NON_ALLIED_RECEDE,
             KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION),

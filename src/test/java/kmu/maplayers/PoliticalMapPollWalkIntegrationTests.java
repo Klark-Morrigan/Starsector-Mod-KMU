@@ -13,7 +13,7 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
@@ -30,7 +30,7 @@ import static kmu.maplayers.PollWalkFixtures.BETA_ID;
 import static kmu.maplayers.PollWalkFixtures.COLONY_SIZE;
 import static kmu.maplayers.PollWalkFixtures.buildSettledSectorWithADerelict;
 import static kmu.maplayers.PollWalkFixtures.captureUnscopedCountsWhile;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;

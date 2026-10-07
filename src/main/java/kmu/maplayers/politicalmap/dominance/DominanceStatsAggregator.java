@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.picker.BlocPresenceIndexBuilder;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndexBuilder;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.LinkedHashMap;
@@ -31,7 +31,7 @@ public final class DominanceStatsAggregator {
     // The four metrics and the system index accumulate over every system in the sector, so passing
     // them along made each step's parameter list longer than the step itself and put the pass - the
     // one thing every step reads - last among them.
-    private final BlocPresenceIndexBuilder inhabitedSystems = new BlocPresenceIndexBuilder();
+    private final OwnerPresenceIndexBuilder inhabitedSystems = new OwnerPresenceIndexBuilder();
     private final DominancePass pass;
     private final Map<String, DominanceStats> statsByBlocId = new LinkedHashMap<>();
 

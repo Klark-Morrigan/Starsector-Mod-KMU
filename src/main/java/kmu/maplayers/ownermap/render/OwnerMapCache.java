@@ -57,7 +57,7 @@ import java.util.Set;
  * KMU's LunaLib settings change (detected off LunaLib's change event via
  * {@link KmuLunaSettings#getSettingsRevision()}), when the view switches or samples a different
  * live input, when one of the sidebar preferences the bake reads holds a different value
- * ({@link ContentInputs}), or when the geometry itself was rebuilt; between those, a colony resize
+ * ({@link ContentInputs}), or when the geometry itself was rebuilt; between those, a change in one system
  * marks just its own system stale and drives an incremental re-shape. So switching a colour,
  * dragging an opacity slider or picking a spotlight takes effect live, and the per-frame path is
  * otherwise a couple of int compares, never a per-frame economy scan.
@@ -207,9 +207,9 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         return drawables.getClusterAnchors();
     }
 
-    /** @return the cached faction-name labels */
-    public List<Label> getFactionLabels() {
-        return drawables.getFactionLabels();
+    /** @return the cached owner-name labels */
+    public List<Label> getOwnerLabels() {
+        return drawables.getOwnerLabels();
     }
 
     /**
@@ -302,7 +302,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         // sector three times over.
         //
         // Paired with the visibility rules the cut is taken under, so the layer's source reads
-        // colonies under the very rule that decided which systems got cells.
+        // each system under the very rule that decided which systems got cells.
         //
         // Discarded with the rebuild. A kept one would draw the next rebuild off the sector this
         // one saw, which is the change a rebuild exists to show.
@@ -421,8 +421,8 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         return wasHoldingReused;
     }
 
-    // Nothing stale enough to rebuild. In the normal view, fold in any per-system holder changes a
-    // colony resize marked, re-shaping only those systems and their neighbours over the standing
+    // Nothing stale enough to rebuild. In the normal view, fold in any per-system holder changes the
+    // board marked, re-shaping only those systems and their neighbours over the standing
     // clusters; that batch opens a reading of its own, since none was opened for this frame.
     // The static debug overlay has no draw lists to patch, so its staleness is dropped instead -
     // it refreshes on the next full rebuild (any settings or geometry change). Under a filter the
@@ -472,7 +472,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
     }
 
     // The face this sector's labels are fitted in, off this cache's own machinery rather than the
-    // running sector's: the labels name this sector's factions. Settled once for the sector and asked
+    // running sector's: the labels name this sector's owners. Settled once for the sector and asked
     // again by each fit, which costs a lookup; the fit records it for the mint and the bake after it.
     private FontAtlas settleLabelFace() {
         return LabelFonts.settleMapLabelFace(SettledFaces.resolveFacesIn(machinery));
@@ -483,7 +483,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
     // the frontier resolution or the cell radius changed, since either reseeds them all. Feeds the
     // cache the currently-moving systems so they are left out of the partition (they seed no cell
     // and clip no neighbour), the rebuild's reading of the sector, whose visibility rules put a
-    // forced or undiscovered-colony system on the drawn set, and the layer's own rule for which of
+    // forced or undiscovered settled system on the drawn set, and the layer's own rule for which of
     // the systems that reading draws seed a cell at all.
     private void rebuildGeometry(
             StaleHalves staleHalves,

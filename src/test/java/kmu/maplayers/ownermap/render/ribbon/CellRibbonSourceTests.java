@@ -234,7 +234,7 @@ final class CellRibbonSourceTests {
         @Test
         void asksNoPlannerAboutASettledCellWhileTheBandsAreSwitchedOff() {
             // The half of the switch that is invisible either way: with the bands off, a rebuild
-            // must not still be counting every settled system's colonies for a readout nothing
+            // must not still be counting what every settled system holds for a readout nothing
             // will draw.
             switchBandsOff();
 
@@ -249,7 +249,7 @@ final class CellRibbonSourceTests {
 
         @Test
         void drawsNoBandForACellWhosePlanIsEmpty() {
-            // The single-holder cell: the bloc that painted it is the only one present, so there
+            // The single-holder cell: the owner that painted it is the only one present, so there
             // is nothing a band could report that the fill beneath it has not said already.
             assertThat(buildWith(system -> RibbonPlan.NONE)
                     .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope))
@@ -277,8 +277,8 @@ final class CellRibbonSourceTests {
         @Test
         void walksACellsRingOnceHoweverOftenItIsBaked() {
             // What the kept ring is for. A bake runs whenever a cluster name may have moved, which
-            // is every colony flip, while the ring a band runs along moves only when its cell is
-            // re-shaped - so the second bake of an untouched cell must walk nothing.
+            // is every flip the layer marks, while the ring a band runs along moves only when its
+            // cell is re-shaped - so the second bake of an untouched cell must walk nothing.
             var ringPathCache = new CellRingPathCache();
             var ribbonSource = buildCachingInto(system -> ANY_PLAN, ringPathCache);
 
@@ -395,7 +395,7 @@ final class CellRibbonSourceTests {
         void asksTheSourceForItsMechanicOnceHoweverManyCellsAreBaked() {
             // Sampled with the sizes and the laying rules, and for the same reason: a mechanic
             // whose inputs moved while a bake was running would otherwise leave one cell banded as a
-            // contest between two blocs and the cell beside it banded as their joint holding.
+            // contest between two owners and the cell beside it banded as their joint holding.
             var sourceFake = buildSourcePlanning(system -> ANY_PLAN);
             var ribbonSource = buildThrough(sourceFake, new CellRingPathCache());
 

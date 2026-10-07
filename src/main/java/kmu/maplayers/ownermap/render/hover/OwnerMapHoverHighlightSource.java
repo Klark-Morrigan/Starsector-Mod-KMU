@@ -23,7 +23,7 @@ import java.util.Map;
  * than by two lookups happening to land alike.
  *
  * <p>The border loops are the holder's rather than the hovered cluster's because the build bakes
- * them per bloc - which of them encloses this particular cell is a geometric question, and one
+ * them per owner - which of them encloses this particular cell is a geometric question, and one
  * the highlight pass answers for itself.
  *
  * <p>A value over one frame's clusters rather than a long-lived collaborator: the draw lists
@@ -45,7 +45,7 @@ public record OwnerMapHoverHighlightSource(
     @Override
     public List<float[]> resolveCandidateFrontierLoopsOf(SystemKey cellKey) {
 
-        // A factionless cell (decivilised, or uninhabited while its outline is drawn) fuses into
+        // An unowned cell (decivilised, or uninhabited while its outline is drawn) fuses into
         // no cluster group, so it has no frontier at all and offers no candidates - its cell still
         // washes, just without a halo.
         var holder = clusters.getOccupancy().readOwnerOf(cellKey);

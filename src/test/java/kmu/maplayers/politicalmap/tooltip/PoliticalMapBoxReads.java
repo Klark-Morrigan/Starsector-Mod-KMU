@@ -8,14 +8,14 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 
 import java.util.List;
 
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures.CONTESTED_WORDING;
 
 /**

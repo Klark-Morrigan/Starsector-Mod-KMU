@@ -6,7 +6,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
-import kmu.maplayers.ownermap.tooltip.FactionTooltipBanner;
+import kmu.maplayers.ownermap.owners.holders.factions.FactionTooltipBanner;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;

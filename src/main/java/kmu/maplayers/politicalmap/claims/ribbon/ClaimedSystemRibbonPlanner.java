@@ -6,8 +6,8 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
 import java.util.Optional;

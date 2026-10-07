@@ -106,22 +106,22 @@ public final class ContinentBridges {
     /**
      * The knobs a set of spans is laid under.
      *
-     * @param reachMultiple      how much water a span may cross and still be laid, in cell
-     *                           radii. On the exterior shore it is read as how far apart the
-     *                           two cells may sit, which across open void is the same claim
-     *                           made of the centres; on the interior it caps the span itself,
-     *                           since a lake's shores can face each other from far centres
-     * @param coastSlack         how far off an existing wall a span may run and still count as
-     *                           running along it, in map units
+     * @param reachMultiple        how much water a span may cross and still be laid, in cell
+     *                             radii. On the exterior shore it is read as how far apart the
+     *                             two cells may sit, which across open void is the same claim
+     *                             made of the centres; on the interior it caps the span itself,
+     *                             since a lake's shores can face each other from far centres
+     * @param coastSlack           how far off an existing wall a span may run and still count as
+     *                             running along it, in map units
      * @param shouldThinFormations whether spans sharing an anchor are thinned once the laying
-     *                           is settled. A rule rather than a display switch: what it
-     *                           changes is which spans exist, so a report and a drawing that
-     *                           disagreed about it would describe different maps
-     * @param anchorSeparation   how close two spans' feet may stand before one of them moves
-     *                           along its frontage, and how much room it reaches for when it
-     *                           does, in map units. One number for both, since a fan is exactly
-     *                           a foot whose nearest neighbour is inside it. Non-positive leaves
-     *                           every foot where the search put it
+     *                             is settled. A rule rather than a display switch: what it
+     *                             changes is which spans exist, so a report and a drawing that
+     *                             disagreed about it would describe different maps
+     * @param anchorSeparation     how close two spans' feet may stand before one of them moves
+     *                             along its frontage, and how much room it reaches for when it
+     *                             does, in map units. One number for both, since a fan is exactly
+     *                             a foot whose nearest neighbour is inside it. Non-positive leaves
+     *                             every foot where the search put it
      */
     public record BridgeRules(
         double reachMultiple,

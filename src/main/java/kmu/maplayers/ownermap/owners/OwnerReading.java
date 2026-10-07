@@ -3,7 +3,7 @@ package kmu.maplayers.ownermap.owners;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 
 import java.awt.Color;
 
@@ -14,11 +14,11 @@ import java.awt.Color;
  *
  * <p>The tier holds an owner key and nothing else about an owner. Without this seam it would have
  * to work those answers out for itself, which means reading them off whatever the key happens to
- * mean - and a key that names a faction on one layer names a relay's presence on another. So a
+ * mean - and a key that names a holder on one layer names a relay's presence on another. So a
  * layer resolves one reading per rebuild and the tier asks it, never learning what an owner is.
  *
  * <p>One reading per rebuild, not per question: an answer may depend on a live source (which
- * factions stand together, say), and every answer the rebuild paints from has to come off one
+ * owners stand together, say), and every answer the rebuild paints from has to come off one
  * sampling of it. A reading is therefore the layer's snapshot, and each method a lookup over it.
  *
  * <p>An owner ID reaching a method is one the layer's own owner source handed the tier, so a
@@ -45,7 +45,7 @@ public interface OwnerReading {
      * @return the owner's name, or null when none resolves, which the label fit treats as an
      *         unresolved name and sizes a stand-in band for instead
      */
-    String resolveName(String ownerId, FactionNameFormatChoice nameFormat);
+    String resolveName(String ownerId, OwnerNameFormatChoice nameFormat);
 
     /**
      * The crest an owner's picker row carries beside its name.

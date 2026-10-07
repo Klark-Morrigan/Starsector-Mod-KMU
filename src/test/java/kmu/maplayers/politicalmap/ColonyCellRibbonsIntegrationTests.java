@@ -6,8 +6,8 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
@@ -21,19 +21,19 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWith;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_DARK;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildInputsFor;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.buildInputsFor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -48,7 +48,7 @@ public final class ShownMapSurface {
     /**
      * The rule the live read applies, over readings taken elsewhere.
      *
-     * @param shownMapTab      the game's own map widget, or null when no screen is showing one
+     * @param shownMapTab       the game's own map widget, or null when no screen is showing one
      * @param singleEmbeddedMap the one map surface another mod has on screen, or null when there is
      *                          not exactly one of them
      * @return the widget the shown surface hangs on, or null when neither reading names one

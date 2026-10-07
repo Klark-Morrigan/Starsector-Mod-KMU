@@ -90,7 +90,7 @@
     "owner_map_ctl_name_full": "全称",
     "owner_map_ctl_name_short": "简称",
     "owner_map_ctl_name_none": "无",
-    "owner_map_ctl_faction_names": "势力名称",
+    "political_map_ctl_faction_names": "势力名称",
     "political_map_ctl_factions": "势力",
     "political_map_ctl_alliances": "联盟",
     "political_map_ctl_claims": "宣称",

@@ -40,7 +40,7 @@ final class MapPalettesTests {
         void returnsThePrimaryShadeForAPrimaryChoice() {
 
             assertThat(MapPalettes.pickPaletteColour(
-                    FactionPaletteSlot.PRIMARY,
+                    OwnerPaletteSlot.PRIMARY,
                     PALETTE))
                 .isEqualTo(PRIMARY);
         }
@@ -49,7 +49,7 @@ final class MapPalettesTests {
         void returnsTheSecondaryShadeForASecondaryChoice() {
 
             assertThat(MapPalettes.pickPaletteColour(
-                    FactionPaletteSlot.SECONDARY,
+                    OwnerPaletteSlot.SECONDARY,
                     PALETTE))
                 .isEqualTo(SECONDARY);
         }
@@ -103,13 +103,13 @@ final class MapPalettesTests {
         void returnsTheHoldersShadeForTheChoice() {
 
             assertThat(MapPalettes.pickHolderPaletteColour(
-                    FactionPaletteSlot.PRIMARY,
+                    OwnerPaletteSlot.PRIMARY,
                     OWNER,
                     NEUTRAL))
                 .isEqualTo(PRIMARY);
 
             assertThat(MapPalettes.pickHolderPaletteColour(
-                    FactionPaletteSlot.SECONDARY,
+                    OwnerPaletteSlot.SECONDARY,
                     OWNER,
                     NEUTRAL))
                 .isEqualTo(SECONDARY);
@@ -117,16 +117,16 @@ final class MapPalettesTests {
 
         @Test
         void fallsBackToTheNeutralShadeForAnUnownedCell() {
-            // A factionless system has no palette, so both shades resolve neutral - the same
+            // An unowned system has no palette, so both shades resolve neutral - the same
             // substitution its own cell outline draws under.
             assertThat(MapPalettes.pickHolderPaletteColour(
-                    FactionPaletteSlot.PRIMARY,
+                    OwnerPaletteSlot.PRIMARY,
                     null,
                     NEUTRAL))
                 .isEqualTo(NEUTRAL);
 
             assertThat(MapPalettes.pickHolderPaletteColour(
-                    FactionPaletteSlot.SECONDARY,
+                    OwnerPaletteSlot.SECONDARY,
                     null,
                     NEUTRAL))
                 .isEqualTo(NEUTRAL);
@@ -160,7 +160,7 @@ final class MapPalettesTests {
         private static final SystemOwner OWNER =
             new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
 
-        // The one pair a factionless cell holds: neutral in both slots, since it names no faction.
+        // The one pair an unowned cell holds: neutral in both slots, since it names no owner.
         private static final OwnerPalette NEUTRAL_PAIR =
             new OwnerPalette(Color.GRAY, Color.GRAY);
 

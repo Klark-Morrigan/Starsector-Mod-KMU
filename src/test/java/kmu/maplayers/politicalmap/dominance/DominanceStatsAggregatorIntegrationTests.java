@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.settings.KmuMapVisibilitySettings;
@@ -19,23 +19,23 @@ import java.util.Map;
 import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
 import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.buildRulesUnder;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.NEUTRAL_BASE;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildAbandonedStationMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildConditionOnlyMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildEconomylessSectorWithSystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWith;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWithSystems;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.findSystemIn;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.listSystemMarkets;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.markSystemAsVisitedByPlayer;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.buildRulesUnder;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.NEUTRAL_BASE;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildAbandonedStationMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildConditionOnlyMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildEconomylessSectorWithSystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWithSystems;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.findSystemIn;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.markSystemAsVisitedByPlayer;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
 import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildPassOver;
 import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildStabilityWeightedRules;
 
@@ -93,7 +93,7 @@ class DominanceStatsAggregatorIntegrationTests {
 
             // At full stability each size point is worth DOMINANCE_WEIGHT_SCALE (1000), so score sums
             // to (5 + 3) * 1000 and market size to the raw 5 + 3.
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(entry("hegemony", new DominanceStats(2, 2, 8000, 8)));
         }
 
@@ -108,7 +108,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 buildVisibleMarket(hegemony, 5),
                 buildVisibleMarket(tritachyon, 3));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(1, 1, 5000, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 3000, 3)));
@@ -127,7 +127,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 buildVisibleMarket(neutral, 6),
                 buildVisibleMarket(hegemony, 3));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .contains(
                     entry(Factions.NEUTRAL, new DominanceStats(0, 1, 6000, 6)),
                     entry("hegemony", new DominanceStats(1, 1, 3000, 3)));
@@ -152,7 +152,7 @@ class DominanceStatsAggregatorIntegrationTests {
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(
                     DominancePass.createOver(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping))
-                .statsByBlocId())
+                .statsByOwnerId())
                 .containsExactly(entry("alliance-1", new DominanceStats(2, 2, 5000, 5)));
         }
 
@@ -220,7 +220,7 @@ class DominanceStatsAggregatorIntegrationTests {
 
             var read = DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector));
 
-            assertThat(read.statsByBlocId())
+            assertThat(read.statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(1, 3, 10000, 10)),
                     entry("tritachyon", new DominanceStats(2, 2, 8000, 8)));
@@ -243,7 +243,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 List.of(hegemony),
                 listSystemMarkets("weightless-system", buildVisibleMarket(hegemony, 0)));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(entry("hegemony", new DominanceStats(1, 1, 0, 0)));
         }
 
@@ -256,7 +256,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 List.of(hegemony),
                 listSystemMarkets("bare-system", buildConditionOnlyMarket(hegemony, 6)));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .isEmpty();
         }
 
@@ -275,7 +275,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 findSystemIn(sector, "unregistered-system"),
                 buildVisibleMarket(hegemony, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(entry("hegemony", new DominanceStats(0, 1, 0, 4)));
         }
 
@@ -293,7 +293,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 findSystemIn(sector, "shared-system"),
                 buildVisibleMarket(tritachyon, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(1, 1, 5000, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 0, 4)));
@@ -316,7 +316,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 buildVisibleMarket(hegemony, 5),
                 buildVisibleMarket(tritachyon, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(0, 1, 0, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 0, 4)));
@@ -339,7 +339,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 listedColony,
                 buildVisibleMarket(hegemony, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(entry("hegemony", new DominanceStats(1, 1, 5000, 9)));
         }
 
@@ -356,7 +356,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 findSystemIn(sector, "derelict-system"),
                 buildAbandonedStationMarket(4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .isEmpty();
         }
 
@@ -436,6 +436,6 @@ class DominanceStatsAggregatorIntegrationTests {
             STABILITY_WEIGHTED);
 
         return List.copyOf(
-            DominanceStatsAggregator.aggregateDominanceStats(pass).statsByBlocId().keySet());
+            DominanceStatsAggregator.aggregateDominanceStats(pass).statsByOwnerId().keySet());
     }
 }

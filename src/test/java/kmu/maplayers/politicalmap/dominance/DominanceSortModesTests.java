@@ -4,16 +4,16 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
-import kmu.maplayers.ownermap.picker.RankedBloc;
+import kmu.maplayers.ownermap.picker.RankedOwner;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static kmu.maplayers.ownermap.picker.BlocSortFixtures.ROW_COLOUR;
-import static kmu.maplayers.ownermap.picker.BlocSortFixtures.buildBloc;
-import static kmu.maplayers.ownermap.picker.BlocSortFixtures.listIdsInModeOrder;
+import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.ROW_COLOUR;
+import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.buildOwner;
+import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.listIdsInModeOrder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,7 +43,7 @@ final class DominanceSortModesTests {
             // Copied to the seam's own element type first: the bundle declares its modes as
             // "? extends ListSortMode", so a capture reaches the assertion and no constant can be named
             // against it directly.
-            var modes = List.<ListSortMode<RankedBloc<DominanceStats>>>copyOf(
+            var modes = List.<ListSortMode<RankedOwner<DominanceStats>>>copyOf(
                 DominanceSortModes.MODES.modes());
 
             assertThat(modes)
@@ -92,7 +92,7 @@ final class DominanceSortModesTests {
         @Test
         void isTheModesMetricAsOneRowColouredRunForANumericMode() {
 
-            var bloc = buildBloc(
+            var bloc = buildOwner(
                 "hegemony",
                 "Hegemony",
                 new DominanceStats(5, 8, 40, 12));
@@ -115,7 +115,7 @@ final class DominanceSortModesTests {
             // The name mode ranks on the label, so there is no number to show and the row's value
             // column stays unfilled.
             assertThat(DominanceSortModes.NAME.resolveTrailingRuns(
-                    buildBloc(
+                    buildOwner(
                         "hegemony",
                         "Hegemony",
                         new DominanceStats(5, 8, 40, 12)),
@@ -152,11 +152,11 @@ final class DominanceSortModesTests {
         @Test
         void ranksANumericModeByItsOwnMetric() {
 
-            var low = buildBloc(
+            var low = buildOwner(
                 "low",
                 "Low",
                 new DominanceStats(1, 0, 0, 0));
-            var high = buildBloc(
+            var high = buildOwner(
                 "high",
                 "High",
                 new DominanceStats(9, 0, 0, 0));
@@ -173,20 +173,20 @@ final class DominanceSortModesTests {
             // differs on, so which bloc leads names the number the chain reaches next.
             assertThat(listIdsInModeOrder(
                     DominanceSortModes.DOMINATION,
-                    buildBloc("lower", "A", new DominanceStats(5, 2, 0, 0)),
-                    buildBloc("higher", "B", new DominanceStats(5, 7, 0, 0))))
+                    buildOwner("lower", "A", new DominanceStats(5, 2, 0, 0)),
+                    buildOwner("higher", "B", new DominanceStats(5, 7, 0, 0))))
                 .containsExactly("higher", "lower");
 
             assertThat(listIdsInModeOrder(
                     DominanceSortModes.DOMINATION,
-                    buildBloc("lower", "A", new DominanceStats(5, 5, 10, 0)),
-                    buildBloc("higher", "B", new DominanceStats(5, 5, 40, 0))))
+                    buildOwner("lower", "A", new DominanceStats(5, 5, 10, 0)),
+                    buildOwner("higher", "B", new DominanceStats(5, 5, 40, 0))))
                 .containsExactly("higher", "lower");
 
             assertThat(listIdsInModeOrder(
                     DominanceSortModes.DOMINATION,
-                    buildBloc("lower", "A", new DominanceStats(5, 5, 10, 3)),
-                    buildBloc("higher", "B", new DominanceStats(5, 5, 10, 9))))
+                    buildOwner("lower", "A", new DominanceStats(5, 5, 10, 3)),
+                    buildOwner("higher", "B", new DominanceStats(5, 5, 10, 9))))
                 .containsExactly("higher", "lower");
         }
     }

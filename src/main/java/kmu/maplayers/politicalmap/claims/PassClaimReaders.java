@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.claims;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 
 /**
  * Opens a claim reader over one holder pass - its walk of each system, under its colony rule.

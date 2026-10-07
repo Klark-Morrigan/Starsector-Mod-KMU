@@ -244,9 +244,12 @@ final class CellRibbonBuilderTests {
                 NO_NAMES,
                 bakeScopeMock);
 
-            verify(bakeScopeMock).markPhase(RibbonBakePhases.CARVE_PHASE);
-            verify(bakeScopeMock).markPhase(RibbonBakePhases.STROKE_PHASE);
-            verify(bakeScopeMock, never()).markPhase(RibbonBakePhases.TRACE_PHASE);
+            verify(bakeScopeMock)
+                .markPhase(RibbonBakePhases.CARVE_PHASE);
+            verify(bakeScopeMock)
+                .markPhase(RibbonBakePhases.STROKE_PHASE);
+            verify(bakeScopeMock, never())
+                .markPhase(RibbonBakePhases.TRACE_PHASE);
         }
 
         @Test
@@ -264,8 +267,10 @@ final class CellRibbonBuilderTests {
                 NAME_ACROSS_THE_WHOLE_CELL,
                 bakeScopeMock);
 
-            verify(bakeScopeMock).markPhase(RibbonBakePhases.CARVE_PHASE);
-            verify(bakeScopeMock, never()).markPhase(RibbonBakePhases.STROKE_PHASE);
+            verify(bakeScopeMock)
+                .markPhase(RibbonBakePhases.CARVE_PHASE);
+            verify(bakeScopeMock, never())
+                .markPhase(RibbonBakePhases.STROKE_PHASE);
         }
 
         @Test
@@ -285,14 +290,18 @@ final class CellRibbonBuilderTests {
             assertThat(ribbon.bands())
                 .singleElement()
                 .satisfies(band -> {
-                    assertThat(band.colour()).isEqualTo(BRIGHT);
-                    assertThat(band.triangles()).containsExactly(
-                        2000.0f, 3800.0f,
-                        2000.0f, 3400.0f,
-                        2400.0f, 3400.0f,
-                        2000.0f, 3800.0f,
-                        2400.0f, 3400.0f,
-                        2400.0f, 3800.0f);
+
+                    assertThat(band.colour())
+                        .isEqualTo(BRIGHT);
+
+                    assertThat(band.triangles())
+                        .containsExactly(
+                            2000.0f, 3800.0f,
+                            2000.0f, 3400.0f,
+                            2400.0f, 3400.0f,
+                            2000.0f, 3800.0f,
+                            2400.0f, 3400.0f,
+                            2400.0f, 3800.0f);
                 });
         }
 
@@ -320,8 +329,9 @@ final class CellRibbonBuilderTests {
         void compressesACrowdedBandRatherThanCuttingItShort() {
             // A market-dense system plans more band than its cell has outline. Every run still
             // draws - the whole point of compressing what a width is worth rather than truncating
-            // is that no bloc drops off the readout - so a crowded cell reads as crowded.
+            // is that no owner drops off the readout - so a crowded cell reads as crowded.
             var crowdedRuns = new ArrayList<RibbonSegment>();
+
             for (var run = 0; run < CROWDED_RUN_COUNT; run++) {
                 crowdedRuns.add(new RibbonSegment(BRIGHT, CROWDED_RUN_LENGTH));
             }
@@ -762,6 +772,7 @@ final class CellRibbonBuilderTests {
         for (var vertex = 0; vertex + 1 < band.triangles().length; vertex += 2) {
             rightmost = Math.max(rightmost, band.triangles()[vertex]);
         }
+
         return rightmost;
     }
 

@@ -30,8 +30,9 @@ public final class OwnerMapBodyPreferencesFixtures {
      * @return one layer's body preferences, stored under the test keys above
      */
     public static OwnerMapBodyPreferences createUnderTestKeys() {
+
         return new OwnerMapBodyPreferences(
-            new NameFormatPreference(NAME_FORMAT_KEY),
+            new NameFormatPreference(NAME_FORMAT_KEY, "test_ctl_names"),
             new UninhabitedOutlinePreference(UNINHABITED_OUTLINE_KEY),
             new RecedePreferences(FILTER_RECEDE_MUTE_KEY, FILTER_RECEDE_DESATURATE_KEY));
     }

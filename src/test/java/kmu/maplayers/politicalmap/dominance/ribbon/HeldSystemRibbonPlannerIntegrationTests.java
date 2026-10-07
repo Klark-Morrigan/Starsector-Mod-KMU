@@ -4,9 +4,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
@@ -18,14 +18,14 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.NEUTRAL;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildInputsFor;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.NEUTRAL;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.buildInputsFor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

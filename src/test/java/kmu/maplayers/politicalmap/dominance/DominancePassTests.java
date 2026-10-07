@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.dominance;
 
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -11,14 +11,14 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.NEUTRAL_BASE;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWith;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.NEUTRAL_BASE;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildPassOver;
 import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildStabilityWeightedRules;
 

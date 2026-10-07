@@ -14,7 +14,7 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.ownermap.ContentInputsTests;
 import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.UninhabitedOutlinePreference;
 import kmu.maplayers.ownermap.render.OwnerMapCache;
@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.awt.Color;
 import java.util.List;
 
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

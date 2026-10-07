@@ -24,12 +24,12 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.render.SequencedMapLayerRenderer;
 import kmu.maplayers.base.sidebar.ListPickerBinder;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.picker.BlocPickerRead;
-import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.picker.SelectableBloc;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.picker.OwnerPickerRead;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.RankedOwner;
+import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.sidebar.OwnerMapBodyControls;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.dominance.DominanceSortModes;
@@ -151,11 +151,11 @@ final class PoliticalMapLayerTests {
 
                 preferences.nameFormat().selectNameFormat(
                     BODY_SCREEN,
-                    FactionNameFormatChoice.SHORT,
+                    OwnerNameFormatChoice.SHORT,
                     new MapLayerRefreshBoard());
 
                 assertThat(sectorMemoryFake.readStoredValue(NAME_FORMAT_KEY))
-                    .isEqualTo(FactionNameFormatChoice.SHORT.persistenceKey());
+                    .isEqualTo(OwnerNameFormatChoice.SHORT.persistenceKey());
             }
         }
 
@@ -483,7 +483,7 @@ final class PoliticalMapLayerTests {
                 // The walk ran against the installed sector, which it can only have done through
                 // that sector's own memo - the machinery of no sector reads no economy at all.
                 verify(viewWithoutControlsMock)
-                    .resolveBlocPickerRead(sector));
+                    .resolveOwnerPickerRead(sector));
         }
 
         @Test
@@ -722,15 +722,15 @@ final class PoliticalMapLayerTests {
         // Stubbed through doReturn because the seam answers a wildcarded read, whose captured item
         // type a when() stub would have to name. The presence beside the rows stands in: what these
         // assertions are about is where the picker sits in the body, which lights nothing.
-        doReturn(new BlocPickerRead<>(
+        doReturn(new OwnerPickerRead<>(
                 new ListPicker<>(
-                    List.of(new RankedBloc<>(
-                        new SelectableBloc("hegemony", "Hegemony", null),
+                    List.of(new RankedOwner<>(
+                        new SelectableOwner("hegemony", "Hegemony", null),
                         DominanceStats.EMPTY)),
                     DominanceSortModes.MODES),
-                BlocPresenceIndex.EMPTY))
+                OwnerPresenceIndex.EMPTY))
             .when(view)
-            .resolveBlocPickerRead(any());
+            .resolveOwnerPickerRead(any());
 
         standLayerOver(view);
     }
@@ -826,9 +826,9 @@ final class PoliticalMapLayerTests {
         when(view.getContentRevision(any()))
             .thenReturn(0);
 
-        doReturn(BlocPickerRead.empty())
+        doReturn(OwnerPickerRead.empty())
             .when(view)
-            .resolveBlocPickerRead(any());
+            .resolveOwnerPickerRead(any());
 
         standLayerOver(view);
     }

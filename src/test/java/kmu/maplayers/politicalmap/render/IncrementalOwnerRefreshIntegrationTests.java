@@ -31,9 +31,10 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.factions.OwnerMapCategory;
 import kmu.maplayers.ownermap.render.IncrementalOwnerRefresh;
 import kmu.maplayers.ownermap.render.IncrementalOwnerRefreshTests;
 import kmu.maplayers.ownermap.render.StandingOwnerMap;
@@ -44,8 +45,7 @@ import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbon;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.ownermap.render.ribbon.RibbonSettingsFixtures;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
-import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
+import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
@@ -255,6 +255,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
 
         @AfterEach
         void closeSeams() {
+
             seams.closeEverySeam();
         }
 
@@ -460,6 +461,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
         // A walk of the sector as it stands, under the player's live visibility rules - what the
         // plugin's cache opens a rebuild or a batch over.
         private SectorWalk openWalkOverTheSector() {
+
             return new SectorWalk(
                 new SectorPassIndex(sectorMock),
                 MapVisibilityRules.readFromLunaSettings());
@@ -491,7 +493,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 OwnerMapBuilder.resolveOwners(viewReading.source(), walk, contentInputs));
 
             var standingAnchors = new StandingClusterAnchors();
-            var factionLabels = new ArrayList<Label>();
+            var ownerLabels = new ArrayList<Label>();
             var cellGeometry = new RevisedCellGeometry(cellsMock, GEOMETRY_REVISION);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
@@ -508,20 +510,21 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 .bakeAllCellRibbons();
 
             LabelsBuilder.rebuildLabels(
-                factionLabels,
+                ownerLabels,
                 standingAnchors,
                 contentInputs.nameFormat().areNamesDrawn());
 
             return new StandingOwnerMap(
                 territories,
                 standingAnchors,
-                factionLabels,
+                ownerLabels,
                 cellGeometry);
         }
 
         // Re-stubs one system's economy listing, which is how a case moves a colony: everything
         // the two legs disagree about is downstream of what the economy answers for a system.
         private void placeColoniesIn(String systemId, MarketAPI... marketMocks) {
+
             when(economyMock.getMarkets(systemMocksById.get(systemId)))
                 .thenReturn(List.of(marketMocks));
         }
@@ -567,6 +570,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
         var systemMocksById = new LinkedHashMap<String, StarSystemAPI>();
 
         for (var systemId : DRAWN_SYSTEM_IDS) {
+
             var systemMock = mock(StarSystemAPI.class);
 
             when(systemMock.getId())
@@ -574,6 +578,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
 
             systemMocksById.put(systemId, systemMock);
         }
+
         return systemMocksById;
     }
 
@@ -596,12 +601,14 @@ final class IncrementalOwnerRefreshIntegrationTests {
             when(sectorMock.getFaction(factionMock.getId()))
                 .thenReturn(factionMock);
         }
+
         return sectorMock;
     }
 
     // A visible colony of the given size. What the suite varies is which system holds one and
     // whose it is, never what sort of market it is.
     private static MarketAPI buildColony(FactionAPI factionMock, int size) {
+
         return SectorOwnershipFixtures.buildVisibleMarket(factionMock, size);
     }
 
@@ -618,12 +625,13 @@ final class IncrementalOwnerRefreshIntegrationTests {
             var opacity = CATEGORY_OPACITY_STEP * (index + 1);
 
             categoryStyles.put(categories[index], new CategoryStyle(
-                new ElementStyle(FactionPaletteSlot.PRIMARY, opacity),
-                new ElementStyle(FactionPaletteSlot.PRIMARY, opacity),
+                new ElementStyle(OwnerPaletteSlot.PRIMARY, opacity),
+                new ElementStyle(OwnerPaletteSlot.PRIMARY, opacity),
                 BORDER_WIDTH,
-                new ElementStyle(FactionPaletteSlot.SECONDARY, opacity),
+                new ElementStyle(OwnerPaletteSlot.SECONDARY, opacity),
                 SEAM_WIDTH));
         }
+
         return new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categoryStyles);
     }
 
@@ -654,6 +662,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
                 buildCellKey(systemId),
                 new double[] {leftEdgeX + CELL_SIDE / 2, CELL_SIDE / 2});
         }
+
         var geometryCacheMock = mock(CellGeometryCache.class);
 
         when(geometryCacheMock.getCellEdgesByCellKey())

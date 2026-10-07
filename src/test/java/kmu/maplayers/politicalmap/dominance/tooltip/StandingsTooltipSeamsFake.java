@@ -9,9 +9,9 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderGroupingSource;
-import kmu.maplayers.ownermap.tooltip.SystemStatusRow;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
+import kmu.maplayers.ownermap.owners.holders.factions.SystemStatusRow;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;

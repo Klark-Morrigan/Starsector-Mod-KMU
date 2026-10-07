@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 
 import java.util.ArrayList;
 import java.util.List;

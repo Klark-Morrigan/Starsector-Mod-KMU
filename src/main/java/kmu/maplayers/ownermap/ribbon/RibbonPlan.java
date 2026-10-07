@@ -1,6 +1,6 @@
 package kmu.maplayers.ownermap.ribbon;
 
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 
 import java.util.ArrayList;
@@ -9,16 +9,16 @@ import java.util.Optional;
 
 /**
  * The banded stroke one cell draws inside its own ring, as the ordered runs it is made of:
- * every bloc present in the cell in the order it was ranked, each contributing a segment per
+ * every owner present in the cell in the order it was ranked, each contributing a segment per
  * market it holds and an interjection between two of its own.
  *
- * <p>What the band says is how a system splits - how many colonies, whose, and in what
+ * <p>What the band says is how a system splits - how many markets, whose, and in what
  * proportion - with no glyph and no label. One shade carries every parting in it. Markets of
- * one bloc are parted by an interjection in that bloc's dark shade, so a long run reads as
- * several holdings rather than as one large one; and where another bloc's run follows, that
+ * one owner are parted by an interjection in that owner's dark shade, so a long run reads as
+ * several holdings rather than as one large one; and where another owner's run follows, that
  * same dark shade closes the outgoing run, so a handover is punctuated as well as recoloured.
- * The divider belongs to the bloc going out rather than to the one coming in, which is what
- * makes it read as that bloc's holdings ending rather than as an unowned gap between two
+ * The divider belongs to the owner going out rather than to the one coming in, which is what
+ * makes it read as that owner's holdings ending rather than as an unowned gap between two
  * rivals. The band's last run is left open, a divider having nothing to part it from.
  *
  * <p>A cell draws a ribbon when anything is present in it at all. What contest adds is the length
@@ -26,19 +26,19 @@ import java.util.Optional;
  * one takes whatever {@link UncontestedRibbonRuns} answers. Contest is one question - does the
  * band say something its own fill does not - asked of the two kinds of fill a cell can have.
  *
- * <p>With a painter, that is any other bloc holding something and not standing with the painter.
- * A cell painted for a bloc that holds nothing in the system still draws the one bloc present,
+ * <p>With a painter, that is any other owner holding something and not standing with the painter.
+ * A cell painted for an owner that holds nothing in the system still draws the one owner present,
  * alone, because the fill names the painter and the band names somebody else. With no painter - a
- * cell no bloc's fill covers - there is nobody to be a rival of, so
+ * cell no owner's fill covers - there is nobody to be a rival of, so
  * the reading falls to how many sides are in it: one side alone is a footprint nothing contradicts,
  * and two are a contest.
  *
- * <p>Sides rather than blocs, because two allies jointly holding a system are not fighting over it,
+ * <p>Sides rather than owners, because two allies jointly holding a system are not fighting over it,
  * and a band laid at contested length there would say they were. Who stands with whom is the
- * {@link BlocAffiliation} the caller hands over and never the fold the presences were counted
+ * {@link OwnerAffiliation} the caller hands over and never the fold the presences were counted
  * under: allies keep their own runs in their own colours, and all that changes is the length those
- * runs are laid at. Where nothing groups factions the affiliation stands nobody together, and every
- * cell is judged bloc by bloc.
+ * runs are laid at. Where nothing groups owners the affiliation stands nobody together, and every
+ * cell is judged owner by owner.
  *
  * <p>Contest decides the lengths and never whether there is a band, which is what keeps the one
  * band a map must not be able to lose - the one saying a system is contested - out of reach of
@@ -46,13 +46,13 @@ import java.util.Optional;
  * a lone holder bands because the fill says whose the system is and not how much is in it. A cell
  * nothing is present in draws under neither reading: there is no footprint to report.
  *
- * <p>The painting bloc draws in the ribbon like any other present bloc. Its own segments are
+ * <p>The painting owner draws in the ribbon like any other present owner. Its own segments are
  * what give the rivals beside them a scale: a lone rival segment against a long run of the
  * holder means something quite different from the same segment against a short one.
  *
  * <p>Pure data over a ranking and a count each, with no geometry and no colour lookup of its
  * own, so the rule depends on nothing live. Ranking order is the caller's: the runs come out
- * in the order the blocs were handed over, so the ribbon cannot disagree with the fill about
+ * in the order the owners were handed over, so the ribbon cannot disagree with the fill about
  * who leads a system it re-ranked for itself.
  *
  * @param segments the ribbon's runs in draw order, starting from the cell's top centre;
@@ -69,45 +69,45 @@ public record RibbonPlan(
     }
 
     /**
-     * Plans one cell's ribbon from the blocs present in it, in the order they were ranked.
+     * Plans one cell's ribbon from the owners present in it, in the order they were ranked.
      *
-     * @param paintingBlocId  the bloc the cell's fill was painted for, whose presence alone is a
-     *                        footprint rather than a contest; empty where no bloc's fill covers
-     *                        the cell, which is a case of its own rather than a painter every bloc
+     * @param paintingOwnerId the owner the cell's fill was painted for, whose presence alone is a
+     *                        footprint rather than a contest; empty where no owner's fill covers
+     *                        the cell, which is a case of its own rather than a painter every owner
      *                        happens to differ from
-     * @param rankedPresences the blocs present in the cell, already ranked as the fill was
+     * @param rankedPresences the owners present in the cell, already ranked as the fill was
      *                        decided, since the runs come out in exactly this order
-     * @param affiliation     who among those blocs stands together, which is what keeps two allies
+     * @param affiliation     who among those owners stands together, which is what keeps two allies
      *                        in one system from banding as though they fought over it;
-     *                        {@link BlocAffiliation#NONE} where nothing groups factions
+     *                        {@link OwnerAffiliation#NONE} where nothing groups owners
      * @param rules           how a band is laid: the run lengths, and how far they reach on a cell
      *                        nobody contests
      * @return the cell's runs in draw order, or {@link #NONE} where the cell draws no band
      */
     public static RibbonPlan planCellRibbon(
-            Optional<String> paintingBlocId,
-            List<BlocPresence> rankedPresences,
-            BlocAffiliation affiliation,
+            Optional<String> paintingOwnerId,
+            List<OwnerPresence> rankedPresences,
+            OwnerAffiliation affiliation,
             RibbonPlanRules rules) {
 
-        var firstPresentBlocId = findFirstPresentBlocId(rankedPresences);
+        var firstPresentOwnerId = findFirstPresentOwnerId(rankedPresences);
 
-        // Who the cell is judged against: the bloc its fill names, or - where no fill covers it -
-        // whichever bloc is there first, since with nobody painted the question is not who the
-        // rivals are but whether the blocs present fall into more than one side at all.
-        var judgedAgainstBlocId = paintingBlocId.or(() -> firstPresentBlocId);
+        // Who the cell is judged against: the owner its fill names, or - where no fill covers it -
+        // whichever owner is there first, since with nobody painted the question is not who the
+        // rivals are but whether the owners present fall into more than one side at all.
+        var judgedAgainstOwnerId = paintingOwnerId.or(() -> firstPresentOwnerId);
 
-        if (isCellContested(judgedAgainstBlocId, rankedPresences, affiliation)) {
-            return layBlocRuns(rankedPresences, rules.lengths());
+        if (isCellContested(judgedAgainstOwnerId, rankedPresences, affiliation)) {
+            return layOwnerRuns(rankedPresences, rules.lengths());
         }
 
         // Nothing the fill does not already say is here, so what is left to report is the size of
-        // the footprint - and there has to be one, which a cell painted for a bloc holding nothing
+        // the footprint - and there has to be one, which a cell painted for an owner holding nothing
         // in the system, with nobody else there either, has not.
-        if (firstPresentBlocId.isEmpty()) {
+        if (firstPresentOwnerId.isEmpty()) {
             return NONE;
         }
-        return layBlocRuns(rankedPresences, rules.resolveUncontestedLengths());
+        return layOwnerRuns(rankedPresences, rules.resolveUncontestedLengths());
     }
 
     /**
@@ -128,78 +128,78 @@ public record RibbonPlan(
         return lengthUnits;
     }
 
-    // Lays the whole band: every bloc's run in the order handed over, each closed off by its own
-    // dark shade wherever another bloc's run follows it.
+    // Lays the whole band: every owner's run in the order handed over, each closed off by its own
+    // dark shade wherever another owner's run follows it.
     //
     // Reached from both readings and given its lengths rather than choosing them, since all the
     // two differ on is how long the runs are - not what a band is made of. A second copy for the
     // uncontested cells would let their bands drift into a different shape from the contested ones,
     // which is the one comparison the readout rests on.
-    private static RibbonPlan layBlocRuns(
-            List<BlocPresence> rankedPresences,
+    private static RibbonPlan layOwnerRuns(
+            List<OwnerPresence> rankedPresences,
             RibbonSegmentLengths lengths) {
 
         var segments = new ArrayList<RibbonSegment>();
-        BlocPresence outgoingBloc = null;
+        OwnerPresence outgoingOwner = null;
 
         for (var presence : rankedPresences) {
-            // A bloc holding nothing counted lays no run, so it opens no handover either: a
-            // divider laid for it would part two blocs across a run that is not there, and
-            // the bloc actually going out would go unclosed.
+            // An owner holding nothing counted lays no run, so it opens no handover either: a
+            // divider laid for it would part two owners across a run that is not there, and
+            // the owner actually going out would go unclosed.
             if (!presence.hasMarkets()) {
                 continue;
             }
-            // The divider closing the run just laid is the outgoing bloc's own, not the
-            // incoming one's: it is that bloc's holdings ending, and drawn in the newcomer's
+            // The divider closing the run just laid is the outgoing owner's own, not the
+            // incoming one's: it is that owner's holdings ending, and drawn in the newcomer's
             // shade it would read as a gap belonging to whoever arrives next.
-            if (outgoingBloc != null) {
-                segments.add(createParting(outgoingBloc.palette(), lengths));
+            if (outgoingOwner != null) {
+                segments.add(createParting(outgoingOwner.palette(), lengths));
             }
-            appendBlocRun(segments, presence, lengths);
-            outgoingBloc = presence;
+            appendOwnerRun(segments, presence, lengths);
+            outgoingOwner = presence;
         }
         return new RibbonPlan(segments);
     }
 
     // Whether the band would say anything the cell's own fill does not, which is what decides the
     // lengths its runs are laid at: somebody holding something in the cell stands apart from the
-    // bloc it is judged against.
+    // owner it is judged against.
     //
-    // One reading serves both kinds of cell because an affiliation is a fold. Blocs that all stand
-    // with one bloc all stand with each other, so asking every bloc about the one it is judged
+    // One reading serves both kinds of cell because an affiliation is a fold. Owners that all stand
+    // with one owner all stand with each other, so asking every owner about the one it is judged
     // against settles whether there is a second side, and on a painted cell that same question is
-    // already the one worth asking: is anybody here a rival of the bloc named by the fill.
+    // already the one worth asking: is anybody here a rival of the owner named by the fill.
     //
-    // Empty only where the cell has neither a painter nor a bloc in it, which is nothing to report
-    // rather than a contest. A cell no fill covers is anchored on a bloc genuinely present rather
-    // than on an ID no bloc carries: that sentinel leaves every bloc a rival, so a lone haven no
+    // Empty only where the cell has neither a painter nor an owner in it, which is nothing to report
+    // rather than a contest. A cell no fill covers is anchored on an owner genuinely present rather
+    // than on an ID no owner carries: that sentinel leaves every owner a rival, so a lone haven no
     // fill covers would band at contested length as though it were fought over.
     private static boolean isCellContested(
-            Optional<String> judgedAgainstBlocId,
-            List<BlocPresence> rankedPresences,
-            BlocAffiliation affiliation) {
+            Optional<String> judgedAgainstOwnerId,
+            List<OwnerPresence> rankedPresences,
+            OwnerAffiliation affiliation) {
 
-        return judgedAgainstBlocId
-            .map(blocId -> hasRivalPresence(blocId, rankedPresences, affiliation))
+        return judgedAgainstOwnerId
+            .map(ownerId -> hasRivalPresence(ownerId, rankedPresences, affiliation))
             .orElse(false);
     }
 
-    // Whether any bloc holding something in the cell is neither the judged bloc itself nor standing
+    // Whether any owner holding something in the cell is neither the judged owner itself nor standing
     // with it. An ally is not a rival: the two of them hold the system between them, and a fill
     // naming one of them says nothing the other contradicts.
     //
-    // The judged bloc drops out on its own ID, which is what lets an anchor drawn from the cell's
+    // The judged owner drops out on its own ID, which is what lets an anchor drawn from the cell's
     // own presences ask about the rest without being counted as a side against itself.
     private static boolean hasRivalPresence(
-            String judgedAgainstBlocId,
-            List<BlocPresence> rankedPresences,
-            BlocAffiliation affiliation) {
+            String judgedAgainstOwnerId,
+            List<OwnerPresence> rankedPresences,
+            OwnerAffiliation affiliation) {
 
         for (var presence : rankedPresences) {
 
             if (presence.hasMarkets()
-                    && !presence.blocId().equals(judgedAgainstBlocId)
-                    && !affiliation.areBlocsAllied(judgedAgainstBlocId, presence.blocId())) {
+                    && !presence.ownerId().equals(judgedAgainstOwnerId)
+                    && !affiliation.areOwnersAllied(judgedAgainstOwnerId, presence.ownerId())) {
 
                 return true;
             }
@@ -207,31 +207,31 @@ public record RibbonPlan(
         return false;
     }
 
-    // The first bloc of the ranking that holds something in the cell, which answers two questions
-    // at once: whether there is any footprint to report at all, and which bloc a cell no fill
+    // The first owner of the ranking that holds something in the cell, which answers two questions
+    // at once: whether there is any footprint to report at all, and which owner a cell no fill
     // covers judges the rest against.
     //
-    // Read over the blocs that hold something rather than over the list, a bloc ranked and holding
+    // Read over the owners that hold something rather than over the list, an owner ranked and holding
     // nothing being one a mechanic listed rather than one the cell has in it - a mechanic that
-    // paints a system for a bloc holding nothing there produces one. Anchored on such a bloc, a
+    // paints a system for an owner holding nothing there produces one. Anchored on such an owner, a
     // cell would be judged against somebody who is not in it.
-    private static Optional<String> findFirstPresentBlocId(List<BlocPresence> rankedPresences) {
+    private static Optional<String> findFirstPresentOwnerId(List<OwnerPresence> rankedPresences) {
 
         for (var presence : rankedPresences) {
             if (presence.hasMarkets()) {
-                return Optional.of(presence.blocId());
+                return Optional.of(presence.ownerId());
             }
         }
         return Optional.empty();
     }
 
-    // Lays down one bloc's run: a bright segment per market, parted by a dark interjection.
+    // Lays down one owner's run: a bright segment per market, parted by a dark interjection.
     // The interjection goes before every market after the first, which is what keeps it
-    // strictly between two of one bloc's markets - so a run neither opens nor closes on one,
+    // strictly between two of one owner's markets - so a run neither opens nor closes on one,
     // and whether it is closed off at all is the caller's to decide from what follows it.
-    private static void appendBlocRun(
+    private static void appendOwnerRun(
             List<RibbonSegment> segments,
-            BlocPresence presence,
+            OwnerPresence presence,
             RibbonSegmentLengths lengths) {
 
         var palette = presence.palette();
@@ -248,10 +248,10 @@ public record RibbonPlan(
     }
 
     // The band's one kind of boundary, made once for both the places that need it: between two
-    // of a bloc's markets, and closing that bloc's whole run where another bloc's follows. Both
-    // are the same bloc's dark shade at the same length, and stating that twice would let one
+    // of an owner's markets, and closing that owner's whole run where another owner's follows. Both
+    // are the same owner's dark shade at the same length, and stating that twice would let one
     // boundary drift into saying more than the other - which would read as a statement about the
-    // blocs being parted rather than as the boundary it is.
+    // owners being parted rather than as the boundary it is.
     private static RibbonSegment createParting(
             OwnerPalette palette,
             RibbonSegmentLengths lengths) {

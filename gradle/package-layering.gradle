@@ -55,6 +55,19 @@ enforcePackageLayering {
                  of: ['kmu.maplayers.politicalmap',
                       'kmu.mods']
 
+    // Nothing in ownermap may import owners.holders - except owners.holders itself.
+    // The rest of ownermap paints any kind of owner, so it must not depend on one kind.
+    forbidImport under: 'kmu.maplayers.ownermap',
+                 except: 'kmu.maplayers.ownermap.owners.holders',
+                 of: 'kmu.maplayers.ownermap.owners.holders'
+
+    forbidImport under: 'kmu.maplayers.ownermap.owners.holders.base',
+                 of: ['kmu.maplayers.ownermap.owners.holders.alliances',
+                      'kmu.maplayers.ownermap.owners.holders.factions']
+
+    forbidImport under: 'kmu.maplayers.ownermap.owners.holders.factions',
+                 of: 'kmu.maplayers.ownermap.owners.holders.alliances'
+
     forbidImport under: 'kmu.maplayers.base.geometry.output',
                  of: 'kmu.maplayers.base.geometry.ui'
 

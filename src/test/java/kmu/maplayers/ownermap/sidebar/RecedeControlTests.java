@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 final class RecedeControlTests {
     // A sample caption the caller supplies, echoed into the first cell; a fixed value so the test
     // depends on no context's real caption.
-    private static final String CAPTION_LABEL = "Non-allied factions are";
+    private static final String CAPTION_LABEL = "Other owners are";
 
     // The board a control is built against, standing in for one sector's installed machinery. Held
     // by identity rather than read for revisions: the set is a mock, so nothing raises on it here and

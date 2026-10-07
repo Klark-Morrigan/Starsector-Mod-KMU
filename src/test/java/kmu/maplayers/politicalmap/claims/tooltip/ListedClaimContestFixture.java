@@ -3,8 +3,8 @@ package kmu.maplayers.politicalmap.claims.tooltip;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.BlocFriendliness;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
 
 /**
  * A contest nothing groups and nothing warms, which is the state every case about something other
@@ -31,7 +31,7 @@ public final class ListedClaimContestFixture {
      * Projects a contest under a colony rule, with every standing left to sort on eligibility
      * alone.
      *
-     * @param breakdown       the contest as the mechanic settled it
+     * @param breakdown        the contest as the mechanic settled it
      * @param colonyVisibility the colony rule the listing is projected under, which is what a case
      *                         about the fog states
      * @return the contest a box would have read, routed by nothing but eligibility

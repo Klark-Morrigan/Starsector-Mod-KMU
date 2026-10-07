@@ -106,7 +106,9 @@ final class OwnerMapRebuildDeciderTests {
         void owesARecutWhenTheGeometrySignalIsRaised() {
 
             decideAndRecordARebuild();
-            machinery.resolveRefreshBoard().requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
+            machinery
+                .resolveRefreshBoard()
+                .requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
 
             var staleHalves = decideAfterABuild();
 
@@ -117,7 +119,7 @@ final class OwnerMapRebuildDeciderTests {
         }
 
         @Test
-        void owesARebuildButNoRecutWhenTheSpotlitBlocMoves() {
+        void owesARebuildButNoRecutWhenTheSpotlitOwnerMoves() {
             // A pick is a different map but the same cells: the content revision folds the sampled
             // reading and moves, while nothing the cells are cut from has.
             var rebuilt = decideAndRecordARebuild();
@@ -187,7 +189,9 @@ final class OwnerMapRebuildDeciderTests {
         void isFalseWhenTheCellsAreRecut() {
             // A recut admits or drops systems, so the holding has to be read over the new set.
             decideAndRecordARebuild();
-            machinery.resolveRefreshBoard().requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
+            machinery
+                .resolveRefreshBoard()
+                .requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
 
             assertThat(decider.canReuseStandingHolding(decideAfterABuild(), true, Set.of()))
                 .isFalse();
@@ -227,20 +231,23 @@ final class OwnerMapRebuildDeciderTests {
         }
     }
 
-    // Picks a bloc on the sidebar, as the seam standing in for the per-save pick reports it.
-    private void spotlight(String blocId) {
+    // Picks an owner on the sidebar, as the seam standing in for the per-save pick reports it.
+    private void spotlight(String ownerId) {
+
         filterSelectionSeam
             .when(() -> FilterSelection.getSelectedIdOf(any()))
-            .thenReturn(blocId);
+            .thenReturn(ownerId);
     }
 
     // The first frame's decision, before anything has been built.
     private StaleHalves decideWithNothingBuilt() {
+
         return decider.decideWhatIsStale(VIEW, SCREEN, true);
     }
 
     // A later frame's decision, once something stands to compare against.
     private StaleHalves decideAfterABuild() {
+
         return decider.decideWhatIsStale(VIEW, SCREEN, false);
     }
 

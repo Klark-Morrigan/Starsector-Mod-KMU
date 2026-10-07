@@ -18,8 +18,8 @@ import java.util.List;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.buildEmptySector;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.buildEmptySector;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

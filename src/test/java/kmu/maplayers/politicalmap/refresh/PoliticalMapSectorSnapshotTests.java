@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.FULL_STABILITY;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.FULL_STABILITY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
  * Integration coverage for the single-walk snapshot: {@link PoliticalMapSectorSnapshot}
  * driving the real visibility rule ({@link kmu.maplayers.base.visibility.systems.MapVisibility}),
  * its fingerprint ({@link kmu.maplayers.base.visibility.systems.MapVisibilityFingerprint})
- * and dominance rule ({@link kmu.maplayers.ownermap.holding.SystemDominance}) over a
+ * and dominance rule ({@link kmu.maplayers.politicalmap.dominance.SystemDominance}) over a
  * stubbed economy. Exercised together because the point of the snapshot is the
  * separation of shapes: one sector walk yields a scalar visibility fingerprint that
  * moves when the on-map set changes and a per-system holder map that moves when a

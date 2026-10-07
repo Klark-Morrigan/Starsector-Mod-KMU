@@ -2,9 +2,9 @@ package kmu.maplayers.politicalmap.holders;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolve;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
 

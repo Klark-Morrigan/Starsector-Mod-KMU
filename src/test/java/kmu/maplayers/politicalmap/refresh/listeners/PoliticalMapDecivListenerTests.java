@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

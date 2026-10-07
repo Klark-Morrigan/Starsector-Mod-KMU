@@ -34,7 +34,7 @@ import java.util.Map;
  * <p>The collaborators split by responsibility so this one stays the thin, settings-fed seam:
  * {@link ClusterLabelStyling} resolves each label's colour and name (the reading off filter, filter
  * rules under one), {@link ClusterAnchorPlacement} runs the pure geometric search over the
- * plain functions of a bloc ID those resolvers hand it, and {@link LabelAnchorSpecification}
+ * plain functions of an owner ID those resolvers hand it, and {@link LabelAnchorSpecification}
  * carries the search's tuning. This is the whole of what the owner map contributes to a
  * label: everything from the resolved colour and name onward is layer-agnostic framework.
  *
@@ -83,7 +83,7 @@ public final class ClusterAnchorsBuilder {
     /**
      * Rebuilds the cluster-label placements in place, replacing the standing pair with this pass's.
      *
-     * <p>The placements feed the faction-name labels and the debug anchor overlay, so they are
+     * <p>The placements feed the owner-name labels and the debug anchor overlay, so they are
      * fitted whenever either is on - one search both share - and each consumer draws under its own
      * toggle. Shared by the full rebuild and the incremental refresh, and the toggles and the
      * search's tuning are read here rather than at the call sites, so every path gates identically
@@ -209,7 +209,7 @@ public final class ClusterAnchorsBuilder {
         var spec = fitFingerprint.specification();
 
         // The agnostic clustering and border trace group the drawn cells, resolving each to
-        // the system it draws as and that system to its bloc ID; the holder map is still
+        // the system it draws as and that system to its owner ID; the holder map is still
         // carried for the per-holder colour. Under a filter that key is a synthetic spotlight
         // key, so the solid and contested clusters trace as their own clusters exactly as
         // the fills do.
@@ -232,16 +232,16 @@ public final class ClusterAnchorsBuilder {
             cellGrouping);
 
         // The desaturation palette is handed in already resolved - off the production build's
-        // drawables, or by the debug path from the same profile seam - so a desaturated bloc's
+        // drawables, or by the debug path from the same profile seam - so a desaturated owner's
         // name matches its recoloured fill and border exactly without re-reading the profile here.
         // The style decision every label follows is the same one the fills read
-        // (OwnerStyleResolver.resolveBlocStyleDecision), cached per bloc since the colour
+        // (OwnerStyleResolver.resolveOwnerStyleDecision), cached per owner since the colour
         // resolver reads both halves of it - the independent-style test and the adjustment:
-        // under a filter it recedes every non-spotlit bloc and leaves the spotlit one full, so a
+        // under a filter it recedes every non-spotlit owner and leaves the spotlit one full, so a
         // receded name matches its receded fill and a spotlit name stays full, the drift a
         // filter opens.
         var contentInputs = styling.contentInputs();
-        var styleDecisionByBlocId = ClusterLabelStyling.newBlocStyleDecisionResolver(
+        var styleDecisionByOwnerId = ClusterLabelStyling.newOwnerStyleDecisionResolver(
             styling.reading(),
             styling.categories(),
             contentInputs);
@@ -254,8 +254,8 @@ public final class ClusterAnchorsBuilder {
             new ClusterLabelResolvers(
                 ClusterLabelStyling.newLabelColourResolver(
                     ownerBySystemKey,
-                    new BlocNameStyles(styling.categories().readNameStyles()),
-                    styleDecisionByBlocId,
+                    new OwnerNameStyles(styling.categories().readNameStyles()),
+                    styleDecisionByOwnerId,
                     styling.desaturationPalette()),
                 ClusterLabelStyling.newNameEstimatorResolver(
                     styling.reading(),

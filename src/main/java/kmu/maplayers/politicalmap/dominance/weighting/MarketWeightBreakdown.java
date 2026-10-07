@@ -31,7 +31,7 @@ import java.util.Optional;
  *                        how current the player's knowledge of it is, say - has to match this line
  *                        against something read elsewhere, and a display name is not an identity:
  *                        vanilla names a station colony and its defending station alike
- * @param marketNameplate  how the colony is identified to a reader - its name and the glyph the
+ * @param marketNameplate how the colony is identified to a reader - its name and the glyph the
  *                        sector map marks it with. Recorded on the walk that counted the colony
  *                        rather than looked up again by whatever draws the name, so the pair shown
  *                        can only ever belong to the colony whose weight is stated beside it

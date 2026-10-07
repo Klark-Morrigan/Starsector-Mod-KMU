@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * <p>Both are silent when wrong, and in the worst way. A pass answering with an immutable empty
  * collection - which the presence read does off filter, and the owner resolve does for a sector
- * with nothing in it - would leave the first colony founded that session throwing inside a frame
+ * with nothing in it - would leave the first system settled that session throwing inside a frame
  * rather than drawing. And a fold whose answer did not match what it wrote would leave a system
  * settled in the model and drawn as backdrop, which no later frame corrects: nothing marks a
  * system twice.
@@ -71,8 +71,8 @@ final class SystemOccupancyTests {
         void foldsIntoCollectionsTheCallerHandedOverImmutable() {
             // The case the type exists for: every one of the three reads a pass makes is free to
             // answer with an immutable collection, and the presence read does exactly that off
-            // filter. Copying here is what keeps that from becoming a throw at the first colony
-            // founded - a frame that dies rather than a map that updates.
+            // filter. Copying here is what keeps that from becoming a throw at the first system
+            // settled - a frame that dies rather than a map that updates.
             var occupancy = SystemOccupancy.createCopyOf(Map.of(), Set.of(), Set.of());
 
             occupancy.recordOwnerOf(HELD_SYSTEM, HEGEMONY);
@@ -254,9 +254,8 @@ final class SystemOccupancyTests {
 
         @Test
         void dropsTheEntryWhenNobodyHoldsItNow() {
-            // A decivilised or bombed-out system: the entry goes rather than being left pointing
-            // at the faction that lost it, since every reader takes an absent entry for "nobody
-            // owns this".
+            // An emptied system: the entry goes rather than being left pointing at the owner
+            // that lost it, since every reader takes an absent entry for "nobody owns this".
             var occupancy = SystemOccupancy.createCopyOf(
                 Map.of(HELD_SYSTEM, HEGEMONY),
                 Set.of(),
@@ -269,7 +268,7 @@ final class SystemOccupancyTests {
         }
 
         @Test
-        void holdsTwoSystemsSharingAnIdUnderDifferentBlocs() {
+        void holdsTwoSystemsSharingAnIdUnderDifferentOwners() {
             // The collision the ownership is keyed by SystemKey to survive: each of the pair keeps
             // its own owner, where a map keyed by ID held one entry and drew the second system in
             // the first's colours.
@@ -289,7 +288,7 @@ final class SystemOccupancyTests {
     class FoldInhabitationOf {
 
         @Test
-        void reportsASystemTakingItsFirstColony() {
+        void reportsASystemTakingItsFirstSettlement() {
 
             var occupancy = SystemOccupancy.createEmpty();
 
@@ -300,7 +299,7 @@ final class SystemOccupancyTests {
         }
 
         @Test
-        void reportsASystemLosingItsLastColony() {
+        void reportsASystemLosingItsLastSettlement() {
 
             var occupancy = SystemOccupancy.createCopyOf(
                 Map.of(),
@@ -315,8 +314,8 @@ final class SystemOccupancyTests {
 
         @Test
         void reportsNothingForASystemThatWasAlreadySettled() {
-            // The common resize: a colony grew. Reporting a change here would redraw a cell that
-            // draws exactly as it did, on every colony event in the sector.
+            // The common resize: a settlement grew. Reporting a change here would redraw a cell
+            // that draws exactly as it did, on every marked change in the sector.
             var occupancy = SystemOccupancy.createCopyOf(
                 Map.of(),
                 Set.of(SETTLED_SYSTEM),

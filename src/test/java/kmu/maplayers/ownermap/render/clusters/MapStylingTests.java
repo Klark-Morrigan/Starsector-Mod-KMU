@@ -1,7 +1,7 @@
 package kmu.maplayers.ownermap.render.clusters;
 
 import kmu.maplayers.ownermap.owners.OwnerPalette;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
+import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,11 +25,11 @@ final class MapStylingTests {
 
         @Test
         void answersTheShadeTheNeutralPairHolds() {
-            // A factionless cell names no faction, so its pair holds one shade twice and the
+            // An unowned cell names no owner, so its pair holds one shade twice and the
             // colour is whichever slot you look at.
             var styling = new MapStyling(
                 null,
-                HolderCategories.INSTANCE,
+                OwnerCategoriesFake.SHARED_FAKE,
                 new OwnerPalette(Color.CYAN, Color.CYAN),
                 new OwnerPalette(Color.MAGENTA, Color.ORANGE),
                 new OwnerPalette(Color.PINK, Color.WHITE));
@@ -44,7 +44,7 @@ final class MapStylingTests {
             // one would still compile and still answer a Color. Only distinct shades catch it.
             var styling = new MapStyling(
                 null,
-                HolderCategories.INSTANCE,
+                OwnerCategoriesFake.SHARED_FAKE,
                 new OwnerPalette(Color.CYAN, Color.CYAN),
                 new OwnerPalette(Color.MAGENTA, Color.ORANGE),
                 new OwnerPalette(Color.PINK, Color.WHITE));

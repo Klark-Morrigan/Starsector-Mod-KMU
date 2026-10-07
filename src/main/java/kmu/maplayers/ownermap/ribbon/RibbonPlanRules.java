@@ -15,7 +15,7 @@ package kmu.maplayers.ownermap.ribbon;
  * to a design nobody chose.
  *
  * @param lengths         how far a market's segment and an interjection run
- * @param uncontestedRuns how far those runs reach on a cell no bloc but its own painter holds
+ * @param uncontestedRuns how far those runs reach on a cell no owner but its own painter holds
  *                        anything in
  */
 public record RibbonPlanRules(

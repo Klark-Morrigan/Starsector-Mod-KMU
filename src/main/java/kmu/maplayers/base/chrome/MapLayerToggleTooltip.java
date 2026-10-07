@@ -149,7 +149,7 @@ final class MapLayerToggleTooltip {
      * to qualify carries a word the name does not own, and tinting that word would say the
      * qualifier were part of what the view is called.
      *
-     * @param phrase        what the sentence reads at this point in its list
+     * @param phrase          what the sentence reads at this point in its list
      * @param highlightedName the view's name inside that phrase, which is what is tinted
      */
     private record ViewMention(String phrase, String highlightedName) {

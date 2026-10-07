@@ -5,10 +5,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.owners.SpotlitBlocs;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SpotlitBlocPresence;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 
@@ -21,23 +22,23 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.NEUTRAL_BASE;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.PERSEAN_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildAbandonedStationMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildDarkTheme;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildHolderPassOver;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWith;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWithSystems;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildUndiscoveredHiddenMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.listSystemMarkets;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.NEUTRAL_BASE;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.PERSEAN_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildAbandonedStationMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildDarkTheme;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildHolderPassOver;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWithSystems;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildUndiscoveredHiddenMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
 import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildPassOver;
 import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildStabilityWeightedRules;
 
@@ -82,7 +83,7 @@ class FilteredPoliticsIntegrationTests {
             var filtered = resolveFor(sector, "hegemony");
             var holder = filtered.ownerBySystemKey().get(buildCellKey("owned-system"));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
+            assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isTrue();
             assertThat(filtered.contestedSystemKeys())
                 .doesNotContain(buildCellKey("owned-system"));
@@ -108,7 +109,7 @@ class FilteredPoliticsIntegrationTests {
             var filtered = resolveFor(sector, "tritachyon");
             var holder = filtered.ownerBySystemKey().get(buildCellKey("owned-system"));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
+            assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isTrue();
             assertThat(filtered.contestedSystemKeys())
                 .contains(buildCellKey("owned-system"));
@@ -135,7 +136,7 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(holder.ownerId())
                 .isEqualTo("tritachyon");
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
+            assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isFalse();
             assertThat(filtered.contestedSystemKeys())
                 .doesNotContain(buildCellKey("tritachyon-system"));
@@ -211,7 +212,7 @@ class FilteredPoliticsIntegrationTests {
                 .ownerBySystemKey()
                 .get(buildCellKey("contested-system"));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
+            assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isTrue();
             assertThat(holder.palette().primaryColour())
                 .isEqualTo(HEGEMONY_BRIGHT);
@@ -233,7 +234,7 @@ class FilteredPoliticsIntegrationTests {
 
             var filtered = resolveFor(sector, "hegemony");
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(
+            assertThat(SpotlitOwners.isSpotlitOwner(
                     filtered.ownerBySystemKey().get(buildCellKey("salvage-system")).ownerId()))
                 .isTrue();
             assertThat(filtered.contestedSystemKeys())
@@ -252,7 +253,7 @@ class FilteredPoliticsIntegrationTests {
             var filtered = resolveFor(sector, "tritachyon");
             var holder = filtered.ownerBySystemKey().get(buildCellKey("owned-system"));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
+            assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isTrue();
             assertThat(filtered.contestedSystemKeys())
                 .contains(buildCellKey("owned-system"));
@@ -276,7 +277,7 @@ class FilteredPoliticsIntegrationTests {
             var filtered = resolveFor(sector, "pirates");
             var holder = filtered.ownerBySystemKey().get(buildCellKey("haven"));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(holder.ownerId()))
+            assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isTrue();
             assertThat(filtered.contestedSystemKeys())
                 .contains(buildCellKey("haven"));
@@ -305,13 +306,13 @@ class FilteredPoliticsIntegrationTests {
             var sector = buildSectorWhereTritachyonIsUnregistered(
                 tritachyon -> buildUndiscoveredHiddenMarket(tritachyon, 3));
 
-            assertThat(SpotlitBlocs.isSpotlitBloc(
+            assertThat(SpotlitOwners.isSpotlitOwner(
                     resolveFor(sector, "tritachyon")
                         .ownerBySystemKey()
                         .get(buildCellKey("owned-system"))
                         .ownerId()))
                 .isFalse();
-            assertThat(SpotlitBlocs.isSpotlitBloc(
+            assertThat(SpotlitOwners.isSpotlitOwner(
                     resolveRevealedFor(sector, "tritachyon")
                         .ownerBySystemKey()
                         .get(buildCellKey("owned-system"))
@@ -396,7 +397,7 @@ class FilteredPoliticsIntegrationTests {
             var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
 
-            assertThat(SpotlitBlocs.findPresentSystemKeys(
+            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
@@ -415,7 +416,7 @@ class FilteredPoliticsIntegrationTests {
                 buildVisibleMarket(pirates, 2),
                 buildVisibleMarket(independent, 6));
 
-            assertThat(SpotlitBlocs.findPresentSystemKeys(
+            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
@@ -434,7 +435,7 @@ class FilteredPoliticsIntegrationTests {
                 buildOnlySystem(sector),
                 buildVisibleMarket(pirates, 4));
 
-            assertThat(SpotlitBlocs.findPresentSystemKeys(
+            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
@@ -453,7 +454,7 @@ class FilteredPoliticsIntegrationTests {
                 buildOnlySystem(sector),
                 buildAbandonedStationMarket(4));
 
-            assertThat(SpotlitBlocs.findPresentSystemKeys(
+            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     Factions.NEUTRAL,
                     Set.of(buildCellKey("haven"))))
@@ -470,7 +471,7 @@ class FilteredPoliticsIntegrationTests {
                 List.of(pirates, independent),
                 buildVisibleMarket(independent, 6));
 
-            assertThat(SpotlitBlocs.findPresentSystemKeys(
+            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
@@ -488,7 +489,7 @@ class FilteredPoliticsIntegrationTests {
                 listSystemMarkets("held", buildVisibleMarket(pirates, 5)),
                 listSystemMarkets("haven", buildVisibleMarket(pirates, 4)));
 
-            assertThat(SpotlitBlocs.findPresentSystemKeys(
+            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
@@ -501,7 +502,7 @@ class FilteredPoliticsIntegrationTests {
             var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
 
-            assertThat(SpotlitBlocs.findPresentSystemKeys(
+            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     null,
                     Set.of(buildCellKey("haven"))))
@@ -510,7 +511,7 @@ class FilteredPoliticsIntegrationTests {
 
         @Test
         void isEmptyForNullSector() {
-            assertThat(SpotlitBlocs.findPresentSystemKeys(
+            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
                     buildHolderPassOver(null),
                     "pirates",
                     Set.of(buildCellKey("haven"))))

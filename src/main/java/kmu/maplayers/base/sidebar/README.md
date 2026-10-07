@@ -450,11 +450,11 @@ which only arrives inside the bundle.
 An offers-nothing picker is answered before that resolution,
 since it carries no fallback mode to land on.
 
-`SelectableBlocCache` is where an owner-painted layer holds its resolved picker between frames,
+`SelectableOwnerCache` is where an owner-painted layer holds its resolved picker between frames,
 over KMLib's `RevisionMemo`;
 what invalidates it is the layer's own judgement.
 It is held the way the hover slot above is,
-by the sector's `SectorMapMachinery` through `SelectableBlocCache.resolveBlocCacheIn` -
+by the sector's `SectorMapMachinery` through `SelectableOwnerCache.resolveBlocCacheIn` -
 under the layer's own ID,
 since the memo holds one entry and two layers sharing it would evict each other every frame.
 [The caching notes](../../../../../../../docs/dev/caching.md) own that model in full.

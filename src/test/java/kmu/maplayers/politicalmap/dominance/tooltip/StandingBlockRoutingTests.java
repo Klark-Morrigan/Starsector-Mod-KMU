@@ -1,9 +1,9 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.BlocFriendliness;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 import kmu.maplayers.politicalmap.dominance.standings.FactionStanding;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.StandingFraction;
@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * by alliance, and what alliance left standing against it sorted again by disposition.
  *
  * <p>Posed over hand-built standings under a bar and a disposition table stated here, since which
- * blocs a live box bars is {@link kmu.maplayers.ownermap.holding.BlocCandidacy}'s answer
+ * blocs a live box bars is {@link kmu.maplayers.politicalmap.dominance.BlocCandidacy}'s answer
  * and how warm two factions are is the sector's - what is pinned here is the order the axes are
  * applied in and what each of them takes.
  */

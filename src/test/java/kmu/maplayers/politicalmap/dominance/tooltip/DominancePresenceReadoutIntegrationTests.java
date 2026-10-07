@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.dominance.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
@@ -16,18 +16,18 @@ import org.junit.jupiter.api.Test;
 
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildHolderPassOver;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.buildInputsFor;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildHolderPassOver;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.buildInputsFor;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildStabilityWeightedRules;
 import static kmu.maplayers.politicalmap.tooltip.PoliticalMapBoxReads.readDominanceSections;
 
@@ -142,7 +142,7 @@ final class DominancePresenceReadoutIntegrationTests {
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(
                     DominancePass.createOver(holding, buildStabilityWeightedRules()))
-                .statsByBlocId())
+                .statsByOwnerId())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
         }
     }

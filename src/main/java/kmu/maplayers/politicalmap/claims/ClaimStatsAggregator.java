@@ -5,8 +5,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.picker.BlocPresenceIndexBuilder;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndexBuilder;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 
 import java.util.LinkedHashMap;
@@ -46,7 +46,7 @@ public final class ClaimStatsAggregator {
     // One walk's worth of running state, held as fields rather than threaded through each step.
     // Both metrics and the claimed-system index accumulate over every system in the sector, so
     // passing them along would make each step's parameter list longer than the step itself.
-    private final BlocPresenceIndexBuilder claimedSystems = new BlocPresenceIndexBuilder();
+    private final OwnerPresenceIndexBuilder claimedSystems = new OwnerPresenceIndexBuilder();
     private final ClaimReader claimReader;
     private final HolderPass pass;
     private final Map<String, ClaimStats> statsByBlocId = new LinkedHashMap<>();
@@ -54,6 +54,7 @@ public final class ClaimStatsAggregator {
     // Single-use and private, so the entry point below stays the only way in: a caller can neither
     // hold a half-filled aggregation nor run a second sector through one that is already full.
     private ClaimStatsAggregator(HolderPass pass, ClaimReader claimReader) {
+
         this.claimReader = claimReader;
         this.pass = pass;
     }
@@ -89,10 +90,13 @@ public final class ClaimStatsAggregator {
     // read answers an empty set without one - so the sizes come to nought where the dominance
     // aggregation's own guard makes it report nothing at all.
     private ClaimStatsRead aggregateWholeSector() {
+
         for (var system : pass.readSystems()) {
+
             accumulateSystemClaim(system);
             accumulateSystemHabitation(system);
         }
+
         return new ClaimStatsRead(statsByBlocId, claimedSystems.buildIndex());
     }
 
@@ -101,11 +105,14 @@ public final class ClaimStatsAggregator {
     // nothing. The claimant faction is folded to its bloc first, so an alliance grouping counts its
     // members' claims as the alliance's and indexes their systems under the alliance too.
     private void accumulateSystemClaim(StarSystemAPI system) {
+
         var claimantId = claimReader.readClaimingFactionId(system);
         if (claimantId == null) {
             return;
         }
+
         var blocId = pass.grouping().resolveBlocId(claimantId);
+
         statsByBlocId.put(
             blocId,
             statsByBlocId.getOrDefault(blocId, ClaimStats.EMPTY).addClaim());
@@ -121,11 +128,15 @@ public final class ClaimStatsAggregator {
     // somebody has seen. A picker answers "what can I spotlight", and a spotlight lights territory,
     // so a bloc whose only holding is a derelict is offered nothing to light and is left out.
     private void accumulateSystemHabitation(StarSystemAPI system) {
+
         for (var entry : pass.readHabitationIn(system).colonySizeByBlocId().entrySet()) {
+
             var blocId = entry.getKey();
+
             statsByBlocId.put(
                 blocId,
-                statsByBlocId.getOrDefault(blocId, ClaimStats.EMPTY)
+                statsByBlocId
+                    .getOrDefault(blocId, ClaimStats.EMPTY)
                     .addMarketSize(entry.getValue()));
         }
     }

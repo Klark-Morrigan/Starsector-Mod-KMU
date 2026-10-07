@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
+import kmu.maplayers.ownermap.owners.holders.factions.SystemColonyReading;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 
 import java.util.Objects;

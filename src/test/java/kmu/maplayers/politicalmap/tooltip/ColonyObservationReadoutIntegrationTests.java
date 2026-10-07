@@ -8,7 +8,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.tooltip.layout.CellTooltipRowReads;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,11 +21,11 @@ import static kmu.maplayers.SectorScenarioFixtures.placeDerelictIn;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.visibility.observations.ObservationClockFixture.stubMomentOnClock;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.tooltip.ColonyObservationFixture.OBSERVED_AT;
-import static kmu.maplayers.ownermap.tooltip.ColonyObservationFixture.OBSERVED_DATE;
-import static kmu.maplayers.ownermap.tooltip.ColonyObservationFixture.installObservedClock;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.factions.ColonyObservationFixture.OBSERVED_AT;
+import static kmu.maplayers.ownermap.owners.holders.factions.ColonyObservationFixture.OBSERVED_DATE;
+import static kmu.maplayers.ownermap.owners.holders.factions.ColonyObservationFixture.installObservedClock;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 import static kmu.maplayers.politicalmap.tooltip.PoliticalMapBoxReads.readClaimSections;
 import static kmu.maplayers.politicalmap.tooltip.PoliticalMapBoxReads.readDominanceSections;
 

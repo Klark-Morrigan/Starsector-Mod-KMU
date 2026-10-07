@@ -53,8 +53,8 @@ public final class MapHoverFixtures {
      * belonging to some sector other than the one being drawn is posed.
      *
      * @param machinery the machinery the hover is published on
-     * @param systemId     the ID of the system under the cursor, alone in its cluster since what a
-     *                     hover lights beside it turns nothing about whether a box draws
+     * @param systemId  the ID of the system under the cursor, alone in its cluster since what a
+     *                  hover lights beside it turns nothing about whether a box draws
      */
     public static void hoverASystemIn(SectorMapMachinery machinery, String systemId) {
 

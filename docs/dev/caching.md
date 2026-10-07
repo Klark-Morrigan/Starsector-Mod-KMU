@@ -572,7 +572,7 @@ when it goes stale,
 and how long it lives are entirely the consumer's declaration -
 including the discard a consumer calls when whatever the value belonged to is released.
 
-[`SelectableBlocCache`](../../src/main/java/kmu/maplayers/ownermap/sidebar/SelectableBlocCache.java)
+[`SelectableOwnerCache`](../../src/main/java/kmu/maplayers/ownermap/sidebar/SelectableOwnerCache.java)
 is the owner-map tier's use of it:
 what it adds is the revision,
 the one thing the memo cannot know.

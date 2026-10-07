@@ -5,10 +5,10 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.BlocFriendliness;
-import kmu.maplayers.ownermap.holding.ContestSide;
-import kmu.maplayers.ownermap.holding.ContestSides;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
+import kmu.maplayers.ownermap.owners.holders.alliances.ContestSide;
+import kmu.maplayers.ownermap.owners.holders.alliances.ContestSides;
 
 import java.util.List;
 import java.util.Optional;

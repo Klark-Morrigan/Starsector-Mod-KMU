@@ -66,16 +66,29 @@ enforcePackageVocabulary {
     // the substrate's political nouns, plus the words that name one layer and the
     // mechanics a layer decides its owners by, since a tier named after one of its
     // layers is that layer with extra callers.
-    //
-    // *Bloc* stays open here where it is closed below. The substrate paints an
-    // opaque owner and has no notion of a group; this tier is where owners are
-    // grouped, ranked and picked, and *bloc* is its word for the group whatever
-    // decides membership.
     forbidWords under: 'kmu.maplayers.ownermap',
                 words: ['territory', 'territories', 'national border',
                         'contested fill', 'political', 'politics',
                         'dominance', 'dominant', 'claim', 'claims',
-                        'alliance', 'alliances', 'nexerelin']
+                        'nexerelin']
+
+    forbidWords under: 'kmu.maplayers.ownermap',
+                except: 'kmu.maplayers.ownermap.owners.holders',
+                words: ['faction', 'factions', 'colony', 'colonies',
+                        'bloc', 'blocs', 'alliance', 'alliances']
+
+    allowWords words: ['faction', 'factions', 'colony', 'bloc', 'alliance', 'alliances'],
+            inFile: 'src/main/java/kmu/maplayers/ownermap/README.md'
+
+    allowWord word: 'faction',
+            inFile: 'src/test/java/kmu/maplayers/ownermap/RelayOwnerLayerIntegrationTests.java'
+
+    forbidWords under: 'kmu.maplayers.ownermap.owners.holders',
+                except: 'kmu.maplayers.ownermap.owners.holders.alliances',
+                words: ['alliance', 'alliances']
+
+    allowWords words: ['alliance', 'alliances'],
+            inFile: 'src/main/java/kmu/maplayers/ownermap/owners/holders/README.md'
 
     // *Cell* means a system's polygon everywhere else under this root - the
     // geometry that shapes one, the edges it is classified by, the hit test

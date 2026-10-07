@@ -534,10 +534,10 @@ final class VoidV3Section extends PanelSection {
      * <p>Stepped in hundredths, so the reach moves by a fraction of a cell radius rather than
      * jumping a whole one.
      *
-     * @param key            what to remember it under
+     * @param key             what to remember it under
      * @param defaultMultiple the reach this search opens at
-     * @param apply          records the new reach, already back in cell radii
-     * @param onChange       what to rebuild once it moves, which differs by search
+     * @param apply           records the new reach, already back in cell radii
+     * @param onChange        what to rebuild once it moves, which differs by search
      * @return the row
      */
     private JPanel buildBridgeReachSlider(

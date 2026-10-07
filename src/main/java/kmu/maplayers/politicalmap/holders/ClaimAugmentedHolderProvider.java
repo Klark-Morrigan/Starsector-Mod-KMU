@@ -4,10 +4,10 @@ import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
+import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.claims.FilteredClaims;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 

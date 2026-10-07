@@ -1,13 +1,13 @@
 package kmu.maplayers.politicalmap.dominance;
 
-import kmu.maplayers.ownermap.picker.PaintingBlocMetrics;
-import kmu.maplayers.ownermap.picker.SizedBlocMetrics;
+import kmu.maplayers.ownermap.owners.holders.factions.SizedBlocMetrics;
+import kmu.maplayers.ownermap.picker.PaintingOwnerMetrics;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 /**
  * The four whole-sector numbers the filter picker sorts and displays a bloc by on the layers
  * domination paints, computed once per grouped dominance pass and carried beside the bloc's identity
- * on {@link kmu.maplayers.ownermap.RankedBloc}. It exists so the picker can rank and label a
+ * on {@link kmu.maplayers.ownermap.RankedOwner}. It exists so the picker can rank and label a
  * bloc without re-reading the economy: a single pass folds every system the bloc holds into these
  * totals, and the sidebar then reads the totals rather than walking the sector again per frame.
  *
@@ -45,7 +45,7 @@ public record DominanceStats(
     int domination,
     int presence,
     int score,
-    int marketSize) implements PaintingBlocMetrics, SizedBlocMetrics {
+    int marketSize) implements PaintingOwnerMetrics, SizedBlocMetrics {
 
     /** A bloc present in no system; the identity a per-system accumulation folds into. */
     public static final DominanceStats EMPTY = new DominanceStats(0, 0, 0, 0);

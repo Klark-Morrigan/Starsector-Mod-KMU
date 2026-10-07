@@ -5,11 +5,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolve;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveSource;
-import kmu.maplayers.ownermap.render.style.SectorBlocPalettes;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.SectorClaims;
 

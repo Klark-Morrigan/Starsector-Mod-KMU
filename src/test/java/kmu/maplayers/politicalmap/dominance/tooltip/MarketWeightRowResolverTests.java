@@ -7,8 +7,8 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.maplayers.ownermap.tooltip.ColonyQualifierTests;
-import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
+import kmu.maplayers.ownermap.owners.holders.factions.ColonyQualifierTests;
+import kmu.maplayers.ownermap.owners.holders.factions.SystemColonyReading;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
@@ -36,11 +36,11 @@ import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabel
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.MARKET_STATS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.FULL_STABILITY;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.LAST_SEEN;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.FULL_STABILITY;
+import static kmu.maplayers.ownermap.owners.holders.factions.SystemColonyReadingFixture.LAST_SEEN;
+import static kmu.maplayers.ownermap.owners.holders.factions.SystemColonyReadingFixture.buildReadingRemarkingOn;
+import static kmu.maplayers.ownermap.owners.holders.factions.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
+import static kmu.maplayers.ownermap.owners.holders.factions.SystemColonyReadingFixture.buildReadingWithUndiscovered;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

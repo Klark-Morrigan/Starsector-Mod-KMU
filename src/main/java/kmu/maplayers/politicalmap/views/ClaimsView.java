@@ -7,19 +7,21 @@ import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.ownermap.holding.ColonyReadRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderOwnerReading;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.OwnerReading;
-import kmu.maplayers.ownermap.owners.holders.HolderPaintedView;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveSource;
-import kmu.maplayers.ownermap.picker.BlocPickerRead;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
+import kmu.maplayers.ownermap.owners.holders.factions.FactionOwnerReading;
+import kmu.maplayers.ownermap.owners.holders.factions.HolderCategories;
+import kmu.maplayers.ownermap.picker.OwnerPickerRead;
+import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.ClaimSortModes;
 import kmu.maplayers.politicalmap.claims.ClaimStats;
@@ -44,7 +46,7 @@ import java.util.Optional;
  *
  * <p>A bloc's styling and label are the faction view's exactly - an independent claimant recedes like
  * independent territory, and a bloc is named by its claiming faction's own display name - so it
- * takes the same holder owner reading and categories {@link FactionsView} does rather than restating
+ * takes the same faction owner reading and categories {@link FactionsView} does rather than restating
  * them, which keeps the two views from drifting on how a plain faction bloc paints and reads.
  *
  * <p>Its spotlight picker is its own, not the held layers': the blocs it offers are the ones that
@@ -53,7 +55,8 @@ import java.util.Optional;
  * while claiming nothing is listed receded at a count of zero rather than dropped, so the list
  * accounts for every faction the player can see instead of appearing to have forgotten one.
  */
-public final class ClaimsView implements HolderPaintedView {
+public final class ClaimsView
+        implements HolderPaintedView {
 
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final ClaimsView INSTANCE = new ClaimsView();
@@ -114,11 +117,11 @@ public final class ClaimsView implements HolderPaintedView {
     }
 
     @Override
-    public HolderGrouping resolveContestGrouping() {
+    public OwnerAffiliation resolveContestAffiliation() {
         // Who stands together in a claim contest is the live alliance set, as it is on every view
-        // of this layer: fills painted apart, allies still read as allies beneath them. Identity
-        // wherever Nexerelin is absent.
-        return NexerelinAlliances.resolveGrouping();
+        // of this layer: fills painted apart, allies still read as allies beneath them. Nobody
+        // stands together wherever Nexerelin is absent.
+        return new BlocAffiliation(NexerelinAlliances.resolveGrouping());
     }
 
     @Override
@@ -149,9 +152,9 @@ public final class ClaimsView implements HolderPaintedView {
     public OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
         // A claimant bloc is read exactly as the faction view reads a held one - an independent
         // claimant recedes like independent territory, and a claim bloc ID is a plain faction ID
-        // under identity grouping, named by the claiming faction - so it takes the one holder reading
-        // rather than restating any of it.
-        return new HolderOwnerReading(sector, grouping);
+        // under identity grouping, named by the claiming faction - so it takes the one faction
+        // reading rather than restating any of it.
+        return new FactionOwnerReading(sector);
     }
 
     @Override
@@ -194,7 +197,7 @@ public final class ClaimsView implements HolderPaintedView {
      *         systems that walk found each bloc claiming
      */
     @Override
-    public BlocPickerRead<RankedBloc<ClaimStats>> resolveBlocPickerRead(
+    public OwnerPickerRead<RankedOwner<ClaimStats>> resolveBlocPickerRead(
             SectorAPI sector,
             ColonyReadRules colonyReadRules) {
 

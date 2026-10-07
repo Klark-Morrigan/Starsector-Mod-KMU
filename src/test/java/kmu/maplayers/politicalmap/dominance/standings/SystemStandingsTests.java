@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.dominance.standings;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import org.junit.jupiter.api.Nested;

@@ -14,6 +14,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### For developers
+
+<details>
+<summary>Internals and the map layers framework</summary>
+
+#### Public contracts changed (**breaking**)
+
+None of these reach a player: every LunaLib field ID and every value saved in sector memory keeps its spelling, so settings and saves carry over. They reach a mod building a map layer on KMU's framework.
+
+##### Packages
+
+The owner-map tier's core no longer knows what an owner is. What the layers painting holders share lives under `kmu.maplayers.ownermap.owners.holders`: `base` for every kind of holder, `factions` for one faction as one owner, and `alliances` for a group of factions as one owner. The core may not import that subtree.
+
+| Before | After |
+| --- | --- |
+| `ownermap.holding`, `ownermap.owners.holders`, `BlocPickerAssembly`, `BlocStanding`, `BlocStandingReader`, `BlocStandingSortMode`, `RibbonPlanInputs`, `BlocPaletteReader` and `SectorBlocPalettes` | `ownermap.owners.holders.base`, apart from the types below |
+| `HolderCategories`, `OwnerMapCategory`, `ColonyCellRibbons`, `SizedBlocMetrics`, `SharedBlocSortModes`, `SystemStatusRow` and the colony and faction lines of `ownermap.tooltip` | `ownermap.owners.holders.factions` |
+| `BlocAffiliation`, `BlocFriendliness`, `ContestSide`, `ContestSides` and `BlocRelations` | `ownermap.owners.holders.alliances` |
+
+##### Renames
+
+| Before | After |
+| --- | --- |
+| `SelectableBloc`, `SelectableBlocCache`, `RankedBloc`, `BlocMetrics`, `PaintingBlocMetrics`, `BlocMetricSortMode`, `BlocSortModeComposer`, `BlocPickerRead`, `BlocPresenceIndex`, `BlocPresenceIndexBuilder`, `BlocStatsRead`, `SpotlitBlocs`, `ResolvedBlocPaint`, `BlocNameStyles` and `BlocPresence` | `Owner` in place of `Bloc` in each name and its members |
+| `FactionNameFormatChoice`, `FactionPaletteSlot`, `FactionlessStyleResolver` and `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`, `OwnerPaletteSlot`, `UnownedStyleResolver` and `OwnerPaletteChoice` |
+| `HolderOwnerReading` | `FactionOwnerReading`, and `AllianceOwnerReading` over it for a layer painting alliances |
+| `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` and its `strings.json` key | `POLITICAL_MAP_CTL_FACTION_NAMES`, the political map's own caption |
+
+##### Seams
+
+| Before | After |
+| --- | --- |
+| `OwnerPaintedView`'s `resolveBlocPickerRead(SectorAPI, ColonyReadRules)`, `buildBlocPickerRead` and `resolveSelectableBlocGate` | On `HolderPaintedView`. `OwnerPaintedView` keeps `resolveOwnerPickerRead(SectorAPI)`, empty by default |
+| `HolderPaintedView.resolveContestGrouping()` | `resolveContestAffiliation()`, answering an `OwnerAffiliation` |
+| `RibbonPlan.planCellRibbon` over a `BlocAffiliation` | Over `kmu.maplayers.ownermap.owners.OwnerAffiliation`, which `BlocAffiliation` implements |
+| `SpotlitBlocs.findPresentSystemKeys` and `isBlocPresentIn` | `SpotlitBlocPresence` |
+| `RenderStyleReader.readFactionStyle`, `readIndependentStyle`, `readDecivilisedStyle` and `readUninhabitedStyle` | `HolderCategoryStyleReader` |
+| `BlocPresence.collectColouredPresences` | Gone: `ColonyCellRibbons` colours its own counts |
+| `NameFormatPreference(String)` | `NameFormatPreference(String, String)`: the layer also names the name radio's caption key |
+
+</details>
+
 ## [0.2.1] - 2026-10-06
 
 ### Fixed

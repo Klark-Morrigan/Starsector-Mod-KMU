@@ -6,9 +6,9 @@ import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures;
 import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
@@ -26,15 +26,15 @@ import java.util.List;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildHiddenMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildHiddenMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -175,7 +175,7 @@ final class ClaimPresenceReadoutIntegrationTests {
                     new RibbonSegment(TRITACHYON_BRIGHT, COLONY_RUN));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(inputs.pass(), claimBreakdownReader)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
         }
     }

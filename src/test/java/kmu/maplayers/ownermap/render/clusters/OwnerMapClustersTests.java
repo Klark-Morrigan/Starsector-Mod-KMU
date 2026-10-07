@@ -15,8 +15,8 @@ import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
+import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
+import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Pins the built map state the renderer paints and the incremental refresh edits:
  * that the empty fallback is a harmless no-op the render path can lean on after a failed
- * first build, that {@link OwnerMapClusters#isEmpty} tracks either draw list, that a bloc
+ * first build, that {@link OwnerMapClusters#isEmpty} tracks either draw list, that an owner
  * baking no group is dropped rather than left painting what it lost, and that the two snapshots
  * handed in - the live occupancy and the inputs the build was baked under - are the two handed
  * back, with the global tier the emission reads coming off the retained theme.
@@ -115,7 +115,7 @@ final class OwnerMapClustersTests {
         @Test
         void isFalseWhenAClusterGroupIsPresent() {
 
-            var clusters = buildDrawablesWith(Map.of(), Map.of("faction", buildAnyStyledClusterGroup()));
+            var clusters = buildDrawablesWith(Map.of(), Map.of("owner", buildAnyStyledClusterGroup()));
 
             assertThat(clusters.isEmpty())
                 .isFalse();
@@ -141,7 +141,7 @@ final class OwnerMapClustersTests {
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         renderStyle,
-                        HolderCategories.INSTANCE,
+                        OwnerCategoriesFake.SHARED_FAKE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE),
@@ -151,7 +151,7 @@ final class OwnerMapClustersTests {
                     Set.of()));
 
             clusters.getStyledCellByCellKey().put(SYSTEM_CELL, styledCell);
-            clusters.getStyledClusterGroupByOwnerId().put("faction", styledClusterGroup);
+            clusters.getStyledClusterGroupByOwnerId().put("owner", styledClusterGroup);
 
             // Read through the seam rather than off the class, which is what the framework
             // emission sees. Satisfying the interface with anything other than the build's own two
@@ -164,7 +164,7 @@ final class OwnerMapClustersTests {
             assertThat(drawLists.getStyledCellByCellKey())
                 .containsExactlyEntriesOf(Map.of(SYSTEM_CELL, styledCell));
             assertThat(drawLists.getStyledClusterGroupByOwnerId())
-                .containsExactlyEntriesOf(Map.of("faction", styledClusterGroup));
+                .containsExactlyEntriesOf(Map.of("owner", styledClusterGroup));
             assertThat(drawLists.getGlobalStyle())
                 .isSameAs(renderStyle.global());
         }
@@ -174,7 +174,7 @@ final class OwnerMapClustersTests {
     class PutStyledClusterGroup {
 
         @Test
-        void recordsTheBlocsGroupUnderItsHolder() {
+        void recordsTheOwnersGroupUnderItsHolder() {
 
             var clusterGroup = buildAnyStyledClusterGroup();
             var clusters = buildDrawablesWith(Map.of(), Map.of());
@@ -186,8 +186,8 @@ final class OwnerMapClustersTests {
         }
 
         @Test
-        void dropsABlocWhoseGroupBakesNothing() {
-            // A bloc that lost its last cell hands over no group; an entry left standing for it
+        void dropsAnOwnerWhoseGroupBakesNothing() {
+            // An owner that lost its last cell hands over no group; an entry left standing for it
             // would go on painting the fill and border it no longer has.
             var clusters = buildDrawablesWith(Map.of(), Map.of("hegemony", buildAnyStyledClusterGroup()));
 
@@ -214,13 +214,13 @@ final class OwnerMapClustersTests {
                     List.of(exclaveOuter)))));
 
             // Flattened across bodies and in cluster order: the cursor read cannot say which body
-            // it is in, so every loop the bloc strokes anywhere is a candidate.
+            // it is in, so every loop the owner strokes anywhere is a candidate.
             assertThat(clusters.listCandidateBorderLoopsOf("hegemony"))
                 .containsExactly(homeOuter, homeEnclave, exclaveOuter);
         }
 
         @Test
-        void returnsNothingForABlocThatIsNotOnTheMap() {
+        void returnsNothingForAnOwnerThatIsNotOnTheMap() {
 
             var clusters = buildDrawablesWith(Map.of(), Map.of());
 
@@ -229,7 +229,7 @@ final class OwnerMapClustersTests {
         }
 
         @Test
-        void keepsTheSameListWhileTheBlocsBodiesStand() {
+        void keepsTheSameListWhileTheOwnersBodiesStand() {
 
             var clusters = buildDrawablesWith(Map.of(), Map.of(
                 "hegemony",
@@ -245,7 +245,7 @@ final class OwnerMapClustersTests {
         }
 
         @Test
-        void recomputesWhenARefreshReplacesTheBlocsBodies() {
+        void recomputesWhenARefreshReplacesTheOwnersBodies() {
 
             var rebuiltLoop = new float[] {9, 9};
             var clusters = buildDrawablesWith(Map.of(), Map.of(
@@ -255,7 +255,7 @@ final class OwnerMapClustersTests {
 
             clusters.listCandidateBorderLoopsOf("hegemony");
 
-            // The other half of retaining an answer: an incremental refresh replaces a bloc's
+            // The other half of retaining an answer: an incremental refresh replaces an owner's
             // group wholesale when a neighbour flips, and a retained list that outlived it would
             // halo a frontier the map is no longer drawing.
             clusters.getStyledClusterGroupByOwnerId().put("hegemony",
@@ -275,7 +275,6 @@ final class OwnerMapClustersTests {
 
             var occupancy = SystemOccupancy.createEmpty();
             var buildInputs = OwnerMapBuildInputs.createEmpty(mock(OwnerPaintedView.class));
-
             var clusters = new OwnerMapClusters(occupancy, buildInputs);
 
             // The two draw lists are created internally, not passed, so the build can fill them;
@@ -335,12 +334,16 @@ final class OwnerMapClustersTests {
                 "C", List.of(buildEdgeTo("B")));
 
             var clusters = buildOwnedBy(Map.of("A", "F", "B", "F", "C", "F"));
+
             reindex(clusters, edges);
 
             assertThat(clusters.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
                 .containsExactlyInAnyOrderElementsOf(buildCellKeys("A", "B", "C"));
 
-            clusters.getOccupancy().recordOwnerOf(buildCellKey("B"), readOwnerOf("RIVAL"));
+            clusters
+                .getOccupancy()
+                .recordOwnerOf(buildCellKey("B"), readOwnerOf("RIVAL"));
+
             reindex(clusters, edges);
 
             assertThat(clusters.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
@@ -352,14 +355,18 @@ final class OwnerMapClustersTests {
         @Test
         void bridgesTwoClustersIntoOneWhenTheGapSystemIsGained() {
             // The mirror of the sever: B joining F merges what were two lone pockets.
+            var clusters = buildOwnedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
             var edges = Map.of(
                 "A", List.of(buildEdgeTo("B")),
                 "B", List.of(buildEdgeTo("A"), buildEdgeTo("C")),
                 "C", List.of(buildEdgeTo("B")));
-            var clusters = buildOwnedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
+
             reindex(clusters, edges);
 
-            clusters.getOccupancy().recordOwnerOf(buildCellKey("B"), readOwnerOf("F"));
+            clusters
+                .getOccupancy()
+                .recordOwnerOf(buildCellKey("B"), readOwnerOf("F"));
+
             reindex(clusters, edges);
 
             assertThat(clusters.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
@@ -382,19 +389,21 @@ final class OwnerMapClustersTests {
 
     // A clusters holding the given holders, the one input the cluster index is derived from;
     // every other slot is an inert placeholder.
-    private static OwnerMapClusters buildOwnedBy(Map<String, String> factionIdBySystemId) {
+    private static OwnerMapClusters buildOwnedBy(Map<String, String> ownerIdBySystemId) {
 
         var ownerBySystemId = new LinkedHashMap<String, SystemOwner>();
 
-        for (var entry : factionIdBySystemId.entrySet()) {
+        for (var entry : ownerIdBySystemId.entrySet()) {
             ownerBySystemId.put(entry.getKey(), readOwnerOf(entry.getValue()));
         }
+
         return OwnerMapClusterFixtures.createClustersOwnedBy(ownerBySystemId);
     }
 
-    // Clustering keys off the faction ID alone, so the palette shades are inert here.
-    private static SystemOwner readOwnerOf(String factionId) {
-        return new SystemOwner(factionId, new OwnerPalette(Color.GRAY, Color.GRAY));
+    // Clustering keys off the owner ID alone, so the palette shades are inert here.
+    private static SystemOwner readOwnerOf(String ownerId) {
+
+        return new SystemOwner(ownerId, new OwnerPalette(Color.GRAY, Color.GRAY));
     }
 
     // Reindexes the clusters over the given adjacency, each cell drawing as its own star
@@ -404,10 +413,14 @@ final class OwnerMapClustersTests {
             Map<String, List<CellEdge>> edges) {
 
         var systemIdByCellId = new LinkedHashMap<String, String>();
+
         for (var cellId : edges.keySet()) {
             systemIdByCellId.put(cellId, cellId);
         }
-        clusters.reindexClusters(buildKeyedValues(edges), buildDrawnSystemKeys(systemIdByCellId));
+
+        clusters.reindexClusters(
+            buildKeyedValues(edges),
+            buildDrawnSystemKeys(systemIdByCellId));
     }
 
     // A clusters whose only varying inputs are the two draw lists; the retained inputs are the
@@ -427,10 +440,12 @@ final class OwnerMapClustersTests {
     }
 
     private static StyledCell buildAnyStyledCell() {
+
         return OwnerMapClusterFixtures.createPlaceholderStyledCell();
     }
 
     private static StyledClusterGroup buildAnyStyledClusterGroup() {
+
         return OwnerMapClusterFixtures.createClusterGroupWithLoops(List.of());
     }
 
@@ -438,7 +453,8 @@ final class OwnerMapClustersTests {
     // distinct instance the seam can be checked against.
     private static CategoryStyle buildStyleMarked(double marker) {
 
-        var element = new ElementStyle(FactionPaletteSlot.PRIMARY, marker);
+        var element = new ElementStyle(OwnerPaletteSlot.PRIMARY, marker);
+
         return new CategoryStyle(element, element, marker, element, marker);
     }
 }

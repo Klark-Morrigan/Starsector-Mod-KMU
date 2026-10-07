@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * {@link OwnerMapCache}'s current draw lists, in one canonical order, bottom to top: the fills (or the
  * debug border-tracing overlay where it has replaced the base view), then the borders, then the
  * picker preview, then the hover highlight, then the cluster-anchor debug overlay, then the per-cell
- * presence bands, then the debug band-path overlay across them, then the faction names. That order
+ * presence bands, then the debug band-path overlay across them, then the owner names. That order
  * is fixed here and is not the player's - it is what makes each sub-layer legible against the ones
  * under it - and each layer still draws only under its own toggle, the debug facilities composing
  * rather than one hiding the other.
@@ -35,14 +35,14 @@ import java.util.function.Supplier;
  * <p>The stack is emitted one band at a time, because the map can put its own drawing between two
  * of the layers: the map holds its own nebula icons, drawn over the sector as a large blended
  * sprite under Starscape, so a sub-layer is either dimmed by that haze or clear of it. Which side
- * each lands on is the player's, read per pass as a {@link OwnerMapBandLayout} and asked of it
+ * each lands on is the player's, read per pass as an {@link OwnerMapBandLayout} and asked of it
  * per sub-layer; the surfaces above only say which band they are painting, and the geometry below
  * is emitted the same way whichever band asks for it.
  *
  * <p>Four sub-layers have no choice of their own and ride with one that does, because each is only
  * a picture in the company of what it is drawn against. The contested hatch is half of a cluster's
  * fill and travels inside it. The hover halo and cell wash brighten the fill under the cursor, and
- * the picker preview brightens the fills of a whole bloc, so both follow the fills - left beneath
+ * the picker preview brightens the fills of a whole owner, so both follow the fills - left beneath
  * while the fills went above, they would be painted over and light nothing. The cluster anchors and
  * the border-tracing overlay annotate or replace the base view, so they follow it, the tracing
  * overlay having no split of its own to honour: it replaces fills and borders together in one pass.
@@ -135,7 +135,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
 
         // The anchor overlay layers over whichever base view just drew - independent of the swap
         // above, so the two debug toggles compose. Gated on its own toggle here (not by the list
-        // being empty): the placements are also built for the faction names, so the list can be
+        // being empty): the placements are also built for the owner names, so the list can be
         // non-empty while the debug overlay is off.
         if (isPaintingFills && KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
             ClusterAnchorRenderer.renderOnMap(cache.getClusterAnchors(), mapFrame);
@@ -147,11 +147,11 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
             renderPresenceBands(mapFrame);
         }
 
-        // Last of the stack, so a name wins where it meets a band: a name says which bloc a whole
+        // Last of the stack, so a name wins where it meets a band: a name says which owner a whole
         // cluster group belongs to, which is the coarser statement of the two and the one a player is
         // reading the map for. An empty-list check when the name choice draws none.
         if (layout.labelBand() == band) {
-            LabelRenderer.renderOnMap(cache.getFactionLabels(), mapFrame);
+            LabelRenderer.renderOnMap(cache.getOwnerLabels(), mapFrame);
         }
     }
 

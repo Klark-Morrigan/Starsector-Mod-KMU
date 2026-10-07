@@ -24,7 +24,7 @@ import java.util.Map;
  * another surface names are the one set read once rather than two walks that can part company. The
  * pure comparison of the footprints it produces is {@link SystemDominance}'s job; turning the
  * winner into draw colours is
- * {@link kmu.maplayers.ownermap.render.style.SectorBlocPalettes#resolveOwnerOf}'s.
+ * {@link kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes#resolveOwnerOf}'s.
  *
  * <p>Every weight is worked out once, as a {@link MarketWeightBreakdown} the scalar
  * weight is then summed over. A caller that wants the number reads the footprint;
@@ -58,15 +58,15 @@ public final class KnownMarketFootprints {
      * carries for hazard and atmosphere conditions) never reach here: the colony set is
      * already selected on ownership, which is the rule that rejects them.
      *
-     * @param colonies         the system's colony set, as one walk of it reported; empty yields
-     *                         an empty map
-     * @param rules            the dominance-weighting rules for this pass - whether stability
-     *                         scales each rating and whether an attached station lifts it. The
-     *                         player's LunaLib toggles, read once per pass by the caller so a
-     *                         whole pass resolves under one rule
+     * @param colonies        the system's colony set, as one walk of it reported; empty yields
+     *                        an empty map
+     * @param rules           the dominance-weighting rules for this pass - whether stability
+     *                        scales each rating and whether an attached station lifts it. The
+     *                        player's LunaLib toggles, read once per pass by the caller so a
+     *                        whole pass resolves under one rule
      * @param colonyKnowledge what the player may be shown of a colony, read once per pass by
-     *                         the caller; the fold runs over the known projection, so a colony
-     *                         the rule withholds hands its owner no weight
+     *                        the caller; the fold runs over the known projection, so a colony
+     *                        the rule withholds hands its owner no weight
      * @return each faction's footprint in the system, keyed by faction ID; empty
      *         when the system holds no folded market
      */
@@ -103,12 +103,12 @@ public final class KnownMarketFootprints {
      * summed away. What paints the map reads the totals; what has to justify a painted system to
      * the player reads the parts those totals are made of.
      *
-     * @param colonies         the system's colony set, as one walk of it reported; empty yields
-     *                         an empty map
-     * @param rules            the dominance-weighting rules for this pass, read once per pass by
-     *                         the caller so a whole pass resolves under one rule
+     * @param colonies        the system's colony set, as one walk of it reported; empty yields
+     *                        an empty map
+     * @param rules           the dominance-weighting rules for this pass, read once per pass by
+     *                        the caller so a whole pass resolves under one rule
      * @param colonyKnowledge what the player may be shown of a colony, the same rule the totals
-     *                         this explains were folded under
+     *                        this explains were folded under
      * @return each faction's counted markets in the system with the breakdown of each market's
      *         weight, keyed by faction ID and in the economy's own market order; empty when the
      *         system holds no counted market
@@ -150,10 +150,10 @@ public final class KnownMarketFootprints {
      * forgotten branch away from painting a system for a faction the mechanic never counted. An
      * identity and a nameplate cannot be summed into anything.
      *
-     * @param colonies         the system's colony set, as one walk of it reported; empty yields
-     *                         an empty map
+     * @param colonies        the system's colony set, as one walk of it reported; empty yields
+     *                        an empty map
      * @param colonyKnowledge what the player may be shown of a colony, the same rule the weighed
-     *                         half is selected under so the two stay exact complements
+     *                        half is selected under so the two stay exact complements
      * @return each faction's unlisted colonies in the system, identified and nothing more, keyed by
      *         faction ID and in the system's own entity order; empty when every colony present is
      *         one the economy lists
@@ -185,10 +185,10 @@ public final class KnownMarketFootprints {
      * reader ordering the blocs this class ranked has to be ranking them over the same colonies,
      * or it can settle a contest among markets the weights were never folded from.
      *
-     * @param colonies         the system's colony set, as one walk of it reported; empty yields
-     *                         an empty list
+     * @param colonies        the system's colony set, as one walk of it reported; empty yields
+     *                        an empty list
      * @param colonyKnowledge what the player may be shown of a colony, so a reader ordering the
-     *                         blocs this class ranked reads the very colonies they were ranked on
+     *                        blocs this class ranked reads the very colonies they were ranked on
      * @return the weighed colonies' markets, in the economy's own order
      */
     public static List<MarketAPI> readWeighedColonies(

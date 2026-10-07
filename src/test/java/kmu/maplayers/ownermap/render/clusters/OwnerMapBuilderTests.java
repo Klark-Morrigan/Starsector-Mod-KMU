@@ -21,8 +21,8 @@ import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
+import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
@@ -76,7 +76,7 @@ final class OwnerMapBuilderTests {
     private static final SystemOwner HELD_BY =
         new SystemOwner("hegemony", new OwnerPalette(NEUTRAL, NEUTRAL));
 
-    // The picks a pass off filter was baked under, and one spotlighting a bloc.
+    // The picks a pass off filter was baked under, and one spotlighting an owner.
     private static final ContentInputs UNFILTERED_INPUTS =
         ContentInputsFixtures.createInertInputs();
     private static final ContentInputs SPOTLIGHTING_INPUTS =
@@ -254,12 +254,12 @@ final class OwnerMapBuilderTests {
             assertThat(shapeRow.findCount(MapBuildCounters.CELLS).getTotals().getTotal())
                 .isZero();
             assertThat(shapeRow.getWorstCall().getTag())
-                .isEqualTo("styled=0 blocs=0");
+                .isEqualTo("styled=0 owners=0");
         }
 
         @Test
         void derivesTheUnownedPaletteFromTheReadingsUnownedShade() {
-            // The shade an unowned cell paints in is the layer's answer, not a faction the tier
+            // The shade an unowned cell paints in is the layer's answer, not an owner the tier
             // reads for itself.
             var clusters = OwnerMapBuilder.buildClusters(
                 new CellGeometryCache(),
@@ -272,7 +272,7 @@ final class OwnerMapBuilderTests {
                 same(OwnerReadingFake.RECEDE_PALETTE),
                 anyDouble()));
             assertThat(clusters.getBuildInputs().styling().categories())
-                .isSameAs(HolderCategories.INSTANCE);
+                .isSameAs(OwnerCategoriesFake.SHARED_FAKE);
         }
     }
 

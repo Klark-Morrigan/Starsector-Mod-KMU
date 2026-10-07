@@ -10,7 +10,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 
@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

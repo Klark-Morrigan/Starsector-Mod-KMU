@@ -53,8 +53,8 @@ public final class KmuOwnerMapHighlightSettings {
     private static final boolean DEFAULT_LAYER_HOVER_TOOLTIP_ENABLED = true;
 
     // Tuned to sit over the fills without swamping them, the fills themselves painting at 0.4.
-    private static final FactionPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOUR =
-        FactionPaletteChoice.SECONDARY;
+    private static final OwnerPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOUR =
+        OwnerPaletteChoice.SECONDARY;
     private static final double DEFAULT_HOVER_GLOW_OPACITY = 0.5;
     private static final double DEFAULT_HOVER_GLOW_WIDTH = 14.0;
     private static final int DEFAULT_HOVER_GLOW_LAYERS = 4;
@@ -65,8 +65,8 @@ public final class KmuOwnerMapHighlightSettings {
     private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
 
     // The shade the cursor's own highlight burns, so the two tiers light the same map alike.
-    private static final FactionPaletteChoice DEFAULT_PREVIEW_HIGHLIGHT_COLOUR =
-        FactionPaletteChoice.SECONDARY;
+    private static final OwnerPaletteChoice DEFAULT_PREVIEW_HIGHLIGHT_COLOUR =
+        OwnerPaletteChoice.SECONDARY;
     private static final double DEFAULT_PREVIEW_WASH_OPACITY = 0.6;
 
     private KmuOwnerMapHighlightSettings() {
@@ -97,7 +97,7 @@ public final class KmuOwnerMapHighlightSettings {
      * @return which palette colour of the cell under the cursor the hover halo and cell wash both
      *         draw in; the secondary (dark) colour by default
      */
-    public static FactionPaletteChoice getOwnerMapHoverHighlightColour() {
+    public static OwnerPaletteChoice getOwnerMapHoverHighlightColour() {
         return KmuLunaSettings.readChoice(
             HOVER_HIGHLIGHT_COLOR_FIELD,
             DEFAULT_HOVER_HIGHLIGHT_COLOUR);
@@ -179,7 +179,7 @@ public final class KmuOwnerMapHighlightSettings {
      *         draw in; the secondary (dark) colour by default. Keyed on the bloc rather than on
      *         each lit cell, so one shade covers the whole set
      */
-    public static FactionPaletteChoice getOwnerMapPreviewHighlightColour() {
+    public static OwnerPaletteChoice getOwnerMapPreviewHighlightColour() {
         return KmuLunaSettings.readChoice(
             PREVIEW_HIGHLIGHT_COLOUR_FIELD,
             DEFAULT_PREVIEW_HIGHLIGHT_COLOUR);

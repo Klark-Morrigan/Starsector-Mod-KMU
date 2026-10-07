@@ -36,7 +36,7 @@ import java.util.Set;
  * system it holds - so the rows and the fraction above them do not add up wherever a member holds
  * nothing here, and are not meant to.
  *
- * <p>Every disposition is read through {@link kmu.maplayers.ownermap.holding.BlocFriendliness}
+ * <p>Every disposition is read through {@link kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness}
  * from the faction being sorted, at both tiers, so which side a faction takes and what its row counts
  * cannot be answered out of pairs read in opposite directions.
  *

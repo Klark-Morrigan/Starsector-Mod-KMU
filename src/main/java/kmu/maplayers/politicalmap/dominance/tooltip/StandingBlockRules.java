@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.BlocFriendliness;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
 
 import java.util.Objects;
 import java.util.Set;

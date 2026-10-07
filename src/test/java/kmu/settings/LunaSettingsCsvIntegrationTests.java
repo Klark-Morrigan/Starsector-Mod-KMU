@@ -254,35 +254,35 @@ final class LunaSettingsCsvIntegrationTests {
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_faction_outerBorder_colour",
             "DEFAULT_FACTION_OUTER_BORDER_COLOUR",
-            FactionPaletteChoice.values()),
+            OwnerPaletteChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_faction_innerBorder_colour",
             "DEFAULT_FACTION_INNER_BORDER_COLOUR",
-            FactionPaletteChoice.values()),
+            OwnerPaletteChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_faction_fill_colour",
             "DEFAULT_FACTION_FILL_COLOUR",
-            FactionPaletteChoice.values()),
+            OwnerPaletteChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_independent_outerBorder_colour",
             "DEFAULT_INDEPENDENT_OUTER_BORDER_COLOUR",
-            FactionPaletteChoice.values()),
+            OwnerPaletteChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_independent_innerBorder_colour",
             "DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR",
-            FactionPaletteChoice.values()),
+            OwnerPaletteChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_independent_fill_colour",
             "DEFAULT_INDEPENDENT_FILL_COLOUR",
-            FactionPaletteChoice.values()),
+            OwnerPaletteChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_hoverHighlight_colour",
             "DEFAULT_HOVER_HIGHLIGHT_COLOUR",
-            FactionPaletteChoice.values()),
+            OwnerPaletteChoice.values()),
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_previewHighlight_colour",
             "DEFAULT_PREVIEW_HIGHLIGHT_COLOUR",
-            FactionPaletteChoice.values()));
+            OwnerPaletteChoice.values()));
 
     // The numeric field types, whose default column holds a number the Java fallback beside the
     // getter has to agree with. Radio and Boolean rows are held against their own defaults above,

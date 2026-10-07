@@ -7,8 +7,8 @@ import kmu.settings.KmuOwnerMapRibbonSettings;
  *
  * <p>Every populated cell bands, so what is left to answer about an uncontested one is only how
  * loudly. A cell some rival holds something in is the readout the whole design exists for, and its
- * runs are the player's authored lengths; a cell held by one bloc alone reports a footprint its
- * fill has already named the owner of, and needs to say only how many colonies are there. At the
+ * runs are the player's authored lengths; a cell held by one owner alone reports a footprint its
+ * fill has already named the owner of, and needs to say only how many markets are there. At the
  * authored run length a large lone holding would lay more band than the contested cells the design
  * was built around - out-shouting the very cells a reader is meant to be drawn to. A market run of
  * one width keeps such a cell a tally rather than a statement.
@@ -24,7 +24,7 @@ import kmu.settings.KmuOwnerMapRibbonSettings;
 public record UncontestedRibbonRuns(
     boolean isRunShortened) {
 
-    // How far one colony's run reaches on an uncontested cell when the runs are shortened: the
+    // How far one market's run reaches on an uncontested cell when the runs are shortened: the
     // shortest run a band can draw, since the width is the unit every length in the design is a
     // multiple of.
     private static final int ONE_WIDTH_PER_MARKET = 1;
@@ -47,7 +47,7 @@ public record UncontestedRibbonRuns(
      * The lengths an uncontested cell's runs are laid at, given the ones a contested cell's are.
      *
      * <p>Only the market run is answered for here. The parting keeps the player's own length, since
-     * what it separates - one colony from the next - is the same statement on an uncontested cell
+     * what it separates - one market from the next - is the same statement on an uncontested cell
      * as on any other, and shortening it too would leave a tally whose ticks and gaps say nothing
      * apart.
      *

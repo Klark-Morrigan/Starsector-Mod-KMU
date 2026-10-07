@@ -9,7 +9,7 @@ import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

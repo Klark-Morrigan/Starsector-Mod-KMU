@@ -8,11 +8,11 @@ import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 
 import java.util.List;
 
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
 
 /**
  * The sector a poll-walk suite counts over, and how the count is taken.

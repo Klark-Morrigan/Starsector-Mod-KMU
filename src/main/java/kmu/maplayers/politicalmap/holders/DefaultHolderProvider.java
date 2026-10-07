@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.holders;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
+import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
 

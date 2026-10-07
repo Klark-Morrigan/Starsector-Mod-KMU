@@ -4,7 +4,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.PresenceOnlyFactionStanding;
 import kmu.maplayers.politicalmap.dominance.standings.StandingFraction;
@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelTexts;
-import static kmu.maplayers.ownermap.holding.HolderGroupingFixture.GROUP_BLOC_ID;
-import static kmu.maplayers.ownermap.holding.HolderGroupingFixture.buildGroupOf;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.buildEmptySector;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.GROUP_BLOC_ID;
+import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.buildEmptySector;
+import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 import static kmu.maplayers.politicalmap.dominance.tooltip.FactionAccountResolver.NO_ACCOUNT;
 
 import static org.assertj.core.api.Assertions.assertThat;

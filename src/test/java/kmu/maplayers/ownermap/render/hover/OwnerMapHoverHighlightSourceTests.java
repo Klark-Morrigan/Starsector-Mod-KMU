@@ -7,7 +7,7 @@ import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
+import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,11 +31,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class OwnerMapHoverHighlightSourceTests {
 
-    private static final String FACTION_ID = "hegemony";
+    private static final String OWNER_ID = "hegemony";
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
     private static final SystemOwner OWNER =
-        new SystemOwner(FACTION_ID, new OwnerPalette(PRIMARY, SECONDARY));
+        new SystemOwner(OWNER_ID, new OwnerPalette(PRIMARY, SECONDARY));
 
     @Nested
     class ResolveCandidateFrontierLoopsOf {
@@ -76,7 +76,7 @@ final class OwnerMapHoverHighlightSourceTests {
         }
 
         @Test
-        void returnsNothingForAFactionlessCell() {
+        void returnsNothingForAnUnownedCell() {
             // A decivilised or uninhabited cell fuses into no cluster group, so it has no frontier
             // to offer at all.
             var source = readSourceOf(buildClustersWith(
@@ -120,17 +120,18 @@ final class OwnerMapHoverHighlightSourceTests {
 
         @Test
         void paintsAnOwnedCellInItsHoldersShade() {
+
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildClusterGroupWithLoops(List.of())));
 
-            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), FactionPaletteSlot.SECONDARY))
+            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), OwnerPaletteSlot.SECONDARY))
                 .isEqualTo(SECONDARY);
         }
 
         @Test
-        void paintsAFactionlessCellInTheNeutralShade() {
+        void paintsAnUnownedCellInTheNeutralShade() {
             // An unowned cell has no palette of its own, so the highlight says so in the same
             // neutral the cell's own outline draws in.
             var source = readSourceOf(buildClustersWith(
@@ -138,7 +139,7 @@ final class OwnerMapHoverHighlightSourceTests {
                 Map.of("A", buildSquare(10, 10, 80)),
                 null));
 
-            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), FactionPaletteSlot.PRIMARY))
+            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), OwnerPaletteSlot.PRIMARY))
                 .isEqualTo(OwnerMapClusterFixtures.NEUTRAL_COLOUR);
         }
 
@@ -178,12 +179,13 @@ final class OwnerMapHoverHighlightSourceTests {
 
     private static OwnerMapHoverHighlightSource readSourceOf(
             OwnerMapClusters clusters) {
+
         return new OwnerMapHoverHighlightSource(clusters);
     }
 
     // Clusters carrying just what the source reads: who owns each system, each cell's shape,
-    // and the holder's traced loops. A null cluster group stands for a faction with none - the state
-    // a factionless cell's holder lookup lands in.
+    // and the holder's traced loops. A null cluster group stands for an owner with none - the state
+    // an unowned cell's holder lookup lands in.
     private static OwnerMapClusters buildClustersWith(
             Map<String, SystemOwner> ownerBySystemId,
             Map<String, List<double[]>> fillPolygonBySystemId,
@@ -220,9 +222,11 @@ final class OwnerMapHoverHighlightSourceTests {
                 buildCellKey(cell.getKey()),
                 OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(cell.getValue()));
         }
+
         if (clusterGroup != null) {
-            clusters.getStyledClusterGroupByOwnerId().put(FACTION_ID, clusterGroup);
+            clusters.getStyledClusterGroupByOwnerId().put(OWNER_ID, clusterGroup);
         }
+
         return clusters;
     }
 
@@ -236,6 +240,7 @@ final class OwnerMapHoverHighlightSourceTests {
     // An axis-aligned square, counter-clockwise, standing in for a cell's painted extent; the
     // source hands it back untouched, so only its identity matters.
     private static List<double[]> buildSquare(double minX, double minY, double side) {
+
         return List.of(
             new double[] {minX, minY},
             new double[] {minX + side, minY},
@@ -245,6 +250,7 @@ final class OwnerMapHoverHighlightSourceTests {
 
     // The same square as the baked [x, y, x, y, ...] run a border loop is kept in.
     private static float[] buildSquareRun(float minX, float minY, float side) {
+
         return new float[] {
             minX, minY,
             minX + side, minY,

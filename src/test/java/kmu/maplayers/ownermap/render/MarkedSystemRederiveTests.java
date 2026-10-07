@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * every case here states one of them moving and reads back both halves: what the occupancy now
  * says, and what the batch thinks it owes for saying it.
  *
- * <p>Both halves are silent when wrong, and nothing corrects them: a colony event marks a system
+ * <p>Both halves are silent when wrong, and nothing corrects them: a change marks a system
  * once, so a fact folded without the redraw it owes leaves the map disagreeing with the sector
  * until something unrelated rebuilds it, and a redraw recorded without the fold behind it spends a
  * frame arriving at the cell it already had.
@@ -49,9 +49,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class MarkedSystemRederiveTests {
 
-    // The bloc a spotlight case picks. Neither of the two factions above, so a system recorded as
+    // The owner a spotlight case picks. Neither of the two owners above, so a system recorded as
     // holding the pick's presence cannot be one the pick is holding.
-    private static final String SPOTLIT_BLOC = "selected-bloc";
+    private static final String SPOTLIT_OWNER = "selected-owner";
 
     @Nested
     class RederiveMarkedSystems {
@@ -71,8 +71,10 @@ final class MarkedSystemRederiveTests {
         void openTheWalkAndTheSource() {
 
             walk = new SectorWalk(
-                new SectorPassIndex(
-                    buildSectorWithSystems(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM, DISTANT_SYSTEM)),
+                new SectorPassIndex(buildSectorWithSystems(
+                    FLIPPED_SYSTEM,
+                    NEIGHBOUR_SYSTEM,
+                    DISTANT_SYSTEM)),
                 MapVisibilityRules.BASE);
 
             // Every fixture below marks systems its clusters already count as settled, so the
@@ -108,15 +110,14 @@ final class MarkedSystemRederiveTests {
 
             assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM), buildCellKey(NEIGHBOUR_SYSTEM));
-            assertThat(disturbance.getAffectedFactionIds())
+            assertThat(disturbance.getAffectedOwnerIds())
                 .containsExactly(HEGEMONY, TRITACHYON);
         }
 
         @Test
-        void dropsTheHolderOfASystemThatLostItsLastColony() {
-            // Decivilised or bombed out: the entry goes rather than being left pointing at the
-            // faction that lost it, since every reader takes an absent entry for "nobody holds
-            // this".
+        void dropsTheHolderOfASystemThatLostItsLastSettlement() {
+            // Emptied: the entry goes rather than being left pointing at the owner that lost it,
+            // since every reader takes an absent entry for "nobody holds this".
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             assertResolvesTo(FLIPPED_SYSTEM, null);
@@ -129,7 +130,7 @@ final class MarkedSystemRederiveTests {
 
         @Test
         void disturbsNothingWhenNoFactMoved() {
-            // The common resize: a colony grew, its faction still wins, nothing about what stands
+            // The common resize: a settlement grew, its owner still wins, nothing about what stands
             // there changed. Every fill and border is identical, so a disturbance recorded here
             // would spend a frame redrawing the map it already had.
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
@@ -145,7 +146,7 @@ final class MarkedSystemRederiveTests {
         }
 
         @Test
-        void addsASystemTakingItsFirstColonyToTheInhabitedSet() {
+        void addsASystemTakingItsFirstSettlementToTheInhabitedSet() {
             // A haven appearing where nothing stood, on a layer whose holding cannot account for
             // whoever built it: no holder moves, so this set is the only record of the change and
             // the cell over it the only surface that can report one.
@@ -165,7 +166,7 @@ final class MarkedSystemRederiveTests {
         }
 
         @Test
-        void removesASystemLosingItsLastColonyFromTheInhabitedSet() {
+        void removesASystemLosingItsLastSettlementFromTheInhabitedSet() {
 
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(),
@@ -185,8 +186,8 @@ final class MarkedSystemRederiveTests {
         @Test
         void rebuildsNoClusterGroupWhenOnlyInhabitationMoved() {
             // Inhabitation moves no seam - a cell's shape is settled by which of its edges are
-            // same-owner seams - so the neighbour keeps the shape it has and no bloc's outline is
-            // retraced. This is what makes the redraw cheap enough to run on a colony event.
+            // same-owner seams - so the neighbour keeps the shape it has and no owner's outline is
+            // retraced. This is what makes the redraw cheap enough to run on every marked change.
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(),
                 Set.of());
@@ -196,7 +197,7 @@ final class MarkedSystemRederiveTests {
 
             var disturbance = rederive(clusters, FLIPPED_SYSTEM);
 
-            assertThat(disturbance.getAffectedFactionIds())
+            assertThat(disturbance.getAffectedOwnerIds())
                 .isEmpty();
             assertThat(disturbance.getCellKeysToRedraw())
                 .doesNotContain(buildCellKey(NEIGHBOUR_SYSTEM));
@@ -205,10 +206,10 @@ final class MarkedSystemRederiveTests {
         @Test
         void recordsThePickArrivingInAnUnheldSystem() {
             // The third fact, which goes stale exactly as the other two do: a cell restyled against
-            // the standing presence set would sink the pick's brand new colony under the recede
+            // the standing presence set would sink the pick's brand new settlement under the recede
             // meant for everything the pick is not.
             var clusters = OwnerMapClusterFixtures.createClustersSpotlighting(
-                SPOTLIT_BLOC,
+                SPOTLIT_OWNER,
                 Map.of(),
                 Set.of(FLIPPED_SYSTEM),
                 Set.of());
@@ -231,12 +232,12 @@ final class MarkedSystemRederiveTests {
             // anyway - which is the set a full rebuild would have resolved, asked only of the
             // systems its holding left out.
             var clusters = OwnerMapClusterFixtures.createClustersSpotlighting(
-                SPOTLIT_BLOC,
+                SPOTLIT_OWNER,
                 Map.of(),
                 Set.of(FLIPPED_SYSTEM),
                 Set.of(FLIPPED_SYSTEM));
 
-            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(SPOTLIT_BLOC));
+            assertResolvesTo(FLIPPED_SYSTEM, buildOwnerOf(SPOTLIT_OWNER));
 
             // The pick does live there, so a presence asked of an owned system would come back
             // true: an empty set is what says it was never asked, the system's answer deciding
@@ -261,34 +262,39 @@ final class MarkedSystemRederiveTests {
                 walk,
                 ownerSourceFake.openSystemResolve(
                     walk,
-                    clusters.getBuildInputs().contentInputs().selectedBlocId()),
+                    clusters.getBuildInputs().contentInputs().selectedOwnerId()),
                 Set.copyOf(buildCellKeys(markedSystemIds)));
         }
 
         // A clusters holding the given systems and counting each of them settled, which is the
-        // only arrangement production builds: a bloc holds a system by having a colony in it.
+        // only arrangement production builds: an owner holds a system by having something
+        // standing in it.
         private static OwnerMapClusters buildSettledIn(
-                Map<String, String> factionIdBySystemId) {
+                Map<String, String> ownerIdBySystemId) {
+
             return OwnerMapClusterFixtures.createClustersOwnedBy(
-                buildOwnersOf(factionIdBySystemId));
+                buildOwnersOf(ownerIdBySystemId));
         }
 
         // What the resolve answers for one system's owner this batch. Every case states the
         // systems it marks; an unstated one comes back null, which reads as a system that lost its
         // owner rather than as a missing statement.
         private void assertResolvesTo(String systemId, SystemOwner owner) {
+
             ownerSourceFake.recordOwnerOf(systemId, owner);
         }
 
         // What the resolve answers for one system's inhabitation, against the "still settled"
         // default.
         private void assertSettledIs(String systemId, boolean isInhabited) {
+
             ownerSourceFake.recordInhabitationOf(systemId, isInhabited);
         }
 
         // Where the resolve finds the pick living. The rule behind it is the layer's; what a case
         // here states is the answer the batch folds.
         private void assertPickLivesIn(String systemId) {
+
             ownerSourceFake.recordSpotlitPresenceIn(systemId);
         }
     }

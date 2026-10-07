@@ -5,12 +5,12 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.SpotlitBlocs;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
-import kmu.maplayers.ownermap.render.style.SectorBlocPalettes;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
+import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.LinkedHashMap;
@@ -37,7 +37,7 @@ import java.util.Set;
  * {@link HolderResolution#contestedSystemKeys()}, so the render layer can split the fill per
  * cell (solid where it dominates, hatched where contested) inside that one frontier rather than
  * fracturing the footprint into two separately-bordered clusters. The key itself is
- * {@link SpotlitBlocs}'s - asked for here and recognised there - so a resolve that stamps a
+ * {@link SpotlitOwners}'s - asked for here and recognised there - so a resolve that stamps a
  * footprint and a render side that reads one can never disagree about what a spotlit key is.
  */
 public final class FilteredPolitics {
@@ -54,8 +54,10 @@ public final class FilteredPolitics {
 
         /** The selected bloc holds the system outright: drawn solid, at full strength. */
         DOMINATES,
+
         /** The selected bloc lives here without winning the system: drawn contested (hatched). */
         PRESENT_BUT_DOMINATED,
+
         /** The selected bloc owns nothing here: the real dominant holder draws, receded. */
         ABSENT
     }
@@ -100,9 +102,11 @@ public final class FilteredPolitics {
         if (!presentBlocIds.contains(selectedBlocId)) {
             return SelectedBlocPresence.ABSENT;
         }
+
         var dominantBlocId = SystemDominance.resolveDominantFactionId(
             footprintByBlocId,
             rankingRules);
+
         return selectedBlocId.equals(dominantBlocId)
             ? SelectedBlocPresence.DOMINATES
             : SelectedBlocPresence.PRESENT_BUT_DOMINATED;
@@ -122,6 +126,7 @@ public final class FilteredPolitics {
     public static HolderResolution resolveFilteredHolder(
             HolderPass pass,
             String selectedBlocId) {
+
         return resolveFilteredHolder(
             DominancePass.readRulesFromLunaSettings(pass),
             selectedBlocId);
@@ -157,13 +162,17 @@ public final class FilteredPolitics {
         if (!pass.canReadEconomy() || selectedBlocId == null) {
             return new HolderResolution(ownerBySystemKey, contestedSystemKeys, Set.of());
         }
+
         for (var system : pass.readSystems()) {
+
             var systemKey = SystemKey.readKeyOf(system);
             var holder = resolveHolder(system, systemKey, pass, selectedBlocId, contestedSystemKeys);
+
             if (holder != null) {
                 ownerBySystemKey.put(systemKey, holder);
             }
         }
+
         return new HolderResolution(ownerBySystemKey, contestedSystemKeys, Set.of());
     }
 
@@ -189,11 +198,14 @@ public final class FilteredPolitics {
             HolderGrouping grouping,
             String selectedBlocId) {
 
-        var palette = new SectorBlocPalettes(sector, grouping).readBlocPalette(selectedBlocId);
+        var palette = new SectorBlocPalettes(sector, grouping)
+            .readBlocPalette(selectedBlocId);
+
         if (palette == null) {
             return null;
         }
-        return new SystemOwner(SpotlitBlocs.readSpotlitBlocKey(), palette);
+
+        return new SystemOwner(SpotlitOwners.readSpotlitOwnerKey(), palette);
     }
 
     // Resolves one system's presence-aware holder: the selected bloc under the spotlit key where
@@ -235,7 +247,11 @@ public final class FilteredPolitics {
         if (presence == SelectedBlocPresence.ABSENT) {
             return resolveRealHolder(system, pass, footprintByBlocId);
         }
-        var spotlit = resolveSpotlitHolder(pass.sector(), pass.grouping(), selectedBlocId);
+
+        var spotlit = resolveSpotlitHolder(
+            pass.sector(),
+            pass.grouping(),
+            selectedBlocId);
 
         // A selectable bloc's colour faction resolves; this fallback only guards the degenerate
         // case where it vanished mid-session, so the system still draws (as its real receded
@@ -244,9 +260,11 @@ public final class FilteredPolitics {
         if (spotlit == null) {
             return resolveRealHolder(system, pass, footprintByBlocId);
         }
+
         if (presence == SelectedBlocPresence.PRESENT_BUT_DOMINATED) {
             contestedSystemKeys.add(systemKey);
         }
+
         return spotlit;
     }
 

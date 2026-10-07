@@ -1,0 +1,174 @@
+package kmu.maplayers.ownermap.owners.holders.alliances;
+
+import com.fs.starfarer.api.campaign.FactionAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
+
+import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.ownermap.ContentInputs;
+import kmu.maplayers.ownermap.ContentInputsFixtures;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.factions.OwnerMapCategory;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.starsector.StarsectorFactionFixtures;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.awt.Color;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+/**
+ * Pins what the alliance reading adds to the faction one: an alliance is named by its own name,
+ * coloured and badged by its leading member, and always draws at full strength, while a lone faction
+ * recedes by the view's backdrop only where some alliance exists. A lone faction's other answers are
+ * the faction reading's, pinned in its own suite.
+ */
+final class AllianceOwnerReadingTests {
+
+    // One alliance fusing two members, coloured and badged off its leading member and named by the
+    // grouping; a faction outside the map stays its own lone bloc.
+    private static final String ALLIANCE = "rebel_pact";
+    private static final String LEADING_MEMBER = "rebels";
+    private static final HolderGrouping ALLIANCE_GROUPING = new HolderGrouping(
+        Map.of(LEADING_MEMBER, ALLIANCE, "pirates", ALLIANCE),
+        Map.of(ALLIANCE, LEADING_MEMBER),
+        Map.of(ALLIANCE, "Rebel Pact"));
+
+    private static final String LONE_FACTION = "hegemony";
+
+    private static final Color BRIGHT = new Color(140, 160, 220);
+    private static final Color DARK = new Color(40, 60, 120);
+
+    private static final ElementStyleAdjustment DESATURATED = new ElementStyleAdjustment(0.3, true);
+
+    // The recede the bake sampled for the view's own backdrop, distinct from the identity so an
+    // owner that took it can be told from one the gate spared.
+    private static final ContentInputs RECEDING_INPUTS =
+        ContentInputsFixtures.createInputsRecedingNonAllied(DESATURATED);
+
+    @Nested
+    class ResolvePalette {
+
+        @Test
+        void coloursAnAllianceByItsLeadingMember() {
+
+            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(LEADING_MEMBER, BRIGHT, DARK);
+
+            assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolvePalette(ALLIANCE))
+                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+        }
+    }
+
+    @Nested
+    class ResolveName {
+
+        @Test
+        void readsTheAlliancesOwnName() {
+            // An alliance's ID is not a faction ID, so its label comes from the grouping - the
+            // sector is never consulted.
+            var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
+
+            assertThat(reading.resolveName(ALLIANCE, OwnerNameFormatChoice.FULL))
+                .isEqualTo("Rebel Pact");
+        }
+
+        @Test
+        void readsALoneFactionByItsOwnName() {
+
+            var sectorMock = mock(SectorAPI.class);
+            var factionMock = mock(FactionAPI.class);
+
+            when(sectorMock.getFaction(LONE_FACTION))
+                .thenReturn(factionMock);
+            when(factionMock.getDisplayNameLong())
+                .thenReturn("The Hegemony");
+
+            var reading = new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING);
+
+            assertThat(reading.resolveName(LONE_FACTION, OwnerNameFormatChoice.FULL))
+                .isEqualTo("The Hegemony");
+        }
+    }
+
+    @Nested
+    class ResolveCrestPath {
+
+        @Test
+        void readsTheCrestOfTheAlliancesLeadingMember() {
+
+            var sectorMock = mock(SectorAPI.class);
+            var factionMock = mock(FactionAPI.class);
+
+            when(sectorMock.getFaction(LEADING_MEMBER))
+                .thenReturn(factionMock);
+            when(factionMock.getCrest())
+                .thenReturn("graphics/rebels_crest.png");
+
+            var reading = new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING);
+
+            assertThat(reading.resolveCrestPath(ALLIANCE))
+                .isEqualTo("graphics/rebels_crest.png");
+        }
+    }
+
+    @Nested
+    class ResolveStyleAdjustment {
+
+        @Test
+        void takesTheSampledBackdropRecedeForALoneFactionBesideAnAlliance() {
+            // A lone faction is backdrop once some alliance stands as the figure, so it takes exactly
+            // the recede the rebuild sampled for the view's backdrop.
+            var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
+
+            assertThat(reading.resolveStyleAdjustment(LONE_FACTION, RECEDING_INPUTS))
+                .isEqualTo(DESATURATED);
+        }
+
+        @Test
+        void recedesNoAllianceEvenWhenTheBackdropRecedes() {
+
+            var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
+
+            assertThat(reading.resolveStyleAdjustment(ALLIANCE, RECEDING_INPUTS))
+                .isEqualTo(ElementStyleAdjustment.NONE);
+        }
+
+        @Test
+        void recedesNothingWhereNoAllianceExists() {
+            // No alliance means no figure, so receding would sink the whole sector rather than
+            // isolate anything - a fresh Nex campaign's case before diplomacy has formed one.
+            var reading = new AllianceOwnerReading(mock(SectorAPI.class), HolderGrouping.identity());
+
+            assertThat(reading.resolveStyleAdjustment(LONE_FACTION, RECEDING_INPUTS))
+                .isEqualTo(ElementStyleAdjustment.NONE);
+        }
+    }
+
+    @Nested
+    class ResolveCategory {
+
+        @Test
+        void keepsADesaturatedAllianceAtFullStrength() {
+            // An alliance always paints in the faction category so it stands out, whatever the
+            // adjustment says.
+            var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
+
+            assertThat(reading.resolveCategory(ALLIANCE, DESATURATED))
+                .isEqualTo(OwnerMapCategory.FACTION);
+        }
+
+        @Test
+        void placesADesaturatedLoneFactionAsTheFactionReadingDoes() {
+
+            var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
+
+            assertThat(reading.resolveCategory(LONE_FACTION, DESATURATED))
+                .isEqualTo(OwnerMapCategory.INDEPENDENT);
+        }
+    }
+}

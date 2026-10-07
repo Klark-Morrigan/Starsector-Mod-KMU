@@ -8,9 +8,9 @@ import java.awt.Color;
  *
  * <p>Named by slot rather than by element - the player points each element (fill, outer border,
  * inner seam) at one slot or the other through the settings - so the pair stays neutral about
- * which element uses which. It names nothing about where the shades came from either: a faction's
- * authored pair is one source of it, and a layer painting owners that are not factions brings
- * shades of its own. That is why the tier carries this type rather than a faction's palette.
+ * which element uses which. It names nothing about where the shades came from either: each layer
+ * brings shades of its own, whether authored in the game's data or chosen for the layer. That is
+ * why the tier carries this type rather than any one source's palette.
  *
  * @param primaryColour   the bright slot
  * @param secondaryColour the dark slot

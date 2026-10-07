@@ -1,12 +1,16 @@
 package kmu.maplayers.politicalmap.views;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.holders.alliances.AllianceOwnerReading;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
 import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
@@ -32,15 +36,15 @@ import java.util.function.Predicate;
  * A sector holding no alliance recedes nothing, whatever the toggles say - there is no figure for
  * a backdrop to sit behind. It exists so the shared pipeline can paint alliances without knowing
  * anything about them - the view supplies the grouping and how far its backdrop recedes, and the
- * holder owner reading it shares with the faction view answers the recede test and the label off
- * that grouping.
+ * alliance owner reading answers the recede test and the label off that grouping.
  *
  * <p>The grouping is sampled live from Nexerelin, which is why the view is registered only
  * when Nex is present. It names no {@code exerelin.*} type of its own: {@link NexerelinAlliances}
  * is the gate that keeps every Nex reference behind its mod-enabled check, so this class is
  * safe to load on a Nex-free install even though it is never offered there.
  */
-public final class AlliancesView implements DominancePaintedView {
+public final class AlliancesView
+        implements DominancePaintedView {
 
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final AlliancesView INSTANCE = new AlliancesView();
@@ -94,9 +98,16 @@ public final class AlliancesView implements DominancePaintedView {
     }
 
     @Override
+    public OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
+        // An alliance reads by its own name in its colour member's shades, and a lone faction as the
+        // faction view reads it - the alliance reading adds the first to the second.
+        return new AllianceOwnerReading(sector, grouping);
+    }
+
+    @Override
     public ElementStyleAdjustment resolveViewRecedeAdjustment(ScreenMemoryScope memoryScope) {
         // How far the non-allied backdrop recedes on the screen being painted, off this view's own
-        // toggles. Which blocs are the backdrop is the holder owner reading's gate: every lone
+        // toggles. Which blocs are the backdrop is the alliance owner reading's gate: every lone
         // faction, and only where some alliance exists.
         return NON_ALLIED_RECEDE.resolveRecedeAdjustment(memoryScope);
     }

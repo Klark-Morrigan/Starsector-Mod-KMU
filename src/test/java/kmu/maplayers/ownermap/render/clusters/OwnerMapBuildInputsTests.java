@@ -12,8 +12,8 @@ import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
+import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
+import kmu.maplayers.ownermap.render.style.StandInCategory;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,22 +37,22 @@ import static org.mockito.Mockito.when;
  *
  * <p>The cascade's rule is {@link kmu.maplayers.ownermap.render.style.OwnerStylingTests}'s
  * and what an element then paints is
- * {@link kmu.maplayers.ownermap.render.style.ResolvedBlocPaintTests}'s; what belongs here
+ * {@link kmu.maplayers.ownermap.render.style.ResolvedOwnerPaintTests}'s; what belongs here
  * is that both are asked over this record's own snapshots, which is the whole reason the
  * composition sits on the type that holds them.
  */
 final class OwnerMapBuildInputsTests {
 
-    private static final String BLOC_ID = "hegemony";
+    private static final String OWNER_ID = "hegemony";
 
     // Two distinct sets so a swapped slot is caught by identity, held apart from each other.
     private static final Set<SystemKey> UNFILLED = Set.of(buildCellKey("unfilled-system"));
     private static final Set<SystemKey> CONTESTED = Set.of(buildCellKey("contested-system"));
 
-    // The bloc a paint is resolved for, and the shades the record sinks a desaturated one to.
+    // The owner a paint is resolved for, and the shades the record sinks a desaturated one to.
     // Distinct from the holder's own pair, so a resolved palette names which of the two it took.
     private static final SystemOwner HOLDER =
-        new SystemOwner(BLOC_ID, new OwnerPalette(Color.RED, Color.BLUE));
+        new SystemOwner(OWNER_ID, new OwnerPalette(Color.RED, Color.BLUE));
 
     private static final OwnerPalette DESATURATION_PALETTE =
         new OwnerPalette(Color.GREEN, Color.YELLOW);
@@ -71,7 +71,7 @@ final class OwnerMapBuildInputsTests {
             assertThat(inputs.viewReading().view())
                 .isSameAs(viewMock);
 
-            // The empty fallback is never a filtered build, so it selects no bloc, recedes nothing
+            // The empty fallback is never a filtered build, so it selects no owner, recedes nothing
             // and derives nothing about the fill; the scheme's own stand-ins are MapStyling's to
             // pin, read back here only to prove no slot is left null.
             assertThat(inputs.contentInputs().isFiltering())
@@ -96,8 +96,8 @@ final class OwnerMapBuildInputsTests {
                 mock(OwnerPaintedView.class),
                 OwnerReadingFake.createAnsweringNothing(),
                 new OwnerSourceFake());
-            var contentInputs = ContentInputsFixtures.createInertInputs();
 
+            var contentInputs = ContentInputsFixtures.createInertInputs();
             var inputs = new OwnerMapBuildInputs(
                 styling,
                 viewReading,
@@ -143,7 +143,7 @@ final class OwnerMapBuildInputsTests {
     }
 
     @Nested
-    class ResolveBlocPaintOf {
+    class ResolveOwnerPaintOf {
 
         @Test
         void cascadesTheRecordsOwnReadingAndPicks() {
@@ -153,16 +153,16 @@ final class OwnerMapBuildInputsTests {
             var adjustment = new ElementStyleAdjustment(0.5, false);
             var contentInputs = ContentInputsFixtures.createInertInputs();
             var readingMock = buildReadingAdjustingBy(adjustment);
-
             var paint = buildInputsUnder(readingMock, contentInputs)
-                .resolveBlocPaintOf(BLOC_ID, HOLDER);
+                .resolveOwnerPaintOf(OWNER_ID, HOLDER);
 
             assertThat(paint.adjustment())
                 .isSameAs(adjustment);
             assertThat(paint.style())
                 .isNotNull();
 
-            verify(readingMock).resolveStyleAdjustment(BLOC_ID, contentInputs);
+            verify(readingMock)
+                .resolveStyleAdjustment(OWNER_ID, contentInputs);
         }
 
         @Test
@@ -174,7 +174,7 @@ final class OwnerMapBuildInputsTests {
             var paint = buildInputsUnder(
                     buildReadingAdjustingBy(new ElementStyleAdjustment(1.0, true)),
                     ContentInputsFixtures.createInertInputs())
-                .resolveBlocPaintOf(BLOC_ID, HOLDER);
+                .resolveOwnerPaintOf(OWNER_ID, HOLDER);
 
             assertThat(paint.palette())
                 .isSameAs(DESATURATION_PALETTE);
@@ -189,7 +189,7 @@ final class OwnerMapBuildInputsTests {
             when(readingMock.resolveStyleAdjustment(any(), any()))
                 .thenReturn(adjustment);
             when(readingMock.resolveCategory(any(), any()))
-                .thenReturn(OwnerMapCategory.FACTION);
+                .thenReturn(StandInCategory.OWNED);
 
             return readingMock;
         }
@@ -205,7 +205,7 @@ final class OwnerMapBuildInputsTests {
             new MapStyling(
                 OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
                     OwnerMapClusterFixtures.createInertCategoryStyle()),
-                HolderCategories.INSTANCE,
+                OwnerCategoriesFake.SHARED_FAKE,
                 OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                 DESATURATION_PALETTE,
                 OwnerMapClusterFixtures.NEUTRAL_PALETTE),

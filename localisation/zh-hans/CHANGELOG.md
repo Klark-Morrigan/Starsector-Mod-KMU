@@ -13,6 +13,48 @@
 
 ## [Unreleased]
 
+### 面向开发者
+
+<details>
+<summary>内部实现与地图图层框架</summary>
+
+#### 公共契约变更（**破坏性**）
+
+以下变更都不影响玩家：每个 LunaLib 字段 ID 和保存在星域内存中的每个值都保持原有拼写，因此设置和存档可原样沿用。它们影响的是基于 KMU 框架构建地图图层的 Mod。
+
+##### 包
+
+所有者地图层的核心不再知道所有者是什么。绘制持有者的图层所共享的部分位于 `kmu.maplayers.ownermap.owners.holders` 下：`base` 用于各类持有者，`factions` 把一个势力作为一个所有者，`alliances` 把一组势力作为一个所有者。核心不得导入该子树。
+
+| 之前 | 之后 |
+| --- | --- |
+| `ownermap.holding`、`ownermap.owners.holders`、`BlocPickerAssembly`、`BlocStanding`、`BlocStandingReader`、`BlocStandingSortMode`、`RibbonPlanInputs`、`BlocPaletteReader` 和 `SectorBlocPalettes` | `ownermap.owners.holders.base`，下列类型除外 |
+| `HolderCategories`、`OwnerMapCategory`、`ColonyCellRibbons`、`SizedBlocMetrics`、`SharedBlocSortModes`、`SystemStatusRow` 以及 `ownermap.tooltip` 中的殖民地与势力行 | `ownermap.owners.holders.factions` |
+| `BlocAffiliation`、`BlocFriendliness`、`ContestSide`、`ContestSides` 和 `BlocRelations` | `ownermap.owners.holders.alliances` |
+
+##### 重命名
+
+| 之前 | 之后 |
+| --- | --- |
+| `SelectableBloc`、`SelectableBlocCache`、`RankedBloc`、`BlocMetrics`、`PaintingBlocMetrics`、`BlocMetricSortMode`、`BlocSortModeComposer`、`BlocPickerRead`、`BlocPresenceIndex`、`BlocPresenceIndexBuilder`、`BlocStatsRead`、`SpotlitBlocs`、`ResolvedBlocPaint`、`BlocNameStyles` 和 `BlocPresence` | 各名称及其成员中的 `Bloc` 换为 `Owner` |
+| `FactionNameFormatChoice`、`FactionPaletteSlot`、`FactionlessStyleResolver` 和 `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`、`OwnerPaletteSlot`、`UnownedStyleResolver` 和 `OwnerPaletteChoice` |
+| `HolderOwnerReading` | `FactionOwnerReading`，以及为绘制联盟的图层建立在其上的 `AllianceOwnerReading` |
+| `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` 及其 `strings.json` 键 | `POLITICAL_MAP_CTL_FACTION_NAMES`，政治地图自己的标题 |
+
+##### 接缝
+
+| 之前 | 之后 |
+| --- | --- |
+| `OwnerPaintedView` 的 `resolveBlocPickerRead(SectorAPI, ColonyReadRules)`、`buildBlocPickerRead` 和 `resolveSelectableBlocGate` | 位于 `HolderPaintedView`。`OwnerPaintedView` 保留 `resolveOwnerPickerRead(SectorAPI)`，默认为空 |
+| `HolderPaintedView.resolveContestGrouping()` | `resolveContestAffiliation()`，返回 `OwnerAffiliation` |
+| 基于 `BlocAffiliation` 的 `RibbonPlan.planCellRibbon` | 基于 `kmu.maplayers.ownermap.owners.OwnerAffiliation`，由 `BlocAffiliation` 实现 |
+| `SpotlitBlocs.findPresentSystemKeys` 和 `isBlocPresentIn` | `SpotlitBlocPresence` |
+| `RenderStyleReader.readFactionStyle`、`readIndependentStyle`、`readDecivilisedStyle` 和 `readUninhabitedStyle` | `HolderCategoryStyleReader` |
+| `BlocPresence.collectColouredPresences` | 已移除：`ColonyCellRibbons` 自行为计数着色 |
+| `NameFormatPreference(String)` | `NameFormatPreference(String, String)`：图层还需给出名称单选框的标题键 |
+
+</details>
+
 ## [0.2.1] - 2026-10-06
 
 ### 修复

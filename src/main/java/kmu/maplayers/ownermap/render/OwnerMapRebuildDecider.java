@@ -226,11 +226,11 @@ final class OwnerMapRebuildDecider {
     // The content revision's holding half: the same fold over only what reaches the resolve. Of the
     // sidebar picks that is the spotlight alone - the two recedes, the name format and the outline
     // reach the paint and nothing before it. The view revision stays in whole, since the rule a
-    // view resolves holding by can read LunaLib fields, and a view that groups factions into blocs
+    // view resolves holding by can read LunaLib fields, and a view that groups owners together
     // moves its holding whenever those groups move. A style pick moves the content revision and
     // leaves this one where it was, which is what lets the rebuild it owes keep the holding.
     private static int computeHoldingRevision(int viewRevision, ContentInputs contentInputs) {
-        return Objects.hash(viewRevision, contentInputs.selectedBlocId());
+        return Objects.hash(viewRevision, contentInputs.selectedOwnerId());
     }
 
     // The terms both revisions share, folded once: the settings revision, since a settings change

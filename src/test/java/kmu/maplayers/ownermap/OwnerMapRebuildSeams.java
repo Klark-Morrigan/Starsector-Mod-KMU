@@ -9,10 +9,10 @@ import kmlib.testfixtures.statics.StaticSeams;
 import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.NameFormatPreference;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuOwnerMapGeometrySettings;
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>Four seams are handed back, because they are what those suites legitimately disagree on: which
  * sector the game is running, whether the bands are on, what the player is allowed to see, and which
- * bloc is spotlighted. Everything else answers the same way for any rebuild, so a caller states only
+ * owner is spotlighted. Everything else answers the same way for any rebuild, so a caller states only
  * what it varies.
  */
 public final class OwnerMapRebuildSeams {
@@ -75,7 +75,7 @@ public final class OwnerMapRebuildSeams {
             .when(() -> LabelFonts.settleMapLabelFace(any()))
             .thenReturn(StarsectorFont.VANILLA_INSIGNIA_42);
 
-        // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory state
+        // No owner spotlighted, which the seam's own null answers - the pick is sector-memory state
         // no test JVM has.
         filterSelectionSeam = seams.openSeam(FilterSelection.class);
 
@@ -109,7 +109,7 @@ public final class OwnerMapRebuildSeams {
         var nameFormatMock = mock(NameFormatPreference.class);
 
         when(nameFormatMock.getSelectedNameFormat(any()))
-            .thenReturn(FactionNameFormatChoice.NONE);
+            .thenReturn(OwnerNameFormatChoice.NONE);
 
         var preferences = OwnerMapBodyPreferencesFixtures.createUnderTestKeys();
 
@@ -172,7 +172,7 @@ public final class OwnerMapRebuildSeams {
     }
 
     /**
-     * @return the seam standing in for the spotlight pick, for a caller posing a bloc picked or
+     * @return the seam standing in for the spotlight pick, for a caller posing an owner picked or
      *         cleared between two frames
      */
     public MockedStatic<FilterSelection> resolveFilterSelectionSeam() {

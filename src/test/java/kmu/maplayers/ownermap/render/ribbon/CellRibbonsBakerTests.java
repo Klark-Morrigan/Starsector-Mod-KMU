@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>Which cells is really the question of which of the clusters' two sets the bake hands the
  * source - what the sector holds, or what this layer painted - and the two are equal on an
- * ordinary map, so only a settled system no bloc holds can tell them apart. One case poses that
+ * ordinary map, so only a settled system no owner holds can tell them apart. One case poses that
  * deliberately; every other here would pass either way.
  *
  * <p>The store is the point, and it is the one thing here that cannot be seen one level down. A
@@ -86,7 +86,7 @@ final class CellRibbonsBakerTests {
     private static final SystemKey UNHELD_SETTLED_CELL = buildCellKey(UNHELD_SETTLED_SYSTEM_ID);
 
     // A cell the clusters were never told about, which is what an incremental re-bake names
-    // when a colony change takes the last thing standing in a system.
+    // when a marked change takes the last thing standing in a system.
     private static final SystemKey UNDRAWN_CELL = buildCellKey("vanished");
 
     private static final Color BAND_COLOUR = new Color(140, 160, 220);
@@ -140,7 +140,7 @@ final class CellRibbonsBakerTests {
         void bandsASettledCellThisLayersHoldingGivesToNobody() {
             // The wiring the whole step turns on, and the one case that can fail if the bake reads
             // the wrong set: the pass gates on what the sector holds, not on what this layer
-            // painted, so a haven no bloc holds is offered a band like any settled cell. Handed
+            // painted, so a haven no owner holds is offered a band like any settled cell. Handed
             // the holder map instead, this cell would be skipped and every other case here would
             // still pass.
             var clusters = buildHeldAndUnheldDrawnCells();
@@ -210,9 +210,9 @@ final class CellRibbonsBakerTests {
         @Test
         void laysALaterPassesBandsAlongTheRingsTheFirstPassWalked() {
             // What the store is for. A bake runs whenever a cluster name may have moved, which is
-            // every colony flip, while a cell's ring moves only when the cell is cut again - so
-            // the second pass over an untouched cell must walk nothing and lay its band along the
-            // ring already standing.
+            // every flip the layer marks, while a cell's ring moves only when the cell is cut
+            // again - so the second pass over an untouched cell must walk nothing and lay its band
+            // along the ring already standing.
             var clusters = buildTwoDrawnCells();
 
             bakeEveryCellThrough(clusters);
@@ -259,7 +259,7 @@ final class CellRibbonsBakerTests {
 
         @Test
         void bandsOnlyTheCellsItWasNamed() {
-            // The incremental path: a colony change disturbs a handful of cells, and the rest of
+            // The incremental path: a marked change disturbs a handful of cells, and the rest of
             // the map keeps the bands it already carries rather than being re-baked around them.
             var clusters = buildTwoDrawnCells();
 
@@ -271,9 +271,10 @@ final class CellRibbonsBakerTests {
 
         @Test
         void passesOverACellTheMapNeverDrew() {
-            // A caller names the cells something happened to, and one of them losing its last
-            // colony is one of the things that can have happened - so a cell with no shape to bake
-            // inside is skipped rather than being an error the refresh has to guard against.
+            // A caller names the cells something happened to, and one of them losing the last
+            // thing standing in it is one of the things that can have happened - so a cell with no
+            // shape to bake inside is skipped rather than being an error the refresh has to guard
+            // against.
             var clusters = buildTwoDrawnCells();
 
             assertThatCode(() -> bakeThrough(clusters).bakeCellRibbonsOf(List.of(UNDRAWN_CELL)))
@@ -407,7 +408,7 @@ final class CellRibbonsBakerTests {
     }
 
     // Any holder, which the fixture also counts as making its system inhabited - the set the band
-    // pass gates on. Which bloc holds it decides nothing here.
+    // pass gates on. Which owner holds it decides nothing here.
     private static SystemOwner buildHolder() {
         return new SystemOwner("hegemony", new OwnerPalette(Color.WHITE, Color.GRAY));
     }

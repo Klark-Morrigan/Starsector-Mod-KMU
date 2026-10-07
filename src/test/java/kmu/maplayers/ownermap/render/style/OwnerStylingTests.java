@@ -27,7 +27,7 @@ final class OwnerStylingTests {
 
     // The two owned categories' fill opacities, kept distinct so an observed opacity names the
     // category it was sourced from.
-    private static final double FACTION_FILL_OPACITY = 0.4;
+    private static final double OWNED_FILL_OPACITY = 0.4;
     private static final double INDEPENDENT_FILL_OPACITY = 0.2;
 
     // Values only the independent bundle carries, so they witness that the rest of that bundle
@@ -39,15 +39,15 @@ final class OwnerStylingTests {
     class ResolveFrom {
 
         @Test
-        void paintsFromTheFactionBundleWhenTheBlocDoesNotRecede() {
+        void paintsFromTheOwnedBundleWhenTheOwnerDoesNotRecede() {
 
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                HolderCategories.INSTANCE,
-                new OwnerStyleDecision(OwnerMapCategory.FACTION, ElementStyleAdjustment.NONE));
+                OwnerCategoriesFake.SHARED_FAKE,
+                new OwnerStyleDecision(StandInCategory.OWNED, ElementStyleAdjustment.NONE));
 
             assertThat(styling.style().fill().opacity())
-                .isEqualTo(FACTION_FILL_OPACITY);
+                .isEqualTo(OWNED_FILL_OPACITY);
         }
 
         @Test
@@ -56,37 +56,37 @@ final class OwnerStylingTests {
             var adjustment = new ElementStyleAdjustment(0.5, true);
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                HolderCategories.INSTANCE,
-                new OwnerStyleDecision(OwnerMapCategory.FACTION, adjustment));
+                OwnerCategoriesFake.SHARED_FAKE,
+                new OwnerStyleDecision(StandInCategory.OWNED, adjustment));
 
             assertThat(styling.adjustment())
                 .isEqualTo(adjustment);
         }
 
         @Test
-        void keepsTheIndependentFillOpacityWhenTheBlocRecedesInFullColour() {
+        void keepsTheIndependentFillOpacityWhenTheOwnerRecedesInFullColour() {
             // In full colour the independent bundle keeps its own lighter fill, so independent
-            // space still recedes behind a faction's fill.
+            // space still recedes behind an owned fill.
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                HolderCategories.INSTANCE,
-                new OwnerStyleDecision(OwnerMapCategory.INDEPENDENT, ElementStyleAdjustment.NONE));
+                OwnerCategoriesFake.SHARED_FAKE,
+                new OwnerStyleDecision(StandInCategory.RECEDED, ElementStyleAdjustment.NONE));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(INDEPENDENT_FILL_OPACITY);
         }
 
         @Test
-        void holdsADesaturatedBlocAtTheFactionFillOpacity() {
-            // A desaturated fill holds the one faction fill opacity, so the whole desaturated
+        void holdsADesaturatedOwnerAtTheOwnedFillOpacity() {
+            // A desaturated fill holds the one owned fill opacity, so the whole desaturated
             // surface reads uniform rather than splitting into two weights of grey.
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                HolderCategories.INSTANCE,
-                new OwnerStyleDecision(OwnerMapCategory.INDEPENDENT, new ElementStyleAdjustment(1.0, true)));
+                OwnerCategoriesFake.SHARED_FAKE,
+                new OwnerStyleDecision(StandInCategory.RECEDED, new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().opacity())
-                .isEqualTo(FACTION_FILL_OPACITY);
+                .isEqualTo(OWNED_FILL_OPACITY);
         }
 
         @Test
@@ -95,13 +95,13 @@ final class OwnerStylingTests {
             // independent bundle's own choice.
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                HolderCategories.INSTANCE,
+                OwnerCategoriesFake.SHARED_FAKE,
                 new OwnerStyleDecision(
-                    OwnerMapCategory.INDEPENDENT,
+                    StandInCategory.RECEDED,
                     new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().colour())
-                .isEqualTo(FactionPaletteSlot.SECONDARY);
+                .isEqualTo(OwnerPaletteSlot.SECONDARY);
         }
 
         @Test
@@ -110,9 +110,9 @@ final class OwnerStylingTests {
             // uniformity, so they survive the crossover untouched.
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                HolderCategories.INSTANCE,
+                OwnerCategoriesFake.SHARED_FAKE,
                 new OwnerStyleDecision(
-                    OwnerMapCategory.INDEPENDENT,
+                    StandInCategory.RECEDED,
                     new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().innerWidth())
@@ -125,15 +125,15 @@ final class OwnerStylingTests {
         void holdsTheFillAtTheCategoryTheLayerDeclaresFullStrength() {
             // The weight a desaturated owner holds is whichever category its layer names as full
             // strength, not a category the tier knows by name: declared the other way round, a
-            // faction-category owner takes the independent weight.
+            // owned-category owner takes the independent weight.
             var categoriesMock = mock(OwnerCategories.class);
             when(categoriesMock.resolveFullStrengthCategory())
-                .thenReturn(OwnerMapCategory.INDEPENDENT);
+                .thenReturn(StandInCategory.RECEDED);
 
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
                 categoriesMock,
-                new OwnerStyleDecision(OwnerMapCategory.FACTION, new ElementStyleAdjustment(1.0, true)));
+                new OwnerStyleDecision(StandInCategory.OWNED, new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(INDEPENDENT_FILL_OPACITY);
@@ -144,53 +144,53 @@ final class OwnerStylingTests {
 
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
-                HolderCategories.INSTANCE,
-                new OwnerStyleDecision(OwnerMapCategory.FACTION, new ElementStyleAdjustment(1.0, true)));
+                OwnerCategoriesFake.SHARED_FAKE,
+                new OwnerStyleDecision(StandInCategory.OWNED, new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().colour())
-                .isEqualTo(FactionPaletteSlot.PRIMARY);
+                .isEqualTo(OwnerPaletteSlot.PRIMARY);
             assertThat(styling.style().fill().opacity())
-                .isEqualTo(FACTION_FILL_OPACITY);
+                .isEqualTo(OWNED_FILL_OPACITY);
         }
     }
 
     // A theme whose two owned bundles differ in every field these tests read back, so an
     // assertion on any one of them names which bundle the cascade sourced it from. The two
-    // factionless categories are never reached by this cascade, so they reuse the faction bundle.
+    // unowned categories are never reached by this cascade, so they reuse the owned bundle.
     private static RenderStyle buildTheme() {
 
-        var factionStyle = new CategoryStyle(
+        var ownedStyle = new CategoryStyle(
             new ElementStyle(
-                FactionPaletteSlot.PRIMARY,
-                FACTION_FILL_OPACITY),
+                OwnerPaletteSlot.PRIMARY,
+                OWNED_FILL_OPACITY),
             new ElementStyle(
-                FactionPaletteSlot.PRIMARY,
+                OwnerPaletteSlot.PRIMARY,
                 1.0),
                 3.0,
             new ElementStyle(
-                FactionPaletteSlot.PRIMARY,
+                OwnerPaletteSlot.PRIMARY,
                 1.0),
                 1.0);
 
         var independentStyle = new CategoryStyle(
             new ElementStyle(
-                FactionPaletteSlot.SECONDARY,
+                OwnerPaletteSlot.SECONDARY,
                 INDEPENDENT_FILL_OPACITY),
             new ElementStyle(
-                FactionPaletteSlot.SECONDARY,
+                OwnerPaletteSlot.SECONDARY,
                 INDEPENDENT_OUTER_OPACITY),
                 3.0,
             new ElementStyle(
-                FactionPaletteSlot.SECONDARY,
+                OwnerPaletteSlot.SECONDARY,
                 1.0),
                 INDEPENDENT_INNER_WIDTH);
 
         Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
 
-        categories.put(OwnerMapCategory.FACTION, factionStyle);
-        categories.put(OwnerMapCategory.INDEPENDENT, independentStyle);
-        categories.put(OwnerMapCategory.DECIVILISED, factionStyle);
-        categories.put(OwnerMapCategory.UNINHABITED, factionStyle);
+        categories.put(StandInCategory.OWNED, ownedStyle);
+        categories.put(StandInCategory.RECEDED, independentStyle);
+        categories.put(StandInCategory.SETTLED, ownedStyle);
+        categories.put(StandInCategory.EMPTY, ownedStyle);
 
         // The global tier is carried untouched by this cascade - it maps categories, not
         // sector-wide knobs - so the shared inert tier serves.

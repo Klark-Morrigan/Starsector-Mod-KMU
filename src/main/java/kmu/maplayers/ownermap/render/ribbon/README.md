@@ -103,9 +103,9 @@ A settled system can resolve no holder,
 for reasons the layer's own holding rule sets,
 so the layer's fill says nothing about it,
 and gating on that fill would leave the band silent on exactly the systems it is the only readout for.
-Every system a bloc holds through a colony is inhabited,
+Every system an owner holds is inhabited,
 so the gate drops none of them.
-It is also the very set the factionless cell beneath is classified from,
+It is also the very set the unowned cell beneath is classified from,
 so a cell drawn as settled and a cell offered a band are one set.
 Such a cell reaches the view's planner with **no painter**,
 which is a case of its own rather than an absent one;
@@ -114,12 +114,10 @@ see [`ownermap.ribbon`](../../ribbon/README.md) for the two arms that follow fro
 The gate is **wider** than the holding,
 which is a real cost.
 Inhabitation is the larger set,
-so the systems the holding leaves out each pay their first walk of the pass's colony index -
-and `readMarketsUnlistedByEconomy` walks every entity in the system.
+so the systems the holding leaves out each pay their first walk of what the source reads per system.
 For a settled system the holding gives to nobody that walk buys the band it exists for.
-A **decivilised** system buys one too:
-the shared set admits a surveyed decivilised world as the colony kind it is (`ColonyKind.UNGOVERNED_COLONY`),
-so it counts toward habitation and lays a run of its own -
+A **decivilised** system buys one too where the layer counts it as inhabited,
+and lays a run of its own -
 unowned,
 so the run draws in the colours nobody's holding gets,
 which is the same thing the cell beneath it says.
@@ -147,7 +145,7 @@ and the pass's timings written to but never read:
    `min(width, stretchLength / totalUnits)`,
    so a crowded cell -
    or one much of whose ring is under a name -
-   compresses rather than losing a bloc off the end.
+   compresses rather than losing an owner off the end.
 4. Below `Limits.MIN_EDGE_LENGTH` the cell says nothing at all -
    too little ring left to state the plan at any size,
    whether because the cell is small or because the names have eaten most of it.
@@ -170,7 +168,7 @@ from the three separate reasons one can owe a band:
 
 | Reason | Which cells |
 | --- | --- |
-| the count moved | the systems a colony event marked, whether or not their holder changed |
+| the count moved | the systems a change marked, whether or not their holder changed |
 | the ring moved | the cells the batch redrew - the ring around a flip, and any system whose own facts moved - each of which lost the band laid in its old shape |
 | the room moved | the cells a re-fitted name reaches, which the flip need never have touched |
 
@@ -337,7 +335,7 @@ but its top centre would be judged on whichever half of its longest stretch happ
 A band shorter than its stretch can sit anywhere along it,
 and where it sits is decided rather than left to the ring the names happened to leave:
 **a band sits as near the cell's top centre as its stretch allows**.
-That landmark is the path's own origin and where the holding bloc's run begins,
+That landmark is the path's own origin and where the holding owner's run begins,
 so every cell is read from the same place -
 which is what a band opening wherever a name left off costs the reader.
 
@@ -460,13 +458,13 @@ per cell:
 
 | Phase | What it covers | What it grows with |
 | --- | --- | --- |
-| `plan` | counting what a system holds | the systems' colonies - a mechanic that weighs markets walks a system's whole market list |
+| `plan` | counting what a system holds | what each system holds - a mechanic that weighs markets walks a system's whole market list |
 | `trace` | reaching for the cell's ring, and `RibbonPathTracer` insetting and walking one where none stands | the cells this bake had to walk - every cell on a fresh build, only the re-shaped ones after |
 | `carve` | the names and the pinches taken off that ring, and the band placed on what is left | the cells times the names, since every name on the map is tested against every cell |
 | `stroke` | the runs laid end to end and stroked into triangles | the cells that drew something, and how much each planned |
 
 Four rather than one because those axes differ:
-a sector that doubles its colonies does not move them by one factor,
+a sector that doubles what it holds does not move them by one factor,
 so a single total can say a bake got slower without saying which of them did.
 
 Phases of one open scope rather than sections of their own,

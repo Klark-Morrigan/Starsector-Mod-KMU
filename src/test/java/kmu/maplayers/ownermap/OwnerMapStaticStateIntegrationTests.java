@@ -35,6 +35,10 @@ final class OwnerMapStaticStateIntegrationTests {
     private static final String TIER_PATH = "kmu/maplayers/ownermap";
     private static final String CLASS_SUFFIX = ".class";
 
+    // The holder answers' subtree, and how many packages it holds: their shared base and two kinds.
+    private static final String HOLDERS_PACKAGE = "kmu.maplayers.ownermap.owners.holders.";
+    private static final int HOLDER_PACKAGE_COUNT = 3;
+
     @Nested
     class EveryTierClass {
 
@@ -50,6 +54,21 @@ final class OwnerMapStaticStateIntegrationTests {
 
             assertThat(findMutableStaticFields(tierClasses))
                 .isEmpty();
+        }
+
+        @Test
+        void readsEveryPackageOfTheHolderAnswers() throws IOException, URISyntaxException {
+            // The holder answers sit in a subtree the core may not import, so a walk that stopped
+            // short of it would pass here unnoticed. Counted rather than named: the shared base and
+            // one package per kind of holder, which this suite is closed to the words for.
+            var holderPackages = listTierClassNames().stream()
+                .filter(className -> className.startsWith(HOLDERS_PACKAGE))
+                .map(className -> className.substring(0, className.lastIndexOf('.')))
+                .distinct()
+                .toList();
+
+            assertThat(holderPackages)
+                .hasSizeGreaterThanOrEqualTo(HOLDER_PACKAGE_COUNT);
         }
     }
 

@@ -10,11 +10,13 @@ A layer that paints the map by *who a place belongs to* draws through this tier
 rather than composing the primitives itself.
 
 The tier holds no opinion about what an owner is.
-A faction,
-a group of factions,
-or whatever else a layer keys a place by -
+Whatever a layer keys a place by,
 the key is opaque here,
 and the layer above says what it means.
+The one kind of owner the mod paints so far,
+a holder,
+is answered from inside the tier but outside its core -
+see [where each part lives](#where-each-part-lives).
 It sits between the substrate and a layer because neither end could hold it:
 not every layer paints by an owner,
 so the assembly cannot be the substrate;
@@ -39,7 +41,7 @@ and a part has to pass both.
 
 The first is whether it names a mechanic.
 Weighing markets,
-or a relation between factions -
+or a relation between owners -
 each decides *who* paints,
 and each is one layer's rule.
 A part that names one belongs to that layer,
@@ -88,14 +90,14 @@ a view recedes nothing of its own accord unless it says so.
 Any other default would name one layer's answer in front of every layer,
 including the ones it does not describe.
 
-**The tier reads no colony.**
+**The tier reads nothing about owners.**
 A rebuild opens one `SectorWalk` -
 the sector's systems and what each holds,
 walked once,
 beside the visibility rules the cells were cut under -
 and hands it to the layer's source.
 Whatever the source opens over it is the source's:
-the layers painting holders open a colony pass,
+the layers painting holders open a pass over what stands in each system,
 a relay layer would read nothing but which systems carry a relay.
 The cut, the source and the band bake all read that one walk,
 so a rebuild still walks the sector once.
@@ -104,7 +106,7 @@ so a marked system lands the owner its neighbours were painted under.
 
 The reading and the source come from one call
 because they have to agree about what an owner is:
-a view folding factions into groups reads that fold live,
+a view folding owners into groups may read that fold live,
 and a source folding under one sampling of it while the reading named owners under another
 would paint a fold the holding never made.
 
@@ -124,7 +126,7 @@ are the owner reading's answers,
 and so are the neutral shades an unowned cell paints in and a receded one sinks toward.
 One reading per rebuild rather than per question,
 because an answer may rest on a live source -
-which factions stand together, say -
+who stands together, say -
 and every shade, name and category one rebuild paints has to come off one sampling of it.
 The build retains it beside the source for every stage after,
 the label fit and the incremental refresh included.
@@ -136,12 +138,9 @@ and the split of unowned cells into settled and empty -
 and indexes the theme by whatever category the layer answers,
 never naming one itself.
 
-The layers painting holders answer all of it through `HolderPaintedView`,
-which samples their grouping once and builds a `HolderOwnerReading` and a `HolderOwnerSource` over it,
-and through `HolderCategories`,
-which divides cells into the four `OwnerMapCategory` values.
-A layer painting owners that are not factions brings its own,
-and the build then never asks the sector for a faction or a colony at all.
+The layers painting holders answer all of it through [`owners/holders`](owners/holders/README.md).
+A layer painting any other kind of owner brings its own answers,
+and nothing on its rebuild's path reads a holder at all.
 
 ## What a layer holds
 
@@ -188,6 +187,15 @@ The edge closing this tier to every layer is what makes it a tier rather than a 
 it proves the assembly compiles with no layer on the compile path,
 which is the whole promise a second painting layer rests on.
 
+Inside the tier,
+the core may not import `owners/holders`,
+the one subtree it is closed to.
+The holder answers fill the core's seams from inside the tier
+so both layers painting holders can reach them,
+and a core that imported one would know what an owner is again.
+The edge leaves the subtree out with the gate's `except:`,
+so a core package added later is closed to it without a line of its own.
+
 ## The words it keeps
 
 The tier speaks the substrate's words one level up -
@@ -197,9 +205,15 @@ cluster group,
 cluster border -
 and `enforcePackageVocabulary` holds it to them;
 the list and the reason for it are in [the map layers README](../README.md#the-vocabulary).
-*Bloc* is the one word it keeps that the substrate may not say,
-since this is where owners are grouped,
-ranked and picked.
+
+The core is also closed to the four words that say what a holder is:
+*faction*,
+*colony*,
+*bloc*
+and *alliance*.
+They are the subject of `owners/holders` and nothing else here,
+so the gate leaves that subtree out
+and the core says *owner*.
 
 Nothing in the tier names a layer built on it.
 The frozen save keys a layer's choices live under are that layer's,
@@ -219,20 +233,19 @@ since that is what a player's stored setting is keyed by.
 
 | Package | What is in it |
 | --- | --- |
-| *(top level)* | the view seam (`OwnerPaintedView`, `MapLayerViewRegistry`, `ViewReading`), the picker assembly behind its defaults (`BlocPickerAssembly`), the stale-spotlight heal (`FilterSelectionHeal`) and the preferences a rebuild samples (`ContentInputs`) |
-| `holding` | one rebuild's reading of a sector: `HolderPass`, the grouping it folds factions by, the colony rules it reads under, the contest sides a `BlocAffiliation` places blocs on, and `HolderOwnerReading`, the owner reading of the layers painting holders |
-| [`owners`](owners/README.md) | the two seams a layer answers its owners through - where they come from (`OwnerSource`, its per-system `SystemOwnerResolve`, the walk it is handed and the `ResolvedOwners` it answers) and how each looks (`OwnerReading`) - beside the owner of a system (`SystemOwner`), the two shades it paints in (`OwnerPalette`), and the spotlight's own key (`SpotlitBlocs`) |
-| [`owners/holders`](owners/holders/README.md) | the holder source over a colony pass, the view shape that assembles it, the holding rules a layer painting holders states, and the three fill states |
-| `picker` | the bloc picker model: its rows (`SelectableBloc`, `RankedBloc`), the metrics they carry, the sort modes ranking them, a bloc's standing with the player, and the presence index a preview lights |
+| *(top level)* | the view seam (`OwnerPaintedView`, `MapLayerViewRegistry`, `ViewReading`), the stale-spotlight heal (`FilterSelectionHeal`) and the preferences a rebuild samples (`ContentInputs`) |
+| [`owners`](owners/README.md) | the seams a layer answers its owners through - where they come from (`OwnerSource`, its per-system `SystemOwnerResolve`, the walk it is handed and the `ResolvedOwners` it answers), how each looks (`OwnerReading`) and who stands together in a contest (`OwnerAffiliation`) - beside the owner of a system (`SystemOwner`), the two shades it paints in (`OwnerPalette`), and the spotlight's own key (`SpotlitOwners`) |
+| [`owners/holders`](owners/holders/README.md) | the answers of the layers painting holders, outside the core: what every holder shares (`base`), one faction as one owner (`factions`), and a group of factions as one owner (`alliances`) |
+| `picker` | the owner picker model: its rows (`SelectableOwner`, `RankedOwner`), the metrics they carry, the sort modes ranking them, and the presence index a preview lights |
 | `preferences` | the per-save body choices - name format, uninhabited outline, recede - and `OwnerMapBodyPreferences`, the set a layer builds over keys of its own |
 | [`render/clusters`](render/clusters/README.md) | cells into coloured, bordered clusters with their seams and split fills |
-| [`render/style`](render/style/README.md) | player settings into each element's colours, widths and opacities, and the categories a layer declares (`OwnerCategories`, with the holder layers' `HolderCategories`) |
+| [`render/style`](render/style/README.md) | player settings into each element's colours, widths and opacities, and the categories a layer declares (`OwnerCategories`) |
 | `render/labels` | what a cluster's name reads and what shade it draws in, handed to the substrate's overlay |
 | [`render/ribbon`](render/ribbon/README.md) | a planned band as triangles inside its cell's ring, and the draw |
 | [`ribbon`](ribbon/README.md) | what a band is made of before any geometry: the runs, their order and the count itself |
 | `render` | the cache, the compositor stacking the sub-layers in their band order, the incremental refresh, and `OwnerMapLayerRenderer`, which hands the cache and the compositor to [the substrate's frame sequence](../base/render/README.md#the-frame-sequence) |
 | `render/hover` | what the cursor is over on this map, the seam a layer answers the picker preview through, and the tier's shared answers to it and to the substrate's cursor switches |
-| `tooltip` | the colony vocabulary and the line shapes every layer's hover box is written in |
+| `tooltip` | the line shapes every layer's hover box is written in |
 | `sidebar` | the body controls a layer built on this tier offers, and the memo behind its picker |
 
 What is underneath all of it -

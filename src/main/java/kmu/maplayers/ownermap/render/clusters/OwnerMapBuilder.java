@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * Runs one full owner-map rebuild: asks the layer's source who owns each system, reads the theme,
  * shapes the cached cells into merged clusters, and drives the two per-item builders over
- * every cell and every owned bloc to produce a fresh {@link OwnerMapClusters}.
+ * every cell and every owned owner to produce a fresh {@link OwnerMapClusters}.
  *
  * <p>The orchestration only - each stage's actual work belongs to a collaborator, and this
  * class's job is to sample every input exactly once so the whole pass keys off one snapshot.
@@ -45,8 +45,8 @@ import java.util.Map;
  * has. Which of the two is stale is the caller's to decide: this resolves what it is asked to and
  * builds from what it is handed.
  *
- * <p>Nothing here reads a colony. What the owners are made of is the layer's source's business,
- * reached over the walk the rebuild opened; this sees only the answer.
+ * <p>Nothing here reads what stands in a system. What the owners are made of is the layer's
+ * source's business, reached over the walk the rebuild opened; this sees only the answer.
  *
  * <p>Each stage is a method below, apart because their order is the whole of the arrangement - a
  * stage that ran before the one it reads would key off a snapshot nothing else in the pass shares -
@@ -104,7 +104,7 @@ public final class OwnerMapBuilder {
             ContentInputs contentInputs) {
 
         try (var holdingScope = ActiveProfiler.resolveProfiler().open(RESOLVE_HOLDING_SECTION)) {
-            return source.resolveOwners(walk, contentInputs.selectedBlocId());
+            return source.resolveOwners(walk, contentInputs.selectedOwnerId());
         }
     }
 
@@ -173,7 +173,6 @@ public final class OwnerMapBuilder {
             ContentInputs contentInputs) {
 
         var renderStyle = RenderStyleReader.readRenderStyle(categories, contentInputs);
-
         var neutralColour = reading.resolveUnownedColour();
 
         // Stated once here, ahead of any geometry, because it does not vary across the bodies this
@@ -191,7 +190,7 @@ public final class OwnerMapBuilder {
             MapPalettes.resolveDesaturationPalette(
                 reading.resolveRecedePalette(),
                 renderStyle.global().desaturationDarkening()),
-            // The other end of that separation: the neutral a spared factionless cell paints in,
+            // The other end of that separation: the neutral a spared unowned cell paints in,
             // lifted toward white so it clears the greys the recede just sank. Resolved beside its
             // counterpart, both once per pass, so the two ends cannot be read from different
             // snapshots of the same two knobs.
@@ -201,7 +200,7 @@ public final class OwnerMapBuilder {
     }
 
     // Turns the cached raw cells into the two draw lists: each cell shaped against the holding and
-    // styled, the clusters re-derived off the keys that shaping fused them by, and each bloc's
+    // styled, the clusters re-derived off the keys that shaping fused them by, and each owner's
     // bodies traced across all of its cells.
     //
     // Written into the clusters rather than returned, because the per-cell builder reads the
@@ -247,7 +246,10 @@ public final class OwnerMapBuilder {
             if (painted == null) {
                 continue;
             }
-            clusters.getPaintedCells().putPaintedCell(entry.getKey(), painted);
+
+            clusters
+                .getPaintedCells()
+                .putPaintedCell(entry.getKey(), painted);
         }
         // The clusters the cursor read resolves a hovered cell's whole cluster group through. Derived
         // here off the same keys the shaping just fused the cells by, so a highlighted cluster group
@@ -256,12 +258,13 @@ public final class OwnerMapBuilder {
             geometryCache.getCellEdgesByCellKey(),
             geometryCache.getSystemKeyByCellKey());
 
-        // Each owned faction's cluster group: one entry per cluster (traced across all its cells so
+        // Each owner's cluster group: one entry per cluster (traced across all its cells so
         // a multi-system cluster reads as one frontier), tessellated for the fill and flattened
         // for the border - the same shape for both. Built off the same raw cells and holders the
         // seams used, and profiled on its own since chaining, smoothing, and tessellating every
-        // faction's outline is comparable in cost to shaping the cells.
+        // owner's outline is comparable in cost to shaping the cells.
         try (var clusterGroupsScope = profiler.open(BUILD_CLUSTER_GROUPS_SECTION)) {
+
             ClusterGroupBuilder.buildAllClusterGroups(
                 clusters,
                 geometryCache,
@@ -269,12 +272,12 @@ public final class OwnerMapBuilder {
         }
 
         // The cells this pass shaped are what its duration is read against. What became of them -
-        // how many were styled, into how many blocs - is a fact about this one call, and the hatch
+        // how many were styled, into how many owners - is a fact about this one call, and the hatch
         // strokes it cut reach the row from where they were cut rather than being summed back out
         // of what was built.
         shapeScope.addCount(MapBuildCounters.CELLS, shapedCells.size());
         shapeScope.tagCall("styled=" + clusters.getStyledCellByCellKey().size()
-            + " blocs=" + clusters.getStyledClusterGroupByOwnerId().size());
+            + " owners=" + clusters.getStyledClusterGroupByOwnerId().size());
     }
 
     // The cell shaping as a row of its own: fusing same-owner cells and insetting each is comparable
@@ -285,11 +288,11 @@ public final class OwnerMapBuilder {
             CellGrouping cellGrouping) {
 
         try (var shapeScope = profiler.open(SHAPE_CELLS_SECTION)) {
+
             return CellShaper.shapeCells(
                 geometryCache.getCellEdgesByCellKey(),
                 cellGrouping,
                 EdgeInset.asTheMapDraws());
         }
     }
-
 }

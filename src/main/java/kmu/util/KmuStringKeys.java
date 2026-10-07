@@ -169,8 +169,8 @@ public final class KmuStringKeys {
     public static final String OWNER_MAP_CTL_NAME_FULL = "owner_map_ctl_name_full";
     public static final String OWNER_MAP_CTL_NAME_SHORT = "owner_map_ctl_name_short";
     public static final String OWNER_MAP_CTL_NAME_NONE = "owner_map_ctl_name_none";
-    public static final String OWNER_MAP_CTL_FACTION_NAMES = "owner_map_ctl_faction_names";
     public static final String POLITICAL_MAP_CTL_FACTIONS = "political_map_ctl_factions";
+    public static final String POLITICAL_MAP_CTL_FACTION_NAMES = "political_map_ctl_faction_names";
     public static final String POLITICAL_MAP_CTL_ALLIANCES = "political_map_ctl_alliances";
     public static final String POLITICAL_MAP_CTL_CLAIMS = "political_map_ctl_claims";
     public static final String POLITICAL_MAP_CTL_NON_ALLIED_CAPTION = "political_map_ctl_non_allied_caption";

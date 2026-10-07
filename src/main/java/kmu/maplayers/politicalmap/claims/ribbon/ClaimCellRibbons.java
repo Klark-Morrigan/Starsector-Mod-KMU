@@ -4,10 +4,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.ribbon.ColonyCellRibbons;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
+import kmu.maplayers.ownermap.owners.holders.factions.ColonyCellRibbons;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

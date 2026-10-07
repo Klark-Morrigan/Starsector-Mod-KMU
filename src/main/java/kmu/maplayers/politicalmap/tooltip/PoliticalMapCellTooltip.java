@@ -13,10 +13,10 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.SystemCellTooltip;
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.BlocFriendliness;
-import kmu.maplayers.ownermap.holding.HolderGroupingSource;
-import kmu.maplayers.ownermap.tooltip.BlocRelations;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocRelations;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;

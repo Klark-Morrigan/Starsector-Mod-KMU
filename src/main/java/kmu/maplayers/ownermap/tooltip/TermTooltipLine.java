@@ -7,10 +7,10 @@ import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 /**
  * One term of the number a listed thing carries: named, uncrested, and stating what it contributed.
  *
- * <p>The shape every line beneath a listed colony or market takes, whichever account is being broken
- * down. Shared rather than spelled per account because it is the same line: two accounts each
- * composing their own would be free to drift in what a term looks like, and a reader comparing one
- * box against the next has no way to tell a difference that means something from one that does not.
+ * <p>The shape every line beneath a listed market takes, whichever account is being broken down.
+ * Shared rather than spelled per account because it is the same line: two accounts each composing
+ * their own would be free to drift in what a term looks like, and a reader comparing one box
+ * against the next has no way to tell a difference that means something from one that does not.
  *
  * <p>Uncrested throughout - a term is arithmetic rather than a thing in the sector, so there is
  * nothing for a mark to picture. What is left open is the entry against the line, since an account

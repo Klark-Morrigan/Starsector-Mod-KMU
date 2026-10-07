@@ -16,15 +16,15 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.style.FactionlessStyleResolver;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
+import kmu.maplayers.ownermap.render.style.UnownedStyleResolver;
 
 import java.util.List;
 import java.util.Set;
 
 /**
- * Builds the debug border-tracing overlay: for each owned faction cluster, its border
+ * Builds the debug border-tracing overlay: for each owned cluster, its border
  * loops captured at every smoothing stage, so the diagnostic renderer can show what each
  * pass did to the geometry.
  *
@@ -41,10 +41,10 @@ import java.util.Set;
  * rounding, so with sanding off the rounded stage rounds the base directly. The overlay's
  * layers therefore mirror the pipeline the normal render would have produced.
  *
- * <p>Owned faction and independent clusters run the full base -> despiked -> rounded
- * pipeline. Drawn factionless cells (inhabited but unheld, or uninhabited when the player turns
+ * <p>Owned clusters run the full base -> despiked -> rounded
+ * pipeline. Drawn unowned cells (inhabited but unheld, or uninhabited when the player turns
  * them on) contribute only base and rounded: a lone convex inset cell has no needle
- * protrusions, so it skips sanding. Factionless cells respect the same visibility the
+ * protrusions, so it skips sanding. Unowned cells respect the same visibility the
  * normal render applies - one draws only when its category's outline colour is not "No
  * colour" - so the overlay does not flood the map with every uninhabited system's cell.
  */
@@ -54,7 +54,7 @@ public final class DebugBorderTracingBuilder {
     private DebugBorderTracingBuilder() {
     }
 
-    // Traces every owned cluster (plus the drawn factionless cells) into the three stage lists.
+    // Traces every owned cluster (plus the drawn unowned cells) into the three stage lists.
     // Independent of the production drawables, so the plugin builds this instead of them in debug
     // mode, not alongside.
     public static ClusterBorderStageOverlay buildDebugDrawables(
@@ -69,14 +69,14 @@ public final class DebugBorderTracingBuilder {
             geometryCache.getSystemKeyByCellKey(),
             owners.ownerBySystemKey());
 
-        // The same inhabitation answer the production build classifies its factionless cells by,
+        // The same inhabitation answer the production build classifies its unowned cells by,
         // off the same source, so the overlay shows the cells the map would show.
         var inhabitedSystemKeys = owners.inhabitedSystemKeys();
 
         // The same trace and the same theme the production build reads, so a stage captured here is
         // the geometry the normal render would have drawn rather than one this builder assembled
         // from its own reads of the same knobs. The whole theme rather than the smoothing alone,
-        // because the factionless pass below indexes into it by category - read twice, the outlines
+        // because the unowned pass below indexes into it by category - read twice, the outlines
         // could be gated by one reading of the knobs and smoothed by another.
         //
         // The categories are the painting layer's, and the preferences arrive with the rebuild
@@ -94,9 +94,9 @@ public final class DebugBorderTracingBuilder {
             renderStyle.global().borderSmoothing(),
             stageCollector);
 
-        // Only the rounding half: the factionless pass has no sanding stage to capture, so the
+        // Only the rounding half: the unowned pass has no sanding stage to capture, so the
         // sanding numbers never reach it.
-        addFactionlessOutlines(
+        addUnownedOutlines(
             geometryCache,
             cellGrouping,
             inhabitedSystemKeys,
@@ -131,13 +131,13 @@ public final class DebugBorderTracingBuilder {
         }
     }
 
-    // Appends each drawn factionless cell's outline as a base loop and, when rounding is
-    // gated on, a rounded loop. A factionless cell is a single convex inset polygon - no
+    // Appends each drawn unowned cell's outline as a base loop and, when rounding is
+    // gated on, a rounded loop. An unowned cell is a single convex inset polygon - no
     // chaining, no spikes to sand - so its two stages are the raw inset (base) and its
     // rounded corners, produced through the same shared rounding the clusters use. Skips
     // owned cells (traced as clusters above) and any category whose outline is "No color",
     // matching the normal render's visibility so the overlay stays legible.
-    private static void addFactionlessOutlines(
+    private static void addUnownedOutlines(
             CellGeometryCache geometryCache,
             CellGrouping cellGrouping,
             Set<SystemKey> inhabitedSystemKeys,
@@ -155,11 +155,11 @@ public final class DebugBorderTracingBuilder {
             if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {
                 continue;
             }
-            // A factionless cell resolves its settled or empty style through the system it
+            // An unowned cell resolves its settled or empty style through the system it
             // draws as; a cell with no system of its own is empty.
             var drawnSystemKey = cellGrouping.resolveDrawnSystemKeyOf(entry.getKey());
             var style = renderStyle.categoryStyle(categories.resolveUnownedCategory(
-                FactionlessStyleResolver.isSettledSystem(inhabitedSystemKeys, drawnSystemKey)));
+                UnownedStyleResolver.isSettledSystem(inhabitedSystemKeys, drawnSystemKey)));
 
             if (!style.outer().isDrawn()) {
                 continue;

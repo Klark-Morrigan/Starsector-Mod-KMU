@@ -8,7 +8,7 @@ import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.OwnerStyleResolver;
 import kmu.maplayers.ownermap.render.style.OwnerStyling;
-import kmu.maplayers.ownermap.render.style.ResolvedBlocPaint;
+import kmu.maplayers.ownermap.render.style.ResolvedOwnerPaint;
 
 import java.util.Set;
 
@@ -19,10 +19,10 @@ import java.util.Set;
  * which owned systems paint no fill, and which spotlit systems the pick contests.
  *
  * <p>Fixed once the build ends, which is what parts it from the {@link SystemOccupancy} beside it:
- * the occupancy is folded per marked system as colonies come and go, while nothing here moves
- * until the next rebuild samples afresh. A reader takes this record and names which snapshot it
- * reads, so a pass cannot compose a cell out of one build's theme and another's reading without
- * the type saying so.
+ * the occupancy is folded per marked system as what stands there comes and goes, while nothing
+ * here moves until the next rebuild samples afresh. A reader takes this record and names which
+ * snapshot it reads, so a pass cannot compose a cell out of one build's theme and another's
+ * reading without the type saying so.
  *
  * <p>The three snapshots stay three records rather than being flattened here, since each is one
  * sampling: the scheme is read once off the theme, the reading once off the view, the picks once
@@ -62,6 +62,7 @@ public record OwnerMapBuildInputs(
      * @return the placeholder inputs
      */
     public static OwnerMapBuildInputs createEmpty(OwnerPaintedView view) {
+
         return new OwnerMapBuildInputs(
             MapStyling.createEmpty(),
             new ViewReading(view, null, null),
@@ -81,6 +82,7 @@ public record OwnerMapBuildInputs(
      * @return true for the inputs of a build that ran
      */
     public boolean wasBuilt() {
+
         return viewReading.reading() != null;
     }
 
@@ -96,9 +98,10 @@ public record OwnerMapBuildInputs(
      * @param owner   whose shades it paints in where nothing desaturates it
      * @return the bundle, the adjustment over it, and the shades its elements pick from
      */
-    public ResolvedBlocPaint resolveBlocPaintOf(String ownerId, SystemOwner owner) {
-        return ResolvedBlocPaint.resolveFrom(
-            resolveBlocStyling(ownerId),
+    public ResolvedOwnerPaint resolveOwnerPaintOf(String ownerId, SystemOwner owner) {
+
+        return ResolvedOwnerPaint.resolveFrom(
+            resolveOwnerStyling(ownerId),
             owner,
             styling.desaturationPalette());
     }
@@ -107,11 +110,12 @@ public record OwnerMapBuildInputs(
     // this build's theme. Private because a caller wanting one is a caller about to paint an
     // element with it, and resolving the shades separately is how a fill comes to be muted while
     // the border beside it is not.
-    private OwnerStyling resolveBlocStyling(String ownerId) {
+    private OwnerStyling resolveOwnerStyling(String ownerId) {
+
         return OwnerStyling.resolveFrom(
             styling.renderStyle(),
             styling.categories(),
-            OwnerStyleResolver.resolveBlocStyleDecision(
+            OwnerStyleResolver.resolveOwnerStyleDecision(
                 ownerId,
                 viewReading.reading(),
                 styling.categories(),

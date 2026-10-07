@@ -17,6 +17,7 @@ see the [mod README](../../../../../../../README.md) for project context.
 - [One system at a time](#one-system-at-a-time)
 - [The bands](#the-bands)
 - [How an owner looks](#how-an-owner-looks)
+- [Who stands together](#who-stands-together)
 - [What is not here](#what-is-not-here)
 
 ## At a glance
@@ -37,7 +38,7 @@ flowchart LR
 A rebuild opens one `SectorWalk`:
 the `SectorPassIndex` that walks each system once,
 and the visibility rules the cells were cut under.
-It names no colony rule and no owner.
+It names no owner and no rule for reading one.
 It keeps whatever reading a source opens over it,
 one per source,
 so the owners, the per-system answers and the band count asked of one walk share one reading
@@ -46,7 +47,7 @@ and the source stays a set of rules.
 The source is handed the walk rather than the sector,
 so whatever it opens over it shares the traversal the cut already paid for.
 The rules ride beside the index
-because a source reading colonies has to read them under the rule that decided which systems got cells.
+because a source reading what stands in each system has to read it under the rule that decided which systems got cells.
 A source sampling the rules for itself could resolve owners for a sector the standing geometry was not cut for.
 
 A walk is one rebuild's or one batch's,
@@ -110,6 +111,16 @@ because the two have to agree about what an owner is:
 a reading naming owners under one sampling of a live fold
 while the source resolved the holding under another
 would paint a fold the holding never made.
+
+## Who stands together
+
+`OwnerAffiliation` answers whether two owners are on one side of a contest.
+A band lays its runs at contested length only against an owner that is not,
+so two allies sharing a system do not band as rivals.
+
+It is a question apart from which owner a cell is painted for:
+a layer can paint two owners apart and still have them stand together.
+A layer where nobody does answers `OwnerAffiliation.NONE`.
 
 ## What is not here
 

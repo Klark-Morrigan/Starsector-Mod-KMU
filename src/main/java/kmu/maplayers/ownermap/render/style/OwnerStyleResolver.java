@@ -4,7 +4,7 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerReading;
-import kmu.maplayers.ownermap.owners.SpotlitBlocs;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 
 /**
  * Resolves the shared per-owner style decision - which category an owner draws in and the
@@ -51,14 +51,15 @@ public final class OwnerStyleResolver {
      * @param contentInputs the preferences this rebuild sampled
      * @return the category and adjustment the owner draws under
      */
-    public static OwnerStyleDecision resolveBlocStyleDecision(
+    public static OwnerStyleDecision resolveOwnerStyleDecision(
             String ownerId,
             OwnerReading reading,
             OwnerCategories categories,
             ContentInputs contentInputs) {
 
         if (contentInputs.isFiltering()) {
-            var isSpotlit = SpotlitBlocs.isSpotlitBloc(ownerId);
+
+            var isSpotlit = SpotlitOwners.isSpotlitOwner(ownerId);
             var adjustment = resolveFilterAdjustment(
                 isSpotlit,
                 reading.resolveStyleAdjustment(ownerId, contentInputs),
@@ -70,7 +71,9 @@ public final class OwnerStyleResolver {
                     : reading.resolveCategory(ownerId, adjustment),
                 adjustment);
         }
+
         var adjustment = reading.resolveStyleAdjustment(ownerId, contentInputs);
+
         return new OwnerStyleDecision(
             reading.resolveCategory(ownerId, adjustment),
             adjustment);
@@ -88,6 +91,7 @@ public final class OwnerStyleResolver {
             boolean isSpotlit,
             ElementStyleAdjustment ownerAdjustment,
             ElementStyleAdjustment recedeAdjustment) {
+
         return isSpotlit
             ? ElementStyleAdjustment.NONE
             : ownerAdjustment.mergeRecede(recedeAdjustment);

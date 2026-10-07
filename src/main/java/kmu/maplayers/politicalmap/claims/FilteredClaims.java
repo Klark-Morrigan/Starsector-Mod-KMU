@@ -3,8 +3,8 @@ package kmu.maplayers.politicalmap.claims;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
 
