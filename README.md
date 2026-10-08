@@ -22,6 +22,7 @@
   - [Localisation](#localisation)
   - [Local linting](#local-linting)
   - [Caching](#caching)
+  - [Nexerelin](#nexerelin)
   - [Documentation](#documentation)
 - [Thanks](#thanks)
 - [Licence](#licence)
@@ -396,6 +397,17 @@ each cache and what it keys on,
 and the four rebuild paths a frame can take.
 Read it before adding a live input to the overlay -
 an input no counter reports is the one way to leave the map silently stale.
+
+### Nexerelin
+
+Nexerelin is optional,
+and it is the main source of the political change the map layers follow.
+[docs/dev/nexerelin.md](docs/dev/nexerelin.md)
+records the Nexerelin version KMU was checked against,
+what KMU and KMLib bind to,
+the Nexerelin concepts a layer could read,
+and which of them the layers use.
+Re-check it before upgrading the Nexerelin build KMU compiles against.
 
 ### Documentation
 

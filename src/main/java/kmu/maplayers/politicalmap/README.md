@@ -618,6 +618,9 @@ and it is told again on the next transfer.
 The listener is a fast path only -
 the staleness poll diffs every system's holder and repaints a changed one within seconds -
 so a throw there costs nothing worth a notice to the player.
+What Nexerelin reports and when,
+and what else it could tell this layer,
+is [the Nexerelin notes](../../../../../../docs/dev/nexerelin.md).
 
 Beside those sits `PoliticalMapRefreshSignal`,
 the coarse changes only this layer can raise on the shared board,
