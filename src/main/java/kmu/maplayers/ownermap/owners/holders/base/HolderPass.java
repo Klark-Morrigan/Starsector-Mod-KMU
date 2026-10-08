@@ -40,7 +40,8 @@ import java.util.Set;
 public final class HolderPass {
 
     // Each system's habitation, resolved on first ask. Memoised because the filter's holder resolve,
-    // the inhabitation scan and each picker's stats fold all ask per system in separate walks.
+    // the inhabitation scan, each picker's stats fold and each cell's band all ask per system in
+    // separate walks.
     //
     // Keyed as the colony memo beneath it is: keyed differently, the two would disagree over a pair
     // of systems sharing an ID, and the second would draw the first's inhabitants over its cell.
@@ -208,9 +209,11 @@ public final class HolderPass {
      * anybody living here" are different questions, and a derelict somebody has seen answers the
      * first and settles nothing in the second.
      *
-     * <p>The habitation rule lands here rather than at the fold below, because this list is also
-     * read directly. It names the one decivilised kind rather than asking the kind itself, so a kind
-     * not yet written inhabits its place until it says otherwise.
+     * <p>Not memoised: a reader asking per system takes {@link #readHabitationIn}, which carries
+     * this list and is worked out once per system.
+     *
+     * <p>The habitation rule names the one decivilised kind rather than asking the kind itself, so
+     * a kind not yet written inhabits its place until it says otherwise.
      *
      * @param system the system to read; null yields an empty list
      * @return the system's known colonies somebody lives on under this pass's habitation rule, in
@@ -261,8 +264,8 @@ public final class HolderPass {
     }
 
     // One system's habitation worked out, for the memo above to remember: the habitation
-    // projection over this pass's walk, with the blocs and their sizes folded from those very
-    // colonies.
+    // projection over this pass's walk, with the blocs and what each lives on folded from those
+    // very colonies.
     private SystemHabitation resolveHabitationIn(StarSystemAPI system) {
 
         var inhabitingColonies = readInhabitingColoniesIn(system);
@@ -270,28 +273,28 @@ public final class HolderPass {
         return new SystemHabitation(
             inhabitingColonies,
             grouping.regroupByBloc(
-                sumColonySizesByFaction(inhabitingColonies),
-                0,
-                Integer::sum));
+                foldHabitationByFaction(inhabitingColonies),
+                BlocHabitation.EMPTY,
+                BlocHabitation::addHabitation));
     }
 
-    // Each owner's summed raw colony size among the colonies handed in - the sizes the habitation
-    // fold above regroups.
+    // What each owner lives on among the colonies handed in - the values the habitation fold above
+    // regroups.
     //
-    // Summed per owner before the grouping rather than per bloc after it, so the one fold that
-    // decides which owners can be named a bloc for decides it for the sizes as well: a bloc's
-    // presence and the size beside it are then the same colonies counted twice over, never two
-    // selections that could differ by one.
-    private static Map<String, Integer> sumColonySizesByFaction(List<Colony> colonies) {
+    // Folded per owner before the grouping rather than per bloc after it, so the one fold that
+    // decides which owners can be named a bloc for decides it for the counts and sizes as well: a
+    // bloc's presence and what it lives on are then the same colonies, never two selections that
+    // could differ by one. An owner with no ID lands under a null key, which the regroup drops.
+    private static Map<String, BlocHabitation> foldHabitationByFaction(List<Colony> colonies) {
 
-        var sizeByFactionId = new LinkedHashMap<String, Integer>();
+        var habitationByFactionId = new LinkedHashMap<String, BlocHabitation>();
         for (var colony : colonies) {
-            sizeByFactionId.merge(
+            habitationByFactionId.merge(
                 colony.readOwnerId(),
-                colony.market().getSize(),
-                Integer::sum);
+                BlocHabitation.EMPTY.addColony(colony),
+                BlocHabitation::addHabitation);
         }
-        return sizeByFactionId;
+        return habitationByFactionId;
     }
 
     // The owners of one projection's colonies, each named once however many it holds there.

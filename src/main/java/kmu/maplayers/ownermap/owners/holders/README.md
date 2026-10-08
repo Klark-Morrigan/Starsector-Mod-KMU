@@ -182,6 +182,11 @@ counts every cell on every layer painting holders:
 the pass's **habitation projection** of the system's colonies,
 folded into a count per bloc under the pass's grouping,
 then coloured through the bake's `BlocPaletteReader`.
+The count is read off the pass's `SystemHabitation`,
+which folds each system once per pass:
+the band, the picker's sizes and the spotlight then name one owner per colony,
+the market's own faction ID,
+and an owner with no ID is counted as nobody's.
 `RibbonPlanInputs` carries the pass,
 the palette port,
 the `OwnerAffiliation` the contest is judged against and the laying rules,

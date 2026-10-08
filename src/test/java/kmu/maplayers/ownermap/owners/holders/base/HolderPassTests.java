@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit coverage for {@link HolderPass}: the construction guard, the two projections it offers over
@@ -394,10 +395,10 @@ final class HolderPassTests {
 
         @Test
         void sumsWhatEachBlocLivesOnThere() {
-            // The picker's size metric comes off this fold as well, so a bloc's presence and the
-            // size beside it are one set of colonies counted twice over rather than two selections
-            // that could differ by one. Allied members sum into the bloc they paint as, as their
-            // weights do.
+            // The picker's size and the band's count come off this fold as well, so a bloc's
+            // presence and what it lives on are one set of colonies rather than two selections that
+            // could differ by one. Allied members sum into the bloc they paint as, as their weights
+            // do.
             var sector = SectorOwnershipFixtures.buildSectorWith(
                 SYSTEM_ID,
                 SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, 5),
@@ -408,8 +409,8 @@ final class HolderPassTests {
             assertThat(HolderPass
                     .over(sector, UNDER_THE_FOG, ALLIED_HEGEMONY_AND_TRITACHYON)
                     .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector))
-                    .colonySizeByBlocId())
-                .containsExactly(entry(GROUP_BLOC_ID, 8));
+                    .habitationByBlocId())
+                .containsExactly(entry(GROUP_BLOC_ID, new BlocHabitation(2, 8)));
         }
 
         @Test
@@ -425,8 +426,33 @@ final class HolderPassTests {
             assertThat(HolderPass
                     .over(sector, UNDER_THE_FOG, HolderGrouping.identity())
                     .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector))
-                    .colonySizeByBlocId())
-                .containsExactly(entry("hegemony", 8));
+                    .habitationByBlocId())
+                .containsExactly(entry("hegemony", new BlocHabitation(2, 8)));
+        }
+
+        @Test
+        void countsAColonyWhoseMarketNamesNoFactionIdAsNobodys() {
+            // A market that keeps its faction object but stores no faction ID. The fold reads the
+            // ID, as every other owner read on the map does, so the colony lands under no bloc -
+            // and it still counts as somebody living there.
+            var ownerless = SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE);
+
+            when(ownerless.getFactionId())
+                .thenReturn(null);
+
+            var sector = SectorOwnershipFixtures.buildSectorWith(
+                SYSTEM_ID,
+                SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE),
+                ownerless);
+
+            var habitation = HolderPass
+                .over(sector, UNDER_THE_FOG, HolderGrouping.identity())
+                .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector));
+
+            assertThat(habitation.habitationByBlocId())
+                .containsExactly(entry("hegemony", new BlocHabitation(1, COLONY_SIZE)));
+            assertThat(habitation.colonies())
+                .hasSize(2);
         }
 
         @Test

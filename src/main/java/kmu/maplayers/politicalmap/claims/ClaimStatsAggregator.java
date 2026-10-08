@@ -129,7 +129,7 @@ public final class ClaimStatsAggregator {
     // so a bloc whose only holding is a derelict is offered nothing to light and is left out.
     private void accumulateSystemHabitation(StarSystemAPI system) {
 
-        for (var entry : pass.readHabitationIn(system).colonySizeByBlocId().entrySet()) {
+        for (var entry : pass.readHabitationIn(system).habitationByBlocId().entrySet()) {
 
             var blocId = entry.getKey();
 
@@ -137,7 +137,7 @@ public final class ClaimStatsAggregator {
                 blocId,
                 statsByBlocId
                     .getOrDefault(blocId, ClaimStats.EMPTY)
-                    .addMarketSize(entry.getValue()));
+                    .addMarketSize(entry.getValue().colonySize()));
         }
     }
 }

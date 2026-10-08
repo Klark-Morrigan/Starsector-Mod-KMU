@@ -96,7 +96,7 @@ public final class DominanceStatsAggregator {
         // winner is settled and never into the map above: a nought-weight footprint entering the
         // ranking would take a system nobody dominates, the first entry being the leader before
         // anything is compared.
-        for (var entry : pass.readHabitationIn(system).colonySizeByBlocId().entrySet()) {
+        for (var entry : pass.readHabitationIn(system).habitationByBlocId().entrySet()) {
             var blocId = entry.getKey();
             var footprint = footprintByBlocId.getOrDefault(blocId, MarketFootprint.EMPTY);
 
@@ -106,7 +106,7 @@ public final class DominanceStatsAggregator {
                     .addSystem(
                         blocId.equals(dominantBlocId),
                         footprint.totalWeight(),
-                        entry.getValue()));
+                        entry.getValue().colonySize()));
 
             inhabitedSystems.recordPresence(blocId, SystemKey.readKeyOf(system));
         }

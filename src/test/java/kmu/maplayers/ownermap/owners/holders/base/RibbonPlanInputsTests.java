@@ -2,8 +2,6 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.markets.colonies.Colony;
-
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
@@ -22,7 +20,6 @@ import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.b
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildUndiscoveredHiddenMarket;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,7 +27,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Pins what one bake's band inputs are read from: the palettes built off the pass's own sector and
- * grouping, the affiliation and rules carried as handed, and the grouping and colonies answered by
+ * grouping, the affiliation and rules carried as handed, and the grouping and habitation answered by
  * the pass rather than by a read of their own.
  */
 final class RibbonPlanInputsTests {
@@ -93,36 +90,34 @@ final class RibbonPlanInputsTests {
     }
 
     @Nested
-    class ReadInhabitingColoniesIn {
+    class ReadHabitationIn {
 
         @Test
-        void answersThePassesProjectionOfTheSystem() {
-            // A colony the player has not found is one the pass's colony rule keeps back, so its
-            // absence shows the list is the pass's and not a plain walk of the system.
+        void answersThePassesOwnRememberedHabitation() {
+            // Asserted as identity: the band reads the very value the pass remembered for the
+            // system, so it neither filters nor folds the colonies a second time.
             var sector = buildSectorWith(
                 SYSTEM_ID,
-                buildVisibleMarket(buildFaction("hegemony"), COLONY_SIZE),
-                buildUndiscoveredHiddenMarket(buildFaction("tritachyon"), COLONY_SIZE));
+                buildVisibleMarket(buildFaction("hegemony"), COLONY_SIZE));
 
             var pass = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
-            var colonies = RibbonPlanInputs
+            var system = buildOnlySystem(sector);
+            var habitation = RibbonPlanInputs
                 .createForPass(pass, OwnerAffiliation.NONE, RULES)
-                .readInhabitingColoniesIn(buildOnlySystem(sector));
+                .readHabitationIn(system);
 
-            assertThat(colonies)
-                .extracting(Colony::market)
-                .extracting(market -> market.getFaction().getId())
-                .containsExactly("hegemony");
+            assertThat(habitation)
+                .isSameAs(pass.readHabitationIn(system));
         }
 
         @Test
-        void answersNoColoniesForNoSystem() {
+        void answersNobodyLivingForNoSystem() {
 
             var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
             var inputs = RibbonPlanInputs.createForPass(pass, OwnerAffiliation.NONE, RULES);
 
-            assertThat(inputs.readInhabitingColoniesIn(null))
-                .isEmpty();
+            assertThat(inputs.readHabitationIn(null).hasInhabitingColony())
+                .isFalse();
         }
     }
 }

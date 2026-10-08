@@ -2,12 +2,8 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.markets.colonies.Colony;
-
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-
-import java.util.List;
 
 /**
  * What one bake's bands are counted and coloured from: the reading of the sector the colonies come
@@ -86,8 +82,8 @@ public record RibbonPlanInputs(
     }
 
     /**
-     * The colonies in one system a band may report - the pass's habitation projection over its
-     * single walk of the system.
+     * What a band may report of one system - the pass's habitation of it, already folded per bloc
+     * under the pass's grouping and remembered for the rest of the pass.
      *
      * <p>Habitation rather than the wider known listing, because a run stands for somebody holding
      * something in the system: a derelict the player has seen is named in the boxes over the cell
@@ -96,11 +92,10 @@ public record RibbonPlanInputs(
      * <p>Taken off the pass rather than from a sector each planner holds, because a planner that
      * could reach a sector is one that could walk a system the bake has already walked.
      *
-     * @param system the system to count; null yields an empty list
-     * @return the system's colonies somebody lives on that the bake's colony rule admits, in the
-     *         set's own order
+     * @param system the system to count; null yields an empty habitation
+     * @return the system's habitation under the bake's colony rule and grouping
      */
-    public List<Colony> readInhabitingColoniesIn(StarSystemAPI system) {
-        return pass.readInhabitingColoniesIn(system);
+    public SystemHabitation readHabitationIn(StarSystemAPI system) {
+        return pass.readHabitationIn(system);
     }
 }

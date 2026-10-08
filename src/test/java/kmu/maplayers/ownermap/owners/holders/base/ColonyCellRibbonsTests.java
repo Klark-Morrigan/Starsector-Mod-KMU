@@ -39,6 +39,7 @@ import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins the one counting rule every painting mechanic hands its cells to: which colonies of a
@@ -268,6 +269,45 @@ final class ColonyCellRibbonsTests {
 
             assertThat(planFor(HEGEMONY, List.of(HEGEMONY), sector).segments())
                 .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+        }
+
+        @Test
+        void countsAColonyWhoseMarketNamesNoFactionIdAsNothing() {
+            // A market that keeps its faction object but stores no faction ID. The band reads the
+            // ID, which names nobody, so the colony raises no run - where a read of the faction
+            // object would have drawn one for an owner no other surface names.
+            var ownerless = buildVisibleMarket(buildFaction(TRITACHYON), COLONY_SIZE);
+
+            when(ownerless.getFactionId())
+                .thenReturn(null);
+
+            var sector = buildSectorWith(
+                SYSTEM_ID,
+                buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE),
+                ownerless);
+
+            assertThat(planFor(HEGEMONY, List.of(HEGEMONY), sector).segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+        }
+
+        @Test
+        void namesAColonysOwnerAsTheHabitationReadDoes() {
+            // A market states its owner twice: the ID a transfer writes and the faction object.
+            // Posed apart here, the band must draw the ID's owner, as the habitation read the
+            // cell, the picker and the spotlight answer off does.
+            var transferred = buildVisibleMarket(buildFaction(HEGEMONY), COLONY_SIZE);
+
+            when(transferred.getFactionId())
+                .thenReturn(TRITACHYON);
+
+            var sector = buildSectorWith(SYSTEM_ID, transferred);
+            var inputs = buildInputsOver(sector, UNGROUPED, BASE_FOG);
+            var system = buildOnlySystem(sector);
+
+            assertThat(planThrough(NO_PAINTER, List.of(), system, inputs).segments())
+                .containsExactly(new RibbonSegment(TRITACHYON_BRIGHT, 3));
+            assertThat(inputs.pass().readHabitationIn(system).blocIds())
+                .containsExactly(TRITACHYON);
         }
 
         @Test

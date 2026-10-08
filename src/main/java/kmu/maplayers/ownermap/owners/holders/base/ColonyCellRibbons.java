@@ -2,8 +2,6 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.markets.colonies.Colony;
-
 import kmu.maplayers.ownermap.ribbon.OwnerPresence;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 
@@ -47,13 +45,6 @@ import java.util.Set;
  */
 public final class ColonyCellRibbons {
 
-    // What one colony adds to its bloc's count. A band counts holdings rather than weighing them,
-    // so every colony behind a run is worth exactly one segment whatever its size or standing.
-    private static final int ONE_COLONY = 1;
-
-    // The count a bloc's first colony is added to, which is the fold's identity.
-    private static final int NO_COLONIES = 0;
-
     private ColonyCellRibbons() {
     }
 
@@ -81,9 +72,7 @@ public final class ColonyCellRibbons {
             paintingBlocId,
             collectColouredPresences(
                 orderCountsForBand(
-                    countColoniesByBloc(
-                        inputs.readInhabitingColoniesIn(system),
-                        inputs.grouping()),
+                    readColonyCountByBloc(inputs.readHabitationIn(system)),
                     rankedBlocIds),
                 inputs.palettes()),
             inputs.affiliation(),
@@ -116,31 +105,22 @@ public final class ColonyCellRibbons {
         return presences;
     }
 
-    // How many colonies each bloc holds in the system: counted per owner, then folded under the
-    // pass's grouping so two allies' colonies arrive as one bloc's count rather than as two runs
-    // side by side.
+    // How many colonies each bloc holds in the system, off the habitation's per-bloc fold, so two
+    // allies' colonies arrive as one bloc's count rather than as two runs side by side.
     //
-    // Folded through the grouping's own regroup rather than by resolving each colony's bloc here,
-    // so what happens to a colony whose owner belongs to no nameable bloc is decided once, where
-    // every other per-bloc fold on the map decides it.
+    // Read rather than counted here, so the band names each colony's owner as every other surface
+    // on the map does, and a system's colonies are filtered and folded once per pass.
     //
-    // Unordered on purpose: the ranking is the mechanic's to state, and a count that came out in
-    // the walk's order would look ranked without being it.
-    private static Map<String, Integer> countColoniesByBloc(
-            List<Colony> inhabitingColonies,
-            HolderGrouping grouping) {
+    // Unordered on purpose: the ranking is the mechanic's to state, and a count kept in the walk's
+    // order would look ranked without being it.
+    private static Map<String, Integer> readColonyCountByBloc(SystemHabitation habitation) {
 
-        var countByFactionId = new HashMap<String, Integer>();
+        var countByBlocId = new HashMap<String, Integer>();
 
-        for (var colony : inhabitingColonies) {
-
-            countByFactionId.merge(
-                colony.market().getFaction().getId(),
-                ONE_COLONY,
-                Integer::sum);
+        for (var blocHabitation : habitation.habitationByBlocId().entrySet()) {
+            countByBlocId.put(blocHabitation.getKey(), blocHabitation.getValue().colonyCount());
         }
-
-        return grouping.regroupByBloc(countByFactionId, NO_COLONIES, Integer::sum);
+        return countByBlocId;
     }
 
     // The counts in the order their runs are drawn: the mechanic's ranking first, then whatever it

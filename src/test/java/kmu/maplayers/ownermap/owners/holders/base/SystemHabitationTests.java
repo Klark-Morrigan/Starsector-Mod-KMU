@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Unit coverage for {@link SystemHabitation}: that the value a render pass hands to three readers
- * cannot change under any of them, that an unstated side reads as empty, that the blocs are the size
+ * cannot change under any of them, that an unstated side reads as empty, that the blocs are the
  * fold's own keys, and that the emptiness the cell classification turns on is the colonies' rather
  * than the blocs'.
  *
@@ -34,6 +34,9 @@ final class SystemHabitationTests {
 
     private static final int COLONY_SIZE = 5;
 
+    // What each posed bloc lives on: one colony of the shared size.
+    private static final BlocHabitation ONE_COLONY = new BlocHabitation(1, COLONY_SIZE);
+
     @Nested
     class Constructor {
 
@@ -43,20 +46,20 @@ final class SystemHabitationTests {
             // picker alike, so a side the caller went on mutating would have one of them answering
             // off a set the others never saw.
             var colonies = new ArrayList<Colony>();
-            var colonySizeByBlocId = new LinkedHashMap<String, Integer>();
+            var habitationByBlocId = new LinkedHashMap<String, BlocHabitation>();
 
             colonies.add(buildColony());
-            colonySizeByBlocId.put(BLOC_ID, COLONY_SIZE);
+            habitationByBlocId.put(BLOC_ID, ONE_COLONY);
 
-            var habitation = new SystemHabitation(colonies, colonySizeByBlocId);
+            var habitation = new SystemHabitation(colonies, habitationByBlocId);
 
             colonies.clear();
-            colonySizeByBlocId.clear();
+            habitationByBlocId.clear();
 
             assertThat(habitation.colonies())
                 .hasSize(1);
-            assertThat(habitation.colonySizeByBlocId())
-                .containsExactly(entry(BLOC_ID, COLONY_SIZE));
+            assertThat(habitation.habitationByBlocId())
+                .containsExactly(entry(BLOC_ID, ONE_COLONY));
         }
 
         @Test
@@ -64,7 +67,7 @@ final class SystemHabitationTests {
 
             var habitation = buildHabitationOf(BLOC_ID);
 
-            assertThatThrownBy(() -> habitation.colonySizeByBlocId().put("tritachyon", 1))
+            assertThatThrownBy(() -> habitation.habitationByBlocId().put("tritachyon", ONE_COLONY))
                 .isInstanceOf(UnsupportedOperationException.class);
             assertThatThrownBy(() -> habitation.colonies().add(buildColony()))
                 .isInstanceOf(UnsupportedOperationException.class);
@@ -129,14 +132,14 @@ final class SystemHabitationTests {
     // case and no assertion reads as being about the arithmetic.
     private static SystemHabitation buildHabitationOf(String... blocIds) {
 
-        var colonySizeByBlocId = new LinkedHashMap<String, Integer>();
+        var habitationByBlocId = new LinkedHashMap<String, BlocHabitation>();
         var colonies = new ArrayList<Colony>();
 
         for (var blocId : blocIds) {
-            colonySizeByBlocId.put(blocId, COLONY_SIZE);
+            habitationByBlocId.put(blocId, ONE_COLONY);
             colonies.add(buildColony());
         }
-        return new SystemHabitation(colonies, colonySizeByBlocId);
+        return new SystemHabitation(colonies, habitationByBlocId);
     }
 
     // A colony this value merely carries. Nothing here reads a market, so the kind and the listing
