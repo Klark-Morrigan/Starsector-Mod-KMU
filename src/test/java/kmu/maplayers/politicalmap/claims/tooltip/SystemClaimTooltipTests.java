@@ -80,9 +80,9 @@ import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.UNFORCED_UNDER_THE_REVEAL;
 import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubDispositionToward;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 import static kmu.maplayers.politicalmap.claims.tooltip.ListedClaimContestFixture.buildUnroutedContest;
+import static kmu.starsector.SectorFactionFixtures.stubDispositionToward;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;

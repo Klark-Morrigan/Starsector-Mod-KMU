@@ -3,6 +3,8 @@ package kmu.maplayers.ownermap.owners.holders.factions;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.FactionCrests;
+import kmlib.starsector.factions.FactionNames;
+import kmlib.starsector.factions.SectorFactions;
 
 /**
  * How a faction appears wherever a hovered system's breakdown names it: the title it is called by and
@@ -17,7 +19,7 @@ import kmlib.starsector.factions.FactionCrests;
  * crest to nothing, so a line names what it was asked to name rather than coming out blank.
  *
  * @param fullName        the faction's long display title, or its ID when the faction will not
- *                        resolve
+ *                        resolve or carries no long title
  * @param crestSpritePath the faction's crest sprite path, or null when it has no authored crest
  */
 public record FactionPresentation(
@@ -27,15 +29,16 @@ public record FactionPresentation(
     /**
      * Resolves how a faction presents, reading the sector once for both halves of it.
      *
-     * @param sector    the sector the faction is read from
+     * @param sector    the sector the faction is read from; null presents every ID as itself
      * @param factionId the ID of the faction being presented
      * @return the title and crest that faction appears as
      */
     public static FactionPresentation resolvePresentation(SectorAPI sector, String factionId) {
-        var faction = sector.getFaction(factionId);
+
+        var faction = SectorFactions.findFaction(sector, factionId);
 
         return new FactionPresentation(
-            TooltipFactionNames.resolveLongName(faction, factionId),
+            FactionNames.resolveLabel(faction, factionId),
             FactionCrests.resolveCrestPath(faction));
     }
 }

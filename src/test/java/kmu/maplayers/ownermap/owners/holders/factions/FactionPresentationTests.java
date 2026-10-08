@@ -1,12 +1,13 @@
 package kmu.maplayers.ownermap.owners.holders.factions;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.buildEmptySector;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
+import static kmu.starsector.SectorFactionFixtures.HEGEMONY;
+import static kmu.starsector.SectorFactionFixtures.HEGEMONY_CREST;
+import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
+import static kmu.starsector.SectorFactionFixtures.buildSectorKnowingHegemony;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,9 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * its crest, its bare ID and no crest when the sector does not know it.
  */
 final class FactionPresentationTests {
-
-    private static final String HEGEMONY = "hegemony";
-    private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
 
     @Nested
     class ResolvePresentation {
@@ -44,6 +42,48 @@ final class FactionPresentationTests {
         }
 
         @Test
+        void presentsTheIdWithNoCrestWithoutASector() {
+
+            var presentation = FactionPresentation.resolvePresentation(null, HEGEMONY);
+
+            assertThat(presentation)
+                .isEqualTo(new FactionPresentation("hegemony", null));
+        }
+
+        @Test
+        void presentsTheIdForAKnownFactionWithABlankLongName() {
+
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "luddic_path", "  ", null);
+
+            assertThat(FactionPresentation.resolvePresentation(sectorMock, "luddic_path"))
+                .isEqualTo(new FactionPresentation("luddic_path", null));
+        }
+
+        @Test
+        void presentsTheIdForAKnownFactionWithNoLongName() {
+
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "luddic_path", null, null);
+
+            assertThat(FactionPresentation.resolvePresentation(sectorMock, "luddic_path"))
+                .isEqualTo(new FactionPresentation("luddic_path", null));
+        }
+
+        @Test
+        void trimsTheWhitespaceAroundALongName() {
+
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "luddic_path", "  Luddic Path  ", null);
+
+            assertThat(FactionPresentation.resolvePresentation(sectorMock, "luddic_path"))
+                .isEqualTo(new FactionPresentation("Luddic Path", null));
+        }
+
+        @Test
         void carriesNoCrestForAFactionWithoutOne() {
             // A faction with nothing authored presents by name alone rather than by a path that
             // would fail to load wherever the line is drawn.
@@ -57,14 +97,5 @@ final class FactionPresentationTests {
             assertThat(presentation)
                 .isEqualTo(new FactionPresentation("Luddic Path", null));
         }
-    }
-
-    private static SectorAPI buildSectorKnowingHegemony() {
-
-        var sectorMock = buildEmptySector();
-
-        stubFaction(sectorMock, HEGEMONY, "The Hegemony", HEGEMONY_CREST);
-
-        return sectorMock;
     }
 }

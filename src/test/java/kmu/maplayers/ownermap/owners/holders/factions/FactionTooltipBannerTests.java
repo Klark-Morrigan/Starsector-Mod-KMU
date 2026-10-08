@@ -1,7 +1,5 @@
 package kmu.maplayers.ownermap.owners.holders.factions;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 
@@ -16,8 +14,10 @@ import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.MARKED_LABEL_RUN;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.buildEmptySector;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
+import static kmu.starsector.SectorFactionFixtures.HEGEMONY;
+import static kmu.starsector.SectorFactionFixtures.HEGEMONY_CREST;
+import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
+import static kmu.starsector.SectorFactionFixtures.buildSectorKnowingHegemony;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,9 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * know still speaks as its bare ID rather than as a blank.
  */
 final class FactionTooltipBannerTests {
-
-    private static final String HEGEMONY = "hegemony";
-    private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
 
     @BeforeEach
     void installColours() {
@@ -65,14 +62,5 @@ final class FactionTooltipBannerTests {
             assertThat(row.labelRuns())
                 .containsExactly(new TextSpan("ghost_faction", TEXT));
         }
-    }
-
-    private static SectorAPI buildSectorKnowingHegemony() {
-
-        var sectorMock = buildEmptySector();
-
-        stubFaction(sectorMock, HEGEMONY, "The Hegemony", HEGEMONY_CREST);
-
-        return sectorMock;
     }
 }

@@ -15,6 +15,9 @@ import org.junit.jupiter.api.Test;
 import java.awt.Color;
 import java.util.Map;
 
+import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
+import static kmu.starsector.SectorFactionFixtures.stubKnownFaction;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -24,9 +27,9 @@ import static org.mockito.Mockito.when;
  * the three cases a bloc lands in, and - where it is measured - which two members' standings the
  * ends came from.
  *
- * <p>All on hand-built standings, the sector reads being the reader's one seam. The single case
- * over a live sector is there for what only the binding decides: that the factions are looked up in
- * the sector handed in.
+ * <p>All on hand-built standings, the sector reads being the reader's one seam. The cases over a live
+ * sector are there for what only the binding decides: that the factions are looked up in the sector
+ * handed in, and that the player is recognised off that sector's own established identity.
  */
 final class BlocStandingReaderTests {
 
@@ -121,6 +124,16 @@ final class BlocStandingReaderTests {
         }
 
         @Test
+        void reportsABlocWithABlankIdAsUnreadable() {
+
+            var relationSourceFake = new PlayerRelationSourceFake("player", Map.of("  ", FRIENDLY));
+            var reader = new BlocStandingReader(HolderGrouping.identity(), relationSourceFake);
+
+            assertThat(reader.readBlocStanding("  "))
+                .isEqualTo(BlocStanding.UNREADABLE);
+        }
+
+        @Test
         void recognisesThePlayersOwnFactionAsTheirBloc() {
 
             var relationSourceFake = new PlayerRelationSourceFake(
@@ -172,24 +185,9 @@ final class BlocStandingReaderTests {
         @Test
         void readsAMembersStandingFromTheHandedInSector() {
 
-            var relationshipMock = mock(RelationshipAPI.class);
+            var sectorMock = buildEmptySector();
 
-            when(relationshipMock.getLevel())
-                .thenReturn(RepLevel.HOSTILE);
-            when(relationshipMock.getRepInt())
-                .thenReturn(-40);
-            when(relationshipMock.getRelColor())
-                .thenReturn(RED);
-
-            var factionMock = mock(FactionAPI.class);
-
-            when(factionMock.getRelToPlayer())
-                .thenReturn(relationshipMock);
-
-            var sectorMock = mock(SectorAPI.class);
-
-            when(sectorMock.getFaction("hegemony"))
-                .thenReturn(factionMock);
+            stubRelationWithPlayer(sectorMock, "hegemony", RepLevel.HOSTILE, -40, RED);
 
             var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
 
@@ -198,6 +196,89 @@ final class BlocStandingReaderTests {
             assertThat(reader.readBlocStanding("hegemony"))
                 .isEqualTo(new BlocStanding.Measured(HOSTILE, HOSTILE));
         }
+
+        @Test
+        void recognisesTheSectorsEstablishedPlayerFactionAsTheirBloc() {
+
+            var sectorMock = buildEmptySector();
+            var playerFactionMock = stubRelationWithPlayer(sectorMock, "player", RepLevel.FRIENDLY, 60, GREEN);
+
+            stubPlayerFaction(sectorMock, playerFactionMock, "player", "Pirate Kingdom");
+
+            var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
+
+            assertThat(reader.readBlocStanding("player"))
+                .isEqualTo(BlocStanding.PLAYERS_OWN);
+        }
+
+        @Test
+        void measuresTheSectorsPlayerFactionBeforeAnIdentityIsEstablished() {
+
+            // A placeholder name and no economy to own a market in leave the identity unestablished.
+            var sectorMock = buildEmptySector();
+            var playerFactionMock = stubRelationWithPlayer(sectorMock, "player", RepLevel.FRIENDLY, 60, GREEN);
+
+            stubPlayerFaction(sectorMock, playerFactionMock, "player", "Independent");
+
+            var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
+
+            assertThat(reader.readBlocStanding("player"))
+                .isEqualTo(new BlocStanding.Measured(FRIENDLY, FRIENDLY));
+        }
+
+        @Test
+        void measuresTheSectorsPlayerFactionWhenItsIdIsBlank() {
+
+            var sectorMock = buildEmptySector();
+            var playerFactionMock = stubRelationWithPlayer(sectorMock, "player", RepLevel.FRIENDLY, 60, GREEN);
+
+            stubPlayerFaction(sectorMock, playerFactionMock, "  ", "Pirate Kingdom");
+
+            var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
+
+            assertThat(reader.readBlocStanding("player"))
+                .isEqualTo(new BlocStanding.Measured(FRIENDLY, FRIENDLY));
+        }
     }
 
+    // Makes the faction the sector answers for the player's own, under the ID and display name a case
+    // poses.
+    private static void stubPlayerFaction(
+            SectorAPI sectorMock,
+            FactionAPI playerFactionMock,
+            String factionId,
+            String displayName) {
+
+        when(playerFactionMock.getId())
+            .thenReturn(factionId);
+        when(playerFactionMock.getDisplayName())
+            .thenReturn(displayName);
+        when(sectorMock.getPlayerFaction())
+            .thenReturn(playerFactionMock);
+    }
+
+    // Stubs a faction onto the sector standing toward the player as the engine reports it.
+    private static FactionAPI stubRelationWithPlayer(
+            SectorAPI sectorMock,
+            String factionId,
+            RepLevel level,
+            int reputation,
+            Color colour) {
+
+        var relationshipMock = mock(RelationshipAPI.class);
+
+        when(relationshipMock.getLevel())
+            .thenReturn(level);
+        when(relationshipMock.getRepInt())
+            .thenReturn(reputation);
+        when(relationshipMock.getRelColor())
+            .thenReturn(colour);
+
+        var factionMock = stubKnownFaction(sectorMock, factionId);
+
+        when(factionMock.getRelToPlayer())
+            .thenReturn(relationshipMock);
+
+        return factionMock;
+    }
 }

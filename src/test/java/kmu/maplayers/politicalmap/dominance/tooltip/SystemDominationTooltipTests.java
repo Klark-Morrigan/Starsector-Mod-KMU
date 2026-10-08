@@ -72,9 +72,9 @@ import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.FULL_STABILITY;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubDispositionToward;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 import static kmu.maplayers.politicalmap.dominance.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
+import static kmu.starsector.SectorFactionFixtures.stubDispositionToward;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;

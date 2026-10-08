@@ -31,8 +31,8 @@ import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.FULL_STABILITY;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.buildEmptySector;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
+import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

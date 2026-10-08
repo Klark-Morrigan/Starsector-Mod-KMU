@@ -23,32 +23,9 @@ public final class FactionTooltipLine {
     }
 
     /**
-     * Builds the line naming a faction, for a caller composing an entry it is one part of - a member of
-     * a group, say.
-     *
-     * @param sector    the sector the faction's name and crest are read from
-     * @param factionId the ID of the faction the line names; an ID the sector does not know is shown
-     *                  as itself rather than leaving the line nameless
-     * @param valueText what the block counts this line in, or {@link CellTooltipEntryLine#NO_SCORE} for a
-     *                  line carrying no number
-     * @return the line, ready to be listed or nested
-     */
-    public static CellTooltipEntryLine buildFactionLine(
-            SectorAPI sector,
-            String factionId,
-            String valueText) {
-
-        var presentation = FactionPresentation.resolvePresentation(sector, factionId);
-
-        return CellTooltipEntryLine.createLine(
-            resolveCrestMark(presentation),
-            presentation.fullName(),
-            valueText);
-    }
-
-    /**
-     * Builds that same line from the number the block counts the faction in, for the ordinary case of a
-     * faction listed at a score - which is a number the block's own arithmetic adds up.
+     * Builds the line {@link #buildFactionLine} builds from the number the block counts the faction in,
+     * for the ordinary case of a faction listed at a score - which is a number the block's own
+     * arithmetic adds up.
      *
      * <p>The count travels rather than words for it so the line carries the figure it shows: a listing
      * too long to draw whole is closed by a row summing what it left out, and only lines holding their
@@ -82,6 +59,30 @@ public final class FactionTooltipLine {
             countedValue);
 
         return isWeighed ? line : line.statesUncountedValue();
+    }
+
+    /**
+     * Builds the line naming a faction, for a caller composing an entry it is one part of - a member of
+     * a group, say.
+     *
+     * @param sector    the sector the faction's name and crest are read from
+     * @param factionId the ID of the faction the line names; an ID the sector does not know is shown
+     *                  as itself rather than leaving the line nameless
+     * @param valueText what the block counts this line in, or {@link CellTooltipEntryLine#NO_SCORE} for a
+     *                  line carrying no number
+     * @return the line, ready to be listed or nested
+     */
+    public static CellTooltipEntryLine buildFactionLine(
+            SectorAPI sector,
+            String factionId,
+            String valueText) {
+
+        var presentation = FactionPresentation.resolvePresentation(sector, factionId);
+
+        return CellTooltipEntryLine.createLine(
+            resolveCrestMark(presentation),
+            presentation.fullName(),
+            valueText);
     }
 
     // The mark a faction's line opens on: its crest as its asset authored it, and none at all for a

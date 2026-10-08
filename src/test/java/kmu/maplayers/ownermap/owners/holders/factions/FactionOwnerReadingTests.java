@@ -1,6 +1,5 @@
 package kmu.maplayers.ownermap.owners.holders.factions;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
@@ -10,12 +9,18 @@ import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
-import kmu.starsector.StarsectorFactionFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+
+import static kmu.starsector.SectorFactionFixtures.HEGEMONY;
+import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
+import static kmu.starsector.SectorFactionFixtures.buildSectorKnowingHegemony;
+import static kmu.starsector.SectorFactionFixtures.buildSectorShadingFaction;
+import static kmu.starsector.SectorFactionFixtures.stubKnownFaction;
+import static kmu.starsector.SectorFactionFixtures.stubNamedFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -27,8 +32,6 @@ import static org.mockito.Mockito.when;
  * faction draw in the independent category, and nothing recedes of the layer's own accord.
  */
 final class FactionOwnerReadingTests {
-
-    private static final String HEGEMONY = "hegemony";
 
     private static final Color BRIGHT = new Color(140, 160, 220);
     private static final Color DARK = new Color(40, 60, 120);
@@ -49,7 +52,7 @@ final class FactionOwnerReadingTests {
         @Test
         void readsTheFactionsOwnShades() {
 
-            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(HEGEMONY, BRIGHT, DARK);
+            var sectorMock = buildSectorShadingFaction(HEGEMONY, BRIGHT, DARK);
 
             assertThat(new FactionOwnerReading(sectorMock).resolvePalette(HEGEMONY))
                 .isEqualTo(new OwnerPalette(BRIGHT, DARK));
@@ -76,7 +79,7 @@ final class FactionOwnerReadingTests {
         @Test
         void readsTheLongNameForTheFullFormat() {
 
-            var reading = new FactionOwnerReading(buildSectorNaming(HEGEMONY, "Hegemony", "The Hegemony"));
+            var reading = new FactionOwnerReading(buildSectorNamingHegemony());
 
             assertThat(reading.resolveName(HEGEMONY, OwnerNameFormatChoice.FULL))
                 .isEqualTo("The Hegemony");
@@ -85,7 +88,7 @@ final class FactionOwnerReadingTests {
         @Test
         void readsTheShortNameForTheShortFormat() {
 
-            var reading = new FactionOwnerReading(buildSectorNaming(HEGEMONY, "Hegemony", "The Hegemony"));
+            var reading = new FactionOwnerReading(buildSectorNamingHegemony());
 
             assertThat(reading.resolveName(HEGEMONY, OwnerNameFormatChoice.SHORT))
                 .isEqualTo("Hegemony");
@@ -115,15 +118,19 @@ final class FactionOwnerReadingTests {
         @Test
         void readsTheFactionsCrest() {
 
-            var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
-            when(sectorMock.getFaction(HEGEMONY))
-                .thenReturn(factionMock);
-            when(factionMock.getCrest())
-                .thenReturn("graphics/hegemony_crest.png");
+            var sectorMock = buildSectorKnowingHegemony();
 
             assertThat(new FactionOwnerReading(sectorMock).resolveCrestPath(HEGEMONY))
                 .isEqualTo("graphics/hegemony_crest.png");
+        }
+
+        @Test
+        void answersNoCrestWhenTheFactionDoesNotResolve() {
+
+            var reading = new FactionOwnerReading(buildSectorKnowingHegemony());
+
+            assertThat(reading.resolveCrestPath("ghost"))
+                .isNull();
         }
 
         @Test
@@ -196,11 +203,8 @@ final class FactionOwnerReadingTests {
         @Test
         void readsTheNeutralFactionsColour() {
 
-            var sectorMock = mock(SectorAPI.class);
-            var neutralMock = mock(FactionAPI.class);
-            when(sectorMock.getFaction(Factions.NEUTRAL))
-                .thenReturn(neutralMock);
-            when(neutralMock.getBaseUIColor())
+            var sectorMock = buildEmptySector();
+            when(stubKnownFaction(sectorMock, Factions.NEUTRAL).getBaseUIColor())
                 .thenReturn(new Color(150, 150, 150));
 
             assertThat(new FactionOwnerReading(sectorMock).resolveUnownedColour())
@@ -222,7 +226,7 @@ final class FactionOwnerReadingTests {
         @Test
         void readsIndependentsOwnShades() {
 
-            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(
+            var sectorMock = buildSectorShadingFaction(
                 Factions.INDEPENDENT,
                 BRIGHT,
                 DARK);
@@ -239,18 +243,12 @@ final class FactionOwnerReadingTests {
         }
     }
 
-    // A sector naming one faction by both its forms.
-    private static SectorAPI buildSectorNaming(String factionId, String shortName, String longName) {
+    // A sector naming the Hegemony by both its forms.
+    private static SectorAPI buildSectorNamingHegemony() {
 
-        var sectorMock = mock(SectorAPI.class);
-        var factionMock = mock(FactionAPI.class);
+        var sectorMock = buildEmptySector();
 
-        when(sectorMock.getFaction(factionId))
-            .thenReturn(factionMock);
-        when(factionMock.getDisplayName())
-            .thenReturn(shortName);
-        when(factionMock.getDisplayNameLong())
-            .thenReturn(longName);
+        stubNamedFaction(sectorMock, HEGEMONY, "Hegemony", "The Hegemony");
 
         return sectorMock;
     }

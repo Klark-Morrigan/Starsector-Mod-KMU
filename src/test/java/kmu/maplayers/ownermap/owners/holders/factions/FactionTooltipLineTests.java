@@ -1,15 +1,15 @@
 package kmu.maplayers.ownermap.owners.holders.factions;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.buildEmptySector;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
+import static kmu.starsector.SectorFactionFixtures.HEGEMONY;
+import static kmu.starsector.SectorFactionFixtures.HEGEMONY_CREST;
+import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
+import static kmu.starsector.SectorFactionFixtures.buildSectorKnowingHegemony;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,8 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class FactionTooltipLineTests {
 
-    private static final String HEGEMONY = "hegemony";
-    private static final String HEGEMONY_CREST = "graphics/hegemony_crest.png";
     private static final CellTooltipMark HEGEMONY_MARK =
         CellTooltipMark.resolveMarkAsAuthored(HEGEMONY_CREST);
 
@@ -107,14 +105,5 @@ final class FactionTooltipLineTests {
             assertThat(line.isValueUncounted())
                 .isTrue();
         }
-    }
-
-    private static SectorAPI buildSectorKnowingHegemony() {
-
-        var sectorMock = buildEmptySector();
-
-        stubFaction(sectorMock, HEGEMONY, "The Hegemony", HEGEMONY_CREST);
-
-        return sectorMock;
     }
 }

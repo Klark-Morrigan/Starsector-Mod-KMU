@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.owners.holders.base.picker;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.SectorFactions;
 import kmlib.starsector.factions.StarsectorPlayerFactionResolver;
 import kmlib.starsector.factions.relation.FactionRelation;
 import kmlib.starsector.factions.relation.RelationExtremes;
@@ -30,8 +31,8 @@ import java.util.Optional;
  * happened to be present is not the fact it purports to be.
  *
  * <p>The sector reads bind behind {@link PlayerRelationSource}, so the fold itself is arithmetic
- * over plain relations. Stateless past that seam and the grouping - both are read afresh on
- * every call, so a reader outlives the reputations it is asked about.
+ * over plain relations. The grouping is fixed when the reader is built, while the relation source is
+ * read afresh on every call, so a reader outlives the reputations it is asked about.
  */
 public final class BlocStandingReader {
 
@@ -162,24 +163,19 @@ public final class BlocStandingReader {
             // Both halves are asked of the handed-in sector - whether an identity is finalised
             // there, and which faction holds it - so a map drawn over a second sector recognises
             // that sector's player rather than the running game's.
+            // An established identity implies the sector holds a player faction, so only its ID
+            // can still come back empty.
             if (!StarsectorPlayerFactionResolver.isPlayerFactionEstablished(sector)) {
                 return Optional.empty();
             }
-            var playerFaction = sector.getPlayerFaction();
-
-            return playerFaction == null
-                ? Optional.empty()
-                : Optional.ofNullable(playerFaction.getId()).filter(KmlibStrings::hasText);
+            return Optional.ofNullable(sector.getPlayerFaction().getId()).filter(KmlibStrings::hasText);
         }
 
         @Override
         public Optional<FactionRelation> readRelationWithPlayer(String factionId) {
 
-            // An ID naming nobody is looked up as nobody rather than handed to the sector, which is
-            // free to fault on it.
-            return KmlibStrings.hasText(factionId)
-                ? StarsectorPlayerRelations.readPlayerRelation(sector.getFaction(factionId))
-                : Optional.empty();
+            return StarsectorPlayerRelations.readPlayerRelation(
+                SectorFactions.findFaction(sector, factionId));
         }
     }
 }

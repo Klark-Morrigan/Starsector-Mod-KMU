@@ -15,7 +15,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.ROW_COLOUR;
 import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.buildStandInOwner;
@@ -197,6 +199,46 @@ final class BlocStandingSortModeTests {
                     buildStandInOwner("hegemony", "Alpha", 1, 1)))
                 .containsExactly("hegemony", "tritachyon");
         }
+
+        @Test
+        void readsEachBlocsStandingOnceInOneSort() {
+
+            // A sort compares every bloc several times over, and one standing read can walk the
+            // whole economy, so a sort reads each bloc once however often it compares it.
+            var relationSourceFake = new CountingRelationSourceFake(
+                Map.of("hegemony", HOSTILE, "tritachyon", FRIENDLY, "persean", NEUTRAL, "diktat", WARMER));
+            var mode = new BlocStandingSortMode<HazardRatingFake>(
+                new BlocStandingReader(HolderGrouping.identity(), relationSourceFake));
+
+            listIdsInModeOrder(
+                mode,
+                buildStandInOwner("hegemony", "Hegemony", 0, 0),
+                buildStandInOwner("tritachyon", "Tri-Tachyon", 0, 0),
+                buildStandInOwner("persean", "Persean League", 0, 0),
+                buildStandInOwner("diktat", "Sindrian Diktat", 0, 0));
+
+            assertThat(relationSourceFake.readCountByFactionId())
+                .isEqualTo(Map.of("hegemony", 1, "tritachyon", 1, "persean", 1, "diktat", 1));
+        }
+
+        @Test
+        void readsTheStandingsAfreshForTheNextSort() {
+
+            // The memo lives as long as one comparator, so a later sort ranks by the standings of
+            // its own moment rather than by those an earlier sort saw.
+            var relationSourceFake = new CountingRelationSourceFake(
+                Map.of("hegemony", HOSTILE, "tritachyon", FRIENDLY));
+            var mode = new BlocStandingSortMode<HazardRatingFake>(
+                new BlocStandingReader(HolderGrouping.identity(), relationSourceFake));
+            var hegemony = buildStandInOwner("hegemony", "Hegemony", 0, 0);
+            var tritachyon = buildStandInOwner("tritachyon", "Tri-Tachyon", 0, 0);
+
+            listIdsInModeOrder(mode, hegemony, tritachyon);
+            listIdsInModeOrder(mode, hegemony, tritachyon);
+
+            assertThat(relationSourceFake.readCountByFactionId())
+                .isEqualTo(Map.of("hegemony", 2, "tritachyon", 2));
+        }
     }
 
     @Nested
@@ -340,5 +382,36 @@ final class BlocStandingSortModeTests {
         return new BlocStandingSortMode<>(new BlocStandingReader(
             grouping,
             new PlayerRelationSourceFake(establishedPlayerFactionId, standingByFactionId)));
+    }
+
+    /**
+     * Answers stated standings for an unestablished player, counting how often each faction's
+     * standing was read.
+     */
+    private static final class CountingRelationSourceFake implements BlocStandingReader.PlayerRelationSource {
+
+        private final Map<String, Integer> readCountByFactionId = new HashMap<>();
+        private final Map<String, FactionRelation> standingByFactionId;
+
+        CountingRelationSourceFake(Map<String, FactionRelation> standingByFactionId) {
+            this.standingByFactionId = standingByFactionId;
+        }
+
+        @Override
+        public Optional<FactionRelation> readRelationWithPlayer(String factionId) {
+
+            readCountByFactionId.merge(factionId, 1, Integer::sum);
+
+            return Optional.ofNullable(standingByFactionId.get(factionId));
+        }
+
+        @Override
+        public Optional<String> resolveEstablishedPlayerFactionId() {
+            return Optional.empty();
+        }
+
+        Map<String, Integer> readCountByFactionId() {
+            return readCountByFactionId;
+        }
     }
 }

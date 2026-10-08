@@ -54,7 +54,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.buildRulesUnder;
 import static kmu.maplayers.ownermap.picker.OwnerPresenceIndexFixtures.buildIndexOf;
-import static kmu.maplayers.politicalmap.views.FactionNameFixtures.stubNamedFaction;
+import static kmu.starsector.SectorFactionFixtures.stubNamedFaction;
 
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;

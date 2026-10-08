@@ -14,6 +14,7 @@ import kmu.util.KmuStringKeys;
 
 import java.awt.Color;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,8 +33,8 @@ import java.util.Objects;
  * {@link OwnerSortModeComposer#appendSharedTail}. The two ends of the range plus the name already
  * separate everything a player can tell apart.
  *
- * <p>The standing is read live at comparison and draw time rather than snapshotted when the picker's
- * rows were built: the picker read is memoised against settings and grouping, not reputation, so a
+ * <p>The standing is read live at sort and draw time rather than snapshotted when the picker's rows
+ * were built: the picker read is memoised against settings and grouping, not reputation, so a
  * snapshot would hold the ranking still until some unrelated knob moved.
  *
  * <p>An instance is built per picker read rather than published as a constant, which the metric modes
@@ -51,26 +52,8 @@ import java.util.Objects;
 public final class BlocStandingSortMode<S extends OwnerMetrics>
         implements ListSortMode<RankedOwner<S>> {
 
-    // Frozen once shipped: renaming it silently resets every save that stored this ranking. One key
-    // across every view rather than one per vocabulary, so the choice survives a view switch the way
-    // every other mode's does.
-    private static final String PERSISTENCE_KEY = "player_standing";
-
     // Friendliest first, so the blocs a player deals with lead the list.
     private static final SortDirection DEFAULT_DIRECTION = SortDirection.DESCENDING;
-
-    // The three cases as positions on one scale, which is what lets a single primary key rank them
-    // together with the numbers. The player's own bloc is the point the scale is measured from, so it
-    // sits above everything measured; a bloc nothing could be read for sits below everything measured,
-    // since an unknown standing must not rank as though it were neutral.
-    private static final int PLAYERS_OWN_POSITION = 2;
-    private static final int MEASURED_POSITION = 1;
-    private static final int UNREADABLE_POSITION = 0;
-
-    // What the two ends of a key read as for a case that holds no range. Never compared against a
-    // real reputation: only two keys level on the scale position reach the ends, and the two cases
-    // filled this way each sit alone at their end of that scale.
-    private static final int NO_REPUTATION = 0;
 
     // The whole ranking, friendliest first: the scale position, then the low end of the range, then
     // the high end - every key descending, so a higher position and a higher reputation both lead.
@@ -82,8 +65,30 @@ public final class BlocStandingSortMode<S extends OwnerMetrics>
             .thenComparingInt(StandingRankKey::highestReputation)
             .reversed();
 
+    // The three cases as positions on one scale, which is what lets a single primary key rank them
+    // together with the numbers. A measured bloc sits between the two cases that hold no range.
+    private static final int MEASURED_POSITION = 1;
+
+    // What the two ends of a key read as for a case that holds no range. Never compared against a
+    // real reputation: only two keys level on the scale position reach the ends, and the two cases
+    // filled this way each sit alone at their end of that scale.
+    private static final int NO_REPUTATION = 0;
+
     // What a case with no number to show draws: the picker leaves the row's value column empty.
     private static final List<TextSpan> NO_RUNS = List.of();
+
+    // Frozen once shipped: renaming it silently resets every save that stored this ranking. One key
+    // across every view rather than one per vocabulary, so the choice survives a view switch the way
+    // every other mode's does.
+    private static final String PERSISTENCE_KEY = "player_standing";
+
+    // The player's own bloc is the point the scale is measured from, so it sits above everything
+    // measured.
+    private static final int PLAYERS_OWN_POSITION = 2;
+
+    // A bloc nothing could be read for sits below everything measured, since an unknown standing must
+    // not rank as though it were neutral.
+    private static final int UNREADABLE_POSITION = 0;
 
     private final BlocStandingReader standingReader;
 
@@ -92,6 +97,41 @@ public final class BlocStandingSortMode<S extends OwnerMetrics>
      */
     public BlocStandingSortMode(BlocStandingReader standingReader) {
         this.standingReader = Objects.requireNonNull(standingReader, "standingReader");
+    }
+
+    /**
+     * The comparator that orders the picker's blocs under this mode in {@code direction}: the three
+     * standing cases as one scale, then the low end of the range, then the high end, then the shared
+     * tail.
+     *
+     * <p>The case ordering is part of the primary key, so a flipped direction reverses it along with
+     * the numbers - the player's own bloc leads under the default and trails under the flip. Pinning
+     * it to one end instead would make it the one row the direction control does not govern.
+     *
+     * <p>Each comparator reads a bloc's standing the first time it compares that bloc and keeps it
+     * from then on, so it is meant for one sort: ask for a fresh one per sort to rank by the standings
+     * of that moment.
+     *
+     * @param direction the way the ranking runs - this mode's default, or the flipped opposite
+     * @return the bloc comparator for this mode in the requested direction
+     */
+    @Override
+    public Comparator<RankedOwner<S>> comparator(SortDirection direction) {
+
+        var standingOrder = buildFriendliestFirstOrder();
+
+        if (direction != DEFAULT_DIRECTION) {
+            standingOrder = standingOrder.reversed();
+        }
+        return OwnerSortModeComposer.appendSharedTail(standingOrder);
+    }
+
+    /**
+     * @return descending, so the friendliest bloc leads
+     */
+    @Override
+    public SortDirection defaultDirection() {
+        return DEFAULT_DIRECTION;
     }
 
     /**
@@ -144,52 +184,6 @@ public final class BlocStandingSortMode<S extends OwnerMetrics>
             () -> NO_RUNS);
     }
 
-    /**
-     * @return descending, so the friendliest bloc leads
-     */
-    @Override
-    public SortDirection defaultDirection() {
-        return DEFAULT_DIRECTION;
-    }
-
-    /**
-     * The comparator that orders the picker's blocs under this mode in {@code direction}: the three
-     * standing cases as one scale, then the low end of the range, then the high end, then the shared
-     * tail.
-     *
-     * <p>The case ordering is part of the primary key, so a flipped direction reverses it along with
-     * the numbers - the player's own bloc leads under the default and trails under the flip. Pinning
-     * it to one end instead would make it the one row the direction control does not govern.
-     *
-     * @param direction the way the ranking runs - this mode's default, or the flipped opposite
-     * @return the bloc comparator for this mode in the requested direction
-     */
-    @Override
-    public Comparator<RankedOwner<S>> comparator(SortDirection direction) {
-
-        Comparator<RankedOwner<S>> standingOrder = this::compareBlocsFriendliestFirst;
-
-        if (direction != DEFAULT_DIRECTION) {
-            standingOrder = standingOrder.reversed();
-        }
-        return OwnerSortModeComposer.appendSharedTail(standingOrder);
-    }
-
-    // A standing as the three numbers it ranks by. The sealed fold is the ranking's exhaustive gate:
-    // a fourth case joining the set breaks here rather than quietly landing on some other position -
-    // and folding once per standing is what keeps the comparison plain arithmetic over two keys,
-    // instead of asking a second time which case each side turned out to be.
-    private static StandingRankKey resolveRankKey(BlocStanding standing) {
-
-        return standing.selectByCase(
-            measured -> new StandingRankKey(
-                MEASURED_POSITION,
-                measured.lowest().reputation(),
-                measured.highest().reputation()),
-            () -> new StandingRankKey(PLAYERS_OWN_POSITION, NO_REPUTATION, NO_REPUTATION),
-            () -> new StandingRankKey(UNREADABLE_POSITION, NO_REPUTATION, NO_REPUTATION));
-    }
-
     // A measured range as the runs it draws: one number where the ends coincide, both ends around the
     // separator where they do not. Each end takes the colour its own relation resolved to, so the
     // range is painted in the shades the game itself uses for its two halves.
@@ -210,6 +204,21 @@ public final class BlocStandingSortMode<S extends OwnerMetrics>
             resolveRelationRun(range.highest()).joinsPreviousRun());
     }
 
+    // A standing as the three numbers it ranks by. The sealed fold is the ranking's exhaustive gate:
+    // a fourth case joining the set breaks here rather than quietly landing on some other position -
+    // and folding once per standing is what keeps the comparison plain arithmetic over two keys,
+    // instead of asking a second time which case each side turned out to be.
+    private static StandingRankKey resolveRankKey(BlocStanding standing) {
+
+        return standing.selectByCase(
+            measured -> new StandingRankKey(
+                MEASURED_POSITION,
+                measured.lowest().reputation(),
+                measured.highest().reputation()),
+            () -> new StandingRankKey(PLAYERS_OWN_POSITION, NO_REPUTATION, NO_REPUTATION),
+            () -> new StandingRankKey(UNREADABLE_POSITION, NO_REPUTATION, NO_REPUTATION));
+    }
+
     // One end of a range as its drawn run: the reputation in that relation's own colour, with its
     // sign shown so a friendly bloc's value reads as a positive relation rather than as a bare
     // number sitting beside negative ones. Neutral draws unsigned, this being a reading on a scale
@@ -221,13 +230,23 @@ public final class BlocStandingSortMode<S extends OwnerMetrics>
             relation.colour());
     }
 
-    // Two blocs by the standings they hold right now, read at comparison time for the reason the
-    // class Javadoc states.
-    private int compareBlocsFriendliestFirst(RankedOwner<S> leftBloc, RankedOwner<S> rightBloc) {
+    // Blocs by the standings they hold right now, each bloc read once per sort.
+    //
+    // A sort compares every bloc many times over, and one standing read can walk every market in the
+    // sector to tell whether the player's identity is established. So the order keeps what it has
+    // read for its own lifetime. The picker asks this mode for a fresh comparator on every sort, which
+    // makes that lifetime exactly one sort: the ranking still follows reputation as it moves.
+    private Comparator<RankedOwner<S>> buildFriendliestFirstOrder() {
 
-        return FRIENDLIEST_FIRST_ORDER.compare(
-            resolveRankKey(standingReader.readBlocStanding(leftBloc.itemId())),
-            resolveRankKey(standingReader.readBlocStanding(rightBloc.itemId())));
+        var rankKeysByBlocId = new HashMap<String, StandingRankKey>();
+
+        return Comparator.comparing(
+            (RankedOwner<S> bloc) -> rankKeysByBlocId.computeIfAbsent(bloc.itemId(), this::readRankKey),
+            FRIENDLIEST_FIRST_ORDER);
+    }
+
+    private StandingRankKey readRankKey(String blocId) {
+        return resolveRankKey(standingReader.readBlocStanding(blocId));
     }
 
     /**

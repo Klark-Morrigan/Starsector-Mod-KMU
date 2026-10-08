@@ -17,6 +17,7 @@ see the [mod README](../../../../../../../../README.md) for project context.
 - [Alliances add to factions](#alliances-add-to-factions)
 - [The word bloc](#the-word-bloc)
 - [What a layer states](#what-a-layer-states)
+- [Standing with the player](#standing-with-the-player)
 - [One pass per walk](#one-pass-per-walk)
 - [One system at a time](#one-system-at-a-time)
 - [The band count](#the-band-count)
@@ -137,7 +138,78 @@ since it is the same for every holder view.
 Who a holder view lists is settled by the sector's colonies,
 so `HolderPaintedView` reads the colony rules the core's picker seam does not,
 assembles the rows,
-and appends the standing mode every holder view offers.
+and appends the [standing mode](#standing-with-the-player) every holder view offers.
+
+## Standing with the player
+
+The ranking by where a bloc stands with the player lives in `base.picker`.
+
+Where a bloc stands with the player is not a metric at all.
+It is read off the sector rather than folded over systems,
+it is the same fact under every view,
+and a bloc is one faction or several -
+so it is a *range*,
+the lowest and the highest of its members' standings,
+with each end in the shade the game itself paints that relation.
+
+`BlocStanding` names the three positions a bloc can hold:
+
+- **Measured** between those two ends.
+- **The player's own bloc** -
+  the point the scale is measured from,
+  so it holds the top of it and draws no number.
+- **Unreadable** -
+  a bloc with a blank ID,
+  which names no membership to read,
+  or a bloc whose every member is an ID the sector cannot look up.
+  It belongs past everything that was read rather than ranked as though it were neutral.
+
+The set is sealed over the three,
+because the two that draw nothing sit at opposite ends,
+and one value standing for both would have to be asked a second question to learn which end it meant.
+
+`BlocStandingReader` is the fold.
+It recognises the player's own bloc through the painting grouping,
+so a player faction inside an alliance is recognised as that alliance.
+Otherwise it folds the membership that grouping names,
+passing over any member the sector cannot answer for.
+Its sector reads sit behind one seam,
+so the fold itself is plain arithmetic.
+
+`BlocStandingSortMode` ranks by that,
+and being outside every view's vocabulary is what shapes it.
+It has no numeric chain of its own to fall through,
+so it leads with the three positions as one scale -
+the player's own bloc above everything measured,
+an unreadable one below -
+then the low end of the range,
+then the high,
+and then goes straight to `OwnerSortModeComposer.appendSharedTail`,
+which exists for a primary key the metric assembly cannot express.
+The case ordering is part of that primary key,
+so the player's bloc leads under the default direction and trails under the flip
+rather than being the one row the direction control does not govern.
+Its row draws the signed reputation,
+one number where a bloc's members agree and both ends joined around a separator where they do not,
+each in its own relation's colour.
+
+The standing is read live at sort and draw time:
+the picker read is memoised against settings and grouping,
+not reputation,
+so a snapshot would hold the ranking still until some unrelated knob moved.
+Within one sort each bloc is read once,
+since one read can walk every market in the sector to settle whether the player's identity is established.
+
+It is offered from the shared assembly rather than from any vocabulary,
+which is the same boundary one layer up:
+a vocabulary declares the numbers its own fold computed,
+and the assembly is the one point every view's read passes through holding both the sector the standing is read off
+and the grouping a bloc's membership is named by.
+So each vocabulary stays its layer's own half,
+the standing joins it behind those numbers on every view,
+and a save that stored it reopens on it whichever view is active -
+the key being one across every view,
+the way every other mode's survives a view switch.
 
 ## One pass per walk
 

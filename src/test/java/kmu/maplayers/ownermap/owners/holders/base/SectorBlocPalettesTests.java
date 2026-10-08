@@ -6,7 +6,7 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.starsector.StarsectorFactionFixtures;
+import kmu.starsector.SectorFactionFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ final class SectorBlocPalettesTests {
         void readsTheShadesOfTheFactionTheGroupingColoursTheBlocBy() {
             // The group case: the bloc's own ID names no faction, and its lead member's authored
             // pair is what the map paints it in.
-            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(
                 LEAD_MEMBER,
                 BRIGHT,
                 DARK);
@@ -81,7 +81,7 @@ final class SectorBlocPalettesTests {
         @Test
         void pairsAFactionBlocWithItsOwnAuthoredShades() {
 
-            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(
                 LEAD_MEMBER,
                 BRIGHT,
                 DARK);
@@ -95,7 +95,7 @@ final class SectorBlocPalettesTests {
         void coloursAGroupByItsLeadingMemberWhileKeepingTheGroupsId() {
             // The group's ID is no faction, so the palette is looked up through the leading member;
             // the owner still carries the group's ID, which is what the cells cluster by.
-            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(
                 LEAD_MEMBER,
                 BRIGHT,
                 DARK);

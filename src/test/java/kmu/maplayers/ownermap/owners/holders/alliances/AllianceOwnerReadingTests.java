@@ -1,6 +1,5 @@
 package kmu.maplayers.ownermap.owners.holders.alliances;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
@@ -11,13 +10,19 @@ import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
-import kmu.starsector.StarsectorFactionFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.Map;
+
+import static kmu.starsector.SectorFactionFixtures.HEGEMONY;
+import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
+import static kmu.starsector.SectorFactionFixtures.buildSectorKnowingHegemony;
+import static kmu.starsector.SectorFactionFixtures.buildSectorShadingFaction;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
+import static kmu.starsector.SectorFactionFixtures.stubKnownFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -43,7 +48,7 @@ final class AllianceOwnerReadingTests {
         Map.of(ALLIANCE, LEADING_MEMBER),
         Map.of(ALLIANCE, "Rebel Pact"));
 
-    private static final String LONE_FACTION = "hegemony";
+    private static final String LONE_FACTION = HEGEMONY;
 
     private static final Color BRIGHT = new Color(140, 160, 220);
     private static final Color DARK = new Color(40, 60, 120);
@@ -61,7 +66,7 @@ final class AllianceOwnerReadingTests {
         @Test
         void coloursAnAllianceByItsLeadingMember() {
 
-            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(LEADING_MEMBER, BRIGHT, DARK);
+            var sectorMock = buildSectorShadingFaction(LEADING_MEMBER, BRIGHT, DARK);
 
             assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolvePalette(ALLIANCE))
                 .isEqualTo(new OwnerPalette(BRIGHT, DARK));
@@ -70,7 +75,7 @@ final class AllianceOwnerReadingTests {
         @Test
         void coloursALoneFactionByItsOwnShades() {
 
-            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(LONE_FACTION, BRIGHT, DARK);
+            var sectorMock = buildSectorShadingFaction(LONE_FACTION, BRIGHT, DARK);
 
             assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolvePalette(LONE_FACTION))
                 .isEqualTo(new OwnerPalette(BRIGHT, DARK));
@@ -93,15 +98,7 @@ final class AllianceOwnerReadingTests {
         @Test
         void readsALoneFactionByItsOwnName() {
 
-            var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
-
-            when(sectorMock.getFaction(LONE_FACTION))
-                .thenReturn(factionMock);
-            when(factionMock.getDisplayNameLong())
-                .thenReturn("The Hegemony");
-
-            var reading = new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING);
+            var reading = new AllianceOwnerReading(buildSectorKnowingHegemony(), ALLIANCE_GROUPING);
 
             assertThat(reading.resolveName(LONE_FACTION, OwnerNameFormatChoice.FULL))
                 .isEqualTo("The Hegemony");
@@ -114,13 +111,9 @@ final class AllianceOwnerReadingTests {
         @Test
         void readsTheCrestOfTheAlliancesLeadingMember() {
 
-            var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
+            var sectorMock = buildEmptySector();
 
-            when(sectorMock.getFaction(LEADING_MEMBER))
-                .thenReturn(factionMock);
-            when(factionMock.getCrest())
-                .thenReturn("graphics/rebels_crest.png");
+            stubFaction(sectorMock, LEADING_MEMBER, "The Rebels", "graphics/rebels_crest.png");
 
             var reading = new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING);
 
@@ -131,15 +124,7 @@ final class AllianceOwnerReadingTests {
         @Test
         void readsALoneFactionsOwnCrest() {
 
-            var sectorMock = mock(SectorAPI.class);
-            var factionMock = mock(FactionAPI.class);
-
-            when(sectorMock.getFaction(LONE_FACTION))
-                .thenReturn(factionMock);
-            when(factionMock.getCrest())
-                .thenReturn("graphics/hegemony_crest.png");
-
-            var reading = new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING);
+            var reading = new AllianceOwnerReading(buildSectorKnowingHegemony(), ALLIANCE_GROUPING);
 
             assertThat(reading.resolveCrestPath(LONE_FACTION))
                 .isEqualTo("graphics/hegemony_crest.png");
@@ -200,6 +185,24 @@ final class AllianceOwnerReadingTests {
             assertThat(reading.resolveCategory(LONE_FACTION, DESATURATED))
                 .isEqualTo(HolderCategory.INDEPENDENT);
         }
+
+        @Test
+        void placesALoneFactionInTheFactionCategory() {
+
+            var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
+
+            assertThat(reading.resolveCategory(LONE_FACTION, ElementStyleAdjustment.NONE))
+                .isEqualTo(HolderCategory.FACTION);
+        }
+
+        @Test
+        void placesIndependentSpaceInTheIndependentCategory() {
+
+            var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
+
+            assertThat(reading.resolveCategory(Factions.INDEPENDENT, ElementStyleAdjustment.NONE))
+                .isEqualTo(HolderCategory.INDEPENDENT);
+        }
     }
 
     @Nested
@@ -209,12 +212,9 @@ final class AllianceOwnerReadingTests {
         void readsTheNeutralFactionsColour() {
             // A system nobody holds paints the same on a layer painting alliances as on one painting
             // factions.
-            var sectorMock = mock(SectorAPI.class);
-            var neutralMock = mock(FactionAPI.class);
+            var sectorMock = buildEmptySector();
 
-            when(sectorMock.getFaction(Factions.NEUTRAL))
-                .thenReturn(neutralMock);
-            when(neutralMock.getBaseUIColor())
+            when(stubKnownFaction(sectorMock, Factions.NEUTRAL).getBaseUIColor())
                 .thenReturn(new Color(150, 150, 150));
 
             assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolveUnownedColour())
@@ -228,7 +228,7 @@ final class AllianceOwnerReadingTests {
         @Test
         void readsIndependentsOwnShades() {
 
-            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(Factions.INDEPENDENT, BRIGHT, DARK);
+            var sectorMock = buildSectorShadingFaction(Factions.INDEPENDENT, BRIGHT, DARK);
 
             assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolveRecedePalette())
                 .isEqualTo(new OwnerPalette(BRIGHT, DARK));

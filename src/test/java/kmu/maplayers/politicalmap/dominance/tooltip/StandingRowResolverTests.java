@@ -23,9 +23,9 @@ import java.util.Map;
 import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.GROUP_BLOC_ID;
 import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.buildEmptySector;
-import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
 import static kmu.maplayers.politicalmap.dominance.tooltip.FactionAccountResolver.NO_ACCOUNT;
+import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

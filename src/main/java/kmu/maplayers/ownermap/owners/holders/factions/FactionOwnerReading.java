@@ -6,6 +6,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.factions.FactionNameForm;
 import kmlib.starsector.factions.FactionNames;
+import kmlib.starsector.factions.SectorFactions;
 import kmlib.starsector.factions.StarsectorFactionColours;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -25,11 +26,10 @@ import java.awt.Color;
  * owner is read off the faction whose ID it is.
  *
  * <p>A faction's shades and crest are its own authored ones, and its name is its own in the player's
- * chosen form. Independent space draws in the independent category, and so does a faction the recede
- * has desaturated, since desaturation means "read as backdrop". Nothing recedes of the layer's own
- * accord: with every owner a lone faction, there is no figure for a backdrop to sit behind.
+ * chosen form.
  *
- * <p>Holds the sector the rebuild sampled, so every answer is a lookup over that one snapshot.
+ * <p>Holds the sector the rebuild was asked about and reads it live on every answer, so a reading
+ * built over a second sector reports that sector's factions rather than the running game's.
  */
 public final class FactionOwnerReading
         implements OwnerReading {
@@ -53,18 +53,11 @@ public final class FactionOwnerReading
         return palettes.readBlocPalette(ownerId);
     }
 
-    // The faction's own name in the player's chosen form - its abbreviated display name for Short,
-    // its long-form title for Full. A faction that will not resolve carries no name, and a blank one
-    // is left for the caller to treat as unresolved.
     @Override
     public String resolveName(String ownerId, OwnerNameFormatChoice nameFormat) {
 
-        var faction = sector == null
-            ? null
-            : sector.getFaction(ownerId);
-
         return FactionNames.resolveName(
-            faction,
+            SectorFactions.findFaction(sector, ownerId),
             nameFormat == OwnerNameFormatChoice.SHORT
                 ? FactionNameForm.SHORT
                 : FactionNameForm.LONG);
@@ -74,13 +67,12 @@ public final class FactionOwnerReading
     @Override
     public String resolveCrestPath(String ownerId) {
 
-        return sector == null
-            ? null
-            : FactionCrests.resolveCrestPath(sector.getFaction(ownerId));
+        return FactionCrests.resolveCrestPath(SectorFactions.findFaction(sector, ownerId));
     }
 
-    // Nothing recedes of the layer's own accord: receding every faction would sink the whole sector
-    // at once, which reads as the layer having failed rather than as an answer.
+    // Nothing recedes of the layer's own accord. With every owner a lone faction there is no figure
+    // for a backdrop to sit behind, and receding every faction would sink the whole sector at once,
+    // which reads as the layer having failed rather than as an answer.
     @Override
     public ElementStyleAdjustment resolveStyleAdjustment(
             String ownerId,
@@ -101,10 +93,10 @@ public final class FactionOwnerReading
     @Override
     public MapStyleCategory resolveCategory(String ownerId, ElementStyleAdjustment adjustment) {
 
-        var isIndependent = Factions.INDEPENDENT.equals(ownerId)
+        var isReadAsBackdrop = Factions.INDEPENDENT.equals(ownerId)
             || adjustment.shouldDesaturate();
 
-        return isIndependent
+        return isReadAsBackdrop
             ? HolderCategory.INDEPENDENT
             : HolderCategory.FACTION;
     }

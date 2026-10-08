@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
@@ -24,10 +23,7 @@ import java.util.List;
  *
  * <p>Separates "who ranks where" - {@code SystemStandings}, pure over the factions present and a
  * grouping - from "how a group and its factions present", the Starsector and grouping lookups
- * gathered here.
- * Confining {@link FactionAPI} and the grouping's label and crest reads to this resolver keeps the
- * render layer consuming plain entries, mirroring how {@code SectorPolitics} confines the holding
- * palette lookups.
+ * gathered here, so the render layer consumes plain entries.
  *
  * <p>It resolves into the shared entry model rather than into a model of its own, because a ranked
  * group already <em>is</em> what an entry is - a thing with a name, a mark, and a number, over whatever
@@ -36,34 +32,12 @@ import java.util.List;
  *
  * <p>A member is always a faction, and how one appears is {@link FactionPresentation}'s answer rather
  * than this resolver's, so a faction ranked here and the same faction named anywhere else in the box
- * cannot present as two. A group presents by its kind: a lone-faction group reuses its one member's
- * name and crest, so a singleton reads identically to the member it wraps and the flat faction view
- * falls out for free; an alliance group takes its name from the grouping and its crest from the
- * alliance's colour (lead) faction - the same crest the alliances view paints the bloc's cluster by -
- * gathering the members that make it up as its peers rather than as its account, since membership states
- * the same answer more finely and explains nothing. Keying that on the group's kind rather than its size
- * is what keeps a one-member alliance a bloc over its member rather than collapsing it into a lone
- * faction, and it is settled here because this is the only side that knows the kind. A blank or absent
- * crest resolves to a null path the render layer draws around, so a group or member with no authored
- * crest still shows its name and score.
- *
- * <p>How far the heading over a row reaches is stated on the row, as the fraction the routing worked out
- * for it. Which of the two readings a row states is settled here, this being the one side that knows a
- * group's kind: a bloc's row states how much of its own membership the heading took, while a faction's
- * states how much of the holder it is at odds with - and a lone-faction group, being that faction under
- * another name, states the faction's rather than the bloc-of-one's. A heading true of the whole of a row
- * qualifies it with nothing, which is every row of every block placed by membership.
- *
- * <p>How loudly a score is drawn is settled here too, on the standing's own kind: a faction or a bloc
- * the pass weighed nothing for carries its nought in the quiet shade. The distinction is the
- * standing's rather than the resolver's - what it adds is that the same distinction is drawn at both
- * tiers, so a bloc cannot read as weighed over members that were not.
- *
- * <p>What accounts for a faction's score is not this resolver's to know, so it is asked for
- * ({@link FactionAccountResolver}) and hung beneath the faction it was resolved for. Asking here rather
- * than letting a box lay accounts over the answer afterwards is what makes the pairing safe: the standing
- * and the line named from it are both in hand at that point, so no caller has to walk two lists at the
- * same index and risk listing one faction's colonies under another's name.
+ * cannot present as two. A group presents by its kind - a lone faction as its one member, an alliance
+ * as its grouping names it - and that is settled here because this is the only side that knows the
+ * kind. Keying on the kind rather than the size is what keeps a one-member alliance a bloc over its
+ * member rather than collapsing it into a lone faction. A blank or absent crest resolves to a null
+ * path the render layer draws around, so a group or member with no authored crest still shows its
+ * name and score.
  */
 public final class StandingRowResolver {
 
@@ -74,7 +48,7 @@ public final class StandingRowResolver {
      * Resolves a hovered system's ranked groups into the entries a block lists, in the same order, each
      * group's members gathered beneath it as its peers and each member over the account asked for it.
      *
-     * @param sector          the sector whose {@link FactionAPI} names and crests are read
+     * @param sector          the sector whose factions' names and crests are read
      * @param standings       the two-tier standings as the block lists them, in draw order
      * @param grouping        the active view's grouping, supplying an alliance's name and colour
      *                        faction; the identity grouping makes every group a lone faction
@@ -97,10 +71,55 @@ public final class StandingRowResolver {
         return List.copyOf(entries);
     }
 
-    // Resolves one group into the entry it is listed as. The members resolve first so a lone-faction
-    // group can reuse its single member's already-resolved name and crest, which is what keeps a
-    // singleton from ever drifting from the member it wraps.
-    private static CellTooltipEntry resolveGroupEntry(
+    // One group's line, whichever kind of group it is: whatever names it, over the score its members
+    // add up to.
+    //
+    // A group the pass weighed nothing for carries its nought in the quiet shade, under the same
+    // treatment its members' lines and the claims box's own presence lines take, so a bloc cannot read
+    // as weighed over members that were not. Read off the group rather than off the member line it
+    // may have been built from, because a bloc is weighed where any one member is: an alliance holding
+    // one weighed colony beside two unregistered ones has an aggregate somebody worked out.
+    private static CellTooltipEntryLine buildGroupLine(
+            CellTooltipMark mark,
+            String labelText,
+            GroupStanding standing) {
+
+        var groupLine = CellTooltipEntryLine.createCountedLine(
+            mark,
+            labelText,
+            standing.aggregateScore());
+
+        return standing.hasWeighedMember() ? groupLine : groupLine.statesUncountedValue();
+    }
+
+    // One member's line: its crest, its name, and what the pass weighed it at. A presence-only
+    // standing is one the pass weighed nothing for - every term of a dominance weight being
+    // economy-fed and its colonies unregistered - so its nought is drawn quiet.
+    private static CellTooltipEntryLine buildMemberLine(SectorAPI sector, FactionStanding member) {
+        return FactionTooltipLine.buildCountedFactionLine(
+            sector,
+            member.factionId(),
+            member.score(),
+            member instanceof WeighedFactionStanding);
+    }
+
+    // The crest a bloc shows: its colour (lead) faction's, which is the crest the alliances view
+    // paints that bloc's cluster by, so the line naming a bloc and the cluster it names are marked
+    // alike.
+    private static CellTooltipMark resolveAllianceCrest(
+            SectorAPI sector,
+            HolderGrouping grouping,
+            String blocId) {
+
+        return CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
+            .resolvePresentation(sector, grouping.resolveColourFactionId(blocId))
+            .crestSpritePath());
+    }
+
+    // An alliance carries the alliance's own name and its lead (colour) member's crest - the same
+    // name and crest the alliances view paints the bloc's cluster by - over the factions in it, and
+    // states how much of its own membership the heading above it took.
+    private static CellTooltipEntry resolveAllianceEntry(
             SectorAPI sector,
             RoutedStanding routedStanding,
             HolderGrouping grouping,
@@ -109,31 +128,6 @@ public final class StandingRowResolver {
         var standing = routedStanding.standing();
         var blocId = standing.blocId();
 
-        if (!grouping.isGroupedBloc(blocId)) {
-            // A lone-faction group has one member, so the group is exactly that member: it takes that
-            // member's own name, crest and account rather than reading any of them a second time. The
-            // member's line is never listed beneath the group's, since repeating it would say nothing
-            // the line above did not - so the account it would have carried hangs directly off the
-            // group, which is the same faction under another name.
-            //
-            // And the fraction it states is that faction's, for the same reason: how much of the
-            // holder this faction is at odds with. The bloc-of-one reading beside it could only ever
-            // count one member out of one, which states nothing at either end of its range.
-            var groupMember = standing.members().get(0);
-            var groupMemberLine = buildMemberLine(sector, groupMember);
-
-            return CellTooltipEntry
-                .createEntry(stateFraction(
-                    buildGroupLine(
-                        groupMemberLine.mark(),
-                        groupMemberLine.labelText(),
-                        standing),
-                    routedStanding.readFractionFor(groupMember.factionId())))
-                .nesting(accountResolver.resolveAccountEntries(groupMember));
-        }
-        // An alliance carries the alliance's own name and its lead (colour) member's crest - the same
-        // name and crest the alliances view paints the bloc's cluster by - over the factions in it,
-        // and states how much of its own membership the heading above it took.
         var allianceLine = stateFraction(
             buildGroupLine(
                 resolveAllianceCrest(sector, grouping, blocId),
@@ -151,64 +145,57 @@ public final class StandingRowResolver {
             .grouping(resolveMemberEntries(sector, routedStanding, accountResolver));
     }
 
-    // How far the heading over a row reaches, stated after the row's name where it reaches over only
-    // part of it. A count out of a total is what the box worked out about the row and reads as a
-    // finding, with nothing around it - what it counts is said by the heading the row sits under.
-    //
-    // Which rows state one and which state nothing is StandingFraction's own rule, so a row under a
-    // heading true of all of it asks the same question every other row does.
-    private static CellTooltipEntryLine stateFraction(
-            CellTooltipEntryLine line,
-            StandingFraction fraction) {
-
-        if (!fraction.isStated()) {
-            return line;
-        }
-        return line.qualifiedWith(KmuStringKeys.format(
-            KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION,
-            fraction.count(),
-            fraction.total()));
-    }
-
-    // The crest a bloc shows: its colour (lead) faction's, which is the crest the alliances view
-    // paints that bloc's cluster by, so the line naming a bloc and the cluster it names are marked
-    // alike.
-    private static CellTooltipMark resolveAllianceCrest(
+    // Resolves one group into the entry it is listed as, by the group's kind.
+    private static CellTooltipEntry resolveGroupEntry(
             SectorAPI sector,
+            RoutedStanding routedStanding,
             HolderGrouping grouping,
-            String blocId) {
+            FactionAccountResolver accountResolver) {
 
-        return CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
-            .resolvePresentation(sector, grouping.resolveColourFactionId(blocId))
-            .crestSpritePath());
+        if (!grouping.isGroupedBloc(routedStanding.standing().blocId())) {
+            return resolveLoneFactionEntry(sector, routedStanding, accountResolver);
+        }
+        return resolveAllianceEntry(sector, routedStanding, grouping, accountResolver);
     }
 
-    // One group's line, whichever kind of group it is: whatever names it, over the score its members
-    // add up to.
+    // A lone-faction group has one member, so the group is exactly that member: it takes that member's
+    // own name, crest and account rather than reading any of them a second time, which is what keeps a
+    // singleton from ever drifting from the member it wraps and lets the flat faction view fall out for
+    // free. The member's line is never listed beneath the group's, since repeating it would say nothing
+    // the line above did not - so the account it would have carried hangs directly off the group, which
+    // is the same faction under another name.
     //
-    // A group the pass weighed nothing for carries its nought in the quiet shade, under the same
-    // treatment its members' lines and the claims box's own presence lines take. Read off the group
-    // rather than off the member line it may have been built from, because a bloc is weighed where
-    // any one member is: an alliance holding one weighed colony beside two unregistered ones has an
-    // aggregate somebody worked out.
-    private static CellTooltipEntryLine buildGroupLine(
-            CellTooltipMark mark,
-            String labelText,
-            GroupStanding standing) {
+    // And the fraction it states is that faction's, for the same reason: how much of the holder this
+    // faction is at odds with. The bloc-of-one reading beside it could only ever count one member out of
+    // one, which states nothing at either end of its range.
+    private static CellTooltipEntry resolveLoneFactionEntry(
+            SectorAPI sector,
+            RoutedStanding routedStanding,
+            FactionAccountResolver accountResolver) {
 
-        var groupLine = CellTooltipEntryLine.createCountedLine(
-            mark,
-            labelText,
-            standing.aggregateScore());
+        var standing = routedStanding.standing();
+        var groupMember = standing.members().get(0);
+        var groupMemberLine = buildMemberLine(sector, groupMember);
 
-        return standing.hasWeighedMember() ? groupLine : groupLine.statesUncountedValue();
+        return CellTooltipEntry
+            .createEntry(stateFraction(
+                buildGroupLine(
+                    groupMemberLine.mark(),
+                    groupMemberLine.labelText(),
+                    standing),
+                routedStanding.readFractionFor(groupMember.factionId())))
+            .nesting(accountResolver.resolveAccountEntries(groupMember));
     }
 
     // Resolves each ranked member standing into the entry it is listed as, preserving the ranking order,
-    // so a group's members read in the order the standing placed them. This resolver states the two tiers
-    // the standings have; what accounts for a member's score is the asking box's to say, so each member
-    // carries whatever that box's resolver answered for it - subordinated, since an account explains the
-    // line it hangs under rather than restating it more finely.
+    // so a group's members read in the order the standing placed them.
+    //
+    // What accounts for a member's score is the asking box's to say, so each member carries whatever that
+    // box's resolver answered for it - subordinated, since an account explains the line it hangs under
+    // rather than restating it more finely. Asking here rather than letting a box lay accounts over the
+    // answer afterwards is what makes the pairing safe: the standing and the line named from it are both
+    // in hand, so no caller has to walk two lists at the same index and risk listing one faction's
+    // colonies under another's name.
     private static List<CellTooltipEntry> resolveMemberEntries(
             SectorAPI sector,
             RoutedStanding routedStanding,
@@ -227,14 +214,24 @@ public final class StandingRowResolver {
         return entries;
     }
 
-    // One member's line: its crest, its name, and what the pass weighed it at. A presence-only
-    // standing is one the pass weighed nothing for - every term of a dominance weight being
-    // economy-fed and its colonies unregistered - so its nought is drawn quiet.
-    private static CellTooltipEntryLine buildMemberLine(SectorAPI sector, FactionStanding member) {
-        return FactionTooltipLine.buildCountedFactionLine(
-            sector,
-            member.factionId(),
-            member.score(),
-            member instanceof WeighedFactionStanding);
+    // How far the heading over a row reaches, stated after the row's name where it reaches over only
+    // part of it. A count out of a total is what the box worked out about the row and reads as a
+    // finding, with nothing around it - what it counts is said by the heading the row sits under.
+    //
+    // Which rows state one and which state nothing is StandingFraction's own rule, so a row under a
+    // heading true of all of it asks the same question every other row does. Which of the two readings
+    // a row states is settled by whoever builds the row: a bloc's row states how much of its own
+    // membership the heading took, while a faction's states how much of the holder it is at odds with.
+    private static CellTooltipEntryLine stateFraction(
+            CellTooltipEntryLine line,
+            StandingFraction fraction) {
+
+        if (!fraction.isStated()) {
+            return line;
+        }
+        return line.qualifiedWith(KmuStringKeys.format(
+            KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION,
+            fraction.count(),
+            fraction.total()));
     }
 }

@@ -7,7 +7,7 @@ import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
-import kmu.starsector.StarsectorFactionFixtures;
+import kmu.starsector.SectorFactionFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -54,7 +54,7 @@ final class RibbonPlanInputsTests {
         void readsABlocsShadesOffThePassesSectorAndGrouping() {
             // A group bloc is shaded by its lead member, which only a palette folding under the
             // pass's grouping and reading the pass's sector can answer.
-            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction("hegemony", BRIGHT, DARK);
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction("hegemony", BRIGHT, DARK);
             var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, buildGroupOf("hegemony", "persean"));
             var inputs = RibbonPlanInputs.createForPass(pass, AFFILIATION, RULES);
 

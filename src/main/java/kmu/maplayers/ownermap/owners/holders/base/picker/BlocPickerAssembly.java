@@ -29,13 +29,10 @@ import java.util.Map;
  *
  * <p>In the holder picker package rather than beside the core picker types, since it asks the view
  * for its gate, and the core picker package stays free of the view seam that builds on it.
- *
- * <p>Final class with a private constructor: pure-function utility, no instance state.
  */
 public final class BlocPickerAssembly {
 
     private BlocPickerAssembly() {
-        // utility class, no instances.
     }
 
     /**

@@ -271,27 +271,6 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
                 detailLevel));
     }
 
-    // What this family may show of a colony - read live off the same settings the faction layer's
-    // pass samples, so crossing between the two layers cannot make one call a system empty that the
-    // other calls held. The whole rule rather than the reveal alone, so a reader taking one term of
-    // it cannot be drawing under a rule the rest of the box is not.
-    private static ColonyVisibility readColonyVisibility() {
-        return MapVisibilityRules.readFromLunaSettings().colonyVisibility();
-    }
-
-    // One faction's line as its standing states it: its crest, its name, and what the contest weighed
-    // its presence at - quiet where the contest never reached the faction at all.
-    private static CellTooltipEntryLine buildStandingLine(
-            SectorAPI sector,
-            FactionClaimStanding standing) {
-
-        return FactionTooltipLine.buildCountedFactionLine(
-            sector,
-            standing.factionId(),
-            standing.score(),
-            standing instanceof WeighedClaimStanding);
-    }
-
     // One faction's line as the block listing it needs it: its standing, plus the word for a faction
     // that could never have taken the system where the block's own heading has not already said so.
     //
@@ -310,6 +289,27 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
                 KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL));
         }
         return standingLine;
+    }
+
+    // One faction's line as its standing states it: its crest, its name, and what the contest weighed
+    // its presence at - quiet where the contest never reached the faction at all.
+    private static CellTooltipEntryLine buildStandingLine(
+            SectorAPI sector,
+            FactionClaimStanding standing) {
+
+        return FactionTooltipLine.buildCountedFactionLine(
+            sector,
+            standing.factionId(),
+            standing.score(),
+            standing instanceof WeighedClaimStanding);
+    }
+
+    // What this family may show of a colony - read live off the same settings the faction layer's
+    // pass samples, so crossing between the two layers cannot make one call a system empty that the
+    // other calls held. The whole rule rather than the reveal alone, so a reader taking one term of
+    // it cannot be drawing under a rule the rest of the box is not.
+    private static ColonyVisibility readColonyVisibility() {
+        return MapVisibilityRules.readFromLunaSettings().colonyVisibility();
     }
 
     // The hovered system's contest as this box may state it: the whole scored read, the colony rule
