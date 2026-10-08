@@ -32,7 +32,7 @@ import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
  * @param viewRecedeAdjustment      how an owner the painting view recedes of its own accord draws;
  *                                  which owners those are is the view's per-owner call, not this
  *                                  record's
- * @param nameFormat                how a cluster label spells its holder's name, including whether
+ * @param nameFormat                how a cluster label spells its owner's name, including whether
  *                                  it draws at all
  * @param isUninhabitedOutlineDrawn whether never-settled space strokes its outline
  */
@@ -104,7 +104,7 @@ public record ContentInputs(
 
     /**
      * This same reading with the spotlight dropped, for a pass that paints the whole sector
-     * whatever the picker holds - resolving real holders and receding nothing behind a
+     * whatever the picker holds - resolving real owners and receding nothing behind a
      * spotlight.
      *
      * <p>Dropped rather than replaced with {@link #createEmpty()}, because such a pass is still

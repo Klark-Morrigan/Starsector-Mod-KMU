@@ -34,7 +34,7 @@ public final class SpotlitOwners {
      * owner is present in, which the render layer draws at full strength while every other key
      * recedes. The single question the filter branch asks to decide recede.
      *
-     * @param ownerId the group key a resolved holder carries
+     * @param ownerId the key a resolved owner carries
      * @return true when the key is the spotlighted owner's synthetic key
      */
     public static boolean isSpotlitOwner(String ownerId) {

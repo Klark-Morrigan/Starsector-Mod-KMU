@@ -98,7 +98,7 @@ public final class MapPalettes {
 
     /**
      * Picks the palette shade of a cell itself: its owner's, or the shared neutral
-     * colour when nothing owns it - an unowned system (decivilised, or uninhabited) has no
+     * colour when nothing owns it - an unowned system (settled, or uninhabited) has no
      * palette of its own, so both shades resolve neutral, exactly as its cell's own outline
      * draws. Null for a NONE ("No color") choice, so the caller skips the element.
      *
@@ -120,12 +120,11 @@ public final class MapPalettes {
 
     /**
      * Resolves the one uniform palette every desaturated owner recolours to: the painting layer's
-     * recede shades, each scaled toward black by {@code darkeningStrength}. On the layers painting
-     * holders those shades are Independent's, and Independent's authored colour and the mid-grey
-     * genuine independent space paints in are the same grey, so painting a desaturated owner in
-     * them unchanged would make it read as independent-held space; darkening sinks the receded fills
-     * to a distinctly darker grey that sits behind it, separated by value rather than a hue neither
-     * grey has. The strength is the fraction of brightness removed - 0 leaves the shades untouched,
+     * recede shades, each scaled toward black by {@code darkeningStrength}. Those shades can be the
+     * very grey some owner at full strength paints in, so painting a desaturated owner in them
+     * unchanged would make it read as that owner's space; darkening sinks the receded fills to a
+     * distinctly darker grey that sits behind it, separated by value rather than a hue neither grey
+     * has. The strength is the fraction of brightness removed - 0 leaves the shades untouched,
      * 0.3 draws them 30% darker, 1 goes to black. Takes the shades and strength as parameters
      * (rather than reading either itself) so the mapping is a pure lookup; the caller reads both once
      * per pass and hands them in.

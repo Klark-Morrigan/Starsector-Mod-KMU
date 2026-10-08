@@ -14,7 +14,7 @@ package kmu.maplayers.ownermap.ribbon;
  * are paired: a band laid at one pass's proportions under another pass's shortening is a cell drawn
  * to a design nobody chose.
  *
- * @param lengths         how far a market's segment and an interjection run
+ * @param lengths         how far a holding's segment and an interjection run
  * @param uncontestedRuns how far those runs reach on a cell no owner but its own painter holds
  *                        anything in
  */
@@ -32,7 +32,7 @@ public record RibbonPlanRules(
      * a previous pass's lengths - and produce a band at proportions nobody set. The one pairing
      * that is ever correct is the one inside this value, so it is the only one reachable.
      *
-     * @return the market run cut to a single width where the shortening is on, and the authored
+     * @return the holding run cut to a single width where the shortening is on, and the authored
      *         lengths where it is not
      */
     public RibbonSegmentLengths resolveUncontestedLengths() {

@@ -16,7 +16,7 @@ import java.util.function.Supplier;
  * layer's owner source, so whatever reading the source opens shares the walk every other stage
  * of the rebuild is answered from.
  *
- * <p>The index names no holding rule and no owner - it is the sector's systems and what each
+ * <p>The index names no owner rule and no owner - it is the sector's systems and what each
  * holds, walked once. The visibility rules beside it are the substrate's own: what the player may
  * be shown of what stands in a system, and whether a system is forced onto the map. They are the
  * rules the cells were cut under, carried here so a source reads the sector under the very rule
@@ -37,7 +37,7 @@ public final class SectorWalk {
     private final MapVisibilityRules visibilityRules;
 
     // The readings opened over this walk, keyed by whoever opened them. By identity, because two
-    // sources reading under different rules - two samplings of a grouping - are two readings even
+    // sources reading under different rules - two samplings of a live input - are two readings even
     // where their rules compare equal.
     private final Map<Object, Object> readingByOpener = new IdentityHashMap<>();
 

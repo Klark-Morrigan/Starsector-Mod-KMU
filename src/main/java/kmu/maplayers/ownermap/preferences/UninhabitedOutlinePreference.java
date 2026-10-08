@@ -8,7 +8,7 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
 /**
  * Whether uninhabited systems draw their outline, persisted per save and per screen. Off by
- * default, so only held, independent, and decivilised systems draw until the player asks for the
+ * default, so only owned and settled systems draw until the player asks for the
  * unowned ones too. View-agnostic: the outline is a property of the map's unowned category, which
  * every view paints the same way.
  *

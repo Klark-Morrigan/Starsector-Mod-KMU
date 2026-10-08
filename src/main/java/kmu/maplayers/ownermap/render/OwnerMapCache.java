@@ -421,14 +421,14 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         return wasHoldingReused;
     }
 
-    // Nothing stale enough to rebuild. In the normal view, fold in any per-system holder changes the
+    // Nothing stale enough to rebuild. In the normal view, fold in any per-system owner changes the
     // board marked, re-shaping only those systems and their neighbours over the standing
     // clusters; that batch opens a reading of its own, since none was opened for this frame.
     // The static debug overlay has no draw lists to patch, so its staleness is dropped instead -
     // it refreshes on the next full rebuild (any settings or geometry change). Under a filter the
-    // incremental re-shape is bypassed too: it re-derives holders through the normal (non-filter)
+    // incremental re-shape is bypassed too: it re-derives owners through the normal (non-filter)
     // holding, which would overwrite the spotlit keys and corrupt the spotlight, so a filtered
-    // map defers holder changes to the next full rebuild instead.
+    // map defers owner changes to the next full rebuild instead.
     //
     // The drain happens here rather than inside the fold, and before either branch is chosen,
     // because this cache is what holds the board: the fold is reached through static entry points

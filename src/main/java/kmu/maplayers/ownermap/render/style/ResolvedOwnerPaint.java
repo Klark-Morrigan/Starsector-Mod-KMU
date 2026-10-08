@@ -37,7 +37,7 @@ public record ResolvedOwnerPaint(
     OwnerPalette palette) {
 
     /**
-     * What an owned owner paints from: its owner's own two shades under the styling resolved for it.
+     * What an owner paints from: its owner's own two shades under the styling resolved for it.
      *
      * @param styling             the bundle and adjustment this owner draws under
      * @param owner               whose shades it paints in when nothing desaturates it

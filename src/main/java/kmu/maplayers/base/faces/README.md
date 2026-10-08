@@ -3,6 +3,8 @@
 The face each KMU text draws in on one sector,
 settled against what the install's fonts can draw.
 
+## Index
+
 - [Why faces are settled](#why-faces-are-settled)
 - [What a face is held to](#what-a-face-is-held-to)
 - [When a face is settled](#when-a-face-is-settled)

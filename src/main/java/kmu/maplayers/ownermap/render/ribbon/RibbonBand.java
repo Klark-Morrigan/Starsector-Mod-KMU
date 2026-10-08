@@ -12,7 +12,7 @@ import java.awt.Color;
  * since nothing about the geometry moves between rebuilds - which is what makes a band cost a
  * draw call rather than a walk.
  *
- * @param colour    the shade this run draws in: an owner's bright colour for a market, its dark
+ * @param colour    the shade this run draws in: an owner's bright colour for a holding, its dark
  *                  colour for the parting between two of them
  * @param triangles the run's triangles as a flat {@code [x, y, x, y, ...]} world-coordinate run,
  *                  every three vertices one triangle

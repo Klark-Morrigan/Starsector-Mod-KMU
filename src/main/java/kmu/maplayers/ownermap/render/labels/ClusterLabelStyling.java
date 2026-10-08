@@ -55,9 +55,9 @@ final class ClusterLabelStyling {
     }
 
     // The colour a cluster's name (and its debug dot) draws in: the colour choice of the name
-    // style of the category the owner draws in - which, on the layers painting holders, is that
-    // category's outer-border choice, so the name inherits the border's own colour rather than a
-    // fixed bright pick - resolved against this owner's two shades: its own palette, or the pass's
+    // style of the category the owner draws in - which a layer can point at that category's
+    // outer-border choice, so the name inherits the border's own colour rather than a fixed
+    // bright pick - resolved against this owner's two shades: its own palette, or the pass's
     // shared desaturation palette when the adjustment desaturates this owner, by the same
     // MapPalettes mapping the border itself uses. A hidden choice ("No color") still needs a
     // legible name, so it falls back to the resolved primary shade. The same name style then picks

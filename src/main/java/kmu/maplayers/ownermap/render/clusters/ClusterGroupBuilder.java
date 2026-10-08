@@ -54,11 +54,11 @@ public final class ClusterGroupBuilder {
      *                       the inputs the build was baked under - the theme, the filter state,
      *                       and the two sets its fill splits by
      * @param geometryCache  the raw cells the border is traced from
-     * @param cellGrouping   how the drawn cells group under this pass's holding, resolved once by
+     * @param cellGrouping   how the drawn cells group under this pass's owners, resolved once by
      *                       the caller: it spans every cell on the map rather than this owner's, so
      *                       an owner resolving its own would rebuild the whole map's grouping per
      *                       owner, and two owners could be traced against two readings of it
-     * @param ownerId        the owner's holder - an ID from the view's grouping,
+     * @param ownerId        the owner's ID - one the owner source resolved,
      *                       or one of the filter's synthetic spotlight keys
      * @param memberCellKeys the cells this owner draws
      * @return the owner's bodies with the paints they share, or null when it paints neither fill
@@ -145,13 +145,13 @@ public final class ClusterGroupBuilder {
     }
 
     /**
-     * Builds every owner's cluster group into the clusters, keyed by its holder. Each owner
+     * Builds every owner's cluster group into the clusters, keyed by its ID. Each owner
      * is independent - its cluster(s) trace only its own cells - so the incremental refresh can
      * rebuild one entry without touching the rest.
      *
      * @param clusters      the pass state to write the clusters into
      * @param geometryCache the raw cells the borders are traced from
-     * @param cellGrouping  how the drawn cells group under this pass's holding, which both the
+     * @param cellGrouping  how the drawn cells group under this pass's owners, which both the
      *                      owner membership below and every owner's own trace read
      */
     public static void buildAllClusterGroups(

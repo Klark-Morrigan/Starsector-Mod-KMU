@@ -20,7 +20,7 @@ import kmu.settings.KmuLunaSettings;
  * clears the dangling filter instead of spotlighting an owner no longer on the map.
  *
  * <p>Only heals a screen while that screen has a view selected. A filter may persist while the
- * layer is toggled off, and with no selected view there is no grouping to judge which owners are
+ * layer is toggled off, and with no selected view there is no view to judge which owners are
  * selectable - one view's owner ID would be meaningless under another view's read - so a persisted
  * filter is left intact until a view is up to validate it. It lives in this tier beside the view
  * registry it reads, since resolving "the active view and its selectable owners" is a view concern
@@ -56,13 +56,13 @@ public final class FilterSelectionHeal {
      * view that panel is set to, and judging it under the other panel's view would clear a
      * spotlight that is perfectly live where it was set.
      *
-     * <p>Costs nothing while no owner is spotlighted. Judging selectability is a whole grouped
-     * holder pass over the sector, so it is left inside the predicate rather than prepared for it:
+     * <p>Costs nothing while no owner is spotlighted. Judging selectability is a whole walk
+     * of the sector, so it is left inside the predicate rather than prepared for it:
      * {@link FilterSelection#healStaleSelection} asks only when a stored ID is there to judge, which
      * is the minority of the calls, since every settings change arrives here - and the second
      * screen's call asks nothing at all unless it too has a spotlight of its own.
      *
-     * @param sector       the sector whose holders decide which owners are still offered; null
+     * @param sector       the sector whose owners decide which owners are still offered; null
      *                     heals nothing, since against no sector every stored owner would read as
      *                     lapsed
      * @param viewRegistry the layer whose spotlights are healed, judged under that layer's own views
@@ -78,7 +78,7 @@ public final class FilterSelectionHeal {
 
             var view = viewRegistry.getSelectedView(screenPicks.memoryScope());
 
-            // No view selected on this panel means no grouping to judge its slot under, so its stored
+            // No view selected on this panel means no view to judge its slot under, so its stored
             // spotlight is left for the next view selected there to rule on - the other panel is still
             // healed.
             if (view == null) {

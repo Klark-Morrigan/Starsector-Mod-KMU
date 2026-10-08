@@ -49,7 +49,7 @@ final class EdgeClassifierTests {
 
         @Test
         void returnsOpenFrontierWhenTheNeighbourIsUnowned() {
-            // A owned cell facing unowned space is the
+            // An owned cell facing unowned space is the
             // open frontier the owned cell can reach toward, not a plain boundary.
             assertThat(EdgeClassifier.classify("hegemony", null))
                 .isEqualTo(EdgeClass.OPEN_FRONTIER);

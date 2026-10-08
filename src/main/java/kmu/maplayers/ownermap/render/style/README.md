@@ -58,36 +58,32 @@ since it can depend on the snapshot the reading was taken over.
 The theme keys on the open `MapStyleCategory`,
 so a hazard or relay layer declares its own set alongside its own painting code.
 
-The layers painting holders share one declaration of four categories,
-with their styles,
+The layers painting holders share one declaration,
+with its styles,
 in [`owners/holders`](../../owners/holders/README.md).
 
-Two of the four are owned and carry a full fill/border/seam style.
-The other two have no owner and so no palette to choose a shade from:
-both paint in the shared neutral colour and expose no colour field at all,
+An unowned category has no owner and so no palette to choose a shade from:
+it paints in the shared neutral colour and exposes no colour field at all,
 leaving each element's opacity as its only on/off -
 the sole shift that colour ever takes is the value lift a spotlight-spared cell gets,
 described below.
-A `DECIVILISED` cell draws a fill and an outline
-(something was settled there, so it reads as occupied rather than as a bare ring);
-an uninhabited cell draws an outline alone,
+A settled unowned cell draws a fill and an outline
+(something stands there, so it reads as occupied rather than as a bare ring);
+an empty one draws an outline alone,
 since filling it would wash every corner of the sector nothing else holds.
 Neither has an inner seam:
 unowned cells never fuse into clusters,
 so there are no province divisions to stroke.
 
-`DECIVILISED` is named for one case it covers,
-but takes every settled cell no holder was resolved for.
-The split the two unowned bundles actually draw is **presence against absence** -
+The split the two unowned roles draw is **presence against absence** -
 is anything here,
-or is this the backdrop -
-not dead against alive.
-A view resolving holding under a narrow rule leaves settled systems holderless,
-for reasons the layer's own holding rule sets.
-Those cells are settled,
-so they take this bundle.
+or is this the backdrop.
+A layer whose rule gives nobody a settled system leaves it unowned,
+for reasons of its own.
+That cell is settled,
+so it takes the settled category.
 The alternative -
-reading emptiness off the holder map -
+reading emptiness off the owner map -
 hides a populated system behind the uninhabited-systems checkbox,
 which is the map erasing what is there.
 
@@ -180,11 +176,10 @@ and every rule here stays pure over the shades it is handed.
   whether the cell is settled, which the layer's declaration turns into its category,
   and whether the pass's recede reaches it
   (a settled cell yes, an empty one no, and a settled one the spotlit owner lives in no either).
-  Classifies off the pass's inhabited-system set
-  (`OwnerMapInhabitation.readInhabitedSystemKeys`) and its spotlit-presence set
-  (`SpotlitOwners.findPresentSystemKeys`),
-  never off the holder map that sent the cell here.
-  Both sets come off one habitation value per system,
+  Classifies off the inhabited and spotlit-presence sets of the build's `ResolvedOwners`
+  (`inhabitedSystemKeys`, `spotlitPresenceSystemKeys`),
+  never off the owner map that sent the cell here.
+  The source answers both in one call,
   so a cell drawn as uninhabited is never one the spotlight spared.
 - `OwnerStyling` -
   maps that decision onto the pass's actual theme,
@@ -228,14 +223,12 @@ A spotlight separates its subject from its backdrop with **two** palettes,
 both resolved once per pass by `MapPalettes` and both moving value alone:
 `resolveDesaturationPalette` sinks the reading's recede shades toward black by `desaturationDarkening`,
 and `resolvePresencePalette` lifts a spared unowned cell's neutral toward white by `presenceLightening`.
-Either alone leaves the two too close to tell apart,
-because on the layers painting holders the neutral and the recede shades -
-Independent's grey -
-start out the same grey,
-so a cell that is merely not receded sits exactly where the background began.
+Either alone leaves the two too close to tell apart
+wherever a reading's neutral and recede shades start out the same grey,
+since a cell that is merely not receded then sits exactly where the background began.
 The lift is a wash toward white on RGB,
 never a recolour:
-a spared cell has no holder to borrow a hue from,
+a spared cell has no owner to borrow a hue from,
 and one would state an ownership the layer sparing it is reporting it does not have.
 
 The *policy* of which owner recedes is the owner reading's,

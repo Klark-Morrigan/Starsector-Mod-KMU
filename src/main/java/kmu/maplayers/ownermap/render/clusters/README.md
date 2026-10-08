@@ -42,7 +42,7 @@ and land on a result identical to a full rebuild.
   An **owned** cell becomes a `FusedCell` and contributes only its interior seams,
   because its fill and cluster border belong to the cluster it fuses into -
   the form has no slot for either.
-  A **unowned** cell (settled but unheld, or uninhabited) does not fuse,
+  An **unowned** cell (settled, or uninhabited) does not fuse,
   so it becomes a `LoneCell` carrying its own fill and outline,
   and resolves both palette slots to the shared neutral colour.
   Of the two,
@@ -105,18 +105,18 @@ so it stays at full strength under every recede.
 A settled cell **the spotlit owner lives in** is the second exception.
 The recede clears away what the pick is not,
 and a system the pick lives in is not that -
-sinking it would hide the pick's own presence for the sole reason that this layer's holding rule could not attribute it to them.
-Under a holding rule that admits only some owners that is routine:
-what the others hold always lands in a holderless cell.
+sinking it would hide the pick's own presence for the sole reason that the layer's rule could not attribute it to them.
+Under a rule that admits only some owners that is routine:
+what the others hold always lands in an unowned cell.
 
 Such a cell paints the neutral **lifted toward white** by `presenceLightening`,
 not the owner's colours -
-nobody holds the system on this layer,
-and its shades would state exactly the holding the view reports it does not have.
-The lift is what makes sparing the recede visible at all:
-on the layers painting holders the neutral an unowned cell paints in
-and the Independent grey the background sinks from are the same grey,
-so a merely-unreceded cell sits at the value the background started at and reads as part of it.
+nobody owns the system on this layer,
+and its shades would state exactly the ownership the view reports it does not have.
+The lift is what makes sparing the recede visible at all
+wherever the neutral an unowned cell paints in
+and the shades the background sinks from are the same grey,
+since a merely-unreceded cell then sits at the value the background started at and reads as part of it.
 Both shades are the owner reading's answers,
 so a layer painting other owners brings its own pair.
 `desaturationDarkening` sinks the backdrop,
@@ -132,7 +132,7 @@ A recede the view applies of its own accord
 which such a cell is not,
 so it leaves it alone.
 Off filter the pass's recede is the identity,
-so an unfiltered map draws its unheld systems untouched.
+so an unfiltered map draws its unowned systems untouched.
 
 The rule itself is not here:
 `PaintedCellBuilder` asks [`UnownedStyleResolver`](../style/README.md),
@@ -155,11 +155,8 @@ which the same source answers in the same call:
 the settled systems the spotlit owner lives in that nobody owns.
 One source answering both is what lets presence be a partition of the set emptiness is asked of,
 so a cell cannot be called empty space while the spotlight keeps an owner's fill over it.
-How a layer painting holders reads the two -
-off one habitation reading per system,
-asked only of the settled systems its holding left out -
-is that source's business,
-described with [`HolderOwnerSource`](../../owners/holders/README.md).
+How a source reads the two is its own business;
+the layers painting holders describe theirs in [`owners/holders`](../../owners/holders/README.md#one-pass-per-walk).
 
 Both sets sit with the owner map in **`SystemOccupancy`** -
 who is in each system -
@@ -188,7 +185,7 @@ Every border edge is shaped the same way,
 whatever sits across it.
 Against another organised entity (a rival owner) and against *empty* space alike -
 an uncontrolled star with no owner,
-whether never-settled or settled-but-unheld -
+whether never-settled or settled-but-unowned -
 the edge keeps the mutual midline plus its inward border channel.
 So an owner cuts off halfway to a dead star exactly as it does halfway to a rival,
 and the dead star's own cell draws its inset outline -
@@ -298,12 +295,12 @@ Everything a rebuild retained to build under lives in its own record,
 reached through `getBuildInputs`:
 the `MapStyling` (the theme, the layer's categories and the three unowned palettes),
 the `ViewReading` (the view, the owner reading it was styled and named by,
-and the grouping its holding was folded under),
+and the owner source it was resolved under),
 the `ContentInputs` it sampled,
-and the two sets the holding resolve derived about the fill -
+and the two sets the source derived about the fill -
 the unfilled systems and the contested ones.
-The grouping rides there for the incremental refresh alone,
-which reopens a per-system resolve under the fold it patches;
+The source rides there for the incremental refresh alone,
+which reopens a per-system resolve under the sampling it patches;
 nothing styles or names by it.
 
 They are one record because they are fixed together:
@@ -328,17 +325,17 @@ and resolving the shades separately is how a fill comes to be muted while the bo
 
 ## The split fill: solid, hatched, unfilled
 
+This section is the one statement of the three fill states.
 An owner's footprint is traced as one border whatever its members' fills;
-the fill is what varies per system inside it,
-across three states.
+the fill is what varies per system inside it.
 **Solid** is the default -
 an owner with no exception among its systems fills its whole cluster from that one border
 and pays nothing for the split,
 the common case.
 The two exceptions each carve a sub-cluster out of the solid,
-hatched and unfilled,
-and both are decided upstream by the view's holder source;
-this section is how the draw honours them.
+hatched (`contestedSystemKeys`) and unfilled (`unfilledSystemKeys`),
+and both are decided upstream by the layer's owner source;
+what follows is how the draw honours them.
 
 The machinery is the framework's -
 `FillSplit` partitions the members and `SplitFillBuilder` tessellates each state as its own cluster inside the one border;
@@ -370,14 +367,14 @@ The province seam has neither problem:
 it is faint,
 and the cell shaper truncates it where it runs into a pulled-in border.
 
-**Unfilled.** A system the view's holder source extends an owner's holdings with,
+**Unfilled.** A system the owner source extends an owner's footprint with,
 though the owner does not hold it,
 sits inside its owner's one border for outline and label but paints no fill at all,
 so the split simply skips it.
 Same shape as the hatch sub-cluster
 (one border, a sub-cluster drawn differently) but the sub-cluster is empty rather than hatched,
 so the boundary between what an owner holds and what its view extends it with reads as the seam where the fill stops inside a continuous frontier.
-Which systems are unfilled is the holder source's to say;
+Which systems are unfilled is the source's to say;
 this package only honours the set.
 
 ## Rendering
@@ -407,7 +404,7 @@ is the framework's [`base.render.clusters`](../../../base/render/clusters/README
 which knows nothing of who holds what;
 the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`).
 The *incremental refresh* that redraws what a marked change moved -
-over the marked systems' holder,
+over the marked systems' owner,
 inhabitation and spotlit presence,
 which `render.MarkedSystemRederive` reads back first -
 is `render.IncrementalOwnerRefresh`,

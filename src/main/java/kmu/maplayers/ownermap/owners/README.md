@@ -1,8 +1,9 @@
 # Owner seams (`ownermap.owners`)
 
-The two questions the owner-map tier asks a layer about its owners:
+The three questions the owner-map tier asks a layer about its owners:
 which systems each one holds,
-and how each one looks.
+how each one looks,
+and which of them stand together in a contest.
 Nothing else in the tier knows what an owner is.
 
 Part of [the owner-map tier](../README.md),
@@ -59,7 +60,7 @@ and is discarded with it.
 as one `ResolvedOwners`:
 
 - who owns each system;
-- which owned systems draw hatched (`contestedSystemKeys`) or unfilled (`unfilledSystemKeys`);
+- which owned systems draw hatched or unfilled - [the fill states](../render/clusters/README.md#the-split-fill-solid-hatched-unfilled);
 - which systems anything stands in, whoever owns them;
 - where the spotlit owner lives among the inhabited systems nobody owns.
 
@@ -109,8 +110,8 @@ A view answers the reading and the source in one call,
 `OwnerPaintedView.resolveViewReading`,
 because the two have to agree about what an owner is:
 a reading naming owners under one sampling of a live fold
-while the source resolved the holding under another
-would paint a fold the holding never made.
+while the source resolved owners under another
+would paint a fold the source never made.
 
 ## Who stands together
 

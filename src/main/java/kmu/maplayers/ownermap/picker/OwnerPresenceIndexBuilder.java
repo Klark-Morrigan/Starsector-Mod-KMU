@@ -37,7 +37,7 @@ public final class OwnerPresenceIndexBuilder {
      * <p>Recording the same pair twice leaves one entry, so an arm that meets an owner more than once
      * in a system needs no guard of its own.
      *
-     * @param ownerId   the owner the walk just counted, already folded through the pass's grouping
+     * @param ownerId   the owner the walk just counted, already folded as the layer folds owners
      *                  so a group's members index under the group
      * @param systemKey the system it was counted in
      */

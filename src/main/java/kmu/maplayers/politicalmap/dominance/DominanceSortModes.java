@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.dominance;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
-import kmu.maplayers.ownermap.OwnerPaintedView;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
 import kmu.maplayers.ownermap.owners.holders.factions.SharedBlocSortModes;
 import kmu.maplayers.ownermap.owners.holders.factions.SizedBlocMetrics;
 import kmu.maplayers.ownermap.picker.OwnerMetricSortMode;
@@ -91,7 +91,7 @@ public final class DominanceSortModes {
     /**
      * This contest's half of the dominance-painted views' sort vocabulary - every mode declared here
      * in selector display order, with {@link #DEFAULT} as the fallback. A view hands it to
-     * {@link OwnerPaintedView#buildBlocPickerRead}, which offers it with the standing ranking behind
+     * {@link HolderPaintedView#buildBlocPickerRead}, which offers it with the standing ranking behind
      * it, so the selector draws these numbers plus the one criterion no vocabulary declares.
      *
      * <p>It travels with the bloc list from there on, which is what keeps the rows and the modes that

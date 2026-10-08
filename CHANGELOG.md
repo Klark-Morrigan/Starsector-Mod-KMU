@@ -25,7 +25,7 @@ None of these reach a player: every LunaLib field ID and every value saved in se
 
 ##### Packages
 
-The owner-map tier's core no longer knows what an owner is. What the layers painting holders share lives under `kmu.maplayers.ownermap.owners.holders`: `base` for every kind of holder, `factions` for one faction as one owner, and `alliances` for a group of factions as one owner. The core may not import that subtree.
+The owner-map tier's core knows nothing of what an owner is. What the layers painting holders share lives under `kmu.maplayers.ownermap.owners.holders`: `base` for every kind of holder, `factions` for one faction as one owner, and `alliances` for a group of factions as one owner. The core may not import that subtree.
 
 | Before | After |
 | --- | --- |
@@ -40,6 +40,7 @@ The owner-map tier's core no longer knows what an owner is. What the layers pain
 | `SelectableBloc`, `SelectableBlocCache`, `RankedBloc`, `BlocMetrics`, `PaintingBlocMetrics`, `BlocMetricSortMode`, `BlocSortModeComposer`, `BlocPickerRead`, `BlocPresenceIndex`, `BlocPresenceIndexBuilder`, `BlocStatsRead`, `SpotlitBlocs`, `ResolvedBlocPaint`, `BlocNameStyles` and `BlocPresence` | `Owner` in place of `Bloc` in each name and its members |
 | `FactionNameFormatChoice`, `FactionPaletteSlot`, `FactionlessStyleResolver` and `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`, `OwnerPaletteSlot`, `UnownedStyleResolver` and `OwnerPaletteChoice` |
 | `HolderOwnerReading` | `FactionOwnerReading`, and `AllianceOwnerReading` over it for a layer painting alliances |
+| `getFactionLabels` on `OwnerMapCache` and `OwnerMapDrawables`, `OwnerMapBuildInputs.resolveBlocPaintOf` and `OwnerStyleResolver.resolveBlocStyleDecision` | `getOwnerLabels`, `resolveOwnerPaintOf` and `resolveOwnerStyleDecision` |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` and its `strings.json` key | `POLITICAL_MAP_CTL_FACTION_NAMES`, the political map's own caption |
 
 ##### Seams

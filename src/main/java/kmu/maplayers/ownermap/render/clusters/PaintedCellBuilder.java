@@ -28,7 +28,7 @@ import java.util.List;
  * constituent cells rather than one smooth blob - the spotlighted owner included, where the
  * solid-to-hatched transition is such a border like any other.
  *
- * <p>A <em>unowned</em> cell (inhabited but unheld, or uninhabited) does not fuse, so it has
+ * <p>An <em>unowned</em> cell (inhabited, or uninhabited) does not fuse, so it has
  * no cluster to inherit from and keeps its own fill and outline. It names no owner's palette
  * either, so both its palette slots hold the shared neutral colour - until the pass recedes it,
  * which a settled unowned cell takes as readily as an owner does.
@@ -52,14 +52,14 @@ public final class PaintedCellBuilder {
      * outline drawn.
      *
      * <p>Takes the system the cell draws as rather than the cell itself, since everything read
-     * here - the holder, the palette, whether the cell is decivilised - is known per system
+     * here - the owner, the palette, whether the cell is settled - is known per system
      * and not per cell.
      *
      * @param clusters  the build the cell belongs to, read for who is in its system and for the
      *                  inputs the build was baked under - the theme, the filter state, and the
-     *                  view its holding was grouped by
+     *                  view its owners were read by
      * @param systemKey the system the cell draws as, or null for a cell with no star of its
-     *                  own, which draws as plain uninhabited - it has no holder to
+     *                  own, which draws as plain uninhabited - it has no owner to
      *                  colour it and nothing standing in it
      * @param shaped    the cell's inset shape
      * @return the cell's draw record and the ring it was laid on, or null when it puts no ink on
@@ -81,28 +81,28 @@ public final class PaintedCellBuilder {
         var occupancy = clusters.getOccupancy();
         var buildInputs = clusters.getBuildInputs();
 
-        // A cell with no star of its own has no holder to look up, so the absent system skips the
-        // holder map rather than probing it for a key it does not hold - keeping the null-star path
-        // clear of whether the holder map happens to tolerate a null-key get.
-        var holder = systemKey == null
+        // A cell with no star of its own has no owner to look up, so the absent system skips the
+        // owner map rather than probing it for a key it does not hold - keeping the null-star path
+        // clear of whether the owner map happens to tolerate a null-key get.
+        var owner = systemKey == null
             ? null
             : occupancy.readOwnerOf(systemKey);
-        return holder == null
+        return owner == null
             ? buildUnownedCell(occupancy, buildInputs, systemKey, shaped)
-            : buildOwnedCell(buildInputs, holder, shaped);
+            : buildOwnedCell(buildInputs, owner, shaped);
     }
 
-    // A fused cell: its seams, in the holder's effective palette. Its fill and border are the
+    // A fused cell: its seams, in the owner's effective palette. Its fill and border are the
     // cluster's, drawn from the cluster's own shape, so this form has no slot for either, and its
     // painted ring is the raw inset extent - what bounds the ink is the cluster's own border rather
     // than anything resolved per cell. The paint comes from the pass's one reading of what this
     // owner draws in, so the seams paint exactly as the cluster paints its fill and border.
     private static PaintedCell buildOwnedCell(
             OwnerMapBuildInputs buildInputs,
-            SystemOwner holder,
+            SystemOwner owner,
             ShapedCell shaped) {
 
-        var ownerPaint = buildInputs.resolveOwnerPaintOf(holder.ownerId(), holder);
+        var ownerPaint = buildInputs.resolveOwnerPaintOf(owner.ownerId(), owner);
         var style = ownerPaint.style();
 
         return new PaintedCell(
@@ -115,7 +115,7 @@ public final class PaintedCellBuilder {
 
     // A lone cell: its own fill and outline, and no seam - an unowned cell fuses with nothing,
     // so it has no sibling to divide from. Its outline's corners are rounded with the same corner
-    // settings and gate the cluster borders use, so a lone unheld system reads as smoothly as a
+    // settings and gate the cluster borders use, so a lone unowned system reads as smoothly as a
     // cluster when rounding is on and stays a sharp Voronoi cell when it is off; the fill is
     // triangulated from that same rounded ring, so it cannot spill past the line its own outline
     // strokes. That rounded ring is the cell's painted extent too - it is the whole of where the
@@ -133,9 +133,9 @@ public final class PaintedCellBuilder {
 
         // One classification drives both the bundle and the recede, so a cell cannot take the
         // settled style yet miss the recede that style is meant to draw under. Classified
-        // off what stands in the system rather than off the holder lookup that sent the cell
-        // here: an inhabited system this layer's holding does not account for is not the empty
-        // backdrop, whatever the absent holder alone would suggest. Which category that makes
+        // off what stands in the system rather than off the owner lookup that sent the cell
+        // here: an inhabited system this layer's owners do not account for is not the empty
+        // backdrop, whatever the absent owner alone would suggest. Which category that makes
         // the cell is the layer's own declaration.
         var isSettled = UnownedStyleResolver.isSettledSystem(
             occupancy.getInhabitedSystemKeys(),
@@ -146,12 +146,12 @@ public final class PaintedCellBuilder {
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
             return null;
         }
-        // An unowned cell has no holder palette, so both slots hold the shared neutral colour:
+        // An unowned cell has no owner palette, so both slots hold the shared neutral colour:
         // whichever slot an element names, it paints neutral - unless the recede desaturates the
         // cell, in which case it recolours off the pass's desaturation palette exactly as a
         // receded owner does.
         // The spotlit owner's own presence spares the cell the recede, so what a pick has standing
-        // there is not sunk merely because this layer's holding could not attribute it to the
+        // there is not sunk merely because this layer's owners could not attribute it to the
         // pick. The cell keeps its neutral unowned paint either way - full strength is the
         // whole of what presence buys it here. A cell drawn as no system names nowhere anyone
         // could be living, so the absent system skips the set rather than probing one that may be
@@ -174,7 +174,7 @@ public final class PaintedCellBuilder {
             ? mapStyling.presencePalette()
             : mapStyling.neutralPalette();
 
-        // Stated over the shades rather than resolved off a holder, there being nobody to ask: the
+        // Stated over the shades rather than resolved off an owner, there being nobody to ask: the
         // desaturation swap and the per-element reads are the owner path's all the same, so a lone
         // cell's fill and outline are painted by the very rule an owner's are.
         var cellPaint = ResolvedOwnerPaint.resolveFrom(

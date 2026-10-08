@@ -52,7 +52,8 @@ public interface OwnerSource {
      * walk.
      *
      * <p>Asked once per bake, so every band in it is counted off one reading and judged against one
-     * grouping. A source with nothing to count answers a planner planning nothing.
+     * sampling of who stands together. A source with nothing to count answers a planner planning
+     * nothing.
      *
      * @param walk  the bake's walk of the sector - the rebuild's own in the same frame, or a
      *              batch's

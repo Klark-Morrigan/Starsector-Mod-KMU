@@ -10,7 +10,7 @@ import java.util.Map;
  *
  * <p>Pure rule over opaque owner IDs: an edge is an interior seam only when the
  * same non-null owner holds both the system and its neighbour across the edge; an edge
- * with an owner on exactly one side (a owned system facing unowned space)
+ * with an owner on exactly one side (an owned system facing unowned space)
  * is an open frontier; any other pairing - two different owners, or two unowned sides -
  * is a plain boundary. An owner is whatever a consumer clusters by, so the geometry fuses
  * cells without knowing what the owner means.
@@ -46,7 +46,7 @@ public final class EdgeClassifier {
         if (cellOwner != null && cellOwner.equals(neighbourOwner)) {
             return EdgeClass.INTERIOR_SEAM;
         }
-        // Exactly one side grouped: a owned cell facing an unowned neighbour (or the
+        // Exactly one side grouped: an owned cell facing an unowned neighbour (or the
         // reverse). This is the frontier a consumer can push outward, kept distinct from a
         // boundary between two differing owners or between two unowned cells.
         if ((cellOwner == null) != (neighbourOwner == null)) {
@@ -75,7 +75,7 @@ public final class EdgeClassifier {
      * @param ownerBySystemKey the owner per system, to look up the owner of a system
      *                         across the edge
      * @return INTERIOR_SEAM for a shared non-null owner or for the same cell, OPEN_FRONTIER for
-     *         a owned cell facing an unowned star, else BOUNDARY; the reach bound is always
+     *         an owned cell facing an unowned star, else BOUNDARY; the reach bound is always
      *         BOUNDARY
      */
     public static EdgeClass classifyAcross(

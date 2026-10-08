@@ -186,18 +186,20 @@ fills,
 bands,
 and labels identically.
 The sources themselves are [below](#the-ownership-sources);
-the seam they answer and the three fill states are [ownership resolution](../ownermap/owners/holders/README.md).
+the seam they answer is [ownership resolution](../ownermap/owners/holders/README.md),
+and the three fill states are [the split fill](../ownermap/render/clusters/README.md#the-split-fill-solid-hatched-unfilled).
 
-The fourth is the one the three views share outright.
-Each answers with the holder owner reading and the holder categories,
-which read a bloc off the faction it paints as under whatever grouping they are handed:
-the group rules - a group named by its own name, never receding,
-a lone faction receding beside it -
-never fire under the identity grouping,
-so the Factions and Claims views' plain faction holding
-and the Alliances view's alliances-against-a-backdrop are one reading,
-differing only by the grouping.
-What that reading answers is the [owner-map tier's](../ownermap/README.md#what-a-layer-supplies).
+The fourth is the one the three views share most of.
+All three answer with the holder categories.
+The Factions and Claims views read a bloc with `FactionOwnerReading`,
+off the faction whose ID it is.
+The Alliances view reads one with `AllianceOwnerReading`:
+an alliance by its own name in its colour faction's shades,
+never receding,
+and a lone faction through `FactionOwnerReading`,
+receding behind the alliances wherever one exists.
+So a lone faction reads the same on all three views.
+What a reading answers is the [owner-map tier's](../ownermap/README.md#what-a-layer-supplies).
 
 The third input is the second one layer along:
 a view's cells are painted by some mechanic,
@@ -534,22 +536,23 @@ and the build keeps it from naming this one.
 
 - **[Ownership resolution](../ownermap/owners/holders/README.md)** -
   the per-view ownership seam
-  and the three fill states.
+  and what lands in each fill state.
 - **[Cluster fills and borders](../ownermap/render/clusters/README.md)** -
   how cells become each bloc's coloured cluster,
   border,
   seams,
   and split fill.
 - **[Render style layer](../ownermap/render/style/README.md)** -
-  the four categories this map divides the cells into,
-  and how player settings become each territory's colours,
+  how player settings become each territory's colours,
   widths,
   and opacities.
-- **`ownermap/render/labels/anchor`** -
+  The four categories this map divides its cells into are the holders' own,
+  `OwnerMapCategory` in [`owners/holders`](../ownermap/owners/holders/README.md).
+- **`ownermap/render/labels`** -
   what a cluster's name reads and what shade it draws in:
   the active view's name for the bloc,
   and the outer border its group inherits.
-  Both are resolved here and handed to the framework's overlay,
+  Both are resolved there and handed to the framework's overlay,
   which places and draws them.
 
 Everything above is drawn over the systems the framework's `base/visibility` admits,

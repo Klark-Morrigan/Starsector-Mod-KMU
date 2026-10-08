@@ -182,7 +182,7 @@ public final class ClusterAnchorsBuilder {
     }
 
     // The sweep itself, measured as its own row: past the gate the skipped path never reaches, and
-    // the rebuild's largest cost, so it needs a duration of its own beside the holder scan's and
+    // the rebuild's largest cost, so it needs a duration of its own beside the owner resolve's and
     // the cell shaping's rather than only inside the whole-rebuild total. The placements go back
     // to the caller rather than into the standing pair here, so what a fit produced and what a
     // rebuild does with it stay two statements.
@@ -209,8 +209,8 @@ public final class ClusterAnchorsBuilder {
         var spec = fitFingerprint.specification();
 
         // The agnostic clustering and border trace group the drawn cells, resolving each to
-        // the system it draws as and that system to its owner ID; the holder map is still
-        // carried for the per-holder colour. Under a filter that key is a synthetic spotlight
+        // the system it draws as and that system to its owner ID; the owner map is still
+        // carried for the per-owner colour. Under a filter that key is a synthetic spotlight
         // key, so the solid and contested clusters trace as their own clusters exactly as
         // the fills do.
         var cells = cellGeometry.cells();
@@ -236,7 +236,7 @@ public final class ClusterAnchorsBuilder {
         // name matches its recoloured fill and border exactly without re-reading the profile here.
         // The style decision every label follows is the same one the fills read
         // (OwnerStyleResolver.resolveOwnerStyleDecision), cached per owner since the colour
-        // resolver reads both halves of it - the independent-style test and the adjustment:
+        // resolver reads both halves of it - the category and the adjustment:
         // under a filter it recedes every non-spotlit owner and leaves the spotlit one full, so a
         // receded name matches its receded fill and a spotlit name stays full, the drift a
         // filter opens.

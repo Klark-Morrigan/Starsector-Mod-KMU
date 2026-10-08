@@ -18,7 +18,7 @@ import java.util.Set;
  * around it redraws because their shared edges changed class, and both sides of the transfer
  * rebuild because their outlines moved, so recording a flip into one and not the other leaves a
  * redraw half done, which shows as a border drawn down one side only or a cluster group still holding
- * the shape it lost. A <em>restyle</em> - what a system is settled from moving without its holder
+ * the shape it lost. A <em>restyle</em> - what a system is settled from moving without its owner
  * following - writes the cell alone: no seam moved, so no neighbour and no cluster group is owed
  * anything.
  *
@@ -42,7 +42,7 @@ final class StaleOwnerMapDisturbance {
         return Collections.unmodifiableSet(affectedOwnerIds);
     }
 
-    /** @return the cells that must redraw against the updated holders, in first-recorded order */
+    /** @return the cells that must redraw against the updated owners, in first-recorded order */
     Set<SystemKey> getCellKeysToRedraw() {
 
         return Collections.unmodifiableSet(cellKeysToRedraw);
@@ -50,7 +50,7 @@ final class StaleOwnerMapDisturbance {
 
     /**
      * Whether this batch moved any holding at all. Read off the owners because every flip
-     * names at least one - a system that changed hands either lost a holder, gained one, or
+     * names at least one - a system that changed hands either lost an owner, gained one, or
      * both - so a batch with no owner to rebuild had no flip in it, and the clustering,
      * cluster group and name work below the cell redraw is skipped.
      *
@@ -63,7 +63,7 @@ final class StaleOwnerMapDisturbance {
 
     /**
      * Records one system changing hands: the cells its flip obliges to redraw, and the
-     * owners on either side of the transfer. Either holder may be absent - a system taking its
+     * owners on either side of the transfer. Either owner may be absent - a system taking its
      * first settlement has no old one, an emptied one has no new one - and only the sides that
      * exist have a cluster group to rebuild.
      *
@@ -92,7 +92,7 @@ final class StaleOwnerMapDisturbance {
 
     /**
      * Records one system's cell drawing in a different style than it was: what stands in it
-     * changed, or the spotlit owner arrived in it or left it, while its holder stayed as it was.
+     * changed, or the spotlit owner arrived in it or left it, while its owner stayed as it was.
      *
      * <p>Its own cell and nothing more. A cell's shape is settled by which of its edges are
      * same-owner seams and neither of those facts moves one, so no neighbour changes shape, no

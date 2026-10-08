@@ -3,7 +3,7 @@ package kmu.maplayers.ownermap.preferences;
 import kmlib.persistence.PersistedChoice;
 
 /**
- * How a cluster's label spells out its holder's name - its full name, its short name, or not at all -
+ * How a cluster's label spells out its owner's name - its full name, its short name, or not at all -
  * the player's choice behind the sidebar's Full/Short/No name radio.
  *
  * <p>An owner supplies two names: a long form (its full title) and a short form (an

@@ -454,7 +454,7 @@ since it carries no fallback mode to land on.
 over KMLib's `RevisionMemo`;
 what invalidates it is the layer's own judgement.
 It is held the way the hover slot above is,
-by the sector's `SectorMapMachinery` through `SelectableOwnerCache.resolveBlocCacheIn` -
+by the sector's `SectorMapMachinery` through `SelectableOwnerCache.resolveOwnerCacheIn` -
 under the layer's own ID,
 since the memo holds one entry and two layers sharing it would evict each other every frame.
 [The caching notes](../../../../../../../docs/dev/caching.md) own that model in full.

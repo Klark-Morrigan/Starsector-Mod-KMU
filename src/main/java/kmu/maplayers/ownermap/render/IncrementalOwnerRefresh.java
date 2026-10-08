@@ -35,7 +35,7 @@ import java.util.Set;
  *
  * <p>What a change costs depends on which fact moved. A flip re-shapes the ring of cells around
  * the system (each neighbour's shared edge flips between a same-owner seam and a cluster
- * border) and rebuilds the two owners' clusters (the old holder's and the new one's); a
+ * border) and rebuilds the two owners' clusters (the old owner's and the new one's); a
  * system that merely became settled, or that the spotlit owner just settled, redraws its own cell
  * and nothing else, neither fact moving a seam. Both go through the same {@link PaintedCellBuilder}
  * and {@link ClusterGroupBuilder} primitives a full rebuild uses, so the incremental result
@@ -152,13 +152,13 @@ public final class IncrementalOwnerRefresh {
         return drawnSystemKeys;
     }
 
-    // Redraws what the batch disturbed: every cell it named re-shaped against the updated holders,
+    // Redraws what the batch disturbed: every cell it named re-shaped against the updated owners,
     // and - only where holding actually moved - the clustering, the two sides' clusters and the
     // names that follow from it. The bands are laid last, around wherever those names ended up.
     //
     // The cell redraw runs off the cells the batch named rather than off there having been a flip,
     // because the two are not the same question: a system whose last settlement went, or one the
-    // spotlit owner just settled, draws differently with its holder exactly where it was. What the
+    // spotlit owner just settled, draws differently with its owner exactly where it was. What the
     // flips still decide is everything below the cells, all of which is a consequence of holding
     // having moved.
     private void redrawDisturbedCells(
@@ -191,13 +191,13 @@ public final class IncrementalOwnerRefresh {
     }
 
     // What a flip owes beyond the cells themselves: the cluster index and the two sides'
-    // clusters rebuilt off the updated holders, and the names re-fitted over them. Reports what
+    // clusters rebuilt off the updated owners, and the names re-fitted over them. Reports what
     // that re-fit moved, since the bands below have to be re-laid wherever a name did.
     private ClusterNameDisturbance rebuildFlippedHolding(StaleOwnerMapDisturbance disturbance) {
 
         // A flip changes which systems are contiguous - it can sever one cluster group in two or
         // bridge two into one - so the cursor read's cluster index is re-derived off the
-        // updated holders here, in step with the cells that just re-shaped.
+        // updated owners here, in step with the cells that just re-shaped.
         clusters.reindexClusters(
             geometryCache.getCellEdgesByCellKey(),
             geometryCache.getSystemKeyByCellKey());
@@ -206,7 +206,7 @@ public final class IncrementalOwnerRefresh {
 
         // A flip can split or merge clusters (a lost system severs one, a gained
         // one bridges two), so the whole placement list is re-derived off the updated
-        // holders rather than the touched owners' anchors being patched alone. What that
+        // owners rather than the touched owners' anchors being patched alone. What that
         // costs is settled by the matching inside the rebuild, not here: a cluster the flip
         // re-partitioned no longer matches any standing placement and is searched again,
         // while every cluster it left alone is carried over - which is why naming the
@@ -236,7 +236,7 @@ public final class IncrementalOwnerRefresh {
     }
 
     // Rebuilds the cluster group of each owner the batch's flips moved. Only the old and new
-    // holders' clusters can have changed shape; every other owner's rings trace unchanged
+    // owners' clusters can have changed shape; every other owner's rings trace unchanged
     // cells, so they are left as-is. An owner's members are the cells it draws, so they are
     // grouped from the cells here to match what buildClusterGroup traces.
     private void rebuildAffectedClusterGroups(StaleOwnerMapDisturbance disturbance) {
@@ -301,7 +301,7 @@ public final class IncrementalOwnerRefresh {
         return cellKeysToBake;
     }
 
-    // Re-shapes one cell against the now-updated holders and replaces its draw record, or
+    // Re-shapes one cell against the now-updated owners and replaces its draw record, or
     // drops it when the cell contributes nothing (inset-collapsed, or unowned with
     // neither its fill nor its outline drawn). Every disturbance goes through here, including the
     // cell-local ones that re-shape to the shape the cell already has: what the batch has to end
@@ -319,19 +319,19 @@ public final class IncrementalOwnerRefresh {
             return;
         }
 
-        // The system the cell draws as, whose holder colours and keys it. Every cell here is a
+        // The system the cell draws as, whose owner colours and keys it. Every cell here is a
         // star's own, so it resolves to that star, but the resolve is explicit so an
-        // absorbed cell would key by its holder rather than its own missing star.
+        // absorbed cell would key by its owner rather than its own missing star.
         var drawnSystemKey = geometryCache.getSystemKeyByCellKey().get(cellKey);
         var occupancy = clusters.getOccupancy();
-        var holder = drawnSystemKey == null
+        var owner = drawnSystemKey == null
             ? null
             : occupancy.readOwnerOf(drawnSystemKey);
 
-        // This cell's own holder narrowly, and the whole holding beside it: the shaper compares
-        // every neighbour's holder against this one to tell a same-owner seam from a border, so that
+        // This cell's own owner narrowly, and the whole holding beside it: the shaper compares
+        // every neighbour's owner against this one to tell a same-owner seam from a border, so that
         // half is one of the few reads the map itself answers.
-        var ownerId = holder == null ? null : holder.ownerId();
+        var ownerId = owner == null ? null : owner.ownerId();
         var shaped = CellShaper.shapeCell(
             edges,
             ownerId,

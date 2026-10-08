@@ -8,7 +8,7 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
 /**
- * How cluster labels spell their holders' names - full, short, or not at all - persisted per save and per
+ * How cluster labels spell their owners' names - full, short, or not at all - persisted per save and per
  * screen. View-agnostic: every view of a layer labels its clusters the same way, so one stored choice
  * backs them all rather than each view holding its own.
  *
@@ -59,7 +59,7 @@ public final class NameFormatPreference {
 
     /**
      * @param memoryScope the screen whose choice is read
-     * @return how that screen's cluster labels spell their holders' names, including whether they draw
+     * @return how that screen's cluster labels spell their owners' names, including whether they draw
      *         at all; full names before a save exists or when no choice was ever picked there
      */
     public OwnerNameFormatChoice getSelectedNameFormat(ScreenMemoryScope memoryScope) {
@@ -76,7 +76,7 @@ public final class NameFormatPreference {
      * is no save to write into yet.
      *
      * @param memoryScope the screen whose panel made the pick
-     * @param choice      how cluster labels should spell their holders' names, or that they draw none
+     * @param choice      how cluster labels should spell their owners' names, or that they draw none
      * @param board       the refresh board of the sector whose radio made the pick, raised on so that
      *                    sector's labels re-fit
      */

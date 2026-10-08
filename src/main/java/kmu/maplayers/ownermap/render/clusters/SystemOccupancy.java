@@ -40,7 +40,7 @@ public final class SystemOccupancy {
     // nobody living there, and reading it as such is what the inhabited set below exists to stop.
     private final Map<SystemKey, SystemOwner> ownerBySystemKey;
 
-    // Every system something stands in, live settlement or known decivilised world.
+    // Every system something stands in, as the owner source counts it.
     private final Set<SystemKey> inhabitedSystemKeys;
 
     // The settled systems the spotlit owner lives in that no owner was resolved for. Empty off

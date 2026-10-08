@@ -65,8 +65,8 @@ public record RibbonBakeSurface(
             StandingClusterAnchors standingAnchors) {
 
         return new RibbonBakeSurface(
-            // The pass's inhabitation scan rather than its holding, so a settled system this layer's
-            // holding rule gives to nobody is still offered a band. It is the same set the unowned
+            // The inhabited set rather than the owner map, so a settled system the layer's rule gives
+            // to nobody is still offered a band. It is the same set the unowned
             // cell beneath it is classified from, so a cell drawn as settled and a cell offered a band
             // are one set.
             clusters.getOccupancy().getInhabitedSystemKeys(),

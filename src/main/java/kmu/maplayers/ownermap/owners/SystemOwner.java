@@ -15,8 +15,8 @@ import java.util.Set;
  *
  * <p>The render-ready output of a layer's owner source: the layer settles who owns each system and
  * pairs that answer with the owner's shades, so the render stages consume a plain owner and never
- * learn what the ID means - a holder, a group of owners standing together, or a value with nothing
- * to do with who holds a system. The player points each map element (fill, outer border, inner
+ * learn what the ID means - one owner, several folded into one, or a value with nothing to do with
+ * who holds a system. The player points each map element (fill, outer border, inner
  * seam) at one of the two slots through the settings, which is why the shades are carried by slot
  * rather than by element.
  * Retaining the ID beside the shades keeps the owner available for per-owner styling and naming,

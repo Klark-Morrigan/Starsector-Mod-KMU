@@ -42,7 +42,7 @@ import java.util.Set;
  * layers therefore mirror the pipeline the normal render would have produced.
  *
  * <p>Owned clusters run the full base -> despiked -> rounded
- * pipeline. Drawn unowned cells (inhabited but unheld, or uninhabited when the player turns
+ * pipeline. Drawn unowned cells (inhabited, or uninhabited when the player turns
  * them on) contribute only base and rounded: a lone convex inset cell has no needle
  * protrusions, so it skips sanding. Unowned cells respect the same visibility the
  * normal render applies - one draws only when its category's outline colour is not "No

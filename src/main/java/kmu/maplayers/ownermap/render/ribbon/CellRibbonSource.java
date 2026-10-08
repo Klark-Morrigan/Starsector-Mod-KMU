@@ -50,7 +50,7 @@ import java.util.Set;
  * <p>Which cells get a band at all is settled here, in three refusals read in one place: a cell
  * nothing lives in or with nowhere to start from, a system the sector no longer lists, and a cell
  * whose plan came back empty. The last of them is the one that has to be answered before the
- * geometry rather than inside it, since what it saves is the ring walk - the single-holder cell
+ * geometry rather than inside it, since what it saves is the ring walk - the single-owner cell
  * is most of the sector, and it costs a bake nothing.
  *
  * <p>A cell's ring is asked of the surface's store before it is traced and written back once it is,
@@ -173,7 +173,7 @@ public final class CellRibbonSource {
         var plan = planner.planSystemRibbon(system);
         bakeScope.markPhase(RibbonBakePhases.PLAN_PHASE);
 
-        // The single-holder cell, and most of the sector: nothing was planned, so nothing is laid
+        // The single-owner cell, and most of the sector: nothing was planned, so nothing is laid
         // out. Answered here rather than by the geometry because what it saves is the ring walk -
         // a cell with nothing to say must not pay for a path nothing would be laid on.
         if (plan.sumLengthUnits() <= 0) {

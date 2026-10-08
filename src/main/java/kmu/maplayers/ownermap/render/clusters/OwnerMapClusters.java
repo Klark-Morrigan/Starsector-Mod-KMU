@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * <p>Two things live here, and the type keeps them apart. The built map is live: the
  * {@link PaintedCellStore} and the styled-cluster-group map are written through by the refresh,
- * which replaces just the cells and owners a holder change touched; the {@link SystemOccupancy}
+ * which replaces just the cells and owners an owner change touched; the {@link SystemOccupancy}
  * is folded by the same refresh as what stands in a system comes and goes, its three facts
  * mutable together behind one type's folds so no pass can bring one up to date and leave a cell
  * drawn from two readings of the sector; and the cluster index is re-derived whenever the
@@ -56,14 +56,14 @@ public final class OwnerMapClusters
     // The two halves of the render output, both mutated in place by the incremental refresh and
     // created empty here since a fresh build fills them and no caller ever supplies them
     // pre-populated. What one cell draws is the store's; what a whole owner draws is the map's,
-    // keyed by its holder - an ID from the view's grouping, or one of the filter's
+    // keyed by its ID - one the owner source resolved, or one of the filter's
     // synthetic spotlight keys - which the emission never interprets.
     private final PaintedCellStore paintedCells = new PaintedCellStore();
 
     private final Map<String, StyledClusterGroup> styledClusterGroupByOwnerId =
         new LinkedHashMap<>();
 
-    // Who is in each system: the holder, what stands there, and where a spotlit pick lives in a
+    // Who is in each system: the owner, what stands there, and where a spotlit pick lives in a
     // system nobody holds. The one live input, folded per marked system by the incremental
     // refresh.
     private final SystemOccupancy occupancy;
@@ -72,7 +72,7 @@ public final class OwnerMapClusters
     private final OwnerMapBuildInputs buildInputs;
 
     // Which contiguous cluster each system sits in, re-derived by reindexClusters whenever the
-    // holder map changes. Seeded empty so a build that never indexes (and the empty placeholder)
+    // owner map changes. Seeded empty so a build that never indexes (and the empty placeholder)
     // still answers a lookup rather than tripping over a null.
     private SystemClusterIndex clusterIndex = SystemClusterIndex.indexClusters(List.of());
 
@@ -146,7 +146,7 @@ public final class OwnerMapClusters
      * <p>The one composition of the cut's draws-as map with this build's holding. Every stage that
      * shapes, traces, clusters or names a cell groups by it, and each composing it for itself is
      * how two stages of one pass come to disagree about which cells fuse - so it is asked of the
-     * build that owns the holding half rather than assembled at each of them.
+     * build that owns the owner half rather than assembled at each of them.
      *
      * @param systemKeyByCellKey the system each cell draws as, off the geometry cache
      * @return the cells grouped by the owner holding the system each draws as
@@ -159,9 +159,9 @@ public final class OwnerMapClusters
     }
 
     /**
-     * Re-derives the cluster index from the current holders.
+     * Re-derives the cluster index from the current owners.
      *
-     * <p>Clusters are a function of holding, so any pass that edits the holder map re-runs this:
+     * <p>Clusters are a function of ownership, so any pass that edits the owner map re-runs this:
      * a single system flipping can sever one cluster group in two or bridge two into one, which no
      * amount of patching the standing index would catch.
      *
@@ -179,7 +179,7 @@ public final class OwnerMapClusters
     }
 
     // Each owner's bodies with the fill, hatch, and cluster border they share, keyed by its
-    // holder. Named for the framework record it hands over rather than for a layer's word
+    // ID. Named for the framework record it hands over rather than for a layer's word
     // for it: the same map answers the emission's cluster read and this layer's own lookups, so
     // it carries one name.
     @Override
@@ -195,7 +195,7 @@ public final class OwnerMapClusters
      * owner whose group came back empty-handed draws nothing, and an entry left standing for it
      * would go on painting the fill and border it lost.
      *
-     * @param ownerId      the owner's holder - an ID from the view's grouping, or
+     * @param ownerId      the owner's ID - one the owner source resolved, or
      *                     one of the filter's synthetic spotlight keys
      * @param clusterGroup the owner's baked bodies, or null where it paints nothing or its cells
      *                     yield no borderable geometry
@@ -252,7 +252,7 @@ public final class OwnerMapClusters
 
     /**
      * @return who is in each system, as the one live record: what a pass folding a marked system's
-     *         holder, its inhabitation or the pick's presence in it writes through, and what every
+     *         owner, its inhabitation or the pick's presence in it writes through, and what every
      *         reader of any of the three reads
      */
     public SystemOccupancy getOccupancy() {
@@ -261,9 +261,9 @@ public final class OwnerMapClusters
     }
 
     /**
-     * @return what this build was baked under - the paint scheme, the view and grouping, the
+     * @return what this build was baked under - the paint scheme, the view and its reading, the
      *         sampled picks and the two fill sets - as the one reading every stage of it sampled.
-     *         What a pass that runs after the build reads rather than asking the holders again: a
+     *         What a pass that runs after the build reads rather than asking the source again: a
      *         label re-fit or a band re-bake taken off a second reading would spell the names one
      *         way and have been sized for another
      */

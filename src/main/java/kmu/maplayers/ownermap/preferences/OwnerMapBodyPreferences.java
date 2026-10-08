@@ -27,7 +27,7 @@ import kmu.maplayers.ownermap.OwnerPaintedView;
  * no-ops and reports none, so nothing bumps a revision no overlay would read. The refresh it raises
  * stands in for the settings revision, which a choice that is not a LunaLib field never moves.
  *
- * @param nameFormat         how cluster labels spell their holders' names
+ * @param nameFormat         how cluster labels spell their owners' names
  * @param uninhabitedOutline whether never-settled space strokes its outline
  * @param filterRecede       how the rest of the sector recedes behind a spotlighted owner
  */

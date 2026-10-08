@@ -20,7 +20,7 @@ see the [mod README](../../../../../../../../README.md) for project context.
 - [One pass per walk](#one-pass-per-walk)
 - [One system at a time](#one-system-at-a-time)
 - [The band count](#the-band-count)
-- [The three fill states](#the-three-fill-states)
+- [What lands in each fill state](#what-lands-in-each-fill-state)
 - [What is not here](#what-is-not-here)
 
 ## At a glance
@@ -212,34 +212,22 @@ and the order that fill decided.
 A bloc the mechanic never ranked draws behind the ranked ones in ID order,
 since any place among them would state it took part in a contest it never entered.
 
-## The three fill states
+## What lands in each fill state
 
-A bloc's footprint always traces as one border.
-The fill is what varies per system inside it.
-There are three states -
-one default and two exceptions:
+The three fill states are [the split fill's](../../render/clusters/README.md#the-split-fill-solid-hatched-unfilled).
+What a holder rule puts in the two exceptions:
 
-- **Solid** -
-  the default.
-  Any owned system not listed as an exception fills solid.
-- **Hatched** (`contestedSystemKeys`) -
-  a spotlit bloc's presence in a system it does not hold outright:
-  "mine,
-  but not only mine",
-  drawn as a diagonal hatch.
+- **Hatched** -
+  a spotlit bloc's presence in a system it does not hold outright.
   It states presence and nothing finer,
   so it reads the same whether a rival holds the system or nobody does -
   the alternative being a fourth state drawn for the handful of systems
   where a bloc's only colony is one no mechanic could weigh.
-- **Unfilled** (`unfilledSystemKeys`) -
-  held for border and label,
-  but painting nothing inside the border.
-  A rule that extends a bloc's holdings with systems it does not hold draws those systems this way.
+- **Unfilled** -
+  a system a rule extends a bloc's holdings with though the bloc does not hold it.
 
-When both exception sets are empty,
-the whole cluster is solid.
-The render split reads that as a fast path,
-so a rule that never contests or unfills pays nothing for the split.
+A rule that never contests or unfills leaves both sets empty,
+and pays nothing for the split.
 
 ## What is not here
 
@@ -251,4 +239,4 @@ so a rule that never contests or unfills pays nothing for the split.
 - The *seams* the tier asks through are [`owners`](../README.md)'.
 - The *render split* that turns the three states into triangles,
   hatch,
-  and skipped fills is [`render.clusters`](../../render/clusters/README.md).
+  and skipped fills is [`render.clusters`](../../render/clusters/README.md#the-split-fill-solid-hatched-unfilled).

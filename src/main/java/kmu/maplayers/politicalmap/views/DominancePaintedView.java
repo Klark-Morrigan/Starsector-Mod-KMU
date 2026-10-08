@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
@@ -37,7 +36,7 @@ import java.util.function.Predicate;
  *
  * <p>This sits between the view seam and the concrete views rather than on the seam itself,
  * because the assembly it holds names the dominance aggregator and the dominance vocabulary. On
- * {@link OwnerPaintedView} those names would reach every view including the ones the contest does
+ * {@link HolderPaintedView} those names would reach every view including the ones the contest does
  * not paint; here they reach exactly the views whose blocs carry the numbers. A view painted by
  * another mechanic implements the seam directly and pairs its own list with its own vocabulary.
  */
@@ -49,7 +48,7 @@ public interface DominancePaintedView
      * system's dominant holder, extended with each system a bloc claims but does not hold, drawn
      * as an unfilled part of that bloc's territory.
      *
-     * <p>Answered here rather than on {@link OwnerPaintedView}, for the reason the ribbon planner
+     * <p>Answered here rather than on {@link HolderPaintedView}, for the reason the ribbon planner
      * is: a default there would name this mechanic's resolver in front of every view, including
      * the ones it does not paint. Both views the contest paints resolve identically, so it is
      * stated once between them instead of twice beside them.
@@ -107,7 +106,7 @@ public interface DominancePaintedView
      * decides which per system off the very economy read the held count makes anyway.
      *
      * <p>Answered once for every such view for the same reason {@link #resolveBlocPickerRead} is: the
-     * assembly names the dominance planner, and on {@link OwnerPaintedView} that name would reach
+     * assembly names the dominance planner, and on {@link HolderPaintedView} that name would reach
      * the views the contest does not paint.
      *
      * @param inputs everything one bake's bands are settled from, sampled once by the bake
@@ -191,7 +190,7 @@ public interface DominancePaintedView
      * differs between views the contest paints, which is why it is the only thing this interface
      * leaves abstract.
      *
-     * <p>Re-abstracted from {@link OwnerPaintedView#resolveSelectableBlocGate}, whose default offers
+     * <p>Re-abstracted from {@link HolderPaintedView#resolveSelectableBlocGate}, whose default offers
      * every present bloc. That default is right for a view whose walk surfaces only blocs it paints;
      * here the grouping can surface a lone faction beside the alliances, so a view that inherited the
      * default silently would list blocs it does not paint rather than failing to compile.

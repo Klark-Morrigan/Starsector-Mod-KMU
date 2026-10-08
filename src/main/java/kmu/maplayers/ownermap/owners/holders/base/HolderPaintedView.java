@@ -18,21 +18,9 @@ import java.util.function.Predicate;
 
 /**
  * A view whose owners are holders: blocs that hold a system through its colonies, folded from the
- * colonies' owning factions by a grouping. It states the parts that are its own - the grouping, who
- * stands together in a contest, the holding rule for the whole sector and for one system, how a band
- * is counted, and how a bloc looks - and this assembles them into the two answers the core asks of
- * every view.
- *
- * <p>The assembly is the point of the type. A view painting holders samples its grouping once per
- * rebuild here, and the reading and the source are both built over that one sampling, so the owners
- * the source resolves and the names and shades the reading gives them describe one fold.
- *
- * <p>Every part is declared rather than defaulted: each is one layer's rule, and a default here would
- * put one layer's mechanic in front of every layer painting holders.
- *
- * <p>The picker is assembled here too. Who a holder view lists is settled by the sector's colonies,
- * under the colony rules a pass samples, so the colony half of the picker is this seam's rather
- * than the core's.
+ * colonies' owning factions by a grouping. A view states its own parts, and this assembles them into
+ * the two answers the core asks of every view, both built over one sampling of the grouping per
+ * rebuild. It assembles the picker too, off the sector's colonies under stated colony rules.
  */
 public interface HolderPaintedView
         extends OwnerPaintedView {

@@ -16,15 +16,15 @@ import java.util.Set;
  * What invalidates an owner map's memoised picker. The memo itself is KMLib's
  * {@link RevisionMemo}; what this adds is the one thing the memo cannot know - which moving values a
  * view's owner list actually depends on, so a stale list is rebuilt and a live one
- * is not. Each list is a full grouped holder pass over the sector, and the picker resolves its
+ * is not. Each list is a full walk of the sector, and the picker resolves its
  * options twice a frame the map is open, so getting that judgement right is what keeps the sidebar
- * from rescanning the whole economy several times a frame.
+ * from rescanning the whole sector several times a frame.
  *
  * <p>The presence behind the rows rides the same memo, since it is the same walk's answer under the
  * same invalidation - a surface lighting an owner's systems reads it here rather than re-walking, and
  * cannot end up holding presence from one reading beside rows from another.
  *
- * <p>One sector's: a list is a walk of that sector's economy keyed on that sector's revisions, so it
+ * <p>One sector's: a list is a walk of that sector keyed on that sector's revisions, so it
  * is held by that sector's {@link SectorMapMachinery} and discarded with it. And one layer's: the
  * memo holds a single entry, so two layers sharing one would evict each other's picker on every
  * frame both are listed - each is held under its own layer instead.
@@ -91,7 +91,7 @@ public final class SelectableOwnerCache
      *
      * <p>Asked under the <em>selected</em> view, the same one the sidebar body asks under: two
      * callers alternating under different views evict each other from the one memo entry below and
-     * re-walk the economy every call. The view also decides what being found somewhere means -
+     * re-walk the sector every call. The view also decides what being found somewhere means -
      * living in a system under one view, claiming it under another.
      *
      * @param view    the selected view the owner was surfaced by
@@ -124,9 +124,9 @@ public final class SelectableOwnerCache
             () -> view.resolveOwnerPickerRead(sector));
     }
 
-    // The revision the memoised list is valid for: the economy-weighting settings (the holding
+    // The revision the memoised list is valid for: the settings (the owner
     // rules and the visibility settings both move settingsRevision) and the view's own live inputs
-    // (its live grouping source where it samples one; a constant for a view sampling nothing). The
+    // (its live sources where it samples any; a constant for a view sampling nothing). The
     // filter selection is absent by design - it changes which owner is lit, never which owners are listed.
     //
     // The view folds its inputs off this machinery's board, the same one the walk above takes its

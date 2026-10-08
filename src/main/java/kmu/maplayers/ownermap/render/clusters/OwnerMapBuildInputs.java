@@ -15,7 +15,7 @@ import java.util.Set;
 /**
  * What one build was baked under, retained whole so a cell rebuilt after it is resolved against
  * exactly the inputs the full build used: the paint scheme, the view and the owner reading it was
- * styled by, the sidebar picks it sampled, and the two sets its holding derived about the fill -
+ * styled by, the sidebar picks it sampled, and the two sets its owner source derived about the fill -
  * which owned systems paint no fill, and which spotlit systems the pick contests.
  *
  * <p>Fixed once the build ends, which is what parts it from the {@link SystemOccupancy} beside it:
@@ -27,7 +27,7 @@ import java.util.Set;
  * <p>The three snapshots stay three records rather than being flattened here, since each is one
  * sampling: the scheme is read once off the theme, the reading once off the view, the picks once
  * off the sidebar. What this adds is the two derived sets, which belong to no one of them - they
- * come off the holding resolve, and a fill split reads them beside the paint.
+ * come off the owner source, and a fill split reads them beside the paint.
  *
  * @param styling             the resolved paint scheme every cell and cluster group is styled from
  * @param viewReading         the view painted, the owner reading it was styled by, and the source

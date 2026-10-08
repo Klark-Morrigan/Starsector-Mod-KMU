@@ -58,7 +58,7 @@ final class OwnerMapRebuildDecider {
     // The revision the standing holding was resolved under: the content revision's holding half,
     // the inputs that reach the resolve and none of the picks that only reach the paint. A rebuild
     // that owes no new reading of the sector - a style pick moved and nothing else - paints over
-    // what the last one read rather than walking the economy for the same answer.
+    // what the last one read rather than walking the sector for the same answer.
     private int lastHoldingRevision = UNBUILT_REVISION;
 
     // What the cells currently held were cut from. One value rather than a revision, the seed
@@ -234,7 +234,7 @@ final class OwnerMapRebuildDecider {
     }
 
     // The terms both revisions share, folded once: the settings revision, since a settings change
-    // restyles every cell over the fixed geometry; the active view, since their grouping, styling
+    // restyles every cell over the fixed geometry; the active view, since their owners, styling
     // and labels differ; and the view's own fingerprint of whatever live inputs it samples, so a
     // change to one of those rebuilds without any setting moving.
     //

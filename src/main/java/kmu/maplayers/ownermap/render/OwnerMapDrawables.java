@@ -110,10 +110,10 @@ final class OwnerMapDrawables {
     }
 
     /**
-     * @return whether a per-system holder change can be folded into the standing clusters: the
+     * @return whether a per-system owner change can be folded into the standing clusters: the
      *         production view is built - by a build that ran, not the placeholder a failed one
      *         stands behind - and not under a filter, since the incremental re-shape derives
-     *         holders through the normal holding, which would overwrite the spotlit keys
+     *         owners through the normal holding, which would overwrite the spotlit keys
      */
     public boolean canFoldHolderChanges() {
         return clusters != null

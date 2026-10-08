@@ -5,9 +5,8 @@ import kmlib.starsector.ui.widgets.lists.SelectableListItem;
 
 /**
  * What one resolve of a view's spotlight picker yields: the rows the sidebar draws, and the systems
- * behind them. The drawn half of
- * {@link kmu.maplayers.ownermap.owners.OwnerStatsRead}, which is where the reason the pair
- * travels together is stated.
+ * behind them. The drawn half of {@link OwnerStatsRead}, which is where the reason the pair travels
+ * together is stated.
  *
  * <p>It carries the index rather than the picker doing so, because a picker is a general widget
  * model that ranks and draws items; where an owner lives is this map's own knowledge and no part of

@@ -29,7 +29,7 @@ import java.util.Map;
  * fields.
  *
  * <p>Live and mutable throughout: a full rebuild fills it, and the incremental refresh replaces
- * just the cells a holder change touched. The maps it hands back are the live ones, since the
+ * just the cells an owner change touched. The maps it hands back are the live ones, since the
  * emission walks them per frame and the highlight memoises on their contents by identity - a
  * defensive copy would cost a frame and defeat that memo.
  */

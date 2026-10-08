@@ -10,10 +10,10 @@ import java.util.Optional;
 /**
  * The banded stroke one cell draws inside its own ring, as the ordered runs it is made of:
  * every owner present in the cell in the order it was ranked, each contributing a segment per
- * market it holds and an interjection between two of its own.
+ * holding it has and an interjection between two of its own.
  *
- * <p>What the band says is how a system splits - how many markets, whose, and in what
- * proportion - with no glyph and no label. One shade carries every parting in it. Markets of
+ * <p>What the band says is how a system splits - how many holdings, whose, and in what
+ * proportion - with no glyph and no label. One shade carries every parting in it. Holdings of
  * one owner are parted by an interjection in that owner's dark shade, so a long run reads as
  * several holdings rather than as one large one; and where another owner's run follows, that
  * same dark shade closes the outgoing run, so a handover is punctuated as well as recoloured.
@@ -43,12 +43,12 @@ import java.util.Optional;
  * <p>Contest decides the lengths and never whether there is a band, which is what keeps the one
  * band a map must not be able to lose - the one saying a system is contested - out of reach of
  * every knob. A cell with a rival in it bands because the fill cannot report a contest; a cell with
- * a lone holder bands because the fill says whose the system is and not how much is in it. A cell
+ * a lone owner bands because the fill says whose the system is and not how much is in it. A cell
  * nothing is present in draws under neither reading: there is no footprint to report.
  *
  * <p>The painting owner draws in the ribbon like any other present owner. Its own segments are
  * what give the rivals beside them a scale: a lone rival segment against a long run of the
- * holder means something quite different from the same segment against a short one.
+ * painter means something quite different from the same segment against a short one.
  *
  * <p>Pure data over a ranking and a count each, with no geometry and no colour lookup of its
  * own, so the rule depends on nothing live. Ranking order is the caller's: the runs come out
@@ -225,9 +225,9 @@ public record RibbonPlan(
         return Optional.empty();
     }
 
-    // Lays down one owner's run: a bright segment per market, parted by a dark interjection.
-    // The interjection goes before every market after the first, which is what keeps it
-    // strictly between two of one owner's markets - so a run neither opens nor closes on one,
+    // Lays down one owner's run: a bright segment per holding, parted by a dark interjection.
+    // The interjection goes before every holding after the first, which is what keeps it
+    // strictly between two of one owner's holdings - so a run neither opens nor closes on one,
     // and whether it is closed off at all is the caller's to decide from what follows it.
     private static void appendOwnerRun(
             List<RibbonSegment> segments,
@@ -248,7 +248,7 @@ public record RibbonPlan(
     }
 
     // The band's one kind of boundary, made once for both the places that need it: between two
-    // of an owner's markets, and closing that owner's whole run where another owner's follows. Both
+    // of an owner's holdings, and closing that owner's whole run where another owner's follows. Both
     // are the same owner's dark shade at the same length, and stating that twice would let one
     // boundary drift into saying more than the other - which would read as a statement about the
     // owners being parted rather than as the boundary it is.

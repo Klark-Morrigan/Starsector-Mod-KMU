@@ -91,24 +91,12 @@ Any other default would name one layer's answer in front of every layer,
 including the ones it does not describe.
 
 **The tier reads nothing about owners.**
-A rebuild opens one `SectorWalk` -
-the sector's systems and what each holds,
-walked once,
-beside the visibility rules the cells were cut under -
-and hands it to the layer's source.
-Whatever the source opens over it is the source's:
-the layers painting holders open a pass over what stands in each system,
-a relay layer would read nothing but which systems carry a relay.
-The cut, the source and the band bake all read that one walk,
-so a rebuild still walks the sector once.
-A batch opens a walk of its own and asks the source the standing build was resolved by,
-so a marked system lands the owner its neighbours were painted under.
-
-The reading and the source come from one call
-because they have to agree about what an owner is:
-a view folding owners into groups may read that fold live,
-and a source folding under one sampling of it while the reading named owners under another
-would paint a fold the holding never made.
+A rebuild opens one `SectorWalk` and hands it to the layer's source,
+and whatever the source opens over it is the source's.
+The walk,
+the per-system answer a batch asks for,
+and why the reading and the source come from one call
+are [the owner seams](owners/README.md).
 
 **Which systems seed a cell is the layer's to state** too.
 The cut asks a `CellSeedRule` per system,

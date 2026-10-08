@@ -187,7 +187,7 @@ public interface OwnerPaintedView {
      * supplies here, and the shared dispatcher draws it - nothing when it supplies nothing - so a view
      * opts into a tooltip by injecting one rather than flipping a flag. A view injects the box that
      * explains the mechanic its own fills were painted by, since a box read off another mechanic
-     * would describe holders the cells do not show. Defaulting to empty makes "no tooltip" the base
+     * would describe owners the cells do not show. Defaulting to empty makes "no tooltip" the base
      * case, the same shape as {@link #resolveOwnerPickerRead} defaulting to no spotlight, so a new
      * view opts in only when it has a tooltip to show.
      *

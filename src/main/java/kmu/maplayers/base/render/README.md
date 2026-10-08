@@ -674,6 +674,17 @@ and the first sector's removal would then reach for a script it never had
 while the one still running went untouched.
 It is taken off by instance rather than by class besides,
 `MapIconReseater` being KMLib's and another mod free to run its own over the same sector.
+
+Both reads are measured,
+as `mapLayer.reseat.findTerrain` and `mapLayer.reseat.readPlacement`,
+each a root under the sector's profiling origin.
+The script asks them on every advance a map is up,
+several per rendered frame under the campaign's speed-up,
+and each is a walk:
+hyperspace's terrain for the entity,
+the live widget tree for its icon.
+They are roots rather than children of a beat because the script runs between frames,
+outside every beat [what a frame costs](#what-a-frame-costs) names.
 `MapSurfaceInstaller` only says when the reseat goes on and comes off,
 and behind which guard.
 
@@ -681,7 +692,9 @@ Only the above-nebulae surface is moved.
 The one beneath it is meant to be fogged,
 so lifting both would flatten the split back into a single pass beneath the fog.
 
-The move takes that terrain out of hyperspace for one advance,
+The move takes that terrain out of hyperspace until a rendered frame has dropped its icon -
+one advance ordinarily,
+a few under the campaign's speed-up -
 which is among the reasons `installAboveStarscapeNebulaeTerrain` stays a per-load sweep;
 its Javadoc has what that costs a save written inside the window.
 Losing the surface entirely costs the upper band alone -

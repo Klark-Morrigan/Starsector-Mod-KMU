@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * Runs one full owner-map rebuild: asks the layer's source who owns each system, reads the theme,
  * shapes the cached cells into merged clusters, and drives the two per-item builders over
- * every cell and every owned owner to produce a fresh {@link OwnerMapClusters}.
+ * every cell and every owner to produce a fresh {@link OwnerMapClusters}.
  *
  * <p>The orchestration only - each stage's actual work belongs to a collaborator, and this
  * class's job is to sample every input exactly once so the whole pass keys off one snapshot.
@@ -109,7 +109,7 @@ public final class OwnerMapBuilder {
     }
 
     // Shapes the cached raw cells into merged clusters and partitions them into the
-    // cluster-filled (owned) and per-cell (decivilised/uninhabited) draw lists, baking in each
+    // cluster-filled (owned) and per-cell (settled/uninhabited) draw lists, baking in each
     // cell's colours, opacities, and widths resolved from the current settings, then
     // flattens each to GL-ready vertex runs. Reads the settings once per category, not
     // per cell. The view's reading arrives with it, retained on the clusters so an incremental
@@ -260,7 +260,7 @@ public final class OwnerMapBuilder {
 
         // Each owner's cluster group: one entry per cluster (traced across all its cells so
         // a multi-system cluster reads as one frontier), tessellated for the fill and flattened
-        // for the border - the same shape for both. Built off the same raw cells and holders the
+        // for the border - the same shape for both. Built off the same raw cells and owners the
         // seams used, and profiled on its own since chaining, smoothing, and tessellating every
         // owner's outline is comparable in cost to shaping the cells.
         try (var clusterGroupsScope = profiler.open(BUILD_CLUSTER_GROUPS_SECTION)) {

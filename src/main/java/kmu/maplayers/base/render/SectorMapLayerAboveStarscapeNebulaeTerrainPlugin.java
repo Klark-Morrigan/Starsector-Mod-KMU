@@ -23,8 +23,8 @@ import java.util.function.BooleanSupplier;
  *
  * <p>Being drawn above the nebulae is not something this class arranges. Its icon is seeded with
  * every other hyperspace entity, ahead of the nebulae the widget appends per map open, and it is
- * lifted past them by being taken out of the location for one advance - see the reseat wired at the
- * mod's entry point. Without that lift this surface paints exactly where the lower one does, which
+ * lifted past them by being taken out of the location until a rendered frame has dropped its icon -
+ * see the reseat wired at the mod's entry point. Without that lift this surface paints exactly where the lower one does, which
  * is the pre-split picture and the graceful direction for it to fail in.
  */
 public class SectorMapLayerAboveStarscapeNebulaeTerrainPlugin

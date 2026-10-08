@@ -87,8 +87,8 @@ a cell nobody lives in or with nowhere to start from,
 a system the sector no longer lists,
 and a cell whose plan came back empty.
 Each is a cost gate as much as an answer -
-a mechanic that weighs markets walks a system's whole market list for its count,
-and the empty plan is what spares the single-holder cell a ring walk.
+a planner may walk everything a system holds for its count,
+and the empty plan is what spares the single-owner cell a ring walk.
 
 The second of those refusals is answered against the pass's own systems-by-key index
 rather than one this bake traverses the sector for.
@@ -96,30 +96,27 @@ The cells were cut from that same index,
 so indexing here would be the rebuild's second traversal of the sector -
 which is exactly what the frame's bound on a refresh refuses.
 
-The gate is the pass's **inhabitation scan**,
-not its holding,
+The gate is the source's **inhabited set**,
+not its owner map,
 and that is what puts a band on the systems no layer paints.
-A settled system can resolve no holder,
-for reasons the layer's own holding rule sets,
+A settled system can resolve no owner,
+for reasons the layer's own rule sets,
 so the layer's fill says nothing about it,
 and gating on that fill would leave the band silent on exactly the systems it is the only readout for.
-Every system an owner holds is inhabited,
-so the gate drops none of them.
+The gate is a contract the source answers to:
+an owner in a system nobody inhabits gets no band.
 It is also the very set the unowned cell beneath is classified from,
 so a cell drawn as settled and a cell offered a band are one set.
 Such a cell reaches the view's planner with **no painter**,
 which is a case of its own rather than an absent one;
 see [`ownermap.ribbon`](../../ribbon/README.md) for the two arms that follow from it.
 
-The gate is **wider** than the holding,
+The gate is **wider** than the owner map,
 which is a real cost.
-Inhabitation is the larger set,
-so the systems the holding leaves out each pay their first walk of what the source reads per system.
-For a settled system the holding gives to nobody that walk buys the band it exists for.
-A **decivilised** system buys one too where the layer counts it as inhabited,
-and lays a run of its own -
-unowned,
-so the run draws in the colours nobody's holding gets,
+The inhabited set is the larger,
+so the systems nobody owns each pay their first walk of what the source reads per system.
+For a settled system that walk buys the band it exists for,
+and a run it lays for something nobody owns draws in the colours an unowned cell gets,
 which is the same thing the cell beneath it says.
 
 ## Laying a band inside a ring
@@ -458,7 +455,7 @@ per cell:
 
 | Phase | What it covers | What it grows with |
 | --- | --- | --- |
-| `plan` | counting what a system holds | what each system holds - a mechanic that weighs markets walks a system's whole market list |
+| `plan` | counting what a system holds | what each system holds - a planner may walk all of it |
 | `trace` | reaching for the cell's ring, and `RibbonPathTracer` insetting and walking one where none stands | the cells this bake had to walk - every cell on a fresh build, only the re-shaped ones after |
 | `carve` | the names and the pinches taken off that ring, and the band placed on what is left | the cells times the names, since every name on the map is tested against every cell |
 | `stroke` | the runs laid end to end and stroked into triangles | the cells that drew something, and how much each planned |

@@ -139,7 +139,7 @@ public final class SectorSvgWriter {
         }
     }
 
-    // Only unowned cells draw their own fill and outline on the real map; a owned cell
+    // Only unowned cells draw their own fill and outline on the real map; an owned cell
     // contributes its fill through its owner's traced cluster instead, so drawing it here
     // too would show a border the game never paints. The key comes off the geometry rather
     // than the fixture, so a cell the build itself grouped - or unowned - is drawn as the
