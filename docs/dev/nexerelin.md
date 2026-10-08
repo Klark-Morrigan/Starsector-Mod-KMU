@@ -16,6 +16,7 @@ It was read out of Nex's own sources and checked against the versions below.
   - [The soft-dependency rule](#the-soft-dependency-rule)
   - [What KM code binds to](#what-km-code-binds-to)
   - [Where the map layers read Nex](#where-the-map-layers-read-nex)
+  - [What an alliance read costs](#what-an-alliance-read-costs)
 - [What changed from 0.12.1e to 0.12.2d](#what-changed-from-0121e-to-0122d)
 - [Nex concepts a map layer can read](#nex-concepts-a-map-layer-can-read)
   - [Blocs](#blocs)
@@ -26,7 +27,13 @@ It was read out of Nex's own sources and checked against the versions below.
   - [Faction configuration](#faction-configuration)
 - [Listeners Nex fires](#listeners-nex-fires)
 - [Traps](#traps)
-- [Integration tracker](#integration-tracker)
+- [Outstanding work](#outstanding-work)
+  - [One alliance read per change](#one-alliance-read-per-change)
+  - [Alliance events](#alliance-events)
+  - [Original owner and occupied colonies](#original-owner-and-occupied-colonies)
+  - [Ceasefires and relation caps](#ceasefires-and-relation-caps)
+  - [Colonies under attack](#colonies-under-attack)
+  - [Vassals](#vassals)
 
 ## Versions this was verified against
 
@@ -40,10 +47,12 @@ KMU's Nex integration was first written against `0.12.1e`.
 
 ## How to re-verify
 
-Nex ships its own Java sources inside `ExerelinCore.jar`.
+Nex ships its own sources inside `ExerelinCore.jar`,
+as `.java` and `.kt` files.
 `/jar-search` keeps them in preference to a decompile,
 so citations here carry real names and line numbers:
 `<starsector>\.sources-cache\mods\Nexerelin\jars\ExerelinCore\`.
+Search both extensions.
 
 The cache is keyed on the jar's path,
 and a Nex upgrade usually replaces the jar in place.
@@ -51,17 +60,18 @@ Re-extract with `-Force` after an upgrade,
 then confirm the version in `mods\Nexerelin\mod_info.json`.
 
 The changelog is at [the Nexerelin wiki](https://github.com/Histidine91/Nexerelin/wiki/Changelog).
-Treat it as a lead.
+Treat it as a lead:
+it missed a change to who receives a conquered colony.
 The source is public at [Histidine91/Nexerelin](https://github.com/Histidine91/Nexerelin),
 tagged per release,
 so two releases can be diffed exactly:
 
 ```bash
 git clone --filter=blob:none --no-checkout https://github.com/Histidine91/Nexerelin.git nex-src
-git -C nex-src diff --name-status v0.12.1e v0.12.2d -- '*.java'
+git -C nex-src diff --name-status v0.12.1e v0.12.2d -- '*.java' '*.kt'
 ```
 
-Java sources sit under `jars/sources/ExerelinCore/` in the repository.
+Sources sit under `jars/sources/ExerelinCore/` in the repository.
 
 ## How KM code reaches Nex
 
@@ -129,22 +139,61 @@ flowchart LR
     nex -- "InvasionListener" --> kmuNex
 ```
 
-`kmu.maplayers` imports `kmu.mods.nexerelin` and nothing of Nex itself.
-Nex types stop at `kmu.mods.nexerelin` and `kmlib.mods.nexerelin`.
+`kmu.maplayers` imports `kmu.mods.nexerelin` and nothing of Nex itself;
+the layering gate closes it to `exerelin`.
 
 | Map-layer feature | Reads | Through |
 | --- | --- | --- |
 | Alliances view offered at all | mod presence | `MapLayers.selectPoliticalMapViews` |
 | Alliances view paints alliances as one bloc | live alliance grouping | `AlliancesView` -> `NexerelinAlliances.resolveGrouping` |
 | Allies are not rivals in bands and boxes | live alliance grouping | `DominancePaintedView`, `ClaimsView` -> `BlocAffiliation` |
-| Hover boxes split allies from rivals | live alliance grouping, sampled per hover | `SystemDominationTooltip`, `SystemClaimTooltip` |
+| Hover boxes split allies from rivals | live alliance grouping | `SystemDominationTooltip`, `SystemClaimTooltip` |
 | "Contested by" rather than "Present" | mod presence | `NexerelinContestWording` |
 | An ally keeps a concealed colony's secret | live alliance membership | `MapLayers.registerFactionAlliances` -> `FactionAllianceRegistry` |
 | Alliance changes repaint | alliance fingerprint, every poll | `PoliticalMapStalenessSource.markAllianceSetChange` |
 | A conquest repaints at once | `InvasionListener.reportMarketTransfered` | relay -> `PoliticalMapMarketTransferListener` |
 | Filter-row toggle tooltip mentions alliances | mod presence | `VanillaMapLayerToggleAttacher` |
 
-The [political map README](../../src/main/java/kmu/maplayers/politicalmap/README.md) owns how each of these behaves.
+An alliance change reaches the picture through the poll.
+The fingerprint moving raises `PoliticalMapRefreshSignal.ALLIANCES`;
+all three political views fold that revision into their content revision,
+so the next map frame rebuilds the clusters and the sidebar picker re-resolves.
+The hover box reads alliances live and needs no signal.
+The [caching notes](caching.md) own that model,
+and the [political map README](../../src/main/java/kmu/maplayers/politicalmap/README.md) owns how each feature behaves.
+
+### What an alliance read costs
+
+One read of the alliance records calls `Alliance.getMembersSorted()` once per alliance.
+That method sums market sizes for every member,
+scanning the economy's markets each time
+(`exerelin/campaign/alliances/Alliance.java:97-111`).
+KMLib memoises nothing:
+`NexerelinAllianceSource` reads afresh on every ask.
+
+| Reader | Reads per run | Runs |
+| --- | --- | --- |
+| Hover box, factions or alliances view (`SystemDominationTooltip`) | 2-3 | every frame while hovering |
+| Hover box, claims view (`SystemClaimTooltip`) | 3 | every frame while hovering |
+| Staleness poll: fingerprint, visibility pass, substrate sweep | 3 | every 4-5 campaign seconds by default, map open or not |
+| Full cluster rebuild | 2-3, plus 1 on a geometry recut | on an `ALLIANCES` or settings change, map open |
+| Incremental owner refresh | 1 | per batch of stale systems |
+| Colony events (`MarketPoliticsRefresh`) | 1-2 | per colonisation, resize, discovery, transfer or decivilisation |
+
+The hover box is the hot path.
+It is rebuilt from the live sector on every paint
+(`SystemCellTooltip`),
+so hovering costs about 120-180 reads a second at 60 fps.
+The visibility rule is cheap by comparison:
+`ColonyKnowledge` reads alliances once per pass, not once per colony.
+
+Only the bloc colour and the fingerprint's lead need the sort.
+The visibility rule and the contest affiliation use membership alone,
+which `Alliance.getMembersCopy()` gives without a scan.
+
+None of the poll or hover reads sit under a profiling row,
+so `kmu_profiling` cannot show this cost.
+Rebuild reads show only as self time in `ownerMap.rebuildDrawables`, `ownerMap.resolveHolding` and `mapLayer.refresh`.
 
 ## What changed from 0.12.1e to 0.12.2d
 
@@ -212,7 +261,11 @@ It reports a faction joining, leaving, two alliances merging,
 one dissolving and a vote.
 It never reports one forming:
 a new alliance shows only as a new `uuId` in the list.
-The events fire synchronously, inside the `AllianceManager` call.
+Nor does anything report the lead member changing,
+which follows market sizes.
+The events fire synchronously, inside the `AllianceManager` call,
+and some fire mid-change:
+a dissolving alliance reports each member leaving while it still lists them all.
 `VassalManager` is itself a listener and joins or leaves alliances from inside those events,
 so one change can arrive as several.
 
@@ -238,11 +291,21 @@ read through `FactionAPI.isHostileTo`.
 which makes it a cheap fingerprint for new wars only.
 
 **Ceasefires and recent wars.**
-Per directed pair, in days remaining:
-`DiplomacyBrain.getCeasefires()` and `getRecentWars()`,
-reached through `DiplomacyManager.getManager().getDiplomacyBrain(id)`.
+Each faction's `DiplomacyBrain` holds both as a map of other faction to days remaining:
+`getCeasefires()` and `getRecentWars()`.
+They return the live maps, so copy before holding them.
+Reach a brain through `DiplomacyManager.getManager().getDiplomacyBrains().get(id)`;
+`getDiplomacyBrain(id)` creates and saves a brain on a miss
+(`exerelin/campaign/DiplomacyManager.java:1009-1015`).
 A ceasefire lasts 240 days and a recent war 180
 (`CEASEFIRE_LENGTH`, `RECENT_WAR_LENGTH`, `exerelin/campaign/diplomacy/DiplomacyBrain.java:109-110`).
+A recent war blocks peace talks,
+and a ceasefire blocks a new war.
+Both brains of a pair usually hold the same ceasefire,
+but the brains of factions Nex keeps out of diplomacy
+(independents, the Luddic Path, Templars, `disableDiplomacy`)
+never count down, so their entries can be stale.
+No Nex screen shows either map or the days left.
 Poll.
 
 **Dispositions.**
@@ -255,8 +318,10 @@ roughly every 20 days.
 **Maximum relation.**
 `DiplomacyManager.getManager().getMaxRelationship(a, b)` caps how friendly two factions can get.
 `getMaxRelationshipStat` gives the breakdown.
-Effectively static,
-so a pair that can never reach peace can be marked once.
+Both write an empty `$nex_max_relations` map into faction memory on a miss,
+and both throw while the manager is null.
+Nex shows the cap only against the player's faction.
+Effectively static.
 
 **Diplomacy traits.**
 `DiplomacyTraits.getFactionTraits(id)`, `hasTrait(id, trait)`.
@@ -273,15 +338,31 @@ Both suit a tooltip line better than a cell colour.
 ### Ownership
 
 **Original owner.**
-Every market carries `$startingFactionId` in its memory
+`$startingFactionId` in market memory
 (`ExerelinConstants.MEMKEY_MARKET_STARTING_FACTION`),
-set at sector start and when a colony is founded.
-`NexUtilsMarket.getOriginalOwner(market)` and `isWithOriginalOwner(market)` read it
+read by `NexUtilsMarket.getOriginalOwner(market)` and `isWithOriginalOwner(market)`
 (`exerelin/utilities/NexUtilsMarket.java:139-168`).
 It is a plain memory key,
 so it can be read without loading a Nex class.
-Nex's own revanchism runs on it,
-which makes it Nex's real notion of a claim.
+Nex calls a colony held by someone else its original owner's claim,
+shows those claims on its faction directory and diplomacy profile,
+and runs its revanchism on them.
+
+Not every market has it.
+Nex writes it once over the economy's markets:
+at a new game,
+or when Nex is added to an existing save
+(`exerelin/plugins/ExerelinModPlugin.java:198-206`, `:729-740`).
+After that only Nex's own colony foundings,
+player colonies and random-sector markets get it.
+Pirate and Luddic Path bases spawned later,
+Nex's respawn bases and player outposts,
+and colonies other mods add later never do.
+Nothing backfills it on load.
+
+It is never rewritten on capture.
+On a save Nex was added to mid-campaign,
+"original" means the owner when Nex was installed.
 
 **Recent capture.**
 `$nex_recentlyCapturedFrom` holds the previous owner for 90 days after a capture
@@ -307,22 +388,31 @@ counter-invasions and colony expeditions all extend `OffensiveFleetIntel`.
 `getTarget()` is the market,
 `getFaction()` and `getTargetFaction()` the two sides,
 and a null `getOutcome()` means it is still running.
-Enumerate with `IntelManager.getIntel(OffensiveFleetIntel.class)`
-together with `getCommQueue(OffensiveFleetIntel.class)`.
-`RaidListener.reportRaidEnded` fires when one ends;
-most launches fire nothing,
-so starts need a poll.
+
+`IntelManager.getIntel(OffensiveFleetIntel.class)` finds every one the player has been told about;
+vanilla's intel repository indexes each item under its superclasses.
+An item is the player's to see while it is in that list,
+`isPlayerVisible()` holds,
+and it is not ending.
+Nex lists every offensive in the sector this way,
+not only those against the player.
 
 `GroundBattleIntel.getOngoing()` lists ground battles,
-and `GroundBattleCampaignListener` fires on start and end.
+which Nex always announces.
 `RebellionIntel` is found by an intel scan;
 `$nex_rebellionPoints` on market memory (0-100) is the cheap unrest gauge.
+
+Listeners cover only part of it.
+`GroundBattleCampaignListener` fires when a battle starts and ends,
+`RaidListener` when an offensive ends,
+and `StrategicAIListener` for strategic-AI actions.
+Most offensive launches and rebellions need a poll.
 
 The colony-threat research for 0.12.1e
 ([research-nexerelin.md](implementation/021-colony-threat-report-and-map/research-nexerelin.md))
 catalogues these in depth.
 Its class and method names still hold in 0.12.2d;
-its line numbers do not.
+its line numbers and its 150-day ceasefire do not.
 
 ### Strength and intent
 
@@ -347,6 +437,11 @@ each concern naming its markets and factions.
 `CovertOpsManager.getManager().getOngoingCovertActionsOfType(CovertActionIntel.class)`
 names each action's market and two factions.
 `AgentActionListener` fires on completion only.
+
+**Faction recognition.**
+`FactionRecognitionIntel` is new in 0.12.2.
+It tracks the player alone and is cosmetic in 0.12.2d,
+so there is nothing for a map to paint.
 
 ### Faction configuration
 
@@ -375,12 +470,14 @@ they reach only the sector currently running.
 | Listener | Fires on |
 | --- | --- |
 | `exerelin.utilities.InvasionListener` | a colony changing hands, invasion rounds, loot, an invasion ending |
-| `exerelin.campaign.alliances.AllianceEventListener` | alliance formed, joined, left, merged, dissolved, voted on |
+| `exerelin.campaign.alliances.AllianceEventListener` | a faction joining or leaving an alliance, alliances merging, one dissolving, a vote |
 | `DiplomacyBrainListener` | a faction's dispositions recomputed |
 | `StrategicAIListener` | strategic AI concerns and actions added, updated, removed |
 | `RaidListener` | an offensive ending |
 | `GroundBattleCampaignListener` | a ground battle starting and ending |
 | `AgentActionListener` | a covert action completing |
+
+`AllianceEventListener` exists from 0.12.2 only.
 
 ## Traps
 
@@ -393,9 +490,7 @@ they reach only the sector currently running.
   A listener should read the second as an ordinary transfer,
   not as a repeat to ignore.
 - **`Alliance.getMembersSorted()` scans the economy.**
-  It sums market sizes for every member on every call
-  (`exerelin/campaign/alliances/Alliance.java:97-111`).
-  KMU calls it once per alliance on every poll and on every hover.
+  See [What an alliance read costs](#what-an-alliance-read-costs).
 - **The bloc colour can come from a vassal.**
   `getMembersSorted()` ranks by market size,
   so a vassal with more colonies than its overlord leads the alliance.
@@ -404,38 +499,129 @@ they reach only the sector currently running.
 - **Some reads write.**
   `DiplomacyBrain.getDisposition(id)` creates and computes an entry on a miss,
   and that includes a full market scan.
-  `getDiplomacyBrain(id)` creates a brain.
+  `DiplomacyManager.getDiplomacyBrain(id)` creates a brain.
+  `getMaxRelationship` writes faction memory.
   `getWarWeariness(id)` and `ResourcePoolManager.getCurrentPool(id)` insert a default.
-  Read the lists instead where one exists.
+  Read the lists and maps instead where one exists.
 - **A disabled pool reads 1,000,000.**
-- **Queued intel is invisible to `getIntel`.**
-  Nex can queue intel instead of adding it (`exerelin/campaign/intel/FilterableIntel.java:41-53`).
-  The default setting queues nothing,
-  but a scan should take the comm queue too.
-- **`InvasionFleetManager.getActiveIntelCopy()` is not every offensive.**
-  It leaves out base strikes and anything another manager launched.
+- **Queued intel is not the player's yet.**
+  Nex can queue intel instead of adding it
+  (`exerelin/campaign/intel/FilterableIntel.java:41-53`),
+  and the comm queue holds what the player has not received.
+  A map reading it would reveal what the intel screen hides.
+- **Some Nex lists ignore what the player knows.**
+  `InvasionFleetManager.getActiveIntelCopy()` includes offensives never announced,
+  and a rebellion's market condition is added while its intel is still queued.
 - **`ColonyExpeditionIntel.getTarget()` is not empty space.**
   It returns the planet's condition-only market;
   `getTargetPlanet()` gives the body.
 
-## Integration tracker
+## Outstanding work
 
-What KMU's map layers take from Nex,
-and what they could.
+What the map layers do not take from Nex yet,
+and the decisions each needs before a design.
 
-| Item | Layer | Nex source | Change signal | State |
-| --- | --- | --- | --- | --- |
-| Alliances view | Political map | `AllianceManager` | fingerprint poll | integrated |
-| Alliance-aware contest | Political map | `AllianceManager` | fingerprint poll | integrated |
-| Contest wording | Political map | mod presence | none needed | integrated |
-| Allies keep secrets | all owner-painted layers | `AllianceManager` | read per rebuild | integrated |
-| Conquest fast path | Political map | `InvasionListener` | listener | integrated |
-| Alliance changes by event | Political map | `AllianceEventListener` | listener; the poll stays for formation | candidate |
-| One alliance read per poll | Political map | `Alliance.getMembersSorted` | - | candidate |
-| Vassals shown as vassals | Political map, alliances view | `VassalManager` | poll | candidate, low: no gameplay path makes a vassal yet |
-| Original owner and occupied colonies | Political map | `$startingFactionId`, `$nex_recentlyCapturedFrom` | `InvasionListener` | candidate |
-| Ceasefires, recent wars, relation caps | Diplomatic map | `DiplomacyBrain`, `DiplomacyManager` | poll | candidate |
-| Colonies under attack | threat annotation | `OffensiveFleetIntel`, `GroundBattleIntel`, `RebellionIntel` | listeners plus poll | candidate |
-| Military weight per colony | metric | `$nex_fleetPoolPointsLastTick` | poll | candidate |
-| Eliminated factions | legend, pickers | `SectorManager.isFactionAlive` | poll | candidate |
-| Faction recognition | - | `FactionRecognitionIntel` | - | not pursued: player-only and cosmetic in 0.12.2d |
+### One alliance read per change
+
+The hover box reads alliances two or three times a frame,
+and each read scans the economy once per alliance member
+([What an alliance read costs](#what-an-alliance-read-costs)).
+The fix is a per-sector snapshot,
+re-folded only when the `ALLIANCES` revision moves.
+Hover and rebuild reads would drop to an int compare,
+and the box would go stale on the same counter as the fills.
+A read using `getMembersCopy()` would take the scan out of every membership-only fold.
+
+Decisions:
+
+- Where the snapshot lives.
+  KMLib has no revision to key it on,
+  and `base` may not name the political map's signal,
+  so `FactionAllianceRegistry` would take the snapshot from its caller rather than from the signal.
+- How the snapshot is seeded at install,
+  and kept fresh for the visibility sweep while the political map is off.
+- Whether the poll and hover box get profiling rows first,
+  so the saving can be measured.
+
+### Alliance events
+
+`AllianceEventListener` could raise `ALLIANCES` the moment a faction joins, leaves, merges or dissolves,
+instead of on the next poll.
+The board is a pair of atomic counters,
+so bumping it from inside Nex's call is safe.
+This buys latency, not cost:
+the poll stays,
+since Nex reports neither a new alliance nor a change of lead.
+It matters most for a change made in a paused dialog,
+where the poll does not run,
+and it becomes necessary once the snapshot above is cached.
+
+The shape follows the [conquest relay](#where-the-map-layers-read-nex):
+a KMU-owned contract in `kmu.starsector.listeners`,
+a relay in `kmu.mods.nexerelin` implementing all six methods,
+and a sixth listener in `PoliticalMapInstaller`.
+It needs its own installer holder,
+since the interface exists from 0.12.2 only
+and a link error must not take the conquest relay down with it.
+
+### Original owner and occupied colonies
+
+A view, or a hover line, could show which colonies are held by someone other than their original owner
+([Ownership](#ownership)).
+The cheapest seam is a word on `ColonyQualifier` in the political hover box.
+A view would be a fourth holder provider beside the claims view's;
+a fill state would be a framework change,
+both exceptions to the solid fill already being taken.
+
+Decisions:
+
+- Hover line, view or fill state.
+- A system's rule when its colonies have different original owners.
+- How to show a colony with no recorded owner,
+  apart from an install without Nex.
+- What to call it:
+  Nex says "claim",
+  and KMU's Claims view already means vanilla's claim.
+- Whether `$nex_recentlyCapturedFrom` is shown as recent capture.
+- Whether a save Nex joined mid-campaign is treated any differently.
+
+### Ceasefires and relation caps
+
+The planned diplomatic map paints by relation alone,
+and its hatch already means mixed relations,
+so ceasefires, recent wars and caps fit as hover annotations without changing its settled design
+([Relations between factions](#relations-between-factions)).
+
+Decisions:
+
+- Hover only, or painted on a new channel.
+- Whether to show days remaining,
+  which Nex itself never shows.
+- Which side's brain counts, and how an alliance target reads.
+- Whether a cap is shown against any faction,
+  or only against the player's as Nex does.
+
+### Colonies under attack
+
+Offensives, ground battles and rebellions name the colony they target
+([Operations against colonies](#operations-against-colonies)).
+The colony-threat research
+([021](implementation/021-colony-threat-report-and-map/research.md))
+proposed a report and map for the player's own colonies.
+It has no problem statement or plan,
+and predates the map-layer framework.
+
+Decisions:
+
+- Whether this revives 021 or replaces it.
+- The player's colonies only, or every colony.
+- A layer of its own, or annotations on the political map.
+- Which operations count.
+
+### Vassals
+
+The alliances view paints a vassal as an ordinary member,
+and may colour the alliance after it
+([Blocs](#blocs)).
+No gameplay path makes a vassal in 0.12.2d,
+so nothing needs doing until one does.

@@ -406,7 +406,7 @@ and it is the main source of the political change the map layers follow.
 records the Nexerelin version KMU was checked against,
 what KMU and KMLib bind to,
 the Nexerelin concepts a layer could read,
-and which of them the layers use.
+and the integration work still outstanding.
 Re-check it before upgrading the Nexerelin build KMU compiles against.
 
 ### Documentation
