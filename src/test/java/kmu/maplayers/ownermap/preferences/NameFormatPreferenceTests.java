@@ -132,6 +132,23 @@ final class NameFormatPreferenceTests {
         }
 
         @Test
+        void raisesAgainOnARepickOfTheStoredChoice() {
+            // A real write is one that landed in a save, not one that changed the value. Keeping a
+            // re-click of the lit segment from re-fitting the labels is the radio's job, which swallows it.
+            var board = new MapLayerRefreshBoard();
+
+            sectorMemoryFake.storeValue(KEY, OwnerNameFormatChoice.SHORT.persistenceKey());
+
+            preference.selectNameFormat(
+                SCREEN_SCOPE,
+                OwnerNameFormatChoice.SHORT,
+                board);
+
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE))
+                .isEqualTo(1);
+        }
+
+        @Test
         void leavesAnotherScreensChoiceUntouched() {
             // Per-screen isolation on the write side: a pick made on one panel writes that panel's slot
             // alone, so the other keeps the form its labels were last fitted to.

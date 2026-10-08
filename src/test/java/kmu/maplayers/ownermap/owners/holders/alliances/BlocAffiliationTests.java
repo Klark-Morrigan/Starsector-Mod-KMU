@@ -103,6 +103,20 @@ class BlocAffiliationTests {
         }
     }
 
+    @Nested
+    class AreOwnersAllied {
+
+        @Test
+        void answersAsTheBlocPredicateDoes() {
+            // A layer painting holders paints blocs, so the tier's question about two owners is
+            // this type's question about two blocs.
+            assertThat(buildAlliedAffiliation().areOwnersAllied("hegemony", "astral_armada"))
+                .isTrue();
+            assertThat(buildAlliedAffiliation().areOwnersAllied("hegemony", "tritachyon"))
+                .isFalse();
+        }
+    }
+
     // Two allied factions folded into one bloc with tritachyon left an outsider, so a case can
     // probe the allied, the rival, and the unknown path off one instance.
     private static BlocAffiliation buildAlliedAffiliation() {

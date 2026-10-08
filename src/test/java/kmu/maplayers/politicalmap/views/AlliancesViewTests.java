@@ -15,13 +15,13 @@ import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.owners.holders.alliances.AllianceOwnerReading;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderOwnerSource;
 import kmu.maplayers.ownermap.owners.holders.factions.HolderCategories;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
@@ -213,11 +213,14 @@ final class AlliancesViewTests {
     class ResolveOwnerReading {
 
         @Test
-        void readsEachBlocOffTheFactionItPaintsAs() {
-            // The reading of the kind of owner this view paints - what it answers is pinned by that
+        void namesAnAllianceByItsGroupingsName() {
+            // One answer read back, enough to show the reading is over the handed grouping and names
+            // an alliance as that grouping does. The rest of what it answers is pinned by that
             // reading's own suite.
-            assertThat(AlliancesView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING))
-                .isInstanceOf(AllianceOwnerReading.class);
+            assertThat(AlliancesView.INSTANCE
+                    .resolveOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING)
+                    .resolveName("rebel_pact", OwnerNameFormatChoice.FULL))
+                .isEqualTo("Rebel Pact");
         }
     }
 
@@ -225,9 +228,9 @@ final class AlliancesViewTests {
     class ResolveViewReading {
 
         @Test
-        void readsBlocsOffTheirFactionsAndFoldsHoldingByTheLiveAllianceSet() {
-            // The view paints by the live alliance set, so the source folds factions into the very
-            // alliance blocs that set names.
+        void namesAlliancesAndFoldsHoldingByTheLiveAllianceSet() {
+            // The view paints by the live alliance set, so the reading names the alliances that set
+            // holds and the source folds factions into the very blocs it names.
             try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
                 alliancesMock
                     .when(NexerelinAlliances::resolveGrouping)
@@ -235,8 +238,8 @@ final class AlliancesViewTests {
 
                 var viewReading = AlliancesView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
 
-                assertThat(viewReading.reading())
-                    .isInstanceOf(AllianceOwnerReading.class);
+                assertThat(viewReading.reading().resolveName("rebel_pact", OwnerNameFormatChoice.FULL))
+                    .isEqualTo("Rebel Pact");
                 assertThat(viewReading.source())
                     .isInstanceOfSatisfying(
                         HolderOwnerSource.class,

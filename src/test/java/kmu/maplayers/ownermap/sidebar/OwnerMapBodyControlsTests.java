@@ -330,6 +330,23 @@ final class OwnerMapBodyControlsTests {
         }
 
         @Test
+        void swallowsARepickOfTheLitNameSoNothingIsRefitted() {
+            // The preference raises a refresh on every write once a save exists, and a refresh re-fits
+            // every label. So it is the radio that keeps a re-click of the lit segment from reaching it.
+            try (var stringsMock = mockStatic(KmuStringKeys.class)) {
+
+                stubControlLabels(stringsMock);
+
+                var radio = (HorizontalRadioSpec) OwnerMapBodyControls
+                    .buildSharedControls(bodyPreferences, BUILT_TARGET)
+                    .get(1);
+
+                assertThat(radio.reselect())
+                    .isEqualTo(ReselectBehaviour.INERT);
+            }
+        }
+
+        @Test
         void labelsTheNameRadioFullThenShortThenNo() {
             // The labels, the lit segment and a click's choice read one order, so the labels are
             // pinned in it too: a label out of step would caption a segment with the choice beside it.

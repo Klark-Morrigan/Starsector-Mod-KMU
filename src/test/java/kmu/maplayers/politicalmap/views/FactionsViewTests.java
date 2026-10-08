@@ -18,11 +18,11 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 import kmu.maplayers.ownermap.owners.holders.base.HolderOwnerSource;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
-import kmu.maplayers.ownermap.owners.holders.factions.FactionOwnerReading;
 import kmu.maplayers.ownermap.owners.holders.factions.HolderCategories;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
@@ -208,11 +208,17 @@ final class FactionsViewTests {
     class ResolveOwnerReading {
 
         @Test
-        void readsEachBlocOffTheFactionItPaintsAs() {
-            // The reading of the kind of owner this view paints - what it answers is pinned by that
-            // reading's own suite.
-            assertThat(FactionsView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), HolderGrouping.identity()))
-                .isInstanceOf(FactionOwnerReading.class);
+        void namesABlocByItsFactionOffTheHandedSector() {
+            // One answer read back, enough to show the reading is over the handed sector and names a
+            // bloc as its faction. The rest of what it answers is pinned by that reading's own suite.
+            var sectorMock = mock(SectorAPI.class);
+
+            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
+
+            assertThat(FactionsView.INSTANCE
+                    .resolveOwnerReading(sectorMock, HolderGrouping.identity())
+                    .resolveName("hegemony", OwnerNameFormatChoice.SHORT))
+                .isEqualTo("Hegemony");
         }
     }
 
@@ -220,19 +226,23 @@ final class FactionsViewTests {
     class ResolveViewReading {
 
         @Test
-        void readsBlocsOffTheirFactionsAndFoldsHoldingByFaction() {
+        void namesBlocsByTheirFactionsAndFoldsHoldingByFaction() {
             // The two answers the core asks for, both over the identity grouping this view paints
-            // by - the holder reading every layer painting holders shares, and the holder source
-            // folding every faction as its own bloc.
+            // by - a reading naming each bloc as its faction, and the holder source folding every
+            // faction as its own bloc.
+            var sectorMock = mock(SectorAPI.class);
+
+            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
+
             try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
                 alliancesMock
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(HolderGrouping.identity());
 
-                var viewReading = FactionsView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
+                var viewReading = FactionsView.INSTANCE.resolveViewReading(sectorMock);
 
-                assertThat(viewReading.reading())
-                    .isInstanceOf(FactionOwnerReading.class);
+                assertThat(viewReading.reading().resolveName("hegemony", OwnerNameFormatChoice.SHORT))
+                    .isEqualTo("Hegemony");
                 assertThat(viewReading.source())
                     .isInstanceOfSatisfying(
                         HolderOwnerSource.class,

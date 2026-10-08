@@ -36,6 +36,7 @@ import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.
 import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON_DARK;
 import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.VANISHED_BLOC;
+import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.buildAlliedInputsOver;
 import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.buildInputsOver;
 import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.buildSectorHolding;
 
@@ -332,6 +333,22 @@ final class ColonyCellRibbonsTests {
 
             assertThat(planFor(HEGEMONY, List.of(HEGEMONY, VANISHED_BLOC), sector).segments())
                 .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+        }
+
+        @Test
+        void leavesACellUncontestedByABlocWithNoShades() {
+            // The vanished bloc is dropped before the contest is judged, so it is no rival: the
+            // shortening reaches the painter's run as it would on a cell the painter holds alone.
+            var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, VANISHED_BLOC);
+
+            var plan = planThrough(
+                Optional.of(HEGEMONY),
+                List.of(HEGEMONY, VANISHED_BLOC),
+                buildOnlySystem(sector),
+                buildAlliedInputsOver(sector));
+
+            assertThat(plan.segments())
+                .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 1));
         }
     }
 

@@ -1,0 +1,128 @@
+package kmu.maplayers.ownermap.owners.holders.base;
+
+import com.fs.starfarer.api.campaign.SectorAPI;
+
+import kmlib.starsector.markets.colonies.Colony;
+
+import kmu.maplayers.ownermap.owners.OwnerAffiliation;
+import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
+import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
+import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
+import kmu.starsector.StarsectorFactionFixtures;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.awt.Color;
+
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.GROUP_BLOC_ID;
+import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildUndiscoveredHiddenMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+
+/**
+ * Pins what one bake's band inputs are read from: the palettes built off the pass's own sector and
+ * grouping, the affiliation and rules carried as handed, and the grouping and colonies answered by
+ * the pass rather than by a read of their own.
+ */
+final class RibbonPlanInputsTests {
+
+    private static final String SYSTEM_ID = "corvus";
+
+    private static final Color BRIGHT = new Color(140, 160, 220);
+    private static final Color DARK = new Color(40, 60, 120);
+
+    // The size every posed colony carries, which nothing here reads.
+    private static final int COLONY_SIZE = 5;
+
+    // Laying rules no default lands on, so carrying them is seen.
+    private static final RibbonPlanRules RULES =
+        new RibbonPlanRules(new RibbonSegmentLengths(4, 2), new UncontestedRibbonRuns(true));
+
+    // An affiliation the case can tell from NONE by identity alone.
+    private static final OwnerAffiliation AFFILIATION = (firstOwnerId, secondOwnerId) -> true;
+
+    @Nested
+    class CreateForPass {
+
+        @Test
+        void readsABlocsShadesOffThePassesSectorAndGrouping() {
+            // A group bloc is shaded by its lead member, which only a palette folding under the
+            // pass's grouping and reading the pass's sector can answer.
+            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction("hegemony", BRIGHT, DARK);
+            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, buildGroupOf("hegemony", "persean"));
+            var inputs = RibbonPlanInputs.createForPass(pass, AFFILIATION, RULES);
+
+            assertThat(inputs.palettes().readBlocPalette(GROUP_BLOC_ID))
+                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+        }
+
+        @Test
+        void carriesTheHandedAffiliationAndRules() {
+
+            var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var inputs = RibbonPlanInputs.createForPass(pass, AFFILIATION, RULES);
+
+            assertThat(inputs.affiliation())
+                .isSameAs(AFFILIATION);
+            assertThat(inputs.rules())
+                .isSameAs(RULES);
+        }
+    }
+
+    @Nested
+    class Grouping {
+
+        @Test
+        void answersThePassesGrouping() {
+            // The counts fold under the grouping the fills were painted with, which is the pass's.
+            var grouping = buildGroupOf("hegemony", "persean");
+            var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, grouping);
+
+            assertThat(RibbonPlanInputs.createForPass(pass, OwnerAffiliation.NONE, RULES).grouping())
+                .isSameAs(grouping);
+        }
+    }
+
+    @Nested
+    class ReadInhabitingColoniesIn {
+
+        @Test
+        void answersThePassesProjectionOfTheSystem() {
+            // A colony the player has not found is one the pass's colony rule keeps back, so its
+            // absence shows the list is the pass's and not a plain walk of the system.
+            var sector = buildSectorWith(
+                SYSTEM_ID,
+                buildVisibleMarket(buildFaction("hegemony"), COLONY_SIZE),
+                buildUndiscoveredHiddenMarket(buildFaction("tritachyon"), COLONY_SIZE));
+
+            var pass = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+            var colonies = RibbonPlanInputs
+                .createForPass(pass, OwnerAffiliation.NONE, RULES)
+                .readInhabitingColoniesIn(buildOnlySystem(sector));
+
+            assertThat(colonies)
+                .extracting(Colony::market)
+                .extracting(market -> market.getFaction().getId())
+                .containsExactly("hegemony");
+        }
+
+        @Test
+        void answersNoColoniesForNoSystem() {
+
+            var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var inputs = RibbonPlanInputs.createForPass(pass, OwnerAffiliation.NONE, RULES);
+
+            assertThat(inputs.readInhabitingColoniesIn(null))
+                .isEmpty();
+        }
+    }
+}

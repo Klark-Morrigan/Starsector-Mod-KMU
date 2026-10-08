@@ -21,6 +21,7 @@ import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.picker.HazardRating;
 import kmu.maplayers.ownermap.picker.OwnerMetrics;
 import kmu.maplayers.ownermap.picker.OwnerMetricsFake;
+import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.OwnerSortModesFake;
 import kmu.maplayers.ownermap.picker.OwnerStatsReadFake;
@@ -46,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.ROW_COLOUR;
 
@@ -354,8 +356,10 @@ final class HolderPaintedViewTests {
                 .picker()
                 .sortModes();
 
-            assertThat(ListSort.resolveStored("player_standing", null, offeredModes).mode())
-                .isInstanceOf(BlocStandingSortMode.class);
+            // Read back by its key, since a key the vocabulary did not hold falls back to the
+            // default mode, whose key is another.
+            assertThat(ListSort.resolveStored("player_standing", null, offeredModes).mode().persistenceKey())
+                .isEqualTo("player_standing");
         }
 
         @Test
@@ -472,6 +476,31 @@ final class HolderPaintedViewTests {
     }
 
     @Nested
+    class ResolveOwnerPickerRead {
+
+        @Test
+        void handsThePlayersLiveColonyRulesOnWithTheSector() {
+            // The core's sidebar and stale-selection heal hold no running pass, so the default reads
+            // the player's live rules itself and hands them on beside the sector it was asked about.
+            // The dev reveal stands in for them, being a reading no default could land on by chance.
+            seams
+                .openSeam(ColonyReadRules.class)
+                .when(ColonyReadRules::readFromLunaSettings)
+                .thenReturn(UNDER_THE_DEV_REVEAL);
+
+            var viewFake = new CountingHolderViewFake();
+            var sectorMock = mock(SectorAPI.class);
+
+            viewFake.resolveOwnerPickerRead(sectorMock);
+
+            assertThat(viewFake.pickerSectors)
+                .containsExactly(sectorMock);
+            assertThat(viewFake.pickerRules)
+                .containsExactly(UNDER_THE_DEV_REVEAL);
+        }
+    }
+
+    @Nested
     class ResolveBlocPickerRead {
 
         @Test
@@ -497,6 +526,23 @@ final class HolderPaintedViewTests {
                     .presenceIndex()
                     .readPresentSystemKeys("hegemony"))
                 .isEmpty();
+        }
+    }
+
+    @Nested
+    class ResolveSelectableBlocGate {
+
+        @Test
+        void offersALoneFactionAndAGroupAlike() {
+            // The default is for a view whose blocs are all of a kind, so it asks nothing about what
+            // a bloc is: a lone faction and a group are both offered.
+            var viewFake = new CountingHolderViewFake();
+            var gate = viewFake.resolveSelectableBlocGate(SAMPLED_GROUPING);
+
+            assertThat(gate.test("tritachyon"))
+                .isTrue();
+            assertThat(gate.test(SAMPLED_GROUPING.resolveBlocId("hegemony")))
+                .isTrue();
         }
     }
 
@@ -538,13 +584,18 @@ final class HolderPaintedViewTests {
         throw new AssertionError("the offered vocabulary holds no standing mode");
     }
 
-    /** A holder view counting how often its grouping is sampled and what its reading is built over. */
+    /**
+     * A holder view counting how often its grouping is sampled, what its reading is built over, and
+     * what its picker is asked under.
+     */
     private static final class CountingHolderViewFake implements HolderPaintedView {
 
         static final SystemRibbonPlanner PLANNER = system -> RibbonPlan.NONE;
 
         private final List<SectorAPI> readingSectors = new ArrayList<>();
         private final List<HolderGrouping> readingGroupings = new ArrayList<>();
+        private final List<SectorAPI> pickerSectors = new ArrayList<>();
+        private final List<ColonyReadRules> pickerRules = new ArrayList<>();
 
         private int groupingSamples;
 
@@ -582,6 +633,15 @@ final class HolderPaintedViewTests {
             readingGroupings.add(grouping);
 
             return OwnerReadingFake.createAnsweringNothing();
+        }
+
+        @Override
+        public OwnerPickerRead<?> resolveBlocPickerRead(SectorAPI sector, ColonyReadRules colonyReadRules) {
+
+            pickerSectors.add(sector);
+            pickerRules.add(colonyReadRules);
+
+            return OwnerPickerRead.empty();
         }
 
         @Override

@@ -60,6 +60,13 @@ final class FactionOwnerReadingTests {
             assertThat(new FactionOwnerReading(mock(SectorAPI.class)).resolvePalette("vanished"))
                 .isNull();
         }
+
+        @Test
+        void answersNoShadesWithoutASector() {
+
+            assertThat(new FactionOwnerReading(null).resolvePalette(HEGEMONY))
+                .isNull();
+        }
     }
 
     @Nested
@@ -198,6 +205,14 @@ final class FactionOwnerReadingTests {
             assertThat(new FactionOwnerReading(sectorMock).resolveUnownedColour())
                 .isEqualTo(new Color(150, 150, 150));
         }
+
+        @Test
+        void fallsBackToGreyWithoutASector() {
+            // A grey stand-in rather than a null, so a reading over no sector still paints its
+            // unowned cells.
+            assertThat(new FactionOwnerReading(null).resolveUnownedColour())
+                .isEqualTo(new Color(128, 128, 128));
+        }
     }
 
     @Nested
@@ -213,6 +228,13 @@ final class FactionOwnerReadingTests {
 
             assertThat(new FactionOwnerReading(sectorMock).resolveRecedePalette())
                 .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+        }
+
+        @Test
+        void fallsBackToGreyShadesWithoutASector() {
+            // The backdrop still has two shades to darken without a sector to read Independent from.
+            assertThat(new FactionOwnerReading(null).resolveRecedePalette())
+                .isEqualTo(new OwnerPalette(new Color(128, 128, 128), new Color(128, 128, 128)));
         }
     }
 
