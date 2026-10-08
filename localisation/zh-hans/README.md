@@ -13,8 +13,8 @@ This reference builds on
 the base every KM mod's Chinese bundle follows:
 the rules, the vanilla words the shared library's own text touches,
 and the terms it draws itself, the compatibility notice above all.
-Read both for the full picture.
-Where both list a term, they agree.
+A term KMLib's reference lists is not repeated here,
+so read both for the full picture.
 
 ## Index
 
@@ -59,10 +59,7 @@ the core localisation replaces them, and without it every Chinese character draw
 ## Rules
 
 [KMLib's rules](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#rules)
-hold for every KM mod's bundle, KMU's included:
-vanilla's word wins, Radio options and proper nouns stay as written,
-full-width punctuation, no em dash, numbered slots where word order moves, an ASCII space wherever a highlighted run touches Chinese, and defaults as `[默认值：X]` on a line of their own.
-A Radio's description then lists each option's translation after a blank line.
+hold for every KM mod's bundle, KMU's included.
 KMU's own examples of them:
 `Galatia 学院` and `Naraka 星系` for Latin proper nouns,
 `UI palette` for a quoted Radio option,
@@ -83,6 +80,8 @@ the same `strings.json` key, the same CSV row, or the same string constant in th
 The source column names where it was found.
 The core localisation at `startup-optimization` 2026.09.04 was the edition read;
 the typeface editions share its text.
+The vanilla words KMLib's own text touches are in
+[KMLib's vanilla terms](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#vanilla-terms).
 
 ### Screens and the map
 
@@ -105,32 +104,25 @@ the typeface editions share its text.
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Sector | 星域 | Persean Sector is 英仙座星域 |
-| Star system | 星系 | `starfarer.api.jar`; in tooltips as `Naraka 星系` |
 | Unvisited star system | 未访问过的星系 | `starfarer_obf.jar` map legend |
 | Planet | 行星 | `starfarer.api.jar` |
-| Hyperspace | 超空间 | `starfarer_obf.jar` |
 | Nebula | 星云 | `starfarer.api.jar` |
 | Gate | 星门 | `descriptions.csv`, Active Gate is 激活的星门 |
 | Station | 空间站 | `starfarer.api.jar`; Jangala Station is `Jangala 空间站` |
 | Orbital Station | 轨道空间站 | `industries.csv` |
 | Star (the body) | 恒星 | `starfarer.api.jar` planet dialog; `planets.json` names each kind, as 黄矮星 |
 | Black hole | 黑洞 | `planets.json` `black_hole` |
-| Jump point | 跳跃点 | `JumpPointInteractionDialogPluginImpl` in `starfarer.api.jar` |
 | Slipstream | 滑流 | `SlipstreamTerrainPlugin`; also 超空间滑流 |
 | Terrain | 地形 | `SlipstreamTerrainPlugin`; "special terrain" is 特殊地形 |
 | Entity | 实体 | `custom_entities.json`, "Unidentified Entity" is 不明实体 |
-| Fleet | 舰队 | `strings.json` `fleetInteractionDialog` |
 | Sensors, sensor range | 传感器, 探测范围 | `starfarer_obf.jar` fleet tooltip, "Sensor Range" is 探测范围 |
 
 ### Colonies and markets
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Colony | 殖民地 | `starfarer_obf.jar` |
 | Colony size | 殖民地规模 | `starfarer_obf.jar` |
 | Size | 规模 | `starfarer_obf.jar` |
-| Market | 市场 | `starfarer_obf.jar` |
 | Market size | 市场规模 | `starfarer_obf.jar` |
 | Population | 人口 | `starfarer_obf.jar` |
 | Stability | 稳定性 | `starfarer_obf.jar`, "Stability: %s" is 稳定性：%s |
@@ -158,7 +150,6 @@ the typeface editions share its text.
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Faction | 势力 | `starfarer.api.jar` |
 | Independent (the faction's name) | 非势力团体 | `independent.faction` `displayName` |
 | Attitude (the relation number) | 关系 | `starfarer_obf.jar` faction screen, "Attitude: " is 关系： |
 | Relationship | 关系 | `starfarer_obf.jar` |
@@ -200,8 +191,6 @@ The nine reputation levels, from `RepLevel` in `starfarer.api.jar`:
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Mod | Mod | `starfarer_obf.jar`, "Found mod: %s" is 发现 Mod：%s |
-| Save (a saved game) | 存档 | "Load last save" is 读取最近的存档 |
 | Starsector | 远行星号 | `starfarer_obf.jar` title, "Welcome to Starsector!" is 欢迎来到远行星号！; most of the game keeps the Latin name |
 | Launcher | 启动器 | `StarfarerLauncher` in `starfarer_obf.jar` |
 | Sound volume | 音量 | `starfarer_obf.jar` title settings, "Sound volume:" is 音量： |
@@ -332,7 +321,6 @@ So a word of one axis never stands in for another:
 | owner (the key an owner-painted map layer paints a system by) | 所有者 | the plain word for the one a thing belongs to; a faction, a bloc or any other key, which is why it is not 势力 |
 | holder (an owner holding a system through its colonies) | 持有者 | 持有, to hold, with 者 for the one doing it; the kind of owner, kept apart from 星系持有方, one system's holder |
 | tier (of the map layers framework, in the changelog) | 层 | the plain word for a layer of a structure, as in 三层; kept apart from 图层, a map layer |
-| seam (a place the framework asks a map layer to fill, in the changelog) | 接缝 | the plain word for where two parts meet |
 | caption (the words beside a sidebar control, in the changelog) | 标题 | the plain word for a control's heading text |
 | radio (a row of options with one lit, in the changelog) | 单选框 | the usual UI word for a one-of-many control |
 | picker (the sidebar list a bloc is spotlit from) | 选择器 | the usual UI word for a control a choice is made in |
@@ -423,7 +411,6 @@ which is how the tooltip heading reads: the faction's name, then 核心领土.
 | The settings below apply only while X is on | 以下设置仅在 [X] 开启时生效 | as above, with X bracketed for the highlight |
 | Visibility overrides (SPOILERS) | 可见性覆盖（剧透） | 覆盖, to override, after 可见性; 剧透, the usual word for a spoiler |
 | (adjustable in settings), (can be disabled in settings) | （可在设置中调整）, （可在设置中关闭） | the forum posts' grey asides, in full-width parentheses; 调整, adjust, and 关闭, switch off, as a setting's 开启 / 关闭 |
-| log verbosity, reflection, log levels | 日志详细程度, 反射, 关闭 / 错误 / 警告 / 信息 / 调试 / 全部 | [KMLib's](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#settings) |
 | UI palette / Chrome grey / Player faction (colour scheme) | 界面配色 / 纯灰 / 你的势力 | 界面, vanilla's word for the UI; 纯灰, the plain grey the description names; 你的势力 as vanilla writes it |
 | Gold / Panel accent (chevron) | 金色 / 面板强调色 | 强调色, the usual design word for an accent colour |
 | profiling | 性能分析 | the usual computing word, as the Map - Dev tab writes it |
@@ -475,8 +462,9 @@ drawn in Microsoft YaHei Bold over `promo/zh-hans/always-has-been.png`.
 
 ## Adding a string
 
-1. Look the term up here.
-   A vanilla concept missing from the [vanilla terms](#vanilla-terms) is looked up in the core localisation before it is translated:
+1. Look the term up here and in
+   [KMLib's reference](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md).
+   A vanilla concept missing from both is looked up in the core localisation before it is translated:
    find the English in vanilla's `data/` or game jars, and read what the core localisation has at the same place.
 2. Translate by the [rules](#rules), and add a row for any new term to the [KMU terms](#kmu-terms).
 3. Check the characters render.
