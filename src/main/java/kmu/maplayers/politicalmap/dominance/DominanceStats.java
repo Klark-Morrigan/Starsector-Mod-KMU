@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.dominance;
 
-import kmu.maplayers.ownermap.owners.holders.factions.SizedBlocMetrics;
+import kmu.maplayers.ownermap.owners.holders.base.picker.SizedBlocMetrics;
 import kmu.maplayers.ownermap.picker.PaintingOwnerMetrics;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 

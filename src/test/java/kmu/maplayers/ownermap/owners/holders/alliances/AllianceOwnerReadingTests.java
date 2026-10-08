@@ -8,8 +8,8 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.factions.OwnerMapCategory;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.starsector.StarsectorFactionFixtures;
 
@@ -189,7 +189,7 @@ final class AllianceOwnerReadingTests {
             var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
 
             assertThat(reading.resolveCategory(ALLIANCE, DESATURATED))
-                .isEqualTo(OwnerMapCategory.FACTION);
+                .isEqualTo(HolderCategory.FACTION);
         }
 
         @Test
@@ -198,7 +198,7 @@ final class AllianceOwnerReadingTests {
             var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
 
             assertThat(reading.resolveCategory(LONE_FACTION, DESATURATED))
-                .isEqualTo(OwnerMapCategory.INDEPENDENT);
+                .isEqualTo(HolderCategory.INDEPENDENT);
         }
     }
 

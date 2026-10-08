@@ -33,8 +33,8 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.owners.holders.factions.OwnerMapCategory;
 import kmu.maplayers.ownermap.render.IncrementalOwnerRefresh;
 import kmu.maplayers.ownermap.render.IncrementalOwnerRefreshTests;
 import kmu.maplayers.ownermap.render.StandingOwnerMap;
@@ -618,7 +618,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
     private static RenderStyle buildThemePaintingEachCategoryApart() {
 
         var categoryStyles = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
-        var categories = OwnerMapCategory.values();
+        var categories = HolderCategory.values();
 
         for (var index = 0; index < categories.length; index++) {
 

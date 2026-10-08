@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.views;
 
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 
-import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.util.KmuStringKeys;
 

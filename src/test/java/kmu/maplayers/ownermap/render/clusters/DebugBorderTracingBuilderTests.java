@@ -22,7 +22,7 @@ import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
-import kmu.maplayers.ownermap.render.style.StandInCategory;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 import kmu.settings.KmuMapLabelSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -447,10 +447,10 @@ final class DebugBorderTracingBuilderTests {
 
         Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
 
-        categories.put(StandInCategory.OWNED, buildOutlinedBy(DRAWN_OUTLINE));
-        categories.put(StandInCategory.RECEDED, buildOutlinedBy(DRAWN_OUTLINE));
-        categories.put(StandInCategory.SETTLED, buildOutlinedBy(decivilisedOutline));
-        categories.put(StandInCategory.EMPTY, buildOutlinedBy(uninhabitedOutline));
+        categories.put(StandInCategoryFake.OWNED, buildOutlinedBy(DRAWN_OUTLINE));
+        categories.put(StandInCategoryFake.RECEDED, buildOutlinedBy(DRAWN_OUTLINE));
+        categories.put(StandInCategoryFake.SETTLED, buildOutlinedBy(decivilisedOutline));
+        categories.put(StandInCategoryFake.EMPTY, buildOutlinedBy(uninhabitedOutline));
 
         // The smoothing profile is the one sector-wide value these cases vary, so the rest of the
         // tier is the shared inert one.

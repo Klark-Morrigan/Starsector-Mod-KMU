@@ -87,7 +87,7 @@ final class HolderOwnerSourceTests {
 
     private final StaticSeams seams = new StaticSeams();
 
-    private MockedStatic<OwnerMapInhabitation> inhabitationMock;
+    private MockedStatic<HolderInhabitation> inhabitationMock;
     private MockedStatic<SpotlitBlocPresence> spotlitPresenceMock;
 
     // What the layer's rules were handed, in the order they were asked.
@@ -106,9 +106,9 @@ final class HolderOwnerSourceTests {
             .when(DecivilisedColonyHabitation::readFromLunaSettings)
             .thenReturn(DecivilisedColonyHabitation.COUNTS_AS_POPULATED);
 
-        inhabitationMock = seams.openSeam(OwnerMapInhabitation.class);
+        inhabitationMock = seams.openSeam(HolderInhabitation.class);
         inhabitationMock
-            .when(() -> OwnerMapInhabitation.readInhabitedSystemKeys(any()))
+            .when(() -> HolderInhabitation.readInhabitedSystemKeys(any()))
             .thenReturn(Set.of(HELD_SYSTEM, UNHELD_SETTLED_SYSTEM));
 
         spotlitPresenceMock = seams.openSeam(SpotlitBlocPresence.class);
@@ -239,7 +239,7 @@ final class HolderOwnerSourceTests {
                 .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
 
             inhabitationMock.verify(
-                () -> OwnerMapInhabitation.readInhabitedSystemKeys(same(providerPasses.get(0))));
+                () -> HolderInhabitation.readInhabitedSystemKeys(same(providerPasses.get(0))));
 
             assertThat(owners.inhabitedSystemKeys())
                 .containsExactlyInAnyOrder(HELD_SYSTEM, UNHELD_SETTLED_SYSTEM);
@@ -357,7 +357,7 @@ final class HolderOwnerSourceTests {
             var system = buildSystem("corvus");
 
             inhabitationMock
-                .when(() -> OwnerMapInhabitation.isSystemInhabited(any(), same(system)))
+                .when(() -> HolderInhabitation.isSystemInhabited(any(), same(system)))
                 .thenReturn(true);
 
             var resolve = buildSourceUnder(HolderGrouping.identity())
@@ -365,7 +365,7 @@ final class HolderOwnerSourceTests {
 
             assertThat(resolve.isSystemInhabited(system))
                 .isTrue();
-            inhabitationMock.verify(() -> OwnerMapInhabitation.isSystemInhabited(
+            inhabitationMock.verify(() -> HolderInhabitation.isSystemInhabited(
                 same(holderResolveSourceFake.readPassesOpenedOver().get(0)),
                 same(system)));
         }

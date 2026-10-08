@@ -4,7 +4,7 @@ import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.util.KmuStringKeys;
 

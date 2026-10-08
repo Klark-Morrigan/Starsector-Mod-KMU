@@ -7,7 +7,6 @@ import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
@@ -19,6 +18,7 @@ import java.util.Set;
 
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildReachableSystemAt;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildStarAnchoredSectorOf;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.FORCED_UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -40,8 +40,7 @@ class PartitionSitesTests {
 
     // The override on, which is what lets a system the map would not show reach the collection at
     // all and contest a point.
-    private static final MapVisibilityRules SHOWING_HIDDEN_SYSTEMS =
-        new MapVisibilityRules(ColonyVisibility.BASE_FOG, true);
+    private static final MapVisibilityRules SHOWING_HIDDEN_SYSTEMS = FORCED_UNDER_THE_FOG;
 
     // Where the colliding pair is posed, standing in for RAT's two abyss systems on one point.
     private static final float SHARED_X = -89_840f;

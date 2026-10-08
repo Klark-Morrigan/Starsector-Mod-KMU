@@ -11,7 +11,7 @@ import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
-import kmu.maplayers.ownermap.owners.holders.factions.SystemStatusRow;
+import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemStatusRow;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;

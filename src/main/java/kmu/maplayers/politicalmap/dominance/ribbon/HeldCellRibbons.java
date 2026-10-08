@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmu.maplayers.ownermap.owners.holders.base.ColonyCellRibbons;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
-import kmu.maplayers.ownermap.owners.holders.factions.ColonyCellRibbons;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 

@@ -6,11 +6,14 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
+import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -20,21 +23,43 @@ import java.util.function.Predicate;
  * that default alone rather than whichever concrete view it borrowed to reach it.
  *
  * <p>The picker gate is supplied where a case is about which blocs survive it; it defaults to the
- * seam's own, which offers every bloc.
+ * seam's own, which offers every bloc. The grouping is supplied where a case is about the one
+ * sampling of it a rebuild takes; it defaults to the identity grouping.
+ *
+ * <p>It records how often its grouping is sampled, what its reading is built over, and what its
+ * picker is asked under. Its picker still answers with the seam's own default, so a case about that
+ * default reads it through this fake unchanged.
  */
 public final class HolderPaintedViewFake
         implements HolderPaintedView {
 
+    /**
+     * The one planner this fake counts every band through, so a case can tell it from a planner the
+     * source built for itself.
+     */
+    public static final SystemRibbonPlanner PLANNER = system -> RibbonPlan.NONE;
+
+    private final HolderGrouping grouping;
+    private final List<ColonyReadRules> pickerRules = new ArrayList<>();
+    private final List<SectorAPI> pickerSectors = new ArrayList<>();
     private final OwnerReadingFake readingFake;
+    private final List<HolderGrouping> readingGroupings = new ArrayList<>();
+    private final List<SectorAPI> readingSectors = new ArrayList<>();
     private final Predicate<String> selectableBlocGate;
+
+    private int groupingSamples;
 
     public HolderPaintedViewFake(Map<String, String> nameByBlocId) {
 
-        this(nameByBlocId, null);
+        this(HolderGrouping.identity(), nameByBlocId, null);
     }
 
-    private HolderPaintedViewFake(Map<String, String> nameByBlocId, Predicate<String> selectableBlocGate) {
+    private HolderPaintedViewFake(
+            HolderGrouping grouping,
+            Map<String, String> nameByBlocId,
+            Predicate<String> selectableBlocGate) {
 
+        this.grouping = grouping;
         this.readingFake = OwnerReadingFake.createNaming(nameByBlocId);
         this.selectableBlocGate = selectableBlocGate;
     }
@@ -51,7 +76,54 @@ public final class HolderPaintedViewFake
             Map<String, String> nameByBlocId,
             Predicate<String> selectableBlocGate) {
 
-        return new HolderPaintedViewFake(nameByBlocId, selectableBlocGate);
+        return new HolderPaintedViewFake(HolderGrouping.identity(), nameByBlocId, selectableBlocGate);
+    }
+
+    /**
+     * A fake folding its holders under a stated grouping, for a case about what is built over the
+     * one sampling of it.
+     *
+     * @param grouping the grouping every sampling answers with
+     * @return the fake, naming no bloc
+     */
+    public static HolderPaintedViewFake createGroupingFake(HolderGrouping grouping) {
+
+        return new HolderPaintedViewFake(grouping, Map.of(), null);
+    }
+
+    /**
+     * @return how many times the grouping has been sampled
+     */
+    public int countGroupingSamples() {
+        return groupingSamples;
+    }
+
+    /**
+     * @return the colony rules each picker read was asked under, in order
+     */
+    public List<ColonyReadRules> listPickerRules() {
+        return pickerRules;
+    }
+
+    /**
+     * @return the sector each picker read was asked about, in order
+     */
+    public List<SectorAPI> listPickerSectors() {
+        return pickerSectors;
+    }
+
+    /**
+     * @return the grouping each reading was built over, in order
+     */
+    public List<HolderGrouping> listReadingGroupings() {
+        return readingGroupings;
+    }
+
+    /**
+     * @return the sector each reading was built over, in order
+     */
+    public List<SectorAPI> listReadingSectors() {
+        return readingSectors;
     }
 
     /**
@@ -63,7 +135,9 @@ public final class HolderPaintedViewFake
 
     @Override
     public HolderGrouping resolveGrouping() {
-        return HolderGrouping.identity();
+
+        groupingSamples++;
+        return grouping;
     }
 
     @Override
@@ -83,12 +157,26 @@ public final class HolderPaintedViewFake
 
     @Override
     public SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs) {
-        return system -> RibbonPlan.NONE;
+        return PLANNER;
     }
 
     @Override
     public OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
+
+        readingSectors.add(sector);
+        readingGroupings.add(grouping);
+
         return readingFake;
+    }
+
+    // Recorded, then answered by the seam's own default, so the default is what a case reads back.
+    @Override
+    public OwnerPickerRead<?> resolveBlocPickerRead(SectorAPI sector, ColonyReadRules colonyReadRules) {
+
+        pickerSectors.add(sector);
+        pickerRules.add(colonyReadRules);
+
+        return HolderPaintedView.super.resolveBlocPickerRead(sector, colonyReadRules);
     }
 
     // The supplied gate, or the seam's own default (offer everything) when a case did not name one.

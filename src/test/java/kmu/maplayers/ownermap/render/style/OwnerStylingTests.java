@@ -44,7 +44,7 @@ final class OwnerStylingTests {
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
                 OwnerCategoriesFake.SHARED_FAKE,
-                new OwnerStyleDecision(StandInCategory.OWNED, ElementStyleAdjustment.NONE));
+                new OwnerStyleDecision(StandInCategoryFake.OWNED, ElementStyleAdjustment.NONE));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(OWNED_FILL_OPACITY);
@@ -57,7 +57,7 @@ final class OwnerStylingTests {
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
                 OwnerCategoriesFake.SHARED_FAKE,
-                new OwnerStyleDecision(StandInCategory.OWNED, adjustment));
+                new OwnerStyleDecision(StandInCategoryFake.OWNED, adjustment));
 
             assertThat(styling.adjustment())
                 .isEqualTo(adjustment);
@@ -70,7 +70,7 @@ final class OwnerStylingTests {
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
                 OwnerCategoriesFake.SHARED_FAKE,
-                new OwnerStyleDecision(StandInCategory.RECEDED, ElementStyleAdjustment.NONE));
+                new OwnerStyleDecision(StandInCategoryFake.RECEDED, ElementStyleAdjustment.NONE));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(INDEPENDENT_FILL_OPACITY);
@@ -83,7 +83,7 @@ final class OwnerStylingTests {
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
                 OwnerCategoriesFake.SHARED_FAKE,
-                new OwnerStyleDecision(StandInCategory.RECEDED, new ElementStyleAdjustment(1.0, true)));
+                new OwnerStyleDecision(StandInCategoryFake.RECEDED, new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(OWNED_FILL_OPACITY);
@@ -97,7 +97,7 @@ final class OwnerStylingTests {
                 buildTheme(),
                 OwnerCategoriesFake.SHARED_FAKE,
                 new OwnerStyleDecision(
-                    StandInCategory.RECEDED,
+                    StandInCategoryFake.RECEDED,
                     new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().colour())
@@ -112,7 +112,7 @@ final class OwnerStylingTests {
                 buildTheme(),
                 OwnerCategoriesFake.SHARED_FAKE,
                 new OwnerStyleDecision(
-                    StandInCategory.RECEDED,
+                    StandInCategoryFake.RECEDED,
                     new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().innerWidth())
@@ -128,12 +128,12 @@ final class OwnerStylingTests {
             // owned-category owner takes the independent weight.
             var categoriesMock = mock(OwnerCategories.class);
             when(categoriesMock.resolveFullStrengthCategory())
-                .thenReturn(StandInCategory.RECEDED);
+                .thenReturn(StandInCategoryFake.RECEDED);
 
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
                 categoriesMock,
-                new OwnerStyleDecision(StandInCategory.OWNED, new ElementStyleAdjustment(1.0, true)));
+                new OwnerStyleDecision(StandInCategoryFake.OWNED, new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().opacity())
                 .isEqualTo(INDEPENDENT_FILL_OPACITY);
@@ -145,7 +145,7 @@ final class OwnerStylingTests {
             var styling = OwnerStyling.resolveFrom(
                 buildTheme(),
                 OwnerCategoriesFake.SHARED_FAKE,
-                new OwnerStyleDecision(StandInCategory.OWNED, new ElementStyleAdjustment(1.0, true)));
+                new OwnerStyleDecision(StandInCategoryFake.OWNED, new ElementStyleAdjustment(1.0, true)));
 
             assertThat(styling.style().fill().colour())
                 .isEqualTo(OwnerPaletteSlot.PRIMARY);
@@ -187,10 +187,10 @@ final class OwnerStylingTests {
 
         Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
 
-        categories.put(StandInCategory.OWNED, ownedStyle);
-        categories.put(StandInCategory.RECEDED, independentStyle);
-        categories.put(StandInCategory.SETTLED, ownedStyle);
-        categories.put(StandInCategory.EMPTY, ownedStyle);
+        categories.put(StandInCategoryFake.OWNED, ownedStyle);
+        categories.put(StandInCategoryFake.RECEDED, independentStyle);
+        categories.put(StandInCategoryFake.SETTLED, ownedStyle);
+        categories.put(StandInCategoryFake.EMPTY, ownedStyle);
 
         // The global tier is carried untouched by this cascade - it maps categories, not
         // sector-wide knobs - so the shared inert tier serves.

@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.sidebar;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 
 import java.util.function.Predicate;
 

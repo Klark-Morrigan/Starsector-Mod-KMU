@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
@@ -15,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildUnroutedSectorOf;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.FORCED_UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -29,8 +29,7 @@ class SiteTieBreakerTests {
     // The override on, which is the only arrangement in which a hidden system reaches the partition
     // to contest a point at all. The tie-breakers do not read it - that is the point of asking what
     // the map would show rather than what this pass is showing - so it is the same for every case.
-    private static final MapVisibilityRules SHOWING_HIDDEN_SYSTEMS =
-        new MapVisibilityRules(ColonyVisibility.BASE_FOG, true);
+    private static final MapVisibilityRules SHOWING_HIDDEN_SYSTEMS = FORCED_UNDER_THE_FOG;
 
     @Nested
     class ShouldTakePoint {

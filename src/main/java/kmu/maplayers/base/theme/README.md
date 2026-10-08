@@ -39,8 +39,8 @@ since a category is only ever looked up -
 and each layer declares its own constants of it beside the code that paints them;
 the owner-painted tier asks a layer for its own through `OwnerCategories`,
 in [`ownermap.render.style`](../../ownermap/render/style/README.md),
-and the layers painting holders answer with the four `OwnerMapCategory` values,
-in [`ownermap.owners.holders`](../../ownermap/owners/holders/README.md).
+and the layers painting holders answer with the four `HolderCategory` values,
+in [`ownermap.owners.holders.base`](../../ownermap/owners/holders/README.md).
 `RenderStyle` keys on the interface,
 so a layer whose cells divide some other way brings its own set
 rather than inheriting one tier's vocabulary of owners.
@@ -183,8 +183,8 @@ the reader's knobs and its per-save uninhabited-outline preference are the owner
 and the palettes resolve an owner's recede.
 They sit in `ownermap` rather than in any one layer for the same reason,
 since every owner-painted layer divides and shades its cells that way;
-the layers painting holders share the four `OwnerMapCategory` values,
-which sit beside them in `ownermap.owners.holders`.
+the layers painting holders share the four `HolderCategory` values,
+which sit beside them in `ownermap.owners.holders.base`.
 A layer that paints by something other than an owner would bring its own categories
 and its own reader rather than share those.
 

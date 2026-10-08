@@ -4,7 +4,7 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
-import kmu.maplayers.ownermap.render.style.StandInCategory;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
 import java.awt.Color;
 import java.util.Map;
@@ -61,7 +61,7 @@ public record OwnerReadingFake(
     public static OwnerReadingFake createNaming(Map<String, String> nameByOwnerId) {
 
         return new OwnerReadingFake(
-            StandInCategory.OWNED,
+            StandInCategoryFake.OWNED,
             ElementStyleAdjustment.NONE,
             nameByOwnerId,
             Map.of(),

@@ -3,41 +3,25 @@ package kmu.maplayers.politicalmap.views;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 import kmu.maplayers.ownermap.owners.holders.base.HolderOwnerSource;
-import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
-import kmu.maplayers.ownermap.owners.holders.factions.HolderCategories;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
-import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsRead;
-import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
-import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
-import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 
@@ -50,8 +34,8 @@ import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.holders.factions.SelectableOwnerFixtures.stubNamedFaction;
 import static kmu.maplayers.ownermap.picker.OwnerPresenceIndexFixtures.buildIndexOf;
+import static kmu.maplayers.politicalmap.views.FactionNameFixtures.stubNamedFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -70,17 +54,15 @@ import static org.mockito.Mockito.when;
  * <p>Beside them, what the view offers the player around the fills: every bloc as a spotlight
  * target, since no faction here is folded into another, and the domination box on hover, since
  * domination is what painted the cells.
+ *
+ * <p>What every view the domination contest paints answers alike is {@link DominancePaintedView}'s,
+ * pinned once by its own suite.
  */
 final class FactionsViewTests {
 
     // The faction view ignores its grouping argument (its own grouping is always identity),
     // so any grouping stands in where the interface demands one.
     private static final HolderGrouping ANY_GROUPING = HolderGrouping.identity();
-
-    // A reading that does recede something, so a NONE answer here is this view adjusting nothing
-    // rather than the picks it was handed holding nothing to adjust with.
-    private static final ContentInputs RECEDING_INPUTS =
-        ContentInputsFixtures.createInputsRecedingNonAllied(new ElementStyleAdjustment(0.4, true));
 
     @Nested
     class ResolveGrouping {
@@ -90,85 +72,6 @@ final class FactionsViewTests {
             // Every faction is its own bloc, so the pipeline resolves plain faction holding.
             assertThat(FactionsView.INSTANCE.resolveGrouping())
                 .isSameAs(HolderGrouping.identity());
-        }
-    }
-
-    @Nested
-    class ResolveContestAffiliation {
-
-        @Test
-        void readsTheLiveAllianceSet() {
-            // Who stands together in a contest is the live alliance set on every view of this
-            // layer, whatever the view paints as one bloc: allies painted apart still read as allies.
-            var allianceSet = HolderGroupingFixture.buildGroupOf("hegemony", "persean");
-
-            try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
-                alliancesMock
-                    .when(NexerelinAlliances::resolveGrouping)
-                    .thenReturn(allianceSet);
-
-                var affiliation = FactionsView.INSTANCE.resolveContestAffiliation();
-
-                assertThat(affiliation.areOwnersAllied("hegemony", "persean"))
-                    .isTrue();
-                assertThat(affiliation.areOwnersAllied("hegemony", "tritachyon"))
-                    .isFalse();
-            }
-        }
-    }
-
-    @Nested
-    class ResolveHolderProvider {
-
-        @Test
-        void returnsTheDefaultProvider() {
-            // The faction view resolves holding no differently from the pipeline's default -
-            // each system's dominant holder, extended with the systems it merely claims - so it
-            // inherits the shared claim-augmented default rather than supplying one of its own.
-            assertThat(FactionsView.INSTANCE.resolveHolderProvider())
-                .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
-        }
-    }
-
-    @Nested
-    class ResolveRibbonPlanner {
-
-        @Test
-        void countsEachSystemByTheMechanicThatPaintedIt() {
-            // The faction view paints held territory and extends it with claims, so its bands are
-            // counted the same way round: the shared composition every contest-painted view
-            // inherits, rather than one mechanic answering for cells the other painted.
-            // The held half names the player's live weighting rule, which reaches LunaLib - a
-            // class the test JVM cannot load - so the pass it would build is handed over already
-            // resolved. What the case reads is which planner the view assembles, not where its
-            // knobs came from.
-            // Undiscovered colonies do not count, as on the live map.
-            var holding = new HolderPass(
-                new SectorPassIndex(null),
-                UNDER_THE_FOG,
-                HolderGrouping.identity());
-
-            try (var passMock = mockStatic(DominancePass.class)) {
-                passMock
-                    .when(() -> DominancePass.readRulesFromLunaSettings(any(HolderPass.class)))
-                    // Built through the constructor rather than the static entry, which is stood
-                    // in for here and would answer with the stand-in rather than build a pass.
-                    .thenReturn(new DominancePass(mock(DominanceRules.class), holding));
-
-                var planner = FactionsView.INSTANCE.resolveRibbonPlanner(
-                    new RibbonPlanInputs(
-                        holding,
-                        blocId -> null,
-                        // Nothing stands together, the case being about which planner the view
-                        // assembles rather than about how any cell of it is judged.
-                        BlocAffiliation.NONE,
-                        new RibbonPlanRules(
-                            new RibbonSegmentLengths(3, 1),
-                            new UncontestedRibbonRuns(false))));
-
-                assertThat(planner)
-                    .isInstanceOf(HeldOrClaimedSystemRibbonPlanner.class);
-            }
         }
     }
 
@@ -248,41 +151,6 @@ final class FactionsViewTests {
                         HolderOwnerSource.class,
                         source -> assertThat(source.grouping()).isSameAs(HolderGrouping.identity()));
             }
-        }
-    }
-
-    @Nested
-    class ResolveSystemHolderResolveSource {
-
-        @Test
-        void reDerivesAMarkedSystemByTheMarketContest() {
-            // The per-system half of the contest this view paints by, so a refreshed cell lands the
-            // bloc the whole-sector resolve would. The weighting rule reaches LunaLib, so the pass it
-            // builds is handed over already resolved.
-            var holding = new HolderPass(
-                new SectorPassIndex(null),
-                UNDER_THE_FOG,
-                HolderGrouping.identity());
-
-            try (var passMock = mockStatic(DominancePass.class)) {
-                passMock
-                    .when(() -> DominancePass.readRulesFromLunaSettings(any(HolderPass.class)))
-                    .thenReturn(new DominancePass(mock(DominanceRules.class), holding));
-
-                assertThat(FactionsView.INSTANCE.resolveSystemHolderResolveSource().openResolveOver(holding))
-                    .isInstanceOf(DominanceSystemHolderResolve.class);
-            }
-        }
-    }
-
-    @Nested
-    class ResolveCategories {
-
-        @Test
-        void declaresTheHolderCategories() {
-
-            assertThat(FactionsView.INSTANCE.resolveCategories())
-                .isSameAs(HolderCategories.INSTANCE);
         }
     }
 

@@ -40,8 +40,10 @@ flowchart LR
 
 | Package | What is in it |
 | --- | --- |
-| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation, the grouping seam (`HolderGrouping`), a bloc's shades through its colour faction (`SectorBlocPalettes`), the holder source and the view shape that assembles it, the picker assembly and the standing mode it appends |
-| `factions` | one faction as one owner: `FactionOwnerReading`, the four `OwnerMapCategory` values and their styles, the colony count behind a band, the colony size metric, and the colony and faction lines of the hover box |
+| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation (`HolderInhabitation`), the grouping seam (`HolderGrouping`), a bloc's shades through its colour faction (`SectorBlocPalettes`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
+| `base.picker` | the picker every holder view shares: its assembly (`BlocPickerAssembly`), the standing mode it appends, and the colony size metric and modes a view ranks by |
+| `base.tooltip` | the colony lines of the hover box: a system's colony reading, its status row, and a colony's qualifier and observation notes |
+| `factions` | one faction as one owner: `FactionOwnerReading`, and the faction lines of the hover box |
 | `alliances` | a group of factions as one owner: `AllianceOwnerReading`, the contest axis (`BlocAffiliation`, `ContestSides`) and the lines naming a holder's allies and rivals |
 
 ## Why it sits inside the tier
@@ -67,6 +69,13 @@ A later kind lands beside them,
 and shared machinery grows inside `base` rather than beside the kinds -
 where a reader could not tell a kind from what the kinds share.
 `base` imports neither kind.
+
+`base.picker` and `base.tooltip` are that growth:
+the picker and the hover box's colony lines,
+which every kind shares and no kind decides.
+The view shape reaches the picker assembly across that line,
+since `buildBlocPickerRead` is where a view hands its rows over;
+nothing else in `base` imports either.
 
 ## Alliances add to factions
 
@@ -140,7 +149,7 @@ and the grouping it was built under.
 It asks every question about that walk off that one pass.
 
 - **The holding** is the layer's `HolderProvider`, handed the pass and the spotlit bloc.
-- **What stands where** is `OwnerMapInhabitation`, over the same pass.
+- **What stands where** is `HolderInhabitation`, over the same pass.
 - **Where the spotlit bloc lives** is `SpotlitBlocPresence`,
   asked only of the inhabited systems the holding left to nobody.
 - **The band count** is the layer's planner, built over the same pass.
@@ -168,7 +177,7 @@ a resolve that lands a different bloc parts the refreshed cell from the rebuild 
 ## The band count
 
 `ColonyCellRibbons`,
-in `factions`,
+in `base`,
 counts every cell on every layer painting holders:
 the pass's **habitation projection** of the system's colonies,
 folded into a count per bloc under the pass's grouping,

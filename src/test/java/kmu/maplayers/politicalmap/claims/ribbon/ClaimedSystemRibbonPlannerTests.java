@@ -19,17 +19,17 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.SHORTENED_UNCONTESTED_RULES;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.STANDARD_RULES;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON_DARK;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildInputsFor;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.buildSectorHolding;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.SHORTENED_UNCONTESTED_RULES;
-import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.STANDARD_RULES;
-import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.TRITACHYON_DARK;
-import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.buildInputsFor;
-import static kmu.maplayers.ownermap.owners.holders.factions.RibbonPlanFixtures.buildSectorHolding;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

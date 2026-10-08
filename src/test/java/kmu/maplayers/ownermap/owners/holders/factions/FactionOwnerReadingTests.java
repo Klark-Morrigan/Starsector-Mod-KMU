@@ -8,6 +8,7 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.starsector.StarsectorFactionFixtures;
 
@@ -156,7 +157,7 @@ final class FactionOwnerReadingTests {
             var reading = new FactionOwnerReading(mock(SectorAPI.class));
 
             assertThat(reading.resolveCategory(Factions.INDEPENDENT, ElementStyleAdjustment.NONE))
-                .isEqualTo(OwnerMapCategory.INDEPENDENT);
+                .isEqualTo(HolderCategory.INDEPENDENT);
         }
 
         @Test
@@ -165,7 +166,7 @@ final class FactionOwnerReadingTests {
             var reading = new FactionOwnerReading(mock(SectorAPI.class));
 
             assertThat(reading.resolveCategory(HEGEMONY, ElementStyleAdjustment.NONE))
-                .isEqualTo(OwnerMapCategory.FACTION);
+                .isEqualTo(HolderCategory.FACTION);
         }
 
         @Test
@@ -175,7 +176,7 @@ final class FactionOwnerReadingTests {
             var reading = new FactionOwnerReading(mock(SectorAPI.class));
 
             assertThat(reading.resolveCategory(HEGEMONY, DESATURATED))
-                .isEqualTo(OwnerMapCategory.INDEPENDENT);
+                .isEqualTo(HolderCategory.INDEPENDENT);
         }
 
         @Test
@@ -185,7 +186,7 @@ final class FactionOwnerReadingTests {
             var reading = new FactionOwnerReading(mock(SectorAPI.class));
 
             assertThat(reading.resolveCategory(HEGEMONY, MUTED_ONLY))
-                .isEqualTo(OwnerMapCategory.FACTION);
+                .isEqualTo(HolderCategory.FACTION);
         }
     }
 

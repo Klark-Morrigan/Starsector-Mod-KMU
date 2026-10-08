@@ -8,7 +8,7 @@ import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.OwnerStyleDecision;
-import kmu.maplayers.ownermap.render.style.StandInCategory;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -55,12 +55,12 @@ final class ClusterLabelStylingTests {
         buildOwnedStyled(ElementStyleAdjustment.NONE);
 
     private static final OwnerStyleDecision INDEPENDENT_STYLED =
-        new OwnerStyleDecision(StandInCategory.RECEDED, ElementStyleAdjustment.NONE);
+        new OwnerStyleDecision(StandInCategoryFake.RECEDED, ElementStyleAdjustment.NONE);
 
     // An owned-styled owner under a given recede, for the tests that vary the adjustment
     // rather than the classification.
     private static OwnerStyleDecision buildOwnedStyled(ElementStyleAdjustment adjustment) {
-        return new OwnerStyleDecision(StandInCategory.OWNED, adjustment);
+        return new OwnerStyleDecision(StandInCategoryFake.OWNED, adjustment);
     }
 
     // Both categories pointed at the same slot and opacity, so a test that varies neither reads
@@ -86,9 +86,9 @@ final class ClusterLabelStylingTests {
             double independentNameOpacity) {
 
         return new OwnerNameStyles(Map.of(
-            StandInCategory.OWNED,
+            StandInCategoryFake.OWNED,
             new ElementStyle(ownedOuterSelection, ownedNameOpacity),
-            StandInCategory.RECEDED,
+            StandInCategoryFake.RECEDED,
             new ElementStyle(independentOuterSelection, independentNameOpacity)));
     }
 
@@ -312,7 +312,7 @@ final class ClusterLabelStylingTests {
             var resolver = ClusterLabelStyling.newLabelColourResolver(
                 Map.of(buildCellKey("alpha"), OWNER_F, buildCellKey("beta"), OWNER_G),
                 nameStyles(OwnerPaletteSlot.PRIMARY),
-                ownerId -> new OwnerStyleDecision(StandInCategory.OWNED, ElementStyleAdjustment.NONE),
+                ownerId -> new OwnerStyleDecision(StandInCategoryFake.OWNED, ElementStyleAdjustment.NONE),
                 UNUSED_PALETTE);
 
             assertThat(resolver.apply("F"))
@@ -334,7 +334,7 @@ final class ClusterLabelStylingTests {
                     FULL_OPACITY,
                     FULL_OPACITY),
                 ownerId -> new OwnerStyleDecision(
-                    "F".equals(ownerId) ? StandInCategory.RECEDED : StandInCategory.OWNED,
+                    "F".equals(ownerId) ? StandInCategoryFake.RECEDED : StandInCategoryFake.OWNED,
                     ElementStyleAdjustment.NONE),
                 UNUSED_PALETTE);
 
@@ -354,7 +354,7 @@ final class ClusterLabelStylingTests {
                 nameStyles(OwnerPaletteSlot.PRIMARY),
                 ownerId -> {
                     askedOwnerIds.add(ownerId);
-                    return new OwnerStyleDecision(StandInCategory.OWNED, ElementStyleAdjustment.NONE);
+                    return new OwnerStyleDecision(StandInCategoryFake.OWNED, ElementStyleAdjustment.NONE);
                 },
                 UNUSED_PALETTE);
 

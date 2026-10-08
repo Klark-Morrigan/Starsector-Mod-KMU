@@ -95,7 +95,7 @@ final class RankedOwnerTests {
             // whether it was consulted or not.
             var measured = new RankedOwner<>(
                 new SelectableOwner("hegemony", "Hegemony", "crest_heg"),
-                new HazardRating(4, 1));
+                new HazardRatingFake(4, 1));
 
             assertThat(measured.isDimmed())
                 .isFalse();

@@ -9,9 +9,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A fixture layer's categories, over {@link StandInCategory}: an owner at full strength draws as
- * {@link StandInCategory#OWNED}, and a cell nobody owns falls to {@link StandInCategory#SETTLED} or
- * {@link StandInCategory#EMPTY} by whether something stands there.
+ * A fixture layer's categories, over {@link StandInCategoryFake}: an owner at full strength draws as
+ * {@link StandInCategoryFake#OWNED}, and a cell nobody owns falls to {@link StandInCategoryFake#SETTLED} or
+ * {@link StandInCategoryFake#EMPTY} by whether something stands there.
  *
  * <p>Every category reads one bundle - the primary shade in every slot at full weight - so a suite
  * over a stage sees differences only from what it staged. A suite pinning a style a category reads
@@ -35,7 +35,7 @@ public final class OwnerCategoriesFake implements OwnerCategories {
 
         var styles = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
 
-        for (var category : StandInCategory.values()) {
+        for (var category : StandInCategoryFake.values()) {
             styles.put(category, new CategoryStyle(
                 PRIMARY_AT_FULL_WEIGHT,
                 PRIMARY_AT_FULL_WEIGHT,
@@ -51,20 +51,20 @@ public final class OwnerCategoriesFake implements OwnerCategories {
     public Map<MapStyleCategory, ElementStyle> readNameStyles() {
 
         return Map.of(
-            StandInCategory.OWNED, PRIMARY_AT_FULL_WEIGHT,
-            StandInCategory.RECEDED, PRIMARY_AT_FULL_WEIGHT);
+            StandInCategoryFake.OWNED, PRIMARY_AT_FULL_WEIGHT,
+            StandInCategoryFake.RECEDED, PRIMARY_AT_FULL_WEIGHT);
     }
 
     @Override
     public MapStyleCategory resolveFullStrengthCategory() {
-        return StandInCategory.OWNED;
+        return StandInCategoryFake.OWNED;
     }
 
     @Override
     public MapStyleCategory resolveUnownedCategory(boolean isSettled) {
 
         return isSettled
-            ? StandInCategory.SETTLED
-            : StandInCategory.EMPTY;
+            ? StandInCategoryFake.SETTLED
+            : StandInCategoryFake.EMPTY;
     }
 }

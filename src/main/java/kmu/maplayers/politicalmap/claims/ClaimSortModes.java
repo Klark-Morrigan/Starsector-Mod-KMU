@@ -4,8 +4,8 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
-import kmu.maplayers.ownermap.owners.holders.factions.SharedBlocSortModes;
-import kmu.maplayers.ownermap.owners.holders.factions.SizedBlocMetrics;
+import kmu.maplayers.ownermap.owners.holders.base.picker.SharedBlocSortModes;
+import kmu.maplayers.ownermap.owners.holders.base.picker.SizedBlocMetrics;
 import kmu.maplayers.ownermap.picker.OwnerMetricSortMode;
 import kmu.maplayers.ownermap.picker.OwnerSortModeComposer;
 import kmu.maplayers.ownermap.picker.RankedOwner;

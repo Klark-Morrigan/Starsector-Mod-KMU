@@ -20,7 +20,7 @@ import java.util.Map;
  * base provider, with each claimed-but-unheld system folded in as an unfilled extension of
  * its claimant's territory.
  *
- * <p>Wraps the held-dominance {@link DefaultHolderProvider} rather than replacing it, so
+ * <p>Wraps the held-dominance {@link DominanceHolderProvider} rather than replacing it, so
  * the held resolve stays one concern and claims layer on top as a second. A system a bloc
  * claims but does not hold joins that bloc's holder map under the same key its held systems
  * carry - so the agnostic geometry fuses claimed and held cells into one bordered territory -
@@ -51,7 +51,7 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
      */
     public static final ClaimAugmentedHolderProvider INSTANCE =
         new ClaimAugmentedHolderProvider(
-            DefaultHolderProvider.INSTANCE,
+            DominanceHolderProvider.INSTANCE,
             VanillaClaimBreakdownReader::new);
 
     private final HolderProvider heldHolderProvider;

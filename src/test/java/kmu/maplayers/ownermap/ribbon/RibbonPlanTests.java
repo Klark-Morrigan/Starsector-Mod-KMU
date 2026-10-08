@@ -10,7 +10,20 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
+
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.ALLIED_HEGEMONY_AND_TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.DIKTAT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.DIKTAT_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.DIKTAT_DARK;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.NO_PAINTER;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.SHORTENED_UNCONTESTED_RULES;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.STANDARD_RULES;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.TRITACHYON_DARK;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,48 +56,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the rule ranks nothing itself and a case that happened to be sorted would hide it.
  */
 final class RibbonPlanTests {
-
-    private static final String HEGEMONY = "hegemony";
-    private static final String TRITACHYON = "tritachyon";
-    private static final String DIKTAT = "sindria";
-
-    private static final Color HEGEMONY_BRIGHT = new Color(140, 160, 220);
-    private static final Color HEGEMONY_DARK = new Color(40, 60, 120);
-    private static final Color TRITACHYON_BRIGHT = new Color(120, 220, 200);
-    private static final Color TRITACHYON_DARK = new Color(20, 90, 80);
-    private static final Color DIKTAT_BRIGHT = new Color(220, 150, 120);
-    private static final Color DIKTAT_DARK = new Color(90, 50, 40);
-
-    // The Hegemony and Tri-Tachyon standing together and every other owner outside, so one value
-    // poses the ally, the rival and the painter's own owner at once.
-    private static final Set<String> ALLIED_PAIR = Set.of(HEGEMONY, TRITACHYON);
-    private static final OwnerAffiliation ALLIED_HEGEMONY_AND_TRITACHYON =
-        (firstOwnerId, secondOwnerId) -> !firstOwnerId.equals(secondOwnerId)
-            && ALLIED_PAIR.contains(firstOwnerId)
-            && ALLIED_PAIR.contains(secondOwnerId);
-
-    // A cell no owner's fill covers.
-    private static final Optional<String> NO_PAINTER = Optional.empty();
-
-    // The design's own proportions: a market three widths long, parted by one width. Stated here
-    // rather than taken from the fixtures, which withhold their widths so that an edit to the
-    // proportions fails every suite reading a band back instead of moving with them.
-    private static final RibbonSegmentLengths STANDARD_LENGTHS = new RibbonSegmentLengths(3, 1);
-
-    // The shortening off, which is what every case about the contested reading is posed under: it
-    // leaves both readings at the same lengths, so a case about what a band is made of cannot be
-    // read as a statement about which reading laid it.
-    private static final UncontestedRibbonRuns UNSHORTENED_RUNS =
-        new UncontestedRibbonRuns(false);
-
-    // The rules most cases are posed under: the standard proportions, no shortening anywhere.
-    private static final RibbonPlanRules STANDARD_RULES =
-        new RibbonPlanRules(STANDARD_LENGTHS, UNSHORTENED_RUNS);
-
-    // The shortening on, which is the one thing that tells the two readings apart: an uncontested
-    // cell falls to the tally of single widths while a contested one keeps the authored run.
-    private static final RibbonPlanRules RULES_SHORTENING_UNCONTESTED_RUNS =
-        new RibbonPlanRules(STANDARD_LENGTHS, new UncontestedRibbonRuns(true));
 
     @Nested
     class PlanCellRibbon {
@@ -127,7 +98,7 @@ final class RibbonPlanTests {
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(2), buildTriTachyonPresence(0)),
                 OwnerAffiliation.NONE,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -146,7 +117,7 @@ final class RibbonPlanTests {
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(3)),
                 OwnerAffiliation.NONE,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -166,7 +137,7 @@ final class RibbonPlanTests {
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
                 OwnerAffiliation.NONE,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -185,7 +156,7 @@ final class RibbonPlanTests {
                 Optional.of(HEGEMONY),
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
                 ALLIED_HEGEMONY_AND_TRITACHYON,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -206,7 +177,7 @@ final class RibbonPlanTests {
                     buildTriTachyonPresence(1),
                     buildDiktatPresence(1)),
                 ALLIED_HEGEMONY_AND_TRITACHYON,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -226,7 +197,7 @@ final class RibbonPlanTests {
                     Optional.of(HEGEMONY),
                     List.of(buildHegemonyPresence(0)),
                     OwnerAffiliation.NONE,
-                    RULES_SHORTENING_UNCONTESTED_RUNS))
+                    SHORTENED_UNCONTESTED_RULES))
                 .isEqualTo(RibbonPlan.NONE);
         }
 
@@ -345,7 +316,7 @@ final class RibbonPlanTests {
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(2)),
                 OwnerAffiliation.NONE,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -363,7 +334,7 @@ final class RibbonPlanTests {
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(1), buildDiktatPresence(1)),
                 OwnerAffiliation.NONE,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -381,7 +352,7 @@ final class RibbonPlanTests {
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(2), buildDiktatPresence(0)),
                 OwnerAffiliation.NONE,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -399,7 +370,7 @@ final class RibbonPlanTests {
                 NO_PAINTER,
                 List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
                 ALLIED_HEGEMONY_AND_TRITACHYON,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -421,7 +392,7 @@ final class RibbonPlanTests {
                     buildHegemonyPresence(1),
                     buildTriTachyonPresence(1)),
                 ALLIED_HEGEMONY_AND_TRITACHYON,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -442,7 +413,7 @@ final class RibbonPlanTests {
                     buildTriTachyonPresence(1),
                     buildDiktatPresence(1)),
                 ALLIED_HEGEMONY_AND_TRITACHYON,
-                RULES_SHORTENING_UNCONTESTED_RUNS);
+                SHORTENED_UNCONTESTED_RULES);
 
             assertThat(plan.segments())
                 .containsExactly(
@@ -550,7 +521,7 @@ final class RibbonPlanTests {
                 OwnerAffiliation.NONE,
                 new RibbonPlanRules(
                     new RibbonSegmentLengths(4, 2),
-                    UNSHORTENED_RUNS));
+                    STANDARD_RULES.uncontestedRuns()));
 
             assertThat(plan.segments())
                 .containsExactly(

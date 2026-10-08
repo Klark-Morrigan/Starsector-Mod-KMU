@@ -223,7 +223,7 @@ since that is what a player's stored setting is keyed by.
 | --- | --- |
 | *(top level)* | the view seam (`OwnerPaintedView`, `MapLayerViewRegistry`, `ViewReading`), the stale-spotlight heal (`FilterSelectionHeal`) and the preferences a rebuild samples (`ContentInputs`) |
 | [`owners`](owners/README.md) | the seams a layer answers its owners through - where they come from (`OwnerSource`, its per-system `SystemOwnerResolve`, the walk it is handed and the `ResolvedOwners` it answers), how each looks (`OwnerReading`) and who stands together in a contest (`OwnerAffiliation`) - beside the owner of a system (`SystemOwner`), the two shades it paints in (`OwnerPalette`), and the spotlight's own key (`SpotlitOwners`) |
-| [`owners/holders`](owners/holders/README.md) | the answers of the layers painting holders, outside the core: what every holder shares (`base`), one faction as one owner (`factions`), and a group of factions as one owner (`alliances`) |
+| [`owners/holders`](owners/holders/README.md) | the answers of the layers painting holders, outside the core: what every holder shares (`base`, with its picker in `base.picker` and its hover-box colony lines in `base.tooltip`), one faction as one owner (`factions`), and a group of factions as one owner (`alliances`) |
 | `picker` | the owner picker model: its rows (`SelectableOwner`, `RankedOwner`), the metrics they carry, the sort modes ranking them, and the presence index a preview lights |
 | `preferences` | the per-save body choices - name format, uninhabited outline, recede - and `OwnerMapBodyPreferences`, the set a layer builds over keys of its own |
 | [`render/clusters`](render/clusters/README.md) | cells into coloured, bordered clusters with their seams and split fills |
@@ -233,7 +233,6 @@ since that is what a player's stored setting is keyed by.
 | [`ribbon`](ribbon/README.md) | what a band is made of before any geometry: the runs, their order and the count itself |
 | `render` | the cache, the compositor stacking the sub-layers in their band order, the incremental refresh, and `OwnerMapLayerRenderer`, which hands the cache and the compositor to [the substrate's frame sequence](../base/render/README.md#the-frame-sequence) |
 | `render/hover` | what the cursor is over on this map, the seam a layer answers the picker preview through, and the tier's shared answers to it and to the substrate's cursor switches |
-| `tooltip` | the line shapes every layer's hover box is written in |
 | `sidebar` | the body controls a layer built on this tier offers, and the memo behind its picker |
 
 What is underneath all of it -

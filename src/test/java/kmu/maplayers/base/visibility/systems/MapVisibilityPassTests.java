@@ -8,7 +8,6 @@ import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildUnroutedSectorOf;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.FORCED_UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,8 +48,7 @@ class MapVisibilityPassTests {
     // The override on, so a case about what the map would show of a system is posed over a pass
     // that is showing it either way - which is the only arrangement in which the two answers
     // can be told apart.
-    private static final MapVisibilityRules SHOWING_HIDDEN_SYSTEMS =
-        new MapVisibilityRules(ColonyVisibility.BASE_FOG, true);
+    private static final MapVisibilityRules SHOWING_HIDDEN_SYSTEMS = FORCED_UNDER_THE_FOG;
 
     @Nested
     class Constructor {

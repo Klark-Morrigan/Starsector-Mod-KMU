@@ -341,7 +341,7 @@ which answers the tier's owner seams off one colony pass.
 Three providers are those rules,
 all of them this layer's own and all in `holders`:
 
-- **`DefaultHolderProvider`** -
+- **`DominanceHolderProvider`** -
   held systems from the live economy.
   No view resolves through it bare:
   the source below wraps it for the Factions and Alliances views.
@@ -547,7 +547,7 @@ and the build keeps it from naming this one.
   widths,
   and opacities.
   The four categories this map divides its cells into are the holders' own,
-  `OwnerMapCategory` in [`owners/holders`](../ownermap/owners/holders/README.md).
+  `HolderCategory` in [`owners/holders`](../ownermap/owners/holders/README.md).
 - **`ownermap/render/labels`** -
   what a cluster's name reads and what shade it draws in:
   the active view's name for the bloc,

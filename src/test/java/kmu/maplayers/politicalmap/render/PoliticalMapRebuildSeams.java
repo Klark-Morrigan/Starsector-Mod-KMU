@@ -7,7 +7,7 @@ import kmlib.testfixtures.statics.StaticSeams;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
-import kmu.maplayers.ownermap.owners.holders.factions.OwnerMapCategory;
+import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
@@ -53,7 +53,7 @@ public final class PoliticalMapRebuildSeams {
         ownerMapSeams.openFurtherSeam(RenderStyleReader.class)
             .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
             .thenReturn(OwnerMapClusterFixtures.createRenderStyleForEveryCategoryOf(
-                OwnerMapCategory.values(),
+                HolderCategory.values(),
                 OwnerMapClusterFixtures.createInertCategoryStyle()));
     }
 

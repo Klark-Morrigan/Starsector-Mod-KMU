@@ -29,9 +29,9 @@ import java.util.function.Supplier;
  *
  * <p>What the layer states is the three rules that are its own - the whole-sector holding, the
  * per-system holding and the band planner - beside the grouping every one of them is read under and
- * who stands together in a contest. What this adds is the colony reading none of them should open for itself: one pass per
- * walk, so the holder scan, the habitation scan and the band count read each system once between
- * them, and cannot disagree about a colony the habitation rule admits.
+ * who stands together in a contest. What this adds is the colony reading none of them should open
+ * for itself: one pass per walk, so the holder scan, the habitation scan and the band count read
+ * each system once between them, and cannot disagree about a colony the habitation rule admits.
  *
  * <p>Built per rebuild, over one sampling of the grouping and the affiliation: a view that reads its grouping live
  * makes a fresh source each rebuild, and the build retains it, so a batch that follows re-derives
@@ -113,7 +113,7 @@ public final class HolderOwnerSource implements OwnerSource {
         var inhabitedSystemKeys = measureSystemScan(
             profiler,
             FIND_INHABITED_SECTION,
-            () -> OwnerMapInhabitation.readInhabitedSystemKeys(pass));
+            () -> HolderInhabitation.readInhabitedSystemKeys(pass));
 
         // Where the spotlit bloc is living outside anything this holding attributed to it, so
         // the factionless cells over its own colonies are spared the recede. Asked only of the

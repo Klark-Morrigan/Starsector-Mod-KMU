@@ -517,6 +517,10 @@ The *body composition* the panel lays out belongs to whichever layer is active -
 for a layer painted by owner,
 to the body controls of [the owner-map tier](../../ownermap/README.md) -
 though it is here that KMLib's picker is bound to the save (see [Picker state](#picker-state)).
+Every body is built against a `BodyControlTarget`:
+the refresh board and the screen of the panel it opened on.
+It sits here rather than with any one layer,
+since every layer's body takes one.
 What the tier above keeps of its own there is what the picker refuses to know:
 which items are on offer,
 what invalidates that list,

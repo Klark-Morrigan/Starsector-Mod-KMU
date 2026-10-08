@@ -13,7 +13,7 @@ import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
-import kmu.maplayers.ownermap.render.style.StandInCategory;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -189,7 +189,7 @@ final class OwnerMapBuildInputsTests {
             when(readingMock.resolveStyleAdjustment(any(), any()))
                 .thenReturn(adjustment);
             when(readingMock.resolveCategory(any(), any()))
-                .thenReturn(StandInCategory.OWNED);
+                .thenReturn(StandInCategoryFake.OWNED);
 
             return readingMock;
         }

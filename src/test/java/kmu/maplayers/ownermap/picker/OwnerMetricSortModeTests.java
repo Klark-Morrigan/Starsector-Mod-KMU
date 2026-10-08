@@ -36,30 +36,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class OwnerMetricSortModeTests {
 
     // The stand-in vocabulary's chain: severity first, volatility behind it.
-    private static final List<ToIntFunction<HazardRating>> CANONICAL_CHAIN =
-        List.of(HazardRating::severity, HazardRating::volatility);
+    private static final List<ToIntFunction<HazardRatingFake>> CANONICAL_CHAIN =
+        List.of(HazardRatingFake::severity, HazardRatingFake::volatility);
 
     // What a mode that ranks by name names instead of a number. Spelled as the accessor type rather
     // than left a bare null at the call, so the case reads as the by-name ranking it sets up.
-    private static final ToIntFunction<HazardRating> NO_METRIC = null;
+    private static final ToIntFunction<HazardRatingFake> NO_METRIC = null;
 
     // Two modes differing only in which number they promote, so a case can read an answer off each and
     // say the difference came from the metric rather than from anything the vocabulary supplied.
-    private static final ListSortMode<RankedOwner<HazardRating>> BY_SEVERITY =
+    private static final ListSortMode<RankedOwner<HazardRatingFake>> BY_SEVERITY =
         new OwnerMetricSortMode<>(
             "severity",
             "hazard_ctl_sort_severity",
-            HazardRating::severity,
+            HazardRatingFake::severity,
             CANONICAL_CHAIN);
 
-    private static final ListSortMode<RankedOwner<HazardRating>> BY_VOLATILITY =
+    private static final ListSortMode<RankedOwner<HazardRatingFake>> BY_VOLATILITY =
         new OwnerMetricSortMode<>(
             "volatility",
             "hazard_ctl_sort_volatility",
-            HazardRating::volatility,
+            HazardRatingFake::volatility,
             CANONICAL_CHAIN);
 
-    private static final ListSortMode<RankedOwner<HazardRating>> BY_NAME =
+    private static final ListSortMode<RankedOwner<HazardRatingFake>> BY_NAME =
         new OwnerMetricSortMode<>(
             "name",
             "hazard_ctl_sort_name",

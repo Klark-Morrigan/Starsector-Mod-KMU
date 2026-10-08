@@ -12,27 +12,19 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.testfixtures.statics.StaticSeams;
 
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.owners.OwnerAffiliation;
-import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SectorWalk;
-import kmu.maplayers.ownermap.picker.HazardRating;
+import kmu.maplayers.ownermap.picker.HazardRatingFake;
 import kmu.maplayers.ownermap.picker.OwnerMetrics;
 import kmu.maplayers.ownermap.picker.OwnerMetricsFake;
-import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.OwnerSortModesFake;
 import kmu.maplayers.ownermap.picker.OwnerStatsReadFake;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
-import kmu.maplayers.ownermap.render.style.OwnerCategories;
-import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
-import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
 
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +32,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,25 +80,25 @@ final class HolderPaintedViewTests {
         @Test
         void samplesTheGroupingOnceForBothAnswers() {
 
-            var viewFake = new CountingHolderViewFake();
+            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
 
             viewFake.resolveViewReading(mock(SectorAPI.class));
 
-            assertThat(viewFake.groupingSamples)
+            assertThat(viewFake.countGroupingSamples())
                 .isEqualTo(1);
         }
 
         @Test
         void resolvesTheReadingOverTheSampledGroupingAndTheHandedSector() {
 
-            var viewFake = new CountingHolderViewFake();
+            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
             var sectorMock = mock(SectorAPI.class);
 
             viewFake.resolveViewReading(sectorMock);
 
-            assertThat(viewFake.readingSectors)
+            assertThat(viewFake.listReadingSectors())
                 .containsExactly(sectorMock);
-            assertThat(viewFake.readingGroupings)
+            assertThat(viewFake.listReadingGroupings())
                 .singleElement()
                 .isSameAs(SAMPLED_GROUPING);
         }
@@ -115,7 +106,7 @@ final class HolderPaintedViewTests {
         @Test
         void foldsTheSourceUnderThatSameSampling() {
 
-            var viewFake = new CountingHolderViewFake();
+            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
 
             assertThat(viewFake.resolveViewReading(mock(SectorAPI.class)).source())
                 .isInstanceOfSatisfying(
@@ -126,7 +117,7 @@ final class HolderPaintedViewTests {
         @Test
         void answersWithItselfAsTheView() {
 
-            var viewFake = new CountingHolderViewFake();
+            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
 
             assertThat(viewFake.resolveViewReading(mock(SectorAPI.class)).view())
                 .isSameAs(viewFake);
@@ -141,7 +132,7 @@ final class HolderPaintedViewTests {
                 .when(DecivilisedColonyHabitation::readFromLunaSettings)
                 .thenReturn(DecivilisedColonyHabitation.COUNTS_AS_POPULATED);
 
-            var viewFake = new CountingHolderViewFake();
+            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
             var planner = viewFake
                 .resolveViewReading(mock(SectorAPI.class))
                 .source()
@@ -150,7 +141,7 @@ final class HolderPaintedViewTests {
                     new RibbonPlanRules(new RibbonSegmentLengths(3, 1), new UncontestedRibbonRuns(false)));
 
             assertThat(planner)
-                .isSameAs(CountingHolderViewFake.PLANNER);
+                .isSameAs(HolderPaintedViewFake.PLANNER);
         }
     }
 
@@ -459,19 +450,19 @@ final class HolderPaintedViewTests {
             // would not notice.
             var sectorMock = mock(SectorAPI.class);
             var viewFake = new HolderPaintedViewFake(Map.of("pirates", "Pirates"));
-            var rating = new HazardRating(4, 1);
+            var ratingFake = new HazardRatingFake(4, 1);
 
             assertThat(viewFake.buildBlocPickerRead(
                         sectorMock,
                         HolderGrouping.identity(),
                         viewFake.readOwnerReading(),
-                        OwnerStatsReadFake.createRowsOnlyFake(Map.of("pirates", rating)),
-                        new ListSortModes<RankedOwner<HazardRating>>(List.of(), null))
+                        OwnerStatsReadFake.createRowsOnlyFake(Map.of("pirates", ratingFake)),
+                        new ListSortModes<RankedOwner<HazardRatingFake>>(List.of(), null))
                     .picker()
                     .items())
                 .containsExactly(new RankedOwner<>(
                     new SelectableOwner("pirates", "Pirates", null),
-                    rating));
+                    ratingFake));
         }
     }
 
@@ -488,14 +479,14 @@ final class HolderPaintedViewTests {
                 .when(ColonyReadRules::readFromLunaSettings)
                 .thenReturn(UNDER_THE_DEV_REVEAL);
 
-            var viewFake = new CountingHolderViewFake();
+            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
             var sectorMock = mock(SectorAPI.class);
 
             viewFake.resolveOwnerPickerRead(sectorMock);
 
-            assertThat(viewFake.pickerSectors)
+            assertThat(viewFake.listPickerSectors())
                 .containsExactly(sectorMock);
-            assertThat(viewFake.pickerRules)
+            assertThat(viewFake.listPickerRules())
                 .containsExactly(UNDER_THE_DEV_REVEAL);
         }
     }
@@ -536,7 +527,7 @@ final class HolderPaintedViewTests {
         void offersALoneFactionAndAGroupAlike() {
             // The default is for a view whose blocs are all of a kind, so it asks nothing about what
             // a bloc is: a lone faction and a group are both offered.
-            var viewFake = new CountingHolderViewFake();
+            var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
             var gate = viewFake.resolveSelectableBlocGate(SAMPLED_GROUPING);
 
             assertThat(gate.test("tritachyon"))
@@ -582,86 +573,5 @@ final class HolderPaintedViewTests {
         }
 
         throw new AssertionError("the offered vocabulary holds no standing mode");
-    }
-
-    /**
-     * A holder view counting how often its grouping is sampled, what its reading is built over, and
-     * what its picker is asked under.
-     */
-    private static final class CountingHolderViewFake implements HolderPaintedView {
-
-        static final SystemRibbonPlanner PLANNER = system -> RibbonPlan.NONE;
-
-        private final List<SectorAPI> readingSectors = new ArrayList<>();
-        private final List<HolderGrouping> readingGroupings = new ArrayList<>();
-        private final List<SectorAPI> pickerSectors = new ArrayList<>();
-        private final List<ColonyReadRules> pickerRules = new ArrayList<>();
-
-        private int groupingSamples;
-
-        @Override
-        public HolderGrouping resolveGrouping() {
-
-            groupingSamples++;
-            return SAMPLED_GROUPING;
-        }
-
-        @Override
-        public OwnerAffiliation resolveContestAffiliation() {
-            return OwnerAffiliation.NONE;
-        }
-
-        @Override
-        public HolderProvider resolveHolderProvider() {
-            return HolderProviderFake.createHoldingNothing();
-        }
-
-        @Override
-        public SystemHolderResolveSource resolveSystemHolderResolveSource() {
-            return SystemHolderResolveFake.createSourceHoldingNothing();
-        }
-
-        @Override
-        public SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs) {
-            return PLANNER;
-        }
-
-        @Override
-        public OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
-
-            readingSectors.add(sector);
-            readingGroupings.add(grouping);
-
-            return OwnerReadingFake.createAnsweringNothing();
-        }
-
-        @Override
-        public OwnerPickerRead<?> resolveBlocPickerRead(SectorAPI sector, ColonyReadRules colonyReadRules) {
-
-            pickerSectors.add(sector);
-            pickerRules.add(colonyReadRules);
-
-            return OwnerPickerRead.empty();
-        }
-
-        @Override
-        public OwnerCategories resolveCategories() {
-            return OwnerCategoriesFake.SHARED_FAKE;
-        }
-
-        @Override
-        public String getId() {
-            return "counting";
-        }
-
-        @Override
-        public String getSegmentLabelKey() {
-            return "counting_label";
-        }
-
-        @Override
-        public int getContentRevision(MapLayerRefreshBoard board) {
-            return 0;
-        }
     }
 }

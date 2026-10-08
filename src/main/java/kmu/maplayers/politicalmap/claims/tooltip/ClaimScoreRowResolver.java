@@ -9,9 +9,9 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
+import kmu.maplayers.base.tooltip.content.TermTooltipLine;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.ownermap.owners.holders.factions.ColonyQualifier;
-import kmu.maplayers.ownermap.tooltip.TermTooltipLine;
+import kmu.maplayers.ownermap.owners.holders.base.tooltip.ColonyQualifier;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;

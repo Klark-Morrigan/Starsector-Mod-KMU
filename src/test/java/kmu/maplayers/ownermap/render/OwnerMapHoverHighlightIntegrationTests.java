@@ -27,7 +27,7 @@ import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
-import kmu.maplayers.ownermap.render.style.StandInCategory;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -163,7 +163,10 @@ final class OwnerMapHoverHighlightIntegrationTests {
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-                new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
+                new ViewReading(
+                    mock(OwnerPaintedView.class),
+                    OwnerReadingFake.createAnsweringNothing(),
+                    new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
                 Set.of(),
                 Set.of()));
@@ -183,7 +186,7 @@ final class OwnerMapHoverHighlightIntegrationTests {
 
         var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
 
-        for (var category : StandInCategory.values()) {
+        for (var category : StandInCategoryFake.values()) {
             categories.put(category, outlineOnly);
         }
 

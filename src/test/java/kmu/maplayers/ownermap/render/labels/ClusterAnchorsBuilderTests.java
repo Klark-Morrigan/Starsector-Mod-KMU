@@ -34,7 +34,7 @@ import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
-import kmu.maplayers.ownermap.render.style.StandInCategory;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -155,9 +155,9 @@ final class ClusterAnchorsBuilderTests {
     // Both owned categories' names pointed at the bright primary shade at full opacity, so a
     // label's colour reads back as the palette shade its owner resolved to.
     private static final Map<MapStyleCategory, ElementStyle> NAME_STYLE_BY_CATEGORY = Map.of(
-        StandInCategory.OWNED,
+        StandInCategoryFake.OWNED,
         new ElementStyle(OwnerPaletteSlot.PRIMARY, FULL_OPACITY),
-        StandInCategory.RECEDED,
+        StandInCategoryFake.RECEDED,
         new ElementStyle(OwnerPaletteSlot.PRIMARY, FULL_OPACITY));
 
     // The face the snapshot says the sector settled its labels on: a settled one rather than the face
@@ -231,7 +231,7 @@ final class ClusterAnchorsBuilderTests {
         when(categoriesMock.readNameStyles())
             .thenReturn(NAME_STYLE_BY_CATEGORY);
         when(categoriesMock.resolveFullStrengthCategory())
-            .thenReturn(StandInCategory.OWNED);
+            .thenReturn(StandInCategoryFake.OWNED);
         styleReaderMock
             .when(RenderStyleReader::readGlobalStyle)
             .thenReturn(ThemeFixtures.createInertGlobalStyle());

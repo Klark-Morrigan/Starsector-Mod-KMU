@@ -6,6 +6,7 @@ import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.controls.specs.LabelSpec;
 import kmlib.starsector.ui.text.TextSpan;
 
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
 import kmu.util.KmuStringKeys;
 

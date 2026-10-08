@@ -25,12 +25,16 @@ None of these reach a player: every LunaLib field ID and every value saved in se
 
 ##### Packages
 
-The owner-map tier's core knows nothing of what an owner is. What the layers painting holders share lives under `kmu.maplayers.ownermap.owners.holders`: `base` for every kind of holder, `factions` for one faction as one owner, and `alliances` for a group of factions as one owner. The core may not import that subtree.
+The owner-map tier's core knows nothing of what an owner is. What the layers painting holders share lives under `kmu.maplayers.ownermap.owners.holders`: `base` for every kind of holder, with its picker in `base.picker` and its hover-box colony lines in `base.tooltip`, `factions` for one faction as one owner, and `alliances` for a group of factions as one owner. The core may not import that subtree.
 
 | Before | After |
 | --- | --- |
-| `ownermap.holding`, `ownermap.owners.holders`, `BlocPickerAssembly`, `BlocStanding`, `BlocStandingReader`, `BlocStandingSortMode`, `RibbonPlanInputs`, `BlocPaletteReader` and `SectorBlocPalettes` | `ownermap.owners.holders.base`, apart from the types below |
-| `HolderCategories`, `OwnerMapCategory`, `ColonyCellRibbons`, `SizedBlocMetrics`, `SharedBlocSortModes`, `SystemStatusRow` and the colony and faction lines of `ownermap.tooltip` | `ownermap.owners.holders.factions` |
+| `ownermap.holding`, `ownermap.owners.holders`, `RibbonPlanInputs`, `BlocPaletteReader`, `SectorBlocPalettes`, `HolderCategories`, `OwnerMapCategory` and `ColonyCellRibbons` | `ownermap.owners.holders.base`, apart from the types below |
+| `BlocPickerAssembly`, `BlocStanding`, `BlocStandingReader`, `BlocStandingSortMode`, `SizedBlocMetrics` and `SharedBlocSortModes` | `ownermap.owners.holders.base.picker` |
+| `SystemStatusRow` and the colony lines of `ownermap.tooltip` | `ownermap.owners.holders.base.tooltip` |
+| The faction lines of `ownermap.tooltip` | `ownermap.owners.holders.factions` |
+| `ownermap.tooltip.TermTooltipLine` | `base.tooltip.content.TermTooltipLine`. `ownermap.tooltip` is gone |
+| `ownermap.sidebar.BodyControlTarget` | `base.sidebar.BodyControlTarget` |
 | `BlocAffiliation`, `BlocFriendliness`, `ContestSide`, `ContestSides` and `BlocRelations` | `ownermap.owners.holders.alliances` |
 
 ##### Renames
@@ -40,6 +44,7 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `SelectableBloc`, `SelectableBlocCache`, `RankedBloc`, `BlocMetrics`, `PaintingBlocMetrics`, `BlocMetricSortMode`, `BlocSortModeComposer`, `BlocPickerRead`, `BlocPresenceIndex`, `BlocPresenceIndexBuilder`, `BlocStatsRead`, `SpotlitBlocs`, `ResolvedBlocPaint`, `BlocNameStyles` and `BlocPresence` | `Owner` in place of `Bloc` in each name and its members |
 | `FactionNameFormatChoice`, `FactionPaletteSlot`, `FactionlessStyleResolver` and `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`, `OwnerPaletteSlot`, `UnownedStyleResolver` and `OwnerPaletteChoice` |
 | `HolderOwnerReading` | `FactionOwnerReading`, and `AllianceOwnerReading` over it for a layer painting alliances |
+| `OwnerMapCategory`, `OwnerMapInhabitation` and `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`, `HolderInhabitation` and `DominanceHolderProvider` |
 | `getFactionLabels` on `OwnerMapCache` and `OwnerMapDrawables`, `OwnerMapBuildInputs.resolveBlocPaintOf` and `OwnerStyleResolver.resolveBlocStyleDecision` | `getOwnerLabels`, `resolveOwnerPaintOf` and `resolveOwnerStyleDecision` |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` and its `strings.json` key | `POLITICAL_MAP_CTL_FACTION_NAMES`, the political map's own caption |
 

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.UNFORCED_UNDER_THE_REVEAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
@@ -31,7 +32,7 @@ final class ColonyReadRulesTests {
 
                 visibilityRulesMock
                     .when(MapVisibilityRules::readFromLunaSettings)
-                    .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
+                    .thenReturn(UNFORCED_UNDER_THE_REVEAL);
                 styleSettingsMock
                     .when(KmuOwnerMapStyleSettings::shouldCountDecivilisedSystemsAsPopulated)
                     .thenReturn(false);

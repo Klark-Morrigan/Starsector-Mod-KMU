@@ -413,14 +413,14 @@ final class RenderStyleReaderTests {
                 var categoriesMock = mock(OwnerCategories.class);
 
                 when(categoriesMock.readCategoryStyles(contentInputs))
-                    .thenReturn(Map.of(StandInCategory.OWNED, declaredStyle));
+                    .thenReturn(Map.of(StandInCategoryFake.OWNED, declaredStyle));
 
                 var renderStyle = RenderStyleReader.readRenderStyle(categoriesMock, contentInputs);
 
                 assertThat(renderStyle.global().desaturationDarkening())
                     .isEqualTo(0.3);
                 assertThat(renderStyle.categories())
-                    .containsExactly(entry(StandInCategory.OWNED, declaredStyle));
+                    .containsExactly(entry(StandInCategoryFake.OWNED, declaredStyle));
             }
         }
     }

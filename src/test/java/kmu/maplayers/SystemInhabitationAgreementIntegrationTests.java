@@ -16,10 +16,10 @@ import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderInhabitation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.base.OwnerMapInhabitation;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.owners.holders.factions.SystemStatusRow;
+import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemStatusRow;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
  * Pins the one claim neither suite either side of it can make: that the cell a system is drawn as
  * and the status line drawn over it answer "does anybody live here" off one rule.
  *
- * <p>The cell classifies through {@link OwnerMapInhabitation}, the box through
+ * <p>The cell classifies through {@link HolderInhabitation}, the box through
  * {@link SystemStatusRow}, and each has its own suite pinning its own answer. Nothing in that pair
  * stops the two drifting onto different colony projections, which is the state that lets a hover
  * print "Unpopulated" across a system the map beneath the cursor has painted as settled.
@@ -248,7 +248,7 @@ final class SystemInhabitationAgreementIntegrationTests {
             StarSystemAPI system,
             ColonyReadRules colonyReadRules) {
 
-        return OwnerMapInhabitation.isSystemInhabited(
+        return HolderInhabitation.isSystemInhabited(
             HolderPass.over(sector, colonyReadRules, HolderGrouping.identity()),
             system);
     }

@@ -25,7 +25,7 @@ import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
-import kmu.maplayers.ownermap.render.style.StandInCategory;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -355,7 +355,7 @@ public final class OwnerMapClusterFixtures {
      */
     public static RenderStyle createRenderStyleForEveryCategory(CategoryStyle style) {
 
-        return createRenderStyleForEveryCategoryOf(StandInCategory.values(), style);
+        return createRenderStyleForEveryCategoryOf(StandInCategoryFake.values(), style);
     }
 
     /**

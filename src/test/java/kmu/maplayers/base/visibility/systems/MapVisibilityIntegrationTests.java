@@ -29,14 +29,14 @@ import org.lwjgl.util.vector.Vector2f;
 import java.util.ArrayList;
 import java.util.List;
 
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildHyperspaceHolding;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildReachableSystemAt;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildStarAnchorTo;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildStarAnchoredSectorOf;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildUnroutedSectorOf;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.listMarketsIn;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.FORCED_UNDER_THE_FOG;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.UNFORCED_UNDER_THE_REVEAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -63,13 +63,11 @@ class MapVisibilityIntegrationTests {
 
     // The force override on, so the rule admits a system regardless of access or
     // inhabitation - the widening the pre-computed entry point reads off the value.
-    private static final MapVisibilityRules FORCED_ONTO_MAP =
-        new MapVisibilityRules(BASE_FOG, true);
+    private static final MapVisibilityRules FORCED_ONTO_MAP = FORCED_UNDER_THE_FOG;
 
     // The undiscovered-colony widening on, the other component of the same value: an
     // undiscovered colony counts as inhabitation.
-    private static final MapVisibilityRules INCLUDING_UNDISCOVERED_MARKETS =
-        new MapVisibilityRules(UNDER_THE_REVEAL, false);
+    private static final MapVisibilityRules INCLUDING_UNDISCOVERED_MARKETS = UNFORCED_UNDER_THE_REVEAL;
 
     // The size every colony these cases stage carries. Nothing the visibility rule reads weighs a
     // colony, so a case varying this would vary nothing the rule can see.

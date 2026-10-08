@@ -18,9 +18,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildUnroutedSectorOf;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.listMarketsIn;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.FORCED_UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -44,8 +44,7 @@ class DrawnSystemPositionsTests {
 
     // The force override on, so membership is settled without staging an economy that owns
     // the system - which leaves a case free to be about the position rather than the rule.
-    private static final MapVisibilityRules FORCED_ONTO_MAP =
-        new MapVisibilityRules(BASE_FOG, true);
+    private static final MapVisibilityRules FORCED_ONTO_MAP = FORCED_UNDER_THE_FOG;
 
     private static final String OWNING_FACTION = "hegemony";
 

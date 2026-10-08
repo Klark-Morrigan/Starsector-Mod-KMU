@@ -31,20 +31,20 @@ final class OwnerSortModeComposerTests {
 
     // The stand-in vocabulary's two numbers, named once so a case can promote either one and read the
     // same accessor back out of the chain.
-    private static final ToIntFunction<HazardRating> SEVERITY = HazardRating::severity;
-    private static final ToIntFunction<HazardRating> VOLATILITY = HazardRating::volatility;
+    private static final ToIntFunction<HazardRatingFake> SEVERITY = HazardRatingFake::severity;
+    private static final ToIntFunction<HazardRatingFake> VOLATILITY = HazardRatingFake::volatility;
 
     // What a mode that ranks by name names instead of a number. Spelled as the accessor type rather
     // than left a bare null at each call, so those cases read as the by-name ranking they set up.
-    private static final ToIntFunction<HazardRating> NO_METRIC = null;
+    private static final ToIntFunction<HazardRatingFake> NO_METRIC = null;
 
     // Severity first, volatility behind it - the order this stand-in vocabulary breaks ties down.
-    private static final List<ToIntFunction<HazardRating>> CANONICAL_CHAIN =
+    private static final List<ToIntFunction<HazardRatingFake>> CANONICAL_CHAIN =
         List.of(SEVERITY, VOLATILITY);
 
     // A caller's own order that separates nothing, so a case over the tail reads what the tail did
     // rather than what the order in front of it did.
-    private static final Comparator<RankedOwner<HazardRating>> LEVEL_ORDER =
+    private static final Comparator<RankedOwner<HazardRatingFake>> LEVEL_ORDER =
         (leftOwner, rightOwner) -> 0;
 
     @Nested
@@ -277,8 +277,8 @@ final class OwnerSortModeComposerTests {
     // spelling out the direction. The flip cases use the direction overload.
     @SafeVarargs
     private static List<String> listIdsSortedBy(
-            ToIntFunction<HazardRating> primaryMetric,
-            RankedOwner<HazardRating>... owners) {
+            ToIntFunction<HazardRatingFake> primaryMetric,
+            RankedOwner<HazardRatingFake>... owners) {
 
         return listIdsSortedBy(
             primaryMetric,
@@ -290,8 +290,8 @@ final class OwnerSortModeComposerTests {
     // is how a mode outside the two vocabularies reaches the tail.
     @SafeVarargs
     private static List<String> listIdsWithSharedTailBehind(
-            Comparator<RankedOwner<HazardRating>> callersOrder,
-            RankedOwner<HazardRating>... owners) {
+            Comparator<RankedOwner<HazardRatingFake>> callersOrder,
+            RankedOwner<HazardRatingFake>... owners) {
 
         return listIdsInOrder(OwnerSortModeComposer.appendSharedTail(callersOrder), owners);
     }
@@ -299,9 +299,9 @@ final class OwnerSortModeComposerTests {
     // The same in a named direction, which is what the flip cases ask for.
     @SafeVarargs
     private static List<String> listIdsSortedBy(
-            ToIntFunction<HazardRating> primaryMetric,
+            ToIntFunction<HazardRatingFake> primaryMetric,
             SortDirection direction,
-            RankedOwner<HazardRating>... owners) {
+            RankedOwner<HazardRatingFake>... owners) {
 
         return listIdsInOrder(
             OwnerSortModeComposer.assembleComparator(primaryMetric, CANONICAL_CHAIN, direction),

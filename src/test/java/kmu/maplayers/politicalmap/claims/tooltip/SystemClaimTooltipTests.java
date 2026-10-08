@@ -33,8 +33,8 @@ import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.factions.SystemColonyReading;
-import kmu.maplayers.ownermap.owners.holders.factions.SystemStatusRow;
+import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReading;
+import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemStatusRow;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltipTests;
@@ -78,6 +78,7 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelTex
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.UNFORCED_UNDER_THE_REVEAL;
 import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
 import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubDispositionToward;
 import static kmu.maplayers.ownermap.owners.holders.factions.SectorFactionsFake.stubFaction;
@@ -841,7 +842,7 @@ final class SystemClaimTooltipTests {
             // about the box.
             visibilityRulesMock
                 .when(MapVisibilityRules::readFromLunaSettings)
-                .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
+                .thenReturn(UNFORCED_UNDER_THE_REVEAL);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -1157,7 +1158,7 @@ final class SystemClaimTooltipTests {
             // has turned it on is not told two different things by two layers about one system.
             visibilityRulesMock
                 .when(MapVisibilityRules::readFromLunaSettings)
-                .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
+                .thenReturn(UNFORCED_UNDER_THE_REVEAL);
 
             stubBreakdown(SystemClaimBreakdown.NONE);
 
@@ -1464,7 +1465,7 @@ final class SystemClaimTooltipTests {
                 .when(MapVisibilityRules::readFromLunaSettings)
                 .thenAnswer(invocation -> {
                     settingsReads.incrementAndGet();
-                    return new MapVisibilityRules(UNDER_THE_REVEAL, false);
+                    return UNFORCED_UNDER_THE_REVEAL;
                 });
 
             stubBreakdown(new SystemClaimBreakdown(
@@ -1504,7 +1505,7 @@ final class SystemClaimTooltipTests {
 
             visibilityRulesMock
                 .when(MapVisibilityRules::readFromLunaSettings)
-                .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
+                .thenReturn(UNFORCED_UNDER_THE_REVEAL);
 
             recordingTooltip.composeBody(sectorMock, systemMock, FACTIONS);
 

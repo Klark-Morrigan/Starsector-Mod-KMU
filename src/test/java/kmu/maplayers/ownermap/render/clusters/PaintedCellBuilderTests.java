@@ -24,7 +24,7 @@ import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
-import kmu.maplayers.ownermap.render.style.StandInCategory;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -62,7 +62,7 @@ final class PaintedCellBuilderTests {
     // A reading answering both per-owner style questions with fixed values, so a case can prove
     // whether the style resolver consulted the reading (off filter) or bypassed it (under filter).
     private static OwnerReading buildReadingDeciding(
-            StandInCategory category,
+            StandInCategoryFake category,
             ElementStyleAdjustment adjustment) {
 
         return OwnerReadingFake.createAnsweringNothing().withStyle(category, adjustment);
@@ -574,7 +574,7 @@ final class PaintedCellBuilderTests {
         // A reading that places every owner in the full-strength category and returns the given
         // adjustment for any owner, so each case names only the adjustment it exercises.
         private static OwnerReading buildReadingAdjusting(ElementStyleAdjustment adjustment) {
-            return buildReadingDeciding(StandInCategory.OWNED, adjustment);
+            return buildReadingDeciding(StandInCategoryFake.OWNED, adjustment);
         }
 
         // The unfiltered unowned backdrop under a chosen pair of unowned category styles,
@@ -684,10 +684,10 @@ final class PaintedCellBuilderTests {
 
             var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
 
-            categories.put(StandInCategory.OWNED, STYLE);
-            categories.put(StandInCategory.RECEDED, STYLE);
-            categories.put(StandInCategory.SETTLED, decivilisedStyle);
-            categories.put(StandInCategory.EMPTY, uninhabitedStyle);
+            categories.put(StandInCategoryFake.OWNED, STYLE);
+            categories.put(StandInCategoryFake.RECEDED, STYLE);
+            categories.put(StandInCategoryFake.SETTLED, decivilisedStyle);
+            categories.put(StandInCategoryFake.EMPTY, uninhabitedStyle);
 
             return new RenderStyle(globalStyle, categories);
         }

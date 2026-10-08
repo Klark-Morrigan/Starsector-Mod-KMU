@@ -7,9 +7,9 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.factions.FactionOwnerReading;
-import kmu.maplayers.ownermap.owners.holders.factions.OwnerMapCategory;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 
 import java.awt.Color;
@@ -94,7 +94,7 @@ public final class AllianceOwnerReading
     public MapStyleCategory resolveCategory(String ownerId, ElementStyleAdjustment adjustment) {
 
         return grouping.isGroupedBloc(ownerId)
-            ? OwnerMapCategory.FACTION
+            ? HolderCategory.FACTION
             : factions.resolveCategory(ownerId, adjustment);
     }
 

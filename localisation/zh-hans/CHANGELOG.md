@@ -24,12 +24,16 @@
 
 ##### 包
 
-所有者地图层的核心对所有者是什么一无所知。绘制持有者的图层所共享的部分位于 `kmu.maplayers.ownermap.owners.holders` 下：`base` 用于各类持有者，`factions` 把一个势力作为一个所有者，`alliances` 把一组势力作为一个所有者。核心不得导入该子树。
+所有者地图层的核心对所有者是什么一无所知。绘制持有者的图层所共享的部分位于 `kmu.maplayers.ownermap.owners.holders` 下：`base` 用于各类持有者，其选择器位于 `base.picker`，悬停框中的殖民地行位于 `base.tooltip`；`factions` 把一个势力作为一个所有者，`alliances` 把一组势力作为一个所有者。核心不得导入该子树。
 
 | 之前 | 之后 |
 | --- | --- |
-| `ownermap.holding`、`ownermap.owners.holders`、`BlocPickerAssembly`、`BlocStanding`、`BlocStandingReader`、`BlocStandingSortMode`、`RibbonPlanInputs`、`BlocPaletteReader` 和 `SectorBlocPalettes` | `ownermap.owners.holders.base`，下列类型除外 |
-| `HolderCategories`、`OwnerMapCategory`、`ColonyCellRibbons`、`SizedBlocMetrics`、`SharedBlocSortModes`、`SystemStatusRow` 以及 `ownermap.tooltip` 中的殖民地与势力行 | `ownermap.owners.holders.factions` |
+| `ownermap.holding`、`ownermap.owners.holders`、`RibbonPlanInputs`、`BlocPaletteReader`、`SectorBlocPalettes`、`HolderCategories`、`OwnerMapCategory` 和 `ColonyCellRibbons` | `ownermap.owners.holders.base`，下列类型除外 |
+| `BlocPickerAssembly`、`BlocStanding`、`BlocStandingReader`、`BlocStandingSortMode`、`SizedBlocMetrics` 和 `SharedBlocSortModes` | `ownermap.owners.holders.base.picker` |
+| `SystemStatusRow` 以及 `ownermap.tooltip` 中的殖民地行 | `ownermap.owners.holders.base.tooltip` |
+| `ownermap.tooltip` 中的势力行 | `ownermap.owners.holders.factions` |
+| `ownermap.tooltip.TermTooltipLine` | `base.tooltip.content.TermTooltipLine`。`ownermap.tooltip` 已移除 |
+| `ownermap.sidebar.BodyControlTarget` | `base.sidebar.BodyControlTarget` |
 | `BlocAffiliation`、`BlocFriendliness`、`ContestSide`、`ContestSides` 和 `BlocRelations` | `ownermap.owners.holders.alliances` |
 
 ##### 重命名
@@ -39,6 +43,7 @@
 | `SelectableBloc`、`SelectableBlocCache`、`RankedBloc`、`BlocMetrics`、`PaintingBlocMetrics`、`BlocMetricSortMode`、`BlocSortModeComposer`、`BlocPickerRead`、`BlocPresenceIndex`、`BlocPresenceIndexBuilder`、`BlocStatsRead`、`SpotlitBlocs`、`ResolvedBlocPaint`、`BlocNameStyles` 和 `BlocPresence` | 各名称及其成员中的 `Bloc` 换为 `Owner` |
 | `FactionNameFormatChoice`、`FactionPaletteSlot`、`FactionlessStyleResolver` 和 `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`、`OwnerPaletteSlot`、`UnownedStyleResolver` 和 `OwnerPaletteChoice` |
 | `HolderOwnerReading` | `FactionOwnerReading`，以及为绘制联盟的图层建立在其上的 `AllianceOwnerReading` |
+| `OwnerMapCategory`、`OwnerMapInhabitation` 和 `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`、`HolderInhabitation` 和 `DominanceHolderProvider` |
 | `OwnerMapCache` 与 `OwnerMapDrawables` 的 `getFactionLabels`、`OwnerMapBuildInputs.resolveBlocPaintOf` 和 `OwnerStyleResolver.resolveBlocStyleDecision` | `getOwnerLabels`、`resolveOwnerPaintOf` 和 `resolveOwnerStyleDecision` |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` 及其 `strings.json` 键 | `POLITICAL_MAP_CTL_FACTION_NAMES`，政治地图自己的标题 |
 

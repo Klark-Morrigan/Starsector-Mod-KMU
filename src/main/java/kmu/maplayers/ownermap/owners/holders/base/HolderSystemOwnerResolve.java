@@ -47,7 +47,7 @@ final class HolderSystemOwnerResolve implements SystemOwnerResolve {
 
         // The same projection the whole-sector scan classified by, so a system re-derived here is
         // never taken off the map the rebuild put it on.
-        return OwnerMapInhabitation.isSystemInhabited(pass, system);
+        return HolderInhabitation.isSystemInhabited(pass, system);
     }
 
     @Override

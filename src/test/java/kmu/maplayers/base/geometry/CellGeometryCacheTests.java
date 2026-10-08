@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildReachableSystemAt;
 import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildStarAnchoredSectorOf;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.FORCED_UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -67,8 +67,7 @@ final class CellGeometryCacheTests {
 
     // The force override on, which admits every system whatever the normal gates say - the one
     // widening that needs no economy staged behind it to change the participating set.
-    private static final MapVisibilityRules FORCED_ONTO_MAP =
-        new MapVisibilityRules(BASE_FOG, true);
+    private static final MapVisibilityRules FORCED_ONTO_MAP = FORCED_UNDER_THE_FOG;
 
     @Nested
     class UpdateFromSector {

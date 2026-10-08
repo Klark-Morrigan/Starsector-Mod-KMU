@@ -335,6 +335,7 @@ So a word of one axis never stands in for another:
 | seam (a place the framework asks a map layer to fill, in the changelog) | 接缝 | the plain word for where two parts meet |
 | caption (the words beside a sidebar control, in the changelog) | 标题 | the plain word for a control's heading text |
 | radio (a row of options with one lit, in the changelog) | 单选框 | the usual UI word for a one-of-many control |
+| picker (the sidebar list a bloc is spotlit from) | 选择器 | the usual UI word for a control a choice is made in |
 | spotlight | 聚焦 | to focus on, which spotlighting a bloc does |
 | recede | 退后 | to step back, which a receded bloc does on the map |
 | Muted / Desaturated | 淡化 / 去色 | 淡化, to fade, and 去色, to strip colour, the usual image-editing word |

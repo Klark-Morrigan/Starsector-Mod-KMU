@@ -14,15 +14,14 @@ import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderOwnerSource;
-import kmu.maplayers.ownermap.owners.holders.factions.HolderCategories;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
-import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsRead;
@@ -31,7 +30,6 @@ import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
-import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuOwnerMapStyleSettings;
@@ -70,6 +68,9 @@ import static org.mockito.Mockito.when;
  * <p>Beside them, what the view offers the player around the fills: only an alliance as a
  * spotlight target, matching its role of grouping holders by alliance, and a domination box of its
  * own on hover, so the box ranks under the grouping this view painted with.
+ *
+ * <p>What every view the domination contest paints answers alike is {@link DominancePaintedView}'s,
+ * pinned once by its own suite.
  */
 final class AlliancesViewTests {
 
@@ -196,20 +197,6 @@ final class AlliancesViewTests {
     }
 
     @Nested
-    class ResolveHolderProvider {
-
-        @Test
-        void returnsTheDefaultProvider() {
-            // The alliances view rolls factions into alliance blocs through its grouping, but the
-            // holding source underneath is the same dominant-holder resolution the faction view
-            // uses - extended with claimed systems - so it inherits the shared claim-augmented
-            // default rather than supplying one of its own.
-            assertThat(AlliancesView.INSTANCE.resolveHolderProvider())
-                .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
-        }
-    }
-
-    @Nested
     class ResolveOwnerReading {
 
         @Test
@@ -245,17 +232,6 @@ final class AlliancesViewTests {
                         HolderOwnerSource.class,
                         source -> assertThat(source.grouping()).isSameAs(ALLIANCE_GROUPING));
             }
-        }
-    }
-
-    @Nested
-    class ResolveCategories {
-
-        @Test
-        void declaresTheHolderCategories() {
-
-            assertThat(AlliancesView.INSTANCE.resolveCategories())
-                .isSameAs(HolderCategories.INSTANCE);
         }
     }
 

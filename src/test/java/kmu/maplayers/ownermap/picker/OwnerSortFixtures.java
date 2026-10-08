@@ -43,7 +43,7 @@ public final class OwnerSortFixtures {
     }
 
     /**
-     * A listed owner over {@link HazardRating}, the payload no view declares. For the suites saying what
+     * A listed owner over {@link HazardRatingFake}, the payload no view declares. For the suites saying what
      * the sorting does for any vocabulary rather than what one layer's numbers happen to produce.
      *
      * @param id         the owner's save-stable ID
@@ -52,13 +52,13 @@ public final class OwnerSortFixtures {
      * @param volatility the stand-in payload's second number, which a tie falls to
      * @return the owner as a picker row
      */
-    public static RankedOwner<HazardRating> buildStandInOwner(
+    public static RankedOwner<HazardRatingFake> buildStandInOwner(
             String id,
             String name,
             int severity,
             int volatility) {
 
-        return buildOwner(id, name, new HazardRating(severity, volatility));
+        return buildOwner(id, name, new HazardRatingFake(severity, volatility));
     }
 
     /**

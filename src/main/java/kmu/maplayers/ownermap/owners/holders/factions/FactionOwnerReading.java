@@ -13,6 +13,7 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
@@ -104,8 +105,8 @@ public final class FactionOwnerReading
             || adjustment.shouldDesaturate();
 
         return isIndependent
-            ? OwnerMapCategory.INDEPENDENT
-            : OwnerMapCategory.FACTION;
+            ? HolderCategory.INDEPENDENT
+            : HolderCategory.FACTION;
     }
 
     // The neutral faction's own colour, which is what a system nobody holds has always painted in.

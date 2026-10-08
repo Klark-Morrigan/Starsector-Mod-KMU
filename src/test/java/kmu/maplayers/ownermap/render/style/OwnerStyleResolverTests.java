@@ -26,7 +26,7 @@ final class OwnerStyleResolverTests {
     // A reading answering both per-owner style questions with fixed values, so a case can prove
     // whether the decision consulted the reading or bypassed it.
     private static OwnerReading buildReadingMockDeciding(
-            StandInCategory category,
+            StandInCategoryFake category,
             ElementStyleAdjustment adjustment) {
 
         var readingMock = mock(OwnerReading.class);
@@ -91,14 +91,14 @@ final class OwnerStyleResolverTests {
             // strength when a filter turns on.
             var decision = OwnerStyleResolver.resolveOwnerStyleDecision(
                 "independent",
-                buildReadingMockDeciding(StandInCategory.RECEDED, ElementStyleAdjustment.NONE),
+                buildReadingMockDeciding(StandInCategoryFake.RECEDED, ElementStyleAdjustment.NONE),
                 OwnerCategoriesFake.SHARED_FAKE,
                 ContentInputsFixtures.createInputsRecedingBehind(
                     "tritachyon",
                     new ElementStyleAdjustment(0.3, true)));
 
             assertThat(decision.category())
-                .isEqualTo(StandInCategory.RECEDED);
+                .isEqualTo(StandInCategoryFake.RECEDED);
         }
 
         @Test
@@ -107,7 +107,7 @@ final class OwnerStyleResolverTests {
             // desaturate would otherwise trip: it draws in the category the layer declares full
             // strength, whatever the reading would have said.
             var readingMock = buildReadingMockDeciding(
-                StandInCategory.RECEDED,
+                StandInCategoryFake.RECEDED,
                 new ElementStyleAdjustment(0.5, true));
 
             var decision = OwnerStyleResolver.resolveOwnerStyleDecision(
@@ -119,7 +119,7 @@ final class OwnerStyleResolverTests {
                     new ElementStyleAdjustment(0.3, true)));
 
             assertThat(decision)
-                .isEqualTo(new OwnerStyleDecision(StandInCategory.OWNED, ElementStyleAdjustment.NONE));
+                .isEqualTo(new OwnerStyleDecision(StandInCategoryFake.OWNED, ElementStyleAdjustment.NONE));
             verify(readingMock, never()).resolveCategory(any(), any());
         }
 
@@ -133,13 +133,13 @@ final class OwnerStyleResolverTests {
             var sharedRecede = new ElementStyleAdjustment(0.3, true);
             var decision = OwnerStyleResolver.resolveOwnerStyleDecision(
                 "hegemony",
-                buildReadingMockDeciding(StandInCategory.OWNED, ownerRecede),
+                buildReadingMockDeciding(StandInCategoryFake.OWNED, ownerRecede),
                 OwnerCategoriesFake.SHARED_FAKE,
                 ContentInputsFixtures.createInputsRecedingBehind("tritachyon", sharedRecede));
 
             assertThat(decision)
                 .isEqualTo(new OwnerStyleDecision(
-                    StandInCategory.OWNED,
+                    StandInCategoryFake.OWNED,
                     new ElementStyleAdjustment(0.3, true)));
         }
 
@@ -151,7 +151,7 @@ final class OwnerStyleResolverTests {
             // shared recede desaturates: the reading must still be offered a desaturating adjustment,
             // or an owner would paint in the desaturation palette while keeping full strength.
             var readingMock = buildReadingMockDeciding(
-                StandInCategory.OWNED,
+                StandInCategoryFake.OWNED,
                 new ElementStyleAdjustment(0.5, false));
 
             OwnerStyleResolver.resolveOwnerStyleDecision(
@@ -171,7 +171,7 @@ final class OwnerStyleResolverTests {
             // Off filter the reading's own adjustment is what the owner paints under, so that is what
             // its category reads - the same "bundle and palette agree" rule, with nothing to union in.
             var adjustment = new ElementStyleAdjustment(0.5, true);
-            var readingMock = buildReadingMockDeciding(StandInCategory.RECEDED, adjustment);
+            var readingMock = buildReadingMockDeciding(StandInCategoryFake.RECEDED, adjustment);
 
             OwnerStyleResolver.resolveOwnerStyleDecision(
                 "pirates",
@@ -190,12 +190,12 @@ final class OwnerStyleResolverTests {
             var adjustment = new ElementStyleAdjustment(0.5, true);
             var decision = OwnerStyleResolver.resolveOwnerStyleDecision(
                 "pirates",
-                buildReadingMockDeciding(StandInCategory.RECEDED, adjustment),
+                buildReadingMockDeciding(StandInCategoryFake.RECEDED, adjustment),
                 OwnerCategoriesFake.SHARED_FAKE,
                 ContentInputsFixtures.createInputsRecedingBehind(null, ElementStyleAdjustment.NONE));
 
             assertThat(decision.category())
-                .isEqualTo(StandInCategory.RECEDED);
+                .isEqualTo(StandInCategoryFake.RECEDED);
             assertThat(decision.adjustment())
                 .isSameAs(adjustment);
         }

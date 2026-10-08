@@ -10,6 +10,7 @@ import kmlib.starsector.ui.controls.specs.LabelSpec;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
 import kmu.starsector.StarsectorSettingsFake;
 import kmu.util.KmuStringKeys;
