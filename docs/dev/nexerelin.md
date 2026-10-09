@@ -526,43 +526,59 @@ and the decisions each needs before a design.
 The hover box reads alliances two or three times a frame,
 and each read scans the economy once per alliance member
 ([What an alliance read costs](#what-an-alliance-read-costs)).
-The fix is a per-sector snapshot,
-re-folded only when the `ALLIANCES` revision moves.
-Hover and rebuild reads would drop to an int compare,
-and the box would go stale on the same counter as the fills.
-A read using `getMembersCopy()` would take the scan out of every membership-only fold.
+The cost is all in reading Nex;
+KMU's folds over the records are a few small maps.
+So the fix splits in two:
+
+- **KMLib holds a versioned snapshot of Nex's alliances**, in `kmlib.mods.nexerelin`.
+  Membership comes from `getMembersCopy()`, which does no scan.
+  The rank, which member leads, is the one part that needs the scan.
+  The version moves when either changes.
+- **KMU folds the snapshot**,
+  each fold memoised on the snapshot's version
+  (`RevisionMemo` in KMLib already has that shape).
+  Hover and rebuild reads drop to an int compare.
+
+KMLib runs no poll of its own and holds nothing per sector.
+Its precedent is `SystemMotionTracker`:
+the caller polls the tracker,
+and the tracker owns the comparison.
+So KMU's staleness poll would drive the snapshot's check,
+which reads the alliance list for a new alliance and re-ranks for a new lead.
+[Alliance events](#alliance-events) move the version between polls.
 
 Decisions:
 
-- Where the snapshot lives.
-  KMLib has no revision to key it on,
-  and `base` may not name the political map's signal,
-  so `FactionAllianceRegistry` would take the snapshot from its caller rather than from the signal.
+- Who holds the per-sector instance.
+  KMU's sector map machinery is the natural holder;
+  KMLib has no per-sector registry.
+- Whether the views fold the snapshot's version into their content revision directly,
+  which would make `PoliticalMapRefreshSignal.ALLIANCES` redundant.
 - How the snapshot is seeded at install,
-  and kept fresh for the visibility sweep while the political map is off.
+  and which poll drives it while the political map is off,
+  since the visibility sweep still reads alliances then.
 - Whether the poll and hover box get profiling rows first,
   so the saving can be measured.
 
 ### Alliance events
 
-`AllianceEventListener` could raise `ALLIANCES` the moment a faction joins, leaves, merges or dissolves,
-instead of on the next poll.
-The board is a pair of atomic counters,
-so bumping it from inside Nex's call is safe.
-This buys latency, not cost:
-the poll stays,
+`AllianceEventListener` reports a faction joining or leaving, a merge and a dissolution
+the moment Nex makes them.
+It belongs with the snapshot in `kmlib.mods.nexerelin`,
+moving the snapshot's version;
+KMU then sees the change on its next frame without a relay of its own.
+The poll stays,
 since Nex reports neither a new alliance nor a change of lead.
-It matters most for a change made in a paused dialog,
-where the poll does not run,
-and it becomes necessary once the snapshot above is cached.
+The event matters most for a change made in a paused dialog,
+where the poll does not run.
 
-The shape follows the [conquest relay](#where-the-map-layers-read-nex):
-a KMU-owned contract in `kmu.starsector.listeners`,
-a relay in `kmu.mods.nexerelin` implementing all six methods,
-and a sixth listener in `PoliticalMapInstaller`.
-It needs its own installer holder,
-since the interface exists from 0.12.2 only
-and a link error must not take the conquest relay down with it.
+The relay implements all six methods,
+is installed transient on the sector the snapshot belongs to,
+and only bumps a version,
+since some events fire while Nex is still mid-change.
+It needs an installer holder of its own,
+because the interface exists from 0.12.2 only
+and a link error must not take the alliance read down with it.
 
 ### Original owner and occupied colonies
 
