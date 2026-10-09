@@ -2,8 +2,9 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.FactionPalette;
-import kmlib.starsector.factions.StarsectorFactionColours;
+import kmlib.colour.ColourPair;
+import kmlib.starsector.factions.FactionColours;
+import kmlib.starsector.factions.SectorFactions;
 
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -44,16 +45,15 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
      * @param palette the faction's bright and dark shades
      * @return the same two shades as an owner's
      */
-    public static OwnerPalette adoptFactionPalette(FactionPalette palette) {
+    public static OwnerPalette adoptFactionPalette(ColourPair palette) {
         return new OwnerPalette(palette.primaryColour(), palette.secondaryColour());
     }
 
     @Override
     public OwnerPalette readBlocPalette(String blocId) {
 
-        var palette = StarsectorFactionColours.findPalette(
-            sector,
-            grouping.resolveColourFactionId(blocId));
+        var palette = FactionColours.findPalette(
+            SectorFactions.findFaction(sector, grouping.resolveColourFactionId(blocId)));
 
         // No colour faction is the degenerate case every caller drops the bloc on: a bloc gone
         // from the sector has no shades, and painting it a stand-in colour would put colour on the

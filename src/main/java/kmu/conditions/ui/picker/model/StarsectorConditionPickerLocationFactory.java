@@ -7,7 +7,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.factions.FactionNames;
-import kmlib.starsector.factions.relation.StarsectorPlayerRelations;
+import kmlib.starsector.factions.relation.PlayerRelations;
 
 import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.domain.StarsectorEditableMarket;
@@ -15,7 +15,7 @@ import kmu.starsector.StarsectorGravityWellResolver;
 
 import java.util.Objects;
 
-import static kmlib.starsector.factions.relation.StarsectorRelationFormatter.formatRelation;
+import static kmlib.starsector.factions.relation.RelationFormatter.formatRelation;
 
 import static kmu.util.KmuValues.normaliseText;
 
@@ -132,7 +132,7 @@ final class StarsectorConditionPickerLocationFactory {
 
         // The row words the standing and paints itself in its colour, so both come off one read;
         // a faction with no standing to read leaves the row carrying neither.
-        var standing = StarsectorPlayerRelations.readPlayerRelation(faction)
+        var standing = PlayerRelations.readPlayerRelation(faction)
             .orElse(null);
 
         return new KmuPickerFaction(

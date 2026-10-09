@@ -3,11 +3,11 @@ package kmu.maplayers.ownermap.owners.holders.factions;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.factions.FactionColours;
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.factions.FactionNameForm;
 import kmlib.starsector.factions.FactionNames;
 import kmlib.starsector.factions.SectorFactions;
-import kmlib.starsector.factions.StarsectorFactionColours;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
@@ -105,7 +105,7 @@ public final class FactionOwnerReading
     @Override
     public Color resolveUnownedColour() {
 
-        return StarsectorFactionColours.resolveNeutralColour(sector);
+        return FactionColours.resolveNeutralColour(sector);
     }
 
     // Independent's own two shades, which the tier darkens into the receded backdrop so it sits below
@@ -115,6 +115,6 @@ public final class FactionOwnerReading
     public OwnerPalette resolveRecedePalette() {
 
         return SectorBlocPalettes.adoptFactionPalette(
-            StarsectorFactionColours.resolvePalette(sector, Factions.INDEPENDENT));
+            FactionColours.resolvePalette(SectorFactions.findFaction(sector, Factions.INDEPENDENT)));
     }
 }

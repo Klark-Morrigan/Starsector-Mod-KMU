@@ -753,7 +753,7 @@ every faction of the one above `RepLevel.NEUTRAL` toward every faction of the ot
 read over both whole memberships
 (`HolderGrouping.resolveMemberFactionIds`) rather than over who happens to stand in the hovered system,
 so the same two blocs cannot come out friendly over one system and contesting over the next.
-The threshold is the base game's own step from indifference to goodwill (`StarsectorFactionRelations`, KMLib),
+The threshold is the base game's own step from indifference to goodwill (`FactionRelations`, KMLib),
 which is what makes the block explicable:
 a cut taken anywhere else in the scale is one the player is never shown.
 What the four rules are is `StandingBlockRules`,

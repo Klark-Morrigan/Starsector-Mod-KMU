@@ -35,6 +35,6 @@ public final class FactionTooltipBanner {
 
         return CellTooltipRows.buildBannerRow(
             presentation.crestSpritePath(),
-            presentation.fullName());
+            presentation.labelText());
     }
 }

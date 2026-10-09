@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.claims.tooltip;
 
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
-import kmlib.starsector.systems.claims.WeighedClaimStanding;
 
 /**
  * What a box may show of a faction's claim markets: which of them get a row, and which of them are
@@ -91,6 +90,6 @@ final class ListedClaimMarkets {
             MarketClaimBreakdown market,
             FactionClaimStanding standing) {
 
-        return market.isCountedTowardSiblings() && standing instanceof WeighedClaimStanding;
+        return market.isCountedTowardSiblings() && standing.isWeighed();
     }
 }

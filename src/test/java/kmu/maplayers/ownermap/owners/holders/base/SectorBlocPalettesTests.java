@@ -2,7 +2,7 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.FactionPalette;
+import kmlib.colour.ColourPair;
 
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -123,7 +123,7 @@ final class SectorBlocPalettesTests {
         @Test
         void keepsTheBrightShadePrimaryAndTheDarkSecondary() {
 
-            assertThat(SectorBlocPalettes.adoptFactionPalette(new FactionPalette(BRIGHT, DARK)))
+            assertThat(SectorBlocPalettes.adoptFactionPalette(new ColourPair(BRIGHT, DARK)))
                 .isEqualTo(new OwnerPalette(BRIGHT, DARK));
         }
     }

@@ -86,11 +86,9 @@ final class StandingRowResolverTests {
             var standings = routeWhole(
                 new GroupStanding("hegemony", 7, List.of(new WeighedFactionStanding("hegemony", 7))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                HolderGrouping.identity(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             // A lone faction is made up of nothing: its one member would only repeat the line above it.
             assertThat(entries)
@@ -114,11 +112,9 @@ final class StandingRowResolverTests {
                 1200,
                 List.of(new WeighedFactionStanding("hegemony", 1200))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                HolderGrouping.identity(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries.get(0).line().valueText())
                 .isEqualTo("1,200");
@@ -135,11 +131,9 @@ final class StandingRowResolverTests {
             var standings = routeWhole(
                 new GroupStanding("hegemony", 7, List.of(new WeighedFactionStanding("hegemony", 7))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                HolderGrouping.identity(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry.createEntry(
@@ -158,11 +152,9 @@ final class StandingRowResolverTests {
                 new WeighedFactionStanding("hegemony", 8),
                 new WeighedFactionStanding("astral_armada", 3))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                buildAllianceGrouping(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             // The bloc takes its own name and its lead (colour) member's crest, and the members stay in
             // the ranking order the standing placed them.
@@ -197,11 +189,9 @@ final class StandingRowResolverTests {
                 new WeighedFactionStanding("hegemony", 8),
                 new WeighedFactionStanding("astral_armada", 3))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                buildAllianceGrouping(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
@@ -225,16 +215,15 @@ final class StandingRowResolverTests {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                List.of(new RoutedStanding(
-                    new GroupStanding(GROUP_BLOC_ID, 11, List.of(
-                        new WeighedFactionStanding("hegemony", 8),
-                        new WeighedFactionStanding("astral_armada", 3))),
-                    new StandingFraction(2, 3),
-                    Map.of())),
-                buildAllianceGrouping(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
+                .resolveRows(
+                    List.of(new RoutedStanding(
+                        new GroupStanding(GROUP_BLOC_ID, 11, List.of(
+                            new WeighedFactionStanding("hegemony", 8),
+                            new WeighedFactionStanding("astral_armada", 3))),
+                        new StandingFraction(2, 3),
+                        Map.of())));
 
             // The count is what the box worked out about the row and reads as a finding with nothing
             // around it - what it counts is said by the heading the row sits under.
@@ -252,18 +241,17 @@ final class StandingRowResolverTests {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                List.of(new RoutedStanding(
-                    new GroupStanding(GROUP_BLOC_ID, 11, List.of(
-                        new WeighedFactionStanding("hegemony", 8),
-                        new WeighedFactionStanding("astral_armada", 3))),
-                    new StandingFraction(2, 3),
-                    Map.of(
-                        "hegemony", new StandingFraction(1, 4),
-                        "astral_armada", new StandingFraction(3, 4)))),
-                buildAllianceGrouping(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
+                .resolveRows(
+                    List.of(new RoutedStanding(
+                        new GroupStanding(GROUP_BLOC_ID, 11, List.of(
+                            new WeighedFactionStanding("hegemony", 8),
+                            new WeighedFactionStanding("astral_armada", 3))),
+                        new StandingFraction(2, 3),
+                        Map.of(
+                            "hegemony", new StandingFraction(1, 4),
+                            "astral_armada", new StandingFraction(3, 4)))));
 
             assertThat(entries.get(0).children())
                 .extracting(member -> member.line().qualifier())
@@ -281,15 +269,14 @@ final class StandingRowResolverTests {
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                List.of(new RoutedStanding(
-                    new GroupStanding("hegemony", 7, List.of(
-                        new WeighedFactionStanding("hegemony", 7))),
-                    new StandingFraction(1, 1),
-                    Map.of("hegemony", new StandingFraction(1, 3)))),
-                HolderGrouping.identity(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
+                .resolveRows(
+                    List.of(new RoutedStanding(
+                        new GroupStanding("hegemony", 7, List.of(
+                            new WeighedFactionStanding("hegemony", 7))),
+                        new StandingFraction(1, 1),
+                        Map.of("hegemony", new StandingFraction(1, 3)))));
 
             assertThat(entries.get(0).line().qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("(1/3)"));
@@ -305,16 +292,15 @@ final class StandingRowResolverTests {
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                List.of(new RoutedStanding(
-                    new GroupStanding(GROUP_BLOC_ID, 11, List.of(
-                        new WeighedFactionStanding("hegemony", 8),
-                        new WeighedFactionStanding("astral_armada", 3))),
-                    new StandingFraction(2, 2),
-                    Map.of("hegemony", new StandingFraction(0, 3)))),
-                buildAllianceGrouping(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
+                .resolveRows(
+                    List.of(new RoutedStanding(
+                        new GroupStanding(GROUP_BLOC_ID, 11, List.of(
+                            new WeighedFactionStanding("hegemony", 8),
+                            new WeighedFactionStanding("astral_armada", 3))),
+                        new StandingFraction(2, 2),
+                        Map.of("hegemony", new StandingFraction(0, 3)))));
 
             assertThat(entries.get(0).line().qualifier())
                 .isNull();
@@ -331,15 +317,14 @@ final class StandingRowResolverTests {
 
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                List.of(new RoutedStanding(
-                    new GroupStanding("astral_armada", 0, List.of(
-                        new PresenceOnlyFactionStanding("astral_armada"))),
-                    new StandingFraction(1, 1),
-                    Map.of("astral_armada", new StandingFraction(1, 3)))),
-                HolderGrouping.identity(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
+                .resolveRows(
+                    List.of(new RoutedStanding(
+                        new GroupStanding("astral_armada", 0, List.of(
+                            new PresenceOnlyFactionStanding("astral_armada"))),
+                        new StandingFraction(1, 1),
+                        Map.of("astral_armada", new StandingFraction(1, 3)))));
 
             assertThat(entries.get(0).line().isValueUncounted())
                 .isTrue();
@@ -348,11 +333,9 @@ final class StandingRowResolverTests {
         @Test
         void isEmptyForEmptyStandings() {
             // An uninhabited system ranks no groups, so the tooltip has nothing to list.
-            assertThat(StandingRowResolver.resolveRows(
-                    buildEmptySector(),
-                    List.of(),
-                    HolderGrouping.identity(),
-                    NO_ACCOUNT))
+            assertThat(StandingRowResolver
+                .createForBox(buildEmptySector(), HolderGrouping.identity(), NO_ACCOUNT)
+                .resolveRows(List.of()))
                 .isEmpty();
         }
 
@@ -372,11 +355,9 @@ final class StandingRowResolverTests {
                     4,
                     List.of(new WeighedFactionStanding("tritachyon", 4))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                HolderGrouping.identity(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries)
                 .extracting(entry -> entry.line().labelText())
@@ -392,11 +373,9 @@ final class StandingRowResolverTests {
             var standings = routeWhole(
                 new GroupStanding("ghost", 5, List.of(new WeighedFactionStanding("ghost", 5))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                HolderGrouping.identity(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry.createEntry(
@@ -417,11 +396,9 @@ final class StandingRowResolverTests {
                 8,
                 List.of(new WeighedFactionStanding("hegemony", 8))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                buildAllianceGrouping(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
@@ -450,11 +427,9 @@ final class StandingRowResolverTests {
                 new WeighedFactionStanding("hegemony", 8),
                 new WeighedFactionStanding("astral_armada", 3))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                buildAllianceGrouping(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries.get(0).isSubordinatingChildren())
                 .isFalse();
@@ -477,7 +452,8 @@ final class StandingRowResolverTests {
                 new WeighedFactionStanding("astral_armada", 3))));
 
             var memberEntries = StandingRowResolver
-                .resolveRows(sectorMock, standings, buildAllianceGrouping(), FACTION_ACCOUNTS)
+                .createForBox(sectorMock, buildAllianceGrouping(), FACTION_ACCOUNTS)
+                .resolveRows(standings)
                 .get(0)
                 .children();
 
@@ -502,7 +478,8 @@ final class StandingRowResolverTests {
                 List.of(new WeighedFactionStanding("hegemony", 8))));
 
             var groupEntry = StandingRowResolver
-                .resolveRows(sectorMock, standings, buildAllianceGrouping(), FACTION_ACCOUNTS)
+                .createForBox(sectorMock, buildAllianceGrouping(), FACTION_ACCOUNTS)
+                .resolveRows(standings)
                 .get(0);
 
             assertThat(groupEntry.isSubordinatingChildren())
@@ -523,11 +500,9 @@ final class StandingRowResolverTests {
             var standings = routeWhole(
                 new GroupStanding("hegemony", 7, List.of(new WeighedFactionStanding("hegemony", 7))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                HolderGrouping.identity(),
-                FACTION_ACCOUNTS);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, HolderGrouping.identity(), FACTION_ACCOUNTS)
+                .resolveRows(standings);
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
@@ -553,11 +528,9 @@ final class StandingRowResolverTests {
                 0,
                 List.of(new PresenceOnlyFactionStanding("tritachyon"))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                HolderGrouping.identity(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries.get(0).line().isValueUncounted())
                 .isTrue();
@@ -579,11 +552,9 @@ final class StandingRowResolverTests {
             var standings = routeWhole(
                 new GroupStanding("hegemony", 0, List.of(new WeighedFactionStanding("hegemony", 0))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                HolderGrouping.identity(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries.get(0).line().isValueUncounted())
                 .isFalse();
@@ -603,11 +574,9 @@ final class StandingRowResolverTests {
                 new PresenceOnlyFactionStanding("hegemony"),
                 new PresenceOnlyFactionStanding("astral_armada"))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                buildAllianceGrouping(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries.get(0).line().isValueUncounted())
                 .isTrue();
@@ -629,11 +598,9 @@ final class StandingRowResolverTests {
                 new WeighedFactionStanding("hegemony", 8),
                 new PresenceOnlyFactionStanding("astral_armada"))));
 
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                standings,
-                buildAllianceGrouping(),
-                NO_ACCOUNT);
+            var entries = StandingRowResolver
+                .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
+                .resolveRows(standings);
 
             assertThat(entries.get(0).line().isValueUncounted())
                 .isFalse();

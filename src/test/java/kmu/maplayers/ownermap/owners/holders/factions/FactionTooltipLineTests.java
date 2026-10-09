@@ -106,4 +106,22 @@ final class FactionTooltipLineTests {
                 .isTrue();
         }
     }
+
+    @Nested
+    class ResolveCrestMark {
+
+        @Test
+        void marksAKnownFactionWithItsCrest() {
+
+            assertThat(FactionTooltipLine.resolveCrestMark(buildSectorKnowingHegemony(), HEGEMONY))
+                .isEqualTo(HEGEMONY_MARK);
+        }
+
+        @Test
+        void marksNothingForAnUnknownFaction() {
+
+            assertThat(FactionTooltipLine.resolveCrestMark(buildEmptySector(), "ghost_faction"))
+                .isNull();
+        }
+    }
 }

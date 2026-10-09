@@ -19,6 +19,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 <details>
 <summary>Internals and the map layers framework</summary>
 
+#### Added
+
+- **`FactionStanding.isWeighed()`**: whether the pass weighed the faction's colonies, so a reader branching on the kind asks rather than testing the sealed type.
+- **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**: the mark a faction's line opens on, for a line marked as that faction's.
+
 #### Public contracts changed (**breaking**)
 
 None of these reach a player: every LunaLib field ID and every value saved in sector memory keeps its spelling, so settings and saves carry over. They reach a mod building a map layer on KMU's framework.
@@ -59,6 +64,9 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `RenderStyleReader.readFactionStyle()`, `readIndependentStyle()`, `readDecivilisedStyle()` and `readUninhabitedStyle(boolean)` | `HolderCategoryStyleReader` |
 | `BlocPresence.collectColouredPresences(Map, BlocPaletteReader)` | Gone: `ColonyCellRibbons` colours its own counts |
 | `NameFormatPreference(String)` | `NameFormatPreference(String, String)`: the layer also names the name radio's caption key |
+| `StandingRowResolver.resolveRows(SectorAPI, List, HolderGrouping, FactionAccountResolver)` | `StandingRowResolver.createForBox(SectorAPI, HolderGrouping, FactionAccountResolver)` once per box, then `resolveRows(List)` per block |
+| `FactionPresentation`, public, with `fullName()` | Package-private, with `labelText()`. A line marked as a faction's takes `FactionTooltipLine.resolveCrestMark(SectorAPI, String)` |
+| `GroupStanding(String, int, List)` over an empty member list | Refused with an `IllegalArgumentException`: a group stands in a system only through a member there |
 
 </details>
 

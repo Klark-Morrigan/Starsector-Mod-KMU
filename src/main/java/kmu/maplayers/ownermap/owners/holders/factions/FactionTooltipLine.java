@@ -2,6 +2,9 @@ package kmu.maplayers.ownermap.owners.holders.factions;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.FactionCrests;
+import kmlib.starsector.factions.SectorFactions;
+
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 
@@ -54,8 +57,8 @@ public final class FactionTooltipLine {
         var presentation = FactionPresentation.resolvePresentation(sector, factionId);
 
         var line = CellTooltipEntryLine.createCountedLine(
-            resolveCrestMark(presentation),
-            presentation.fullName(),
+            resolveCrestMark(presentation.crestSpritePath()),
+            presentation.labelText(),
             countedValue);
 
         return isWeighed ? line : line.statesUncountedValue();
@@ -80,15 +83,27 @@ public final class FactionTooltipLine {
         var presentation = FactionPresentation.resolvePresentation(sector, factionId);
 
         return CellTooltipEntryLine.createLine(
-            resolveCrestMark(presentation),
-            presentation.fullName(),
+            resolveCrestMark(presentation.crestSpritePath()),
+            presentation.labelText(),
             valueText);
     }
 
-    // The mark a faction's line opens on: its crest as its asset authored it, and none at all for a
-    // faction with no authored crest. Shared by both shapes of line so a faction cannot be marked one
-    // way where its number is a score and another way where it is not.
-    private static CellTooltipMark resolveCrestMark(FactionPresentation presentation) {
-        return CellTooltipMark.resolveMarkAsAuthored(presentation.crestSpritePath());
+    /**
+     * The mark a faction's line opens on, for a caller marking a line of its own as that faction's -
+     * a bloc's line under its colour faction's crest, say.
+     *
+     * @param sector    the sector the faction's crest is read from
+     * @param factionId the ID of the faction whose crest marks the line
+     * @return the crest as its asset authored it, or no mark for a faction with no authored crest
+     */
+    public static CellTooltipMark resolveCrestMark(SectorAPI sector, String factionId) {
+        return resolveCrestMark(FactionCrests.resolveCrestPath(SectorFactions.findFaction(sector, factionId)));
+    }
+
+    // The one statement of how a crest becomes a mark: as its asset authored it, and none at all for
+    // a faction with no authored crest. Shared by every line here and by the public read, so a faction
+    // cannot be marked one way on one line and another way on the next.
+    private static CellTooltipMark resolveCrestMark(String crestSpritePath) {
+        return CellTooltipMark.resolveMarkAsAuthored(crestSpritePath);
     }
 }

@@ -7,7 +7,6 @@ import kmlib.starsector.markets.colonies.SystemColonies;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
-import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -301,7 +300,7 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
             sector,
             standing.factionId(),
             standing.score(),
-            standing instanceof WeighedClaimStanding);
+            standing.isWeighed());
     }
 
     // What this family may show of a colony - read live off the same settings the faction layer's

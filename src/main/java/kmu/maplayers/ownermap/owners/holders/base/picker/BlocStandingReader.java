@@ -5,8 +5,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.factions.SectorFactions;
 import kmlib.starsector.factions.StarsectorPlayerFactionResolver;
 import kmlib.starsector.factions.relation.FactionRelation;
+import kmlib.starsector.factions.relation.PlayerRelations;
 import kmlib.starsector.factions.relation.RelationExtremes;
-import kmlib.starsector.factions.relation.StarsectorPlayerRelations;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
@@ -117,8 +117,8 @@ public final class BlocStandingReader {
         for (var memberFactionId : grouping.resolveMemberFactionIds(blocId)) {
             relationSource.readRelationWithPlayer(memberFactionId).ifPresent(memberRelations::add);
         }
-        var worstRelation = RelationExtremes.resolveWorst(memberRelations);
-        var bestRelation = RelationExtremes.resolveBest(memberRelations);
+        var worstRelation = RelationExtremes.resolveWorstRelation(memberRelations);
+        var bestRelation = RelationExtremes.resolveBestRelation(memberRelations);
 
         // Both ends are present together or not at all, the one set answering both.
         if (worstRelation.isEmpty() || bestRelation.isEmpty()) {
@@ -160,21 +160,15 @@ public final class BlocStandingReader {
         @Override
         public Optional<String> resolveEstablishedPlayerFactionId() {
 
-            // Both halves are asked of the handed-in sector - whether an identity is finalised
-            // there, and which faction holds it - so a map drawn over a second sector recognises
-            // that sector's player rather than the running game's.
-            // An established identity implies the sector holds a player faction, so only its ID
-            // can still come back empty.
-            if (!StarsectorPlayerFactionResolver.isPlayerFactionEstablished(sector)) {
-                return Optional.empty();
-            }
-            return Optional.ofNullable(sector.getPlayerFaction().getId()).filter(KmlibStrings::hasText);
+            // Asked of the handed-in sector, so a map drawn over a second sector recognises that
+            // sector's player rather than the running game's.
+            return Optional.ofNullable(StarsectorPlayerFactionResolver.findEstablishedPlayerFactionId(sector));
         }
 
         @Override
         public Optional<FactionRelation> readRelationWithPlayer(String factionId) {
 
-            return StarsectorPlayerRelations.readPlayerRelation(
+            return PlayerRelations.readPlayerRelation(
                 SectorFactions.findFaction(sector, factionId));
         }
     }

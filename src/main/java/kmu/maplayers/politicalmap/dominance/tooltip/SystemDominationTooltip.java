@@ -297,8 +297,10 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
         // The account is settled once for the whole box, before any group is named, so a box reading
         // the economy to build one reads it once however many groups hold the system - and every
         // faction listed is explained from that one read rather than from a read of its own.
-        var accountResolver = createAdmittedAccountResolver(system, pass, detailLevel);
-        var grouping = pass.grouping();
+        var rowResolver = StandingRowResolver.createForBox(
+            sector,
+            pass.grouping(),
+            createAdmittedAccountResolver(system, pass, detailLevel));
 
         // Each block is named through the one resolver and under the pass's own grouping, so which
         // block a group falls in is the only thing that varies between them: a group reads the same
@@ -306,11 +308,7 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
         appendContestBlockSections(
             body,
             StandingBlock.values(),
-            block -> StandingRowResolver.resolveRows(
-                sector,
-                ranking.routing().selectStandingsIn(block),
-                grouping,
-                accountResolver));
+            block -> rowResolver.resolveRows(ranking.routing().selectStandingsIn(block)));
 
         return body.readBlocks();
     }

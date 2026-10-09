@@ -163,17 +163,18 @@ final class TooltipDensityDepthIntegrationTests {
 
         stubFaction(sectorMock, FACTION_ID, "The Hegemony", "graphics/hegemony_crest.png");
 
-        var entries = StandingRowResolver.resolveRows(
-            sectorMock,
-            List.of(RoutedStanding.routeWhole(new GroupStanding(
-                FACTION_ID,
-                7,
-                List.of(new WeighedFactionStanding(FACTION_ID, 7))))),
-            HolderGrouping.identity(),
-            standing -> MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildPatrolledColony()),
-                List.of(),
-                new WeightAccountReading(WEIGHING_RULES, SystemColonyReading.NONE, PATROL_DETAILS)));
+        FactionAccountResolver accountResolver = standing -> MarketWeightRowResolver.resolveMarketRows(
+            List.of(buildPatrolledColony()),
+            List.of(),
+            new WeightAccountReading(WEIGHING_RULES, SystemColonyReading.NONE, PATROL_DETAILS));
+
+        var entries = StandingRowResolver
+            .createForBox(sectorMock, HolderGrouping.identity(), accountResolver)
+            .resolveRows(
+                List.of(RoutedStanding.routeWhole(new GroupStanding(
+                    FACTION_ID,
+                    7,
+                    List.of(new WeighedFactionStanding(FACTION_ID, 7))))));
 
         var body = CellTooltipBody.openBody(PATROL_DETAILS);
 

@@ -18,4 +18,14 @@ import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 public record WeighedFactionStanding(
     String factionId,
     int score) implements FactionStanding {
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Always true: the score is the faction's worked-out footprint.
+     */
+    @Override
+    public boolean isWeighed() {
+        return true;
+    }
 }

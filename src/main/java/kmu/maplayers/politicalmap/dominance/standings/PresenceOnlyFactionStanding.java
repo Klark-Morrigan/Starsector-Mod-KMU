@@ -31,6 +31,16 @@ public record PresenceOnlyFactionStanding(
     /**
      * {@inheritDoc}
      *
+     * <p>Always false: the pass weighed none of the faction's colonies here.
+     */
+    @Override
+    public boolean isWeighed() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * <p>Nought however large the colonies behind it: the pass weighed none of them, so the size of
      * what is present says nothing about the contest.
      */

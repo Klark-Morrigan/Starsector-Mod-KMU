@@ -1,10 +1,10 @@
 package kmu.maplayers.ownermap.owners.holders.base.picker;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.characters.RelationshipAPI;
 
+import kmlib.starsector.factions.StarsectorPlayerFactionResolver;
 import kmlib.starsector.factions.relation.FactionRelation;
 
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
@@ -20,6 +20,7 @@ import static kmu.starsector.SectorFactionFixtures.stubKnownFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>All on hand-built standings, the sector reads being the reader's one seam. The cases over a live
  * sector are there for what only the binding decides: that the factions are looked up in the sector
- * handed in, and that the player is recognised off that sector's own established identity.
+ * handed in, and that the player is recognised by the ID the library reads off that sector.
  */
 final class BlocStandingReaderTests {
 
@@ -201,64 +202,43 @@ final class BlocStandingReaderTests {
         void recognisesTheSectorsEstablishedPlayerFactionAsTheirBloc() {
 
             var sectorMock = buildEmptySector();
-            var playerFactionMock = stubRelationWithPlayer(sectorMock, "player", RepLevel.FRIENDLY, 60, GREEN);
 
-            stubPlayerFaction(sectorMock, playerFactionMock, "player", "Pirate Kingdom");
+            stubRelationWithPlayer(sectorMock, "player", RepLevel.FRIENDLY, 60, GREEN);
 
-            var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
+            try (var resolverMock = mockStatic(StarsectorPlayerFactionResolver.class)) {
 
-            assertThat(reader.readBlocStanding("player"))
-                .isEqualTo(BlocStanding.PLAYERS_OWN);
+                resolverMock.when(() -> StarsectorPlayerFactionResolver.findEstablishedPlayerFactionId(sectorMock))
+                    .thenReturn("player");
+
+                var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
+
+                assertThat(reader.readBlocStanding("player"))
+                    .isEqualTo(BlocStanding.PLAYERS_OWN);
+            }
         }
 
         @Test
         void measuresTheSectorsPlayerFactionBeforeAnIdentityIsEstablished() {
 
-            // A placeholder name and no economy to own a market in leave the identity unestablished.
             var sectorMock = buildEmptySector();
-            var playerFactionMock = stubRelationWithPlayer(sectorMock, "player", RepLevel.FRIENDLY, 60, GREEN);
 
-            stubPlayerFaction(sectorMock, playerFactionMock, "player", "Independent");
+            stubRelationWithPlayer(sectorMock, "player", RepLevel.FRIENDLY, 60, GREEN);
 
-            var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
+            try (var resolverMock = mockStatic(StarsectorPlayerFactionResolver.class)) {
 
-            assertThat(reader.readBlocStanding("player"))
-                .isEqualTo(new BlocStanding.Measured(FRIENDLY, FRIENDLY));
+                resolverMock.when(() -> StarsectorPlayerFactionResolver.findEstablishedPlayerFactionId(sectorMock))
+                    .thenReturn(null);
+
+                var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
+
+                assertThat(reader.readBlocStanding("player"))
+                    .isEqualTo(new BlocStanding.Measured(FRIENDLY, FRIENDLY));
+            }
         }
-
-        @Test
-        void measuresTheSectorsPlayerFactionWhenItsIdIsBlank() {
-
-            var sectorMock = buildEmptySector();
-            var playerFactionMock = stubRelationWithPlayer(sectorMock, "player", RepLevel.FRIENDLY, 60, GREEN);
-
-            stubPlayerFaction(sectorMock, playerFactionMock, "  ", "Pirate Kingdom");
-
-            var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
-
-            assertThat(reader.readBlocStanding("player"))
-                .isEqualTo(new BlocStanding.Measured(FRIENDLY, FRIENDLY));
-        }
-    }
-
-    // Makes the faction the sector answers for the player's own, under the ID and display name a case
-    // poses.
-    private static void stubPlayerFaction(
-            SectorAPI sectorMock,
-            FactionAPI playerFactionMock,
-            String factionId,
-            String displayName) {
-
-        when(playerFactionMock.getId())
-            .thenReturn(factionId);
-        when(playerFactionMock.getDisplayName())
-            .thenReturn(displayName);
-        when(sectorMock.getPlayerFaction())
-            .thenReturn(playerFactionMock);
     }
 
     // Stubs a faction onto the sector standing toward the player as the engine reports it.
-    private static FactionAPI stubRelationWithPlayer(
+    private static void stubRelationWithPlayer(
             SectorAPI sectorMock,
             String factionId,
             RepLevel level,
@@ -278,7 +258,5 @@ final class BlocStandingReaderTests {
 
         when(factionMock.getRelToPlayer())
             .thenReturn(relationshipMock);
-
-        return factionMock;
     }
 }

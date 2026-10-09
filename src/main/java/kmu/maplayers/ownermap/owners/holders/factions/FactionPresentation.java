@@ -18,12 +18,12 @@ import kmlib.starsector.factions.SectorFactions;
  * <p>An ID the sector does not know still presents: the title falls back to the ID itself and the
  * crest to nothing, so a line names what it was asked to name rather than coming out blank.
  *
- * @param fullName        the faction's long display title, or its ID when the faction will not
+ * @param labelText       the faction's long display title, or its ID when the faction will not
  *                        resolve or carries no long title
  * @param crestSpritePath the faction's crest sprite path, or null when it has no authored crest
  */
-public record FactionPresentation(
-    String fullName,
+record FactionPresentation(
+    String labelText,
     String crestSpritePath) {
 
     /**
@@ -33,7 +33,7 @@ public record FactionPresentation(
      * @param factionId the ID of the faction being presented
      * @return the title and crest that faction appears as
      */
-    public static FactionPresentation resolvePresentation(SectorAPI sector, String factionId) {
+    static FactionPresentation resolvePresentation(SectorAPI sector, String factionId) {
 
         var faction = SectorFactions.findFaction(sector, factionId);
 

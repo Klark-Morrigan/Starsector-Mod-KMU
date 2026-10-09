@@ -18,6 +18,11 @@
 <details>
 <summary>内部实现与地图图层框架</summary>
 
+#### 新增
+
+- **`FactionStanding.isWeighed()`**：本次计算是否为该势力的殖民地计算过权重，按类别分支的读取方据此询问，而不必检查密封类型。
+- **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
+
 #### 公共契约变更（**破坏性**）
 
 以下变更都不影响玩家：每个 LunaLib 字段 ID 和保存在星域内存中的每个值都保持原有拼写，因此设置和存档可原样沿用。它们影响的是基于 KMU 框架构建地图图层的 Mod。
@@ -58,6 +63,9 @@
 | `RenderStyleReader.readFactionStyle()`、`readIndependentStyle()`、`readDecivilisedStyle()` 和 `readUninhabitedStyle(boolean)` | `HolderCategoryStyleReader` |
 | `BlocPresence.collectColouredPresences(Map, BlocPaletteReader)` | 已移除：`ColonyCellRibbons` 自行为计数着色 |
 | `NameFormatPreference(String)` | `NameFormatPreference(String, String)`：图层还需给出名称单选框的标题键 |
+| `StandingRowResolver.resolveRows(SectorAPI, List, HolderGrouping, FactionAccountResolver)` | 每个悬停框调用一次 `StandingRowResolver.createForBox(SectorAPI, HolderGrouping, FactionAccountResolver)`，再对每个区块调用 `resolveRows(List)` |
+| 公开的 `FactionPresentation`，带有 `fullName()` | 改为包私有，带有 `labelText()`。标记为某势力的行改用 `FactionTooltipLine.resolveCrestMark(SectorAPI, String)` |
+| 成员列表为空的 `GroupStanding(String, int, List)` | 以 `IllegalArgumentException` 拒绝：势力组只能通过位于该星系的成员出现在其中 |
 
 </details>
 

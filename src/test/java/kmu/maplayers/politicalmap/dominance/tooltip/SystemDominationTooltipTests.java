@@ -313,8 +313,8 @@ final class SystemDominationTooltipTests {
             // listed with whatever it scored, and never named as holding the place.
             StandingsTooltipSeamsFake.stubRankedGroups(
                 List.of(
-                    new GroupStanding(CORE_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(Factions.NEUTRAL, ANY_SCORE, List.of())),
+                    createLoneGroup(CORE_FACTION),
+                    createLoneGroup(Factions.NEUTRAL)),
                 List.of(createLoneGroupEntry(), createPlaceholderGroupEntry()));
 
             assertThat(readSectionOpeningWords(
@@ -340,11 +340,11 @@ final class SystemDominationTooltipTests {
 
             StandingsTooltipSeamsFake.stubRankedGroups(
                 List.of(
-                    new GroupStanding(CORE_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(ALLY_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(FRIENDLY_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(RIVAL_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(Factions.NEUTRAL, ANY_SCORE, List.of())),
+                    createLoneGroup(CORE_FACTION),
+                    createLoneGroup(ALLY_FACTION),
+                    createLoneGroup(FRIENDLY_FACTION),
+                    createLoneGroup(RIVAL_FACTION),
+                    createLoneGroup(Factions.NEUTRAL)),
                 List.of(
                     createLoneGroupEntry(),
                     createAlliedGroupEntry(),
@@ -380,9 +380,9 @@ final class SystemDominationTooltipTests {
 
             StandingsTooltipSeamsFake.stubRankedGroups(
                 List.of(
-                    new GroupStanding(CORE_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(FRIENDLY_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(RIVAL_FACTION, ANY_SCORE, List.of())),
+                    createLoneGroup(CORE_FACTION),
+                    createLoneGroup(FRIENDLY_FACTION),
+                    createLoneGroup(RIVAL_FACTION)),
                 List.of(
                     createLoneGroupEntry(),
                     createNamedGroupEntry("The Luddic Church"),
@@ -417,11 +417,11 @@ final class SystemDominationTooltipTests {
 
             StandingsTooltipSeamsFake.stubRankedGroups(
                 List.of(
-                    new GroupStanding(CORE_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(ALLY_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(FRIENDLY_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(RIVAL_FACTION, ANY_SCORE, List.of()),
-                    new GroupStanding(Factions.NEUTRAL, ANY_SCORE, List.of())),
+                    createLoneGroup(CORE_FACTION),
+                    createLoneGroup(ALLY_FACTION),
+                    createLoneGroup(FRIENDLY_FACTION),
+                    createLoneGroup(RIVAL_FACTION),
+                    createLoneGroup(Factions.NEUTRAL)),
                 List.of(
                     createLoneGroupEntry(),
                     createAlliedGroupEntry(),
@@ -818,5 +818,11 @@ final class SystemDominationTooltipTests {
             new BaseSizeFactor(4, 4.0, contribution, 0.0),
             Optional.empty(),
             Optional.empty());
+    }
+
+    // A group standing in the system through a lone member of its own ID, for a case about where the
+    // group is listed rather than what it is made up of.
+    private static GroupStanding createLoneGroup(String blocId) {
+        return new GroupStanding(blocId, ANY_SCORE, List.of(new WeighedFactionStanding(blocId, ANY_SCORE)));
     }
 }

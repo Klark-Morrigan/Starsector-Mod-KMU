@@ -326,14 +326,15 @@ class StandingBlockRoutingTests {
         void listsOnlyThePresentMembersOfABlocThatIsNotOfOneMind() {
             // The two readings part exactly here: the fraction is over the whole membership, while
             // what is listed is who stands in the hovered system - the box having never listed
-            // anybody else. So the rows and the fraction do not add up, and are not meant to.
+            // anybody else. So the rows and the fraction do not add up, and are not meant to. The
+            // holder is listed too, standing through its one member.
             var routing = routeMixedBlocAgainstTheHolder();
 
             assertThat(Arrays
                     .stream(StandingBlock.values())
                     .flatMap(block -> readListedMembers(routing, block).stream())
                     .toList())
-                .containsExactlyInAnyOrder(WARM_MEMBER, SOUR_MEMBER);
+                .containsExactlyInAnyOrder(HOLDER_BLOC, WARM_MEMBER, SOUR_MEMBER);
         }
 
         @Test
@@ -659,11 +660,11 @@ class StandingBlockRoutingTests {
             .toList();
     }
 
-    // One ranked group as the routing places it: the bloc it is. What it is weighed at and made up
-    // of are the naming's business, so which block it falls in turns on the bloc alone wherever the
-    // case is not about a bloc's members disagreeing.
+    // One ranked group as the routing places it: the bloc it is, standing through a lone member of
+    // the same ID. What it is weighed at and made up of are the naming's business, so which block it
+    // falls in turns on the bloc alone wherever the case is not about a bloc's members disagreeing.
     private static GroupStanding createGroupStanding(String blocId) {
-        return new GroupStanding(blocId, ANY_SCORE, List.<FactionStanding>of());
+        return new GroupStanding(blocId, ANY_SCORE, List.of(new WeighedFactionStanding(blocId, ANY_SCORE)));
     }
 
     // That same group as a block placed by membership lists it: nothing qualifies the heading over

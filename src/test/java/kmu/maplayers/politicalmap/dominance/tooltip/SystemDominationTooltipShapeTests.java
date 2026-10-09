@@ -21,6 +21,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
+import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltipTests;
 
@@ -532,10 +533,11 @@ final class SystemDominationTooltipShapeTests {
             CellTooltipEntryLine.createLine(ALLY_MARK, "Tri-Tachyon", ALLY_SCORE));
     }
 
-    // One ranked group as the box places it: the bloc it is. What it is weighed at and made up of are
-    // the naming's business, which is stood in for, so which block it falls in turns on the bloc alone.
+    // One ranked group as the box places it: the bloc it is, standing through a lone member of the
+    // same ID. What it is weighed at and made up of are the naming's business, which is stood in for,
+    // so which block it falls in turns on the bloc alone.
     private static GroupStanding createGroupStanding(String blocId) {
-        return new GroupStanding(blocId, ANY_SCORE, List.of());
+        return new GroupStanding(blocId, ANY_SCORE, List.of(new WeighedFactionStanding(blocId, ANY_SCORE)));
     }
 
     // The three groups every routing case is posed over, ranked leader first: an alliance set states
