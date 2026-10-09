@@ -45,14 +45,12 @@ final class HolderSystemOwnerResolve implements SystemOwnerResolve {
     @Override
     public boolean isSystemInhabited(StarSystemAPI system) {
 
-        // The same projection the whole-sector scan classified by, so a system re-derived here is
-        // never taken off the map the rebuild put it on.
         return HolderInhabitation.isSystemInhabited(pass, system);
     }
 
     @Override
     public boolean isSpotlitOwnerPresentIn(StarSystemAPI system) {
 
-        return SpotlitBlocPresence.isBlocPresentIn(pass, spotlitBlocId, system);
+        return HolderInhabitation.isBlocPresentIn(pass, spotlitBlocId, system);
     }
 }

@@ -128,6 +128,36 @@ final class SectorBlocPalettesTests {
         }
     }
 
+    @Nested
+    class ReadFactionPalette {
+
+        @Test
+        void readsTheShadesOfTheNamedFactionItself() {
+            // No grouping stands between: the ID handed over is the faction asked for.
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(
+                LEAD_MEMBER,
+                BRIGHT,
+                DARK);
+
+            assertThat(SectorBlocPalettes.readFactionPalette(sectorMock, LEAD_MEMBER))
+                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+        }
+
+        @Test
+        void readsNoPaletteForAFactionThatIsGone() {
+
+            assertThat(SectorBlocPalettes.readFactionPalette(mock(SectorAPI.class), "vanished"))
+                .isNull();
+        }
+
+        @Test
+        void readsNoPaletteWithoutASector() {
+
+            assertThat(SectorBlocPalettes.readFactionPalette(null, LEAD_MEMBER))
+                .isNull();
+        }
+    }
+
     // The palettes as one group's bloc reads them: the bloc folds to its lead member, which is
     // the faction the sector is asked for.
     private static OwnerPalette readPaletteFrom(SectorAPI sector, String blocId) {

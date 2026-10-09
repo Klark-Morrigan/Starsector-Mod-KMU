@@ -20,7 +20,7 @@ import java.util.function.Function;
  *                     where nobody holds it, which leaves every contestant on the rival side, there
  *                     being nobody for them to be standing with
  * @param affiliation  who stands with whom, the sides being placed under it; it is
- *                     {@link BlocAffiliation#NONE} wherever nothing groups factions - every
+ *                     read over the identity grouping wherever nothing groups factions - every
  *                     contestant a rival, exactly as a contest read without groups at all
  */
 public record ContestSides(

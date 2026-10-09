@@ -13,8 +13,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pins {@link BlocAffiliation}'s one predicate: two distinct blocs stand together exactly when the
- * affiliation grouping folds them into one bloc, and under {@link BlocAffiliation#NONE} no two blocs
- * ever do. These are the answers every contest judgement reads, so they are fixed here on hand-built
+ * affiliation grouping folds them into one bloc, and over the identity grouping no two blocs ever
+ * do. These are the answers every contest judgement reads, so they are fixed here on hand-built
  * groupings free of any live group source.
  */
 class BlocAffiliationTests {
@@ -95,10 +95,10 @@ class BlocAffiliationTests {
         }
 
         @Test
-        void isFalseForEveryDistinctPairUnderNone() {
+        void isFalseForEveryDistinctPairOverTheIdentityGrouping() {
             // The affiliation of an install with nothing grouping factions: the identity grouping read
             // as an affiliation folds nothing, so factions allied in some other grouping stand apart under it.
-            assertThat(BlocAffiliation.NONE.areBlocsAllied("hegemony", "astral_armada"))
+            assertThat(new BlocAffiliation(HolderGrouping.identity()).areBlocsAllied("hegemony", "astral_armada"))
                 .isFalse();
         }
     }

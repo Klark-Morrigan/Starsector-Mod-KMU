@@ -2,10 +2,8 @@ package kmu.maplayers.politicalmap.views;
 
 import kmlib.starsector.systems.SectorPassIndex;
 
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
-import kmu.maplayers.ownermap.owners.holders.base.HolderCategories;
+import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
@@ -13,7 +11,6 @@ import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlan
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
-import kmu.mods.nexerelin.NexerelinAlliances;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,8 +26,7 @@ import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins what every view the domination contest paints answers alike: the claim-extended holding,
- * the per-system contest, the holder categories, the live alliance set as who stands together, and
- * the band counting by the mechanic that painted each cell.
+ * the per-system contest, and the band counting by the mechanic that painted each cell.
  *
  * <p>Read off the interface's own defaults rather than off a concrete view, so each is pinned once.
  * A view's own suite then pins only what that view decides.
@@ -79,42 +75,6 @@ final class DominancePaintedViewTests {
     }
 
     @Nested
-    class ResolveCategories {
-
-        @Test
-        void declaresTheHolderCategories() {
-
-            assertThat(viewMock.resolveCategories())
-                .isSameAs(HolderCategories.INSTANCE);
-        }
-    }
-
-    @Nested
-    class ResolveContestAffiliation {
-
-        @Test
-        void readsTheLiveAllianceSet() {
-            // Who stands together in a contest is the live alliance set whatever a view paints as one
-            // bloc: allies painted apart still read as allies.
-            var allianceSet = HolderGroupingFixture.buildGroupOf("hegemony", "persean");
-
-            try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
-
-                alliancesMock
-                    .when(NexerelinAlliances::resolveGrouping)
-                    .thenReturn(allianceSet);
-
-                var affiliation = viewMock.resolveContestAffiliation();
-
-                assertThat(affiliation.areOwnersAllied("hegemony", "persean"))
-                    .isTrue();
-                assertThat(affiliation.areOwnersAllied("hegemony", "tritachyon"))
-                    .isFalse();
-            }
-        }
-    }
-
-    @Nested
     class ResolveRibbonPlanner {
 
         @Test
@@ -143,7 +103,7 @@ final class DominancePaintedViewTests {
                         blocId -> null,
                         // Nothing stands together, the case being about which planner the view
                         // assembles rather than about how any cell of it is judged.
-                        BlocAffiliation.NONE,
+                        OwnerAffiliation.NONE,
                         STANDARD_RULES));
 
                 assertThat(planner)

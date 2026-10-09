@@ -5,15 +5,10 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.OwnerReading;
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
-import kmu.maplayers.ownermap.owners.holders.base.HolderCategories;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
@@ -21,7 +16,6 @@ import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
 import kmu.maplayers.ownermap.owners.holders.factions.FactionOwnerReading;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
-import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.ClaimSortModes;
 import kmu.maplayers.politicalmap.claims.ClaimStats;
@@ -31,8 +25,6 @@ import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolve;
 import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
-import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
-import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStringKeys;
 
 import java.util.Optional;
@@ -54,9 +46,13 @@ import java.util.Optional;
  * sort selector can only offer numbers this layer is actually painted by. A bloc that holds colonies
  * while claiming nothing is listed receded at a count of zero rather than dropped, so the list
  * accounts for every faction the player can see instead of appearing to have forgotten one.
+ *
+ * <p>The market-inferred claims that make up most of what is painted change with the economy, which
+ * the shared economy revision already repaints on. Explicit claim-flag flips have no live
+ * fingerprint, so a flag-only claim change waits for the next economy rebuild.
  */
 public final class ClaimsView
-        implements HolderPaintedView {
+        implements PoliticalHolderView {
 
     /** The one shared instance; stateless, so every pass reuses it. */
     public static final ClaimsView INSTANCE = new ClaimsView();
@@ -90,19 +86,6 @@ public final class ClaimsView
     }
 
     @Override
-    public int getContentRevision(MapLayerRefreshBoard board) {
-        // The alliance set is this view's one live input. The fills do not move with it - they are
-        // pinned to the claiming faction - but the bands over them do: a run is laid at contested
-        // length only against a bloc the claimant is not allied with, so membership moving in play
-        // must repaint them rather than leave every band at stale lengths.
-        //
-        // The market-inferred claims that make up the majority of what is painted change with the
-        // economy, which the shared economy revision already repaints on. Explicit claim-flag flips
-        // have no live fingerprint, so a flag-only claim change waits for the next economy rebuild.
-        return PoliticalMapRefreshSignal.computeAllianceContentRevision(board);
-    }
-
-    @Override
     public HolderGrouping resolveGrouping() {
         // Claims are grouped strictly by claiming faction - no alliance rollup in what this layer
         // paints - so the pipeline resolves plain faction holding.
@@ -114,14 +97,6 @@ public final class ClaimsView
         // the block naming them would be permanently empty on the one layer that draws it - which
         // is why what fuses and who stands together stay two separate reads.
         return HolderGrouping.identity();
-    }
-
-    @Override
-    public OwnerAffiliation resolveContestAffiliation() {
-        // Who stands together in a claim contest is the live alliance set, as it is on every view
-        // of this layer: fills painted apart, allies still read as allies beneath them. Nobody
-        // stands together wherever Nexerelin is absent.
-        return new BlocAffiliation(NexerelinAlliances.resolveGrouping());
     }
 
     @Override
@@ -155,12 +130,6 @@ public final class ClaimsView
         // under identity grouping, named by the claiming faction - so it takes the one faction
         // reading rather than restating any of it.
         return new FactionOwnerReading(sector);
-    }
-
-    @Override
-    public OwnerCategories resolveCategories() {
-        // The faction layer's look, so the faction layer's categories.
-        return HolderCategories.INSTANCE;
     }
 
     @Override
@@ -201,28 +170,21 @@ public final class ClaimsView
             SectorAPI sector,
             ColonyReadRules colonyReadRules) {
 
-        // The grouping is resolved once and handed to both halves, so the numbers, the crest, and the
-        // name all read against one snapshot rather than three live samples.
-        var grouping = resolveGrouping();
-
-        // The layer-generic pass: this layer is painted by claims, and a claim count and a colony
-        // size are read without weighing anything.
-        var pass = HolderPass.over(sector, colonyReadRules, grouping);
-
-        // The claim half reads through the pass's own colony walk, so the two metrics cost one
-        // traversal of each system between them rather than one apiece - and are answered off the
-        // same reading of the sector, which is what keeps a claim count and a colony size from
-        // describing a system at two different moments.
-        //
         // No gate of its own: this view offers every bloc its walk surfaced, which is the shared
         // seam's default.
-        return buildBlocPickerRead(
-            sector,
-            grouping,
-            resolveOwnerReading(sector, grouping),
-            ClaimStatsAggregator.aggregateClaimStats(
+        return readPickerUnderOneGrouping(sector, grouping -> {
+
+            // The layer-generic pass: this layer is painted by claims, and a claim count and a
+            // colony size are read without weighing anything.
+            var pass = HolderPass.over(sector, colonyReadRules, grouping);
+
+            // The claim half reads through the pass's own colony walk, so the two metrics cost one
+            // traversal of each system between them rather than one apiece - and are answered off
+            // the same reading of the sector, which is what keeps a claim count and a colony size
+            // from describing a system at two different moments.
+            return ClaimStatsAggregator.aggregateClaimStats(
                 pass,
-                PassClaimReaders.openClaimReaderOver(pass, claimReaderSource)),
-            ClaimSortModes.MODES);
+                PassClaimReaders.openClaimReaderOver(pass, claimReaderSource));
+        }, ClaimSortModes.MODES);
     }
 }

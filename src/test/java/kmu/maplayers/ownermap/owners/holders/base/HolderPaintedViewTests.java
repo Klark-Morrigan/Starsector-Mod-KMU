@@ -57,9 +57,10 @@ import static org.mockito.Mockito.when;
  *
  * <p>It also pins the picker read every holder view shares: which walked blocs survive the view's own
  * gate, how a surviving one is turned into a row, and what rides beside those rows - the stats-walk
- * order, the crest and name off the handed reading, a row surviving a crest that will not resolve,
- * the caller's vocabulary composed with the shared standing mode, the whole walk's presence being
- * carried through, and the metrics riding through untouched whatever their type.
+ * order, the crest and name off the view's own reading over the walk's grouping, a row surviving a
+ * crest that will not resolve, the caller's vocabulary composed with the shared standing mode, the
+ * whole walk's presence being carried through, and the metrics riding through untouched whatever
+ * their type.
  */
 final class HolderPaintedViewTests {
 
@@ -105,13 +106,26 @@ final class HolderPaintedViewTests {
 
         @Test
         void foldsTheSourceUnderThatSameSampling() {
+            // Read back through the band planner the source builds, whose inputs carry the pass the
+            // source opened - and so the grouping that pass folds under.
+            seams
+                .openSeam(DecivilisedColonyHabitation.class)
+                .when(DecivilisedColonyHabitation::readFromLunaSettings)
+                .thenReturn(DecivilisedColonyHabitation.COUNTS_AS_POPULATED);
 
             var viewFake = HolderPaintedViewFake.createGroupingFake(SAMPLED_GROUPING);
 
-            assertThat(viewFake.resolveViewReading(mock(SectorAPI.class)).source())
-                .isInstanceOfSatisfying(
-                    HolderOwnerSource.class,
-                    holderSource -> assertThat(holderSource.grouping()).isSameAs(SAMPLED_GROUPING));
+            viewFake
+                .resolveViewReading(mock(SectorAPI.class))
+                .source()
+                .resolveRibbonPlanner(
+                    new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE),
+                    new RibbonPlanRules(new RibbonSegmentLengths(3, 1), new UncontestedRibbonRuns(false)));
+
+            assertThat(viewFake.listPlannerInputs())
+                .singleElement()
+                .extracting(RibbonPlanInputs::grouping)
+                .isSameAs(SAMPLED_GROUPING);
         }
 
         @Test
@@ -186,7 +200,6 @@ final class HolderPaintedViewTests {
             assertThat(viewFake.buildBlocPickerRead(
                         sectorMock,
                         HolderGrouping.identity(),
-                        viewFake.readOwnerReading(),
                         OwnerStatsReadFake.createRowsOnlyFake(statsByBlocId),
                         ANY_MODES)
                     .picker()
@@ -210,7 +223,6 @@ final class HolderPaintedViewTests {
             assertThat(viewFake.buildBlocPickerRead(
                         sectorMock,
                         HolderGrouping.identity(),
-                        viewFake.readOwnerReading(),
                         OwnerStatsReadFake.createRowsOnlyFake(statsByBlocId),
                         ANY_MODES)
                     .picker()
@@ -233,7 +245,6 @@ final class HolderPaintedViewTests {
             assertThat(viewFake.buildBlocPickerRead(
                         sectorMock,
                         HolderGrouping.identity(),
-                        viewFake.readOwnerReading(),
                         OwnerStatsReadFake.createRowsOnlyFake(statsByBlocId),
                         ANY_MODES)
                     .picker()
@@ -243,24 +254,16 @@ final class HolderPaintedViewTests {
         }
 
         @Test
-        void takesEachRowsNameAndCrestFromTheHandedReading() {
-            // The row names and badges a bloc exactly as the map does, so both come off the reading
-            // the calling view resolved over the walk's grouping, never a reading of its own.
-            var sectorMock = mock(SectorAPI.class);
-            var grouping = new HolderGrouping(
-                Map.of("rebels", "rebel_pact"),
-                Map.of("rebel_pact", "rebels"),
-                Map.of("rebel_pact", "Rebel Pact"));
-
-            var viewFake = new HolderPaintedViewFake(Map.of());
-            var readingFake = OwnerReadingFake
+        void takesEachRowsNameAndCrestFromTheViewsOwnReading() {
+            // The row names and badges a bloc exactly as the map does, so both come off the view's
+            // own reading, never a reading of the assembly's.
+            var viewFake = HolderPaintedViewFake.createReadingFake(OwnerReadingFake
                 .createNaming(Map.of("rebel_pact", "Rebel Pact"))
-                .withLooks(Map.of(), Map.of("rebel_pact", "graphics/rebels_crest.png"));
+                .withLooks(Map.of(), Map.of("rebel_pact", "graphics/rebels_crest.png")));
 
             assertThat(viewFake.buildBlocPickerRead(
-                        sectorMock,
-                        grouping,
-                        readingFake,
+                        mock(SectorAPI.class),
+                        PACT_GROUPING,
                         OwnerStatsReadFake.createRowsOnlyFake(Map.of("rebel_pact", ANY_STATS_FAKE)),
                         ANY_MODES)
                     .picker()
@@ -268,6 +271,26 @@ final class HolderPaintedViewTests {
                 .containsExactly(new RankedOwner<>(
                     new SelectableOwner("rebel_pact", "Rebel Pact", "graphics/rebels_crest.png"),
                     ANY_STATS_FAKE));
+        }
+
+        @Test
+        void readsTheViewsReadingOverTheHandedSectorAndGrouping() {
+            // The reading names the blocs the walk folded, so it is built over the walk's own
+            // grouping rather than one the view samples again.
+            var sectorMock = mock(SectorAPI.class);
+            var viewFake = new HolderPaintedViewFake(Map.of());
+
+            viewFake.buildBlocPickerRead(
+                sectorMock,
+                PACT_GROUPING,
+                OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
+                ANY_MODES);
+
+            assertThat(viewFake.listReadingSectors())
+                .containsExactly(sectorMock);
+            assertThat(viewFake.listReadingGroupings())
+                .singleElement()
+                .isSameAs(PACT_GROUPING);
         }
 
         @Test
@@ -283,7 +306,6 @@ final class HolderPaintedViewTests {
             assertThat(viewFake.buildBlocPickerRead(
                         sectorMock,
                         HolderGrouping.identity(),
-                        viewFake.readOwnerReading(),
                         OwnerStatsReadFake.createRowsOnlyFake(Map.of("ghost", ANY_STATS_FAKE)),
                         ANY_MODES)
                     .picker()
@@ -304,7 +326,6 @@ final class HolderPaintedViewTests {
             assertThat(viewFake.buildBlocPickerRead(
                         mock(SectorAPI.class),
                         HolderGrouping.identity(),
-                        viewFake.readOwnerReading(),
                         OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
                         OwnerSortModesFake.MODES)
                     .picker()
@@ -323,7 +344,6 @@ final class HolderPaintedViewTests {
             assertThat(viewFake.buildBlocPickerRead(
                         mock(SectorAPI.class),
                         HolderGrouping.identity(),
-                        viewFake.readOwnerReading(),
                         OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
                         OwnerSortModesFake.MODES)
                     .picker()
@@ -341,7 +361,6 @@ final class HolderPaintedViewTests {
             var offeredModes = viewFake.buildBlocPickerRead(
                     mock(SectorAPI.class),
                     HolderGrouping.identity(),
-                    viewFake.readOwnerReading(),
                     OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
                     OwnerSortModesFake.MODES)
                 .picker()
@@ -375,7 +394,6 @@ final class HolderPaintedViewTests {
             var read = viewFake.buildBlocPickerRead(
                 sectorMock,
                 PACT_GROUPING,
-                viewFake.readOwnerReading(),
                 OwnerStatsReadFake.createRowsOnlyFake(Map.of("pact", ANY_STATS_FAKE)),
                 OwnerSortModesFake.MODES);
 
@@ -403,7 +421,6 @@ final class HolderPaintedViewTests {
             assertThat(viewFake.buildBlocPickerRead(
                         null,
                         HolderGrouping.identity(),
-                        viewFake.readOwnerReading(),
                         OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
                         OwnerSortModesFake.MODES)
                     .picker()
@@ -424,7 +441,6 @@ final class HolderPaintedViewTests {
             var read = viewFake.buildBlocPickerRead(
                 sectorMock,
                 HolderGrouping.identity(),
-                viewFake.readOwnerReading(),
                 new OwnerStatsReadFake<>(
                     Map.of("kept", ANY_STATS_FAKE, "dropped", OTHER_STATS_FAKE),
                     new OwnerPresenceIndex(Map.of(
@@ -455,7 +471,6 @@ final class HolderPaintedViewTests {
             assertThat(viewFake.buildBlocPickerRead(
                         sectorMock,
                         HolderGrouping.identity(),
-                        viewFake.readOwnerReading(),
                         OwnerStatsReadFake.createRowsOnlyFake(Map.of("pirates", ratingFake)),
                         new ListSortModes<RankedOwner<HazardRatingFake>>(List.of(), null))
                     .picker()

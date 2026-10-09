@@ -14,7 +14,7 @@ import java.util.Objects;
  * in what order, is the asking box's business rather than this pair's.
  *
  * @param affiliation  who stands together, which the holder's own allies are lifted out by; it is
- *                     {@link BlocAffiliation#NONE} wherever nothing groups factions
+ *                     read over the identity grouping wherever nothing groups factions
  * @param friendliness whether two blocs are on good terms, read over both memberships whole
  */
 public record BlocRelations(

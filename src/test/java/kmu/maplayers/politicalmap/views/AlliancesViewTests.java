@@ -12,12 +12,10 @@ import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
-import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.base.HolderOwnerSource;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
@@ -30,7 +28,6 @@ import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
-import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuOwnerMapStyleSettings;
 
@@ -62,15 +59,16 @@ import static org.mockito.Mockito.when;
  * so its resolution is pinned only for the Nex-absent fallback here; a live alliance set is the
  * in-game test's concern.
  *
- * <p>Its two seams that take a refresh board are pinned on the board they are handed rather than on
- * one resolved for them: the revision it folds, and the body controls it contributes.
+ * <p>Its body controls are pinned on the refresh board they are handed rather than on one resolved
+ * for them.
  *
  * <p>Beside them, what the view offers the player around the fills: only an alliance as a
  * spotlight target, matching its role of grouping holders by alliance, and a domination box of its
  * own on hover, so the box ranks under the grouping this view painted with.
  *
  * <p>What every view the domination contest paints answers alike is {@link DominancePaintedView}'s,
- * pinned once by its own suite.
+ * and what every view of the layer answers alike is {@link PoliticalHolderView}'s, each pinned once
+ * by its own suite.
  */
 final class AlliancesViewTests {
 
@@ -91,63 +89,6 @@ final class AlliancesViewTests {
             // Frozen: renaming it silently resets any save that selected this view to the default.
             assertThat(AlliancesView.INSTANCE.getId())
                 .isEqualTo("alliances");
-        }
-    }
-
-    @Nested
-    class GetContentRevision {
-
-        @Test
-        void shiftsWhenTheAllianceRevisionMoves() {
-            // The alliance set is one of the view's live inputs, so a membership change must shift
-            // the revision - that is what folds it into the content token and repaints the view
-            // without a reload.
-            var board = new MapLayerRefreshBoard();
-            var before = AlliancesView.INSTANCE.getContentRevision(board);
-
-            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
-
-            assertThat(AlliancesView.INSTANCE.getContentRevision(board))
-                .isNotEqualTo(before);
-        }
-
-        @Test
-        void standsStillWhenTheRecedeStyleRevisionMoves() {
-            // A Mute/Desaturate flip is not folded here. The bake samples this view's non-allied
-            // recede with every other preference and folds the values in, so a flip that leaves the
-            // recede where it was must cost nothing - and one that moves it rebuilds through the
-            // sampled value rather than through a counter that only says somebody clicked.
-            var board = new MapLayerRefreshBoard();
-            var before = AlliancesView.INSTANCE.getContentRevision(board);
-
-            board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
-
-            assertThat(AlliancesView.INSTANCE.getContentRevision(board))
-                .isEqualTo(before);
-        }
-
-        @Test
-        void foldsTheBoardItIsHandedRatherThanAnother() {
-            // One stateless view answers for every sector, so the board handed in is the only thing
-            // telling two sectors' asks apart. An alliance formed under one sector must move that
-            // sector's number and leave the other's exactly where it was - a view folding an
-            // ambient board instead would repaint whichever sector happened to be running.
-            //
-            // Made once, here, for the seam rather than per view: every view's cases above build a
-            // board of their own, so a view resolving one instead of folding the argument already
-            // fails them - a raise on a board nothing else reads would move no number at all. What
-            // this adds is the second board those cases have no way to disagree with.
-            var board = new MapLayerRefreshBoard();
-            var otherBoard = new MapLayerRefreshBoard();
-            var before = AlliancesView.INSTANCE.getContentRevision(board);
-            var otherBefore = AlliancesView.INSTANCE.getContentRevision(otherBoard);
-
-            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
-
-            assertThat(AlliancesView.INSTANCE.getContentRevision(board))
-                .isNotEqualTo(before);
-            assertThat(AlliancesView.INSTANCE.getContentRevision(otherBoard))
-                .isEqualTo(otherBefore);
         }
     }
 
@@ -215,22 +156,19 @@ final class AlliancesViewTests {
     class ResolveViewReading {
 
         @Test
-        void namesAlliancesAndFoldsHoldingByTheLiveAllianceSet() {
+        void namesTheAlliancesOfTheLiveAllianceSet() {
             // The view paints by the live alliance set, so the reading names the alliances that set
-            // holds and the source folds factions into the very blocs it names.
+            // holds. That the source folds under that same set is the shared assembly's, pinned once.
             try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
                 alliancesMock
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(ALLIANCE_GROUPING);
 
-                var viewReading = AlliancesView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
-
-                assertThat(viewReading.reading().resolveName("rebel_pact", OwnerNameFormatChoice.FULL))
+                assertThat(AlliancesView.INSTANCE
+                        .resolveViewReading(mock(SectorAPI.class))
+                        .reading()
+                        .resolveName("rebel_pact", OwnerNameFormatChoice.FULL))
                     .isEqualTo("Rebel Pact");
-                assertThat(viewReading.source())
-                    .isInstanceOfSatisfying(
-                        HolderOwnerSource.class,
-                        source -> assertThat(source.grouping()).isSameAs(ALLIANCE_GROUPING));
             }
         }
     }

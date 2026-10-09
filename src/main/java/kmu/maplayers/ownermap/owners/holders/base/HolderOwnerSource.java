@@ -86,13 +86,6 @@ public final class HolderOwnerSource implements OwnerSource {
     }
 
     /**
-     * @return the grouping this source folds factions into blocs under
-     */
-    public HolderGrouping grouping() {
-        return grouping;
-    }
-
-    /**
      * Resolves the holding, then reads what stands in each system and where the spotlit bloc lives
      * among the settled systems nobody holds - in that order, because each is asked of what the one
      * before left, and all off the one pass so the three cannot disagree about a colony the rules
@@ -122,13 +115,10 @@ public final class HolderOwnerSource implements OwnerSource {
         // that resolves holding through a filtered resolve already keys every system the bloc is
         // present in, so its leftovers are systems the bloc is absent from and the read comes back
         // empty for the cost of the set arithmetic.
-        //
-        // Asked of the same habitation the scan above classified by, so a cell spared here is
-        // never one that scan called empty space.
         var spotlitPresenceSystemKeys = measureSystemScan(
             profiler,
             FIND_SPOTLIT_PRESENCE_SECTION,
-            () -> SpotlitBlocPresence.findPresentSystemKeys(
+            () -> HolderInhabitation.findSpotlitPresenceSystemKeys(
                 pass,
                 spotlitOwnerId,
                 SystemOwner.selectUnownedSystemKeysAmong(

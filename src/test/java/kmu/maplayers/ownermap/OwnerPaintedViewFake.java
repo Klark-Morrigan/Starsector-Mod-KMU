@@ -9,13 +9,10 @@ import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 
-import java.util.Map;
-
 /**
  * Test fixture: the smallest view the shared pipeline can run against. Answers the seam's
- * abstract methods with fixed values and names an owner from a canned map, so a test of a shared
- * default exercises that default alone rather than whichever concrete view it borrowed to reach
- * it.
+ * abstract methods with fixed values and a reading answering nothing, so a test of a shared default
+ * exercises that default alone rather than whichever concrete view it borrowed to reach it.
  *
  * <p>The owner source is supplied where a case is about what the pipeline hands a source; it
  * defaults to one owning nothing, which is what a case about anything else wants.
@@ -25,25 +22,17 @@ public final class OwnerPaintedViewFake implements OwnerPaintedView {
     private final OwnerReadingFake readingFake;
     private final OwnerSource ownerSource;
 
-    OwnerPaintedViewFake(Map<String, String> nameByOwnerId) {
-        this(nameByOwnerId, new OwnerSourceFake());
+    OwnerPaintedViewFake() {
+        this(new OwnerSourceFake());
     }
 
-    public OwnerPaintedViewFake(Map<String, String> nameByOwnerId, OwnerSource ownerSource) {
+    public OwnerPaintedViewFake(OwnerSource ownerSource) {
 
-        this.readingFake = OwnerReadingFake.createNaming(nameByOwnerId);
+        this.readingFake = OwnerReadingFake.createAnsweringNothing();
         this.ownerSource = ownerSource;
     }
 
-    /**
-     * @return the reading this fake answers with, naming owners from its canned map
-     */
-    public OwnerReadingFake readOwnerReading() {
-        return readingFake;
-    }
-
-    // The reading naming owners from the canned map - null for an unknown owner, the unresolved-name
-    // case the seam allows - beside the supplied source, or one owning nothing.
+    // The reading answering nothing beside the supplied source, or one owning nothing.
     @Override
     public ViewReading resolveViewReading(SectorAPI sector) {
         return new ViewReading(this, readingFake, ownerSource);

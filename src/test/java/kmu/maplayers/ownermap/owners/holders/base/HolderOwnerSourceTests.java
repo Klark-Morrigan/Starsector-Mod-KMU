@@ -88,7 +88,6 @@ final class HolderOwnerSourceTests {
     private final StaticSeams seams = new StaticSeams();
 
     private MockedStatic<HolderInhabitation> inhabitationMock;
-    private MockedStatic<SpotlitBlocPresence> spotlitPresenceMock;
 
     // What the layer's rules were handed, in the order they were asked.
     private final List<HolderPass> providerPasses = new ArrayList<>();
@@ -110,10 +109,8 @@ final class HolderOwnerSourceTests {
         inhabitationMock
             .when(() -> HolderInhabitation.readInhabitedSystemKeys(any()))
             .thenReturn(Set.of(HELD_SYSTEM, UNHELD_SETTLED_SYSTEM));
-
-        spotlitPresenceMock = seams.openSeam(SpotlitBlocPresence.class);
-        spotlitPresenceMock
-            .when(() -> SpotlitBlocPresence.findPresentSystemKeys(any(), any(), any()))
+        inhabitationMock
+            .when(() -> HolderInhabitation.findSpotlitPresenceSystemKeys(any(), any(), any()))
             .thenReturn(Set.of(UNHELD_SETTLED_SYSTEM));
     }
 
@@ -149,19 +146,6 @@ final class HolderOwnerSourceTests {
                     inputs -> system -> RibbonPlan.NONE))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("holderProvider");
-        }
-    }
-
-    @Nested
-    class Grouping {
-
-        @Test
-        void answersTheGroupingItWasBuiltUnder() {
-
-            var grouping = HolderGroupingFixture.buildGroupOf(HEGEMONY, PERSEAN);
-
-            assertThat(buildSourceUnder(grouping).grouping())
-                .isSameAs(grouping);
         }
     }
 
@@ -253,7 +237,7 @@ final class HolderOwnerSourceTests {
             var owners = buildSourceUnder(HolderGrouping.identity())
                 .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
 
-            spotlitPresenceMock.verify(() -> SpotlitBlocPresence.findPresentSystemKeys(
+            inhabitationMock.verify(() -> HolderInhabitation.findSpotlitPresenceSystemKeys(
                 same(providerPasses.get(0)),
                 eq(HEGEMONY),
                 eq(Set.of(UNHELD_SETTLED_SYSTEM))));
@@ -375,8 +359,8 @@ final class HolderOwnerSourceTests {
 
             var system = buildSystem("hybrasil");
 
-            spotlitPresenceMock
-                .when(() -> SpotlitBlocPresence.isBlocPresentIn(any(), eq(HEGEMONY), same(system)))
+            inhabitationMock
+                .when(() -> HolderInhabitation.isBlocPresentIn(any(), eq(HEGEMONY), same(system)))
                 .thenReturn(true);
 
             var resolve = buildSourceUnder(HolderGrouping.identity())

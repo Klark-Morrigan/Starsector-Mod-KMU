@@ -15,7 +15,6 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 
@@ -35,22 +34,21 @@ public final class FactionOwnerReading
         implements OwnerReading {
 
     private final SectorAPI sector;
-    private final SectorBlocPalettes palettes;
 
     /**
      * @param sector the sector a faction's shades, name and crest are read from; null yields no
      *               shades, no names and no crests, and the fallback neutrals
      */
     public FactionOwnerReading(SectorAPI sector) {
-
         this.sector = sector;
-        this.palettes = new SectorBlocPalettes(sector, HolderGrouping.identity());
     }
 
+    // Read straight off the faction: the owner ID is the faction ID, so there is no colour faction to
+    // resolve through a grouping first.
     @Override
     public OwnerPalette resolvePalette(String ownerId) {
 
-        return palettes.readBlocPalette(ownerId);
+        return SectorBlocPalettes.readFactionPalette(sector, ownerId);
     }
 
     @Override
@@ -70,9 +68,9 @@ public final class FactionOwnerReading
         return FactionCrests.resolveCrestPath(SectorFactions.findFaction(sector, ownerId));
     }
 
-    // Nothing recedes of the layer's own accord. With every owner a lone faction there is no figure
-    // for a backdrop to sit behind, and receding every faction would sink the whole sector at once,
-    // which reads as the layer having failed rather than as an answer.
+    // Nothing recedes of the layer's own accord. A backdrop needs a figure to sit behind, and with
+    // every owner a lone faction there is none: receding every faction would sink the whole sector at
+    // once, which reads as the layer having failed rather than as an answer.
     @Override
     public ElementStyleAdjustment resolveStyleAdjustment(
             String ownerId,

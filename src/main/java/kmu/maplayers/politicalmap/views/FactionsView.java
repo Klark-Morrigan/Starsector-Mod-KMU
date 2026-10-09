@@ -2,13 +2,11 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.factions.FactionOwnerReading;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
-import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.util.KmuStringKeys;
 
 import java.util.Optional;
@@ -46,16 +44,6 @@ public final class FactionsView
     public String getSegmentLabelKey() {
         // "Factions" - this view's segment on the view-selector radio.
         return KmuStringKeys.POLITICAL_MAP_CTL_FACTIONS;
-    }
-
-    @Override
-    public int getContentRevision(MapLayerRefreshBoard board) {
-        // The alliance set is this view's one live input. Nothing it paints moves with it - the
-        // grouping is identity and never changes in a session - but what its bands report does: a run
-        // is laid at contested length only against a bloc the painter is not allied with. Without
-        // this fold, an alliance formed or dissolved in play leaves every band drawn at stale
-        // lengths until an unrelated economy change happens to rebuild the map.
-        return PoliticalMapRefreshSignal.computeAllianceContentRevision(board);
     }
 
     @Override

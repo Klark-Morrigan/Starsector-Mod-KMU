@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.owners.holders.alliances;
 
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 
 import org.junit.jupiter.api.Nested;
@@ -77,7 +78,7 @@ class ContestSidesTests {
         void alliesNobodyWhereNothingGroupsFactions() {
             // An install with nothing grouping factions: no two blocs stand together, so
             // the allied block is empty and its heading is dropped by the surface drawing it.
-            assertThat(new ContestSides(HOLDER, BlocAffiliation.NONE)
+            assertThat(new ContestSides(HOLDER, new BlocAffiliation(HolderGrouping.identity()))
                     .selectSide(ContestSide.ALLIED, List.of(ALLY, RIVAL), BLOC_ID_ITSELF))
                 .isEmpty();
         }
@@ -86,7 +87,7 @@ class ContestSidesTests {
         void keepsEverybodyAsRivalsWhereNothingGroupsFactions() {
             // Why an install without groups needs no branch anywhere: every contestant routes
             // exactly as it did before either side existed.
-            assertThat(new ContestSides(HOLDER, BlocAffiliation.NONE)
+            assertThat(new ContestSides(HOLDER, new BlocAffiliation(HolderGrouping.identity()))
                     .selectSide(ContestSide.RIVAL, List.of(ALLY, RIVAL), BLOC_ID_ITSELF))
                 .containsExactly(ALLY, RIVAL);
         }

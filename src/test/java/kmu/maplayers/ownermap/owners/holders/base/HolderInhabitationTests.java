@@ -17,8 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins where the spotlit bloc lives among the systems a holder map left out. The read answers only
  * over the candidates it is handed and only where the bloc lives, since the cells it spares are the
  * ones the map would otherwise draw as empty backdrop.
+ *
+ * <p>Where anybody lives at all is the composition {@code HolderInhabitationIntegrationTests} pins.
  */
-final class SpotlitBlocPresenceTests {
+final class HolderInhabitationTests {
 
     private static final String SPOTLIT_BLOC_ID = "hegemony";
 
@@ -29,7 +31,7 @@ final class SpotlitBlocPresenceTests {
     private static final FactionAPI TRITACHYON_FACTION = SectorOwnershipFixtures.buildFaction("tritachyon");
 
     @Nested
-    class FindPresentSystemKeys {
+    class FindSpotlitPresenceSystemKeys {
 
         @Test
         void namesTheCandidatesTheSpotlitBlocLivesIn() {
@@ -39,7 +41,7 @@ final class SpotlitBlocPresenceTests {
             var corvusKey = readSystemKey(sector, "corvus");
             var askoniaKey = readSystemKey(sector, "askonia");
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     SectorOwnershipFixtures.buildHolderPassOver(sector),
                     SPOTLIT_BLOC_ID,
                     Set.of(corvusKey, askoniaKey)))
@@ -52,7 +54,7 @@ final class SpotlitBlocPresenceTests {
             // candidates is never answered for, wherever the bloc lives.
             var sector = buildTwoSystemSector();
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     SectorOwnershipFixtures.buildHolderPassOver(sector),
                     SPOTLIT_BLOC_ID,
                     Set.of(readSystemKey(sector, "askonia"))))
@@ -64,7 +66,7 @@ final class SpotlitBlocPresenceTests {
 
             var sector = buildTwoSystemSector();
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     SectorOwnershipFixtures.buildHolderPassOver(sector),
                     null,
                     Set.of(readSystemKey(sector, "corvus"))))
@@ -76,7 +78,7 @@ final class SpotlitBlocPresenceTests {
 
             var sector = buildTwoSystemSector();
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     SectorOwnershipFixtures.buildHolderPassOver(sector),
                     SPOTLIT_BLOC_ID,
                     Set.of()))
@@ -89,7 +91,7 @@ final class SpotlitBlocPresenceTests {
             // and nothing is reported present rather than every system reported empty.
             var sector = SectorOwnershipFixtures.buildEconomylessSectorWithSystem("corvus");
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     SectorOwnershipFixtures.buildHolderPassOver(sector),
                     SPOTLIT_BLOC_ID,
                     Set.of(readSystemKey(sector, "corvus"))))
@@ -105,7 +107,7 @@ final class SpotlitBlocPresenceTests {
 
             var sector = buildTwoSystemSector();
 
-            assertThat(SpotlitBlocPresence.isBlocPresentIn(
+            assertThat(HolderInhabitation.isBlocPresentIn(
                     SectorOwnershipFixtures.buildHolderPassOver(sector),
                     SPOTLIT_BLOC_ID,
                     SectorOwnershipFixtures.findSystemIn(sector, "corvus")))
@@ -117,7 +119,7 @@ final class SpotlitBlocPresenceTests {
 
             var sector = buildTwoSystemSector();
 
-            assertThat(SpotlitBlocPresence.isBlocPresentIn(
+            assertThat(HolderInhabitation.isBlocPresentIn(
                     SectorOwnershipFixtures.buildHolderPassOver(sector),
                     SPOTLIT_BLOC_ID,
                     SectorOwnershipFixtures.findSystemIn(sector, "askonia")))
@@ -129,7 +131,7 @@ final class SpotlitBlocPresenceTests {
 
             var sector = buildTwoSystemSector();
 
-            assertThat(SpotlitBlocPresence.isBlocPresentIn(
+            assertThat(HolderInhabitation.isBlocPresentIn(
                     SectorOwnershipFixtures.buildHolderPassOver(sector),
                     null,
                     SectorOwnershipFixtures.findSystemIn(sector, "corvus")))
@@ -140,7 +142,7 @@ final class SpotlitBlocPresenceTests {
         void answersNoForASystemTheSectorNoLongerLists() {
             // A marked key the sector dropped reaches a batch as no system at all, and nobody can
             // be living in it.
-            assertThat(SpotlitBlocPresence.isBlocPresentIn(
+            assertThat(HolderInhabitation.isBlocPresentIn(
                     SectorOwnershipFixtures.buildHolderPassOver(buildTwoSystemSector()),
                     SPOTLIT_BLOC_ID,
                     null))
@@ -153,7 +155,7 @@ final class SpotlitBlocPresenceTests {
             // so a batch run then cannot spare a cell the rebuild would not.
             var sector = SectorOwnershipFixtures.buildEconomylessSectorWithSystem("corvus");
 
-            assertThat(SpotlitBlocPresence.isBlocPresentIn(
+            assertThat(HolderInhabitation.isBlocPresentIn(
                     SectorOwnershipFixtures.buildHolderPassOver(sector),
                     SPOTLIT_BLOC_ID,
                     SectorOwnershipFixtures.findSystemIn(sector, "corvus")))

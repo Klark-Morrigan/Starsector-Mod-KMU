@@ -189,8 +189,21 @@ The sources themselves are [below](#the-ownership-sources);
 the seam they answer is [ownership resolution](../ownermap/owners/holders/README.md),
 and the three fill states are [the split fill](../ownermap/render/clusters/README.md#the-split-fill-solid-hatched-unfilled).
 
-The fourth is the one the three views share most of.
-All three answer with the holder categories.
+What the three views answer alike is stated once,
+on `PoliticalHolderView`,
+which every view of this layer extends:
+
+- the alliance set's revision as the one live input they repaint on;
+- the live alliance set as who stands together in a contest,
+  whatever a view paints as one bloc;
+- the holder categories;
+- a picker read over one sampling of the grouping,
+  so the walk's numbers and the rows naming them come off one membership.
+
+It sits below the holder seam rather than on it,
+since every answer names this layer's own alliance set.
+
+The fourth input is the one the three views share most of.
 The Factions and Claims views read a bloc with `FactionOwnerReading`,
 off the faction whose ID it is.
 The Alliances view reads one with `AllianceOwnerReading`:
@@ -222,7 +235,7 @@ Factions and Alliances are painted by the same contest,
 so `DominancePaintedView` answers that once for both
 and leaves them only the one thing they differ on,
 which is the Spotlight targets column above.
-A view painted by another mechanic implements the seam directly
+A view painted by another mechanic implements `PoliticalHolderView` directly
 and pairs its own list with its own vocabulary rather than widening theirs.
 
 A vocabulary states only its numbers,
@@ -458,7 +471,7 @@ so shelving them under either mechanic would make that mechanic name the other.
 | Package | What is in it |
 | --- | --- |
 | *(top level)* | the tab (`PoliticalMapLayer`), what it stands up on a sector (`PoliticalMapStanding`, `PoliticalMapInstaller`) |
-| `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), the contest-painted views' shared answers (`DominancePaintedView`), and the alliance-only body controls (`AllianceBodyControls`) |
+| `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), every view's shared answers (`PoliticalHolderView`), the contest-painted views' (`DominancePaintedView`), and the alliance-only body controls (`AllianceBodyControls`) |
 | `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the two per-system resolves, `DominanceSystemHolderResolve` and `ClaimSystemHolderResolve` |
 | `dominance` | the market contest: the pass, `SectorPolitics`, `FilteredPolitics`, `SystemDominance`, the tie-break and the ranking rules, `BlocCandidacy`, the stats and sort modes |
 | `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`) |

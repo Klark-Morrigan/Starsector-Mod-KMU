@@ -25,7 +25,7 @@ import java.util.function.Predicate;
  * @param candidacy      which blocs take part in the contest at all; the rest are set aside before a
  *                       holder is picked
  * @param affiliation    the alliance set the holder's own allies are lifted out by, which is
- *                       {@link BlocAffiliation#NONE} wherever nothing groups factions
+ *                       read over the identity grouping wherever nothing groups factions
  * @param friendliness   whether two blocs are on good terms, read over both memberships whole
  * @param blocMembership what a bloc is made of, keyed by bloc id. A reader rather than the grouping
  *                       itself, because a grouping sat beside a {@link BlocAffiliation} is the very

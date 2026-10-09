@@ -24,11 +24,12 @@ import java.awt.Color;
  *
  * <p>An alliance always keeps full strength so it stands out against the backdrop. A lone faction is
  * that backdrop: it recedes of the layer's own accord, but only where some alliance exists for it to
- * sit behind.
+ * sit behind - with none, it keeps full strength for the reason {@link FactionOwnerReading} recedes
+ * nothing.
  *
- * <p>Holds the grouping the rebuild sampled, so every answer is a lookup over that one snapshot - the
- * grouping can be a live read of the game, and a reading that sampled it again per question could
- * colour, name and recede one bloc off three different memberships.
+ * <p>Holds the grouping the rebuild sampled, which is the snapshot {@link OwnerReading} asks for.
+ * An alliance's colour faction is resolved through it alone; the faction reading asked after that
+ * takes the ID as a faction's own.
  */
 public final class AllianceOwnerReading
         implements OwnerReading {
@@ -73,9 +74,7 @@ public final class AllianceOwnerReading
         return factions.resolveCrestPath(grouping.resolveColourFactionId(ownerId));
     }
 
-    // Only a lone faction recedes of the layer's own accord, and only where some alliance exists: with
-    // no alliance there is no figure, and receding every bloc would sink the whole sector at once. How
-    // far such a faction recedes is the painting view's own backdrop, sampled into the rebuild's
+    // How far a lone faction recedes is the painting view's own backdrop, sampled into the rebuild's
     // preferences.
     @Override
     public ElementStyleAdjustment resolveStyleAdjustment(

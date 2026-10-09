@@ -280,7 +280,7 @@ final class OwnerMapBuilderTests {
     // handed, the cases differing in the owners rather than in the reading.
     private static ViewReading buildReadingOver(OwnerSource source) {
         return new ViewReading(
-            new OwnerPaintedViewFake(Map.of(), source),
+            new OwnerPaintedViewFake(source),
             OwnerReadingFake.createAnsweringNothing(),
             source);
     }

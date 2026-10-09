@@ -21,9 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins the one guarantee neither suite either side of it can make: that a cell classified as empty
  * backdrop is never a cell the filter's spotlight has kept a bloc's fill over.
  *
- * <p>The classification reads {@link HolderInhabitation}, the sparing reads
- * {@link SpotlitBlocPresence#findPresentSystemKeys}, and each has its own suite pinning its own answer.
- * Nothing in that pair stops the two drifting onto different colony projections - and the pair that
+ * <p>The classification reads {@link HolderInhabitation#readInhabitedSystemKeys}, the sparing reads
+ * {@link HolderInhabitation#findSpotlitPresenceSystemKeys}, and each has its own suite pinning its own
+ * answer. Nothing in that pair stops the two drifting onto different colony projections - and the pair that
  * drifted draws a bloc's colours across a system the same pass has just called empty space, which
  * neither suite alone can see.
  *
@@ -107,7 +107,7 @@ final class SpotlitPresenceAgreementIntegrationTests {
     // prove nothing.
     private static Set<SystemKey> findPresentSystemKeys(SectorAPI sector, String selectedBlocId) {
 
-        return SpotlitBlocPresence.findPresentSystemKeys(
+        return HolderInhabitation.findSpotlitPresenceSystemKeys(
             buildPassOver(sector),
             selectedBlocId,
             Set.of(buildCellKey(SYSTEM_ID)));

@@ -157,11 +157,11 @@ public interface HolderPaintedView
      * hand over a map from one walk and an index from another, which is precisely the disagreement
      * the paired read exists to make impossible.
      *
-     * <p>The crest and the label are the handed owner reading's, which the calling view resolves
-     * over the walk's own grouping, so the rows name and badge each bloc exactly as the map does. A
-     * bloc with no crest keeps its option and simply draws its name alone. The label is always in
-     * the short form: the picker labels a bloc by its short name regardless of the map's name-format
-     * setting, so a long-form map label never widens the sidebar's option rows.
+     * <p>The crest and the label are this view's own owner reading's, resolved here over the walk's
+     * grouping, so the rows name and badge each bloc exactly as the map does. A bloc with no crest
+     * keeps its option and simply draws its name alone. The label is always in the short form: the
+     * picker labels a bloc by its short name regardless of the map's name-format setting, so a
+     * long-form map label never widens the sidebar's option rows.
      *
      * <p>The vocabulary it bundles is the caller's own modes with {@link BlocStandingSortMode} behind
      * them, which is why the sector and the grouping are read here beside the reading. Where a
@@ -170,12 +170,11 @@ public interface HolderPaintedView
      * through instead of being declared into each vocabulary.
      *
      * @param <S>             the calling view's own metrics type, ranked by that view's vocabulary
-     * @param sector          the sector a bloc's standing with the player is read from
-     * @param grouping        the grouping the walk folded under, so the gate and a bloc's
-     *                        membership resolve against the same snapshot the numbers came from
-     * @param reading         the view's reading of its owners over that same grouping, which names
-     *                        and badges each row; handed in rather than resolved here so the rows
-     *                        and the numbers come off one sampling
+     * @param sector          the sector a bloc's standing with the player, name and crest are read
+     *                        from
+     * @param grouping        the grouping the walk folded under, so the gate, the reading and a
+     *                        bloc's membership resolve against the same snapshot the numbers came
+     *                        from
      * @param statsRead       the walk's totals and the systems behind them, in the order it surfaced
      *                        them, which the returned rows preserve
      * @param vocabularyModes the calling layer's own modes - the numbers its rows carry - bundled
@@ -186,12 +185,10 @@ public interface HolderPaintedView
     default <S extends OwnerMetrics> OwnerPickerRead<RankedOwner<S>> buildBlocPickerRead(
             SectorAPI sector,
             HolderGrouping grouping,
-            OwnerReading reading,
             OwnerStatsRead<S> statsRead,
             ListSortModes<RankedOwner<S>> vocabularyModes) {
 
-        return BlocPickerAssembly.buildBlocPickerRead(
-            this, sector, grouping, reading, statsRead, vocabularyModes);
+        return BlocPickerAssembly.buildBlocPickerRead(this, sector, grouping, statsRead, vocabularyModes);
     }
 
     /**

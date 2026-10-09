@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -14,7 +13,6 @@ import kmu.maplayers.ownermap.owners.holders.alliances.AllianceOwnerReading;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
-import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStringKeys;
 
@@ -52,6 +50,10 @@ public final class AlliancesView
     // This view's own backdrop: every faction outside an alliance, receded so the alliances read as
     // the figure. Independent of the layer's filter recede, so it keeps its own toggles under the keys
     // they have always been saved under - frozen, since a rename resets every save's choice.
+    //
+    // Not folded into the content revision: the bake samples the toggles with every other
+    // preference and folds them in as values, so a flip that leaves the recede where it was rebuilds
+    // nothing.
     static final RecedePreferences NON_ALLIED_RECEDE = new RecedePreferences(
         "$kmu_political_alliance_recede_mute",
         "$kmu_political_alliance_recede_desaturate");
@@ -76,18 +78,6 @@ public final class AlliancesView
         // "Alliances" - this view's segment on the view-selector radio, sibling to the faction and
         // claims ones.
         return KmuStringKeys.POLITICAL_MAP_CTL_ALLIANCES;
-    }
-
-    @Override
-    public int getContentRevision(MapLayerRefreshBoard board) {
-        // This view's one live input: the alliance set, whose revision the sector watcher bumps when
-        // membership moves, so the map repaints on a form/dissolve/transfer. It is the set this view
-        // paints its blocs out of, so a membership change moves the fills themselves rather than only
-        // what is reported over them. The non-allied recede toggles are not folded in - they are
-        // sampled by the bake with every other preference and folded in as values, so a flip that
-        // leaves the recede where it was rebuilds nothing while a real flip rebuilds whichever view
-        // is up.
-        return PoliticalMapRefreshSignal.computeAllianceContentRevision(board);
     }
 
     @Override

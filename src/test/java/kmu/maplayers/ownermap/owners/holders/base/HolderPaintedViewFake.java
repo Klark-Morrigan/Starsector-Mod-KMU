@@ -26,9 +26,12 @@ import java.util.function.Predicate;
  * seam's own, which offers every bloc. The grouping is supplied where a case is about the one
  * sampling of it a rebuild takes; it defaults to the identity grouping.
  *
- * <p>It records how often its grouping is sampled, what its reading is built over, and what its
- * picker is asked under. Its picker still answers with the seam's own default, so a case about that
- * default reads it through this fake unchanged.
+ * <p>It records how often its grouping is sampled, what its reading is built over, what its band
+ * planner is built over, and what its picker is asked under. Its picker still answers with the
+ * seam's own default, so a case about that default reads it through this fake unchanged.
+ *
+ * <p>The reading is supplied where a case is about what is read off it; it defaults to one naming
+ * blocs from a canned map.
  */
 public final class HolderPaintedViewFake
         implements HolderPaintedView {
@@ -42,6 +45,7 @@ public final class HolderPaintedViewFake
     private final HolderGrouping grouping;
     private final List<ColonyReadRules> pickerRules = new ArrayList<>();
     private final List<SectorAPI> pickerSectors = new ArrayList<>();
+    private final List<RibbonPlanInputs> plannerInputs = new ArrayList<>();
     private final OwnerReadingFake readingFake;
     private final List<HolderGrouping> readingGroupings = new ArrayList<>();
     private final List<SectorAPI> readingSectors = new ArrayList<>();
@@ -51,16 +55,16 @@ public final class HolderPaintedViewFake
 
     public HolderPaintedViewFake(Map<String, String> nameByBlocId) {
 
-        this(HolderGrouping.identity(), nameByBlocId, null);
+        this(HolderGrouping.identity(), OwnerReadingFake.createNaming(nameByBlocId), null);
     }
 
     private HolderPaintedViewFake(
             HolderGrouping grouping,
-            Map<String, String> nameByBlocId,
+            OwnerReadingFake readingFake,
             Predicate<String> selectableBlocGate) {
 
         this.grouping = grouping;
-        this.readingFake = OwnerReadingFake.createNaming(nameByBlocId);
+        this.readingFake = readingFake;
         this.selectableBlocGate = selectableBlocGate;
     }
 
@@ -76,7 +80,10 @@ public final class HolderPaintedViewFake
             Map<String, String> nameByBlocId,
             Predicate<String> selectableBlocGate) {
 
-        return new HolderPaintedViewFake(HolderGrouping.identity(), nameByBlocId, selectableBlocGate);
+        return new HolderPaintedViewFake(
+            HolderGrouping.identity(),
+            OwnerReadingFake.createNaming(nameByBlocId),
+            selectableBlocGate);
     }
 
     /**
@@ -88,7 +95,19 @@ public final class HolderPaintedViewFake
      */
     public static HolderPaintedViewFake createGroupingFake(HolderGrouping grouping) {
 
-        return new HolderPaintedViewFake(grouping, Map.of(), null);
+        return new HolderPaintedViewFake(grouping, OwnerReadingFake.createAnsweringNothing(), null);
+    }
+
+    /**
+     * A fake answering with a stated reading, for a case about what is read off the view's own
+     * reading.
+     *
+     * @param readingFake the reading every resolve answers with
+     * @return the fake, over the identity grouping
+     */
+    public static HolderPaintedViewFake createReadingFake(OwnerReadingFake readingFake) {
+
+        return new HolderPaintedViewFake(HolderGrouping.identity(), readingFake, null);
     }
 
     /**
@@ -113,6 +132,13 @@ public final class HolderPaintedViewFake
     }
 
     /**
+     * @return the inputs each band planner was built over, in order
+     */
+    public List<RibbonPlanInputs> listPlannerInputs() {
+        return plannerInputs;
+    }
+
+    /**
      * @return the grouping each reading was built over, in order
      */
     public List<HolderGrouping> listReadingGroupings() {
@@ -124,13 +150,6 @@ public final class HolderPaintedViewFake
      */
     public List<SectorAPI> listReadingSectors() {
         return readingSectors;
-    }
-
-    /**
-     * @return the reading this fake answers with, naming blocs from its canned map
-     */
-    public OwnerReadingFake readOwnerReading() {
-        return readingFake;
     }
 
     @Override
@@ -157,6 +176,8 @@ public final class HolderPaintedViewFake
 
     @Override
     public SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs) {
+
+        plannerInputs.add(inputs);
         return PLANNER;
     }
 

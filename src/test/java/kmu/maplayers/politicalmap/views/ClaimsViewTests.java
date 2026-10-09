@@ -8,20 +8,13 @@ import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
-import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
-import kmu.maplayers.ownermap.owners.holders.base.HolderCategories;
+import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
-import kmu.maplayers.ownermap.owners.holders.base.HolderOwnerSource;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
@@ -38,7 +31,6 @@ import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolve;
 import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
-import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStringKeys;
 
@@ -73,17 +65,11 @@ import static org.mockito.Mockito.when;
  * metrics rather than domination ones. Reproducing these here is what lets the
  * shared pipeline read the claims view through
  * {@link kmu.maplayers.ownermap.OwnerPaintedView} without naming it.
+ *
+ * <p>What every view of the layer answers alike is {@link PoliticalHolderView}'s, pinned once by its
+ * own suite.
  */
 final class ClaimsViewTests {
-
-    // The claims view ignores its grouping argument (its own grouping is always identity), so any
-    // grouping stands in where the interface demands one.
-    private static final HolderGrouping ANY_GROUPING = HolderGrouping.identity();
-
-    // A reading that does recede something, so a NONE answer here is this view adjusting nothing
-    // rather than the picks it was handed holding nothing to adjust with.
-    private static final ContentInputs RECEDING_INPUTS =
-        ContentInputsFixtures.createInputsRecedingNonAllied(new ElementStyleAdjustment(0.4, true));
 
     @Nested
     class GetId {
@@ -114,30 +100,6 @@ final class ClaimsViewTests {
             // resolves plain faction holding.
             assertThat(ClaimsView.INSTANCE.resolveGrouping())
                 .isSameAs(HolderGrouping.identity());
-        }
-    }
-
-    @Nested
-    class ResolveContestAffiliation {
-
-        @Test
-        void readsTheLiveAllianceSet() {
-            // Who stands together in a contest is the live alliance set on every view of this
-            // layer, whatever the view paints as one bloc: allies painted apart still read as allies.
-            var allianceSet = HolderGroupingFixture.buildGroupOf("hegemony", "persean");
-
-            try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
-                alliancesMock
-                    .when(NexerelinAlliances::resolveGrouping)
-                    .thenReturn(allianceSet);
-
-                var affiliation = ClaimsView.INSTANCE.resolveContestAffiliation();
-
-                assertThat(affiliation.areOwnersAllied("hegemony", "persean"))
-                    .isTrue();
-                assertThat(affiliation.areOwnersAllied("hegemony", "tritachyon"))
-                    .isFalse();
-            }
         }
     }
 
@@ -196,45 +158,13 @@ final class ClaimsViewTests {
                     // Nothing stands together, which is what the claims layer's own binding hands
                     // over on an install without alliances - and the planner it resolves does not
                     // read this either way.
-                    BlocAffiliation.NONE,
+                    OwnerAffiliation.NONE,
                     new RibbonPlanRules(
                         new RibbonSegmentLengths(3, 1),
                         new UncontestedRibbonRuns(false))));
 
             assertThat(planner)
                 .isInstanceOf(ClaimedSystemRibbonPlanner.class);
-        }
-    }
-
-    @Nested
-    class GetContentRevision {
-
-        @Test
-        void shiftsWhenTheAllianceRevisionMoves() {
-            // The alliance set is this view's one live input: the fills stay per-claimant, but the
-            // bands over them lay a contested run only against a bloc the claimant is not allied
-            // with, so a membership change must shift the revision and repaint them.
-            var board = new MapLayerRefreshBoard();
-            var before = ClaimsView.INSTANCE.getContentRevision(board);
-
-            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
-
-            assertThat(ClaimsView.INSTANCE.getContentRevision(board))
-                .isNotEqualTo(before);
-        }
-
-        @Test
-        void isInvariantAcrossAnUnrelatedSignal() {
-            // Only the alliance set is folded in - the market-inferred claims repaint on the shared
-            // economy revision, not here - so a signal this view renders nothing from, a geometry
-            // rebuild here, leaves its contribution fixed.
-            var board = new MapLayerRefreshBoard();
-            var before = ClaimsView.INSTANCE.getContentRevision(board);
-
-            board.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
-
-            assertThat(ClaimsView.INSTANCE.getContentRevision(board))
-                .isEqualTo(before);
         }
     }
 
@@ -260,8 +190,8 @@ final class ClaimsViewTests {
     class ResolveViewReading {
 
         @Test
-        void namesBlocsByTheirFactionsAndFoldsHoldingByClaimant() {
-            // Claims fold strictly by claiming faction, so both answers stand on the identity
+        void namesAnAlliedClaimantAsItsOwnFaction() {
+            // Claims fold strictly by claiming faction, so the reading stands on the identity
             // grouping whatever the alliance set says: a member of a live alliance is still named
             // as its own faction.
             var sectorMock = mock(SectorAPI.class);
@@ -273,26 +203,12 @@ final class ClaimsViewTests {
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(HolderGroupingFixture.buildGroupOf("hegemony", "persean"));
 
-                var viewReading = ClaimsView.INSTANCE.resolveViewReading(sectorMock);
-
-                assertThat(viewReading.reading().resolveName("hegemony", OwnerNameFormatChoice.SHORT))
+                assertThat(ClaimsView.INSTANCE
+                        .resolveViewReading(sectorMock)
+                        .reading()
+                        .resolveName("hegemony", OwnerNameFormatChoice.SHORT))
                     .isEqualTo("Hegemony");
-                assertThat(viewReading.source())
-                    .isInstanceOfSatisfying(
-                        HolderOwnerSource.class,
-                        source -> assertThat(source.grouping()).isSameAs(HolderGrouping.identity()));
             }
-        }
-    }
-
-    @Nested
-    class ResolveCategories {
-
-        @Test
-        void declaresTheHolderCategories() {
-
-            assertThat(ClaimsView.INSTANCE.resolveCategories())
-                .isSameAs(HolderCategories.INSTANCE);
         }
     }
 

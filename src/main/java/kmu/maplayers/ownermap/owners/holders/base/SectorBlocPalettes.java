@@ -49,18 +49,29 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
         return new OwnerPalette(palette.primaryColour(), palette.secondaryColour());
     }
 
-    @Override
-    public OwnerPalette readBlocPalette(String blocId) {
+    /**
+     * One faction's shades as an owner's, for a reader that already holds the faction ID and so has
+     * no grouping to resolve it through.
+     *
+     * @param sector    the sector the faction is read from; null yields null
+     * @param factionId the faction to colour
+     * @return the faction's shades, or null when the sector knows no such faction
+     */
+    public static OwnerPalette readFactionPalette(SectorAPI sector, String factionId) {
 
-        var palette = FactionColours.findPalette(
-            SectorFactions.findFaction(sector, grouping.resolveColourFactionId(blocId)));
+        var palette = FactionColours.findPalette(SectorFactions.findFaction(sector, factionId));
 
-        // No colour faction is the degenerate case every caller drops the bloc on: a bloc gone
-        // from the sector has no shades, and painting it a stand-in colour would put colour on the
-        // map for something the map cannot name.
+        // No faction is the degenerate case every caller drops the owner on: a faction gone from the
+        // sector has no shades, and painting it a stand-in colour would put colour on the map for
+        // something the map cannot name.
         return palette == null
             ? null
             : adoptFactionPalette(palette);
+    }
+
+    @Override
+    public OwnerPalette readBlocPalette(String blocId) {
+        return readFactionPalette(sector, grouping.resolveColourFactionId(blocId));
     }
 
     /**

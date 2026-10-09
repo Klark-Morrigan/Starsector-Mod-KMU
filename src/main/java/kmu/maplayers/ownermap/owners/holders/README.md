@@ -222,8 +222,10 @@ It asks every question about that walk off that one pass.
 
 - **The holding** is the layer's `HolderProvider`, handed the pass and the spotlit bloc.
 - **What stands where** is `HolderInhabitation`, over the same pass.
-- **Where the spotlit bloc lives** is `SpotlitBlocPresence`,
+- **Where the spotlit bloc lives** is `HolderInhabitation` too,
   asked only of the inhabited systems the holding left to nobody.
+  Both reads take the system's habitation,
+  so a spared cell is never one the scan called empty.
 - **The band count** is the layer's planner, built over the same pass.
 
 So the holder scan, the habitation scan and the band count read each system once between them,

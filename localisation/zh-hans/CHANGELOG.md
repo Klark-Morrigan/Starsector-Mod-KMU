@@ -22,6 +22,8 @@
 
 - **`FactionStanding.isWeighed()`**：本次计算是否为该势力的殖民地计算过权重，按类别分支的读取方据此询问，而不必检查密封类型。
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
+- **`PoliticalHolderView`**，政治地图的每个视图都实现它：视图据以重绘的实时输入联盟集合、争夺中谁与谁站在一起、持有者类别，以及在分组的一次采样上读取的选择器。
+- **`SectorBlocPalettes.readFactionPalette(SectorAPI, String)`**：把一个势力的配色作为所有者的配色，供本身持有势力 ID 的读取方使用。
 
 #### 公共契约变更（**破坏性**）
 
@@ -56,10 +58,11 @@
 
 | 之前 | 之后 |
 | --- | --- |
-| `OwnerPaintedView` 的 `resolveBlocPickerRead(SectorAPI, ColonyReadRules)`、`buildBlocPickerRead(SectorAPI, HolderGrouping, OwnerReading, BlocStatsRead, ListSortModes)` 和 `resolveSelectableBlocGate(HolderGrouping)` | 位于 `HolderPaintedView`。`OwnerPaintedView` 保留 `resolveOwnerPickerRead(SectorAPI)`，默认为空 |
+| `OwnerPaintedView` 的 `resolveBlocPickerRead(SectorAPI, ColonyReadRules)`、`buildBlocPickerRead(SectorAPI, HolderGrouping, OwnerReading, BlocStatsRead, ListSortModes)` 和 `resolveSelectableBlocGate(HolderGrouping)` | 位于 `HolderPaintedView`，其中 `buildBlocPickerRead(SectorAPI, HolderGrouping, OwnerStatsRead, ListSortModes)` 通过视图自身的读取为各行命名。`OwnerPaintedView` 保留 `resolveOwnerPickerRead(SectorAPI)`，默认为空 |
 | `HolderPaintedView.resolveContestGrouping()` | `resolveContestAffiliation()`，返回 `OwnerAffiliation` |
 | 基于 `BlocAffiliation` 的 `RibbonPlan.planCellRibbon(Optional, List, BlocAffiliation, RibbonPlanRules)` | 基于 `kmu.maplayers.ownermap.owners.OwnerAffiliation`，由 `BlocAffiliation` 实现 |
-| `SpotlitBlocs.findPresentSystemKeys(HolderPass, String, Set)` 和 `isBlocPresentIn(HolderPass, String, StarSystemAPI)` | `SpotlitBlocPresence` |
+| `SpotlitBlocs.findPresentSystemKeys(HolderPass, String, Set)` 和 `isBlocPresentIn(HolderPass, String, StarSystemAPI)` | `HolderInhabitation.findSpotlitPresenceSystemKeys(HolderPass, String, Set)` 和 `HolderInhabitation.isBlocPresentIn(HolderPass, String, StarSystemAPI)` |
+| `HolderOwnerSource.grouping()` 和 `BlocAffiliation.NONE` | 已移除。在 `new BlocAffiliation(HolderGrouping.identity())` 下没有任何集团站在一起 |
 | `RenderStyleReader.readFactionStyle()`、`readIndependentStyle()`、`readDecivilisedStyle()` 和 `readUninhabitedStyle(boolean)` | `HolderCategoryStyleReader` |
 | `BlocPresence.collectColouredPresences(Map, BlocPaletteReader)` | 已移除：`ColonyCellRibbons` 自行为计数着色 |
 | `NameFormatPreference(String)` | `NameFormatPreference(String, String)`：图层还需给出名称单选框的标题键 |

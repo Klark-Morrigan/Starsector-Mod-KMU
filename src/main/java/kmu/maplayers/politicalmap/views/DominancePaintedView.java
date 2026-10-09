@@ -2,10 +2,7 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.ownermap.owners.OwnerAffiliation;
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
-import kmu.maplayers.ownermap.owners.holders.base.HolderCategories;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
@@ -13,7 +10,6 @@ import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
-import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.DominanceSortModes;
@@ -23,7 +19,6 @@ import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlan
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
-import kmu.mods.nexerelin.NexerelinAlliances;
 
 import java.util.function.Predicate;
 
@@ -34,14 +29,15 @@ import java.util.function.Predicate;
  * that can read those numbers. What a view painted this way actually varies is one thing - which of
  * the present blocs it offers as spotlight targets - so that is the only thing it is left to declare.
  *
- * <p>This sits between the view seam and the concrete views rather than on the seam itself,
- * because the assembly it holds names the dominance aggregator and the dominance vocabulary. On
- * {@link HolderPaintedView} those names would reach every view including the ones the contest does
- * not paint; here they reach exactly the views whose blocs carry the numbers. A view painted by
- * another mechanic implements the seam directly and pairs its own list with its own vocabulary.
+ * <p>This sits between the layer's views and the concrete ones rather than on
+ * {@link PoliticalHolderView}, because the assembly it holds names the dominance aggregator and the
+ * dominance vocabulary. There those names would reach the claims view, which the contest does not
+ * paint; here they reach exactly the views whose blocs carry the numbers. A view painted by another
+ * mechanic implements {@link PoliticalHolderView} directly and pairs its own list with its own
+ * vocabulary.
  */
 public interface DominancePaintedView
-        extends HolderPaintedView {
+        extends PoliticalHolderView {
 
     /**
      * The source the contest-painted views resolve their per-system holder from: each inhabited
@@ -69,31 +65,6 @@ public interface DominancePaintedView
     @Override
     default SystemHolderResolveSource resolveSystemHolderResolveSource() {
         return DominanceSystemHolderResolve::openResolveOver;
-    }
-
-    /**
-     * The categories of a view the domination contest paints: the four every layer painting
-     * holders shares, read off the settings rows those four have always been read from.
-     *
-     * @return the holder layers' categories
-     */
-    @Override
-    default OwnerCategories resolveCategories() {
-        return HolderCategories.INSTANCE;
-    }
-
-    /**
-     * Who stands together in a contest on a view the domination contest paints: the live alliance
-     * set, identity wherever Nexerelin is absent.
-     *
-     * <p>The same for both such views whatever each paints as one bloc, so stated once between
-     * them: the factions view paints allies apart and still reads them as allies in a contest.
-     *
-     * @return the live alliance set, read as who stands together
-     */
-    @Override
-    default OwnerAffiliation resolveContestAffiliation() {
-        return new BlocAffiliation(NexerelinAlliances.resolveGrouping());
     }
 
     /**
@@ -168,20 +139,13 @@ public interface DominancePaintedView
             DominanceRules rules,
             ColonyReadRules colonyReadRules) {
 
-        // The grouping is resolved once and handed to both halves, so the numbers, the crest, and
-        // the gate all read against the one snapshot rather than three live samples of a set that
-        // moves (the alliances view samples Nexerelin).
-        var grouping = resolveGrouping();
-        var pass = DominancePass.createOver(sector, rules, colonyReadRules, grouping);
-
         // The aggregation is handed over whole rather than opened here: the rows come off its totals
         // and the presence off the very entries counted into them, so both halves of the picker read
         // are one reading of the sector rather than two walks that could disagree.
-        return buildBlocPickerRead(
+        return readPickerUnderOneGrouping(
             sector,
-            grouping,
-            resolveOwnerReading(sector, grouping),
-            DominanceStatsAggregator.aggregateDominanceStats(pass),
+            grouping -> DominanceStatsAggregator.aggregateDominanceStats(
+                DominancePass.createOver(sector, rules, colonyReadRules, grouping)),
             DominanceSortModes.MODES);
     }
 

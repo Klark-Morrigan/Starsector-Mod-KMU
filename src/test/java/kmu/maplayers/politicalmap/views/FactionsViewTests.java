@@ -5,11 +5,8 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
-import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.base.HolderOwnerSource;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
@@ -22,7 +19,6 @@ import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
-import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 
 import org.junit.jupiter.api.Nested;
@@ -56,7 +52,8 @@ import static org.mockito.Mockito.when;
  * domination is what painted the cells.
  *
  * <p>What every view the domination contest paints answers alike is {@link DominancePaintedView}'s,
- * pinned once by its own suite.
+ * and what every view of the layer answers alike is {@link PoliticalHolderView}'s, each pinned once
+ * by its own suite.
  */
 final class FactionsViewTests {
 
@@ -72,38 +69,6 @@ final class FactionsViewTests {
             // Every faction is its own bloc, so the pipeline resolves plain faction holding.
             assertThat(FactionsView.INSTANCE.resolveGrouping())
                 .isSameAs(HolderGrouping.identity());
-        }
-    }
-
-    @Nested
-    class GetContentRevision {
-
-        @Test
-        void shiftsWhenTheAllianceRevisionMoves() {
-            // The alliance set is this view's one live input: its bands lay a contested run only
-            // against a bloc the painter is not allied with, so a membership change must shift the
-            // revision - that is what repaints the bands at their new lengths instead of leaving
-            // them stale until an unrelated rebuild.
-            var board = new MapLayerRefreshBoard();
-            var before = FactionsView.INSTANCE.getContentRevision(board);
-
-            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
-
-            assertThat(FactionsView.INSTANCE.getContentRevision(board))
-                .isNotEqualTo(before);
-        }
-
-        @Test
-        void isInvariantAcrossAnUnrelatedSignal() {
-            // Only the alliance set is folded in, so a signal this view renders nothing from - a
-            // geometry rebuild here - leaves its contribution fixed rather than churning the view.
-            var board = new MapLayerRefreshBoard();
-            var before = FactionsView.INSTANCE.getContentRevision(board);
-
-            board.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
-
-            assertThat(FactionsView.INSTANCE.getContentRevision(board))
-                .isEqualTo(before);
         }
     }
 
@@ -129,10 +94,9 @@ final class FactionsViewTests {
     class ResolveViewReading {
 
         @Test
-        void namesBlocsByTheirFactionsAndFoldsHoldingByFaction() {
-            // The two answers the core asks for, both over the identity grouping this view paints
-            // by - a reading naming each bloc as its faction, and the holder source folding every
-            // faction as its own bloc.
+        void namesBlocsByTheirFactions() {
+            // The reading the core asks for, over the identity grouping this view paints by. That
+            // the source folds under that same grouping is the shared assembly's, pinned once.
             var sectorMock = mock(SectorAPI.class);
 
             stubNamedFaction(sectorMock, "hegemony", "Hegemony");
@@ -142,14 +106,11 @@ final class FactionsViewTests {
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(HolderGrouping.identity());
 
-                var viewReading = FactionsView.INSTANCE.resolveViewReading(sectorMock);
-
-                assertThat(viewReading.reading().resolveName("hegemony", OwnerNameFormatChoice.SHORT))
+                assertThat(FactionsView.INSTANCE
+                        .resolveViewReading(sectorMock)
+                        .reading()
+                        .resolveName("hegemony", OwnerNameFormatChoice.SHORT))
                     .isEqualTo("Hegemony");
-                assertThat(viewReading.source())
-                    .isInstanceOfSatisfying(
-                        HolderOwnerSource.class,
-                        source -> assertThat(source.grouping()).isSameAs(HolderGrouping.identity()));
             }
         }
     }

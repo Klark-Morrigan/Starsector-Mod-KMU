@@ -29,14 +29,6 @@ import java.util.Objects;
 public final class BlocAffiliation
         implements OwnerAffiliation {
 
-    /**
-     * The affiliation under which no two blocs stand together - the identity grouping read as an
-     * affiliation. The one value an install with nothing grouping factions and a caller with no
-     * groups to judge by both use, so the absence of groups is a value rather than a null every
-     * judging site would have to guard.
-     */
-    public static final BlocAffiliation NONE = new BlocAffiliation(HolderGrouping.identity());
-
     private final HolderGrouping affiliationGrouping;
 
     /**
@@ -45,8 +37,7 @@ public final class BlocAffiliation
      * a cluster group, which is the confusion this type exists to make explicit.
      *
      * @param affiliationGrouping the grouping to read; {@link HolderGrouping#identity()} where
-     *                            nothing groups factions, though {@link #NONE} already names that
-     *                            value
+     *                            nothing groups factions, under which no two blocs stand together
      */
     public BlocAffiliation(HolderGrouping affiliationGrouping) {
 

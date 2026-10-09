@@ -5,6 +5,7 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 
 /**
  * A contest nothing groups and nothing warms, which is the state every case about something other
@@ -43,7 +44,7 @@ public final class ListedClaimContestFixture {
         return ListedClaimContest.selectFrom(
             breakdown,
             colonyVisibility,
-            BlocAffiliation.NONE,
+            new BlocAffiliation(HolderGrouping.identity()),
             INDIFFERENT_FACTIONS);
     }
 }

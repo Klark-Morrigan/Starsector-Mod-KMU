@@ -71,7 +71,7 @@ final class OwnerMapCacheTests {
     // A view answering every question a decision asks of it with a constant, so two frames of one
     // case sample the same inputs and the second owes a rebuild only where a case makes it.
     private static final OwnerPaintedView VIEW =
-        new OwnerPaintedViewFake(Map.of(), new OwnerSourceFake());
+        new OwnerPaintedViewFake(new OwnerSourceFake());
 
     // The owner a filtered map is spotlighting, for the case about what a filter defers.
     private static final String HEGEMONY_ID = "hegemony";

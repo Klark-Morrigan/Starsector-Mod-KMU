@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -49,7 +48,7 @@ final class OwnerMapRebuildDeciderTests {
     // nothing here turns on which panel the frame was prepared for.
     // Any view: what the decider answers turns on what moved, never on who is painting.
     private static final OwnerPaintedViewFake VIEW =
-        new OwnerPaintedViewFake(Map.of(), new OwnerSourceFake());
+        new OwnerPaintedViewFake(new OwnerSourceFake());
 
     private static final ScreenMemoryScope SCREEN = ScreenMemoryScopes.createStandInScreen();
 

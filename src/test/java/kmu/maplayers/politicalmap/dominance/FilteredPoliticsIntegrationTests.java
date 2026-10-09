@@ -7,9 +7,9 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderInhabitation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.owners.holders.base.SpotlitBlocPresence;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 
@@ -397,7 +397,7 @@ class FilteredPoliticsIntegrationTests {
             var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
@@ -416,7 +416,7 @@ class FilteredPoliticsIntegrationTests {
                 buildVisibleMarket(pirates, 2),
                 buildVisibleMarket(independent, 6));
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
@@ -435,7 +435,7 @@ class FilteredPoliticsIntegrationTests {
                 buildOnlySystem(sector),
                 buildVisibleMarket(pirates, 4));
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
@@ -454,7 +454,7 @@ class FilteredPoliticsIntegrationTests {
                 buildOnlySystem(sector),
                 buildAbandonedStationMarket(4));
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     buildHolderPassOver(sector),
                     Factions.NEUTRAL,
                     Set.of(buildCellKey("haven"))))
@@ -471,7 +471,7 @@ class FilteredPoliticsIntegrationTests {
                 List.of(pirates, independent),
                 buildVisibleMarket(independent, 6));
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
@@ -489,7 +489,7 @@ class FilteredPoliticsIntegrationTests {
                 listSystemMarkets("held", buildVisibleMarket(pirates, 5)),
                 listSystemMarkets("haven", buildVisibleMarket(pirates, 4)));
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
@@ -502,7 +502,7 @@ class FilteredPoliticsIntegrationTests {
             var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
 
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     buildHolderPassOver(sector),
                     null,
                     Set.of(buildCellKey("haven"))))
@@ -511,7 +511,7 @@ class FilteredPoliticsIntegrationTests {
 
         @Test
         void isEmptyForNullSector() {
-            assertThat(SpotlitBlocPresence.findPresentSystemKeys(
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
                     buildHolderPassOver(null),
                     "pirates",
                     Set.of(buildCellKey("haven"))))
