@@ -1,10 +1,10 @@
 package kmu.maplayers.ownermap.render.style;
 
+import kmlib.colour.ColourPair;
 import kmlib.colour.Colours;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.awt.Color;
@@ -29,10 +29,10 @@ public final class MapPalettes {
      * owner's fill and border, and the owner's name all recolour off one decision rather than
      * three copies of it.
      */
-    public static OwnerPalette resolveEffectivePalette(
+    public static ColourPair resolveEffectivePalette(
             ElementStyleAdjustment adjustment,
             SystemOwner owner,
-            OwnerPalette desaturationPalette) {
+            ColourPair desaturationPalette) {
         return resolveEffectivePalette(
             adjustment,
             owner.palette(),
@@ -49,10 +49,10 @@ public final class MapPalettes {
      * owner-keyed form above resolves to this one. That keeps "desaturate swaps the palette" a
      * single rule no matter what the un-desaturated shades came from.
      */
-    public static OwnerPalette resolveEffectivePalette(
+    public static ColourPair resolveEffectivePalette(
             ElementStyleAdjustment adjustment,
-            OwnerPalette ownPalette,
-            OwnerPalette desaturationPalette) {
+            ColourPair ownPalette,
+            ColourPair desaturationPalette) {
         return adjustment.shouldDesaturate()
             ? desaturationPalette
             : ownPalette;
@@ -64,8 +64,8 @@ public final class MapPalettes {
      * "an unowned cell has no palette of its own" is one rule, and a caller spelling the
      * colour twice is stating it again rather than reading it.
      */
-    public static OwnerPalette resolveNeutralPalette(Color neutralColour) {
-        return new OwnerPalette(neutralColour, neutralColour);
+    public static ColourPair resolveNeutralPalette(Color neutralColour) {
+        return new ColourPair(neutralColour, neutralColour);
     }
 
     /**
@@ -85,7 +85,7 @@ public final class MapPalettes {
      */
     public static Color pickPaletteColour(
             ElementPaintSelection paintSelection,
-            OwnerPalette palette) {
+            ColourPair palette) {
 
         if (!(paintSelection instanceof OwnerPaletteSlot slot)) {
             return null;
@@ -133,13 +133,13 @@ public final class MapPalettes {
      * @param darkeningStrength the fraction of brightness removed
      * @return the palette every desaturated owner recolours to
      */
-    public static OwnerPalette resolveDesaturationPalette(
-            OwnerPalette recedePalette,
+    public static ColourPair resolveDesaturationPalette(
+            ColourPair recedePalette,
             double darkeningStrength) {
 
         var keepFactor = (float) (1.0 - darkeningStrength);
 
-        return new OwnerPalette(
+        return new ColourPair(
             Colours.darken(recedePalette.primaryColour(), keepFactor),
             Colours.darken(recedePalette.secondaryColour(), keepFactor));
     }
@@ -165,7 +165,7 @@ public final class MapPalettes {
      *                           palette, 1 yields white
      * @return the two shades a spared cell paints in
      */
-    public static OwnerPalette resolvePresencePalette(
+    public static ColourPair resolvePresencePalette(
             Color neutralColour,
             double lighteningStrength) {
 

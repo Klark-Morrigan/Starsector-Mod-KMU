@@ -46,7 +46,7 @@ public final class BlocAffiliation
 
     /**
      * Whether two distinct blocs stand together - both fold into one bloc under the affiliation
-     * grouping.
+     * grouping. A layer painting holders paints blocs, so an owner ID is a bloc ID.
      *
      * <p>A bloc ID the affiliation grouping names no faction for falls through to itself, which is
      * what keeps the rule uniform across layers with no per-layer branch: on a layer whose paint
@@ -58,7 +58,8 @@ public final class BlocAffiliation
      * @param secondBlocId the other bloc of the pair
      * @return true when the two are distinct blocs folded into one under the affiliation grouping
      */
-    public boolean areBlocsAllied(String firstBlocId, String secondBlocId) {
+    @Override
+    public boolean areOwnersAllied(String firstBlocId, String secondBlocId) {
 
         // One bloc named twice is one side of a contest, not two standing together. The judging
         // sites ask "is this the painter" as a question of its own, so a self-affiliation here
@@ -72,12 +73,5 @@ public final class BlocAffiliation
         // nothing must not read as standing together for it.
         return firstAffiliatedBlocId != null
             && firstAffiliatedBlocId.equals(affiliationGrouping.resolveBlocId(secondBlocId));
-    }
-
-    // A layer painting holders paints blocs, so an owner ID is a bloc ID.
-    @Override
-    public boolean areOwnersAllied(String firstOwnerId, String secondOwnerId) {
-
-        return areBlocsAllied(firstOwnerId, secondOwnerId);
     }
 }

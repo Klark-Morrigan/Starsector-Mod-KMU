@@ -114,6 +114,6 @@ final class SpotlitPresenceAgreementIntegrationTests {
     }
 
     private static HolderPass buildPassOver(SectorAPI sector) {
-        return HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+        return HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
     }
 }

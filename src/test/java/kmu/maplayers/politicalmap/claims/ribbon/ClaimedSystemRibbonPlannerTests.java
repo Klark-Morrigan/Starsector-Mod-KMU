@@ -195,7 +195,7 @@ final class ClaimedSystemRibbonPlannerTests {
         return new ClaimedSystemRibbonPlanner(
                 readerFake,
                 buildInputsFor(
-                    HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity()),
+                    HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()),
                     rules))
             .planSystemRibbon(buildOnlySystem(sector));
     }

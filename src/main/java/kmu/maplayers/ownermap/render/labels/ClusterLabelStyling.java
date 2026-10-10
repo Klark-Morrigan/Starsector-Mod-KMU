@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.labels;
 
+import kmlib.colour.ColourPair;
 import kmlib.colour.Colours;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.FontAtlas;
@@ -10,7 +11,6 @@ import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -68,7 +68,7 @@ final class ClusterLabelStyling {
             SystemOwner owner,
             OwnerNameStyles nameStyles,
             OwnerStyleDecision styleDecision,
-            OwnerPalette desaturationPalette) {
+            ColourPair desaturationPalette) {
 
         // One category pick drives both the name's colour choice and its opacity, so the two
         // can never be read from different categories.
@@ -109,7 +109,7 @@ final class ClusterLabelStyling {
             Map<SystemKey, SystemOwner> ownerBySystemKey,
             OwnerNameStyles nameStyles,
             Function<String, OwnerStyleDecision> styleDecisionByOwnerId,
-            OwnerPalette desaturationPalette) {
+            ColourPair desaturationPalette) {
 
         var ownerByOwnerId = mapHolderByOwnerId(ownerBySystemKey);
 

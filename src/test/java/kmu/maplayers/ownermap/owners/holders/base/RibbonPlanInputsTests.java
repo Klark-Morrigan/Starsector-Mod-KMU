@@ -2,8 +2,9 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
@@ -55,17 +56,17 @@ final class RibbonPlanInputsTests {
             // A group bloc is shaded by its lead member, which only a palette folding under the
             // pass's grouping and reading the pass's sector can answer.
             var sectorMock = SectorFactionFixtures.buildSectorShadingFaction("hegemony", BRIGHT, DARK);
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, buildGroupOf("hegemony", "persean"));
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, buildGroupOf("hegemony", "persean"));
             var inputs = RibbonPlanInputs.createForPass(pass, AFFILIATION, RULES);
 
             assertThat(inputs.palettes().readBlocPalette(GROUP_BLOC_ID))
-                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
 
         @Test
         void carriesTheHandedAffiliationAndRules() {
 
-            var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
             var inputs = RibbonPlanInputs.createForPass(pass, AFFILIATION, RULES);
 
             assertThat(inputs.affiliation())
@@ -82,7 +83,7 @@ final class RibbonPlanInputsTests {
         void answersThePassesGrouping() {
             // The counts fold under the grouping the fills were painted with, which is the pass's.
             var grouping = buildGroupOf("hegemony", "persean");
-            var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, grouping);
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, grouping);
 
             assertThat(RibbonPlanInputs.createForPass(pass, OwnerAffiliation.NONE, RULES).grouping())
                 .isSameAs(grouping);
@@ -100,7 +101,7 @@ final class RibbonPlanInputsTests {
                 SYSTEM_ID,
                 buildVisibleMarket(buildFaction("hegemony"), COLONY_SIZE));
 
-            var pass = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
             var system = buildOnlySystem(sector);
             var habitation = RibbonPlanInputs
                 .createForPass(pass, OwnerAffiliation.NONE, RULES)
@@ -113,7 +114,7 @@ final class RibbonPlanInputsTests {
         @Test
         void answersNobodyLivingForNoSystem() {
 
-            var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
             var inputs = RibbonPlanInputs.createForPass(pass, OwnerAffiliation.NONE, RULES);
 
             assertThat(inputs.readHabitationIn(null).hasInhabitingColony())

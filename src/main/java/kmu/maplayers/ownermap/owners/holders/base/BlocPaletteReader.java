@@ -1,6 +1,6 @@
 package kmu.maplayers.ownermap.owners.holders.base;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmlib.colour.ColourPair;
 
 /**
  * Where the two shades a bloc paints in are read from.
@@ -25,5 +25,5 @@ public interface BlocPaletteReader {
      * @return the bloc's bright and dark shades, or null where the bloc has no colour to resolve
      *         at all - the degenerate case of a bloc whose colour faction has gone from the sector
      */
-    OwnerPalette readBlocPalette(String blocId);
+    ColourPair readBlocPalette(String blocId);
 }

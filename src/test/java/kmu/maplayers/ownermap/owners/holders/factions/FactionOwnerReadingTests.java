@@ -3,10 +3,11 @@ package kmu.maplayers.ownermap.owners.holders.factions;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 
@@ -55,7 +56,7 @@ final class FactionOwnerReadingTests {
             var sectorMock = buildSectorShadingFaction(HEGEMONY, BRIGHT, DARK);
 
             assertThat(new FactionOwnerReading(sectorMock).resolvePalette(HEGEMONY))
-                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
 
         @Test
@@ -232,14 +233,14 @@ final class FactionOwnerReadingTests {
                 DARK);
 
             assertThat(new FactionOwnerReading(sectorMock).resolveRecedePalette())
-                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
 
         @Test
         void fallsBackToGreyShadesWithoutASector() {
             // The backdrop still has two shades to darken without a sector to read Independent from.
             assertThat(new FactionOwnerReading(null).resolveRecedePalette())
-                .isEqualTo(new OwnerPalette(new Color(128, 128, 128), new Color(128, 128, 128)));
+                .isEqualTo(new ColourPair(new Color(128, 128, 128), new Color(128, 128, 128)));
         }
     }
 

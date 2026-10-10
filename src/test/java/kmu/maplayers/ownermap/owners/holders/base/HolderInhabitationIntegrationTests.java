@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.owners.holders.base;
 
+import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
@@ -12,6 +13,7 @@ import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -24,9 +26,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
- * Integration coverage for the owner map's inhabitation read: the whole-sector scan a rebuild
- * takes and the per-system read a refresh takes, each composed over a real pass, a real colony walk
- * and the real decivilised-world read.
+ * Integration coverage for the holders' inhabitation reads: the whole-sector scans a rebuild takes
+ * and the per-system reads a refresh takes - who lives anywhere, and where the spotlit bloc lives -
+ * each composed over a real pass, a real colony walk and the real decivilised-world read.
  *
  * <p>Integration rather than unit because the value is the composition. The scan and the read are
  * two scopes of one question, taken minutes apart - the scan where a rebuild began, the read when a
@@ -45,6 +47,11 @@ final class HolderInhabitationIntegrationTests {
     // The size every staged colony carries. Nothing inhabitation reads weighs a colony, so a case
     // varying this would vary nothing the answer can see.
     private static final int COLONY_SIZE = 5;
+
+    private static final String SPOTLIT_BLOC_ID = "hegemony";
+
+    private static final FactionAPI HEGEMONY_FACTION = SectorOwnershipFixtures.buildFaction("hegemony");
+    private static final FactionAPI TRITACHYON_FACTION = SectorOwnershipFixtures.buildFaction("tritachyon");
 
     private static final String SETTLED_SYSTEM = "settled";
     private static final String EMPTY_SYSTEM = "empty";
@@ -182,6 +189,180 @@ final class HolderInhabitationIntegrationTests {
         }
     }
 
+    @Nested
+    class FindSpotlitPresenceSystemKeys {
+
+        @Test
+        void namesTheCandidatesTheSpotlitBlocLivesIn() {
+
+            var sector = buildTwoSystemSector();
+
+            var corvusKey = readSystemKey(sector, "corvus");
+            var askoniaKey = readSystemKey(sector, "askonia");
+
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    Set.of(corvusKey, askoniaKey)))
+                .containsExactly(corvusKey);
+        }
+
+        @Test
+        void leavesOutASystemThatIsNoCandidate() {
+            // The holder map already drew every system it resolved, so a system outside the
+            // candidates is never answered for, wherever the bloc lives.
+            var sector = buildTwoSystemSector();
+
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    Set.of(readSystemKey(sector, "askonia"))))
+                .isEmpty();
+        }
+
+        @Test
+        void answersNothingWithNoBlocSpotlit() {
+
+            var sector = buildTwoSystemSector();
+
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    null,
+                    Set.of(readSystemKey(sector, "corvus"))))
+                .isEmpty();
+        }
+
+        @Test
+        void answersNothingWithNoCandidates() {
+
+            var sector = buildTwoSystemSector();
+
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    Set.of()))
+                .isEmpty();
+        }
+
+        @Test
+        void keepsTheCandidatesOwnOrder() {
+            // The spared cells are walked in the order the holder map handed them over, so the read
+            // keeps that order rather than one of its own.
+            var sector = SectorOwnershipFixtures.buildSectorWithSystems(
+                List.of(),
+                SectorOwnershipFixtures.listSystemMarkets(
+                    "corvus",
+                    SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE)),
+                SectorOwnershipFixtures.listSystemMarkets(
+                    "hybrasil",
+                    SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE)));
+
+            var candidateKeys = new LinkedHashSet<SystemKey>();
+
+            candidateKeys.add(readSystemKey(sector, "hybrasil"));
+            candidateKeys.add(readSystemKey(sector, "corvus"));
+
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    candidateKeys))
+                .containsExactly(readSystemKey(sector, "hybrasil"), readSystemKey(sector, "corvus"));
+        }
+
+        @Test
+        void leavesOutACandidateTheSectorNoLongerLists() {
+            // A key the sector dropped reaches the read as no system at all, and nobody lives in it.
+            var elsewhere = SectorOwnershipFixtures.buildSectorWithSystems(
+                List.of(),
+                SectorOwnershipFixtures.listSystemMarkets(
+                    "elsewhere",
+                    SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE)));
+
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(buildTwoSystemSector()),
+                    SPOTLIT_BLOC_ID,
+                    Set.of(readSystemKey(elsewhere, "elsewhere"))))
+                .isEmpty();
+        }
+
+        @Test
+        void answersNothingBeforeTheEconomyStandsUp() {
+            // Mid-load the systems are walkable while the economy is not, so no colony can be read
+            // and nothing is reported present rather than every system reported empty.
+            var sector = SectorOwnershipFixtures.buildEconomylessSectorWithSystem("corvus");
+
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    Set.of(readSystemKey(sector, "corvus"))))
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class IsBlocPresentIn {
+
+        @Test
+        void answersYesWhereTheBlocLives() {
+
+            var sector = buildTwoSystemSector();
+
+            assertThat(HolderInhabitation.isBlocPresentIn(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    SectorOwnershipFixtures.findSystemIn(sector, "corvus")))
+                .isTrue();
+        }
+
+        @Test
+        void answersNoWhereOnlyARivalLives() {
+
+            var sector = buildTwoSystemSector();
+
+            assertThat(HolderInhabitation.isBlocPresentIn(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    SectorOwnershipFixtures.findSystemIn(sector, "askonia")))
+                .isFalse();
+        }
+
+        @Test
+        void answersNoWithNoBlocSpotlit() {
+
+            var sector = buildTwoSystemSector();
+
+            assertThat(HolderInhabitation.isBlocPresentIn(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    null,
+                    SectorOwnershipFixtures.findSystemIn(sector, "corvus")))
+                .isFalse();
+        }
+
+        @Test
+        void answersNoForASystemTheSectorNoLongerLists() {
+            // A marked key the sector dropped reaches a batch as no system at all, and nobody can
+            // be living in it.
+            assertThat(HolderInhabitation.isBlocPresentIn(
+                    SectorOwnershipFixtures.buildHolderPassOver(buildTwoSystemSector()),
+                    SPOTLIT_BLOC_ID,
+                    null))
+                .isFalse();
+        }
+
+        @Test
+        void answersNoBeforeTheEconomyStandsUp() {
+            // The single-system arm answers the mid-load sector exactly as the sector-wide scan does,
+            // so a batch run then cannot spare a cell the rebuild would not.
+            var sector = SectorOwnershipFixtures.buildEconomylessSectorWithSystem("corvus");
+
+            assertThat(HolderInhabitation.isBlocPresentIn(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    SectorOwnershipFixtures.findSystemIn(sector, "corvus")))
+                .isFalse();
+        }
+    }
+
     // The scan under one rule, off a pass opened over the sector as a rebuild opens it.
     private static Set<SystemKey> readInhabitedSystemKeys(
             SectorAPI sector,
@@ -194,7 +375,7 @@ final class HolderInhabitationIntegrationTests {
     // A plain identity pass under the given rule: what is varied across these cases is the rule and
     // the fixture, never the grouping, inhabitation folding no blocs of its own.
     private static HolderPass buildPassOver(SectorAPI sector, ColonyVisibility colonyVisibility) {
-        return HolderPass.over(sector, buildRulesUnder(colonyVisibility), HolderGrouping.identity());
+        return HolderPass.createOver(sector, buildRulesUnder(colonyVisibility), HolderGrouping.identity());
     }
 
     // An ordinary colony on a found entity: the plain "somebody lives here" case.
@@ -204,4 +385,21 @@ final class HolderInhabitationIntegrationTests {
             COLONY_SIZE);
     }
 
+    // Corvus holds a colony of the spotlit bloc; Askonia holds only a rival's.
+    private static SectorAPI buildTwoSystemSector() {
+
+        return SectorOwnershipFixtures.buildSectorWithSystems(
+            List.of(),
+            SectorOwnershipFixtures.listSystemMarkets(
+                "corvus",
+                SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE)),
+            SectorOwnershipFixtures.listSystemMarkets(
+                "askonia",
+                SectorOwnershipFixtures.buildVisibleMarket(TRITACHYON_FACTION, COLONY_SIZE)));
+    }
+
+    // The key the pass reads a staged system under, so a case names its candidates the same way.
+    private static SystemKey readSystemKey(SectorAPI sector, String systemId) {
+        return SystemKey.readKeyOf(SectorOwnershipFixtures.findSystemIn(sector, systemId));
+    }
 }

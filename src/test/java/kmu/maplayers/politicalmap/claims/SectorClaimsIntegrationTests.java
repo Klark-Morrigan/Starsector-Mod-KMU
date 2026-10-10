@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.claims;
 
+import kmlib.colour.ColourPair;
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
@@ -71,7 +71,7 @@ final class SectorClaimsIntegrationTests {
             assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     buildHolderPassOver(sectorMock), claimReaderFake))
                     .containsExactly(Map.entry(buildCellKey("claimed"),
-                            new SystemOwner("hegemony", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)))));
+                            new SystemOwner("hegemony", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)))));
         }
 
         @Test
@@ -89,9 +89,9 @@ final class SectorClaimsIntegrationTests {
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
-                    HolderPass.over(sectorMock, UNDER_THE_FOG, grouping), claimReaderFake))
+                    HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping), claimReaderFake))
                     .containsExactly(Map.entry(buildCellKey("claimed"),
-                            new SystemOwner("alliance-1", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)))));
+                            new SystemOwner("alliance-1", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)))));
         }
 
         @Test
@@ -138,7 +138,7 @@ final class SectorClaimsIntegrationTests {
                     Map.of("hegemony", "alliance-1"),
                     Map.of("alliance-1", "hegemony"),
                     Map.of("alliance-1", "Allied Powers"));
-            var pass = HolderPass.over(
+            var pass = HolderPass.createOver(
                     buildSectorWithSystems(
                             List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("claimed")),
                     UNDER_THE_FOG,
@@ -149,7 +149,7 @@ final class SectorClaimsIntegrationTests {
             assertThat(SectorClaims.resolveClaimingHolderIn(
                     pass.readSystems().get(0), pass, claimReaderFake, buildPalettesOver(pass)))
                     .isEqualTo(new SystemOwner(
-                            "alliance-1", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                            "alliance-1", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         private static SectorBlocPalettes buildPalettesOver(HolderPass pass) {

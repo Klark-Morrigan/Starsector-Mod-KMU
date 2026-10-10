@@ -4,9 +4,10 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures;
 
@@ -89,17 +90,17 @@ public final class RibbonPlanFixtures {
      */
     public static final BlocPaletteReader PALETTES = Map.of(
             HEGEMONY,
-            new OwnerPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
+            new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK),
             GROUP_BLOC_ID,
-            new OwnerPalette(HEGEMONY_BRIGHT, HEGEMONY_DARK),
+            new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK),
             TRITACHYON,
-            new OwnerPalette(TRITACHYON_BRIGHT, TRITACHYON_DARK),
+            new ColourPair(TRITACHYON_BRIGHT, TRITACHYON_DARK),
             PERSEAN,
-            new OwnerPalette(PERSEAN_BRIGHT, PERSEAN_DARK),
+            new ColourPair(PERSEAN_BRIGHT, PERSEAN_DARK),
             DIKTAT,
-            new OwnerPalette(DIKTAT_BRIGHT, DIKTAT_DARK),
+            new ColourPair(DIKTAT_BRIGHT, DIKTAT_DARK),
             NEUTRAL,
-            new OwnerPalette(NEUTRAL_BRIGHT, NEUTRAL_DARK))
+            new ColourPair(NEUTRAL_BRIGHT, NEUTRAL_DARK))
         ::get;
 
     /**
@@ -175,7 +176,7 @@ public final class RibbonPlanFixtures {
             ColonyVisibility colonyVisibility) {
 
         return buildInputsFor(
-            HolderPass.over(sector, buildRulesUnder(colonyVisibility), grouping));
+            HolderPass.createOver(sector, buildRulesUnder(colonyVisibility), grouping));
     }
 
     /**
@@ -217,7 +218,7 @@ public final class RibbonPlanFixtures {
     public static RibbonPlanInputs buildAlliedInputsOver(SectorAPI sector) {
 
         return buildInputsFor(
-            HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity()),
+            HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()),
             ALLIED_HEGEMONY_AND_TRITACHYON,
             SHORTENED_UNCONTESTED_RULES);
     }

@@ -56,7 +56,7 @@ class DominancePassTests {
             assertThatThrownBy(() ->
                     new DominancePass(
                         null,
-                        HolderPass.over(null, UNDER_THE_FOG, HolderGrouping.identity())))
+                        HolderPass.createOver(null, UNDER_THE_FOG, HolderGrouping.identity())))
                 .isInstanceOf(NullPointerException.class);
         }
 

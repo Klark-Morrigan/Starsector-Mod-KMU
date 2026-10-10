@@ -1,6 +1,6 @@
 package kmu.maplayers.ownermap.ribbon;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmlib.colour.ColourPair;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,8 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class OwnerPresenceTests {
 
-    private static final OwnerPalette PALETTE =
-        new OwnerPalette(new Color(140, 160, 220), new Color(40, 60, 120));
+    private static final ColourPair PALETTE =
+        new ColourPair(new Color(140, 160, 220), new Color(40, 60, 120));
 
     @Nested
     class HasMarkets {

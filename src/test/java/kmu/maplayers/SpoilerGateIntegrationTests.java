@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.util.List;
+import java.util.Set;
 
 import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
 import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
@@ -237,17 +237,13 @@ final class SpoilerGateIntegrationTests {
 
     // Who the map may name in the sector's one system, read through a pass opened on the player's
     // live rule the way a rebuild opens one.
-    private static List<String> readKnownOwnerIds(SectorAPI sector) {
+    private static Set<String> readKnownOwnerIds(SectorAPI sector) {
 
-        var pass = HolderPass.over(
+        var pass = HolderPass.createOver(
             sector,
             buildRulesUnder(MapVisibilityRules.readFromLunaSettings().colonyVisibility()),
             HolderGrouping.identity());
 
-        return pass
-            .readKnownColoniesIn(buildOnlySystem(sector))
-            .stream()
-            .map(colony -> colony.market().getFaction().getId())
-            .toList();
+        return pass.readKnownColonyFactionIds(buildOnlySystem(sector));
     }
 }

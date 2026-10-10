@@ -146,6 +146,19 @@ public enum ColonyKind {
     }
 
     /**
+     * Whether a place of this kind is people living under nobody's authority: the collapsed colony,
+     * which habitation admits and no polity runs.
+     *
+     * <p>One question every reader telling governed colonies from ungoverned ones asks of the kind,
+     * rather than each comparing against a constant of its own.
+     *
+     * @return true for the collapsed colony
+     */
+    public boolean isUngoverned() {
+        return this == UNGOVERNED_COLONY;
+    }
+
+    /**
      * Whether a place of this kind settles its location - whether somebody there would both see
      * whatever else stands in it and have word of that reach the player.
      *

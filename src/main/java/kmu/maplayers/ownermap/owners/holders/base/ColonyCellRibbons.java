@@ -6,7 +6,6 @@ import kmu.maplayers.ownermap.ribbon.OwnerPresence;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +71,7 @@ public final class ColonyCellRibbons {
             paintingBlocId,
             collectColouredPresences(
                 orderCountsForBand(
-                    readColonyCountByBloc(inputs.readHabitationIn(system)),
+                    inputs.readHabitationIn(system).habitationByBlocId(),
                     rankedBlocIds),
                 inputs.palettes()),
             inputs.affiliation(),
@@ -105,26 +104,9 @@ public final class ColonyCellRibbons {
         return presences;
     }
 
-    // How many colonies each bloc holds in the system, off the habitation's per-bloc fold, so two
-    // allies' colonies arrive as one bloc's count rather than as two runs side by side.
-    //
-    // Read rather than counted here, so the band names each colony's owner as every other surface
-    // on the map does, and a system's colonies are filtered and folded once per pass.
-    //
-    // Unordered on purpose: the ranking is the mechanic's to state, and a count kept in the walk's
-    // order would look ranked without being it.
-    private static Map<String, Integer> readColonyCountByBloc(SystemHabitation habitation) {
-
-        var countByBlocId = new HashMap<String, Integer>();
-
-        for (var blocHabitation : habitation.habitationByBlocId().entrySet()) {
-            countByBlocId.put(blocHabitation.getKey(), blocHabitation.getValue().colonyCount());
-        }
-        return countByBlocId;
-    }
-
     // The counts in the order their runs are drawn: the mechanic's ranking first, then whatever it
-    // did not rank, by id.
+    // did not rank, by id. Read off the habitation's per-bloc fold, so two allies' colonies arrive as
+    // one bloc's count and the band names each colony's owner as every other surface does.
     //
     // The tail exists because the count and the ranking come from different places. A mechanic ranks
     // the blocs it scored, and the habitation projection hands back blocs no score was computed for -
@@ -135,21 +117,21 @@ public final class ColonyCellRibbons {
     // A ranking naming one bloc twice - which two members of one group produce - keeps the place
     // its first mention took, since a map insertion does not move an existing key.
     private static Map<String, Integer> orderCountsForBand(
-            Map<String, Integer> countByBlocId,
+            Map<String, BlocHabitation> habitationByBlocId,
             List<String> rankedBlocIds) {
 
         var orderedCountByBlocId = new LinkedHashMap<String, Integer>();
 
         for (var blocId : rankedBlocIds) {
 
-            var blocCount = countByBlocId.get(blocId);
-            if (blocCount != null) {
-                orderedCountByBlocId.put(blocId, blocCount);
+            var blocHabitation = habitationByBlocId.get(blocId);
+            if (blocHabitation != null) {
+                orderedCountByBlocId.put(blocId, blocHabitation.colonyCount());
             }
         }
 
-        for (var blocId : sortUnrankedBlocIds(countByBlocId, orderedCountByBlocId.keySet())) {
-            orderedCountByBlocId.put(blocId, countByBlocId.get(blocId));
+        for (var blocId : sortUnrankedBlocIds(habitationByBlocId.keySet(), orderedCountByBlocId.keySet())) {
+            orderedCountByBlocId.put(blocId, habitationByBlocId.get(blocId).colonyCount());
         }
 
         return orderedCountByBlocId;
@@ -157,12 +139,12 @@ public final class ColonyCellRibbons {
 
     // The counted blocs the mechanic's ranking never named, in ID order.
     private static List<String> sortUnrankedBlocIds(
-            Map<String, Integer> countByBlocId,
+            Set<String> countedBlocIds,
             Set<String> rankedBlocIds) {
 
         var unrankedBlocIds = new ArrayList<String>();
 
-        for (var blocId : countByBlocId.keySet()) {
+        for (var blocId : countedBlocIds) {
 
             if (!rankedBlocIds.contains(blocId)) {
                 unrankedBlocIds.add(blocId);

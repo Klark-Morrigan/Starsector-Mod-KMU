@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.colour.ColourPair;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.starsector.SectorFactionFixtures;
 
@@ -21,8 +20,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins how a bloc's two shades are found: through the grouping's colour faction rather than
  * through the bloc ID, and as nothing at all when that faction is gone - and the owner built from
- * them, which carries the bloc's own ID beside the shades. A faction's pair keeps its slots exactly
- * on the way into the tier's type, bright into primary and dark into secondary.
+ * them, which carries the bloc's own ID beside the shades.
  *
  * <p>Both matter because a bloc is not always a faction. A group carries a synthetic bloc ID no
  * {@code FactionAPI} answers to, so asking the sector for it directly would leave every group
@@ -51,7 +49,7 @@ final class SectorBlocPalettesTests {
                 DARK);
 
             assertThat(readPaletteFrom(sectorMock, GROUP_BLOC))
-                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
 
         @Test
@@ -88,7 +86,7 @@ final class SectorBlocPalettesTests {
 
             assertThat(new SectorBlocPalettes(sectorMock, HolderGrouping.identity())
                     .resolveOwnerOf(LEAD_MEMBER))
-                .isEqualTo(new SystemOwner(LEAD_MEMBER, new OwnerPalette(BRIGHT, DARK)));
+                .isEqualTo(new SystemOwner(LEAD_MEMBER, new ColourPair(BRIGHT, DARK)));
         }
 
         @Test
@@ -102,7 +100,7 @@ final class SectorBlocPalettesTests {
 
             assertThat(new SectorBlocPalettes(sectorMock, buildGroupLedByTheLeadMember())
                     .resolveOwnerOf(GROUP_BLOC))
-                .isEqualTo(new SystemOwner(GROUP_BLOC, new OwnerPalette(BRIGHT, DARK)));
+                .isEqualTo(new SystemOwner(GROUP_BLOC, new ColourPair(BRIGHT, DARK)));
         }
 
         @Test
@@ -118,17 +116,6 @@ final class SectorBlocPalettesTests {
     }
 
     @Nested
-    class AdoptFactionPalette {
-
-        @Test
-        void keepsTheBrightShadePrimaryAndTheDarkSecondary() {
-
-            assertThat(SectorBlocPalettes.adoptFactionPalette(new ColourPair(BRIGHT, DARK)))
-                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
-        }
-    }
-
-    @Nested
     class ReadFactionPalette {
 
         @Test
@@ -140,7 +127,7 @@ final class SectorBlocPalettesTests {
                 DARK);
 
             assertThat(SectorBlocPalettes.readFactionPalette(sectorMock, LEAD_MEMBER))
-                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
 
         @Test
@@ -160,7 +147,7 @@ final class SectorBlocPalettesTests {
 
     // The palettes as one group's bloc reads them: the bloc folds to its lead member, which is
     // the faction the sector is asked for.
-    private static OwnerPalette readPaletteFrom(SectorAPI sector, String blocId) {
+    private static ColourPair readPaletteFrom(SectorAPI sector, String blocId) {
         return new SectorBlocPalettes(sector, buildGroupLedByTheLeadMember())
             .readBlocPalette(blocId);
     }

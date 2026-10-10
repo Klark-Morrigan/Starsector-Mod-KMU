@@ -139,7 +139,6 @@ The vanilla words KMLib's own text touches are in
 | Industry (a colony building) | 工业设施 | `IndustryListPanel`, "Industries on %s:"; 产业 only where the English means an economic sector |
 | Military (facilities) | 军事设施 | `HAColonyDefensesFactor` in `starfarer.api.jar` |
 | Militarized (ships only) | 军事化 | `hull_mods.csv` `militarized_subsystems`, the Militarized Subsystems hullmod (军事化子系统) for civilian hulls; vanilla uses the word for ships alone, so it never names [KMU's militarised station](#the-political-map) |
-| Commodity | 商品 | `CommodityPanel` in `starfarer_obf.jar` |
 | Population center (a large hub) | 人口中心 | `market_conditions.csv` `population_10`, "a dominant population center"; vanilla uses it for large hubs, as 主要的人口中心, so it never names [KMU's population center](#the-political-map) |
 | Docked (at a market) | 停靠 | `starfarer_obf.jar` refit, "Must be docked at a market" |
 | Can not be colonized | 无法殖民 | `PlanetSurveyPanel`; vanilla has no positive form |
@@ -324,10 +323,17 @@ So a word of one axis never stands in for another:
 | caption (the words beside a sidebar control, in the changelog) | 标题 | the plain word for a control's heading text |
 | radio (a row of options with one lit, in the changelog) | 单选框 | the usual UI word for a one-of-many control |
 | picker (the sidebar list a bloc is spotlit from) | 选择器 | the usual UI word for a control a choice is made in |
-| category (the style a map draws an owner in, in the changelog) | 类别 | the plain word for a kind something is sorted into |
+| category (the kind a map sorts a cell into, which picks its style, in the changelog) | 类别 | the plain word for a class something is sorted into |
+| kind (of a place or a record a reader branches on, in the changelog) | 种类 | the plain word for a sort of thing, kept apart from 类别 |
 | grouping (how factions fold into blocs, in the changelog) | 分组 | the plain word for sorting things into groups |
 | sampling (one read of a live value, in the changelog) | 采样 | the usual word for taking one reading of something that changes |
 | shades (an owner's two colours, in the changelog) | 配色 | as in vanilla's 界面配色, a set of colours worn together |
+| seam (an interface a layer answers through, in the changelog) | 接缝 | where two parts are joined, which a seam between layers is |
+| reading (an owner's looks and names, in the changelog) | 读取 | the plain word for reading something off; a reader is 读取方 |
+| contest (who holds a system, weighed between blocs) | 争夺 | to contend for, as in 争夺方 |
+| alliance set (every alliance at one moment, in the changelog) | 联盟集合 | 联盟 with 集合, a set |
+| revision (a number that moves when content changes, in the changelog) | 修订号 | 修订, a revision, with 号, its number |
+| recede control (in the changelog) | 退后控件 | 退后 with 控件, the usual UI word for a control |
 | spotlight | 聚焦 | to focus on, which spotlighting a bloc does |
 | recede | 退后 | to step back, which a receded bloc does on the map |
 | Muted / Desaturated | 淡化 / 去色 | 淡化, to fade, and 去色, to strip colour, the usual image-editing word |

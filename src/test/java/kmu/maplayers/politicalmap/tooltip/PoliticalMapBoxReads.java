@@ -104,7 +104,7 @@ public final class PoliticalMapBoxReads {
      */
     public static VanillaClaimBreakdownReader buildClaimBreakdownReaderOver(SectorAPI sector) {
 
-        var pass = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+        var pass = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
 
         return new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.sectorIndex());
     }

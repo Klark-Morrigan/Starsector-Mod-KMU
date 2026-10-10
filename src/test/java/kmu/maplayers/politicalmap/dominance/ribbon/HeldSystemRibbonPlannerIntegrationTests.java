@@ -176,7 +176,7 @@ final class HeldSystemRibbonPlannerIntegrationTests {
     // built apart, the weights could be read off one walk of a system and its colonies off another.
     private static HeldSystemRibbonPlanner buildPlanner(SectorAPI sector) {
 
-        var holding = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+        var holding = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
 
         return new HeldSystemRibbonPlanner(
             DominancePass.createOver(holding, DominancePassFixtures.buildStabilityWeightedRules()),

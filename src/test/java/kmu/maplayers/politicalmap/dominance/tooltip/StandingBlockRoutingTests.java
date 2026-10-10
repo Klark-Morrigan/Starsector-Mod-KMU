@@ -1,7 +1,8 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
+import kmlib.starsector.factions.relation.FactionSetFriendliness;
+
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 import kmu.maplayers.politicalmap.dominance.standings.FactionStanding;
@@ -648,7 +649,7 @@ class StandingBlockRoutingTests {
             // Read one way round, every rule here asking its pairs from the faction being sorted -
             // so a table stating what a rival thinks of the holder settles which side that rival
             // takes and both the counts stated on its row alike.
-            new BlocFriendliness((factionId, otherFactionId) ->
+            new FactionSetFriendliness((factionId, otherFactionId) ->
                 aboveNeutralPairs.contains(factionId + ":" + otherFactionId)),
             membershipFold::resolveMemberFactionIds);
     }

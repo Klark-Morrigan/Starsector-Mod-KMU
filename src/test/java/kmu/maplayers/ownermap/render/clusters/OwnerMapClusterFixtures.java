@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
@@ -16,7 +17,6 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSource;
@@ -64,8 +64,8 @@ public final class OwnerMapClusterFixtures {
      * palette says so by naming this rather than by spelling out a grey pair whose two equal slots
      * read as a choice somebody made.
      */
-    public static final OwnerPalette NEUTRAL_PALETTE =
-        new OwnerPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR);
+    public static final ColourPair NEUTRAL_PALETTE =
+        new ColourPair(NEUTRAL_COLOUR, NEUTRAL_COLOUR);
 
     // Fixtures only; never instantiated.
     private OwnerMapClusterFixtures() {

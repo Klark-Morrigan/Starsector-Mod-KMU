@@ -232,9 +232,8 @@ public final class BlocStandingSortMode<S extends OwnerMetrics>
 
     // Blocs by the standings they hold right now, each bloc read once per sort.
     //
-    // A sort compares every bloc many times over, and one standing read can walk every market in the
-    // sector to tell whether the player's identity is established. So the order keeps what it has
-    // read for its own lifetime. The picker asks this mode for a fresh comparator on every sort, which
+    // A sort compares every bloc many times over, and one standing read walks the bloc's whole
+    // membership for its relations. So the order keeps what it has read for its own lifetime. The picker asks this mode for a fresh comparator on every sort, which
     // makes that lifetime exactly one sort: the ranking still follows reputation as it moves.
     private Comparator<RankedOwner<S>> buildFriendliestFirstOrder() {
 

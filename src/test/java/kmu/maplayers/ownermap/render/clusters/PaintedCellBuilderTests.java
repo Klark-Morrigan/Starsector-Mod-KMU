@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.math.geometry.CornerRounding;
 import kmlib.starsector.systems.SystemKey;
 
@@ -17,7 +18,6 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
@@ -103,7 +103,7 @@ final class PaintedCellBuilderTests {
         private static final double NO_CHAMFER = 0.0;
 
         private static final SystemOwner OWNER =
-            new SystemOwner("hegemony", new OwnerPalette(OWNER_PRIMARY, OWNER_SECONDARY));
+            new SystemOwner("hegemony", new ColourPair(OWNER_PRIMARY, OWNER_SECONDARY));
 
         // Two systems the sector answers to one ID for - vanilla's own unnamed deep space, which
         // only their anchors tell apart - and the rival holding the second of them. Its seam shade
@@ -115,7 +115,7 @@ final class PaintedCellBuilderTests {
         private static final Color RIVAL_SECONDARY = Color.MAGENTA;
 
         private static final SystemOwner RIVAL_OWNER =
-            new SystemOwner("tritachyon", new OwnerPalette(RIVAL_PRIMARY, RIVAL_SECONDARY));
+            new SystemOwner("tritachyon", new ColourPair(RIVAL_PRIMARY, RIVAL_SECONDARY));
 
         // An owned cell's fill and cluster border are per cluster (in StyledCluster),
         // so fill and outer are "No color" here and only inner - the interior seam -
@@ -646,9 +646,9 @@ final class PaintedCellBuilderTests {
                     new MapStyling(
                         buildUnownedTheme(STYLE, STYLE, buildRoundingGlobalStyle()),
                         OwnerCategoriesFake.SHARED_FAKE,
-                        new OwnerPalette(UNOWNED_NEUTRAL, UNOWNED_NEUTRAL),
-                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                        new ColourPair(UNOWNED_NEUTRAL, UNOWNED_NEUTRAL),
+                        new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new ColourPair(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         reading,
@@ -722,9 +722,9 @@ final class PaintedCellBuilderTests {
                     new MapStyling(
                         theme,
                         OwnerCategoriesFake.SHARED_FAKE,
-                        new OwnerPalette(UNOWNED_NEUTRAL, UNOWNED_NEUTRAL),
-                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                        new ColourPair(UNOWNED_NEUTRAL, UNOWNED_NEUTRAL),
+                        new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new ColourPair(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         buildReadingAdjusting(ElementStyleAdjustment.NONE),
@@ -815,8 +815,8 @@ final class PaintedCellBuilderTests {
                         OwnerMapClusterFixtures.createRenderStyleForEveryCategory(STYLE),
                         OwnerCategoriesFake.SHARED_FAKE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                        new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new ColourPair(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         buildReadingAdjusting(ElementStyleAdjustment.NONE),
@@ -844,8 +844,8 @@ final class PaintedCellBuilderTests {
                         OwnerMapClusterFixtures.createRenderStyleForEveryCategory(STYLE),
                         OwnerCategoriesFake.SHARED_FAKE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                        new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new ColourPair(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         reading,

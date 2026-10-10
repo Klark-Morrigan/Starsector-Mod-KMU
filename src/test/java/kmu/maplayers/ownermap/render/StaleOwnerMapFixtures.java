@@ -3,11 +3,11 @@ package kmu.maplayers.ownermap.render;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.awt.Color;
@@ -56,7 +56,7 @@ final class StaleOwnerMapFixtures {
     // the shades are one shared placeholder pair - which is also what makes two holders of one
     // owner compare equal, as the re-derive's own no-change test needs them to.
     static SystemOwner buildOwnerOf(String ownerId) {
-        return new SystemOwner(ownerId, new OwnerPalette(Color.GRAY, Color.GRAY));
+        return new SystemOwner(ownerId, new ColourPair(Color.GRAY, Color.GRAY));
     }
 
     // The holders of the given systems, keyed by system, for a case stating who holds what before

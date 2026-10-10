@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.installed.LazyFontCache;
@@ -28,7 +29,6 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.base.visibility.systems.MapSectorFixture;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
@@ -108,8 +108,8 @@ final class RelayOwnerLayerIntegrationTests {
     // a second pair, both unlike anything a holder layer would carry.
     private static final String RELAY = "carries_relay";
     private static final String NO_RELAY = "lacks_relay";
-    private static final OwnerPalette RELAY_PALETTE = new OwnerPalette(Color.CYAN, Color.BLUE);
-    private static final OwnerPalette NO_RELAY_PALETTE = new OwnerPalette(Color.ORANGE, Color.RED);
+    private static final ColourPair RELAY_PALETTE = new ColourPair(Color.CYAN, Color.BLUE);
+    private static final ColourPair NO_RELAY_PALETTE = new ColourPair(Color.ORANGE, Color.RED);
 
     // The shade the layer paints a cell nobody owns in.
     private static final Color UNOWNED_COLOUR = new Color(90, 90, 90);
@@ -548,7 +548,7 @@ final class RelayOwnerLayerIntegrationTests {
     private static final class RelayReadingFake implements OwnerReading {
 
         @Override
-        public OwnerPalette resolvePalette(String ownerId) {
+        public ColourPair resolvePalette(String ownerId) {
 
             return RELAY.equals(ownerId)
                 ? RELAY_PALETTE
@@ -592,9 +592,9 @@ final class RelayOwnerLayerIntegrationTests {
         }
 
         @Override
-        public OwnerPalette resolveRecedePalette() {
+        public ColourPair resolveRecedePalette() {
 
-            return new OwnerPalette(Color.DARK_GRAY, Color.BLACK);
+            return new ColourPair(Color.DARK_GRAY, Color.BLACK);
         }
     }
 

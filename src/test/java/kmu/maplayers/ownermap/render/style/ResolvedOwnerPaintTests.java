@@ -1,9 +1,10 @@
 package kmu.maplayers.ownermap.render.style;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import org.junit.jupiter.api.Nested;
@@ -33,17 +34,17 @@ final class ResolvedOwnerPaintTests {
     private static final Color DESATURATED_PRIMARY = Color.GREEN;
     private static final Color DESATURATED_SECONDARY = Color.YELLOW;
 
-    private static final OwnerPalette OWN_PALETTE =
-        new OwnerPalette(OWN_PRIMARY, OWN_SECONDARY);
+    private static final ColourPair OWN_PALETTE =
+        new ColourPair(OWN_PRIMARY, OWN_SECONDARY);
 
-    private static final OwnerPalette DESATURATION_PALETTE =
-        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY);
+    private static final ColourPair DESATURATION_PALETTE =
+        new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY);
 
     // The holder whose shades the owner path reads, carrying the same pair the palette above holds
     // so a case can tell "read off the holder" from "read off the stated shades" by nothing but
     // which factory it called.
     private static final SystemOwner HOLDER =
-        new SystemOwner("hegemony", new OwnerPalette(OWN_PRIMARY, OWN_SECONDARY));
+        new SystemOwner("hegemony", new ColourPair(OWN_PRIMARY, OWN_SECONDARY));
 
     // The element opacity every case states, and the mute one applies over it. Distinct so the
     // product is neither of them and an unmuted alpha cannot pass by coincidence.

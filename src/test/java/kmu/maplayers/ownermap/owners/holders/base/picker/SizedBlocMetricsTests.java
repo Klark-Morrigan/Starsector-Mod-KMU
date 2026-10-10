@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the shared assembly's; both are pinned in their own suites. All on hand-built blocs, since neither
  * record carries a Starsector type.
  */
-final class SharedBlocSortModesTests {
+final class SizedBlocMetricsTests {
 
     // Two vocabularies' chains, spelled the way each spells its own: one leads with the number its
     // metrics paint by, the other with a bare count.
@@ -47,13 +47,13 @@ final class SharedBlocSortModesTests {
     // Two bindings of the one declaration, each over the chain its own vocabulary declares. Naming both
     // is what lets a tie on the size show which chain the binding actually fell through to.
     private static final ListSortMode<RankedOwner<LeadingBlocMetricsFake>> PAINTING_BINDING =
-        SharedBlocSortModes.declareMarketSizeMode(PAINTING_CHAIN);
+        SizedBlocMetrics.createMarketSizeMode(PAINTING_CHAIN);
 
     private static final ListSortMode<RankedOwner<CountedBlocMetricsFake>> COUNTED_BINDING =
-        SharedBlocSortModes.declareMarketSizeMode(COUNTED_CHAIN);
+        SizedBlocMetrics.createMarketSizeMode(COUNTED_CHAIN);
 
     @Nested
-    class DeclareMarketSizeMode {
+    class CreateMarketSizeMode {
 
         @Test
         void carriesTheFrozenKeyUnderEveryVocabulary() {

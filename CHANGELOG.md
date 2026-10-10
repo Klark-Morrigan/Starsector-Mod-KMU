@@ -23,8 +23,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **`FactionStanding.isWeighed()`**: whether the pass weighed the faction's colonies, so a reader branching on the kind asks rather than testing the sealed type.
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**: the mark a faction's line opens on, for a line marked as that faction's.
-- **`PoliticalHolderView`**, which every political map view implements: the alliance set as the live input it repaints on, who stands together in a contest, the holder categories, and a picker read over one sampling of the grouping.
-- **`SectorBlocPalettes.readFactionPalette(SectorAPI, String)`**: one faction's shades as an owner's, for a reader that holds the faction ID itself.
+- **`PoliticalHolderView`**, which every political map view implements: the alliance set's revision as its content revision, who stands together in a contest, the holder categories, and the faction reading.
+- **`SectorBlocPalettes.readFactionPalette(SectorAPI, String)`**: one faction's shades, for a reader that holds the faction ID itself.
+- **`ColonyKind.isUngoverned()`**: whether a place is people living under nobody's authority, for every reader telling governed colonies from ungoverned ones.
 
 #### Public contracts changed (**breaking**)
 
@@ -37,12 +38,13 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | Before | After |
 | --- | --- |
 | `ownermap.holding`, `ownermap.owners.holders`, `RibbonPlanInputs`, `BlocPaletteReader`, `SectorBlocPalettes`, `HolderCategories`, `OwnerMapCategory` and `ColonyCellRibbons` | `ownermap.owners.holders.base`, apart from the types below |
-| `BlocPickerAssembly`, `BlocStanding`, `BlocStandingReader`, `BlocStandingSortMode`, `SizedBlocMetrics` and `SharedBlocSortModes` | `ownermap.owners.holders.base.picker` |
+| `BlocPickerAssembly`, `BlocStanding`, `BlocStandingReader`, `BlocStandingSortMode` and `SizedBlocMetrics` | `ownermap.owners.holders.base.picker` |
 | `SystemStatusRow` and the colony lines of `ownermap.tooltip` | `ownermap.owners.holders.base.tooltip` |
 | The faction lines of `ownermap.tooltip` | `ownermap.owners.holders.factions` |
 | `ownermap.tooltip.TermTooltipLine` | `base.tooltip.content.TermTooltipLine`. `ownermap.tooltip` is gone |
 | `ownermap.sidebar.BodyControlTarget` | `base.sidebar.BodyControlTarget` |
-| `BlocAffiliation`, `BlocFriendliness`, `ContestSide`, `ContestSides` and `BlocRelations` | `ownermap.owners.holders.alliances` |
+| `BlocAffiliation`, `ContestSide`, `ContestSides` and `BlocRelations` | `ownermap.owners.holders.alliances` |
+| `BlocFriendliness`, with `areBlocsFriendly(Set, Set)` | KMLib's `kmlib.starsector.factions.relation.FactionSetFriendliness`, with `areSetsFriendly(Set, Set)` and `createForSector(SectorAPI)` |
 
 ##### Renames
 
@@ -54,16 +56,23 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `OwnerMapCategory`, `OwnerMapInhabitation` and `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`, `HolderInhabitation` and `DominanceHolderProvider` |
 | `getFactionLabels()` on `OwnerMapCache` and `OwnerMapDrawables`, `OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` and `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`, `resolveOwnerPaintOf(String, SystemOwner)` and `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` and its `strings.json` key | `POLITICAL_MAP_CTL_FACTION_NAMES`, the political map's own caption |
+| `ownermap.owners.OwnerPalette` | KMLib's `kmlib.colour.ColourPair`, which a faction's pair already is. `SectorBlocPalettes.adoptFactionPalette(FactionPalette)` is gone |
+| `HolderPass.over(SectorAPI, ColonyReadRules, HolderGrouping)` | `HolderPass.createOver(SectorAPI, ColonyReadRules, HolderGrouping)` |
+| `SharedBlocSortModes.declareMarketSizeMode(List)` | `SizedBlocMetrics.createMarketSizeMode(List)` |
 
 ##### Seams
 
 | Before | After |
 | --- | --- |
-| `OwnerPaintedView`'s `resolveBlocPickerRead(SectorAPI, ColonyReadRules)`, `buildBlocPickerRead(SectorAPI, HolderGrouping, OwnerReading, BlocStatsRead, ListSortModes)` and `resolveSelectableBlocGate(HolderGrouping)` | On `HolderPaintedView`, with `buildBlocPickerRead(SectorAPI, HolderGrouping, OwnerStatsRead, ListSortModes)` naming the rows through the view's own reading. `OwnerPaintedView` keeps `resolveOwnerPickerRead(SectorAPI)`, empty by default |
+| `OwnerPaintedView`'s `resolveBlocPickerRead(SectorAPI, ColonyReadRules)`, `buildBlocPickerRead(SectorAPI, HolderGrouping, OwnerReading, BlocStatsRead, ListSortModes)` and `resolveSelectableBlocGate(HolderGrouping)` | On `HolderPaintedView`, where `buildBlocPickerRead` is `readPickerUnderOneGrouping(SectorAPI, Function, ListSortModes)`: it samples the grouping once and names the rows through the view's own reading. `OwnerPaintedView` keeps `resolveOwnerPickerRead(SectorAPI)`, empty by default |
 | `HolderPaintedView.resolveContestGrouping()` | `resolveContestAffiliation()`, answering an `OwnerAffiliation` |
 | `RibbonPlan.planCellRibbon(Optional, List, BlocAffiliation, RibbonPlanRules)` over a `BlocAffiliation` | Over `kmu.maplayers.ownermap.owners.OwnerAffiliation`, which `BlocAffiliation` implements |
 | `SpotlitBlocs.findPresentSystemKeys(HolderPass, String, Set)` and `isBlocPresentIn(HolderPass, String, StarSystemAPI)` | `HolderInhabitation.findSpotlitPresenceSystemKeys(HolderPass, String, Set)` and `HolderInhabitation.isBlocPresentIn(HolderPass, String, StarSystemAPI)` |
-| `HolderOwnerSource.grouping()` and `BlocAffiliation.NONE` | Gone. Nobody stands together under `new BlocAffiliation(HolderGrouping.identity())` |
+| `HolderOwnerSource(HolderGrouping, HolderGrouping, HolderProvider, SystemHolderResolveSource, Function)` | `HolderOwnerSource(HolderGrouping, HolderPaintedView)`: the view answers the rest |
+| `HolderOwnerSource.grouping()`, `BlocAffiliation.NONE` and `BlocAffiliation.areBlocsAllied(String, String)` | `grouping()` is gone: the view's `resolveGrouping()` names it. For `NONE`, `OwnerAffiliation.NONE` or `new BlocAffiliation(HolderGrouping.identity())`. `areBlocsAllied` is `areOwnersAllied` |
+| `HolderGrouping.collectBlocIds(Collection)` | Gone |
+| `HolderPass.readKnownColoniesIn(StarSystemAPI)` and `readInhabitingColoniesIn(StarSystemAPI)`, public | Package-private. A reader outside it takes `readHabitationIn(StarSystemAPI)` or `readKnownColonyFactionIds(StarSystemAPI)` |
+| `AllianceBodyControls` | Gone: `AlliancesView.getViewBodyControls(BodyControlTarget)` binds the shared recede control itself |
 | `RenderStyleReader.readFactionStyle()`, `readIndependentStyle()`, `readDecivilisedStyle()` and `readUninhabitedStyle(boolean)` | `HolderCategoryStyleReader` |
 | `BlocPresence.collectColouredPresences(Map, BlocPaletteReader)` | Gone: `ColonyCellRibbons` colours its own counts |
 | `NameFormatPreference(String)` | `NameFormatPreference(String, String)`: the layer also names the name radio's caption key |

@@ -131,7 +131,7 @@ final class HolderPassTests {
                     COLONY_SIZE));
 
             var knownColonies = HolderPass
-                .over(sector, UNDER_THE_FOG, HolderGrouping.identity())
+                .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity())
                 .readKnownColoniesIn(SectorOwnershipFixtures.buildOnlySystem(sector));
 
             assertThat(knownColonies)
@@ -149,7 +149,7 @@ final class HolderPassTests {
                     COLONY_SIZE));
 
             var knownColonies = HolderPass
-                .over(sector, UNDER_THE_DEV_REVEAL, HolderGrouping.identity())
+                .createOver(sector, UNDER_THE_DEV_REVEAL, HolderGrouping.identity())
                 .readKnownColoniesIn(SectorOwnershipFixtures.buildOnlySystem(sector));
 
             assertThat(knownColonies)
@@ -161,7 +161,7 @@ final class HolderPassTests {
             // The null-system answer every read on the pass holds to, so a reader handed a system
             // the sector no longer lists is not obliged to guard before asking.
             assertThat(HolderPass
-                    .over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity())
+                    .createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity())
                     .readKnownColoniesIn(null))
                 .isEmpty();
         }
@@ -187,7 +187,7 @@ final class HolderPassTests {
             SectorOwnershipFixtures.placeMarketsOnSystemEntities(system, colony, derelict);
 
             var pass = HolderPass
-                .over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+                .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
 
             assertThat(pass.readKnownColoniesIn(system))
                 .extracting(HolderPassTests::readColonyFactionId)
@@ -208,12 +208,12 @@ final class HolderPassTests {
             DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(system);
 
             assertThat(HolderPass
-                    .over(sector, DECIVILISED_POPULATED, HolderGrouping.identity())
+                    .createOver(sector, DECIVILISED_POPULATED, HolderGrouping.identity())
                     .readInhabitingColoniesIn(system))
                 .extracting(HolderPassTests::readColonyFactionId)
                 .containsExactly("neutral");
             assertThat(HolderPass
-                    .over(sector, DECIVILISED_UNPOPULATED, HolderGrouping.identity())
+                    .createOver(sector, DECIVILISED_UNPOPULATED, HolderGrouping.identity())
                     .readInhabitingColoniesIn(system))
                 .isEmpty();
         }
@@ -233,12 +233,12 @@ final class HolderPassTests {
             DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(system);
 
             assertThat(HolderPass
-                    .over(sector, DECIVILISED_POPULATED, HolderGrouping.identity())
+                    .createOver(sector, DECIVILISED_POPULATED, HolderGrouping.identity())
                     .readInhabitingColoniesIn(system))
                 .extracting(HolderPassTests::readColonyFactionId)
                 .containsExactlyInAnyOrder("hegemony", "neutral");
             assertThat(HolderPass
-                    .over(sector, DECIVILISED_UNPOPULATED, HolderGrouping.identity())
+                    .createOver(sector, DECIVILISED_UNPOPULATED, HolderGrouping.identity())
                     .readInhabitingColoniesIn(system))
                 .extracting(HolderPassTests::readColonyFactionId)
                 .containsExactly("hegemony");
@@ -257,7 +257,7 @@ final class HolderPassTests {
                     COLONY_SIZE));
 
             var inhabitingColonies = HolderPass
-                .over(sector, UNDER_THE_FOG, HolderGrouping.identity())
+                .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity())
                 .readInhabitingColoniesIn(SectorOwnershipFixtures.buildOnlySystem(sector));
 
             assertThat(inhabitingColonies)
@@ -276,7 +276,7 @@ final class HolderPassTests {
                     COLONY_SIZE));
 
             var inhabitingColonies = HolderPass
-                .over(sector, UNDER_THE_DEV_REVEAL, HolderGrouping.identity())
+                .createOver(sector, UNDER_THE_DEV_REVEAL, HolderGrouping.identity())
                 .readInhabitingColoniesIn(SectorOwnershipFixtures.buildOnlySystem(sector));
 
             assertThat(inhabitingColonies)
@@ -288,7 +288,7 @@ final class HolderPassTests {
             // The null-system answer every read on the pass holds to, stated here too so the newer
             // read cannot be the one that faults where its siblings answer.
             assertThat(HolderPass
-                    .over(
+                    .createOver(
                         mock(SectorAPI.class),
                         UNDER_THE_FOG,
                         HolderGrouping.identity())
@@ -319,7 +319,7 @@ final class HolderPassTests {
                     COLONY_SIZE));
 
             assertThat(HolderPass
-                    .over(sector, UNDER_THE_FOG, HolderGrouping.identity())
+                    .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity())
                     .readKnownColonyFactionIds(SectorOwnershipFixtures.buildOnlySystem(sector)))
                 .containsExactlyInAnyOrder("hegemony", "tritachyon");
         }
@@ -334,7 +334,7 @@ final class HolderPassTests {
                 SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE));
 
             assertThat(HolderPass
-                    .over(sector, UNDER_THE_FOG, HolderGrouping.identity())
+                    .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity())
                     .readKnownColonyFactionIds(SectorOwnershipFixtures.buildOnlySystem(sector)))
                 .containsExactly("hegemony");
         }
@@ -353,11 +353,11 @@ final class HolderPassTests {
             var system = SectorOwnershipFixtures.buildOnlySystem(sector);
 
             assertThat(HolderPass
-                    .over(sector, UNDER_THE_FOG, HolderGrouping.identity())
+                    .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity())
                     .readKnownColonyFactionIds(system))
                 .isEmpty();
             assertThat(HolderPass
-                    .over(sector, UNDER_THE_DEV_REVEAL, HolderGrouping.identity())
+                    .createOver(sector, UNDER_THE_DEV_REVEAL, HolderGrouping.identity())
                     .readKnownColonyFactionIds(system))
                 .containsExactly("hegemony");
         }
@@ -366,7 +366,7 @@ final class HolderPassTests {
         void namesNobodyForASystemThatIsNotThere() {
 
             assertThat(HolderPass
-                    .over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity())
+                    .createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity())
                     .readKnownColonyFactionIds(null))
                 .isEmpty();
         }
@@ -387,7 +387,7 @@ final class HolderPassTests {
                     COLONY_SIZE));
 
             assertThat(HolderPass
-                    .over(sector, UNDER_THE_FOG, ALLIED_HEGEMONY_AND_TRITACHYON)
+                    .createOver(sector, UNDER_THE_FOG, ALLIED_HEGEMONY_AND_TRITACHYON)
                     .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector))
                     .blocIds())
                 .containsExactly(GROUP_BLOC_ID);
@@ -407,7 +407,7 @@ final class HolderPassTests {
                     3));
 
             assertThat(HolderPass
-                    .over(sector, UNDER_THE_FOG, ALLIED_HEGEMONY_AND_TRITACHYON)
+                    .createOver(sector, UNDER_THE_FOG, ALLIED_HEGEMONY_AND_TRITACHYON)
                     .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector))
                     .habitationByBlocId())
                 .containsExactly(entry(GROUP_BLOC_ID, new BlocHabitation(2, 8)));
@@ -424,7 +424,7 @@ final class HolderPassTests {
                 SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, 3));
 
             assertThat(HolderPass
-                    .over(sector, UNDER_THE_FOG, HolderGrouping.identity())
+                    .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity())
                     .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector))
                     .habitationByBlocId())
                 .containsExactly(entry("hegemony", new BlocHabitation(2, 8)));
@@ -446,7 +446,7 @@ final class HolderPassTests {
                 ownerless);
 
             var habitation = HolderPass
-                .over(sector, UNDER_THE_FOG, HolderGrouping.identity())
+                .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity())
                 .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector));
 
             assertThat(habitation.habitationByBlocId())
@@ -468,7 +468,7 @@ final class HolderPassTests {
                     COLONY_SIZE));
 
             assertThat(HolderPass
-                    .over(sector, UNDER_THE_FOG, HolderGrouping.identity())
+                    .createOver(sector, UNDER_THE_FOG, HolderGrouping.identity())
                     .readHabitationIn(SectorOwnershipFixtures.buildOnlySystem(sector))
                     .blocIds())
                 .containsExactly("hegemony");
@@ -487,7 +487,7 @@ final class HolderPassTests {
             // Through the entity side, as a vanilla derelict arrives: the economy never lists one.
             SectorOwnershipFixtures.placeMarketsOnSystemEntities(system, derelict);
 
-            var pass = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
             var habitation = pass.readHabitationIn(system);
 
             assertThat(pass.readKnownColonyFactionIds(system))
@@ -509,7 +509,7 @@ final class HolderPassTests {
 
             DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(system);
 
-            var pass = HolderPass.over(sector, DECIVILISED_UNPOPULATED, HolderGrouping.identity());
+            var pass = HolderPass.createOver(sector, DECIVILISED_UNPOPULATED, HolderGrouping.identity());
             var habitation = pass.readHabitationIn(system);
 
             assertThat(pass.readKnownColonyFactionIds(system))
@@ -531,7 +531,7 @@ final class HolderPassTests {
             DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(system);
 
             assertThat(HolderPass
-                    .over(sector, DECIVILISED_POPULATED, HolderGrouping.identity())
+                    .createOver(sector, DECIVILISED_POPULATED, HolderGrouping.identity())
                     .readHabitationIn(system)
                     .blocIds())
                 .containsExactly("neutral");
@@ -548,7 +548,7 @@ final class HolderPassTests {
                 SYSTEM_ID,
                 SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE));
 
-            var pass = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
             var system = SectorOwnershipFixtures.buildOnlySystem(sector);
 
             assertThat(pass.readHabitationIn(system))
@@ -576,7 +576,7 @@ final class HolderPassTests {
                         SectorOwnershipFixtures.buildFaction("tritachyon"),
                         COLONY_SIZE)));
 
-            var pass = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
 
             assertThat(pass.readHabitationIn(first).blocIds())
                 .containsExactly("hegemony");
@@ -596,7 +596,7 @@ final class HolderPassTests {
                     SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE)),
                 SectorOwnershipFixtures.listSystemMarkets(null));
 
-            var pass = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
             var systems = sector.getStarSystems();
 
             assertThat(pass.readHabitationIn(systems.get(0)).blocIds())
@@ -610,7 +610,7 @@ final class HolderPassTests {
             // The null-system answer every read on the pass holds to, stated for the value too so a
             // reader handed a system the sector no longer lists is not obliged to guard first.
             var habitation = HolderPass
-                .over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity())
+                .createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity())
                 .readHabitationIn(null);
 
             assertThat(habitation.hasInhabitingColony())
@@ -628,7 +628,7 @@ final class HolderPassTests {
 
             var sectorMock = mock(SectorAPI.class);
 
-            assertThat(HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity()).sector())
+            assertThat(HolderPass.createOver(sectorMock, UNDER_THE_FOG, HolderGrouping.identity()).sector())
                 .isSameAs(sectorMock);
         }
 
@@ -636,7 +636,7 @@ final class HolderPassTests {
         void namesNoSectorForAPassOverNone() {
             // The unreachable-sector case every resolve already guards on, reported rather than
             // stood in for.
-            assertThat(HolderPass.over(null, UNDER_THE_FOG, HolderGrouping.identity()).sector())
+            assertThat(HolderPass.createOver(null, UNDER_THE_FOG, HolderGrouping.identity()).sector())
                 .isNull();
         }
     }

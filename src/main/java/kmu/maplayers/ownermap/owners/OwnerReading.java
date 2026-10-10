@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.owners;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.ownermap.ContentInputs;
@@ -33,7 +35,7 @@ public interface OwnerReading {
      * @return the owner's shades, or null when it has none to give - an owner that is gone from the
      *         sector, which the surfaces asking drop rather than colour in a stand-in
      */
-    OwnerPalette resolvePalette(String ownerId);
+    ColourPair resolvePalette(String ownerId);
 
     /**
      * The label an owner reads by on the map and in the picker.
@@ -102,5 +104,5 @@ public interface OwnerReading {
      *
      * @return the pair the receded palette is darkened from
      */
-    OwnerPalette resolveRecedePalette();
+    ColourPair resolveRecedePalette();
 }

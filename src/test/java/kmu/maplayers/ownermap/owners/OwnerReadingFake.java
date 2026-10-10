@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.owners;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.ownermap.ContentInputs;
@@ -30,17 +32,17 @@ public record OwnerReadingFake(
     MapStyleCategory category,
     ElementStyleAdjustment adjustment,
     Map<String, String> nameByOwnerId,
-    Map<String, OwnerPalette> paletteByOwnerId,
+    Map<String, ColourPair> paletteByOwnerId,
     Map<String, String> crestByOwnerId,
     Color unownedColour,
-    OwnerPalette recedePalette) implements OwnerReading {
+    ColourPair recedePalette) implements OwnerReading {
 
     /** The shade a reading built by the factories below paints unowned cells in. */
     public static final Color UNOWNED_COLOUR = Color.GRAY;
 
     /** The shades a reading built by the factories below sinks a receded owner toward. */
-    public static final OwnerPalette RECEDE_PALETTE =
-        new OwnerPalette(Color.LIGHT_GRAY, Color.DARK_GRAY);
+    public static final ColourPair RECEDE_PALETTE =
+        new ColourPair(Color.LIGHT_GRAY, Color.DARK_GRAY);
 
     /**
      * A reading placing every owner at full strength, adjusting nothing and naming, colouring and
@@ -99,7 +101,7 @@ public record OwnerReadingFake(
      * @return the reading, otherwise as it was
      */
     public OwnerReadingFake withLooks(
-            Map<String, OwnerPalette> newPaletteByOwnerId,
+            Map<String, ColourPair> newPaletteByOwnerId,
             Map<String, String> newCrestByOwnerId) {
 
         return new OwnerReadingFake(
@@ -113,7 +115,7 @@ public record OwnerReadingFake(
     }
 
     @Override
-    public OwnerPalette resolvePalette(String ownerId) {
+    public ColourPair resolvePalette(String ownerId) {
         return paletteByOwnerId.get(ownerId);
     }
 
@@ -145,7 +147,7 @@ public record OwnerReadingFake(
     }
 
     @Override
-    public OwnerPalette resolveRecedePalette() {
+    public ColourPair resolveRecedePalette() {
         return recedePalette;
     }
 }

@@ -89,7 +89,7 @@ public record DominancePass(
             HolderGrouping grouping) {
 
         return createOver(
-            HolderPass.over(sector, colonyReadRules, grouping),
+            HolderPass.createOver(sector, colonyReadRules, grouping),
             rules);
     }
 

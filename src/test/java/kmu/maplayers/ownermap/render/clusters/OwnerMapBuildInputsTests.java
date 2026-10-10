@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -7,7 +8,6 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
@@ -52,10 +52,10 @@ final class OwnerMapBuildInputsTests {
     // The owner a paint is resolved for, and the shades the record sinks a desaturated one to.
     // Distinct from the holder's own pair, so a resolved palette names which of the two it took.
     private static final SystemOwner HOLDER =
-        new SystemOwner(OWNER_ID, new OwnerPalette(Color.RED, Color.BLUE));
+        new SystemOwner(OWNER_ID, new ColourPair(Color.RED, Color.BLUE));
 
-    private static final OwnerPalette DESATURATION_PALETTE =
-        new OwnerPalette(Color.GREEN, Color.YELLOW);
+    private static final ColourPair DESATURATION_PALETTE =
+        new ColourPair(Color.GREEN, Color.YELLOW);
 
     @Nested
     class CreateEmpty {

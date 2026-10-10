@@ -1,7 +1,8 @@
 package kmu.maplayers.ownermap.ribbon;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -253,7 +254,7 @@ public record RibbonPlan(
     // boundary drift into saying more than the other - which would read as a statement about the
     // owners being parted rather than as the boundary it is.
     private static RibbonSegment createParting(
-            OwnerPalette palette,
+            ColourPair palette,
             RibbonSegmentLengths lengths) {
 
         return new RibbonSegment(

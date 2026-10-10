@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.labels;
 
+import kmlib.colour.ColourPair;
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
@@ -27,7 +28,6 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
@@ -112,18 +112,18 @@ final class ClusterAnchorsBuilderTests {
     private static final Color HEGEMONY_PRIMARY = Color.RED;
     private static final Color TRITACHYON_PRIMARY = Color.CYAN;
     private static final SystemOwner HEGEMONY_HOLDER =
-        new SystemOwner(HEGEMONY, new OwnerPalette(HEGEMONY_PRIMARY, Color.BLUE));
+        new SystemOwner(HEGEMONY, new ColourPair(HEGEMONY_PRIMARY, Color.BLUE));
     private static final SystemOwner TRITACHYON_HOLDER =
-        new SystemOwner(TRITACHYON, new OwnerPalette(TRITACHYON_PRIMARY, Color.DARK_GRAY));
+        new SystemOwner(TRITACHYON, new ColourPair(TRITACHYON_PRIMARY, Color.DARK_GRAY));
 
     // The shades a receded owner recolours to, garish so a label that kept its own colour through a
     // recede is unmistakable.
-    private static final OwnerPalette DESATURATION_PALETTE =
-        new OwnerPalette(Color.GREEN, Color.YELLOW);
+    private static final ColourPair DESATURATION_PALETTE =
+        new ColourPair(Color.GREEN, Color.YELLOW);
 
     // A palette no unfiltered case should ever reach for, for the same reason.
-    private static final OwnerPalette UNUSED_PALETTE =
-        new OwnerPalette(Color.MAGENTA, Color.MAGENTA);
+    private static final ColourPair UNUSED_PALETTE =
+        new ColourPair(Color.MAGENTA, Color.MAGENTA);
 
     // Full opacity throughout, so an asserted colour is the resolved shade itself rather than a
     // faded version of it; how a name fades is pinned by the styling's own suite.

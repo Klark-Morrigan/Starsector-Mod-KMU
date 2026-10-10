@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -10,7 +11,6 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -86,10 +86,10 @@ final class ClusterGroupBuilderTests {
     private static final Color OWNER_PRIMARY = Color.RED;
     private static final Color OWNER_SECONDARY = Color.BLUE;
     private static final SystemOwner HEGEMONY_OWNER =
-        new SystemOwner(HEGEMONY, new OwnerPalette(OWNER_PRIMARY, OWNER_SECONDARY));
+        new SystemOwner(HEGEMONY, new ColourPair(OWNER_PRIMARY, OWNER_SECONDARY));
 
     private static final SystemOwner TRITACHYON_OWNER =
-        new SystemOwner(TRITACHYON, new OwnerPalette(OWNER_PRIMARY, OWNER_SECONDARY));
+        new SystemOwner(TRITACHYON, new ColourPair(OWNER_PRIMARY, OWNER_SECONDARY));
 
     private static final double FILL_OPACITY = 0.5;
     private static final double BORDER_OPACITY = 0.25;
@@ -572,7 +572,7 @@ final class ClusterGroupBuilderTests {
                     OwnerMapClusterFixtures.createRenderStyleForEveryCategory(style),
                     OwnerCategoriesFake.SHARED_FAKE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                    new OwnerPalette(Color.GREEN, Color.YELLOW),
+                    new ColourPair(Color.GREEN, Color.YELLOW),
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE),
                 // A reading placing every owner at full strength and receding none of them, so the
                 // paints below come from the category style and the owner's palette alone.

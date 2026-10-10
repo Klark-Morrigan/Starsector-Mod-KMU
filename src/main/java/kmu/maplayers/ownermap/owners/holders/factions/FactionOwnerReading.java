@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.owners.holders.factions;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.factions.FactionColours;
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.factions.FactionNameForm;
@@ -12,7 +13,6 @@ import kmlib.starsector.factions.SectorFactions;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
@@ -46,7 +46,7 @@ public final class FactionOwnerReading
     // Read straight off the faction: the owner ID is the faction ID, so there is no colour faction to
     // resolve through a grouping first.
     @Override
-    public OwnerPalette resolvePalette(String ownerId) {
+    public ColourPair resolvePalette(String ownerId) {
 
         return SectorBlocPalettes.readFactionPalette(sector, ownerId);
     }
@@ -110,9 +110,8 @@ public final class FactionOwnerReading
     // genuine independent space - a spotlit faction, even Independent at full strength, therefore
     // reads distinctly against it.
     @Override
-    public OwnerPalette resolveRecedePalette() {
+    public ColourPair resolveRecedePalette() {
 
-        return SectorBlocPalettes.adoptFactionPalette(
-            FactionColours.resolvePalette(SectorFactions.findFaction(sector, Factions.INDEPENDENT)));
+        return FactionColours.resolvePalette(SectorFactions.findFaction(sector, Factions.INDEPENDENT));
     }
 }

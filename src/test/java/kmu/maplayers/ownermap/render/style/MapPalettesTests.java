@@ -1,8 +1,9 @@
 package kmu.maplayers.ownermap.render.style;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import org.junit.jupiter.api.Nested;
@@ -25,7 +26,7 @@ final class MapPalettesTests {
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
 
-    private static final OwnerPalette PALETTE = new OwnerPalette(PRIMARY, SECONDARY);
+    private static final ColourPair PALETTE = new ColourPair(PRIMARY, SECONDARY);
 
     // A selection from no layer's option set, standing in for a second map layer's own options.
     // Not an enum, since the interface admits any implementation and a record proves the pick
@@ -97,7 +98,7 @@ final class MapPalettesTests {
         // the holder's own.
         private static final Color NEUTRAL = Color.GRAY;
         private static final SystemOwner OWNER =
-            new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
+            new SystemOwner("hegemony", new ColourPair(PRIMARY, SECONDARY));
 
         @Test
         void returnsTheHoldersShadeForTheChoice() {
@@ -154,15 +155,15 @@ final class MapPalettesTests {
 
         // The pass's shared desaturation shades, distinct from every other colour here so a swap
         // to them is unmistakable.
-        private static final OwnerPalette DESATURATION =
-            new OwnerPalette(Color.GREEN, Color.YELLOW);
+        private static final ColourPair DESATURATION =
+            new ColourPair(Color.GREEN, Color.YELLOW);
 
         private static final SystemOwner OWNER =
-            new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
+            new SystemOwner("hegemony", new ColourPair(PRIMARY, SECONDARY));
 
         // The one pair an unowned cell holds: neutral in both slots, since it names no owner.
-        private static final OwnerPalette NEUTRAL_PAIR =
-            new OwnerPalette(Color.GRAY, Color.GRAY);
+        private static final ColourPair NEUTRAL_PAIR =
+            new ColourPair(Color.GRAY, Color.GRAY);
 
         @Test
         void keepsTheHoldersOwnShadesWhenTheAdjustmentDoesNotDesaturate() {
@@ -221,22 +222,22 @@ final class MapPalettesTests {
     class ResolveDesaturationPalette {
 
         // Recede shades whose channels halve exactly, so the darkened pair is stated as literals.
-        private static final OwnerPalette RECEDE_PALETTE =
-            new OwnerPalette(new Color(200, 100, 50), new Color(100, 40, 20));
+        private static final ColourPair RECEDE_PALETTE =
+            new ColourPair(new Color(200, 100, 50), new Color(100, 40, 20));
 
         @Test
         void darkensTheRecedeShades() {
             // Half the brightness removed: the pair sinks toward black so the receded fills read
             // behind the quieter owners' own space rather than as it.
             assertThat(MapPalettes.resolveDesaturationPalette(RECEDE_PALETTE, 0.5))
-                .isEqualTo(new OwnerPalette(new Color(100, 50, 25), new Color(50, 20, 10)));
+                .isEqualTo(new ColourPair(new Color(100, 50, 25), new Color(50, 20, 10)));
         }
 
         @Test
         void leavesTheRecedeShadesUntouchedAtZeroStrength() {
             // A strength of 0 keeps full brightness, so the target is the raw recede pair.
             assertThat(MapPalettes.resolveDesaturationPalette(RECEDE_PALETTE, 0.0))
-                .isEqualTo(new OwnerPalette(new Color(200, 100, 50), new Color(100, 40, 20)));
+                .isEqualTo(new ColourPair(new Color(200, 100, 50), new Color(100, 40, 20)));
         }
     }
 
@@ -256,7 +257,7 @@ final class MapPalettesTests {
             var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 0.2);
 
             assertThat(palette)
-                .isEqualTo(new OwnerPalette(
+                .isEqualTo(new ColourPair(
                     new Color(153, 153, 153),
                     new Color(153, 153, 153)));
         }
@@ -268,7 +269,7 @@ final class MapPalettesTests {
             var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 0.0);
 
             assertThat(palette)
-                .isEqualTo(new OwnerPalette(NEUTRAL_GREY, NEUTRAL_GREY));
+                .isEqualTo(new ColourPair(NEUTRAL_GREY, NEUTRAL_GREY));
         }
 
         @Test
@@ -277,7 +278,7 @@ final class MapPalettesTests {
             var palette = MapPalettes.resolvePresencePalette(NEUTRAL_GREY, 1.0);
 
             assertThat(palette)
-                .isEqualTo(new OwnerPalette(Color.WHITE, Color.WHITE));
+                .isEqualTo(new ColourPair(Color.WHITE, Color.WHITE));
         }
     }
 }

@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.profiling.RecordedCapture;
@@ -12,7 +13,6 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -410,6 +410,6 @@ final class CellRibbonsBakerTests {
     // Any holder, which the fixture also counts as making its system inhabited - the set the band
     // pass gates on. Which owner holds it decides nothing here.
     private static SystemOwner buildHolder() {
-        return new SystemOwner("hegemony", new OwnerPalette(Color.WHITE, Color.GRAY));
+        return new SystemOwner("hegemony", new ColourPair(Color.WHITE, Color.GRAY));
     }
 }

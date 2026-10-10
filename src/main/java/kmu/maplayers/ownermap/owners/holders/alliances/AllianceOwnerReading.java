@@ -2,10 +2,11 @@ package kmu.maplayers.ownermap.owners.holders.alliances;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
@@ -50,7 +51,7 @@ public final class AllianceOwnerReading
 
     // The colour faction's shades: an alliance's leading member, or a lone faction itself.
     @Override
-    public OwnerPalette resolvePalette(String ownerId) {
+    public ColourPair resolvePalette(String ownerId) {
 
         return factions.resolvePalette(grouping.resolveColourFactionId(ownerId));
     }
@@ -104,7 +105,7 @@ public final class AllianceOwnerReading
     }
 
     @Override
-    public OwnerPalette resolveRecedePalette() {
+    public ColourPair resolveRecedePalette() {
 
         return factions.resolveRecedePalette();
     }

@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.owners;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
 import org.junit.jupiter.api.Nested;
@@ -112,10 +113,10 @@ final class SystemOwnerTests {
 
         ownerBySystemKey.put(
             ASKONIA_KEY,
-            new SystemOwner("sindrian_diktat", new OwnerPalette(Color.GREEN, Color.BLACK)));
+            new SystemOwner("sindrian_diktat", new ColourPair(Color.GREEN, Color.BLACK)));
         ownerBySystemKey.put(
             CORVUS_KEY,
-            new SystemOwner("hegemony", new OwnerPalette(Color.RED, Color.BLUE)));
+            new SystemOwner("hegemony", new ColourPair(Color.RED, Color.BLUE)));
 
         return ownerBySystemKey;
     }

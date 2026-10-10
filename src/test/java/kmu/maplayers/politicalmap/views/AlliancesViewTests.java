@@ -7,7 +7,6 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.controls.specs.ControlSpec;
-import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
@@ -20,6 +19,7 @@ import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsRead;
@@ -30,6 +30,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuOwnerMapStyleSettings;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,9 +39,7 @@ import org.mockito.MockedStatic;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.picker.OwnerPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,13 +50,10 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the alliances view's render rules: an alliance bloc paints in full colour and reads its
- * alliance name, while a non-allied faction keeps its own faction style until Desaturate makes it
- * adopt the independent style bundle; Mute only dims the active style via the opacity modifier. A
- * non-allied faction is named exactly as the faction view would name that lone faction. The grouping
- * is sampled from Nexerelin,
- * so its resolution is pinned only for the Nex-absent fallback here; a live alliance set is the
- * in-game test's concern.
+ * Pins what the alliances view decides: its frozen ID and label, the alliance reading over the
+ * grouping it is handed, its own backdrop toggles, and its body controls. The grouping is sampled
+ * from Nexerelin, so its resolution is pinned only for the Nex-absent fallback here; a live alliance
+ * set is the in-game test's concern.
  *
  * <p>Its body controls are pinned on the refresh board they are handed rather than on one resolved
  * for them.
@@ -93,6 +89,17 @@ final class AlliancesViewTests {
     }
 
     @Nested
+    class GetSegmentLabelKey {
+
+        @Test
+        void isTheAlliancesRadioLabel() {
+
+            assertThat(AlliancesView.INSTANCE.getSegmentLabelKey())
+                .isEqualTo(KmuStringKeys.POLITICAL_MAP_CTL_ALLIANCES);
+        }
+    }
+
+    @Nested
     class ResolveGrouping {
 
         @Test
@@ -113,22 +120,27 @@ final class AlliancesViewTests {
     class GetViewBodyControls {
 
         @Test
-        void handsThePanelItWasGivenToTheRecedeAdapter() {
-            // This view's Mute/Desaturate checkboxes repaint by raising a signal and store under the
-            // panel they were placed on, so the panel has to reach them from the tab that placed them.
-            // Dropped here - a delegation short enough to look incapable of losing anything - the
-            // checkboxes would fall back to the running sector's board and whichever screen was up, and
-            // a flip would repaint a map the player is not looking at, or land on the other panel.
+        void handsTheNonAlliedSetCaptionAndPanelToTheSharedRecedeControl() {
+            // The checkboxes repaint by raising a signal and store under the panel they were placed
+            // on, so the panel has to reach them from the tab that placed them. Dropped here, a flip
+            // would repaint a map the player is not looking at, or land on the other panel. The
+            // caption is pinned by its key, not its live text.
             var passedTarget = new BodyControlTarget(
                 new MapLayerRefreshBoard(),
                 ScreenMemoryScopes.createStandInScreen());
+            var builtControls = List.<ControlSpec>of();
 
-            try (var controlsMock = mockStatic(AllianceBodyControls.class)) {
+            try (var controlMock = mockStatic(RecedeControl.class);
+                    var stringsMock = mockStatic(KmuStringKeys.class)) {
 
-                var builtControls = List.<ControlSpec>of();
-
-                controlsMock
-                    .when(() -> AllianceBodyControls.buildControls(passedTarget))
+                stringsMock
+                    .when(() -> KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))
+                    .thenReturn("Non-allied factions are");
+                controlMock
+                    .when(() -> RecedeControl.buildControls(
+                        AlliancesView.NON_ALLIED_RECEDE,
+                        "Non-allied factions are",
+                        passedTarget))
                     .thenReturn(builtControls);
 
                 assertThat(AlliancesView.INSTANCE.getViewBodyControls(passedTarget))
@@ -313,71 +325,6 @@ final class AlliancesViewTests {
             }
         }
 
-        @Test
-        void ranksItsBlocsByTheDominanceVocabularyThenTheirStanding() {
-            // This view's blocs are folded sets of factions, but they carry the same metrics a lone
-            // faction's do, so it ranks by the same vocabulary the factions view offers. Asserted
-            // per view rather than once on the shared assembly, since which vocabulary a view's rows
-            // can be read by is the view's own choice of what paints it. The standing ranking behind
-            // them is not a choice - it reads one fact off the sector that holds under every view.
-            var view = spy(AlliancesView.INSTANCE);
-
-            doReturn(ALLIANCE_GROUPING)
-                .when(view)
-                .resolveGrouping();
-
-            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
-
-                aggregatorMock
-                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(DominanceStatsRead.EMPTY);
-
-                assertThat(view.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES, UNDER_THE_FOG)
-                        .picker()
-                        .sortModes()
-                        .modes())
-                    .extracting(ListSortMode::persistenceKey)
-                    .containsExactly(
-                        "name", "domination", "presence", "score", "market_size", "player_standing");
-            }
-        }
-
-        @Test
-        void carriesThePresenceOfBlocsItsGateDropped() {
-            // The index is the whole walk's, not the offered rows'. This is the view where the two
-            // differ - a lone faction is present but never listed - and trimming it to match would
-            // cost a pass to remove entries no lookup can reach, only a listed bloc being hoverable.
-            var view = spy(AlliancesView.INSTANCE);
-
-            doReturn(ALLIANCE_GROUPING)
-                .when(view)
-                .resolveGrouping();
-
-            var sectorMock = mock(SectorAPI.class);
-
-            when(sectorMock.getFaction("rebels"))
-                .thenReturn(mock(FactionAPI.class));
-
-            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
-
-                aggregatorMock
-                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(new DominanceStatsRead(
-                        Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
-                        buildIndexOf(Map.of(
-                            "rebel_pact", List.of("corvus"),
-                            "hegemony", List.of("askonia")))));
-
-                var read = view.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG);
-
-                assertThat(read.picker().items())
-                    .extracting(RankedOwner::itemId)
-                    .containsExactly("rebel_pact");
-
-                assertThat(read.presenceIndex().readPresentSystemKeys("hegemony"))
-                    .containsExactlyElementsOf(buildCellKeys("askonia"));
-            }
-        }
     }
 
     private static void stubNexEnabled(MockedStatic<Global> globalMock, boolean isEnabled) {

@@ -118,10 +118,9 @@ public interface DominancePaintedView
      * a view's blocs carry, so offering any other mechanic's vocabulary would rank rows by numbers
      * they do not hold.
      *
-     * <p>Beside the live entry above on the terms every pass in this feature is built on: a caller
-     * that has already sampled the rule states it, and one that has not reads the player's. Which
-     * is why the rule is named here and not on the shared seam - it is this mechanic's, so only
-     * the views it paints have an entry taking it.
+     * <p>Beside the live entry above: a caller that has already sampled the rule states it, and one
+     * that has not reads the player's. The rule is named here and not on the shared seam because it
+     * is this mechanic's, so only the views it paints have an entry taking it.
      *
      * @param sector          the sector whose colonies decide who is listed; null yields an empty
      *                        read

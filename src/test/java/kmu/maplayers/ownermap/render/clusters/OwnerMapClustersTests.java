@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -11,7 +12,6 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -403,7 +403,7 @@ final class OwnerMapClustersTests {
     // Clustering keys off the owner ID alone, so the palette shades are inert here.
     private static SystemOwner readOwnerOf(String ownerId) {
 
-        return new SystemOwner(ownerId, new OwnerPalette(Color.GRAY, Color.GRAY));
+        return new SystemOwner(ownerId, new ColourPair(Color.GRAY, Color.GRAY));
     }
 
     // Reindexes the clusters over the given adjacency, each cell drawing as its own star

@@ -36,7 +36,7 @@ import java.util.Set;
  * system it holds - so the rows and the fraction above them do not add up wherever a member holds
  * nothing here, and are not meant to.
  *
- * <p>Every disposition is read through {@link kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness}
+ * <p>Every disposition is read through {@link kmlib.starsector.factions.relation.FactionSetFriendliness}
  * from the faction being sorted, at both tiers, so which side a faction takes and what its row counts
  * cannot be answered out of pairs read in opposite directions.
  *
@@ -79,6 +79,7 @@ final class RivalDispositionSplit {
         for (var rival : rivals) {
             split.appendRival(rival);
         }
+
         return split;
     }
 
@@ -109,22 +110,29 @@ final class RivalDispositionSplit {
 
         for (var member : rival.members()) {
 
-            var members = isMemberFriendly(member) ? friendlyMembers : sourMembers;
+            var members = isMemberFriendly(member)
+                ? friendlyMembers
+                : sourMembers;
+
             members.add(member);
         }
+
         var blocMemberFactionIds = rules.readMemberFactionIds(rival.blocId());
 
         if (friendlyMembers.isEmpty() || sourMembers.isEmpty()) {
 
             var isBlocFriendly = rules
                 .friendliness()
-                .areBlocsFriendly(blocMemberFactionIds, holderMemberFactionIds);
+                .areSetsFriendly(blocMemberFactionIds, holderMemberFactionIds);
 
-            var side = isBlocFriendly ? friendlyRivals : contestedRivals;
+            var side = isBlocFriendly
+                ? friendlyRivals
+                : contestedRivals;
 
             side.add(routeRivalSide(rival, rival.members(), isBlocFriendly, blocMemberFactionIds));
             return;
         }
+
         friendlyRivals.add(routeRivalSide(rival, friendlyMembers, true, blocMemberFactionIds));
         contestedRivals.add(routeRivalSide(rival, sourMembers, false, blocMemberFactionIds));
     }
@@ -160,7 +168,9 @@ final class RivalDispositionSplit {
             .countMembersAtOddsWith(blocMemberFactionIds, holderMemberFactionIds);
 
         return new StandingFraction(
-            isFriendlySide ? blocMemberFactionIds.size() - atOddsCount : atOddsCount,
+            isFriendlySide
+                ? blocMemberFactionIds.size() - atOddsCount
+                : atOddsCount,
             blocMemberFactionIds.size());
     }
 
@@ -194,6 +204,6 @@ final class RivalDispositionSplit {
 
         return rules
             .friendliness()
-            .areBlocsFriendly(Set.of(member.factionId()), holderMemberFactionIds);
+            .areSetsFriendly(Set.of(member.factionId()), holderMemberFactionIds);
     }
 }

@@ -2,31 +2,25 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.ui.widgets.lists.ListSortModes;
-
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
+import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategories;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
-import kmu.maplayers.ownermap.picker.OwnerMetrics;
-import kmu.maplayers.ownermap.picker.OwnerPickerRead;
-import kmu.maplayers.ownermap.picker.OwnerStatsRead;
-import kmu.maplayers.ownermap.picker.RankedOwner;
+import kmu.maplayers.ownermap.owners.holders.factions.FactionOwnerReading;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
-
-import java.util.function.Function;
 
 /**
  * A view of the political map: what its three views answer alike, stated once between the holder
  * seam and them.
  *
- * <p>Here rather than on {@link HolderPaintedView}, because every answer names this layer's own
- * inputs - the alliance set and its refresh signal - which a layer painting other holders would
- * have in front of it.
+ * <p>Here rather than on {@link HolderPaintedView}, because these are this layer's choices: it
+ * repaints on and judges contests by the alliance set, and paints factions in the holder categories.
+ * A layer painting other holders would have them in front of it.
  */
 public interface PoliticalHolderView
         extends HolderPaintedView {
@@ -62,8 +56,7 @@ public interface PoliticalHolderView
     }
 
     /**
-     * The categories every view of this layer paints in: the holder categories, read off the
-     * settings rows they have always been read from.
+     * The categories every view of this layer paints in.
      *
      * @return the holder layers' categories
      */
@@ -73,26 +66,16 @@ public interface PoliticalHolderView
     }
 
     /**
-     * This view's picker over one sampling of its grouping: the walk is read under it, and the rows
-     * are gated, named and badged under it.
+     * Every bloc read as the lone faction whose ID it is, which is right for a view painting each
+     * faction as its own bloc. A view folding factions into groups answers with a reading that adds
+     * the groups.
      *
-     * <p>Sampled once here rather than by each view, because the alliances view samples Nexerelin
-     * live. Sampled per read, the numbers and the rows naming them could come off two different
-     * memberships.
-     *
-     * @param <S>             the view's own metrics type
-     * @param sector          the sector the rows are read from; null yields an empty read
-     * @param statsReader     the view's own walk, read under the sampled grouping
-     * @param vocabularyModes the view's own sort modes, which the rows' metrics are ranked by
-     * @return the view's picker beside the walk's presence
+     * @param sector   the sector a faction's shades, name and crest are read from
+     * @param grouping the grouping the rebuild sampled, which a lone faction's reading has no use for
+     * @return the faction reading over the sector
      */
-    default <S extends OwnerMetrics> OwnerPickerRead<RankedOwner<S>> readPickerUnderOneGrouping(
-            SectorAPI sector,
-            Function<HolderGrouping, OwnerStatsRead<S>> statsReader,
-            ListSortModes<RankedOwner<S>> vocabularyModes) {
-
-        var grouping = resolveGrouping();
-
-        return buildBlocPickerRead(sector, grouping, statsReader.apply(grouping), vocabularyModes);
+    @Override
+    default OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
+        return new FactionOwnerReading(sector);
     }
 }

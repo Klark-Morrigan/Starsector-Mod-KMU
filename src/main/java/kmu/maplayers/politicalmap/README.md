@@ -189,21 +189,7 @@ The sources themselves are [below](#the-ownership-sources);
 the seam they answer is [ownership resolution](../ownermap/owners/holders/README.md),
 and the three fill states are [the split fill](../ownermap/render/clusters/README.md#the-split-fill-solid-hatched-unfilled).
 
-What the three views answer alike is stated once,
-on `PoliticalHolderView`,
-which every view of this layer extends:
-
-- the alliance set's revision as the one live input they repaint on;
-- the live alliance set as who stands together in a contest,
-  whatever a view paints as one bloc;
-- the holder categories;
-- a picker read over one sampling of the grouping,
-  so the walk's numbers and the rows naming them come off one membership.
-
-It sits below the holder seam rather than on it,
-since every answer names this layer's own alliance set.
-
-The fourth input is the one the three views share most of.
+The fourth input, the owner reading, is where the views differ least.
 The Factions and Claims views read a bloc with `FactionOwnerReading`,
 off the faction whose ID it is.
 The Alliances view reads one with `AllianceOwnerReading`:
@@ -224,13 +210,29 @@ including the ones that mechanic does not paint.
 The contest-painted views answer it once between them on `DominancePaintedView`,
 and the claims view answers with its own.
 
+What the three views answer alike is stated once,
+on `PoliticalHolderView`,
+which every view of this layer extends:
+
+- the alliance set's revision as the content revision they repaint on;
+- the live alliance set as who stands together in a contest,
+  whatever a view paints as one bloc;
+- the holder categories;
+- the faction reading,
+  which only the Alliances view replaces.
+
+It sits below the holder seam rather than on it,
+since these are this layer's choices of input and look.
+
 The spotlight list runs on the same principle one level down.
 `OwnerPaintedView` asks a view for its picker -
 the blocs on offer *and* its mechanic's vocabulary for ranking them -
 so the metrics a view's rows carry can never drift from the modes offered to sort them by,
 and the sidebar above passes the pair on without naming either.
 The shared assembly then widens that vocabulary by one,
-the ranking by standing with the player below.
+the ranking by standing with the player below,
+and every holder view reads it over one sampling of its grouping,
+so the walk's numbers and the rows naming them come off one membership.
 Factions and Alliances are painted by the same contest,
 so `DominancePaintedView` answers that once for both
 and leaves them only the one thing they differ on,
@@ -257,7 +259,7 @@ though:
 a bloc's whole-sector colony size is the same sum off the same habitation projection whichever mechanic paints the map.
 It is stated as a capability the metrics opt into,
 `SizedBlocMetrics`,
-and its mode is asked for from `SharedBlocSortModes` rather than declared twice.
+and its mode is asked for from `SizedBlocMetrics.createMarketSizeMode` rather than declared twice.
 
 Where a bloc stands with the player is not a metric at all,
 and the ranking by it lives with the picker every holder view shares:
@@ -471,7 +473,7 @@ so shelving them under either mechanic would make that mechanic name the other.
 | Package | What is in it |
 | --- | --- |
 | *(top level)* | the tab (`PoliticalMapLayer`), what it stands up on a sector (`PoliticalMapStanding`, `PoliticalMapInstaller`) |
-| `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), every view's shared answers (`PoliticalHolderView`), the contest-painted views' (`DominancePaintedView`), and the alliance-only body controls (`AllianceBodyControls`) |
+| `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), every view's shared answers (`PoliticalHolderView`), and the contest-painted views' (`DominancePaintedView`) |
 | `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the two per-system resolves, `DominanceSystemHolderResolve` and `ClaimSystemHolderResolve` |
 | `dominance` | the market contest: the pass, `SectorPolitics`, `FilteredPolitics`, `SystemDominance`, the tie-break and the ranking rules, `BlocCandidacy`, the stats and sort modes |
 | `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`) |
@@ -569,7 +571,8 @@ installed by `KMU_ModPlugin.installMapLayers` through `NexerelinInvasionListener
 forwards Nexerelin's transfers to every `MarketTransferListener` on the sector's listener manager.
 That keeps `kmu.maplayers` closed to optional-mod imports;
 on an install without Nexerelin the listener is registered and never called.
-Nexerelin calls the relay at the end of its market transfer, with no catch of its own above it,
+Nexerelin calls the relay at the end of its market transfer,
+with no catch of its own above it,
 so the relay tells each listener behind a boundary:
 a listener that throws is logged with its trace,
 the listeners after it are still told,
@@ -646,7 +649,8 @@ and the core-territory heading (`CoreTerritoryHeading`) and status lines.
 
 All of them sit on `PoliticalMapCellTooltip`,
 which binds the two live reads every political box places blocs by
-(the claim read for the whole layer, and the `BlocRelations` pair sampled per hover) and heads its boxes with the decree holding the system:
+(the claim read for the whole layer, and the `BlocRelations` pair sampled per hover)
+and heads its boxes with the decree holding the system:
 any box may have to say a system is held by decree,
 and a decree resolved -
 or drawn -
@@ -727,7 +731,7 @@ Below the holder the split is `ContestSides` -
 the one placement every surface reporting a contest routes its blocks through,
 over the `BlocAffiliation` the bands judge their contest by -
 the live alliance set,
-which every view of this layer answers `resolveContestAffiliation()` with
+which `PoliticalHolderView.resolveContestAffiliation()` answers for every view of this layer
 and the box takes through an injected `HolderGroupingSource` sampled per hover -
 so no two surfaces over one system can put a bloc on different sides of it,
 and a box cannot disagree with the band beneath it about who is a rival.
@@ -761,7 +765,7 @@ and the blocks above it name relations that hold whether or not anybody can act 
 
 Inside that split,
 disposition sorts what alliance left standing against the holder.
-`BlocFriendliness` answers whether two blocs are on good terms -
+KMLib's `FactionSetFriendliness` answers whether two blocs are on good terms -
 every faction of the one above `RepLevel.NEUTRAL` toward every faction of the other,
 read over both whole memberships
 (`HolderGrouping.resolveMemberFactionIds`) rather than over who happens to stand in the hovered system,
@@ -864,7 +868,8 @@ which vanilla names alike,
 so the account states the same words at two levels for two different things.
 Both conditions have to hold:
 the colony must itself be a station
-(`MarketWeightBreakdown.isStationMarket`, read on the same walk that counted it, and the same reading the dominance tie-break prefers planets by) and the two names must match.
+(`MarketWeightBreakdown.isStationMarket`, read on the same walk that counted it, and the same reading the dominance tie-break prefers planets by),
+and the two names must match.
 A planet colony that happens to share its station's name is two places the player can see apart on the map,
 so a clarifier there would answer a question they never had.
 It reads in the line's own colour rather than the qualifier's gold:
@@ -1074,7 +1079,7 @@ and to answer two factions of one box under two different rules.
 Both relations to the claim holder travel in that same value and for the same reason -
 the `BlocAffiliation` the blocks are routed against,
 placed by the same `ContestSides` split the domination box routes its own blocks through,
-and the `BlocFriendliness` bound to the hovered sector's own relations.
+and the `FactionSetFriendliness` bound to the hovered sector's own relations.
 The pair is sampled once per hover as `BlocRelations`,
 by the shape both box families share (`PoliticalMapCellTooltip`):
 the alliance set comes off the injected `HolderGroupingSource` at that moment -
@@ -1229,8 +1234,8 @@ so the mechanic's economy walk never sees it
 and a box reading the economy alone reports that station as nobody's.
 The contest is read over `Colonies` -
 KMLib's shared colony set,
-which covers both listings and
-which is also what keeps the condition-only market every surveyed rock carries out of the account -
+which covers both listings,
+and which is also what keeps the condition-only market every surveyed rock carries out of the account -
 and the sibling count and every other term stay on the economy's own half of it,
 since admitting an unregistered colony there would raise a real one's score above what the game scores it at
 and could hand the system to a different faction.
@@ -1391,8 +1396,8 @@ blocked out where nobody has found it,
 so the term never stands over a list short of what it counted.
 It is withheld for the one market that can contradict it -
 an unlisted colony on the list,
-which the mechanic never counted and
-which sits among the very lines the count invites the reader to check it against,
+which the mechanic never counted,
+and which sits among the very lines the count invites the reader to check it against,
 where the term would read as short by a market on screen.
 
 The resolver shares the entry model
@@ -1436,9 +1441,7 @@ the shared sub-options,
 the view selector,
 the spotlight picker paired with the filter recede,
 then the selected view's own controls -
-and `AllianceBodyControls`,
-in `views`,
-holds the Alliances view's Mute and Desaturate toggles,
+and `AlliancesView` binds its own Mute and Desaturate toggles to the shared recede control,
 shown only while that view is selected.
 
 The class that names and orders the views is `kmu.maplayers.MapLayers`,

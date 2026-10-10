@@ -429,7 +429,7 @@ class DominanceStatsAggregatorIntegrationTests {
     private static List<String> readOfferedHolderIds(SectorAPI sector) {
 
         var pass = DominancePass.createOver(
-            HolderPass.over(
+            HolderPass.createOver(
                 sector,
                 buildRulesUnder(MapVisibilityRules.readFromLunaSettings().colonyVisibility()),
                 HolderGrouping.identity()),

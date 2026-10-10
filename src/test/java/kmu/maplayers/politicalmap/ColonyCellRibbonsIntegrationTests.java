@@ -91,7 +91,7 @@ final class ColonyCellRibbonsIntegrationTests {
             // depend on which layer they are looking at.
             var sector = buildContestedSector();
             var system = buildOnlySystem(sector);
-            var holding = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+            var holding = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
             var inputs = buildInputsFor(holding);
 
             var heldPlan = new HeldSystemRibbonPlanner(
@@ -128,7 +128,7 @@ final class ColonyCellRibbonsIntegrationTests {
             // the suite exists - each was self-consistent while disagreeing with the other.
             var sector = buildSectorWhereTritachyonIsUnregistered();
             var system = buildOnlySystem(sector);
-            var holding = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+            var holding = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
             var pass = DominancePass.createOver(
                 holding,
                 DominancePassFixtures.buildStabilityWeightedRules());

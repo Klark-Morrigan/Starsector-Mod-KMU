@@ -41,7 +41,7 @@ flowchart LR
 
 | Package | What is in it |
 | --- | --- |
-| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation (`HolderInhabitation`), the grouping seam (`HolderGrouping`), a bloc's shades through its colour faction (`SectorBlocPalettes`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
+| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation and where a spotlit bloc lives (`HolderInhabitation`), the grouping seam (`HolderGrouping`), a bloc's or one faction's shades (`SectorBlocPalettes`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
 | `base.picker` | the picker every holder view shares: its assembly (`BlocPickerAssembly`), the standing mode it appends, and the colony size metric and modes a view ranks by |
 | `base.tooltip` | the colony lines of the hover box: a system's colony reading, its status row, and a colony's qualifier and observation notes |
 | `factions` | one faction as one owner: `FactionOwnerReading`, and the faction lines of the hover box |
@@ -75,7 +75,7 @@ where a reader could not tell a kind from what the kinds share.
 the picker and the hover box's colony lines,
 which every kind shares and no kind decides.
 The view shape reaches the picker assembly across that line,
-since `buildBlocPickerRead` is where a view hands its rows over;
+since `readPickerUnderOneGrouping` is where a view hands its rows over;
 nothing else in `base` imports either.
 
 ## Alliances add to factions
@@ -225,7 +225,7 @@ It asks every question about that walk off that one pass.
 - **Where the spotlit bloc lives** is `HolderInhabitation` too,
   asked only of the inhabited systems the holding left to nobody.
   Both reads take the system's habitation,
-  so a spared cell is never one the scan called empty.
+  so a cell kept out of the recede is never one the scan called empty.
 - **The band count** is the layer's planner, built over the same pass.
 
 So the holder scan, the habitation scan and the band count read each system once between them,

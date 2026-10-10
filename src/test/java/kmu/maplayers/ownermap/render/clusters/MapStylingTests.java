@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap.render.clusters;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 
 import org.junit.jupiter.api.Nested;
@@ -30,9 +31,9 @@ final class MapStylingTests {
             var styling = new MapStyling(
                 null,
                 OwnerCategoriesFake.SHARED_FAKE,
-                new OwnerPalette(Color.CYAN, Color.CYAN),
-                new OwnerPalette(Color.MAGENTA, Color.ORANGE),
-                new OwnerPalette(Color.PINK, Color.WHITE));
+                new ColourPair(Color.CYAN, Color.CYAN),
+                new ColourPair(Color.MAGENTA, Color.ORANGE),
+                new ColourPair(Color.PINK, Color.WHITE));
 
             assertThat(styling.readNeutralColour())
                 .isEqualTo(Color.CYAN);
@@ -45,9 +46,9 @@ final class MapStylingTests {
             var styling = new MapStyling(
                 null,
                 OwnerCategoriesFake.SHARED_FAKE,
-                new OwnerPalette(Color.CYAN, Color.CYAN),
-                new OwnerPalette(Color.MAGENTA, Color.ORANGE),
-                new OwnerPalette(Color.PINK, Color.WHITE));
+                new ColourPair(Color.CYAN, Color.CYAN),
+                new ColourPair(Color.MAGENTA, Color.ORANGE),
+                new ColourPair(Color.PINK, Color.WHITE));
 
             assertThat(styling.readNeutralColour())
                 .isNotEqualTo(Color.MAGENTA)
@@ -89,11 +90,11 @@ final class MapStylingTests {
             var placeholder = styling.readNeutralColour();
 
             assertThat(styling.neutralPalette())
-                .isEqualTo(new OwnerPalette(placeholder, placeholder));
+                .isEqualTo(new ColourPair(placeholder, placeholder));
             assertThat(styling.desaturationPalette())
-                .isEqualTo(new OwnerPalette(placeholder, placeholder));
+                .isEqualTo(new ColourPair(placeholder, placeholder));
             assertThat(styling.presencePalette())
-                .isEqualTo(new OwnerPalette(placeholder, placeholder));
+                .isEqualTo(new ColourPair(placeholder, placeholder));
         }
     }
 }

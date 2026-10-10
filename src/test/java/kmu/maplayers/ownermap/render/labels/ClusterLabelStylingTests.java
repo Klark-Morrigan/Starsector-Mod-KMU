@@ -1,9 +1,10 @@
 package kmu.maplayers.ownermap.render.labels;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
@@ -37,12 +38,12 @@ final class ClusterLabelStylingTests {
 
     // The owner whose shades a resolved name should carry.
     private static final SystemOwner OWNER_F =
-        new SystemOwner("F", new OwnerPalette(PRIMARY, SECONDARY));
+        new SystemOwner("F", new ColourPair(PRIMARY, SECONDARY));
 
     // A garish pair no test with an identity adjustment ever reads, so a name that
     // desaturated when it should not stands out.
-    private static final OwnerPalette UNUSED_PALETTE =
-        new OwnerPalette(Color.MAGENTA, Color.MAGENTA);
+    private static final ColourPair UNUSED_PALETTE =
+        new ColourPair(Color.MAGENTA, Color.MAGENTA);
 
     // Full opacity leaves scaleAlpha an identity, so the colour tests read the resolved shade
     // unfaded; the fade tests dim one group at a time.
@@ -242,7 +243,7 @@ final class ClusterLabelStylingTests {
                 OWNER_F,
                 nameStyles(OwnerPaletteSlot.PRIMARY),
                 buildOwnedStyled(new ElementStyleAdjustment(FULL_OPACITY, true)),
-                new OwnerPalette(Color.GREEN, Color.YELLOW));
+                new ColourPair(Color.GREEN, Color.YELLOW));
 
             assertThat(colour)
                 .isEqualTo(Color.GREEN);
@@ -257,7 +258,7 @@ final class ClusterLabelStylingTests {
                 OWNER_F,
                 nameStyles(OwnerPaletteSlot.PRIMARY),
                 OWNED_STYLED,
-                new OwnerPalette(Color.GREEN, Color.YELLOW));
+                new ColourPair(Color.GREEN, Color.YELLOW));
 
             assertThat(colour)
                 .isEqualTo(PRIMARY);
@@ -271,7 +272,7 @@ final class ClusterLabelStylingTests {
             // both mutes and desaturates, as a real filter recede can; the colour comparison reads
             // RGB, since the label additionally fades its alpha by the name opacity the fill omits.
             var recede = new ElementStyleAdjustment(HALF_OPACITY, true);
-            var desaturationPalette = new OwnerPalette(Color.GREEN, Color.YELLOW);
+            var desaturationPalette = new ColourPair(Color.GREEN, Color.YELLOW);
 
             var labelColour = ClusterLabelStyling.resolveLabelColour(
                 OWNER_F,
@@ -303,7 +304,7 @@ final class ClusterLabelStylingTests {
         private static final Color OTHER_PRIMARY = Color.CYAN;
 
         private static final SystemOwner OWNER_G =
-            new SystemOwner("G", new OwnerPalette(OTHER_PRIMARY, Color.DARK_GRAY));
+            new SystemOwner("G", new ColourPair(OTHER_PRIMARY, Color.DARK_GRAY));
 
         @Test
         void answersTheShadeOfTheOwnerItIsAskedFor() {

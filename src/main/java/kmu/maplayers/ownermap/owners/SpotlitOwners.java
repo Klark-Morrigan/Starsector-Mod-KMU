@@ -14,8 +14,6 @@ package kmu.maplayers.ownermap.owners;
  * <p>The encoding stays in this one class: a resolver stamping a footprint asks for the key rather
  * than spelling it, and the render side asks {@link #isSpotlitOwner} rather than matching a raw
  * string, so the two can never disagree about what a spotlit key looks like.
- *
- * <p>Final class with a private constructor: pure-function utility, no instance state.
  */
 public final class SpotlitOwners {
 
@@ -26,7 +24,6 @@ public final class SpotlitOwners {
     private static final String SPOTLIT_KEY = "$kmu_filter_spotlit";
 
     private SpotlitOwners() {
-        // utility class, no instances.
     }
 
     /**

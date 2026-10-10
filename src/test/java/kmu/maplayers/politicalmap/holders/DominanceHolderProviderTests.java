@@ -2,9 +2,9 @@ package kmu.maplayers.politicalmap.holders;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
@@ -48,10 +48,10 @@ final class DominanceHolderProviderTests {
         void returnsTheDominantHoldersAndNothingContestedOffFilter() {
 
             var sectorMock = mock(SectorAPI.class);
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
             var holders = Map.of(
                 OWNED_SYSTEM,
-                new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY)));
+                new SystemOwner("hegemony", new ColourPair(PRIMARY, SECONDARY)));
 
             try (var sectorPoliticsMock = mockStatic(SectorPolitics.class)) {
 
@@ -74,10 +74,10 @@ final class DominanceHolderProviderTests {
         void passesThroughThePresenceAwareResolverWhenABlocIsSpotlighted() {
 
             var sectorMock = mock(SectorAPI.class);
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
             var holders = Map.of(
                 OWNED_SYSTEM,
-                new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY)));
+                new SystemOwner("$spotlit", new ColourPair(PRIMARY, SECONDARY)));
 
             var contested = Set.of(OWNED_SYSTEM);
             var filtered = new HolderResolution(holders, contested, Set.of());

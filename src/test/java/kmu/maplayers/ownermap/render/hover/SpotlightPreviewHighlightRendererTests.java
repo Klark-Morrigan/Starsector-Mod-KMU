@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.render.hover;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.KmuMod;
@@ -15,7 +16,6 @@ import kmu.maplayers.base.theme.HoverWashStyle;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
@@ -78,7 +78,7 @@ final class SpotlightPreviewHighlightRendererTests {
     // The reading the frame was built under, answering the previewed owner's own shades.
     private static final OwnerReading READING_SHADING_THE_OWNER = OwnerReadingFake
         .createAnsweringNothing()
-        .withLooks(Map.of(OWNER_ID, new OwnerPalette(OWNER_BRIGHT_COLOUR, OWNER_DARK_COLOUR)), Map.of());
+        .withLooks(Map.of(OWNER_ID, new ColourPair(OWNER_BRIGHT_COLOUR, OWNER_DARK_COLOUR)), Map.of());
 
     // The sector the picker's presence is read over, and the machinery installed on it - the one
     // sector every case here previews over, since a preview is one sector's throughout.

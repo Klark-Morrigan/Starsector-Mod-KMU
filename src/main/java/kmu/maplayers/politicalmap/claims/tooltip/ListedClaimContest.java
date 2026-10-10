@@ -1,12 +1,12 @@
 package kmu.maplayers.politicalmap.claims.tooltip;
 
+import kmlib.starsector.factions.relation.FactionSetFriendliness;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
 import kmu.maplayers.ownermap.owners.holders.alliances.ContestSide;
 import kmu.maplayers.ownermap.owners.holders.alliances.ContestSides;
 
@@ -38,7 +38,7 @@ record ListedClaimContest(
     ColonyVisibility colonyVisibility,
     List<FactionClaimStanding> listedStandings,
     BlocAffiliation affiliation,
-    BlocFriendliness friendliness) {
+    FactionSetFriendliness friendliness) {
 
     /**
      * Selects from a contest the standings the player may be shown, keeping the rule that
@@ -62,7 +62,7 @@ record ListedClaimContest(
             SystemClaimBreakdown breakdown,
             ColonyVisibility colonyVisibility,
             BlocAffiliation affiliation,
-            BlocFriendliness friendliness) {
+            FactionSetFriendliness friendliness) {
 
         var isListingUndiscoveredMarkets = colonyVisibility.shouldIncludeUndiscoveredMarkets();
 
@@ -158,7 +158,7 @@ record ListedClaimContest(
 
         var claimantFactionId = breakdown.claimantFactionId();
 
-        return friendliness.areBlocsFriendly(
+        return friendliness.areSetsFriendly(
             Set.of(standing.factionId()),
             KmlibStrings.hasText(claimantFactionId)
                 ? Set.of(claimantFactionId)

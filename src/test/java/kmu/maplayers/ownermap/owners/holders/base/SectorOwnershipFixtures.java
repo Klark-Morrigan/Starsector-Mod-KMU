@@ -84,7 +84,7 @@ public final class SectorOwnershipFixtures {
     public static HolderPass buildHolderPassOver(SectorAPI sector) {
 
         // Undiscovered markets are not included, and a decivilised world inhabits its system.
-        return HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
+        return HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
     }
 
     /**

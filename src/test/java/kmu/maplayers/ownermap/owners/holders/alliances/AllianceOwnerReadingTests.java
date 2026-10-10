@@ -3,10 +3,11 @@ package kmu.maplayers.ownermap.owners.holders.alliances;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
@@ -69,7 +70,7 @@ final class AllianceOwnerReadingTests {
             var sectorMock = buildSectorShadingFaction(LEADING_MEMBER, BRIGHT, DARK);
 
             assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolvePalette(ALLIANCE))
-                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
 
         @Test
@@ -78,7 +79,7 @@ final class AllianceOwnerReadingTests {
             var sectorMock = buildSectorShadingFaction(LONE_FACTION, BRIGHT, DARK);
 
             assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolvePalette(LONE_FACTION))
-                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
     }
 
@@ -231,7 +232,7 @@ final class AllianceOwnerReadingTests {
             var sectorMock = buildSectorShadingFaction(Factions.INDEPENDENT, BRIGHT, DARK);
 
             assertThat(new AllianceOwnerReading(sectorMock, ALLIANCE_GROUPING).resolveRecedePalette())
-                .isEqualTo(new OwnerPalette(BRIGHT, DARK));
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
     }
 }

@@ -13,8 +13,7 @@ import java.util.Map;
 
 /**
  * The categories a layer painting holders divides its cells into - the four of
- * {@link HolderCategory} - with their styles read off the settings rows those four have always
- * been read from.
+ * {@link HolderCategory} - with their styles read off the holder category settings rows.
  *
  * <p>A holder at full strength draws as a faction; one receded to the backdrop draws as independent
  * space; a system nobody holds draws decivilised where somebody still stands there and uninhabited

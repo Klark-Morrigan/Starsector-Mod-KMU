@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.factions.relation.FactionRelations;
+import kmlib.starsector.factions.relation.FactionSetFriendliness;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
@@ -14,7 +14,6 @@ import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.SystemCellTooltip;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocRelations;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.util.KmuStringKeys;
@@ -117,7 +116,7 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
 
         return new BlocRelations(
             new BlocAffiliation(holderGroupingSource.resolveGrouping()),
-            new BlocFriendliness(FactionRelations.createDispositionReader(sector)));
+            FactionSetFriendliness.createForSector(sector));
     }
 
     /**

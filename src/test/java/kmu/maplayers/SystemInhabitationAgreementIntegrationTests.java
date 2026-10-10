@@ -249,7 +249,7 @@ final class SystemInhabitationAgreementIntegrationTests {
             ColonyReadRules colonyReadRules) {
 
         return HolderInhabitation.isSystemInhabited(
-            HolderPass.over(sector, colonyReadRules, HolderGrouping.identity()),
+            HolderPass.createOver(sector, colonyReadRules, HolderGrouping.identity()),
             system);
     }
 

@@ -8,7 +8,6 @@ import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKeyedMemo;
 
-import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 
 import java.util.LinkedHashMap;
@@ -93,7 +92,7 @@ public final class HolderPass {
      * @param grouping        the grouping this pass folds factions into blocs under
      * @return a pass over that sector carrying those rules
      */
-    public static HolderPass over(
+    public static HolderPass createOver(
             SectorAPI sector,
             ColonyReadRules colonyReadRules,
             HolderGrouping grouping) {
@@ -113,7 +112,7 @@ public final class HolderPass {
      * @return a pass carrying the live rules paired with the grouping
      */
     public static HolderPass readFromLunaSettings(SectorAPI sector, HolderGrouping grouping) {
-        return over(sector, ColonyReadRules.readFromLunaSettings(), grouping);
+        return createOver(sector, ColonyReadRules.readFromLunaSettings(), grouping);
     }
 
     /**
@@ -189,49 +188,6 @@ public final class HolderPass {
     }
 
     /**
-     * The colonies in one system the player may be shown, under the rule the pass was opened with.
-     *
-     * <p>Named here rather than composed at each display reader, because the fill, the band inside
-     * it and the box over it all have to withhold the same colonies.
-     *
-     * @param system the system to read; null yields an empty list
-     * @return the system's colonies the rule admits, in the set's own order
-     */
-    public List<Colony> readKnownColoniesIn(StarSystemAPI system) {
-        return colonyKnowledge.readKnownColonies(readColoniesIn(system));
-    }
-
-    /**
-     * The colonies in one system that amount to people living there, under the visibility rule and
-     * this pass's habitation rule.
-     *
-     * <p>Beside the known listing rather than in place of it: "who may be named here" and "is
-     * anybody living here" are different questions, and a derelict somebody has seen answers the
-     * first and settles nothing in the second.
-     *
-     * <p>Not memoised: a reader asking per system takes {@link #readHabitationIn}, which carries
-     * this list and is worked out once per system.
-     *
-     * <p>The habitation rule names the one decivilised kind rather than asking the kind itself, so
-     * a kind not yet written inhabits its place until it says otherwise.
-     *
-     * @param system the system to read; null yields an empty list
-     * @return the system's known colonies somebody lives on under this pass's habitation rule, in
-     *         the set's own order
-     */
-    public List<Colony> readInhabitingColoniesIn(StarSystemAPI system) {
-
-        var inhabitingColonies = colonyKnowledge.readInhabitingColonies(readColoniesIn(system));
-
-        if (colonyReadRules.decivilisedColonyHabitation().isCountedAsPopulated()) {
-            return inhabitingColonies;
-        }
-        return inhabitingColonies.stream()
-            .filter(colony -> colonyKnowledge.readKindOf(colony) != ColonyKind.UNGOVERNED_COLONY)
-            .toList();
-    }
-
-    /**
      * The factions the player may be told about in one system - the owners of the known listing,
      * each named once.
      *
@@ -261,6 +217,49 @@ public final class HolderPass {
             return resolveHabitationIn(null);
         }
         return habitationBySystem.readValueFor(system, this::resolveHabitationIn);
+    }
+
+    /**
+     * The colonies in one system the player may be shown, under the rule the pass was opened with.
+     *
+     * <p>Named here rather than composed at each display reader, because the fill, the band inside
+     * it and the box over it all have to withhold the same colonies.
+     *
+     * @param system the system to read; null yields an empty list
+     * @return the system's colonies the rule admits, in the set's own order
+     */
+    List<Colony> readKnownColoniesIn(StarSystemAPI system) {
+        return colonyKnowledge.readKnownColonies(readColoniesIn(system));
+    }
+
+    /**
+     * The colonies in one system that amount to people living there, under the visibility rule and
+     * this pass's habitation rule.
+     *
+     * <p>Beside the known listing rather than in place of it: "who may be named here" and "is
+     * anybody living here" are different questions, and a derelict somebody has seen answers the
+     * first and settles nothing in the second.
+     *
+     * <p>Not memoised: a reader asking per system takes {@link #readHabitationIn}, which carries
+     * this list and is worked out once per system.
+     *
+     * <p>The habitation rule names the one decivilised kind rather than asking the kind itself, so
+     * a kind not yet written inhabits its place until it says otherwise.
+     *
+     * @param system the system to read; null yields an empty list
+     * @return the system's known colonies somebody lives on under this pass's habitation rule, in
+     *         the set's own order
+     */
+    List<Colony> readInhabitingColoniesIn(StarSystemAPI system) {
+
+        var inhabitingColonies = colonyKnowledge.readInhabitingColonies(readColoniesIn(system));
+
+        if (colonyReadRules.decivilisedColonyHabitation().isCountedAsPopulated()) {
+            return inhabitingColonies;
+        }
+        return inhabitingColonies.stream()
+            .filter(colony -> !colonyKnowledge.readKindOf(colony).isUngoverned())
+            .toList();
     }
 
     // One system's habitation worked out, for the memo above to remember: the habitation

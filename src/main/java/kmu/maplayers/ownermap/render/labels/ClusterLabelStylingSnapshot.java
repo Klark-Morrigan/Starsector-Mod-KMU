@@ -1,11 +1,11 @@
 package kmu.maplayers.ownermap.render.labels;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.FontAtlas;
 
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -45,7 +45,7 @@ import java.util.Map;
  */
 public record ClusterLabelStylingSnapshot(
     Map<SystemKey, SystemOwner> ownerBySystemKey,
-    OwnerPalette desaturationPalette,
+    ColourPair desaturationPalette,
     OwnerCategories categories,
     OwnerReading reading,
     ContentInputs contentInputs,

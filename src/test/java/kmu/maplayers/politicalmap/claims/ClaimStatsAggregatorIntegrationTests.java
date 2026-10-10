@@ -149,7 +149,7 @@ final class ClaimStatsAggregatorIntegrationTests {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                        HolderPass.over(sectorMock, UNDER_THE_FOG, grouping),
+                        HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping),
                         claimReaderFake)
                     .statsByOwnerId())
                 .containsExactly(entry("alliance-1", new ClaimStats(1, 3)));
@@ -358,7 +358,7 @@ final class ClaimStatsAggregatorIntegrationTests {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                        HolderPass.over(sectorMock, UNDER_THE_FOG, grouping),
+                        HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping),
                         claimReaderFake)
                     .presenceIndex()
                     .readPresentSystemKeys("alliance-1"))

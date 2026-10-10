@@ -13,7 +13,7 @@ package kmu.maplayers.politicalmap.dominance.standings;
  * a rule restated at each row that draws one is a rule some of them can drift from.
  *
  * <p>Plain arithmetic with no Starsector types and nothing about how the count was arrived at - who
- * is at odds with whom is {@link kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness}'s answer, and what
+ * is at odds with whom is {@link kmlib.starsector.factions.relation.FactionSetFriendliness}'s answer, and what
  * a row counts out of is its caller's.
  *
  * @param count what the heading is true of

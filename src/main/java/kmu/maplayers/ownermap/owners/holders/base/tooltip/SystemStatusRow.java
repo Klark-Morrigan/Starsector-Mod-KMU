@@ -5,7 +5,6 @@ import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
-import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.util.KmuStringKeys;
 
@@ -113,10 +112,12 @@ public final class SystemStatusRow {
             List<Colony> inhabitingColonies) {
 
         for (var colony : inhabitingColonies) {
-            if (colonyKnowledge.readKindOf(colony) != ColonyKind.UNGOVERNED_COLONY) {
+
+            if (!colonyKnowledge.readKindOf(colony).isUngoverned()) {
                 return true;
             }
         }
+
         return false;
     }
 }

@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.owners.holders.alliances;
 
+import kmlib.starsector.factions.relation.FactionSetFriendliness;
+
 import java.util.Objects;
 
 /**
@@ -19,7 +21,7 @@ import java.util.Objects;
  */
 public record BlocRelations(
     BlocAffiliation affiliation,
-    BlocFriendliness friendliness) {
+    FactionSetFriendliness friendliness) {
 
     public BlocRelations {
 

@@ -1,7 +1,8 @@
 package kmu.maplayers.ownermap.ribbon;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -620,7 +621,7 @@ final class RibbonPlanTests {
 
         return new OwnerPresence(
             ownerId,
-            new OwnerPalette(brightShade, darkShade),
+            new ColourPair(brightShade, darkShade),
             marketCount);
     }
 }

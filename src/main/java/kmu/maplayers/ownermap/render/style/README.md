@@ -160,8 +160,7 @@ and every rule here stays pure over the shades it is handed.
   so an ownerless cell recolours by the same rule an owner does -
   and an ownerless cell gets that palette from `resolveNeutralPalette`,
   the one statement of "no owner means the neutral colour in both slots".
-  Every palette here is an `OwnerPalette`,
-  the tier's pair of shades,
+  Every palette here is a `ColourPair`,
   which names nothing about where the shades came from.
   The neutral an unowned cell paints in,
   and the shades a receded owner sinks toward,

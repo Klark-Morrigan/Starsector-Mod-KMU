@@ -33,22 +33,22 @@ class BlocAffiliationTests {
     }
 
     @Nested
-    class AreBlocsAllied {
+    class AreOwnersAllied {
 
         @Test
         void isTrueForTwoFactionsFoldedIntoOneGroup() {
             // Asserted in both argument orders: standing together has no direction, so neither may
             // the predicate.
-            assertThat(buildAlliedAffiliation().areBlocsAllied("hegemony", "astral_armada"))
+            assertThat(buildAlliedAffiliation().areOwnersAllied("hegemony", "astral_armada"))
                 .isTrue();
-            assertThat(buildAlliedAffiliation().areBlocsAllied("astral_armada", "hegemony"))
+            assertThat(buildAlliedAffiliation().areOwnersAllied("astral_armada", "hegemony"))
                 .isTrue();
         }
 
         @Test
         void isFalseForAFactionOutsideTheGroup() {
 
-            assertThat(buildAlliedAffiliation().areBlocsAllied("hegemony", "tritachyon"))
+            assertThat(buildAlliedAffiliation().areOwnersAllied("hegemony", "tritachyon"))
                 .isFalse();
         }
 
@@ -56,7 +56,7 @@ class BlocAffiliationTests {
         void isFalseForABlocAgainstItself() {
             // One bloc named twice is one side of a contest, not two standing together; whether a
             // bloc is the painter is asked at the judging site as a question of its own.
-            assertThat(buildAlliedAffiliation().areBlocsAllied("hegemony", "hegemony"))
+            assertThat(buildAlliedAffiliation().areOwnersAllied("hegemony", "hegemony"))
                 .isFalse();
         }
 
@@ -64,9 +64,9 @@ class BlocAffiliationTests {
         void isFalseForABlocTheAffiliationNeverNamed() {
             // An unknown ID falls through to itself, so it stands with nothing - neither with a
             // group member nor with another unknown.
-            assertThat(buildAlliedAffiliation().areBlocsAllied("pirates", "hegemony"))
+            assertThat(buildAlliedAffiliation().areOwnersAllied("pirates", "hegemony"))
                 .isFalse();
-            assertThat(buildAlliedAffiliation().areBlocsAllied("pirates", "luddic_church"))
+            assertThat(buildAlliedAffiliation().areOwnersAllied("pirates", "luddic_church"))
                 .isFalse();
         }
 
@@ -74,9 +74,9 @@ class BlocAffiliationTests {
         void isFalseForABlocWithNoId() {
             // A bloc with no ID resolves to no bloc, and two such IDs must not read as standing
             // together merely because both resolved to nothing.
-            assertThat(buildAlliedAffiliation().areBlocsAllied(null, "hegemony"))
+            assertThat(buildAlliedAffiliation().areOwnersAllied(null, "hegemony"))
                 .isFalse();
-            assertThat(buildAlliedAffiliation().areBlocsAllied(" ", "  "))
+            assertThat(buildAlliedAffiliation().areOwnersAllied(" ", "  "))
                 .isFalse();
         }
 
@@ -90,7 +90,7 @@ class BlocAffiliationTests {
                 Map.of("group-1", "hegemony", "group-2", "tritachyon"),
                 Map.of("group-1", "Allied Powers", "group-2", "Rival Powers"));
 
-            assertThat(new BlocAffiliation(grouping).areBlocsAllied("group-1", "group-2"))
+            assertThat(new BlocAffiliation(grouping).areOwnersAllied("group-1", "group-2"))
                 .isFalse();
         }
 
@@ -98,21 +98,7 @@ class BlocAffiliationTests {
         void isFalseForEveryDistinctPairOverTheIdentityGrouping() {
             // The affiliation of an install with nothing grouping factions: the identity grouping read
             // as an affiliation folds nothing, so factions allied in some other grouping stand apart under it.
-            assertThat(new BlocAffiliation(HolderGrouping.identity()).areBlocsAllied("hegemony", "astral_armada"))
-                .isFalse();
-        }
-    }
-
-    @Nested
-    class AreOwnersAllied {
-
-        @Test
-        void answersAsTheBlocPredicateDoes() {
-            // A layer painting holders paints blocs, so the tier's question about two owners is
-            // this type's question about two blocs.
-            assertThat(buildAlliedAffiliation().areOwnersAllied("hegemony", "astral_armada"))
-                .isTrue();
-            assertThat(buildAlliedAffiliation().areOwnersAllied("hegemony", "tritachyon"))
+            assertThat(new BlocAffiliation(HolderGrouping.identity()).areOwnersAllied("hegemony", "astral_armada"))
                 .isFalse();
         }
     }

@@ -20,10 +20,11 @@
 
 #### 新增
 
-- **`FactionStanding.isWeighed()`**：本次计算是否为该势力的殖民地计算过权重，按类别分支的读取方据此询问，而不必检查密封类型。
+- **`FactionStanding.isWeighed()`**：本次计算是否为该势力的殖民地计算过权重，按种类分支的读取方据此询问，而不必检查密封类型。
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
-- **`PoliticalHolderView`**，政治地图的每个视图都实现它：视图据以重绘的实时输入联盟集合、争夺中谁与谁站在一起、持有者类别，以及在分组的一次采样上读取的选择器。
-- **`SectorBlocPalettes.readFactionPalette(SectorAPI, String)`**：把一个势力的配色作为所有者的配色，供本身持有势力 ID 的读取方使用。
+- **`PoliticalHolderView`**，政治地图的每个视图都实现它：联盟集合的修订号（作为视图的内容修订号）、争夺中谁与谁站在一起、持有者类别，以及势力读取。
+- **`SectorBlocPalettes.readFactionPalette(SectorAPI, String)`**：一个势力的配色，供本身持有势力 ID 的读取方使用。
+- **`ColonyKind.isUngoverned()`**：某处是否住着不受任何权力管辖的人，供每个区分有人管辖与无人管辖殖民地的读取方使用。
 
 #### 公共契约变更（**破坏性**）
 
@@ -36,12 +37,13 @@
 | 之前 | 之后 |
 | --- | --- |
 | `ownermap.holding`、`ownermap.owners.holders`、`RibbonPlanInputs`、`BlocPaletteReader`、`SectorBlocPalettes`、`HolderCategories`、`OwnerMapCategory` 和 `ColonyCellRibbons` | `ownermap.owners.holders.base`，下列类型除外 |
-| `BlocPickerAssembly`、`BlocStanding`、`BlocStandingReader`、`BlocStandingSortMode`、`SizedBlocMetrics` 和 `SharedBlocSortModes` | `ownermap.owners.holders.base.picker` |
+| `BlocPickerAssembly`、`BlocStanding`、`BlocStandingReader`、`BlocStandingSortMode` 和 `SizedBlocMetrics` | `ownermap.owners.holders.base.picker` |
 | `SystemStatusRow` 以及 `ownermap.tooltip` 中的殖民地行 | `ownermap.owners.holders.base.tooltip` |
 | `ownermap.tooltip` 中的势力行 | `ownermap.owners.holders.factions` |
 | `ownermap.tooltip.TermTooltipLine` | `base.tooltip.content.TermTooltipLine`。`ownermap.tooltip` 已移除 |
 | `ownermap.sidebar.BodyControlTarget` | `base.sidebar.BodyControlTarget` |
-| `BlocAffiliation`、`BlocFriendliness`、`ContestSide`、`ContestSides` 和 `BlocRelations` | `ownermap.owners.holders.alliances` |
+| `BlocAffiliation`、`ContestSide`、`ContestSides` 和 `BlocRelations` | `ownermap.owners.holders.alliances` |
+| `BlocFriendliness` 及其 `areBlocsFriendly(Set, Set)` | KMLib 的 `kmlib.starsector.factions.relation.FactionSetFriendliness`，及其 `areSetsFriendly(Set, Set)` 和 `createForSector(SectorAPI)` |
 
 ##### 重命名
 
@@ -53,16 +55,23 @@
 | `OwnerMapCategory`、`OwnerMapInhabitation` 和 `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`、`HolderInhabitation` 和 `DominanceHolderProvider` |
 | `OwnerMapCache` 与 `OwnerMapDrawables` 的 `getFactionLabels()`、`OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` 和 `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`、`resolveOwnerPaintOf(String, SystemOwner)` 和 `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` 及其 `strings.json` 键 | `POLITICAL_MAP_CTL_FACTION_NAMES`，政治地图自己的标题 |
+| `ownermap.owners.OwnerPalette` | KMLib 的 `kmlib.colour.ColourPair`，势力的配色本就是它。`SectorBlocPalettes.adoptFactionPalette(FactionPalette)` 已移除 |
+| `HolderPass.over(SectorAPI, ColonyReadRules, HolderGrouping)` | `HolderPass.createOver(SectorAPI, ColonyReadRules, HolderGrouping)` |
+| `SharedBlocSortModes.declareMarketSizeMode(List)` | `SizedBlocMetrics.createMarketSizeMode(List)` |
 
 ##### 接缝
 
 | 之前 | 之后 |
 | --- | --- |
-| `OwnerPaintedView` 的 `resolveBlocPickerRead(SectorAPI, ColonyReadRules)`、`buildBlocPickerRead(SectorAPI, HolderGrouping, OwnerReading, BlocStatsRead, ListSortModes)` 和 `resolveSelectableBlocGate(HolderGrouping)` | 位于 `HolderPaintedView`，其中 `buildBlocPickerRead(SectorAPI, HolderGrouping, OwnerStatsRead, ListSortModes)` 通过视图自身的读取为各行命名。`OwnerPaintedView` 保留 `resolveOwnerPickerRead(SectorAPI)`，默认为空 |
+| `OwnerPaintedView` 的 `resolveBlocPickerRead(SectorAPI, ColonyReadRules)`、`buildBlocPickerRead(SectorAPI, HolderGrouping, OwnerReading, BlocStatsRead, ListSortModes)` 和 `resolveSelectableBlocGate(HolderGrouping)` | 位于 `HolderPaintedView`，其中 `buildBlocPickerRead` 改为 `readPickerUnderOneGrouping(SectorAPI, Function, ListSortModes)`：只对分组采样一次，并通过视图自身的读取为各行命名。`OwnerPaintedView` 保留 `resolveOwnerPickerRead(SectorAPI)`，默认为空 |
 | `HolderPaintedView.resolveContestGrouping()` | `resolveContestAffiliation()`，返回 `OwnerAffiliation` |
 | 基于 `BlocAffiliation` 的 `RibbonPlan.planCellRibbon(Optional, List, BlocAffiliation, RibbonPlanRules)` | 基于 `kmu.maplayers.ownermap.owners.OwnerAffiliation`，由 `BlocAffiliation` 实现 |
 | `SpotlitBlocs.findPresentSystemKeys(HolderPass, String, Set)` 和 `isBlocPresentIn(HolderPass, String, StarSystemAPI)` | `HolderInhabitation.findSpotlitPresenceSystemKeys(HolderPass, String, Set)` 和 `HolderInhabitation.isBlocPresentIn(HolderPass, String, StarSystemAPI)` |
-| `HolderOwnerSource.grouping()` 和 `BlocAffiliation.NONE` | 已移除。在 `new BlocAffiliation(HolderGrouping.identity())` 下没有任何集团站在一起 |
+| `HolderOwnerSource(HolderGrouping, HolderGrouping, HolderProvider, SystemHolderResolveSource, Function)` | `HolderOwnerSource(HolderGrouping, HolderPaintedView)`：其余部分由视图给出 |
+| `HolderOwnerSource.grouping()`、`BlocAffiliation.NONE` 和 `BlocAffiliation.areBlocsAllied(String, String)` | `grouping()` 已移除，改由视图的 `resolveGrouping()` 给出。`NONE` 改用 `OwnerAffiliation.NONE` 或 `new BlocAffiliation(HolderGrouping.identity())`。`areBlocsAllied` 改为 `areOwnersAllied` |
+| `HolderGrouping.collectBlocIds(Collection)` | 已移除 |
+| 公开的 `HolderPass.readKnownColoniesIn(StarSystemAPI)` 和 `readInhabitingColoniesIn(StarSystemAPI)` | 改为包私有。外部读取方改用 `readHabitationIn(StarSystemAPI)` 或 `readKnownColonyFactionIds(StarSystemAPI)` |
+| `AllianceBodyControls` | 已移除：`AlliancesView.getViewBodyControls(BodyControlTarget)` 自行绑定共享的退后控件 |
 | `RenderStyleReader.readFactionStyle()`、`readIndependentStyle()`、`readDecivilisedStyle()` 和 `readUninhabitedStyle(boolean)` | `HolderCategoryStyleReader` |
 | `BlocPresence.collectColouredPresences(Map, BlocPaletteReader)` | 已移除：`ColonyCellRibbons` 自行为计数着色 |
 | `NameFormatPreference(String)` | `NameFormatPreference(String, String)`：图层还需给出名称单选框的标题键 |

@@ -1,11 +1,11 @@
 package kmu.maplayers.ownermap.render.style;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.awt.Color;
@@ -34,7 +34,7 @@ import java.awt.Color;
 public record ResolvedOwnerPaint(
     CategoryStyle style,
     ElementStyleAdjustment adjustment,
-    OwnerPalette palette) {
+    ColourPair palette) {
 
     /**
      * What an owner paints from: its owner's own two shades under the styling resolved for it.
@@ -47,7 +47,7 @@ public record ResolvedOwnerPaint(
     public static ResolvedOwnerPaint resolveFrom(
             OwnerStyling styling,
             SystemOwner owner,
-            OwnerPalette desaturationPalette) {
+            ColourPair desaturationPalette) {
 
         return resolveFrom(
             styling.style(),
@@ -70,8 +70,8 @@ public record ResolvedOwnerPaint(
     public static ResolvedOwnerPaint resolveFrom(
             CategoryStyle style,
             ElementStyleAdjustment adjustment,
-            OwnerPalette ownPalette,
-            OwnerPalette desaturationPalette) {
+            ColourPair ownPalette,
+            ColourPair desaturationPalette) {
 
         return new ResolvedOwnerPaint(
             style,

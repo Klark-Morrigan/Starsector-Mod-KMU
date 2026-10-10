@@ -59,6 +59,6 @@ public record ContestSides(
     // at contested length by - two answers to one question being the disagreement between a box and
     // the band beneath it that the whole axis exists to rule out.
     private <T> boolean isStandingWithHolder(T contestant, Function<T, String> resolveBlocId) {
-        return affiliation.areBlocsAllied(holderBlocId, resolveBlocId.apply(contestant));
+        return affiliation.areOwnersAllied(holderBlocId, resolveBlocId.apply(contestant));
     }
 }

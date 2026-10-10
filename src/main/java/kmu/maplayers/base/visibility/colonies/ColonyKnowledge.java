@@ -52,7 +52,8 @@ import java.util.function.Predicate;
  * are a snapshot of the sector that pass read. Not safe for concurrent use, a pass being one
  * thread's work.
  */
-public final class ColonyKnowledge implements KnownColonyReader {
+public final class ColonyKnowledge
+        implements KnownColonyReader {
 
     // The kind test of a projection that turns nothing away for what it is - the known reading,
     // where the visibility rule is the whole of the filter.
@@ -184,6 +185,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (colony == null) {
             return ColonyKind.COLONY;
         }
+
         return kindByColony.computeIfAbsent(
             colony,
             found -> ColonyKind.resolveKind(found.market(), found.isListedByEconomy()));
@@ -366,6 +368,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // The emptiness of the same test, stopped at the first colony that passes - the pair to the
     // walk above, over the very filter that walk would have taken.
     private static boolean hasAnyColony(Colonies colonies, Predicate<Colony> isPassingColony) {
+
         return colonies != null
             && colonies.hasAnyColony(isPassingColony);
     }
@@ -388,12 +391,14 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (colonies == null) {
             return PlaceWitnesses.NONE;
         }
+
         for (var colony : colonies.colonies()) {
 
             if (isSettlingColony(colony, fogRule)) {
                 settlingOwnerIds.add(colony.readOwnerId());
             }
         }
+
         return new PlaceWitnesses(settlingOwnerIds, alliances);
     }
 
@@ -423,6 +428,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (!isFoundColony(colony, witnesses)) {
             return false;
         }
+
         // A reveal reaches the fog and stops there. It says a colony may be shown though nobody
         // has found it, which is no answer at all to whether anybody has seen it standing here -
         // and a reveal that quietly cleared a gate beside it would show a player a second thing
@@ -470,9 +476,11 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (isAdmittedByFog(colony, rule)) {
             return true;
         }
+
         if (!readKindOf(colony).isFoundByReport()) {
             return false;
         }
+
         return witnesses.wouldSpeakAbout(colony.readOwnerId())
             || (DecivilisedMarkets.isMetBySighting(rule.ungovernedColonySurveyLevel())
                 && isSighted(colony));
@@ -502,12 +510,14 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // statement of "counts as a known colony" living in this class.
     private boolean isAdmittedByFog(Colony colony, ColonyVisibility fogRule) {
 
-        if (readKindOf(colony) == ColonyKind.UNGOVERNED_COLONY) {
+        if (readKindOf(colony).isUngoverned()) {
+
             return MarketVisibility.isCountedAsUngovernedColony(
                 colony.market(),
                 fogRule.shouldIncludeUndiscoveredMarkets(),
                 fogRule.ungovernedColonySurveyLevel());
         }
+
         return MarketVisibility.isCountedAsColony(
             colony.market(),
             fogRule.shouldIncludeUndiscoveredMarkets());
@@ -523,7 +533,9 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // permanently in the sector's own sight, so an entry for one would answer nothing while costing
     // an entry per colony in the sector.
     private boolean isWorthRecording(Colony colony) {
-        return isGatedColony(colony) || readKindOf(colony).isFoundByReport();
+
+        return isGatedColony(colony)
+            || readKindOf(colony).isFoundByReport();
     }
 
     // Whether any gate at all covers this colony, whatever the rule happens to be holding back.
@@ -545,6 +557,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -564,6 +577,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // bar in it. The found routes take the two terms apart instead, the bar reaching one of them -
     // which is isFoundColony's business and stated there.
     private boolean isObserved(Colony colony, PlaceWitnesses witnesses) {
+
         return witnesses.wouldSpeakAbout(colony.readOwnerId())
             || isSighted(colony);
     }
@@ -584,8 +598,10 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (!(colony.market().getContainingLocation() instanceof StarSystemAPI system)) {
             return true;
         }
+
         var observation = sightings.readObservation(colony.market().getId());
 
-        return observation != null && observation.locationId().equals(system.getId());
+        return observation != null
+            && observation.locationId().equals(system.getId());
     }
 }

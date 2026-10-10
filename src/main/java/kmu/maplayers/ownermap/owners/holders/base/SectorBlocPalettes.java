@@ -6,7 +6,6 @@ import kmlib.colour.ColourPair;
 import kmlib.starsector.factions.FactionColours;
 import kmlib.starsector.factions.SectorFactions;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 /**
@@ -15,10 +14,8 @@ import kmu.maplayers.ownermap.owners.SystemOwner;
  *
  * <p>A bloc is not always a faction - a group is named by a synthetic ID no
  * {@code FactionAPI} answers to - so the grouping names the colour faction first and the sector is
- * asked for that. The two shades are the faction's own authored UI pair, bright into the primary
- * slot and dark into the secondary, so whatever is drawn for a bloc draws it in the same colours its
- * fills and borders already give it. This is where a faction's palette becomes an
- * {@link OwnerPalette}: the tier paints owners, and a faction is one source of an owner's shades.
+ * asked for that. The two shades are the faction's own authored UI pair, so whatever is drawn for a
+ * bloc draws it in the same colours its fills and borders already give it.
  *
  * <p>Holds the sector and grouping the pass sampled rather than reading either live, so everything
  * one pass colours for a bloc is coloured off the one snapshot the fills were.
@@ -39,38 +36,22 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
     }
 
     /**
-     * A faction's authored pair as the owner shades the tier paints in - the one place a faction's
-     * palette crosses into the tier's type, slot for slot.
+     * One faction's shades, for a reader that already holds the faction ID and so has no grouping to
+     * resolve it through.
      *
-     * @param palette the faction's bright and dark shades
-     * @return the same two shades as an owner's
-     */
-    public static OwnerPalette adoptFactionPalette(ColourPair palette) {
-        return new OwnerPalette(palette.primaryColour(), palette.secondaryColour());
-    }
-
-    /**
-     * One faction's shades as an owner's, for a reader that already holds the faction ID and so has
-     * no grouping to resolve it through.
+     * <p>Null for a faction gone from the sector, which every caller drops the owner on: painting it
+     * a stand-in colour would put colour on the map for something the map cannot name.
      *
      * @param sector    the sector the faction is read from; null yields null
      * @param factionId the faction to colour
      * @return the faction's shades, or null when the sector knows no such faction
      */
-    public static OwnerPalette readFactionPalette(SectorAPI sector, String factionId) {
-
-        var palette = FactionColours.findPalette(SectorFactions.findFaction(sector, factionId));
-
-        // No faction is the degenerate case every caller drops the owner on: a faction gone from the
-        // sector has no shades, and painting it a stand-in colour would put colour on the map for
-        // something the map cannot name.
-        return palette == null
-            ? null
-            : adoptFactionPalette(palette);
+    public static ColourPair readFactionPalette(SectorAPI sector, String factionId) {
+        return FactionColours.findPalette(SectorFactions.findFaction(sector, factionId));
     }
 
     @Override
-    public OwnerPalette readBlocPalette(String blocId) {
+    public ColourPair readBlocPalette(String blocId) {
         return readFactionPalette(sector, grouping.resolveColourFactionId(blocId));
     }
 

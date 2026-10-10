@@ -103,7 +103,7 @@ name,
 crest,
 recede and category,
 and the shades an unowned or receded cell is derived from.
-`OwnerPalette` is the pair of shades,
+The pair of shades is KMLib's `ColourPair`,
 and `SystemOwner` pairs an owner ID with its palette.
 
 A view answers the reading and the source in one call,

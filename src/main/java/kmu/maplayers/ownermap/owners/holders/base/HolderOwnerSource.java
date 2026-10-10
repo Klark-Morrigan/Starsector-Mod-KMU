@@ -17,7 +17,6 @@ import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -40,7 +39,8 @@ import java.util.function.Supplier;
  * build reads the build's pass rather than paying a second habitation fold over the walk it already
  * shares - so the source itself holds nothing from one walk to the next.
  */
-public final class HolderOwnerSource implements OwnerSource {
+public final class HolderOwnerSource
+        implements OwnerSource {
 
     // The three scans a holding resolve makes, each writing a log line of its own on every call:
     // a rebuild happens when something changed rather than on a clock, so the trace a reader
@@ -59,30 +59,27 @@ public final class HolderOwnerSource implements OwnerSource {
     private final OwnerAffiliation contestAffiliation;
     private final HolderProvider holderProvider;
     private final SystemHolderResolveSource holderResolveSource;
-    private final Function<RibbonPlanInputs, SystemRibbonPlanner> ribbonPlannerSource;
+    private final HolderPaintedView view;
 
     /**
-     * @param grouping            the grouping this source folds factions into blocs under, sampled
-     *                            once by the view for the rebuild this source serves
-     * @param contestAffiliation  who among the blocs stands together in a contest a band judges,
-     *                            sampled once beside it; {@link OwnerAffiliation#NONE} where nobody
-     *                            does
-     * @param holderProvider      the layer's whole-sector holding rule
-     * @param holderResolveSource where the layer's per-system holding rule is opened from, per batch
-     * @param ribbonPlannerSource the layer's band counting, built over one bake's inputs
+     * @param grouping the grouping this source folds factions into blocs under, sampled once by the
+     *                 view for the rebuild this source serves
+     * @param view     the view whose rules this source reads under. Who stands together is sampled
+     *                 here, once, beside the grouping; the holding rules and the band planner are
+     *                 the view's to answer
      */
-    public HolderOwnerSource(
-            HolderGrouping grouping,
-            OwnerAffiliation contestAffiliation,
-            HolderProvider holderProvider,
-            SystemHolderResolveSource holderResolveSource,
-            Function<RibbonPlanInputs, SystemRibbonPlanner> ribbonPlannerSource) {
+    public HolderOwnerSource(HolderGrouping grouping, HolderPaintedView view) {
 
         this.grouping = Objects.requireNonNull(grouping, "grouping");
-        this.contestAffiliation = Objects.requireNonNull(contestAffiliation, "contestAffiliation");
-        this.holderProvider = Objects.requireNonNull(holderProvider, "holderProvider");
-        this.holderResolveSource = Objects.requireNonNull(holderResolveSource, "holderResolveSource");
-        this.ribbonPlannerSource = Objects.requireNonNull(ribbonPlannerSource, "ribbonPlannerSource");
+        this.view = Objects.requireNonNull(view, "view");
+        this.contestAffiliation = Objects.requireNonNull(
+            view.resolveContestAffiliation(),
+            "contestAffiliation");
+
+        this.holderProvider = Objects.requireNonNull(view.resolveHolderProvider(), "holderProvider");
+        this.holderResolveSource = Objects.requireNonNull(
+            view.resolveSystemHolderResolveSource(),
+            "holderResolveSource");
     }
 
     /**
@@ -96,7 +93,6 @@ public final class HolderOwnerSource implements OwnerSource {
 
         var profiler = ActiveProfiler.resolveProfiler();
         var pass = openPassOver(walk);
-
         var resolution = resolveHolders(profiler, pass, spotlitOwnerId);
 
         // What stands in each system, read once for the whole pass. Independent of the holding
@@ -151,7 +147,7 @@ public final class HolderOwnerSource implements OwnerSource {
         // handed to whatever planner the layer resolves - so every mechanic counting one map reads
         // a bloc's shades through one object, judges a contest against one affiliation, and lays its
         // cells by one rule.
-        return ribbonPlannerSource.apply(
+        return view.resolveRibbonPlanner(
             RibbonPlanInputs.createForPass(openPassOver(walk), contestAffiliation, rules));
     }
 

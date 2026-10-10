@@ -2,10 +2,10 @@ package kmu.maplayers.politicalmap.claims;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
@@ -35,7 +35,7 @@ final class FilteredClaimsTests {
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
     private static final SystemOwner SPOTLIT_HOLDER =
-        new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY));
+        new SystemOwner("$spotlit", new ColourPair(PRIMARY, SECONDARY));
 
     private static final SystemKey HEGEMONY_CLAIMED = buildCellKey("hegemony-claimed");
     private static final SystemKey RIVAL_CLAIMED = buildCellKey("rival-claimed");
@@ -46,8 +46,8 @@ final class FilteredClaimsTests {
 
         var claims = new LinkedHashMap<SystemKey, SystemOwner>();
 
-        claims.put(HEGEMONY_CLAIMED, new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY)));
-        claims.put(RIVAL_CLAIMED, new SystemOwner("tritachyon", new OwnerPalette(PRIMARY, SECONDARY)));
+        claims.put(HEGEMONY_CLAIMED, new SystemOwner("hegemony", new ColourPair(PRIMARY, SECONDARY)));
+        claims.put(RIVAL_CLAIMED, new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY)));
 
         return claims;
     }
@@ -61,7 +61,7 @@ final class FilteredClaimsTests {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
@@ -90,7 +90,7 @@ final class FilteredClaimsTests {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
@@ -128,7 +128,7 @@ final class FilteredClaimsTests {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
@@ -161,7 +161,7 @@ final class FilteredClaimsTests {
         void passesThePlainClaimResolveThroughWithNoSector() {
 
             var claimReaderMock = mock(ClaimReader.class);
-            var pass = HolderPass.over(null, UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(null, UNDER_THE_FOG, HolderGrouping.identity());
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 

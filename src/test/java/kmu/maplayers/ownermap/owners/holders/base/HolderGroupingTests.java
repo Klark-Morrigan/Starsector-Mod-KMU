@@ -3,9 +3,7 @@ package kmu.maplayers.ownermap.owners.holders.base;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -274,51 +272,6 @@ class HolderGroupingTests {
 
             assertThat(HolderGrouping.identity().regroupByBloc(valueByFactionId, 0, Integer::sum))
                 .containsExactly(entry("z-faction", 1), entry("a-faction", 2));
-        }
-    }
-
-    @Nested
-    class CollectBlocIds {
-
-        @Test
-        void namesABlocOnceHoweverManyOfItsMembersAreThere() {
-            // The id-level fold's own case: a caller asking who is present wants the blocs it would
-            // paint, so a group's two members are one bloc there rather than two.
-            var grouping = new HolderGrouping(
-                Map.of("hegemony", "group-1", "tritachyon", "group-1"),
-                Map.of("group-1", "hegemony"),
-                Map.of("group-1", "Allied Powers"));
-
-            assertThat(grouping.collectBlocIds(List.of("hegemony", "tritachyon")))
-                .containsExactly("group-1");
-        }
-
-        @Test
-        void keepsFactionsInDistinctBlocsSeparate() {
-
-            assertThat(HolderGrouping.identity().collectBlocIds(List.of("hegemony", "tritachyon")))
-                .containsExactly("hegemony", "tritachyon");
-        }
-
-        @Test
-        void leavesOutAFactionItCanNameNoBlocFor() {
-            // The same rule the value fold applies, stated once for both: a nameless key would
-            // travel on as a bloc that nothing downstream could name, colour, or rank.
-            var factionIds = new ArrayList<String>();
-
-            factionIds.add("hegemony");
-            factionIds.add(null);
-
-            assertThat(HolderGrouping.identity().collectBlocIds(factionIds))
-                .containsExactly("hegemony");
-        }
-
-        @Test
-        void preservesTheFirstSeenBlocOrderOfTheInput() {
-            // Ordered by the walk that read the factions, not sorted, so a caller that had an order
-            // worth keeping keeps it.
-            assertThat(HolderGrouping.identity().collectBlocIds(List.of("z-faction", "a-faction")))
-                .containsExactly("z-faction", "a-faction");
         }
     }
 

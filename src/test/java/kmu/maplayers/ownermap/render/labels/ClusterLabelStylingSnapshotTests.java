@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.labels;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
 
@@ -8,7 +9,6 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -59,9 +59,9 @@ final class ClusterLabelStylingSnapshotTests {
                 buildCellKey("corvus"),
                 new SystemOwner(
                     SPOTLIT_OWNER_ID,
-                    new OwnerPalette(Color.BLUE, Color.DARK_GRAY)));
+                    new ColourPair(Color.BLUE, Color.DARK_GRAY)));
 
-            var desaturationPalette = new OwnerPalette(Color.LIGHT_GRAY, Color.GRAY);
+            var desaturationPalette = new ColourPair(Color.LIGHT_GRAY, Color.GRAY);
             var clusters = buildClusters(
                 holderBySystemKey,
                 desaturationPalette,
@@ -90,7 +90,7 @@ final class ClusterLabelStylingSnapshotTests {
 
             var clusters = buildClusters(
                 Map.of(),
-                new OwnerPalette(Color.GRAY, Color.GRAY),
+                new ColourPair(Color.GRAY, Color.GRAY),
                 viewReading,
                 contentInputs);
 
@@ -111,7 +111,7 @@ final class ClusterLabelStylingSnapshotTests {
             var styling = ClusterLabelStylingSnapshot.resolveFrom(
                 buildClusters(
                     Map.of(),
-                    new OwnerPalette(Color.GRAY, Color.GRAY),
+                    new ColourPair(Color.GRAY, Color.GRAY),
                     buildViewReading(),
                     ContentInputs.createEmpty()),
                 LABEL_FACE);
@@ -127,7 +127,7 @@ final class ClusterLabelStylingSnapshotTests {
             var styling = ClusterLabelStylingSnapshot.resolveFrom(
                 buildClusters(
                     Map.of(),
-                    new OwnerPalette(Color.GRAY, Color.GRAY),
+                    new ColourPair(Color.GRAY, Color.GRAY),
                     buildViewReading(),
                     ContentInputs.createEmpty()),
                 StarsectorFont.VANILLA_INSIGNIA_25);
@@ -142,15 +142,15 @@ final class ClusterLabelStylingSnapshotTests {
 
         // The global darkening the inert theme carries, applied to the reading's recede shades:
         // light grey and dark grey kept at 70%.
-        private static final OwnerPalette DARKENED_RECEDE_PALETTE =
-            new OwnerPalette(new Color(134, 134, 134), new Color(45, 45, 45));
+        private static final ColourPair DARKENED_RECEDE_PALETTE =
+            new ColourPair(new Color(134, 134, 134), new Color(45, 45, 45));
 
         @Test
         void carriesTheTracedOwnersAndTheViewsReadingAndCategories() {
 
             var ownerBySystemKey = Map.of(
                 buildCellKey("corvus"),
-                new SystemOwner(SPOTLIT_OWNER_ID, new OwnerPalette(Color.BLUE, Color.DARK_GRAY)));
+                new SystemOwner(SPOTLIT_OWNER_ID, new ColourPair(Color.BLUE, Color.DARK_GRAY)));
 
             var viewReading = buildViewReading();
 
@@ -231,7 +231,7 @@ final class ClusterLabelStylingSnapshotTests {
 
     private static OwnerMapClusters buildClusters(
             Map<SystemKey, SystemOwner> holderBySystemKey,
-            OwnerPalette desaturationPalette,
+            ColourPair desaturationPalette,
             ViewReading viewReading,
             ContentInputs contentInputs) {
 

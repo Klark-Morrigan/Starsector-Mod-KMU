@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.math.geometry.CornerRounding;
 import kmlib.starsector.systems.SystemKey;
 
@@ -16,7 +17,6 @@ import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
@@ -92,7 +92,7 @@ final class DebugBorderTracingBuilderTests {
     // nothing to outline.
     private static final String TINY_SYSTEM = "tiny";
     private static final SystemOwner HEGEMONY_OWNER =
-        new SystemOwner(HEGEMONY, new OwnerPalette(Color.RED, Color.BLUE));
+        new SystemOwner(HEGEMONY, new ColourPair(Color.RED, Color.BLUE));
 
     // The live Dev-tab trace parameters, stubbed at their read: a weld tolerance loose enough to
     // chain the hand-built corners, and the miter limit the shipped border uses.

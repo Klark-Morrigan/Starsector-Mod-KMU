@@ -1,7 +1,8 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
+import kmlib.starsector.factions.relation.FactionSetFriendliness;
+
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
 
 import java.util.Objects;
 import java.util.Set;
@@ -34,7 +35,7 @@ import java.util.function.Predicate;
 public record StandingBlockRules(
     Predicate<String> candidacy,
     BlocAffiliation affiliation,
-    BlocFriendliness friendliness,
+    FactionSetFriendliness friendliness,
     Function<String, Set<String>> blocMembership) {
 
     public StandingBlockRules {

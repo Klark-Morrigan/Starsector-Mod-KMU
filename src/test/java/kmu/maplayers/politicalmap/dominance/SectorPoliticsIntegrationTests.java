@@ -6,7 +6,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
@@ -78,7 +79,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(holders)
                 .containsEntry(
                     buildCellKey("owned-system"),
-                    new SystemOwner("hegemony", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                    new SystemOwner("hegemony", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
@@ -95,7 +96,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("frontier-system"),
-                    new SystemOwner("independent", new OwnerPalette(NEUTRAL_BASE, buildDarkTheme(NEUTRAL_BASE))));
+                    new SystemOwner("independent", new ColourPair(NEUTRAL_BASE, buildDarkTheme(NEUTRAL_BASE))));
         }
 
         @Test
@@ -113,7 +114,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("salvage-system"),
-                    new SystemOwner("hegemony", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                    new SystemOwner("hegemony", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
@@ -129,7 +130,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("derelict-system"),
-                    new SystemOwner(Factions.NEUTRAL, new OwnerPalette(NEUTRAL_BASE, buildDarkTheme(NEUTRAL_BASE))));
+                    new SystemOwner(Factions.NEUTRAL, new ColourPair(NEUTRAL_BASE, buildDarkTheme(NEUTRAL_BASE))));
         }
 
         @Test
@@ -148,7 +149,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("unrest-system"),
-                    new SystemOwner("tritachyon", new OwnerPalette(TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT))));
+                    new SystemOwner("tritachyon", new ColourPair(TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT))));
         }
 
         @Test
@@ -187,7 +188,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("hidden-system"),
-                    new SystemOwner("hegemony", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                    new SystemOwner("hegemony", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
@@ -206,7 +207,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("mixed-system"),
-                    new SystemOwner("tritachyon", new OwnerPalette(TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT))));
+                    new SystemOwner("tritachyon", new ColourPair(TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT))));
         }
 
         @Test
@@ -223,7 +224,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("hidden-faction-system"),
-                    new SystemOwner("zea_dusk", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                    new SystemOwner("zea_dusk", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
@@ -277,7 +278,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("tie-system"),
-                    new SystemOwner("tritachyon", new OwnerPalette(TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT))));
+                    new SystemOwner("tritachyon", new ColourPair(TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT))));
         }
 
         @Test
@@ -305,7 +306,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("rama"),
-                    new SystemOwner("hegemony", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                    new SystemOwner("hegemony", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
@@ -340,7 +341,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("rama"),
-                    new SystemOwner("hegemony", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                    new SystemOwner("hegemony", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(
                     DominancePass.createOver(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping)))
@@ -348,7 +349,7 @@ class SectorPoliticsIntegrationTests {
                     buildCellKey("rama"),
                     new SystemOwner(
                         "greater_hegemony",
-                        new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                        new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
@@ -364,7 +365,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("discovered-system"),
-                    new SystemOwner("knights_of_selkie", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                    new SystemOwner("knights_of_selkie", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
@@ -381,7 +382,7 @@ class SectorPoliticsIntegrationTests {
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("owned-system"),
-                    new SystemOwner("hegemony", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                    new SystemOwner("hegemony", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
@@ -408,7 +409,7 @@ class SectorPoliticsIntegrationTests {
                     DominancePass.createOver(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping)))
                 .containsEntry(
                     buildCellKey("contested-system"),
-                    new SystemOwner("alliance-1", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                    new SystemOwner("alliance-1", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
     }
 
@@ -429,7 +430,7 @@ class SectorPoliticsIntegrationTests {
             // The single-system resolve returns the same winner and palette the bulk
             // pass would put under this system's id.
             assertThat(SectorPolitics.resolveDominantHolder(buildOnlySystem(sector), buildPassOver(sector)))
-                .isEqualTo(new SystemOwner("hegemony", new OwnerPalette(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                .isEqualTo(new SystemOwner("hegemony", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test

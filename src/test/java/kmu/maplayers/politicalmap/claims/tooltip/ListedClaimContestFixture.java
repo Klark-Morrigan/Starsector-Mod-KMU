@@ -1,10 +1,10 @@
 package kmu.maplayers.politicalmap.claims.tooltip;
 
+import kmlib.starsector.factions.relation.FactionSetFriendliness;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocFriendliness;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 
 /**
@@ -22,8 +22,8 @@ public final class ListedClaimContestFixture {
     // Nobody above neutral with anybody. Vanilla starts most faction pairs at indifference, so this
     // is the ordinary sector rather than a hostile one - and it is what leaves the friendly block
     // empty over every system a case built here poses.
-    private static final BlocFriendliness INDIFFERENT_FACTIONS =
-        new BlocFriendliness((factionId, otherFactionId) -> false);
+    private static final FactionSetFriendliness INDIFFERENT_FACTIONS =
+        new FactionSetFriendliness((factionId, otherFactionId) -> false);
 
     private ListedClaimContestFixture() {
     }

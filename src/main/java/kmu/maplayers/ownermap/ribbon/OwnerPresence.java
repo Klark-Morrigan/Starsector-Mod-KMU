@@ -1,6 +1,6 @@
 package kmu.maplayers.ownermap.ribbon;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmlib.colour.ColourPair;
 
 /**
  * One owner's stake in one cell's presence ribbon: who it is, the two shades its runs draw
@@ -32,7 +32,7 @@ import kmu.maplayers.ownermap.owners.OwnerPalette;
  */
 public record OwnerPresence(
     String ownerId,
-    OwnerPalette palette,
+    ColourPair palette,
     int marketCount) {
 
     // An owner holding nothing the player may be shown, which is the count presence starts above.

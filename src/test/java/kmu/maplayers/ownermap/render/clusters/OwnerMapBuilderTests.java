@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 import kmlib.starsector.systems.SectorPassIndex;
@@ -13,7 +14,6 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedViewFake;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
@@ -74,7 +74,7 @@ final class OwnerMapBuilderTests {
     private static final SystemKey HELD_SYSTEM = buildCellKey("corvus");
     private static final Color NEUTRAL = new Color(150, 150, 150);
     private static final SystemOwner HELD_BY =
-        new SystemOwner("hegemony", new OwnerPalette(NEUTRAL, NEUTRAL));
+        new SystemOwner("hegemony", new ColourPair(NEUTRAL, NEUTRAL));
 
     // The picks a pass off filter was baked under, and one spotlighting an owner.
     private static final ContentInputs UNFILTERED_INPUTS =

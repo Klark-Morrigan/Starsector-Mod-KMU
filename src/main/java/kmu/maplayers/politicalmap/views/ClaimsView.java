@@ -6,14 +6,12 @@ import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
-import kmu.maplayers.ownermap.owners.holders.factions.FactionOwnerReading;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
@@ -36,10 +34,8 @@ import java.util.Optional;
  * grouping is {@link HolderGrouping#identity()} and a claimed system reads under its own faction's
  * border and name.
  *
- * <p>A bloc's styling and label are the faction view's exactly - an independent claimant recedes like
- * independent territory, and a bloc is named by its claiming faction's own display name - so it
- * takes the same faction owner reading and categories {@link FactionsView} does rather than restating
- * them, which keeps the two views from drifting on how a plain faction bloc paints and reads.
+ * <p>A bloc paints and reads exactly as on the factions view, through the faction reading and
+ * categories every view of this layer shares.
  *
  * <p>Its spotlight picker is its own, not the held layers': the blocs it offers are the ones that
  * claim a system or live in one, and they carry claim metrics rather than domination ones, so the
@@ -124,15 +120,6 @@ public final class ClaimsView
     }
 
     @Override
-    public OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
-        // A claimant bloc is read exactly as the faction view reads a held one - an independent
-        // claimant recedes like independent territory, and a claim bloc ID is a plain faction ID
-        // under identity grouping, named by the claiming faction - so it takes the one faction
-        // reading rather than restating any of it.
-        return new FactionOwnerReading(sector);
-    }
-
-    @Override
     public Optional<MapHoverTooltip> resolveHoverTooltip() {
         // The claim breakdown, not the domination one the other two views inject: this layer paints by
         // the claim mechanic, so what a hover has to explain is the claim contest rather than the
@@ -176,7 +163,7 @@ public final class ClaimsView
 
             // The layer-generic pass: this layer is painted by claims, and a claim count and a
             // colony size are read without weighing anything.
-            var pass = HolderPass.over(sector, colonyReadRules, grouping);
+            var pass = HolderPass.createOver(sector, colonyReadRules, grouping);
 
             // The claim half reads through the pass's own colony walk, so the two metrics cost one
             // traversal of each system between them rather than one apiece - and are answered off

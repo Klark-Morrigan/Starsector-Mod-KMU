@@ -4,7 +4,6 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
-import kmu.maplayers.ownermap.owners.holders.base.picker.SharedBlocSortModes;
 import kmu.maplayers.ownermap.owners.holders.base.picker.SizedBlocMetrics;
 import kmu.maplayers.ownermap.picker.OwnerMetricSortMode;
 import kmu.maplayers.ownermap.picker.OwnerSortModeComposer;
@@ -30,7 +29,7 @@ import java.util.function.ToIntFunction;
  * mode of every vocabulary answers the picker identically and breaks a tie the same way.
  *
  * <p>{@link #MARKET_SIZE} is asked for rather than declared: its number is measured the same way under
- * every mechanic, so {@link SharedBlocSortModes} owns its key and label and this vocabulary supplies
+ * every mechanic, so {@link SizedBlocMetrics} owns its key and label and this vocabulary supplies
  * only the chain. The claim count is this mechanic's own and is named nowhere else.
  *
  * <p>{@link #DEFAULT} is claims - the metric the layer is actually painted by, so a fresh save and any
@@ -72,7 +71,7 @@ public final class ClaimSortModes {
             CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedOwner<ClaimStats>> MARKET_SIZE =
-        SharedBlocSortModes.declareMarketSizeMode(CANONICAL_METRIC_CHAIN);
+        SizedBlocMetrics.createMarketSizeMode(CANONICAL_METRIC_CHAIN);
 
     /** The mode a fresh save and any unrecognised stored key fall back to, so an ordering always exists. */
     public static final ListSortMode<RankedOwner<ClaimStats>> DEFAULT = CLAIMS;
@@ -80,7 +79,7 @@ public final class ClaimSortModes {
     /**
      * This mechanic's half of the claims view's sort vocabulary - every mode declared here in selector
      * display order, with {@link #DEFAULT} as the fallback. The view hands it to
-     * {@link HolderPaintedView#buildBlocPickerRead}, which offers it with the standing ranking behind
+     * {@link HolderPaintedView#readPickerUnderOneGrouping}, which offers it with the standing ranking behind
      * it, so the selector draws these numbers plus the one criterion no vocabulary declares.
      *
      * <p>It travels with the bloc list from there on, which is what keeps the rows and the modes that

@@ -1,32 +1,49 @@
 package kmu.maplayers.politicalmap.views;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmlib.starsector.systems.SectorPassIndex;
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
+import kmu.maplayers.politicalmap.dominance.DominanceStats;
+import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
+import kmu.maplayers.politicalmap.dominance.DominanceStatsRead;
 import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+import java.util.function.Predicate;
 
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.STANDARD_RULES;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins what every view the domination contest paints answers alike: the claim-extended holding,
- * the per-system contest, and the band counting by the mechanic that painted each cell.
+ * the per-system contest, the band counting by the mechanic that painted each cell, and a picker of
+ * the contest's own numbers under a weighting rule.
  *
  * <p>Read off the interface's own defaults rather than off a concrete view, so each is pinned once.
  * A view's own suite then pins only what that view decides.
@@ -55,21 +72,21 @@ final class DominancePaintedViewTests {
         @Test
         void reDerivesAMarkedSystemByTheMarketContest() {
             // The per-system half of the contest, so a refreshed cell lands the bloc the whole-sector
-            // resolve would. The weighting rule reaches LunaLib, so the pass it builds is handed over
-            // already resolved.
+            // resolve would - opened over the batch's own pass.
             var holding = new HolderPass(
                 new SectorPassIndex(null),
                 UNDER_THE_FOG,
                 HolderGrouping.identity());
+            var resolveMock = mock(SystemHolderResolve.class);
 
-            try (var passMock = mockStatic(DominancePass.class)) {
+            try (var resolveFactoryMock = mockStatic(DominanceSystemHolderResolve.class)) {
 
-                passMock
-                    .when(() -> DominancePass.readRulesFromLunaSettings(any(HolderPass.class)))
-                    .thenReturn(new DominancePass(mock(DominanceRules.class), holding));
+                resolveFactoryMock
+                    .when(() -> DominanceSystemHolderResolve.openResolveOver(holding))
+                    .thenReturn(resolveMock);
 
                 assertThat(viewMock.resolveSystemHolderResolveSource().openResolveOver(holding))
-                    .isInstanceOf(DominanceSystemHolderResolve.class);
+                    .isSameAs(resolveMock);
             }
         }
     }
@@ -81,33 +98,125 @@ final class DominancePaintedViewTests {
         void countsEachSystemByTheMechanicThatPaintedIt() {
             // A contest-painted view paints held territory and extends it with claims, so its bands
             // are counted the same way round rather than one mechanic answering for cells the other
-            // painted. The held half names the player's live weighting rule, which reaches LunaLib,
-            // so the pass it would build is handed over already resolved. Undiscovered colonies do
-            // not count, as on the live map.
-            var holding = new HolderPass(
-                new SectorPassIndex(null),
-                UNDER_THE_FOG,
-                HolderGrouping.identity());
+            // painted.
+            var inputs = new RibbonPlanInputs(
+                new HolderPass(new SectorPassIndex(null), UNDER_THE_FOG, HolderGrouping.identity()),
+                blocId -> null,
+                OwnerAffiliation.NONE,
+                STANDARD_RULES);
+            var plannerMock = mock(HeldOrClaimedSystemRibbonPlanner.class);
 
-            try (var passMock = mockStatic(DominancePass.class)) {
+            try (var plannerFactoryMock = mockStatic(HeldOrClaimedSystemRibbonPlanner.class)) {
 
-                passMock
-                    .when(() -> DominancePass.readRulesFromLunaSettings(any(HolderPass.class)))
-                    // Built through the constructor rather than the static entry, which is stood
-                    // in for here and would answer with the stand-in rather than build a pass.
-                    .thenReturn(new DominancePass(mock(DominanceRules.class), holding));
+                plannerFactoryMock
+                    .when(() -> HeldOrClaimedSystemRibbonPlanner.createForPass(inputs))
+                    .thenReturn(plannerMock);
 
-                var planner = viewMock.resolveRibbonPlanner(
-                    new RibbonPlanInputs(
-                        holding,
-                        blocId -> null,
-                        // Nothing stands together, the case being about which planner the view
-                        // assembles rather than about how any cell of it is judged.
-                        OwnerAffiliation.NONE,
-                        STANDARD_RULES));
+                assertThat(viewMock.resolveRibbonPlanner(inputs))
+                    .isSameAs(plannerMock);
+            }
+        }
+    }
 
-                assertThat(planner)
-                    .isInstanceOf(HeldOrClaimedSystemRibbonPlanner.class);
+    @Nested
+    class ResolveBlocPickerRead {
+
+        // Any stated rule; a case about which rule is handed on compares by identity.
+        private static final DominanceRules ANY_RULES_MOCK = mock(DominanceRules.class);
+
+        // Forwarded onto a row verbatim, so any stats stand in.
+        private static final DominanceStats ANY_STATS = new DominanceStats(3, 2, 5000, 7);
+
+        @BeforeEach
+        void stubTheViewsOwnAnswers() {
+
+            doReturn(HolderGrouping.identity()).when(viewMock).resolveGrouping();
+            doReturn((Predicate<String>) blocId -> true)
+                .when(viewMock)
+                .resolveSelectableBlocGate(any());
+        }
+
+        @Test
+        void carriesTheContestsOwnNumbersOnEachRow() {
+            // The rows are the dominance aggregator's: these are the metrics a contest-painted bloc
+            // carries, so the picker ranks by the numbers the map paints by.
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
+                    .thenReturn(new DominanceStatsRead(Map.of("hegemony", ANY_STATS), OwnerPresenceIndex.EMPTY));
+
+                assertThat(viewMock.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES_MOCK, UNDER_THE_FOG)
+                        .picker()
+                        .items())
+                    .extracting(RankedOwner::itemId, RankedOwner::stats)
+                    .containsExactly(tuple("hegemony", ANY_STATS));
+            }
+        }
+
+        @Test
+        void ranksItsBlocsByTheDominanceVocabularyThenTheirStanding() {
+            // The pairing is fixed rather than a per-view choice: the numbers these blocs carry are
+            // the contest's, so the vocabulary is too. The standing ranking behind it is the one fact
+            // every view offers.
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
+                    .thenReturn(DominanceStatsRead.EMPTY);
+
+                assertThat(viewMock.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES_MOCK, UNDER_THE_FOG)
+                        .picker()
+                        .sortModes()
+                        .modes())
+                    .extracting(ListSortMode::persistenceKey)
+                    .containsExactly(
+                        "name", "domination", "presence", "score", "market_size", "player_standing");
+            }
+        }
+
+        @Test
+        void weighsUnderTheStatedRuleAndTheSampledGrouping() {
+            // A caller that has already sampled the rule states it, so the pass the numbers come off
+            // is opened under that rule rather than a second read of the player's.
+            var sectorMock = mock(SectorAPI.class);
+
+            try (var passMock = mockStatic(DominancePass.class);
+                    var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
+                    .thenReturn(DominanceStatsRead.EMPTY);
+
+                viewMock.resolveBlocPickerRead(sectorMock, ANY_RULES_MOCK, UNDER_THE_FOG);
+
+                passMock.verify(() -> DominancePass.createOver(
+                    same(sectorMock),
+                    same(ANY_RULES_MOCK),
+                    same(UNDER_THE_FOG),
+                    same(HolderGrouping.identity())));
+            }
+        }
+
+        @Test
+        void weighsUnderThePlayersLiveRuleOnTheLiveEntry() {
+            // The entry the shared seam reaches reads the player's rule, the one input that seam does
+            // not carry.
+            var sectorMock = mock(SectorAPI.class);
+
+            try (var rulesMock = mockStatic(DominanceRules.class);
+                    var passMock = mockStatic(DominancePass.class);
+                    var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                rulesMock.when(DominanceRules::readFromLunaSettings)
+                    .thenReturn(ANY_RULES_MOCK);
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
+                    .thenReturn(DominanceStatsRead.EMPTY);
+
+                viewMock.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG);
+
+                passMock.verify(() -> DominancePass.createOver(
+                    same(sectorMock),
+                    same(ANY_RULES_MOCK),
+                    same(UNDER_THE_FOG),
+                    same(HolderGrouping.identity())));
             }
         }
     }

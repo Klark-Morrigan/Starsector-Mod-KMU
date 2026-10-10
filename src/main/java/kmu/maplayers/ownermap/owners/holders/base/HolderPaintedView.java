@@ -9,13 +9,13 @@ import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.base.picker.BlocPickerAssembly;
-import kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingSortMode;
 import kmu.maplayers.ownermap.picker.OwnerMetrics;
 import kmu.maplayers.ownermap.picker.OwnerPickerRead;
 import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -101,12 +101,7 @@ public interface HolderPaintedView
         return new ViewReading(
             this,
             resolveOwnerReading(sector, grouping),
-            new HolderOwnerSource(
-                grouping,
-                resolveContestAffiliation(),
-                resolveHolderProvider(),
-                resolveSystemHolderResolveSource(),
-                this::resolveRibbonPlanner));
+            new HolderOwnerSource(grouping, this));
     }
 
     /**
@@ -147,48 +142,34 @@ public interface HolderPaintedView
     }
 
     /**
-     * Turns one bloc walk's read into the picker read a view offers, so an overriding view declares
-     * only what distinguishes it - which of the present blocs are targets, and which vocabulary
-     * ranks them - rather than repeating the crest, name, and option assembly every view resolves
-     * identically.
+     * This view's picker over one sampling of its grouping: the walk is read under it, and the rows
+     * are gated, named and badged under it, as {@link BlocPickerAssembly} lays out.
      *
-     * <p>It takes the walk's read whole rather than its totals and its presence apart. The two are
-     * one reading of the sector ({@link OwnerStatsRead}), so passing them separately would let a view
-     * hand over a map from one walk and an index from another, which is precisely the disagreement
-     * the paired read exists to make impossible.
-     *
-     * <p>The crest and the label are this view's own owner reading's, resolved here over the walk's
-     * grouping, so the rows name and badge each bloc exactly as the map does. A bloc with no crest
-     * keeps its option and simply draws its name alone. The label is always in the short form: the
-     * picker labels a bloc by its short name regardless of the map's name-format setting, so a
-     * long-form map label never widens the sidebar's option rows.
-     *
-     * <p>The vocabulary it bundles is the caller's own modes with {@link BlocStandingSortMode} behind
-     * them, which is why the sector and the grouping are read here beside the reading. Where a
-     * bloc stands with the player is one fact read off the sector rather than a number any
-     * mechanic's fold computes, so it is offered from the single point every view's read passes
-     * through instead of being declared into each vocabulary.
+     * <p>Sampled once here rather than per read, because a grouping can be a live read of the game:
+     * sampled twice, the numbers and the rows naming them could come off two different memberships.
      *
      * @param <S>             the calling view's own metrics type, ranked by that view's vocabulary
-     * @param sector          the sector a bloc's standing with the player, name and crest are read
-     *                        from
-     * @param grouping        the grouping the walk folded under, so the gate, the reading and a
-     *                        bloc's membership resolve against the same snapshot the numbers came
-     *                        from
-     * @param statsRead       the walk's totals and the systems behind them, in the order it surfaced
-     *                        them, which the returned rows preserve
+     * @param sector          the sector the rows' standing with the player, names and crests are
+     *                        read from
+     * @param statsReader     the view's own walk, read under the sampled grouping
      * @param vocabularyModes the calling layer's own modes - the numbers its rows carry - bundled
      *                        with those rows so a row can only ever be sorted by numbers it carries
      * @return the rows this view offers paired with the vocabulary that ranks them, beside the whole
      *         walk's presence
      */
-    default <S extends OwnerMetrics> OwnerPickerRead<RankedOwner<S>> buildBlocPickerRead(
+    default <S extends OwnerMetrics> OwnerPickerRead<RankedOwner<S>> readPickerUnderOneGrouping(
             SectorAPI sector,
-            HolderGrouping grouping,
-            OwnerStatsRead<S> statsRead,
+            Function<HolderGrouping, OwnerStatsRead<S>> statsReader,
             ListSortModes<RankedOwner<S>> vocabularyModes) {
 
-        return BlocPickerAssembly.buildBlocPickerRead(this, sector, grouping, statsRead, vocabularyModes);
+        var grouping = resolveGrouping();
+
+        return BlocPickerAssembly.buildBlocPickerRead(
+            this,
+            sector,
+            grouping,
+            statsReader.apply(grouping),
+            vocabularyModes);
     }
 
     /**

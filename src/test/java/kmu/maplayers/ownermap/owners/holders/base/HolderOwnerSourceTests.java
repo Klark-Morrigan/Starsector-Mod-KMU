@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
@@ -13,7 +14,6 @@ import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
@@ -41,6 +42,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins what the owner source of a layer painting holders adds to the layer's own rules: one pass per
@@ -65,7 +68,7 @@ final class HolderOwnerSourceTests {
     private static final SystemKey UNFILLED_SYSTEM = buildCellKey("eos");
 
     private static final SystemOwner HEGEMONY_OWNER =
-        new SystemOwner(HEGEMONY, new OwnerPalette(Color.RED, Color.BLUE));
+        new SystemOwner(HEGEMONY, new ColourPair(Color.RED, Color.BLUE));
 
     // A colony rule that is plainly not the fog alone, so a pass opened under a rule of its own fails
     // the case about which rule it reads under rather than passing it by coincidence.
@@ -125,12 +128,9 @@ final class HolderOwnerSourceTests {
         @Test
         void refusesAMissingGrouping() {
 
-            assertThatThrownBy(() -> new HolderOwnerSource(
-                    null,
-                    OwnerAffiliation.NONE,
-                    HolderProviderFake.createHoldingNothing(),
-                    holderResolveSourceFake,
-                    inputs -> system -> RibbonPlan.NONE))
+            var viewMock = stubViewOver(OwnerAffiliation.NONE, inputs -> system -> RibbonPlan.NONE);
+
+            assertThatThrownBy(() -> new HolderOwnerSource(null, viewMock))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("grouping");
         }
@@ -138,12 +138,12 @@ final class HolderOwnerSourceTests {
         @Test
         void refusesAMissingHoldingRule() {
 
-            assertThatThrownBy(() -> new HolderOwnerSource(
-                    HolderGrouping.identity(),
-                    OwnerAffiliation.NONE,
-                    null,
-                    holderResolveSourceFake,
-                    inputs -> system -> RibbonPlan.NONE))
+            var viewMock = stubViewOver(OwnerAffiliation.NONE, inputs -> system -> RibbonPlan.NONE);
+
+            when(viewMock.resolveHolderProvider())
+                .thenReturn(null);
+
+            assertThatThrownBy(() -> new HolderOwnerSource(HolderGrouping.identity(), viewMock))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("holderProvider");
         }
@@ -397,12 +397,7 @@ final class HolderOwnerSourceTests {
             // than the grouping the counts fold under.
             OwnerAffiliation allied = (first, second) -> !first.equals(second);
 
-            new HolderOwnerSource(
-                    HolderGrouping.identity(),
-                    allied,
-                    buildProvider(),
-                    holderResolveSourceFake,
-                    this::recordPlannerInputs)
+            new HolderOwnerSource(HolderGrouping.identity(), stubViewOver(allied, this::recordPlannerInputs))
                 .resolveRibbonPlanner(buildWalkUnder(MapVisibilityRules.BASE), RULES);
 
             assertThat(plannerInputs.get(0).affiliation())
@@ -428,10 +423,7 @@ final class HolderOwnerSourceTests {
 
             var answered = new HolderOwnerSource(
                     HolderGrouping.identity(),
-                    OwnerAffiliation.NONE,
-                    buildProvider(),
-                    holderResolveSourceFake,
-                    inputs -> planner)
+                    stubViewOver(OwnerAffiliation.NONE, inputs -> planner))
                 .resolveRibbonPlanner(buildWalkUnder(MapVisibilityRules.BASE), RULES);
 
             assertThat(answered)
@@ -449,13 +441,29 @@ final class HolderOwnerSourceTests {
 
         return new HolderOwnerSource(
             grouping,
-            OwnerAffiliation.NONE,
-            buildProvider(),
-            holderResolveSourceFake,
-            inputs -> {
+            stubViewOver(OwnerAffiliation.NONE, inputs -> {
                 plannerInputs.add(inputs);
                 return system -> RibbonPlan.NONE;
-            });
+            }));
+    }
+
+    // A view answering the recording rules, the stated affiliation and the stated band planner.
+    private HolderPaintedView stubViewOver(
+            OwnerAffiliation affiliation,
+            Function<RibbonPlanInputs, SystemRibbonPlanner> plannerSource) {
+
+        var viewMock = mock(HolderPaintedView.class);
+
+        when(viewMock.resolveContestAffiliation())
+            .thenReturn(affiliation);
+        when(viewMock.resolveHolderProvider())
+            .thenReturn(buildProvider());
+        when(viewMock.resolveSystemHolderResolveSource())
+            .thenReturn(holderResolveSourceFake);
+        when(viewMock.resolveRibbonPlanner(any()))
+            .thenAnswer(invocation -> plannerSource.apply(invocation.getArgument(0)));
+
+        return viewMock;
     }
 
     // The layer's whole-sector rule: one held system, one contested and one unfilled, recording the

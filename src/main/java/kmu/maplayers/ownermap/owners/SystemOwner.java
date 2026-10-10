@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.owners;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGrouping;
@@ -27,7 +28,7 @@ import java.util.Set;
  */
 public record SystemOwner(
     String ownerId,
-    OwnerPalette palette) {
+    ColourPair palette) {
 
     /**
      * Maps each owned system to its owner's ID - the per-system key the owner-map geometry clusters

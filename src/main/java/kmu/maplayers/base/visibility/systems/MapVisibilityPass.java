@@ -7,7 +7,6 @@ import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKeyedMemo;
 
-import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 
 import java.util.Objects;
@@ -219,7 +218,7 @@ public final class MapVisibilityPass {
         for (var colony : colonyKnowledge
                 .readInhabitingColonies(sectorIndex.readColoniesIn(system))) {
 
-            if (colonyKnowledge.readKindOf(colony) == ColonyKind.UNGOVERNED_COLONY) {
+            if (colonyKnowledge.readKindOf(colony).isUngoverned()) {
                 return true;
             }
         }

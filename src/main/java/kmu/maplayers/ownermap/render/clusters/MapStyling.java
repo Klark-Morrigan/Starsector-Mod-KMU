@@ -1,7 +1,8 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.theme.RenderStyle;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 
 import java.awt.Color;
@@ -34,9 +35,9 @@ import java.awt.Color;
 public record MapStyling(
     RenderStyle renderStyle,
     OwnerCategories categories,
-    OwnerPalette neutralPalette,
-    OwnerPalette desaturationPalette,
-    OwnerPalette presencePalette) {
+    ColourPair neutralPalette,
+    ColourPair desaturationPalette,
+    ColourPair presencePalette) {
 
     // The shade every slot of the placeholder below holds. A bare mid grey rather than a layer's
     // unowned shade: the placeholder stands in for a build that never got as far as reading a
@@ -48,8 +49,8 @@ public record MapStyling(
     // All three of the placeholder's palettes, at that one shade in both slots. One value shared
     // between them rather than three equal pairs, since none is ever read and a second would only
     // invite a reader to hunt for the difference between them.
-    private static final OwnerPalette PLACEHOLDER_PALETTE =
-        new OwnerPalette(PLACEHOLDER_COLOUR, PLACEHOLDER_COLOUR);
+    private static final ColourPair PLACEHOLDER_PALETTE =
+        new ColourPair(PLACEHOLDER_COLOUR, PLACEHOLDER_COLOUR);
 
     /**
      * The inert scheme a build that never resolved a theme carries - the fallback the render path

@@ -12,6 +12,7 @@ import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.alliances.AllianceOwnerReading;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
+import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStringKeys;
@@ -21,20 +22,10 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
- * The alliances view's render rules: allied factions fuse into one bloc per alliance so an
- * alliance reads as a single coloured, named cluster, while every unaligned faction keeps its
- * own border and name. Two orthogonal knobs recede a non-allied faction: Mute dims its opacity
- * by the muted modifier while leaving its faction style and colours intact, and Desaturate makes
- * it adopt the independent style - the independent borders and seams plus the desaturation
- * palette - so it reads as independent territory. Its fill holds the faction fill opacity, since
- * a desaturated territory reads as one uniform surface separated by colour alone. Desaturate
- * starts on and Mute off, so the view opens with the alliances already reading as the figure;
- * turn both off and a non-allied faction paints exactly as the faction view draws it, so a lone
- * faction reads identically in both views and only the allied factions differ between the two.
- * A sector holding no alliance recedes nothing, whatever the toggles say - there is no figure for
- * a backdrop to sit behind. It exists so the shared pipeline can paint alliances without knowing
- * anything about them - the view supplies the grouping and how far its backdrop recedes, and the
- * alliance owner reading answers the recede test and the label off that grouping.
+ * The alliances view: allied factions fuse into one bloc per alliance, while every unaligned faction
+ * keeps its own border and name and recedes behind them by this view's own Mute and Desaturate
+ * toggles. The view supplies the grouping and how far its backdrop recedes; the alliance owner
+ * reading answers which blocs recede and what they are called.
  *
  * <p>The grouping is sampled live from Nexerelin, which is why the view is registered only
  * when Nex is present. It names no {@code exerelin.*} type of its own: {@link NexerelinAlliances}
@@ -48,8 +39,8 @@ public final class AlliancesView
     public static final AlliancesView INSTANCE = new AlliancesView();
 
     // This view's own backdrop: every faction outside an alliance, receded so the alliances read as
-    // the figure. Independent of the layer's filter recede, so it keeps its own toggles under the keys
-    // they have always been saved under - frozen, since a rename resets every save's choice.
+    // the figure. Independent of the layer's filter recede, so it keeps toggles of its own. The keys
+    // are frozen save keys: a rename resets every save's choice.
     //
     // Not folded into the content revision: the bake samples the toggles with every other
     // preference and folds them in as values, so a flip that leaves the recede where it was rebuilds
@@ -58,8 +49,7 @@ public final class AlliancesView
         "$kmu_political_alliance_recede_mute",
         "$kmu_political_alliance_recede_desaturate");
 
-    // The hover box this view injects, ranking under this view's own grouping - so the box explains
-    // the fills this view painted, whichever layer or screen is asking.
+    // Ranks under this view's own grouping, so the box explains the fills this view painted.
     private final SystemDominationTooltip hoverTooltip =
         SystemDominationTooltip.createPaintedBy(this::resolveGrouping);
 
@@ -104,8 +94,6 @@ public final class AlliancesView
 
     @Override
     public Optional<MapHoverTooltip> resolveHoverTooltip() {
-        // The alliance and faction views share the one domination tooltip: it adapts flat vs nested
-        // off the active grouping, so under this view a bloc reads as its members nested beneath it.
         return Optional.of(hoverTooltip);
     }
 
@@ -121,9 +109,12 @@ public final class AlliancesView
     @Override
     public List<ControlSpec> getViewBodyControls(BodyControlTarget target) {
 
-        // The Mute/Desaturate checkboxes belong only to this view, so they show solely while it is
-        // selected; keeping them behind AllianceBodyControls keeps every alliance-only control in one
-        // place beside the view that owns them.
-        return AllianceBodyControls.buildControls(target);
+        // The shared recede control bound to this view's own toggles, shown only while it is
+        // selected. The checkbox shape and wiring are the control's; the set and caption are this
+        // view's.
+        return RecedeControl.buildControls(
+            NON_ALLIED_RECEDE,
+            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION),
+            target);
     }
 }
