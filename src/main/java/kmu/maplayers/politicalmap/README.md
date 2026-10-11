@@ -483,7 +483,7 @@ so shelving them under either mechanic would make that mechanic name the other.
 | `claims` | the claim mechanic: `SectorClaims`, `FilteredClaims`, `PassClaimReaders`, the stats and sort modes |
 | [`claims/ribbon`](claims/ribbon/README.md) | the band ranking on a claims-layer cell |
 | `claims/tooltip` | the [claims box](#the-claims-box) |
-| `tooltip` | what both box families share: `PoliticalMapCellTooltip`, `CoreTerritoryHeading`, the contest wording, and the live-visibility claim read |
+| `tooltip` | what both box families share: `PoliticalMapCellTooltip`, `CoreTerritoryHeading`, the contest wording, the live-visibility claim read, the [status line](#the-status-line-and-the-colony-vocabulary) (`SystemStatusRow`), and the colony lines - a system's colony reading (`SystemColonyReading`) with the qualifier and the observation notes it lays on them |
 | `refresh` | what repaints the overlay while the campaign runs ([refresh](#refresh)) |
 | `render` | the player's draw-order choices, read as the tier's band layout |
 
@@ -1038,14 +1038,19 @@ the Academy is a hidden colony to `ColonyVisibility` still,
 gated still,
 and admitted still only by Ancyra settling the system.
 
-Each box fills in a small `ColonyQualifierFacts` from what it holds -
+Each box hands over the colony a line names as an `AccountedColony`,
+carrying the two facts only its own row holds:
+whether the colony conceals itself,
+and whether the economy lists it -
 the claims box off `MarketClaimBreakdown`'s admission,
-handing its own `claim holder` wording (`POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER`) in as the finding that leads,
-since the shared resolver is the tier's and names no mechanic;
-the domination box off `MarketWeightBreakdown.isHiddenMarket` or the `UnweighedColony` -
-and the kind,
+the domination box off `MarketWeightBreakdown.isHiddenMarket` or the `UnweighedColony`.
+The economy listing is named by the factory a box calls rather than passed beside the concealment,
+since two adjacent flags about being out of view swap without failing.
+The claims box also hands in its own `claim holder` wording (`POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER`) as the finding that leads,
+since the shared vocabulary names no mechanic.
+The kind,
 the discovery answer and the landmark answer come off the box's own walk of the system
-(`SystemColonyReading`, whose `readConcealmentOf` gathers its two answers with the account's own concealment fact),
+(`SystemColonyReading`, which gathers them with the row's two facts into what the qualifier reads),
 no row of either box carrying any of them.
 
 ### The claims box

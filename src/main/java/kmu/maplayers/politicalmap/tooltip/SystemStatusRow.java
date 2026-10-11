@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.owners.holders.base.tooltip;
+package kmu.maplayers.politicalmap.tooltip;
 
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
@@ -43,32 +43,10 @@ public final class SystemStatusRow {
     /**
      * Resolves the status line for a system nobody the player knows of lives in.
      *
-     * <p>Answered off habitation rather than off the listing beneath it, because the line is a
-     * statement about the system and not a heading for the breakdown: it says whether people live
-     * here, while the breakdown names everything the player may be told about. The two part over
-     * the derelict, and the parting is the true reading rather than the disagreement it looks
-     * like - a system holding one derelict and nothing else is unpopulated space, and the box
-     * beneath still names it. The same holds the other way with a colony beside the derelict: the
-     * line reads populated on the colony's account and the box names both.
-     *
-     * <p>The rule arrives from the caller rather than being read here, which is what keeps this in
-     * step with the body below it: a status resolved under a rule of its own would eventually
-     * withhold a colony the breakdown went on to name, or count one it did not.
-     *
-     * <p>Withholding a colony never leaks. A colony the rule holds back fails the projection
-     * outright, so its system keeps its status line and the absence of one never becomes a tell
-     * that something is hiding there.
-     *
-     * <p>The colonies arrive read rather than as a sector to walk, so a box that has already read
-     * the system - which every box drawing this line has, the standings beside it being ranked off
-     * that very walk - heads itself for the cost of a projection rather than of a second traversal.
-     * A caller with no walk behind it selects one and hands it over, so the cost of the walk is
-     * visible where it is paid.
-     *
-     * <p>The collapse comes out of that same projection rather than off a walk of the system's
-     * planets. A collapsed colony is one of the colonies habitation admits, so the line and the
-     * breakdown beneath it are answered from one reading - where two readings could have headed a
-     * system Decivilised over a box that named no such colony in it.
+     * <p>Answered off habitation rather than off the listing beneath it, because the line says
+     * whether people live here while the listing names everything the player may be told about. A
+     * system holding one derelict and nothing else is unpopulated space, and the box beneath still
+     * names the derelict.
      *
      * @param colonies        the hovered system's colonies, as one walk of it reported
      * @param colonyKnowledge what the player may be told about a colony, passed by the caller so

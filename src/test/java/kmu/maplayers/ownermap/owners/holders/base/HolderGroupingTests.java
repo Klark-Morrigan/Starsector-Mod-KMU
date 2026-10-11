@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.owners.holders.base;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -14,33 +15,58 @@ import static org.assertj.core.api.Assertions.entry;
  * faction its own bloc, and a grouping holding a group folds members into the bloc while
  * outsiders stay themselves. These are the answers the regroup step and the render
  * rules read, so they are fixed here on hand-built maps free of any live group source.
+ *
+ * <p>A faction with no ID is posed against every lookup. The game itself always names its
+ * factions and a mod may not, and each lookup reads an immutable map, which faults on a null key
+ * rather than reporting it absent - even the identity grouping's empty ones. Unguarded, such an
+ * owner would take down whatever walk reached it: a band's count, a footprint regroup, or a render
+ * rule asking whether its bloc is a group.
  */
-class HolderGroupingTests {
+final class HolderGroupingTests {
+
+    @Nested
+    class Constructor {
+
+        @Test
+        void keepsItsLookupsWhenTheSourceMapsChangeAfterwards() {
+            // A grouping is sampled once per rebuild and read for the whole pass, so a supplier
+            // reusing its maps for the next sampling must not move the fold under a pass in flight.
+            var blocIdByFactionId = new HashMap<>(Map.of("hegemony", "group-1"));
+            var colourFactionIdByBlocId = new HashMap<>(Map.of("group-1", "hegemony"));
+            var groupNameByBlocId = new HashMap<>(Map.of("group-1", "Allied Powers"));
+
+            var grouping = new HolderGrouping(blocIdByFactionId, colourFactionIdByBlocId, groupNameByBlocId);
+
+            blocIdByFactionId.put("tritachyon", "group-1");
+            colourFactionIdByBlocId.put("group-1", "tritachyon");
+            groupNameByBlocId.put("group-2", "Free Traders");
+
+            assertThat(grouping.resolveBlocId("tritachyon"))
+                .isEqualTo("tritachyon");
+            assertThat(grouping.resolveColourFactionId("group-1"))
+                .isEqualTo("hegemony");
+            assertThat(grouping.isGroupedBloc("group-2"))
+                .isFalse();
+        }
+    }
 
     @Nested
     class Identity {
 
         @Test
-        void mapsEveryFactionToItself() {
-
-            assertThat(HolderGrouping.identity().resolveBlocId("hegemony"))
-                .isEqualTo("hegemony");
+        void answersTheOneSharedGrouping() {
+            // Every entry point taking no explicit grouping falls back to this, so it is one value
+            // rather than a fresh one per ask.
+            assertThat(HolderGrouping.identity())
+                .isSameAs(HolderGrouping.identity());
         }
 
         @Test
-        void coloursEveryBlocAsItself() {
-
-            assertThat(HolderGrouping.identity().resolveColourFactionId("hegemony"))
-                .isEqualTo("hegemony");
-        }
-
-        @Test
-        void treatsNoBlocAsAGroup() {
-
-            assertThat(HolderGrouping.identity().isGroupedBloc("hegemony"))
-                .isFalse();
-            assertThat(HolderGrouping.identity().resolveGroupName("hegemony"))
-                .isNull();
+        void groupsNoFactionAwayFromItself() {
+            // The sparse maps are what make every lookup fall through to the faction itself, so
+            // the identity grouping is all three of them empty.
+            assertThat(HolderGrouping.identity())
+                .isEqualTo(new HolderGrouping(Map.of(), Map.of(), Map.of()));
         }
     }
 
@@ -60,51 +86,21 @@ class HolderGroupingTests {
             assertThat(buildSingleGroupGrouping().resolveBlocId("tritachyon"))
                 .isEqualTo("tritachyon");
         }
-    }
 
-    @Nested
-    class UnnamedIds {
-
-        // A faction the game itself would always have named, and a mod may not. Every lookup here
-        // reads an immutable map, which faults on a null key rather than reporting it absent - even
-        // the identity grouping's empty ones - so an owner with no ID would otherwise take down
-        // whatever walk reached it: a band's count, a footprint regroup, or a render rule asking
-        // whether its bloc is a group.
         @Test
-        void resolveBlocIdNamesNoBlocForAFactionWithNoId() {
+        void mapsEveryFactionToItselfUnderTheIdentityGrouping() {
+
+            assertThat(HolderGrouping.identity().resolveBlocId("hegemony"))
+                .isEqualTo("hegemony");
+        }
+
+        @Test
+        void namesNoBlocForAFactionWithNoId() {
 
             assertThat(buildSingleGroupGrouping().resolveBlocId(null))
                 .isNull();
             assertThat(HolderGrouping.identity().resolveBlocId(" "))
                 .isNull();
-        }
-
-        @Test
-        void resolveColourFactionIdNamesNoPaletteForABlocWithNoId() {
-
-            assertThat(buildSingleGroupGrouping().resolveColourFactionId(null))
-                .isNull();
-            assertThat(HolderGrouping.identity().resolveColourFactionId(" "))
-                .isNull();
-        }
-
-        @Test
-        void resolveGroupNameReadsABlocWithNoIdAsNoGroup() {
-
-            assertThat(buildSingleGroupGrouping().resolveGroupName(null))
-                .isNull();
-            assertThat(buildSingleGroupGrouping().isGroupedBloc(null))
-                .isFalse();
-        }
-
-        @Test
-        void resolveMemberFactionIdsNamesNoMemberForABlocWithNoId() {
-            // The lone-faction fallback must not fire here: a bloc with no ID standing in as its own
-            // sole member would hand a rule read over membership a member named nothing at all.
-            assertThat(buildSingleGroupGrouping().resolveMemberFactionIds(null))
-                .isEmpty();
-            assertThat(HolderGrouping.identity().resolveMemberFactionIds(" "))
-                .isEmpty();
         }
     }
 
@@ -124,6 +120,22 @@ class HolderGroupingTests {
             assertThat(buildSingleGroupGrouping().resolveColourFactionId("tritachyon"))
                 .isEqualTo("tritachyon");
         }
+
+        @Test
+        void coloursEveryBlocAsItselfUnderTheIdentityGrouping() {
+
+            assertThat(HolderGrouping.identity().resolveColourFactionId("hegemony"))
+                .isEqualTo("hegemony");
+        }
+
+        @Test
+        void namesNoPaletteForABlocWithNoId() {
+
+            assertThat(buildSingleGroupGrouping().resolveColourFactionId(null))
+                .isNull();
+            assertThat(HolderGrouping.identity().resolveColourFactionId(" "))
+                .isNull();
+        }
     }
 
     @Nested
@@ -142,6 +154,20 @@ class HolderGroupingTests {
             assertThat(buildSingleGroupGrouping().resolveGroupName("tritachyon"))
                 .isNull();
         }
+
+        @Test
+        void namesNoGroupUnderTheIdentityGrouping() {
+
+            assertThat(HolderGrouping.identity().resolveGroupName("hegemony"))
+                .isNull();
+        }
+
+        @Test
+        void readsABlocWithNoIdAsNoGroup() {
+
+            assertThat(buildSingleGroupGrouping().resolveGroupName(null))
+                .isNull();
+        }
     }
 
     @Nested
@@ -158,6 +184,20 @@ class HolderGroupingTests {
         void isFalseForAFactionBloc() {
 
             assertThat(buildSingleGroupGrouping().isGroupedBloc("tritachyon"))
+                .isFalse();
+        }
+
+        @Test
+        void isFalseForEveryBlocUnderTheIdentityGrouping() {
+
+            assertThat(HolderGrouping.identity().isGroupedBloc("hegemony"))
+                .isFalse();
+        }
+
+        @Test
+        void isFalseForABlocWithNoId() {
+
+            assertThat(buildSingleGroupGrouping().isGroupedBloc(null))
                 .isFalse();
         }
     }
@@ -198,38 +238,31 @@ class HolderGroupingTests {
     class RegroupByBloc {
 
         @Test
-        void collapsesSameBlocFactionsThroughTheMerge() {
+        void collapsesSameBlocFactionsThroughTheMergeStartingFromTheIdentity() {
             // Two factions the grouping folds into one bloc merge their values into a single entry, so
-            // a group's members rank as one summed unit.
-            var grouping = new HolderGrouping(
-                Map.of("hegemony", "group-1", "tritachyon", "group-1"),
-                Map.of("group-1", "hegemony"),
-                Map.of("group-1", "Allied Powers"));
+            // a group's members rank as one unit. The merge concatenates from a marker identity, so
+            // the entry shows the identity was taken once and the members merged in walk order.
+            var valueByFactionId = new LinkedHashMap<String, String>();
 
-            var valueByFactionId = new LinkedHashMap<String, Integer>();
+            valueByFactionId.put("hegemony", "a");
+            valueByFactionId.put("tritachyon", "b");
 
-            valueByFactionId.put("hegemony", 2);
-            valueByFactionId.put("tritachyon", 3);
-
-            assertThat(grouping.regroupByBloc(valueByFactionId, 0, Integer::sum))
-                .containsExactly(entry("group-1", 5));
+            assertThat(HolderGroupingFixture.buildGroupOf("hegemony", "tritachyon")
+                    .regroupByBloc(valueByFactionId, "^", String::concat))
+                .containsExactly(entry("group-1", "^ab"));
         }
 
         @Test
         void keepsFactionsInDistinctBlocsSeparate() {
             // Only the mapped faction folds into its bloc; an unmapped faction stays its own bloc, so
             // the two never merge.
-            var grouping = new HolderGrouping(
-                Map.of("hegemony", "group-1"),
-                Map.of("group-1", "hegemony"),
-                Map.of("group-1", "Allied Powers"));
-
             var valueByFactionId = new LinkedHashMap<String, Integer>();
 
             valueByFactionId.put("hegemony", 2);
             valueByFactionId.put("tritachyon", 3);
 
-            assertThat(grouping.regroupByBloc(valueByFactionId, 0, Integer::sum))
+            assertThat(HolderGroupingFixture.buildGroupOf("hegemony")
+                    .regroupByBloc(valueByFactionId, 0, Integer::sum))
                 .containsOnly(entry("group-1", 2), entry("tritachyon", 3));
         }
 
@@ -317,15 +350,22 @@ class HolderGroupingTests {
             assertThat(HolderGrouping.identity().resolveMemberFactionIds("hegemony"))
                 .containsExactly("hegemony");
         }
+
+        @Test
+        void namesNoMemberForABlocWithNoId() {
+            // The lone-faction fallback must not fire here: a bloc with no ID standing in as its own
+            // sole member would hand a rule read over membership a member named nothing at all.
+            assertThat(buildSingleGroupGrouping().resolveMemberFactionIds(null))
+                .isEmpty();
+            assertThat(HolderGrouping.identity().resolveMemberFactionIds(" "))
+                .isEmpty();
+        }
     }
 
-    // Two allied factions folded into one bloc whose colour faction and leading
-    // member is hegemony, with tritachyon left an outsider mapped to itself, so a
-    // test can probe both the grouped and the unowned path off one instance.
+    // Two allied factions folded into one bloc whose colour faction and leading member is the
+    // Hegemony, with Tri-Tachyon left an outsider mapped to itself, so a case can probe both the
+    // grouped and the lone-faction path off one instance.
     private static HolderGrouping buildSingleGroupGrouping() {
-        return new HolderGrouping(
-            Map.of("hegemony", "group-1", "astral_armada", "group-1"),
-            Map.of("group-1", "hegemony"),
-            Map.of("group-1", "Allied Powers"));
+        return HolderGroupingFixture.buildGroupOf("hegemony", "astral_armada");
     }
 }

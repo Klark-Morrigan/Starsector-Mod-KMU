@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.owners.holders.base.tooltip;
+package kmu.maplayers.politicalmap.tooltip;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipLabelFinding;
@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Pure over a small value with no Starsector types, the boxes' own carriers being the thing the
  * shared read exists not to be built around.
  */
-public final class ColonyQualifierTests {
+final class ColonyQualifierTests {
 
     // A finding a layer leads with, already worded - one no vocabulary word here spells, so reading
     // it back is reading the layer's word rather than one of this resolver's.
@@ -307,7 +307,7 @@ public final class ColonyQualifierTests {
         void callsTheWordOutAtTheEndOfALineTheNameDoesNotSay() {
             // The same derelict under a name that says nothing about what it is, which is the case
             // the gilding leaves untouched: the word has nowhere in the name to be stated, so it
-            // closes the line as it always did.
+            // closes the line like any other word.
             var line = qualifyLine("Sentinel Gantries", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
 
             assertThat(line.labelFinding())
@@ -380,8 +380,8 @@ public final class ColonyQualifierTests {
         @Test
         void gildsOneStretchOfANameThatSaysTheWordTwice() {
             // At most one gilded stretch per line, and it is the first the reader meets. Two of them
-            // would cost the line model a list of parts where one part does, for a shape nothing has
-            // ever needed.
+            // would cost the line model a list of parts where one part does, for the rare name that
+            // repeats a word of the vocabulary.
             assertThat(qualifyLine(
                     "Abandoned Abandoned Yards",
                     buildUnlistedFacts(ColonyKind.SPACE_DERELICT))
@@ -392,7 +392,7 @@ public final class ColonyQualifierTests {
         @Test
         void statesASecondWordTheNameSaysAtTheEndOfTheLineAnyway() {
             // The other half of one word moving: the rest stay put. A name saying two of the
-            // vocabulary gilds one stretch and reads the other where it always was, rather than
+            // vocabulary gilds one stretch and reads the other at the end of the line, rather than
             // growing a second gilded stretch or quietly dropping the word for being in the name.
             var line = qualifyLine("Abandoned Undiscovered Yards", new ColonyQualifierFacts(
                 ColonyKind.SPACE_DERELICT,
@@ -441,16 +441,6 @@ public final class ColonyQualifierTests {
                     NO_LEADING_FINDING,
                     new ColonyConcealment(IS_DISCOVERED, IS_OPEN, IS_A_SECRET),
                     IS_LISTED)))
-                .isSameAs(line);
-        }
-
-        @Test
-        void leavesALineAloneWhereNothingWasReadAboutTheColony() {
-            // A box holding a row it has no reading behind states nothing about it rather than
-            // failing, the row being one it is already committed to drawing.
-            var line = buildLine("Jangala");
-
-            assertThat(ColonyQualifier.qualifyColony(line, null))
                 .isSameAs(line);
         }
 

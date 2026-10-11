@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Posed over plain bloc IDs, since what a surface lists a contestant as is its own business and
  * the split reads nothing of one but the bloc it names.
  */
-class ContestSidesTests {
+final class ContestSidesTests {
 
     private static final String HOLDER = "hegemony";
     private static final String ALLY = "astral_armada";

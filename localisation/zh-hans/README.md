@@ -334,6 +334,8 @@ So a word of one axis never stands in for another:
 | alliance set (every alliance at one moment, in the changelog) | 联盟集合 | 联盟 with 集合, a set |
 | revision (a number that moves when content changes, in the changelog) | 修订号 | 修订, a revision, with 号, its number |
 | recede control (in the changelog) | 退后控件 | 退后 with 控件, the usual UI word for a control |
+| overload (one of several same-named methods, in the changelog) | 重载 | the usual computing word |
+| remark (the note a hover line carries about a colony, in the changelog) | 备注 | the plain word for a note added to something |
 | spotlight | 聚焦 | to focus on, which spotlighting a bloc does |
 | recede | 退后 | to step back, which a receded bloc does on the map |
 | Muted / Desaturated | 淡化 / 去色 | 淡化, to fade, and 去色, to strip colour, the usual image-editing word |

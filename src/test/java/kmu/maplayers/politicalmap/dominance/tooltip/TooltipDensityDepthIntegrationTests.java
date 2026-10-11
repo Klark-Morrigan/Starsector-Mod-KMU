@@ -7,7 +7,6 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReading;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
@@ -18,6 +17,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.PatrolFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolTierFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.settings.HiddenMarketScalingChoice;
 import kmu.starsector.StarsectorSettingsFake;
 

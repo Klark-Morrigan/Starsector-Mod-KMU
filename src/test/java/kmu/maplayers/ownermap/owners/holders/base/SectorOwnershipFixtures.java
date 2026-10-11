@@ -61,9 +61,10 @@ public final class SectorOwnershipFixtures {
 
     // A small stable of authored faction shades, distinct enough that a test telling one palette
     // from another reads clearly. Bright is the fill/border colour; the dark seam shade is derived.
-    public static final Color HEGEMONY_BRIGHT = new Color(120, 160, 200);
-    public static final Color TRITACHYON_BRIGHT = new Color(140, 180, 220);
-    public static final Color PERSEAN_BRIGHT = new Color(160, 200, 240);
+    // Named apart from the band fixtures' own bright shades, which are other colours.
+    public static final Color HEGEMONY_FACTION_BRIGHT = new Color(120, 160, 200);
+    public static final Color TRITACHYON_FACTION_BRIGHT = new Color(140, 180, 220);
+    public static final Color PERSEAN_FACTION_BRIGHT = new Color(160, 200, 240);
     public static final Color NEUTRAL_BASE = new Color(150, 150, 150);
 
     private SectorOwnershipFixtures() {
@@ -255,20 +256,6 @@ public final class SectorOwnershipFixtures {
         return atStability(ColonyMarketFixture.buildDerelictStation(size));
     }
 
-    /**
-     * A station a faction keeps: the same derelict condition on a market a real faction holds.
-     * Nothing but the owner parts it from the derelict above, which is why the pair is worth posing
-     * together - a read splitting them on anything else is reading the wrong thing.
-     *
-     * @param faction the faction keeping the station
-     * @param size    the colony size
-     * @return the market mock
-     */
-    public static MarketAPI buildOutpostMarket(FactionAPI faction, int size) {
-
-        return atStability(ColonyMarketFixture.buildOutpost(faction, size));
-    }
-
     // The one fact a market weight reads that a market read does not, laid over a colony the
     // shared fixture built. Stability is this layer's alone: KMLib poses what a market *is*, and
     // what it is worth to a weighting rule is the weighting layer's question.
@@ -370,41 +357,6 @@ public final class SectorOwnershipFixtures {
             .thenReturn(focus);
 
         return entityMock;
-    }
-
-    /**
-     * Re-points a market's primary entity to a body on the given orbit, so a resolve reading
-     * orbit geometry places the market that far from the system centre.
-     *
-     * @param market the market to place
-     * @param radius the primary entity's circular-orbit radius
-     * @param focus  the body the primary entity orbits
-     */
-    public static void placeMarketOnOrbit(MarketAPI market, float radius, SectorEntityToken focus) {
-
-        // Build the orbiting entity (which stubs its own orbit) before opening the market's
-        // stubbing, so the two do not nest into an unfinished-stubbing error.
-        var entityMock = buildOrbitingEntity(radius, focus);
-
-        when(market.getPrimaryEntity())
-            .thenReturn(entityMock);
-    }
-
-    /**
-     * Re-sites the given markets onto one shared primary entity, so they stand for the same
-     * place - the shape a mod makes when it supersedes a market by adding its own beside
-     * vanilla's rather than replacing it, and the only way two market objects come to name
-     * one colony.
-     *
-     * @param markets the markets to place on one entity
-     */
-    public static void placeMarketsOnOneEntity(MarketAPI... markets) {
-
-        var entityMock = mock(SectorEntityToken.class);
-
-        for (var market : markets) {
-            when(market.getPrimaryEntity()).thenReturn(entityMock);
-        }
     }
 
     /**
@@ -520,21 +472,6 @@ public final class SectorOwnershipFixtures {
 
         when(sector.getMemoryWithoutUpdate())
             .thenReturn(memoryMock);
-    }
-
-    /**
-     * Centres a system on a star - both its centre and its one star - so a distance-from-centre
-     * read resolves that star as its reference.
-     *
-     * @param system the system to centre
-     * @param star   the star at its centre
-     */
-    public static void centreSystemOn(StarSystemAPI system, PlanetAPI star) {
-
-        when(system.getCenter())
-            .thenReturn(star);
-        when(system.getPlanets())
-            .thenReturn(List.of(star));
     }
 
     /**
@@ -654,25 +591,6 @@ public final class SectorOwnershipFixtures {
     }
 
     /**
-     * Gives a system a hyperspace position, without which a walk collecting drawn-system positions
-     * skips it before the drawn-set rule is ever asked about it - so a suite counting what that
-     * walk read would be blind to the very systems it staged.
-     *
-     * <p>Distinct per system so no two share a site, and taken off the ID's hash rather than from
-     * an argument: nothing that wants this moves a system, so coordinates on the call would look
-     * like they meant something.
-     *
-     * @param system the system to place
-     */
-    public static void placeSystemInHyperspace(StarSystemAPI system) {
-
-        var idHash = system.getId().hashCode();
-
-        when(system.getLocation())
-            .thenReturn(new Vector2f(idHash, -idHash));
-    }
-
-    /**
      * Places every one of a sector's systems, which is what a suite driving a real cut or a real
      * motion walk wants: either skips an unplaced system before the drawn-set rule is asked about
      * it, so a sector staged with one system left out reads as a rule decision rather than as a
@@ -685,6 +603,21 @@ public final class SectorOwnershipFixtures {
         for (var system : sector.getStarSystems()) {
             placeSystemInHyperspace(system);
         }
+    }
+
+    // Gives a system a hyperspace position, without which a walk collecting drawn-system positions
+    // skips it before the drawn-set rule is ever asked about it - so a suite counting what that walk
+    // read would be blind to the very systems it staged.
+    //
+    // Distinct per system so no two share a site, and taken off the ID's hash rather than from an
+    // argument: nothing that wants this moves a system, so coordinates on the call would look like
+    // they meant something.
+    private static void placeSystemInHyperspace(StarSystemAPI system) {
+
+        var idHash = system.getId().hashCode();
+
+        when(system.getLocation())
+            .thenReturn(new Vector2f(idHash, -idHash));
     }
 
     /**

@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.owners.holders.base.tooltip;
+package kmu.maplayers.politicalmap.tooltip;
 
 import kmlib.text.KmlibStrings;
 
@@ -24,7 +24,7 @@ import java.util.Optional;
  * own account. Lower case throughout, the qualifier being a phrase run on after a name rather than a
  * heading; the status row's own {@code Decivilised} keeps its capital, one fact at two altitudes.
  */
-public final class ColonyQualifier {
+final class ColonyQualifier {
 
     private ColonyQualifier() {
     }
@@ -44,16 +44,13 @@ public final class ColonyQualifier {
      * typographic budget standing in for a statement about the world.
      *
      * @param line  the colony's line as the box has built it so far
-     * @param facts what the box knows about the colony beyond its own number; null states nothing
+     * @param facts what the box knows about the colony beyond its own number
      * @return the line, called out where anything is due and untouched otherwise
      */
-    public static CellTooltipEntryLine qualifyColony(
+    static CellTooltipEntryLine qualifyColony(
             CellTooltipEntryLine line,
             ColonyQualifierFacts facts) {
 
-        if (facts == null) {
-            return line;
-        }
         var words = resolveWords(facts);
 
         if (words.isEmpty()) {
@@ -144,9 +141,9 @@ public final class ColonyQualifier {
     // rather than attached to one word, since a name may carry any of them.
     //
     // First in the name's reading order rather than in the resolved order, because the reader meets
-    // the name before the line's end and one gilded stretch is all a line carries. Two of the
-    // vocabulary in one name is a shape nothing has ever needed, and a second gilded stretch would
-    // cost the line model a list of parts where one part does.
+    // the name before the line's end. One gilded stretch is all a line carries: a second would cost
+    // the line model a list of parts where one part does, for the rare name saying two of the
+    // vocabulary.
     //
     // Read off the line's own label rather than off a name handed in beside it: what the reader can
     // see is exactly what the line says, and a second copy of the name would be free to disagree

@@ -180,28 +180,12 @@ final class AllianceOwnerReadingTests {
 
         @Test
         void placesADesaturatedLoneFactionAsTheFactionReadingDoes() {
-
+            // A lone faction's category is the faction reading's answer, pinned in its own suite, so
+            // one case shows the delegation. Desaturated, because that is where a lone faction's
+            // answer parts from an alliance's.
             var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
 
             assertThat(reading.resolveCategory(LONE_FACTION, DESATURATED))
-                .isEqualTo(HolderCategory.INDEPENDENT);
-        }
-
-        @Test
-        void placesALoneFactionInTheFactionCategory() {
-
-            var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
-
-            assertThat(reading.resolveCategory(LONE_FACTION, ElementStyleAdjustment.NONE))
-                .isEqualTo(HolderCategory.FACTION);
-        }
-
-        @Test
-        void placesIndependentSpaceInTheIndependentCategory() {
-
-            var reading = new AllianceOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING);
-
-            assertThat(reading.resolveCategory(Factions.INDEPENDENT, ElementStyleAdjustment.NONE))
                 .isEqualTo(HolderCategory.INDEPENDENT);
         }
     }

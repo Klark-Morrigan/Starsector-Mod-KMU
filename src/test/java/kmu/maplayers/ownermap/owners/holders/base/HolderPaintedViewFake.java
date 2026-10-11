@@ -171,7 +171,7 @@ public final class HolderPaintedViewFake
 
     @Override
     public SystemHolderResolveSource resolveSystemHolderResolveSource() {
-        return SystemHolderResolveFake.createSourceHoldingNothing();
+        return new SystemHolderResolveSourceFake();
     }
 
     @Override

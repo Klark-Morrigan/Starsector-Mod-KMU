@@ -23,7 +23,6 @@ import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonySightings;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.ColonyObservationNotes;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.PresenceOnlyFactionStanding;
@@ -36,6 +35,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.UnweighedColony;
+import kmu.maplayers.politicalmap.tooltip.ColonyObservationNotes;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltipTests;
 import kmu.settings.HiddenMarketScalingChoice;
@@ -702,7 +702,11 @@ final class SystemDominationTooltipTests {
 
             var sightings = ArgumentCaptor.forClass(ColonySightings.class);
 
-            try (var notesMock = Mockito.mockStatic(ColonyObservationNotes.class)) {
+            // Real methods behind the spy, because the reading takes the remark off the notes it is
+            // handed and a stubbed read would hand it none.
+            try (var notesMock = Mockito.mockStatic(
+                    ColonyObservationNotes.class,
+                    Mockito.CALLS_REAL_METHODS)) {
 
                 SystemDominationTooltip.createFactionAccountResolver(systemMock, OBSERVED_PASS, PATROL_DETAILS);
 

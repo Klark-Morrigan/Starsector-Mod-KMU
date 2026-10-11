@@ -1,10 +1,10 @@
 package kmu.maplayers.ownermap.owners.holders.base.picker;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.characters.RelationshipAPI;
 
+import kmlib.starsector.factions.relation.FactionRelation;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
@@ -25,13 +25,17 @@ import kmu.maplayers.ownermap.picker.SelectableOwner;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.FRIENDLY;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.GREEN;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.HOSTILE;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.PACT_GROUPING;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.RED;
 import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.ROW_COLOUR;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,19 +53,6 @@ final class BlocPickerAssemblyTests {
 
     private static final OwnerMetricsFake ANY_STATS_FAKE = new OwnerMetricsFake(3, 2, 5000, 7);
     private static final OwnerMetricsFake OTHER_STATS_FAKE = new OwnerMetricsFake(1, 1, 400, 2);
-
-    // The shades two relations resolve to, distinct so an end drawn from the wrong member shows as a
-    // colour rather than only as a number.
-    private static final Color GREEN = new Color(60, 180, 60);
-    private static final Color RED = new Color(200, 50, 50);
-
-    // A group of two, which is the smallest grouping in which a bloc's membership is anything
-    // other than the bloc's own ID - so a standing read against it can only come from the grouping
-    // the read was handed.
-    private static final HolderGrouping PACT_GROUPING = new HolderGrouping(
-        Map.of("hegemony", "pact", "tritachyon", "pact"),
-        Map.of("pact", "hegemony"),
-        Map.of("pact", "Persean Pact"));
 
     // The vocabulary a case is not about. The assembly bundles whatever it is handed, so a case
     // reading only the rows or the presence pairs them with a set that ranks nothing.
@@ -155,7 +146,7 @@ final class BlocPickerAssemblyTests {
             assertThat(BlocPickerAssembly.buildBlocPickerRead(
                         viewFake,
                         mock(SectorAPI.class),
-                        PACT_GROUPING,
+                        HolderGrouping.identity(),
                         OwnerStatsReadFake.createRowsOnlyFake(Map.of("rebel_pact", ANY_STATS_FAKE)),
                         ANY_MODES)
                     .picker()
@@ -278,8 +269,8 @@ final class BlocPickerAssemblyTests {
             // some other fold could not produce.
             // Both factions are built before either is handed over: stubbing a fresh mock inside an
             // open when(...) leaves Mockito holding an unfinished stubbing.
-            var hostileMember = stubFactionAtStanding(RepLevel.HOSTILE, -40, RED);
-            var friendlyMember = stubFactionAtStanding(RepLevel.FRIENDLY, 60, GREEN);
+            var hostileMember = stubFactionAtStanding(HOSTILE);
+            var friendlyMember = stubFactionAtStanding(FRIENDLY);
             var sectorMock = mock(SectorAPI.class);
 
             when(sectorMock.getFaction("hegemony"))
@@ -385,16 +376,16 @@ final class BlocPickerAssemblyTests {
     // A faction the sector answers with, standing where the case wants it. Stubbed through the live
     // relationship object, which is the tier the standing read takes first, so the colour comes back
     // as this shade rather than out of the engine palette the test JVM cannot reach.
-    private static FactionAPI stubFactionAtStanding(RepLevel level, int reputation, Color colour) {
+    private static FactionAPI stubFactionAtStanding(FactionRelation relation) {
 
         var relationshipMock = mock(RelationshipAPI.class);
 
         when(relationshipMock.getLevel())
-            .thenReturn(level);
+            .thenReturn(relation.level());
         when(relationshipMock.getRepInt())
-            .thenReturn(reputation);
+            .thenReturn(relation.reputation());
         when(relationshipMock.getRelColor())
-            .thenReturn(colour);
+            .thenReturn(relation.colour());
 
         var factionMock = mock(FactionAPI.class);
 

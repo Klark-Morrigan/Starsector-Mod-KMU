@@ -32,13 +32,13 @@
 
 ##### 包
 
-所有者地图层的核心对所有者是什么一无所知。绘制持有者的图层所共享的部分位于 `kmu.maplayers.ownermap.owners.holders` 下：`base` 用于各类持有者，其选择器位于 `base.picker`，悬停框中的殖民地行位于 `base.tooltip`；`factions` 把一个势力作为一个所有者，`alliances` 把一组势力作为一个所有者。核心不得导入该子树。
+所有者地图层的核心对所有者是什么一无所知。绘制持有者的图层所共享的部分位于 `kmu.maplayers.ownermap.owners.holders` 下：`base` 用于各类持有者，其选择器位于 `base.picker`；`factions` 把一个势力作为一个所有者，`alliances` 把一组势力作为一个所有者。核心不得导入该子树。
 
 | 之前 | 之后 |
 | --- | --- |
 | `ownermap.holding`、`ownermap.owners.holders`、`RibbonPlanInputs`、`BlocPaletteReader`、`SectorBlocPalettes`、`HolderCategories`、`OwnerMapCategory` 和 `ColonyCellRibbons` | `ownermap.owners.holders.base`，下列类型除外 |
 | `BlocPickerAssembly`、`BlocStanding`、`BlocStandingReader`、`BlocStandingSortMode` 和 `SizedBlocMetrics` | `ownermap.owners.holders.base.picker` |
-| `SystemStatusRow` 以及 `ownermap.tooltip` 中的殖民地行 | `ownermap.owners.holders.base.tooltip` |
+| `SystemStatusRow` 以及 `ownermap.tooltip` 中的殖民地行 | `politicalmap.tooltip`，与读取它们的政治地图悬停框放在一起 |
 | `ownermap.tooltip` 中的势力行 | `ownermap.owners.holders.factions` |
 | `ownermap.tooltip.TermTooltipLine` | `base.tooltip.content.TermTooltipLine`。`ownermap.tooltip` 已移除 |
 | `ownermap.sidebar.BodyControlTarget` | `base.sidebar.BodyControlTarget` |
@@ -57,6 +57,7 @@
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` 及其 `strings.json` 键 | `POLITICAL_MAP_CTL_FACTION_NAMES`，政治地图自己的标题 |
 | `ownermap.owners.OwnerPalette` | KMLib 的 `kmlib.colour.ColourPair`，势力的配色本就是它。`SectorBlocPalettes.adoptFactionPalette(FactionPalette)` 已移除 |
 | `HolderPass.over(SectorAPI, ColonyReadRules, HolderGrouping)` | `HolderPass.createOver(SectorAPI, ColonyReadRules, HolderGrouping)` |
+| `SystemColonyReading.readColoniesIn(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` | `readColonyReadingOf(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` |
 | `SharedBlocSortModes.declareMarketSizeMode(List)` | `SizedBlocMetrics.createMarketSizeMode(List)` |
 
 ##### 接缝
@@ -72,6 +73,8 @@
 | `HolderGrouping.collectBlocIds(Collection)` | 已移除 |
 | 公开的 `HolderPass.readKnownColoniesIn(StarSystemAPI)` 和 `readInhabitingColoniesIn(StarSystemAPI)` | 改为包私有。外部读取方改用 `readHabitationIn(StarSystemAPI)` 或 `readKnownColonyFactionIds(StarSystemAPI)` |
 | `AllianceBodyControls` | 已移除：`AlliancesView.getViewBodyControls(BodyControlTarget)` 自行绑定共享的退后控件 |
+| `SystemColonyReading` 的 `readKindOf(String)`、`isDiscoveredColony(String)`、`isOpenlyKnownColony(String)`、`readConcealmentOf(String, boolean)`、两个 `readQualifierFacts` 重载和 `describeColony(CellTooltipEntryLine, String, ColonyQualifierFacts)` | `describeColony(CellTooltipEntryLine, AccountedColony, String)`，殖民地由 `AccountedColony.createEconomyListedColony(String, boolean)` 或 `createOffEconomyColony(String, boolean)` 构建。已持有种类的调用方将其传给 `describeColony(CellTooltipEntryLine, AccountedColony, ColonyKind, String)` |
+| 公开的 `ColonyQualifier`、`ColonyQualifierFacts`、`ColonyConcealment` 和 `SystemColonyReading` 构造函数 | 改为包私有：通过 `SystemColonyReading.describeColony` 描述一行。构造函数以 `BiFunction` 接收殖民地备注，并拒绝空的部分 |
 | `RenderStyleReader.readFactionStyle()`、`readIndependentStyle()`、`readDecivilisedStyle()` 和 `readUninhabitedStyle(boolean)` | `HolderCategoryStyleReader` |
 | `BlocPresence.collectColouredPresences(Map, BlocPaletteReader)` | 已移除：`ColonyCellRibbons` 自行为计数着色 |
 | `NameFormatPreference(String)` | `NameFormatPreference(String, String)`：图层还需给出名称单选框的标题键 |

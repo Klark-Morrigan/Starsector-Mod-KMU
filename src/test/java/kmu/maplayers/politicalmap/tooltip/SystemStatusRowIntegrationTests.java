@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.owners.holders.base.tooltip;
+package kmu.maplayers.politicalmap.tooltip;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.PlanetAPI;
@@ -55,15 +55,14 @@ import static org.mockito.Mockito.when;
  * outright, so a row wired to the listing beneath it would call a system of wrecks populated - and
  * would answer identically on every other case here, none of which stages one.
  */
-final class SystemStatusRowTests {
+final class SystemStatusRowIntegrationTests {
 
     // The status line is one plain run, so its label is read at the first of them.
     private static final int STATUS_RUN = 0;
 
     // The size the staged derelict carries. Nothing the status line reads weighs a colony, so a
-    // case
-    // varying this would vary nothing the line can see - it is here because the shared builder
-    // states a size for the weighing suites that share it.
+    // case varying this would vary nothing the line can see - it is here because the shared
+    // builder states a size for the weighing suites that share it.
     private static final int DERELICT_SIZE = 4;
 
     private MockedStatic<Misc> miscMock;
@@ -128,9 +127,8 @@ final class SystemStatusRowTests {
         @Test
         void isEmptyForALivingColonyBesideADecivilisedWorld() {
             // A collapsed world never heads a system somebody still lives in. Habitation admits
-            // both, so the
-            // line has to part them by kind rather than by the projection's emptiness - and the box
-            // beneath goes on naming the collapsed colony along with the governed one.
+            // both, so the line has to part them by kind rather than by the projection's emptiness -
+            // and the box beneath goes on naming the collapsed colony along with the governed one.
             var system = buildSystemWithPlanets();
 
             placeRevealedDecivilisedPlanetIn(system);
@@ -196,16 +194,14 @@ final class SystemStatusRowTests {
         @Test
         void callsASystemHoldingOnlyADerelictUnpopulated() {
             // The line asks about habitation, not about what may be named. The derelict passes the
-            // fog
-            // outright - un-hidden, on a found entity - so the listing beneath this row goes on
+            // fog outright - un-hidden, on a found entity - so the listing beneath this row goes on
             // naming it, and the row still says nobody lives here, which is the true reading of a
             // system with one wreck in it.
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system);
 
             // Through the entity side, as a vanilla derelict arrives: the economy never registers
-            // one,
-            // so listing it would pose a market the sector does not hold.
+            // one, so listing it would pose a market the sector does not hold.
             hangMarketsOnSystemEntities(system, buildAbandonedStationMarket(DERELICT_SIZE));
 
             var row = resolveStatusRowIn(sector, system, BASE_FOG)

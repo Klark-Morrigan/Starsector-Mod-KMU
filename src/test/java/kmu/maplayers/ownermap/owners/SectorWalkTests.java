@@ -87,10 +87,12 @@ final class SectorWalkTests {
         @Test
         void opensApartForTwoOpeners() {
             // Two sources sampled under different rules are two readings, whatever their rules say.
+            // The openers compare equal, so a walk keying its readings by equality would hand the
+            // second the first's reading.
             var walk = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE);
 
-            var first = walk.readReadingOpenedBy(new Object(), Object.class, Object::new);
-            var second = walk.readReadingOpenedBy(new Object(), Object.class, Object::new);
+            var first = walk.readReadingOpenedBy(new EqualOpener(), Object.class, Object::new);
+            var second = walk.readReadingOpenedBy(new EqualOpener(), Object.class, Object::new);
 
             assertThat(second).isNotSameAs(first);
         }
@@ -107,5 +109,10 @@ final class SectorWalkTests {
 
             assertThat(second).isNotSameAs(first);
         }
+    }
+
+    // An opener every instance of which equals every other, standing in for two sources whose
+    // sampled rules compare equal.
+    private record EqualOpener() {
     }
 }

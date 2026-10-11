@@ -16,15 +16,16 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun;
 import static kmu.starsector.SectorFactionFixtures.HEGEMONY;
 import static kmu.starsector.SectorFactionFixtures.HEGEMONY_CREST;
-import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
 import static kmu.starsector.SectorFactionFixtures.buildSectorKnowingHegemony;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the faction as a verdict about the whole system rather than as an entry in its table: crest and
- * name travel inside the line's own words so the two centre together, and a faction the sector does not
- * know still speaks as its bare ID rather than as a blank.
+ * name travel inside the line's own words so the two centre together.
+ *
+ * <p>How a faction the sector does not know is named is {@link FactionPresentation}'s, pinned in its
+ * own suite.
  */
 final class FactionTooltipBannerTests {
 
@@ -52,15 +53,6 @@ final class FactionTooltipBannerTests {
                 .isEqualTo(new ImageSpan(HEGEMONY_CREST));
             assertThat(readLabelRun(row, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", TEXT));
-        }
-
-        @Test
-        void fallsBackToTheIdForAnUnknownFaction() {
-
-            var row = FactionTooltipBanner.buildFactionBanner(buildEmptySector(), "ghost_faction");
-
-            assertThat(row.labelRuns())
-                .containsExactly(new TextSpan("ghost_faction", TEXT));
         }
     }
 }

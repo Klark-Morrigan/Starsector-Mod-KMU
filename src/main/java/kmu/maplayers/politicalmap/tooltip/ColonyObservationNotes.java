@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.owners.holders.base.tooltip;
+package kmu.maplayers.politicalmap.tooltip;
 
 import com.fs.starfarer.api.campaign.CampaignClockAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
@@ -51,7 +51,8 @@ public final class ColonyObservationNotes {
     // no clock, so nothing can be said about when anything was last seen.
     private static final boolean NOBODY_IS_LOOKING = false;
     private static final CampaignClockAPI NO_CLOCK = null;
-    private static final Colonies NO_COLONIES = null;
+
+    private static final Optional<String> NO_NOTE = Optional.empty();
 
     /**
      * A box with no world to read: nobody is looking at anything and nothing can be dated, so no
@@ -61,7 +62,7 @@ public final class ColonyObservationNotes {
     public static final ColonyObservationNotes NONE = new ColonyObservationNotes(
         NO_CLOCK,
         NOBODY_IS_LOOKING,
-        NO_COLONIES,
+        Colonies.NONE,
         ColonySightings.NONE);
 
     private final CampaignClockAPI clock;
@@ -118,36 +119,12 @@ public final class ColonyObservationNotes {
         if (sector == null || system == null || colonies == null) {
             return NONE;
         }
+
         return new ColonyObservationNotes(
             sector.getClock(),
             Objects.equals(sector.getCurrentLocation(), system),
             colonies,
             sightings == null ? ColonySightings.NONE : sightings);
-    }
-
-    /**
-     * The remark one colony's line carries about how current the box's news of it is.
-     *
-     * @param colonyId the colony's market ID, as the account listing it carries
-     * @return the remark, or empty where the colony is being observed now, where nothing was ever
-     *         observed of it, where what was observed carries no time, or where there is no clock
-     *         to date it by
-     */
-    Optional<String> resolveLastSeenNote(String colonyId) {
-
-        // The colony's own routes, posed in the shared triad's terms: whether anybody is observing
-        // the colony now, and what the register recalls of it. Which of the two readings answers -
-        // live over recalled over nothing - is the triad's rule, not a comparison made here.
-        var recency = ObservationRecency.resolveRecency(
-            isPlayerPresent || readColonyIdsObservedByInhabitants().contains(colonyId),
-            readRecordedObservation(colonyId));
-
-        // One axis, under the colony's own lead-in: what the box states of a colony is that
-        // somebody had eyes on it, which is the only route a colony is ever observed by. The span
-        // and the date are composed in the words every axis shares.
-        return ObservationNotes.resolveNoteForAxes(
-            clock,
-            List.of(new ObservationAxis(KmuStringKeys.OWNER_MAP_TOOLTIP_LAST_SEEN, recency)));
     }
 
     /**
@@ -169,9 +146,47 @@ public final class ColonyObservationNotes {
      * @return the line, remarked on where a remark is due and untouched where none is
      */
     CellTooltipEntryLine remarkOnColony(CellTooltipEntryLine line, String colonyId) {
+
         return resolveLastSeenNote(colonyId)
             .map(line::notedWith)
             .orElse(line);
+    }
+
+    // The remark one colony's line carries about how current the box's news of it is, or empty
+    // where the colony is being observed now, where nothing was observed of it, where what was
+    // observed carries no time, or where there is no clock to date it by.
+    //
+    // The clock and the record are read before anybody is asked whether they are looking. Neither
+    // the live reading nor the never-observed one carries a moment, so with no clock or no record
+    // the answer is empty whoever is looking - and who is looking is the one read here that folds
+    // the whole system.
+    private Optional<String> resolveLastSeenNote(String colonyId) {
+
+        if (clock == null) {
+            return NO_NOTE;
+        }
+
+        return readRecordedObservation(colonyId)
+            .flatMap(recordedObservation -> resolveNoteForRecorded(colonyId, recordedObservation));
+    }
+
+    // The remark due on a colony the register recalls, posed in the shared triad's terms: whether
+    // anybody is observing the colony now, and what the register recalls of it. Which of the two
+    // answers - live over recalled - is the triad's rule, not a comparison made here.
+    private Optional<String> resolveNoteForRecorded(
+            String colonyId,
+            RecalledObservation recordedObservation) {
+
+        var recency = ObservationRecency.resolveRecency(
+            isPlayerPresent || readColonyIdsObservedByInhabitants().contains(colonyId),
+            Optional.of(recordedObservation));
+
+        // One axis, under the colony's own lead-in: what the box states of a colony is that
+        // somebody had eyes on it, which is the only route a colony is ever observed by. The span
+        // and the date are composed in the words every axis shares.
+        return ObservationNotes.resolveNoteForAxes(
+            clock,
+            List.of(new ObservationAxis(KmuStringKeys.OWNER_MAP_TOOLTIP_LAST_SEEN, recency)));
     }
 
     // What the register recalls of one colony, in the triad's recalled shape. The place the
@@ -190,6 +205,7 @@ public final class ColonyObservationNotes {
         if (colonyIdsObservedByInhabitants == null) {
             colonyIdsObservedByInhabitants = foldColonyIdsObservedByInhabitants(colonies);
         }
+
         return colonyIdsObservedByInhabitants;
     }
 
@@ -206,16 +222,13 @@ public final class ColonyObservationNotes {
 
         var colonyIds = new HashSet<String>();
 
-        if (colonies == null) {
-            return colonyIds;
-        }
-
         for (var colony : ColonyKnowledge
                 .observingUnderTheFog()
                 .readColoniesObservedByInhabitants(colonies)) {
 
             colonyIds.add(colony.market().getId());
         }
+
         return colonyIds;
     }
 }

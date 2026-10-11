@@ -10,6 +10,7 @@ import kmlib.testfixtures.profiling.RecordedCapture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 import kmlib.testfixtures.statics.StaticSeams;
 
+import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -88,23 +89,31 @@ final class HolderOwnerSourceTests {
         new RibbonSegmentLengths(3, 1),
         new UncontestedRibbonRuns(false));
 
-    private final StaticSeams seams = new StaticSeams();
+    private MockedStatic<DecivilisedColonyHabitation> habitationSettingMock;
 
-    private MockedStatic<HolderInhabitation> inhabitationMock;
-
-    // What the layer's rules were handed, in the order they were asked.
-    private final List<HolderPass> providerPasses = new ArrayList<>();
-    private final List<String> providerSpotlitIds = new ArrayList<>();
-    private final List<RibbonPlanInputs> plannerInputs = new ArrayList<>();
+    // The layer's whole-sector rule: one held system, one contested and one unfilled.
+    private final HolderProviderFake holderProviderFake = HolderProviderFake.createAnswering(
+        new HolderResolution(
+            Map.of(HELD_SYSTEM, HEGEMONY_OWNER),
+            Set.of(CONTESTED_SYSTEM),
+            Set.of(UNFILLED_SYSTEM)));
 
     private final SystemHolderResolveSourceFake holderResolveSourceFake =
         new SystemHolderResolveSourceFake();
+
+    private MockedStatic<HolderInhabitation> inhabitationMock;
+
+    // What the layer's band planner was handed, in the order it was asked.
+    private final List<RibbonPlanInputs> plannerInputs = new ArrayList<>();
+
+    private final StaticSeams seams = new StaticSeams();
 
     @BeforeEach
     void openTheColonySeams() {
 
         // The layer's own habitation knob, read where a pass opens - LunaLib-backed.
-        seams.openSeam(DecivilisedColonyHabitation.class)
+        habitationSettingMock = seams.openSeam(DecivilisedColonyHabitation.class);
+        habitationSettingMock
             .when(DecivilisedColonyHabitation::readFromLunaSettings)
             .thenReturn(DecivilisedColonyHabitation.COUNTS_AS_POPULATED);
 
@@ -160,7 +169,7 @@ final class HolderOwnerSourceTests {
 
             buildSourceUnder(HolderGrouping.identity()).resolveOwners(walk, null);
 
-            assertThat(providerPasses)
+            assertThat(holderProviderFake.readResolvedPasses())
                 .singleElement()
                 .extracting(HolderPass::sectorIndex)
                 .isSameAs(walk.sectorIndex());
@@ -174,7 +183,7 @@ final class HolderOwnerSourceTests {
 
             buildSourceUnder(grouping).resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
 
-            assertThat(providerPasses)
+            assertThat(holderProviderFake.readResolvedPasses())
                 .singleElement()
                 .extracting(HolderPass::grouping)
                 .isSameAs(grouping);
@@ -187,8 +196,33 @@ final class HolderOwnerSourceTests {
             buildSourceUnder(HolderGrouping.identity())
                 .resolveOwners(buildWalkUnder(GATED_RULES), null);
 
-            assertThat(providerPasses.get(0).colonyKnowledge().rule())
+            assertThat(readFirstResolvedPass().colonyKnowledge().rule())
                 .isEqualTo(GATED_RULES.colonyVisibility());
+        }
+
+        @Test
+        void readsDecivilisedWorldsUnderTheLayersOwnHabitationKnob() {
+            // The other half of the colony rule is the layer's own setting rather than the walk's.
+            // Every other case leaves it at the shipped reading, which a pass hard-coding that
+            // reading would match; posed the other way here, the world is nobody's home.
+            habitationSettingMock
+                .when(DecivilisedColonyHabitation::readFromLunaSettings)
+                .thenReturn(DecivilisedColonyHabitation.COUNTS_AS_UNPOPULATED);
+
+            var sector = SectorOwnershipFixtures.buildSectorWith("corvus");
+            var system = SectorOwnershipFixtures.buildOnlySystem(sector);
+
+            DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(system);
+
+            buildSourceUnder(HolderGrouping.identity())
+                .resolveOwners(new SectorWalk(new SectorPassIndex(sector), MapVisibilityRules.BASE), null);
+
+            var habitation = readFirstResolvedPass().readHabitationIn(system);
+
+            assertThat(habitation.blocIds())
+                .isEmpty();
+            assertThat(habitation.hasInhabitingColony())
+                .isFalse();
         }
 
         @Test
@@ -197,7 +231,7 @@ final class HolderOwnerSourceTests {
             buildSourceUnder(HolderGrouping.identity())
                 .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
 
-            assertThat(providerSpotlitIds)
+            assertThat(holderProviderFake.readSelectedBlocIds())
                 .containsExactly(HEGEMONY);
         }
 
@@ -223,7 +257,7 @@ final class HolderOwnerSourceTests {
                 .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), null);
 
             inhabitationMock.verify(
-                () -> HolderInhabitation.readInhabitedSystemKeys(same(providerPasses.get(0))));
+                () -> HolderInhabitation.readInhabitedSystemKeys(same(readFirstResolvedPass())));
 
             assertThat(owners.inhabitedSystemKeys())
                 .containsExactlyInAnyOrder(HELD_SYSTEM, UNHELD_SETTLED_SYSTEM);
@@ -238,7 +272,7 @@ final class HolderOwnerSourceTests {
                 .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY);
 
             inhabitationMock.verify(() -> HolderInhabitation.findSpotlitPresenceSystemKeys(
-                same(providerPasses.get(0)),
+                same(readFirstResolvedPass()),
                 eq(HEGEMONY),
                 eq(Set.of(UNHELD_SETTLED_SYSTEM))));
 
@@ -256,6 +290,17 @@ final class HolderOwnerSourceTests {
 
             assertThat(capture.findNode(RESOLVE_HOLDERS_SECTION).getWorstCall().getTag())
                 .isEqualTo("owned=1 filtering=false contested=1 unfilled=1");
+        }
+
+        @Test
+        void namesTheHoldingResolveAsFilteringUnderASpotlight() {
+            // A filtered resolve walks the spotlit bloc's presence as well, so its duration is read
+            // against a different volume of work and the row has to say which kind it was.
+            var capture = RecordedCapture.recordWhile(() -> buildSourceUnder(HolderGrouping.identity())
+                .resolveOwners(buildWalkUnder(MapVisibilityRules.BASE), HEGEMONY));
+
+            assertThat(capture.findNode(RESOLVE_HOLDERS_SECTION).getWorstCall().getTag())
+                .isEqualTo("owned=1 filtering=true contested=1 unfilled=1");
         }
 
         @Test
@@ -286,7 +331,7 @@ final class HolderOwnerSourceTests {
 
             assertThat(holderResolveSourceFake.readPassesOpenedOver())
                 .singleElement()
-                .isSameAs(providerPasses.get(0));
+                .isSameAs(readFirstResolvedPass());
         }
 
         @Test
@@ -301,7 +346,7 @@ final class HolderOwnerSourceTests {
 
             assertThat(holderResolveSourceFake.readPassesOpenedOver())
                 .singleElement()
-                .isNotSameAs(providerPasses.get(0))
+                .isNotSameAs(readFirstResolvedPass())
                 .extracting(HolderPass::sectorIndex)
                 .isSameAs(batchWalk.sectorIndex());
         }
@@ -318,7 +363,7 @@ final class HolderOwnerSourceTests {
 
             assertThat(holderResolveSourceFake.readPassesOpenedOver())
                 .singleElement()
-                .isNotSameAs(providerPasses.get(0))
+                .isNotSameAs(readFirstResolvedPass())
                 .extracting(HolderPass::grouping)
                 .isSameAs(otherGrouping);
         }
@@ -387,7 +432,7 @@ final class HolderOwnerSourceTests {
             assertThat(plannerInputs)
                 .singleElement()
                 .extracting(RibbonPlanInputs::pass)
-                .isSameAs(providerPasses.get(0));
+                .isSameAs(readFirstResolvedPass());
         }
 
         @Test
@@ -397,7 +442,7 @@ final class HolderOwnerSourceTests {
             // than the grouping the counts fold under.
             OwnerAffiliation allied = (first, second) -> !first.equals(second);
 
-            new HolderOwnerSource(HolderGrouping.identity(), stubViewOver(allied, this::recordPlannerInputs))
+            buildSourceUnder(HolderGrouping.identity(), allied)
                 .resolveRibbonPlanner(buildWalkUnder(MapVisibilityRules.BASE), RULES);
 
             assertThat(plannerInputs.get(0).affiliation())
@@ -429,22 +474,29 @@ final class HolderOwnerSourceTests {
             assertThat(answered)
                 .isSameAs(planner);
         }
-
-        private SystemRibbonPlanner recordPlannerInputs(RibbonPlanInputs inputs) {
-            plannerInputs.add(inputs);
-            return system -> RibbonPlan.NONE;
-        }
     }
 
     // A source under the given grouping over the recording rules, nobody standing together.
     private HolderOwnerSource buildSourceUnder(HolderGrouping grouping) {
+        return buildSourceUnder(grouping, OwnerAffiliation.NONE);
+    }
 
-        return new HolderOwnerSource(
-            grouping,
-            stubViewOver(OwnerAffiliation.NONE, inputs -> {
-                plannerInputs.add(inputs);
-                return system -> RibbonPlan.NONE;
-            }));
+    // A source under the given grouping and affiliation over the recording rules.
+    private HolderOwnerSource buildSourceUnder(HolderGrouping grouping, OwnerAffiliation affiliation) {
+        return new HolderOwnerSource(grouping, stubViewOver(affiliation, this::recordPlannerInputs));
+    }
+
+    // The first pass the layer's whole-sector rule was handed, which every other read in a case is
+    // compared against.
+    private HolderPass readFirstResolvedPass() {
+        return holderProviderFake.readResolvedPasses().get(0);
+    }
+
+    // The layer's band planner: records what it was handed, and counts nothing.
+    private SystemRibbonPlanner recordPlannerInputs(RibbonPlanInputs inputs) {
+
+        plannerInputs.add(inputs);
+        return system -> RibbonPlan.NONE;
     }
 
     // A view answering the recording rules, the stated affiliation and the stated band planner.
@@ -457,28 +509,13 @@ final class HolderOwnerSourceTests {
         when(viewMock.resolveContestAffiliation())
             .thenReturn(affiliation);
         when(viewMock.resolveHolderProvider())
-            .thenReturn(buildProvider());
+            .thenReturn(holderProviderFake);
         when(viewMock.resolveSystemHolderResolveSource())
             .thenReturn(holderResolveSourceFake);
         when(viewMock.resolveRibbonPlanner(any()))
             .thenAnswer(invocation -> plannerSource.apply(invocation.getArgument(0)));
 
         return viewMock;
-    }
-
-    // The layer's whole-sector rule: one held system, one contested and one unfilled, recording the
-    // pass and the pick it was handed.
-    private HolderProvider buildProvider() {
-
-        return (pass, selectedBlocId) -> {
-            providerPasses.add(pass);
-            providerSpotlitIds.add(selectedBlocId);
-
-            return new HolderResolution(
-                Map.of(HELD_SYSTEM, HEGEMONY_OWNER),
-                Set.of(CONTESTED_SYSTEM),
-                Set.of(UNFILLED_SYSTEM));
-        };
     }
 
     // A walk over no sector: every read beneath the source is stood in for, so only which walk and

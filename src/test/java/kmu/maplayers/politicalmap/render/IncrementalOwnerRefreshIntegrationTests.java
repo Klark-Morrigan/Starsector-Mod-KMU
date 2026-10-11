@@ -192,13 +192,13 @@ final class IncrementalOwnerRefreshIntegrationTests {
 
             hegemonyMock = SectorOwnershipFixtures.buildFaction(
                 HEGEMONY,
-                SectorOwnershipFixtures.HEGEMONY_BRIGHT);
+                SectorOwnershipFixtures.HEGEMONY_FACTION_BRIGHT);
             tritachyonMock = SectorOwnershipFixtures.buildFaction(
                 TRITACHYON,
-                SectorOwnershipFixtures.TRITACHYON_BRIGHT);
+                SectorOwnershipFixtures.TRITACHYON_FACTION_BRIGHT);
             piratesMock = SectorOwnershipFixtures.buildFaction(
                 PIRATES,
-                SectorOwnershipFixtures.PERSEAN_BRIGHT);
+                SectorOwnershipFixtures.PERSEAN_FACTION_BRIGHT);
 
             // Assembled in three named steps rather than behind one builder, so the systems a case
             // re-stubs colonies through and the economy it re-stubs them on are visible here

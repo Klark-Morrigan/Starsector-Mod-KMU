@@ -1,6 +1,7 @@
 package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.colour.ColourPair;
 
@@ -14,32 +15,28 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.List;
+import java.util.Map;
 
-import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.GROUP_BLOC_ID;
 import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins what one bake's band inputs are read from: the palettes built off the pass's own sector and
- * grouping, the affiliation and rules carried as handed, and the grouping and habitation answered by
- * the pass rather than by a read of their own.
+ * grouping, the pass, affiliation and rules carried as handed, and the grouping and habitation
+ * answered by the pass rather than by a read of their own.
+ *
+ * <p>The pass is stood in for, since what it answers is pinned in its own suite; what belongs here
+ * is that the inputs ask it rather than anything beside it.
  */
 final class RibbonPlanInputsTests {
 
-    private static final String SYSTEM_ID = "corvus";
-
     private static final Color BRIGHT = new Color(140, 160, 220);
     private static final Color DARK = new Color(40, 60, 120);
-
-    // The size every posed colony carries, which nothing here reads.
-    private static final int COLONY_SIZE = 5;
 
     // Laying rules no default lands on, so carrying them is seen.
     private static final RibbonPlanRules RULES =
@@ -56,19 +53,22 @@ final class RibbonPlanInputsTests {
             // A group bloc is shaded by its lead member, which only a palette folding under the
             // pass's grouping and reading the pass's sector can answer.
             var sectorMock = SectorFactionFixtures.buildSectorShadingFaction("hegemony", BRIGHT, DARK);
-            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, buildGroupOf("hegemony", "persean"));
-            var inputs = RibbonPlanInputs.createForPass(pass, AFFILIATION, RULES);
+            var passMock = stubPassOver(sectorMock, buildGroupOf("hegemony", "persean"));
+            var inputs = RibbonPlanInputs.createForPass(passMock, AFFILIATION, RULES);
 
             assertThat(inputs.palettes().readBlocPalette(GROUP_BLOC_ID))
                 .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
 
         @Test
-        void carriesTheHandedAffiliationAndRules() {
+        void carriesTheHandedPassAffiliationAndRules() {
+            // The pass is carried rather than reopened, so every planner of one bake counts off the
+            // one walk the bake began with.
+            var passMock = stubPassOver(mock(SectorAPI.class), HolderGrouping.identity());
+            var inputs = RibbonPlanInputs.createForPass(passMock, AFFILIATION, RULES);
 
-            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
-            var inputs = RibbonPlanInputs.createForPass(pass, AFFILIATION, RULES);
-
+            assertThat(inputs.pass())
+                .isSameAs(passMock);
             assertThat(inputs.affiliation())
                 .isSameAs(AFFILIATION);
             assertThat(inputs.rules())
@@ -83,9 +83,9 @@ final class RibbonPlanInputsTests {
         void answersThePassesGrouping() {
             // The counts fold under the grouping the fills were painted with, which is the pass's.
             var grouping = buildGroupOf("hegemony", "persean");
-            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, grouping);
+            var passMock = stubPassOver(mock(SectorAPI.class), grouping);
 
-            assertThat(RibbonPlanInputs.createForPass(pass, OwnerAffiliation.NONE, RULES).grouping())
+            assertThat(RibbonPlanInputs.createForPass(passMock, OwnerAffiliation.NONE, RULES).grouping())
                 .isSameAs(grouping);
         }
     }
@@ -97,28 +97,30 @@ final class RibbonPlanInputsTests {
         void answersThePassesOwnRememberedHabitation() {
             // Asserted as identity: the band reads the very value the pass remembered for the
             // system, so it neither filters nor folds the colonies a second time.
-            var sector = buildSectorWith(
-                SYSTEM_ID,
-                buildVisibleMarket(buildFaction("hegemony"), COLONY_SIZE));
+            var systemMock = mock(StarSystemAPI.class);
+            var habitation = new SystemHabitation(List.of(), Map.of("hegemony", new BlocHabitation(1, 5)));
+            var passMock = stubPassOver(mock(SectorAPI.class), HolderGrouping.identity());
 
-            var pass = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
-            var system = buildOnlySystem(sector);
-            var habitation = RibbonPlanInputs
-                .createForPass(pass, OwnerAffiliation.NONE, RULES)
-                .readHabitationIn(system);
+            when(passMock.readHabitationIn(systemMock))
+                .thenReturn(habitation);
 
-            assertThat(habitation)
-                .isSameAs(pass.readHabitationIn(system));
+            assertThat(RibbonPlanInputs
+                    .createForPass(passMock, OwnerAffiliation.NONE, RULES)
+                    .readHabitationIn(systemMock))
+                .isSameAs(habitation);
         }
+    }
 
-        @Test
-        void answersNobodyLivingForNoSystem() {
+    // A pass naming the stated sector and grouping, which is all the palettes are built from.
+    private static HolderPass stubPassOver(SectorAPI sector, HolderGrouping grouping) {
 
-            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
-            var inputs = RibbonPlanInputs.createForPass(pass, OwnerAffiliation.NONE, RULES);
+        var passMock = mock(HolderPass.class);
 
-            assertThat(inputs.readHabitationIn(null).hasInhabitingColony())
-                .isFalse();
-        }
+        when(passMock.sector())
+            .thenReturn(sector);
+        when(passMock.grouping())
+            .thenReturn(grouping);
+
+        return passMock;
     }
 }

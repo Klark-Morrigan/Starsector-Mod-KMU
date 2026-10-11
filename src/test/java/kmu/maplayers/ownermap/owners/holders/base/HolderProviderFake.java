@@ -1,10 +1,7 @@
 package kmu.maplayers.ownermap.owners.holders.base;
 
-import kmlib.starsector.systems.SystemKey;
-
-import kmu.maplayers.ownermap.owners.SystemOwner;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,22 +10,30 @@ import java.util.Set;
  * A holding source a tier case can hand over without reaching for a mechanic's own resolver.
  *
  * <p>The tier resolves holders through {@link HolderProvider} and never names what fills it, so its
- * own suites cannot name one either. What a case usually wants is a source that answers the same
- * thing every time and records nothing, which is what this is.
+ * own suites cannot name one either. What a case wants is a source that answers one stated
+ * resolution every time, whatever it is passed.
  *
- * <p>Answers whatever holding it was built over, with nothing contested and nothing unfilled - the
- * two sets a case about those states its own resolution for rather than reaching here.
- *
- * <p>Records every pass it was handed, so a case can pin what the caller opened - that a
- * diagnostic reads under the grouping it says it does, or that a gated path never resolved at all.
+ * <p>Records every pass it was handed and the bloc each resolve was spotlit on, so a case can pin
+ * what the caller opened and asked under.
  */
 public final class HolderProviderFake implements HolderProvider {
 
-    private final Map<SystemKey, SystemOwner> ownerBySystemKey;
+    private final HolderResolution resolution;
     private final List<HolderPass> resolvedPasses = new ArrayList<>();
+    private final List<String> selectedBlocIds = new ArrayList<>();
 
-    private HolderProviderFake(Map<SystemKey, SystemOwner> ownerBySystemKey) {
-        this.ownerBySystemKey = ownerBySystemKey;
+    private HolderProviderFake(HolderResolution resolution) {
+        this.resolution = resolution;
+    }
+
+    /**
+     * A source answering one stated resolution whatever it is passed.
+     *
+     * @param resolution the resolution every resolve answers with
+     * @return a provider over that resolution
+     */
+    public static HolderProviderFake createAnswering(HolderResolution resolution) {
+        return new HolderProviderFake(resolution);
     }
 
     /**
@@ -38,19 +43,7 @@ public final class HolderProviderFake implements HolderProvider {
      * @return a provider answering empty holding for any pass
      */
     public static HolderProviderFake createHoldingNothing() {
-        return new HolderProviderFake(Map.of());
-    }
-
-    /**
-     * A source answering one stated holding whatever it is passed.
-     *
-     * @param ownerBySystemKey the holding every resolve answers with
-     * @return a provider over that holding
-     */
-    public static HolderProviderFake createHolding(
-            Map<SystemKey, SystemOwner> ownerBySystemKey) {
-
-        return new HolderProviderFake(ownerBySystemKey);
+        return createAnswering(new HolderResolution(Map.of(), Set.of(), Set.of()));
     }
 
     /**
@@ -62,9 +55,21 @@ public final class HolderProviderFake implements HolderProvider {
         return List.copyOf(resolvedPasses);
     }
 
+    /**
+     * The bloc each resolve was spotlit on, in the order they were asked.
+     *
+     * @return the recorded bloc IDs, null where a resolve was asked with nothing spotlit
+     */
+    public List<String> readSelectedBlocIds() {
+        return Collections.unmodifiableList(new ArrayList<>(selectedBlocIds));
+    }
+
     @Override
     public HolderResolution resolveHolder(HolderPass pass, String selectedBlocId) {
+
         resolvedPasses.add(pass);
-        return new HolderResolution(ownerBySystemKey, Set.of(), Set.of());
+        selectedBlocIds.add(selectedBlocId);
+
+        return resolution;
     }
 }

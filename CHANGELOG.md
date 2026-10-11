@@ -33,13 +33,13 @@ None of these reach a player: every LunaLib field ID and every value saved in se
 
 ##### Packages
 
-The owner-map tier's core knows nothing of what an owner is. What the layers painting holders share lives under `kmu.maplayers.ownermap.owners.holders`: `base` for every kind of holder, with its picker in `base.picker` and its hover-box colony lines in `base.tooltip`, `factions` for one faction as one owner, and `alliances` for a group of factions as one owner. The core may not import that subtree.
+The owner-map tier's core knows nothing of what an owner is. What the layers painting holders share lives under `kmu.maplayers.ownermap.owners.holders`: `base` for every kind of holder, with its picker in `base.picker`, `factions` for one faction as one owner, and `alliances` for a group of factions as one owner. The core may not import that subtree.
 
 | Before | After |
 | --- | --- |
 | `ownermap.holding`, `ownermap.owners.holders`, `RibbonPlanInputs`, `BlocPaletteReader`, `SectorBlocPalettes`, `HolderCategories`, `OwnerMapCategory` and `ColonyCellRibbons` | `ownermap.owners.holders.base`, apart from the types below |
 | `BlocPickerAssembly`, `BlocStanding`, `BlocStandingReader`, `BlocStandingSortMode` and `SizedBlocMetrics` | `ownermap.owners.holders.base.picker` |
-| `SystemStatusRow` and the colony lines of `ownermap.tooltip` | `ownermap.owners.holders.base.tooltip` |
+| `SystemStatusRow` and the colony lines of `ownermap.tooltip` | `politicalmap.tooltip`, beside the political map's hover boxes that read them |
 | The faction lines of `ownermap.tooltip` | `ownermap.owners.holders.factions` |
 | `ownermap.tooltip.TermTooltipLine` | `base.tooltip.content.TermTooltipLine`. `ownermap.tooltip` is gone |
 | `ownermap.sidebar.BodyControlTarget` | `base.sidebar.BodyControlTarget` |
@@ -58,6 +58,7 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` and its `strings.json` key | `POLITICAL_MAP_CTL_FACTION_NAMES`, the political map's own caption |
 | `ownermap.owners.OwnerPalette` | KMLib's `kmlib.colour.ColourPair`, which a faction's pair already is. `SectorBlocPalettes.adoptFactionPalette(FactionPalette)` is gone |
 | `HolderPass.over(SectorAPI, ColonyReadRules, HolderGrouping)` | `HolderPass.createOver(SectorAPI, ColonyReadRules, HolderGrouping)` |
+| `SystemColonyReading.readColoniesIn(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` | `readColonyReadingOf(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` |
 | `SharedBlocSortModes.declareMarketSizeMode(List)` | `SizedBlocMetrics.createMarketSizeMode(List)` |
 
 ##### Seams
@@ -73,6 +74,8 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `HolderGrouping.collectBlocIds(Collection)` | Gone |
 | `HolderPass.readKnownColoniesIn(StarSystemAPI)` and `readInhabitingColoniesIn(StarSystemAPI)`, public | Package-private. A reader outside it takes `readHabitationIn(StarSystemAPI)` or `readKnownColonyFactionIds(StarSystemAPI)` |
 | `AllianceBodyControls` | Gone: `AlliancesView.getViewBodyControls(BodyControlTarget)` binds the shared recede control itself |
+| `SystemColonyReading`'s `readKindOf(String)`, `isDiscoveredColony(String)`, `isOpenlyKnownColony(String)`, `readConcealmentOf(String, boolean)`, both `readQualifierFacts` overloads and `describeColony(CellTooltipEntryLine, String, ColonyQualifierFacts)` | `describeColony(CellTooltipEntryLine, AccountedColony, String)`, the colony built by `AccountedColony.createEconomyListedColony(String, boolean)` or `createOffEconomyColony(String, boolean)`. A caller already holding the kind passes it to `describeColony(CellTooltipEntryLine, AccountedColony, ColonyKind, String)` |
+| `ColonyQualifier`, `ColonyQualifierFacts`, `ColonyConcealment` and the `SystemColonyReading` constructor, public | Package-private: a line is described through `SystemColonyReading.describeColony`. The constructor takes the colony remark as a `BiFunction` and refuses a null part |
 | `RenderStyleReader.readFactionStyle()`, `readIndependentStyle()`, `readDecivilisedStyle()` and `readUninhabitedStyle(boolean)` | `HolderCategoryStyleReader` |
 | `BlocPresence.collectColouredPresences(Map, BlocPaletteReader)` | Gone: `ColonyCellRibbons` colours its own counts |
 | `NameFormatPreference(String)` | `NameFormatPreference(String, String)`: the layer also names the name radio's caption key |

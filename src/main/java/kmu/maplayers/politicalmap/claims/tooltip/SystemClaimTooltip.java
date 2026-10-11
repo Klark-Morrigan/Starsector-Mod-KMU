@@ -20,12 +20,12 @@ import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.ColonyObservationNotes;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReading;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemStatusRow;
 import kmu.maplayers.ownermap.owners.holders.factions.FactionTooltipLine;
+import kmu.maplayers.politicalmap.tooltip.ColonyObservationNotes;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingSource;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
+import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.mods.nexerelin.NexerelinContestWording;
 import kmu.util.KmuStringKeys;
@@ -164,7 +164,7 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         // and how old the box's news of it is - folded once for the whole box off the walk above.
         // An account lists a system's colonies once per faction standing, so either read taken
         // where a row is drawn would walk the set again for every faction listed.
-        var colonyReading = SystemColonyReading.readColoniesIn(
+        var colonyReading = SystemColonyReading.readColonyReadingOf(
             sector,
             system,
             colonies,

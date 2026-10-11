@@ -15,16 +15,20 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.FRIENDLY;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.GREEN;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.HOSTILE;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.PACT_GROUPING;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.RED;
 import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.ROW_COLOUR;
 import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.buildStandInOwner;
 import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.listIdsInModeOrder;
 import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.listIdsInOrder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pins the ranking and the drawn value the standing mode adds: the three cases laid out as one scale
@@ -41,26 +45,27 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class BlocStandingSortModeTests {
 
-    // The shades relations resolve to, distinct so a run carrying the wrong end's standing shows as a
-    // colour rather than only as a number.
-    private static final Color GREEN = new Color(60, 180, 60);
-    private static final Color RED = new Color(200, 50, 50);
+    // The shade a neutral relation resolves to, beside the shared friendly and hostile ones.
     private static final Color GREY = new Color(140, 140, 140);
 
-    private static final FactionRelation FRIENDLY = new FactionRelation(RepLevel.FRIENDLY, 60, GREEN);
-    private static final FactionRelation HOSTILE = new FactionRelation(RepLevel.HOSTILE, -40, RED);
     private static final FactionRelation NEUTRAL = new FactionRelation(RepLevel.NEUTRAL, 0, GREY);
 
     // A second friendly standing one point off the first, so a pair level on the low end of the range
     // has a high end left to break it.
     private static final FactionRelation WARMER = new FactionRelation(RepLevel.FRIENDLY, 61, GREEN);
 
-    // A group of two, which is the smallest grouping in which a bloc's standing is a range over
-    // more than one member.
-    private static final HolderGrouping PACT_GROUPING = new HolderGrouping(
-        Map.of("hegemony", "pact", "tritachyon", "pact"),
-        Map.of("pact", "hegemony"),
-        Map.of("pact", "Persean Pact"));
+    @Nested
+    class Constructor {
+
+        @Test
+        void refusesAMissingStandingReader() {
+            // The reader is consulted only once a sort runs, so a mode built without one would fault
+            // when the player first picked it rather than where the picker composed it.
+            assertThatThrownBy(() -> new BlocStandingSortMode<HazardRatingFake>(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("standingReader");
+        }
+    }
 
     @Nested
     class PersistenceKey {
@@ -205,7 +210,8 @@ final class BlocStandingSortModeTests {
 
             // A sort compares every bloc several times over, and one standing read can walk the
             // whole economy, so a sort reads each bloc once however often it compares it.
-            var relationSourceFake = new CountingRelationSourceFake(
+            var relationSourceFake = new PlayerRelationSourceFake(
+                null,
                 Map.of("hegemony", HOSTILE, "tritachyon", FRIENDLY, "persean", NEUTRAL, "diktat", WARMER));
             var mode = new BlocStandingSortMode<HazardRatingFake>(
                 new BlocStandingReader(HolderGrouping.identity(), relationSourceFake));
@@ -226,7 +232,8 @@ final class BlocStandingSortModeTests {
 
             // The memo lives as long as one comparator, so a later sort ranks by the standings of
             // its own moment rather than by those an earlier sort saw.
-            var relationSourceFake = new CountingRelationSourceFake(
+            var relationSourceFake = new PlayerRelationSourceFake(
+                null,
                 Map.of("hegemony", HOSTILE, "tritachyon", FRIENDLY));
             var mode = new BlocStandingSortMode<HazardRatingFake>(
                 new BlocStandingReader(HolderGrouping.identity(), relationSourceFake));
@@ -382,36 +389,5 @@ final class BlocStandingSortModeTests {
         return new BlocStandingSortMode<>(new BlocStandingReader(
             grouping,
             new PlayerRelationSourceFake(establishedPlayerFactionId, standingByFactionId)));
-    }
-
-    /**
-     * Answers stated standings for an unestablished player, counting how often each faction's
-     * standing was read.
-     */
-    private static final class CountingRelationSourceFake implements BlocStandingReader.PlayerRelationSource {
-
-        private final Map<String, Integer> readCountByFactionId = new HashMap<>();
-        private final Map<String, FactionRelation> standingByFactionId;
-
-        CountingRelationSourceFake(Map<String, FactionRelation> standingByFactionId) {
-            this.standingByFactionId = standingByFactionId;
-        }
-
-        @Override
-        public Optional<FactionRelation> readRelationWithPlayer(String factionId) {
-
-            readCountByFactionId.merge(factionId, 1, Integer::sum);
-
-            return Optional.ofNullable(standingByFactionId.get(factionId));
-        }
-
-        @Override
-        public Optional<String> resolveEstablishedPlayerFactionId() {
-            return Optional.empty();
-        }
-
-        Map<String, Integer> readCountByFactionId() {
-            return readCountByFactionId;
-        }
     }
 }

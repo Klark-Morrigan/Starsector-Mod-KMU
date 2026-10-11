@@ -1,26 +1,29 @@
 package kmu.maplayers.ownermap.owners.holders.base.picker;
 
-import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.characters.RelationshipAPI;
 
 import kmlib.starsector.factions.StarsectorPlayerFactionResolver;
 import kmlib.starsector.factions.relation.FactionRelation;
+import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
 import java.util.Map;
 
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.FRIENDLY;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.HOSTILE;
+import static kmu.maplayers.ownermap.owners.holders.base.picker.BlocStandingFixtures.PACT_GROUPING;
 import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
 import static kmu.starsector.SectorFactionFixtures.stubKnownFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -34,27 +37,40 @@ import static org.mockito.Mockito.when;
  */
 final class BlocStandingReaderTests {
 
-    // The shades a relation resolves to, distinct so an end carrying the wrong member's standing
-    // shows as a colour rather than only as a number.
-    private static final Color GREEN = new Color(60, 180, 60);
-    private static final Color RED = new Color(200, 50, 50);
-
-    private static final FactionRelation FRIENDLY = new FactionRelation(RepLevel.FRIENDLY, 60, GREEN);
-    private static final FactionRelation HOSTILE = new FactionRelation(RepLevel.HOSTILE, -40, RED);
-
-    // A group of two, which is the smallest grouping in which a bloc's membership is anything
-    // other than the bloc's own id.
-    private static final HolderGrouping PACT_GROUPING = new HolderGrouping(
-        Map.of("hegemony", "pact", "tritachyon", "pact"),
-        Map.of("pact", "hegemony"),
-        Map.of("pact", "Persean Pact"));
-
-    // The same group with the player's own faction inside it, so a bloc the map paints as partly
-    // the player's is asked about as one.
+    // The same group as the shared pact with the player's own faction inside it, so a bloc the map
+    // paints as partly the player's is asked about as one.
     private static final HolderGrouping PLAYER_PACT_GROUPING = new HolderGrouping(
         Map.of("player", "pact", "hegemony", "pact"),
         Map.of("pact", "hegemony"),
         Map.of("pact", "Persean Pact"));
+
+    private final StaticSeams seams = new StaticSeams();
+
+    @AfterEach
+    void closeSeams() {
+        seams.closeEverySeam();
+    }
+
+    @Nested
+    class Constructor {
+
+        @Test
+        void refusesAMissingGrouping() {
+            // The grouping is what names a bloc's members, so a reader with none would fault on the
+            // first bloc it was asked about rather than where the picker failed to hand one over.
+            assertThatThrownBy(() -> new BlocStandingReader(null, new PlayerRelationSourceFake(null, Map.of())))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("grouping");
+        }
+
+        @Test
+        void refusesAMissingRelationSource() {
+
+            assertThatThrownBy(() -> new BlocStandingReader(HolderGrouping.identity(), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("relationSource");
+        }
+    }
 
     @Nested
     class ReadBlocStanding {
@@ -184,11 +200,28 @@ final class BlocStandingReaderTests {
     class CreateForSector {
 
         @Test
+        void refusesAMissingSector() {
+            // The reads behind the reader are deferred to each call, so without this guard a missing
+            // sector would surface only when the picker first ranked by standing.
+            assertThatThrownBy(() -> BlocStandingReader.createForSector(null, HolderGrouping.identity()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("sector");
+        }
+
+        @Test
+        void refusesAMissingGrouping() {
+
+            assertThatThrownBy(() -> BlocStandingReader.createForSector(buildEmptySector(), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("grouping");
+        }
+
+        @Test
         void readsAMembersStandingFromTheHandedInSector() {
 
             var sectorMock = buildEmptySector();
 
-            stubRelationWithPlayer(sectorMock, "hegemony", RepLevel.HOSTILE, -40, RED);
+            stubRelationWithPlayer(sectorMock, "hegemony", HOSTILE);
 
             var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
 
@@ -203,18 +236,16 @@ final class BlocStandingReaderTests {
 
             var sectorMock = buildEmptySector();
 
-            stubRelationWithPlayer(sectorMock, "player", RepLevel.FRIENDLY, 60, GREEN);
+            stubRelationWithPlayer(sectorMock, "player", FRIENDLY);
 
-            try (var resolverMock = mockStatic(StarsectorPlayerFactionResolver.class)) {
+            seams.openSeam(StarsectorPlayerFactionResolver.class)
+                .when(() -> StarsectorPlayerFactionResolver.findEstablishedPlayerFactionId(sectorMock))
+                .thenReturn("player");
 
-                resolverMock.when(() -> StarsectorPlayerFactionResolver.findEstablishedPlayerFactionId(sectorMock))
-                    .thenReturn("player");
+            var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
 
-                var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
-
-                assertThat(reader.readBlocStanding("player"))
-                    .isEqualTo(BlocStanding.PLAYERS_OWN);
-            }
+            assertThat(reader.readBlocStanding("player"))
+                .isEqualTo(BlocStanding.PLAYERS_OWN);
         }
 
         @Test
@@ -222,18 +253,16 @@ final class BlocStandingReaderTests {
 
             var sectorMock = buildEmptySector();
 
-            stubRelationWithPlayer(sectorMock, "player", RepLevel.FRIENDLY, 60, GREEN);
+            stubRelationWithPlayer(sectorMock, "player", FRIENDLY);
 
-            try (var resolverMock = mockStatic(StarsectorPlayerFactionResolver.class)) {
+            seams.openSeam(StarsectorPlayerFactionResolver.class)
+                .when(() -> StarsectorPlayerFactionResolver.findEstablishedPlayerFactionId(sectorMock))
+                .thenReturn(null);
 
-                resolverMock.when(() -> StarsectorPlayerFactionResolver.findEstablishedPlayerFactionId(sectorMock))
-                    .thenReturn(null);
+            var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
 
-                var reader = BlocStandingReader.createForSector(sectorMock, HolderGrouping.identity());
-
-                assertThat(reader.readBlocStanding("player"))
-                    .isEqualTo(new BlocStanding.Measured(FRIENDLY, FRIENDLY));
-            }
+            assertThat(reader.readBlocStanding("player"))
+                .isEqualTo(new BlocStanding.Measured(FRIENDLY, FRIENDLY));
         }
     }
 
@@ -241,18 +270,16 @@ final class BlocStandingReaderTests {
     private static void stubRelationWithPlayer(
             SectorAPI sectorMock,
             String factionId,
-            RepLevel level,
-            int reputation,
-            Color colour) {
+            FactionRelation relation) {
 
         var relationshipMock = mock(RelationshipAPI.class);
 
         when(relationshipMock.getLevel())
-            .thenReturn(level);
+            .thenReturn(relation.level());
         when(relationshipMock.getRepInt())
-            .thenReturn(reputation);
+            .thenReturn(relation.reputation());
         when(relationshipMock.getRelColor())
-            .thenReturn(colour);
+            .thenReturn(relation.colour());
 
         var factionMock = stubKnownFaction(sectorMock, factionId);
 

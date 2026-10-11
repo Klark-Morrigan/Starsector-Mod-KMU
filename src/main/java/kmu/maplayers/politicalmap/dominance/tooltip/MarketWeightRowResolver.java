@@ -7,14 +7,14 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.content.TermTooltipLine;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.ColonyQualifier;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReading;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolTierFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.StationFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.UnweighedColony;
+import kmu.maplayers.politicalmap.tooltip.AccountedColony;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.settings.HiddenMarketScalingChoice;
 import kmu.util.KmuStringKeys;
 
@@ -35,7 +35,7 @@ import java.util.List;
  *
  * <p>Pure over a breakdown and a rule with no Starsector types, so a whole box's worth of lines is
  * resolved without a live economy. How one line's numbers read is {@link MarketFactorText}'s; what a
- * colony's line calls out beyond its weight is {@link ColonyQualifier}'s.
+ * colony's line calls out beyond its weight is {@link SystemColonyReading#describeColony}'s.
  */
 public final class MarketWeightRowResolver {
 
@@ -61,12 +61,6 @@ public final class MarketWeightRowResolver {
     // A tier nobody fields is not listed. Its line would state patrols the colony does not have,
     // and the reader is looking for what the weight is made of, not what it is not.
     private static final int NO_PATROLS = 0;
-
-    // Where the economy stands on a colony that reached one list or the other. The weight read
-    // walks the economy's own set, so everything it weighed is listed by construction and
-    // everything on the unweighed list is there precisely because it is not.
-    private static final boolean IS_LISTED_BY_ECONOMY = true;
-    private static final boolean IS_NOT_LISTED_BY_ECONOMY = false;
 
     // What this box leads a colony's line with, which is nothing: taking a system is the claim
     // contest's finding, and this box is an account of a different one.
@@ -125,6 +119,9 @@ public final class MarketWeightRowResolver {
     // The kind comes off the box's walk of the system rather than off the breakdown, the weight
     // read having no reason to carry one: everything it weighs is a place somebody keeps. It is
     // asked all the same, so what a line may call out is decided in one place for both lists.
+    //
+    // Listed by the economy by construction, the weight read walking the economy's own set - which
+    // is also why everything on the unweighed list is not.
     private static CellTooltipEntry resolveMarketEntry(
             MarketWeightBreakdown breakdown,
             WeightAccountReading reading) {
@@ -138,12 +135,10 @@ public final class MarketWeightRowResolver {
         return CellTooltipEntry
             .createEntry(colonyReading.describeColony(
                 line,
-                breakdown.marketId(),
-                colonyReading.readQualifierFacts(
+                AccountedColony.createEconomyListedColony(
                     breakdown.marketId(),
-                    breakdown.isHiddenMarket(),
-                    IS_LISTED_BY_ECONOMY,
-                    NO_LEADING_FINDING)))
+                    breakdown.isHiddenMarket()),
+                NO_LEADING_FINDING))
             .nesting(resolveFactorEntries(breakdown, reading));
     }
 
@@ -173,13 +168,9 @@ public final class MarketWeightRowResolver {
         // the line's findings can only ever be about the colony it names.
         return CellTooltipEntry.createEntry(colonyReading.describeColony(
             line,
-            colony.marketId(),
-            colonyReading.readQualifierFacts(
-                colony.marketId(),
-                colony.kind(),
-                colony.isHiddenMarket(),
-                IS_NOT_LISTED_BY_ECONOMY,
-                NO_LEADING_FINDING)));
+            AccountedColony.createOffEconomyColony(colony.marketId(), colony.isHiddenMarket()),
+            colony.kind(),
+            NO_LEADING_FINDING));
     }
 
     // A line naming something the sector map draws - a colony or the station defending it - led by

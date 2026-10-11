@@ -1,15 +1,15 @@
 package kmu.maplayers.ownermap.owners.holders.base.picker;
 
 /**
- * One vocabulary's numbers for a case proving one shared sort mode binds into more than one: a
- * number it leads with, and the size every holder vocabulary carries.
+ * The numbers of a vocabulary leading with the number its layer paints by, for a case proving one
+ * shared sort mode binds into more than one vocabulary.
  *
- * <p>Beside {@link CountedBlocMetricsFake} rather than in its place: a shared mode has to survive
- * being bound over vocabularies that agree on nothing but the number it is about, so a case needs
- * two of them.
+ * <p>The same shape as {@link CountedBlocMetricsFake}; only the type tells the two apart. The shared
+ * mode is generic over the metrics record, so binding it over two distinct records is what shows it
+ * reads the one number they share and nothing either declares for itself.
  *
  * @param lead       the number this vocabulary leads with
- * @param marketSize the bloc's summed colony size
+ * @param marketSize the bloc's summed colony size, which every holder vocabulary carries
  */
 public record LeadingBlocMetricsFake(
     int lead,

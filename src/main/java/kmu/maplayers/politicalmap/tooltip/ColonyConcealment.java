@@ -1,4 +1,4 @@
-package kmu.maplayers.ownermap.owners.holders.base.tooltip;
+package kmu.maplayers.politicalmap.tooltip;
 
 /**
  * The three ways one colony may be out of plain view, which a box weighs together because they only
@@ -27,7 +27,7 @@ package kmu.maplayers.ownermap.owners.holders.base.tooltip;
  *                             beside the concealment rather than a correction to it, the colony
  *                             being concealed in every sense a visibility rule cares about
  */
-public record ColonyConcealment(
+record ColonyConcealment(
     boolean isDiscoveredByPlayer,
     boolean isHiddenMarket,
     boolean isOpenlyKnownMarket) {

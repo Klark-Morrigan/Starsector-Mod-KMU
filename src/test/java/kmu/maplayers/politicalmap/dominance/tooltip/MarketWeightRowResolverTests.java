@@ -7,8 +7,6 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.ColonyQualifierTests;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReading;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
@@ -19,6 +17,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.UnweighedColony;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.settings.HiddenMarketScalingChoice;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -37,10 +36,10 @@ import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.MARKET_S
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.FULL_STABILITY;
-import static kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
-import static kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
-import static kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
-import static kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.LAST_SEEN;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -72,7 +71,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>What a colony's line calls out about the place is pinned here only as far as this resolver
  * decides it: which facts each of the two lists hands over, and that they reach the line naming the
  * colony rather than a term beneath it. Which words those facts come to, in which order, is the
- * shared read's own question and is pinned by {@link ColonyQualifierTests}.
+ * shared read's own question and is pinned by ColonyQualifierTests.
  *
  * <p>How a line's numbers read is stood apart from and pinned by {@link MarketFactorTextTests}; the
  * values asserted below are read only where the case is about which line carries which.

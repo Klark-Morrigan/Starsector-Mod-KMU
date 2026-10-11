@@ -24,10 +24,10 @@ import java.util.function.Function;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_FACTION_BRIGHT;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.NEUTRAL_BASE;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.PERSEAN_BRIGHT;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.PERSEAN_FACTION_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.TRITACHYON_FACTION_BRIGHT;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildAbandonedStationMarket;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildDarkTheme;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
@@ -72,8 +72,8 @@ class FilteredPoliticsIntegrationTests {
         void marksADominatedSystemWithTheSpotlitKeyInTheSelectedBlocPaletteAndNotContested() {
             // The selected hegemony wins its system, so its cell keys spotlit and paints in
             // hegemony's own palette, and it is left out of the contested set (drawn solid).
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "owned-system",
                 List.of(hegemony, tritachyon),
@@ -88,9 +88,9 @@ class FilteredPoliticsIntegrationTests {
             assertThat(filtered.contestedSystemKeys())
                 .doesNotContain(buildCellKey("owned-system"));
             assertThat(holder.palette().primaryColour())
-                .isEqualTo(HEGEMONY_BRIGHT);
+                .isEqualTo(HEGEMONY_FACTION_BRIGHT);
             assertThat(holder.palette().secondaryColour())
-                .isEqualTo(buildDarkTheme(HEGEMONY_BRIGHT));
+                .isEqualTo(buildDarkTheme(HEGEMONY_FACTION_BRIGHT));
         }
 
         @Test
@@ -98,8 +98,8 @@ class FilteredPoliticsIntegrationTests {
             // The selected tritachyon owns a market but loses to hegemony, so its cell keys spotlit
             // (fusing with the rest of tritachyon's footprint) yet is reported contested - the only
             // record that it draws hatched - while still painting in tritachyon's palette.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "owned-system",
                 List.of(hegemony, tritachyon),
@@ -114,9 +114,9 @@ class FilteredPoliticsIntegrationTests {
             assertThat(filtered.contestedSystemKeys())
                 .contains(buildCellKey("owned-system"));
             assertThat(holder.palette().primaryColour())
-                .isEqualTo(TRITACHYON_BRIGHT);
+                .isEqualTo(TRITACHYON_FACTION_BRIGHT);
             assertThat(holder.palette().secondaryColour())
-                .isEqualTo(buildDarkTheme(TRITACHYON_BRIGHT));
+                .isEqualTo(buildDarkTheme(TRITACHYON_FACTION_BRIGHT));
         }
 
         @Test
@@ -124,8 +124,8 @@ class FilteredPoliticsIntegrationTests {
             // The selected hegemony owns nothing in the tritachyon system, so that cell keeps its
             // real tritachyon holder - which isSpotlitBloc rejects, so the caller recedes it - and is
             // never reported contested.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets("hegemony-system", buildVisibleMarket(hegemony, 5)),
@@ -141,7 +141,7 @@ class FilteredPoliticsIntegrationTests {
             assertThat(filtered.contestedSystemKeys())
                 .doesNotContain(buildCellKey("tritachyon-system"));
             assertThat(holder.palette().primaryColour())
-                .isEqualTo(TRITACHYON_BRIGHT);
+                .isEqualTo(TRITACHYON_FACTION_BRIGHT);
         }
 
         @Test
@@ -149,8 +149,8 @@ class FilteredPoliticsIntegrationTests {
             // The selected hegemony dominates one system and is present-but-dominated in another;
             // the two now share one spotlit key so the geometry traces a single frontier over the
             // whole footprint, with only the contested set - not the key - telling them apart.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets("solid-system", buildVisibleMarket(hegemony, 5)),
@@ -172,7 +172,7 @@ class FilteredPoliticsIntegrationTests {
             // Both systems the selected bloc dominates share the one spotlit key, so the geometry
             // fuses them into a single territory the way one faction's systems fuse, neither
             // contested.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("system-a", buildVisibleMarket(hegemony, 5)),
@@ -191,9 +191,9 @@ class FilteredPoliticsIntegrationTests {
             // Under the alliance grouping the selected bloc is an alliance ID; its spotlit cell
             // paints in its dominant member's (hegemony's) palette, reusing the same colour path
             // the normal alliance holder does.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
-            var persean = buildFaction("persean", PERSEAN_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
+            var persean = buildFaction("persean", PERSEAN_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "contested-system",
                 List.of(hegemony, tritachyon, persean),
@@ -215,7 +215,7 @@ class FilteredPoliticsIntegrationTests {
             assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isTrue();
             assertThat(holder.palette().primaryColour())
-                .isEqualTo(HEGEMONY_BRIGHT);
+                .isEqualTo(HEGEMONY_FACTION_BRIGHT);
         }
 
         @Test
@@ -224,7 +224,7 @@ class FilteredPoliticsIntegrationTests {
             // faction holds the system outright and its cell fills solid. Judged under the pass's
             // own rules: were the spotlight to settle a winner under any other, it would hatch a
             // cell the base layers paint solid, which is a spotlight moving a fill.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var neutral = buildFaction(Factions.NEUTRAL, NEUTRAL_BASE);
             var sector = buildSectorWith(
                 "salvage-system",
@@ -258,7 +258,7 @@ class FilteredPoliticsIntegrationTests {
             assertThat(filtered.contestedSystemKeys())
                 .contains(buildCellKey("owned-system"));
             assertThat(holder.palette().primaryColour())
-                .isEqualTo(TRITACHYON_BRIGHT);
+                .isEqualTo(TRITACHYON_FACTION_BRIGHT);
         }
 
         @Test
@@ -267,7 +267,7 @@ class FilteredPoliticsIntegrationTests {
             // dominant holder at all. The spotlit bloc still lives in it, which is what the
             // contested arm records - so the cell draws in its colours instead of leaving the
             // holder map and taking the factionless recede.
-            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
+            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates));
 
             placeMarketsOnSystemEntities(
@@ -325,8 +325,8 @@ class FilteredPoliticsIntegrationTests {
             // The widening is the spotlight's alone: a system whose every colony is unregistered
             // still resolves no dominant holder, so an unspotlit one is left out of the holder map
             // exactly as before. Presence keeps a bloc drawn; it never hands anybody a system.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony, pirates),
                 listSystemMarkets("hegemony-system", buildVisibleMarket(hegemony, 5)),
@@ -343,7 +343,7 @@ class FilteredPoliticsIntegrationTests {
         @Test
         void isEmptyWhenNoBlocIsSelected() {
 
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sector = buildSectorWith("owned-system", List.of(hegemony), buildVisibleMarket(hegemony, 5));
             var filtered =
                 FilteredPolitics.resolveFilteredHolder(buildPassOver(sector), null);
@@ -369,8 +369,8 @@ class FilteredPoliticsIntegrationTests {
         void leavesNoSystemUnfilledEvenWhereTheSpotlitBlocIsContested() {
             // The filter hatches a contested cell rather than blanking it, so the one resolution the
             // render pass reads carries no unfilled system even beside a hatched one.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "owned-system",
                 List.of(hegemony, tritachyon),
@@ -394,7 +394,7 @@ class FilteredPoliticsIntegrationTests {
             // The claims view's case: pirates hold a colony but claim nothing, so the system reaches
             // the render pass with no holder. The read has to find them there, or the cell over
             // their own colony sinks into the receded background.
-            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
+            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
 
             assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
@@ -408,8 +408,8 @@ class FilteredPoliticsIntegrationTests {
         void reportsACandidateTheSelectedBlocOwnsAMarketInEvenWhenARivalOutweighsIt() {
             // Presence, not dominance: a holderless system has no contest to win, so a bloc living
             // beside a larger rival counts exactly as one living alone does.
-            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
-            var independent = buildFaction("independent", PERSEAN_BRIGHT);
+            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
+            var independent = buildFaction("independent", PERSEAN_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "haven",
                 List.of(pirates, independent),
@@ -428,7 +428,7 @@ class FilteredPoliticsIntegrationTests {
             // The shape this read exists for, now that presence is read off the colonies rather
             // than off the weights: a haven whose one station the economy never registered, which
             // is why nothing holds the system and why it reached this read at all.
-            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
+            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates));
 
             placeMarketsOnSystemEntities(
@@ -464,8 +464,8 @@ class FilteredPoliticsIntegrationTests {
         @Test
         void omitsACandidateTheSelectedBlocOwnsNothingIn() {
 
-            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
-            var independent = buildFaction("independent", PERSEAN_BRIGHT);
+            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
+            var independent = buildFaction("independent", PERSEAN_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "haven",
                 List.of(pirates, independent),
@@ -483,7 +483,7 @@ class FilteredPoliticsIntegrationTests {
             // The candidate set is the whole of what the read answers for. A system the holding
             // already attributed to somebody draws in that territory, so re-reporting it here would
             // spare a cell a recede its own bloc is meant to take.
-            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
+            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(pirates),
                 listSystemMarkets("held", buildVisibleMarket(pirates, 5)),
@@ -499,7 +499,7 @@ class FilteredPoliticsIntegrationTests {
         @Test
         void isEmptyWhenNoBlocIsSelected() {
 
-            var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
+            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
 
             assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
@@ -526,8 +526,8 @@ class FilteredPoliticsIntegrationTests {
     private static SectorAPI buildSectorWhereTritachyonIsUnregistered(
             Function<FactionAPI, MarketAPI> buildUnregisteredColony) {
 
-        var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-        var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+        var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+        var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
         var sector = buildSectorWith(
             "owned-system",
             List.of(hegemony, tritachyon),

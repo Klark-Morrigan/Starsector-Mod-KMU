@@ -16,7 +16,7 @@ import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_FACTION_BRIGHT;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildDarkTheme;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildHolderPassOver;
@@ -51,7 +51,7 @@ final class SectorClaimsIntegrationTests {
             // A system the port reports no claimant for is absent from the map, exactly as an
             // uninhabited system is absent from the held-dominance pass.
             var sectorMock = buildSectorWithSystems(
-                    List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("unclaimed"));
+                    List.of(buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT)), listSystemMarkets("unclaimed"));
             var claimReaderFake = new ClaimReaderFake();
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
@@ -64,14 +64,16 @@ final class SectorClaimsIntegrationTests {
             // claiming faction's own key and authored shades - the same holder a held system of that
             // faction would carry, so the two fuse into one territory downstream.
             var sectorMock = buildSectorWithSystems(
-                    List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("claimed"));
+                    List.of(buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT)), listSystemMarkets("claimed"));
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     buildHolderPassOver(sectorMock), claimReaderFake))
                     .containsExactly(Map.entry(buildCellKey("claimed"),
-                            new SystemOwner("hegemony", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)))));
+                            new SystemOwner(
+                                "hegemony",
+                                new ColourPair(HEGEMONY_FACTION_BRIGHT, buildDarkTheme(HEGEMONY_FACTION_BRIGHT)))));
         }
 
         @Test
@@ -84,14 +86,16 @@ final class SectorClaimsIntegrationTests {
                     Map.of("alliance-1", "hegemony"),
                     Map.of("alliance-1", "Allied Powers"));
             var sectorMock = buildSectorWithSystems(
-                    List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("claimed"));
+                    List.of(buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT)), listSystemMarkets("claimed"));
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping), claimReaderFake))
                     .containsExactly(Map.entry(buildCellKey("claimed"),
-                            new SystemOwner("alliance-1", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)))));
+                            new SystemOwner(
+                                "alliance-1",
+                                new ColourPair(HEGEMONY_FACTION_BRIGHT, buildDarkTheme(HEGEMONY_FACTION_BRIGHT)))));
         }
 
         @Test
@@ -124,7 +128,7 @@ final class SectorClaimsIntegrationTests {
         void returnsNullForAnUnclaimedSystem() {
 
             var pass = buildHolderPassOver(buildSectorWithSystems(
-                    List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("unclaimed")));
+                    List.of(buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT)), listSystemMarkets("unclaimed")));
 
             assertThat(SectorClaims.resolveClaimingHolderIn(
                     pass.readSystems().get(0), pass, new ClaimReaderFake(), buildPalettesOver(pass))).isNull();
@@ -140,7 +144,7 @@ final class SectorClaimsIntegrationTests {
                     Map.of("alliance-1", "Allied Powers"));
             var pass = HolderPass.createOver(
                     buildSectorWithSystems(
-                            List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("claimed")),
+                            List.of(buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT)), listSystemMarkets("claimed")),
                     UNDER_THE_FOG,
                     grouping);
             var claimReaderFake = new ClaimReaderFake();
@@ -149,7 +153,8 @@ final class SectorClaimsIntegrationTests {
             assertThat(SectorClaims.resolveClaimingHolderIn(
                     pass.readSystems().get(0), pass, claimReaderFake, buildPalettesOver(pass)))
                     .isEqualTo(new SystemOwner(
-                            "alliance-1", new ColourPair(HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
+                            "alliance-1",
+                            new ColourPair(HEGEMONY_FACTION_BRIGHT, buildDarkTheme(HEGEMONY_FACTION_BRIGHT))));
         }
 
         private static SectorBlocPalettes buildPalettesOver(HolderPass pass) {

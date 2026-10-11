@@ -14,14 +14,8 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
-import kmu.maplayers.base.visibility.colonies.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.maplayers.base.visibility.colonies.ColonyKindLookup;
-import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyLookup;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.ColonyObservationNotes;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.ColonyObservationNotesTests;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.ColonyQualifierTests;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReading;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -31,7 +25,6 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture.nameMarketId;
@@ -40,10 +33,11 @@ import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.NO_NAME_S
 import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
-import static kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
-import static kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
-import static kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
-import static kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.LAST_SEEN;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingWithKind;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -68,7 +62,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Where a remark about how old the box's news of a market is may appear is pinned the same way -
  * on a market's own line whatever the contest made of it, and on nothing beneath one. When such a
- * remark is due at all is the notes' own question and is pinned by {@link ColonyObservationNotesTests}.
+ * remark is due at all is the notes' own question and is pinned by ColonyObservationNotesTests.
  *
  * <p>What a row the box may not name looks like is {@link RedactedMarketLinesTests}'s. What is pinned
  * here is what the account does with such a row: which markets get one, the listing place and the tie
@@ -79,7 +73,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>What a market's line calls out about the place is pinned here only as far as this resolver
  * decides it: which facts it hands over - the claim it took, the admission the contest met it
  * through, and what the box's walk of the system says about it. Which words those come to, in which
- * order, is the shared read's own question and is pinned by {@link ColonyQualifierTests}.
+ * order, is the shared read's own question and is pinned by ColonyQualifierTests.
  *
  * <p>The mechanic behind the numbers is KMLib's and has its own suite there, so what is left is what
  * this resolver alone decides - which market leads, when it is called out, and which terms are stated
@@ -147,11 +141,8 @@ final class ClaimScoreRowResolverTests {
     private static final SystemColonyReading NOTHING_BEYOND_THE_SCORE = SystemColonyReading.NONE;
 
     // The world people left, as the box's own walk of the system classified it.
-    private static final SystemColonyReading TIBICENA_IS_A_DECIVILISED_WORLD = new SystemColonyReading(
-        new ColonyKindLookup(Map.of("tibicena", ColonyKind.UNGOVERNED_COLONY)),
-        ColonyDiscoveryLookup.NONE,
-        OpenlyKnownColonyLookup.NONE,
-        ColonyObservationNotes.NONE);
+    private static final SystemColonyReading TIBICENA_IS_A_DECIVILISED_WORLD =
+        buildReadingWithKind("tibicena", ColonyKind.UNGOVERNED_COLONY);
 
     // A market the sector map marks with a glyph, and one it marks with none - the two readings a
     // market line's opening run turns on. The authored colour is carried because the read hands one

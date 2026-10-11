@@ -1,23 +1,22 @@
-package kmu.maplayers.ownermap.owners.holders.base.tooltip;
+package kmu.maplayers.politicalmap.tooltip;
 
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.colonies.ColonyDiscoveryLookup;
+import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKindLookup;
 import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyLookup;
 
-import java.util.Optional;
+import java.util.Map;
 import java.util.Set;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import java.util.function.BiFunction;
 
 /**
- * The box's walk of a system, posed as a case needs it: one colony the player has yet to find, or
- * one the box has something to remark on.
+ * The box's walk of a system, posed as a case needs it: one colony of a stated kind, one the player
+ * has yet to find, one the sector openly points at, or one the box has something to remark on.
  *
- * <p>Shared by every row resolver's suite because they pose the same two systems. Each resolver
- * holds a carrier the others have never heard of, but none carries what a reading answers, which
- * is exactly why one reading serves them all.
+ * <p>Shared by every row resolver's suite because they pose the same systems. Each resolver holds a
+ * carrier the others have never heard of, but none carries what a reading answers, which is exactly
+ * why one reading serves them all.
  */
 public final class SystemColonyReadingFixture {
 
@@ -27,7 +26,27 @@ public final class SystemColonyReadingFixture {
      */
     public static final String LAST_SEEN = "last seen 34 days ago (c206.05.12)";
 
+    // What a walk with nothing to remark on lays on every line: nothing at all.
+    private static final BiFunction<CellTooltipEntryLine, String, CellTooltipEntryLine> NO_REMARK =
+        (line, colonyId) -> line;
+
     private SystemColonyReadingFixture() {
+    }
+
+    /**
+     * A walk of a system holding one colony of the given kind and nothing else worth stating.
+     *
+     * @param colonyId the colony's market ID, as the account listing it carries
+     * @param kind     what sort of place the walk classified the colony as
+     * @return a reading answering that colony's kind and the ordinary colony for every other
+     */
+    public static SystemColonyReading buildReadingWithKind(String colonyId, ColonyKind kind) {
+
+        return new SystemColonyReading(
+            new ColonyKindLookup(Map.of(colonyId, kind)),
+            ColonyDiscoveryLookup.NONE,
+            OpenlyKnownColonyLookup.NONE,
+            NO_REMARK);
     }
 
     /**
@@ -38,11 +57,12 @@ public final class SystemColonyReadingFixture {
      * @return a reading answering that colony undiscovered and every other discovered
      */
     public static SystemColonyReading buildReadingWithUndiscovered(String colonyId) {
+
         return new SystemColonyReading(
             ColonyKindLookup.NONE,
             new ColonyDiscoveryLookup(Set.of(colonyId)),
             OpenlyKnownColonyLookup.NONE,
-            ColonyObservationNotes.NONE);
+            NO_REMARK);
     }
 
     /**
@@ -53,38 +73,30 @@ public final class SystemColonyReadingFixture {
      * @return a reading answering that colony openly known and every other a secret
      */
     public static SystemColonyReading buildReadingWithOpenlyKnown(String colonyId) {
+
         return new SystemColonyReading(
             ColonyKindLookup.NONE,
             ColonyDiscoveryLookup.NONE,
             new OpenlyKnownColonyLookup(Set.of(colonyId)),
-            ColonyObservationNotes.NONE);
+            NO_REMARK);
     }
 
     /**
-     * A walk remarking on exactly one colony. The notes are mocked because what makes a remark due
-     * is the notes' own question, pinned by {@link ColonyObservationNotesTests}; what the suites
-     * taking this are about is which line carries the answer.
+     * A walk remarking on exactly one colony. The remark is posed directly because what makes one
+     * due is the notes' own question, pinned beside the notes; what the suites taking this are about
+     * is which line carries the answer.
      *
      * @param colonyId the colony's market ID, as the account listing it carries
      * @return a reading remarking on that colony and on nothing else
      */
     public static SystemColonyReading buildReadingRemarkingOn(String colonyId) {
 
-        var notesMock = mock(ColonyObservationNotes.class);
-
-        when(notesMock.resolveLastSeenNote(colonyId))
-            .thenReturn(Optional.of(LAST_SEEN));
-
-        // The one thing the notes do to a line is left to run for real, since which line the remark
-        // lands on is what the suites taking this assert. Every other colony answers the unstubbed
-        // empty, so nothing else is touched.
-        when(notesMock.remarkOnColony(any(), any()))
-            .thenCallRealMethod();
-
         return new SystemColonyReading(
             ColonyKindLookup.NONE,
             ColonyDiscoveryLookup.NONE,
             OpenlyKnownColonyLookup.NONE,
-            notesMock);
+            (line, remarkedColonyId) -> colonyId.equals(remarkedColonyId)
+                ? line.notedWith(LAST_SEEN)
+                : line);
     }
 }

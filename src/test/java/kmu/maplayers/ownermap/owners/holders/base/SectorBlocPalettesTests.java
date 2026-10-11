@@ -11,7 +11,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.util.Map;
+
+import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.GROUP_BLOC_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -30,7 +31,6 @@ import static org.mockito.Mockito.when;
  */
 final class SectorBlocPalettesTests {
 
-    private static final String GROUP_BLOC = "hegemony_compact";
     private static final String LEAD_MEMBER = "hegemony";
 
     private static final Color BRIGHT = new Color(140, 160, 220);
@@ -48,7 +48,7 @@ final class SectorBlocPalettesTests {
                 BRIGHT,
                 DARK);
 
-            assertThat(readPaletteFrom(sectorMock, GROUP_BLOC))
+            assertThat(readPaletteFrom(sectorMock, GROUP_BLOC_ID))
                 .isEqualTo(new ColourPair(BRIGHT, DARK));
         }
 
@@ -60,7 +60,7 @@ final class SectorBlocPalettesTests {
             when(sectorMock.getFaction(LEAD_MEMBER))
                 .thenReturn(null);
 
-            assertThat(readPaletteFrom(sectorMock, GROUP_BLOC))
+            assertThat(readPaletteFrom(sectorMock, GROUP_BLOC_ID))
                 .isNull();
         }
 
@@ -68,7 +68,7 @@ final class SectorBlocPalettesTests {
         void readsNoPaletteWithoutASector() {
             // The sector is absent outside a running game, and a band asked for one then answers
             // with no colour rather than throwing on the way to a map nobody is looking at.
-            assertThat(readPaletteFrom(null, GROUP_BLOC))
+            assertThat(readPaletteFrom(null, GROUP_BLOC_ID))
                 .isNull();
         }
     }
@@ -99,8 +99,8 @@ final class SectorBlocPalettesTests {
                 DARK);
 
             assertThat(new SectorBlocPalettes(sectorMock, buildGroupLedByTheLeadMember())
-                    .resolveOwnerOf(GROUP_BLOC))
-                .isEqualTo(new SystemOwner(GROUP_BLOC, new ColourPair(BRIGHT, DARK)));
+                    .resolveOwnerOf(GROUP_BLOC_ID))
+                .isEqualTo(new SystemOwner(GROUP_BLOC_ID, new ColourPair(BRIGHT, DARK)));
         }
 
         @Test
@@ -155,9 +155,6 @@ final class SectorBlocPalettesTests {
     // One group whose lead member is the faction every sector here shades, so the group's ID is no
     // faction ID and its colour can only come through that member.
     private static HolderGrouping buildGroupLedByTheLeadMember() {
-        return new HolderGrouping(
-            Map.of(LEAD_MEMBER, GROUP_BLOC),
-            Map.of(GROUP_BLOC, LEAD_MEMBER),
-            Map.of(GROUP_BLOC, "The Hegemony Compact"));
+        return HolderGroupingFixture.buildGroupOf(LEAD_MEMBER);
     }
 }

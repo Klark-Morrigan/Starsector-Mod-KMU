@@ -3,6 +3,8 @@ package kmu.maplayers.ownermap;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 
 import org.junit.jupiter.api.Nested;
@@ -13,7 +15,7 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Pins the defaults every owner-painted view inherits: no spotlight picker, so the spotlight is opted
- * into, and no backdrop of the view's own.
+ * into, no backdrop of the view's own, no body controls and no hover tooltip.
  */
 final class OwnerPaintedViewTests {
 
@@ -56,6 +58,35 @@ final class OwnerPaintedViewTests {
 
             assertThat(viewFake.resolveViewRecedeAdjustment(ScreenMemoryScopes.createStandInScreen()))
                 .isEqualTo(ElementStyleAdjustment.NONE);
+        }
+    }
+
+    @Nested
+    class GetViewBodyControls {
+
+        @Test
+        void contributesNoControlsForAViewWithNoneOfItsOwn() {
+            // A view adding nothing to its tab inherits an empty list, so the shared sub-options and
+            // the view selector stand alone beneath it rather than beside a gap.
+            var viewFake = new OwnerPaintedViewFake();
+            var target = new BodyControlTarget(
+                mock(MapLayerRefreshBoard.class),
+                ScreenMemoryScopes.createStandInScreen());
+
+            assertThat(viewFake.getViewBodyControls(target))
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class ResolveHoverTooltip {
+
+        @Test
+        void showsNoTooltipForAViewWithNoneOfItsOwn() {
+            // The hover tooltip is opted into as the spotlight is, so a new view shows none until it
+            // has one to show.
+            assertThat(new OwnerPaintedViewFake().resolveHoverTooltip())
+                .isEmpty();
         }
     }
 }

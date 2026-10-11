@@ -13,13 +13,13 @@ import kmu.maplayers.base.tooltip.layout.ComposedCellBody;
 import kmu.maplayers.ownermap.owners.holders.alliances.ContestSides;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReading;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemStatusRow;
 import kmu.maplayers.politicalmap.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingSource;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
+import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.mods.nexerelin.NexerelinContestWording;
 
@@ -183,7 +183,7 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
         // off the same walk the two reads above came from: what sort of place it is, whether the
         // player has found it, and - unless somebody is looking at it as the box is drawn - when it
         // was last seen.
-        var colonyReading = SystemColonyReading.readColoniesIn(
+        var colonyReading = SystemColonyReading.readColonyReadingOf(
             pass.sector(),
             system,
             pass.readColoniesIn(system),

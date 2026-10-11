@@ -43,7 +43,6 @@ flowchart LR
 | --- | --- |
 | `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation and where a spotlit bloc lives (`HolderInhabitation`), the grouping seam (`HolderGrouping`), a bloc's or one faction's shades (`SectorBlocPalettes`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
 | `base.picker` | the picker every holder view shares: its assembly (`BlocPickerAssembly`), the standing mode it appends, and the colony size metric and modes a view ranks by |
-| `base.tooltip` | the colony lines of the hover box: a system's colony reading, its status row, and a colony's qualifier and observation notes |
 | `factions` | one faction as one owner: `FactionOwnerReading`, and the faction lines of the hover box |
 | `alliances` | a group of factions as one owner: `AllianceOwnerReading`, the contest axis (`BlocAffiliation`, `ContestSides`) and the lines naming a holder's allies and rivals |
 
@@ -71,12 +70,12 @@ and shared machinery grows inside `base` rather than beside the kinds -
 where a reader could not tell a kind from what the kinds share.
 `base` imports neither kind.
 
-`base.picker` and `base.tooltip` are that growth:
-the picker and the hover box's colony lines,
+`base.picker` is that growth:
+the picker,
 which every kind shares and no kind decides.
 The view shape reaches the picker assembly across that line,
 since `readPickerUnderOneGrouping` is where a view hands its rows over;
-nothing else in `base` imports either.
+nothing else in `base` imports it.
 
 ## Alliances add to factions
 

@@ -43,7 +43,6 @@ import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildUndiscoveredHiddenMarket;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnOneEntity;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
 import static kmu.maplayers.politicalmap.dominance.weighting.MarketWeights.DOMINANCE_WEIGHT_SCALE;
 
@@ -1937,6 +1936,20 @@ class KnownMarketFootprintsIntegrationTests {
             .thenReturn(true);
 
         return entityMock;
+    }
+
+    // Re-sites the given markets onto one shared primary entity, so they stand for the same place -
+    // the shape a mod makes when it supersedes a market by adding its own beside vanilla's rather than
+    // replacing it, and the only way two market objects come to name one colony.
+    private static void placeMarketsOnOneEntity(MarketAPI... markets) {
+
+        var entityMock = mock(SectorEntityToken.class);
+
+        for (var market : markets) {
+
+            when(market.getPrimaryEntity())
+                .thenReturn(entityMock);
+        }
     }
 
     // The shared wiring behind the station shapes: the tag, the name the breakdown labels

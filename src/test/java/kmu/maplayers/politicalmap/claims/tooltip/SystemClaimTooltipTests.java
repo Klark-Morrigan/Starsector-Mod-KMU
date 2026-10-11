@@ -33,11 +33,11 @@ import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemColonyReading;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.SystemStatusRow;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltipTests;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
+import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -1430,7 +1430,7 @@ final class SystemClaimTooltipTests {
                     statusRowColonies.capture(),
                     statusRowKnowledge.capture()));
 
-                readingMock.verify(() -> SystemColonyReading.readColoniesIn(
+                readingMock.verify(() -> SystemColonyReading.readColonyReadingOf(
                     any(),
                     any(),
                     readingColonies.capture(),

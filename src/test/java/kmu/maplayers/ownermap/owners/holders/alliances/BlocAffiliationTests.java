@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * do. These are the answers every contest judgement reads, so they are fixed here on hand-built
  * groupings free of any live group source.
  */
-class BlocAffiliationTests {
+final class BlocAffiliationTests {
 
     @Nested
     class Constructor {
@@ -26,9 +26,10 @@ class BlocAffiliationTests {
         void rejectsNullAffiliationGrouping() {
             // An affiliation with no grouping behind it would fault on the first pair it was
             // asked about rather than at the binding point that failed to supply one; the absence
-            // of groups is a value of its own - NONE - never a null.
+            // of groups is a value of its own - HolderGrouping.identity() - never a null.
             assertThatThrownBy(() -> new BlocAffiliation(null))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("affiliationGrouping");
         }
     }
 

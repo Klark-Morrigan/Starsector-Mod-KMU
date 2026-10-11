@@ -128,5 +128,4 @@ final class SizedBlocMetricsTests {
                 .containsExactly("higher", "lower");
         }
     }
-
 }

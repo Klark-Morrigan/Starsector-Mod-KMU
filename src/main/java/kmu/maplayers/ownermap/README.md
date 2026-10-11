@@ -13,7 +13,7 @@ The tier holds no opinion about what an owner is.
 Whatever a layer keys a place by,
 the key is opaque here,
 and the layer above says what it means.
-The one kind of owner the mod paints so far,
+The one kind of owner the mod paints,
 a holder,
 is answered from inside the tier but outside its core -
 see [where each part lives](#where-each-part-lives).
@@ -73,7 +73,7 @@ Every place the tier needs a layer's answer is a seam the layer fills where it c
 | who owns each system, which owned systems draw as a fill exception, what stands where and where the spotlit owner lives, for a whole rebuild | an `OwnerSource`, resolved with the reading through `OwnerPaintedView.resolveViewReading` and handed the rebuild's `SectorWalk` |
 | who owns one marked system, whether anything stands in it and whether the spotlit owner does, for an incremental refresh | the `SystemOwnerResolve` that same source opens over the batch's own walk |
 | how a cell's presence band is counted | the same source's band planner |
-| each owner's shades, name, crest, recede and category, and the shades an unowned or receded cell is derived from | the `OwnerReading` resolved beside the source |
+| each owner's shades, name, crest, recede and category, the shade an unowned cell paints in and the pair a receded one sinks toward | the `OwnerReading` resolved beside the source |
 | which systems seed a cell | a `CellSeedRule`, handed to `OwnerMapLayerRenderer.createForLiveScreen`; `SEED_DRAWN_SYSTEMS` for the systems the map draws |
 | which categories cells divide into, which one is full strength, and which one an unowned cell falls to | `OwnerCategories`, through `OwnerPaintedView.resolveCategories` |
 | whether the cursor is answered at all | the substrate's `MapLayerHoverGates`, or the tier's `SharedOwnerMapHoverGates` over the shared owner-map switches |
@@ -84,47 +84,18 @@ Every place the tier needs a layer's answer is a seam the layer fills where it c
 | the per-save choices its body offers, and where they are stored | an `OwnerMapBodyPreferences` the layer builds over keys of its own |
 | how a view's own backdrop recedes | `OwnerPaintedView.resolveViewRecedeAdjustment` |
 
-Only the last has a default here,
-and it names no layer's answer:
+Only the last has a default here:
 a view recedes nothing of its own accord unless it says so.
-Any other default would name one layer's answer in front of every layer,
-including the ones it does not describe.
 
-**The tier reads nothing about owners.**
-A rebuild opens one `SectorWalk` and hands it to the layer's source,
-and whatever the source opens over it is the source's.
-The walk,
+**The tier holds an owner key and asks the layer everything else about it.**
+Fusing, bordering and labelling never ask what an owner ID means.
+[The owner seams](owners/README.md) cover the walk a rebuild hands the source,
 the per-system answer a batch asks for,
-and why the reading and the source come from one call
-are [the owner seams](owners/README.md).
-
-**Which systems seed a cell is the layer's to state** too.
-The cut asks a `CellSeedRule` per system,
-and a layer seeding exactly what the map draws names `SEED_DRAWN_SYSTEMS`
-rather than inheriting another layer's set without a line saying so.
-
-**The tier holds an owner key and asks the layer everything else about an owner.**
-Fusing, bordering and labelling never ask what an owner ID means,
-and nor does anything else here:
-the colours an owner paints in,
-the name it reads by,
-the crest its picker row carries,
-how far it recedes and which category it draws in
-are the owner reading's answers,
-and so are the neutral shades an unowned cell paints in and a receded one sinks toward.
-One reading per rebuild rather than per question,
-because an answer may rest on a live source -
-who stands together, say -
-and every shade, name and category one rebuild paints has to come off one sampling of it.
-The build retains it beside the source for every stage after,
-the label fit and the incremental refresh included.
-
-The categories are declared the same way.
-The tier states the roles a category plays -
-the full-strength one a desaturated owner's fill opacity is held at,
-and the split of unowned cells into settled and empty -
+and why the reading and the source come from one call.
+The categories are declared the same way:
+the tier states the roles a category plays
 and indexes the theme by whatever category the layer answers,
-never naming one itself.
+as [`render/style`](render/style/README.md) describes.
 
 The layers painting holders answer all of it through [`owners/holders`](owners/holders/README.md).
 A layer painting any other kind of owner brings its own answers,
@@ -155,21 +126,21 @@ a memoised picker in one memo -
 none of it reaches the other.
 
 The rule is written here rather than left as a property of the current code
-because a layer built from a spec depends on it:
-a spec that wired a process-wide holder would hand every layer built from it the same one.
+because a layer added beside the first depends on it:
+process-wide state would hand every layer the same choices.
 `OwnerMapStaticStateIntegrationTests` holds the rule,
 failing on any static field under this package that is not final.
 
 ## The arrow
 
-This tier may import `kmu.maplayers.base` and nothing else under `kmu.maplayers`,
-and nothing under `kmu.mods`:
-an optional mod reaches it only through a seam a layer fills.
+This tier imports `kmu.maplayers.base` and no layer:
+the gate closes it to `politicalmap` and to `kmu.mods`,
+and a new layer's tree needs an edge of its own.
+An optional mod reaches it only through a seam a layer fills.
 `base` is closed to it in turn,
 so the substrate cannot come to depend on one assembly of itself.
 The gate is `enforcePackageLayering`,
-whose edges are declared with the mod's others
-in [gradle/package-layering.gradle](../../../../../../gradle/package-layering.gradle).
+whose edges are declared with the mod's others in [gradle/package-layering.gradle](../../../../../../gradle/package-layering.gradle).
 
 The edge closing this tier to every layer is what makes it a tier rather than a shelf:
 it proves the assembly compiles with no layer on the compile path,
@@ -180,7 +151,7 @@ the core may not import `owners/holders`,
 the one subtree it is closed to.
 The holder answers fill the core's seams from inside the tier
 so both layers painting holders can reach them,
-and a core that imported one would know what an owner is again.
+and a core that imported one would know what an owner is.
 The edge leaves the subtree out with the gate's `except:`,
 so a core package added later is closed to it without a line of its own.
 
@@ -223,7 +194,7 @@ since that is what a player's stored setting is keyed by.
 | --- | --- |
 | *(top level)* | the view seam (`OwnerPaintedView`, `MapLayerViewRegistry`, `ViewReading`), the stale-spotlight heal (`FilterSelectionHeal`) and the preferences a rebuild samples (`ContentInputs`) |
 | [`owners`](owners/README.md) | the seams a layer answers its owners through - where they come from (`OwnerSource`, its per-system `SystemOwnerResolve`, the walk it is handed and the `ResolvedOwners` it answers), how each looks (`OwnerReading`) and who stands together in a contest (`OwnerAffiliation`) - beside the owner of a system (`SystemOwner`) and the spotlight's own key (`SpotlitOwners`) |
-| [`owners/holders`](owners/holders/README.md) | the answers of the layers painting holders, outside the core: what every holder shares (`base`, with its picker in `base.picker` and its hover-box colony lines in `base.tooltip`), one faction as one owner (`factions`), and a group of factions as one owner (`alliances`) |
+| [`owners/holders`](owners/holders/README.md) | the answers of the layers painting holders, outside the core: what every holder shares (`base`, with its picker in `base.picker`), one holder as one owner (`factions`), and a group of holders as one owner (`alliances`) |
 | `picker` | the owner picker model: its rows (`SelectableOwner`, `RankedOwner`), the metrics they carry, the sort modes ranking them, and the presence index a preview lights |
 | `preferences` | the per-save body choices - name format, uninhabited outline, recede - and `OwnerMapBodyPreferences`, the set a layer builds over keys of its own |
 | [`render/clusters`](render/clusters/README.md) | cells into coloured, bordered clusters with their seams and split fills |

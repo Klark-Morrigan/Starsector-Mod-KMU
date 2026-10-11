@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_FACTION_BRIGHT;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.NEUTRAL_BASE;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.TRITACHYON_FACTION_BRIGHT;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
@@ -80,7 +80,7 @@ class DominancePassTests {
             // things at once - who holds it, what its blocs contribute, what a hover accounts for -
             // and each of those walking the system itself is what made a rebuild cost two or three
             // traversals per system.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "owned-system",
                 List.of(hegemony),
@@ -114,12 +114,12 @@ class DominancePassTests {
             // A colony a mod hung on a faction with no id. The fold cannot name a bloc for it, so it
             // is left out - where before it was folded under a nameless key and the grouping faulted
             // on that key, taking the whole resolve down with it.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "owned-system",
                 List.of(hegemony),
                 buildVisibleMarket(hegemony, 5),
-                buildVisibleMarket(buildFaction(null, HEGEMONY_BRIGHT), 5));
+                buildVisibleMarket(buildFaction(null, HEGEMONY_FACTION_BRIGHT), 5));
 
             var footprintByBlocId = buildPassOver(sector)
                 .readBlocFootprints(buildOnlySystem(sector));
@@ -135,8 +135,8 @@ class DominancePassTests {
         @Test
         void namesTheHeavierBloc() {
 
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "owned-system",
                 List.of(hegemony, tritachyon),
@@ -154,7 +154,7 @@ class DominancePassTests {
         void passesOverAHeavierNeutralBloc() {
             // The pass's own candidacy bar rides in with the ranking, so the neutral placeholder's
             // heavier footprint buys it nothing - the one rule every surface naming a winner shares.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var neutral = buildFaction(Factions.NEUTRAL, NEUTRAL_BASE);
             var sector = buildSectorWith(
                 "salvage-system",
@@ -172,7 +172,7 @@ class DominancePassTests {
         @Test
         void isNullWhereNothingWasWeighed() {
 
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "owned-system",
                 List.of(hegemony),

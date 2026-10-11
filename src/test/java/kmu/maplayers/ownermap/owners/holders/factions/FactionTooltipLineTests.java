@@ -15,9 +15,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins how a faction appears wherever a hovered system's breakdown lists one: its long title beside its
- * crest, its bare ID when the sector does not know it, and whatever the block counts it in - quiet
- * where the mechanic behind the block never weighed it, since every block listing both kinds has to
- * quieten the same one.
+ * crest, and whatever the block counts it in - quiet where the mechanic behind the block never weighed
+ * it, since every block listing both kinds has to quieten the same one.
+ *
+ * <p>How a faction the sector does not know is named is {@link FactionPresentation}'s, pinned in its
+ * own suite.
  */
 final class FactionTooltipLineTests {
 
@@ -46,28 +48,13 @@ final class FactionTooltipLineTests {
                     "The Hegemony",
                     "1,200"));
         }
-
-        @Test
-        void fallsBackToTheIdForAnUnknownFaction() {
-            // A line naming one faction reads better as a bare ID than as a blank where the name
-            // belongs, and a faction with no crest simply draws its name alone.
-            var line = FactionTooltipLine.buildFactionLine(
-                buildEmptySector(),
-                "ghost_faction",
-                CellTooltipEntryLine.NO_SCORE);
-
-            assertThat(line.labelText())
-                .isEqualTo("ghost_faction");
-            assertThat(line.mark())
-                .isNull();
-        }
     }
 
     @Nested
     class BuildCountedFactionLine {
 
         @Test
-        void statesAWeighedFactionsCountInTheListsOwnShade() {
+        void countsAWeighedFactionsValueLikeEveryOtherScore() {
             // A faction the mechanic weighed competed on its number, so the number reads as loudly as
             // every other score in the block.
             var line = FactionTooltipLine.buildCountedFactionLine(

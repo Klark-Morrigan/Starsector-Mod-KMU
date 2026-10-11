@@ -1,7 +1,5 @@
 package kmu.maplayers.ownermap.owners.holders.base;
 
-import kmlib.starsector.systems.SystemKey;
-
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.util.ArrayList;
@@ -16,13 +14,13 @@ import java.util.Map;
  * it, so what a case pins is that the holder resolve was opened over the very pass the batch's
  * other answers came from. That is read off what this recorded.
  *
- * <p>The holding each open answers with is stated by the case, on this source.
+ * <p>The holding each open answers with is stated by the case, on this source; a source nobody
+ * states a holding on opens resolves holding nothing.
  */
 public final class SystemHolderResolveSourceFake implements SystemHolderResolveSource {
 
-    private final List<HolderPass> passesOpenedOver = new ArrayList<>();
-    private final List<SystemHolderResolveFake> resolvesHandedOut = new ArrayList<>();
     private final Map<String, SystemOwner> holderBySystemId = new LinkedHashMap<>();
+    private final List<HolderPass> passesOpenedOver = new ArrayList<>();
 
     /**
      * Every pass a batch opened a resolve over, in the order it opened them.
@@ -31,18 +29,6 @@ public final class SystemHolderResolveSourceFake implements SystemHolderResolveS
      */
     public List<HolderPass> readPassesOpenedOver() {
         return List.copyOf(passesOpenedOver);
-    }
-
-    /**
-     * Every system a batch asked this source's resolves about, across all of them.
-     *
-     * @return the system IDs resolved, in the order they were asked
-     */
-    public List<String> readResolvedSystemIds() {
-        return resolvesHandedOut.stream()
-            .flatMap(resolve -> resolve.readResolvedSystems().stream())
-            .map(system -> SystemKey.readKeyOf(system).systemId())
-            .toList();
     }
 
     /**
@@ -57,10 +43,8 @@ public final class SystemHolderResolveSourceFake implements SystemHolderResolveS
 
     @Override
     public SystemHolderResolve openResolveOver(HolderPass pass) {
-        passesOpenedOver.add(pass);
 
-        var resolveFake = SystemHolderResolveFake.createHolding(holderBySystemId);
-        resolvesHandedOut.add(resolveFake);
-        return resolveFake;
+        passesOpenedOver.add(pass);
+        return SystemHolderResolveFake.createHolding(holderBySystemId);
     }
 }

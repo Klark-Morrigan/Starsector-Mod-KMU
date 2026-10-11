@@ -43,6 +43,10 @@ import static org.mockito.Mockito.mock;
  */
 final class HolderPaintedViewTests {
 
+    // The vocabulary a picker case is not about; the shared assembly bundles whatever it is handed.
+    private static final ListSortModes<RankedOwner<OwnerMetricsFake>> ANY_MODES =
+        new ListSortModes<>(List.of(), null);
+
     private static final HolderGrouping SAMPLED_GROUPING =
         HolderGroupingFixture.buildGroupOf("hegemony", "persean");
 
@@ -140,10 +144,6 @@ final class HolderPaintedViewTests {
 
     @Nested
     class ReadPickerUnderOneGrouping {
-
-        // The vocabulary a case is not about; the shared assembly bundles whatever it is handed.
-        private static final ListSortModes<RankedOwner<OwnerMetricsFake>> ANY_MODES =
-            new ListSortModes<>(List.of(), null);
 
         @Test
         void samplesTheGroupingOnce() {

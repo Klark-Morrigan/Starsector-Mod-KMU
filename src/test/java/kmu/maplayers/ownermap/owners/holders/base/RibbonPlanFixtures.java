@@ -61,13 +61,6 @@ public final class RibbonPlanFixtures {
      */
     public static final String VANISHED_BLOC = "vanished";
 
-    /**
-     * The bloc a Hegemony-led group folds into, read off the grouping fixture rather than spelled
-     * here, so the palette below answers for exactly the bloc a suite's grouping produces.
-     */
-    public static final String GROUP_BLOC_ID =
-        HolderGroupingFixture.buildGroupOf(HEGEMONY).resolveBlocId(HEGEMONY);
-
     public static final Color HEGEMONY_BRIGHT = RibbonPlanRulesFixtures.HEGEMONY_BRIGHT;
     public static final Color HEGEMONY_DARK = RibbonPlanRulesFixtures.HEGEMONY_DARK;
     public static final Color TRITACHYON_BRIGHT = RibbonPlanRulesFixtures.TRITACHYON_BRIGHT;
@@ -75,33 +68,6 @@ public final class RibbonPlanFixtures {
     public static final Color PERSEAN_BRIGHT = new Color(200, 180, 120);
     public static final Color PERSEAN_DARK = new Color(90, 70, 30);
     public static final Color DIKTAT_BRIGHT = RibbonPlanRulesFixtures.DIKTAT_BRIGHT;
-    public static final Color DIKTAT_DARK = RibbonPlanRulesFixtures.DIKTAT_DARK;
-    public static final Color NEUTRAL_BRIGHT = new Color(170, 170, 170);
-    public static final Color NEUTRAL_DARK = new Color(70, 70, 70);
-
-    /**
-     * The shades every bloc draws in, read by bloc ID exactly as the live map reads them. A bloc
-     * absent from this map has no colour to resolve, which is the drop case
-     * {@link #VANISHED_BLOC} poses.
-     *
-     * <p>The group bloc draws in the Hegemony's shades because that is its colour faction: every
-     * group these fixtures pose is led by the Hegemony, and a bloc paints in the shades of the
-     * member it was folded around rather than in any of its own.
-     */
-    public static final BlocPaletteReader PALETTES = Map.of(
-            HEGEMONY,
-            new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK),
-            GROUP_BLOC_ID,
-            new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK),
-            TRITACHYON,
-            new ColourPair(TRITACHYON_BRIGHT, TRITACHYON_DARK),
-            PERSEAN,
-            new ColourPair(PERSEAN_BRIGHT, PERSEAN_DARK),
-            DIKTAT,
-            new ColourPair(DIKTAT_BRIGHT, DIKTAT_DARK),
-            NEUTRAL,
-            new ColourPair(NEUTRAL_BRIGHT, NEUTRAL_DARK))
-        ::get;
 
     /**
      * The core's own proportions, with the shortening off. See {@link RibbonPlanRulesFixtures#STANDARD_RULES}.
@@ -116,21 +82,42 @@ public final class RibbonPlanFixtures {
         RibbonPlanRulesFixtures.SHORTENED_UNCONTESTED_RULES;
 
     /**
-     * The Hegemony and Tri-Tachyon standing together, every other bloc outside. See
-     * {@link RibbonPlanRulesFixtures#ALLIED_HEGEMONY_AND_TRITACHYON}.
-     *
-     * <p>Stated as an affiliation rather than as a grouping, which is the distinction the type exists
-     * for: a case folding the two under a grouping would merge them into one run instead of leaving
-     * them their own.
-     */
-    public static final OwnerAffiliation ALLIED_HEGEMONY_AND_TRITACHYON =
-        RibbonPlanRulesFixtures.ALLIED_HEGEMONY_AND_TRITACHYON;
-
-    /**
      * A cell no bloc's fill covers, which is what a populated system no mechanic paints draws as.
      * See {@link RibbonPlanRulesFixtures#NO_PAINTER}.
      */
     public static final Optional<String> NO_PAINTER = RibbonPlanRulesFixtures.NO_PAINTER;
+
+    private static final Color DIKTAT_DARK = RibbonPlanRulesFixtures.DIKTAT_DARK;
+    private static final Color NEUTRAL_BRIGHT = new Color(170, 170, 170);
+    private static final Color NEUTRAL_DARK = new Color(70, 70, 70);
+
+    // The shades every bloc draws in, read by bloc ID exactly as the live map reads them. A bloc
+    // absent from this map has no colour to resolve, which is the drop case VANISHED_BLOC poses.
+    //
+    // The group bloc draws in the Hegemony's shades because that is its colour faction: every group
+    // these fixtures pose is led by the Hegemony, and a bloc paints in the shades of the member it
+    // was folded around rather than in any of its own.
+    private static final BlocPaletteReader PALETTES = Map.of(
+            HEGEMONY,
+            new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK),
+            HolderGroupingFixture.GROUP_BLOC_ID,
+            new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK),
+            TRITACHYON,
+            new ColourPair(TRITACHYON_BRIGHT, TRITACHYON_DARK),
+            PERSEAN,
+            new ColourPair(PERSEAN_BRIGHT, PERSEAN_DARK),
+            DIKTAT,
+            new ColourPair(DIKTAT_BRIGHT, DIKTAT_DARK),
+            NEUTRAL,
+            new ColourPair(NEUTRAL_BRIGHT, NEUTRAL_DARK))
+        ::get;
+
+    // The Hegemony and Tri-Tachyon standing together, every other bloc outside. Stated as an
+    // affiliation rather than as a grouping, which is the distinction the type exists for: a case
+    // folding the two under a grouping would merge them into one run instead of leaving them their
+    // own.
+    private static final OwnerAffiliation ALLIED_HEGEMONY_AND_TRITACHYON =
+        RibbonPlanRulesFixtures.ALLIED_HEGEMONY_AND_TRITACHYON;
 
     // The size every colony these fixtures build carries. A band counts holdings rather than
     // weighing them, so a suite about counting or ordering varies nothing by varying this.
@@ -205,9 +192,9 @@ public final class RibbonPlanFixtures {
 
     /**
      * The inputs a case about who counts as a rival takes: blocs painted per faction, under the
-     * identity grouping, judged against {@link #ALLIED_HEGEMONY_AND_TRITACHYON}
-     * and laid with the shortening on - which is the one place the reading a cell fell under can be
-     * read back.
+     * identity grouping, judged against
+     * {@link RibbonPlanRulesFixtures#ALLIED_HEGEMONY_AND_TRITACHYON} and laid with the shortening
+     * on - which is the one place the reading a cell fell under can be read back.
      *
      * <p>The fog is the plain one because no such case turns on it. A suite posing what the player
      * has found states its own inputs.
@@ -216,11 +203,18 @@ public final class RibbonPlanFixtures {
      * @return the inputs a planner is posed with
      */
     public static RibbonPlanInputs buildAlliedInputsOver(SectorAPI sector) {
+        return buildAlliedInputsFor(HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()));
+    }
 
-        return buildInputsFor(
-            HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()),
-            ALLIED_HEGEMONY_AND_TRITACHYON,
-            SHORTENED_UNCONTESTED_RULES);
+    /**
+     * The same rival-judging inputs over a pass the caller already holds - what a suite standing in
+     * for the pass takes, so the habitation a case states is the one the band counts.
+     *
+     * @param pass the bake's reading of the sector
+     * @return the inputs a planner is posed with
+     */
+    public static RibbonPlanInputs buildAlliedInputsFor(HolderPass pass) {
+        return buildInputsFor(pass, ALLIED_HEGEMONY_AND_TRITACHYON, SHORTENED_UNCONTESTED_RULES);
     }
 
     // The inputs under an affiliation the caller states. Held private because a case wanting one

@@ -11,7 +11,8 @@ import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.content.TermTooltipLine;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.ownermap.owners.holders.base.tooltip.ColonyQualifier;
+import kmu.maplayers.politicalmap.tooltip.AccountedColony;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ import java.util.Optional;
  * <p>Pure over a standing with no Starsector types, so a whole faction's worth of lines is resolved
  * without a live economy. How a market the box may not name is drawn is {@link RedactedMarketLines}'s,
  * which listing ties decided anything is {@link ClaimTieOutcomes}'s, and what a market's line calls out
- * beyond its number is {@link ColonyQualifier}'s.
+ * beyond its number is {@link SystemColonyReading#describeColony}'s.
  */
 final class ClaimScoreRowResolver {
 
@@ -236,13 +237,9 @@ final class ClaimScoreRowResolver {
         // findings about different things, and which of them leads is the shared resolver's to say
         // for every box at once. Stated here, the precedence would be a second copy of a rule the
         // sharing exists to have one of.
-        var facts = colonyReading.readQualifierFacts(
-            market.marketId(),
-            market.isHiddenMarket(),
-            !market.isOffEconomyMarket(),
-            isHoldingTheClaim
-                ? KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER)
-                : NO_LEADING_FINDING);
+        var leadingFinding = isHoldingTheClaim
+            ? KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER)
+            : NO_LEADING_FINDING;
 
         // Described whatever the contest made of the market, because neither what sort of place a
         // colony is nor how current the box's news of it is has anything to do with whether the
@@ -252,10 +249,18 @@ final class ClaimScoreRowResolver {
         // below - its terms were computed and are being withheld, rather than never having arisen - so
         // the two are stated apart rather than folded into one predicate that would read as one reason.
         return CellTooltipEntry
-            .createEntry(colonyReading.describeColony(line, market.marketId(), facts))
+            .createEntry(colonyReading.describeColony(line, readAccountedColony(market), leadingFinding))
             .nesting(RedactedMarketLines.isRedactedMarket(market)
                 ? List.of()
                 : resolveTermEntries(market, reading.detailLevel()));
+    }
+
+    // The market as the colony its line names, under the economy listing the breakdown carries.
+    private static AccountedColony readAccountedColony(MarketClaimBreakdown market) {
+
+        return market.isOffEconomyMarket()
+            ? AccountedColony.createOffEconomyColony(market.marketId(), market.isHiddenMarket())
+            : AccountedColony.createEconomyListedColony(market.marketId(), market.isHiddenMarket());
     }
 
     // The shape every market's own line takes, whether or not the box may say what the market is

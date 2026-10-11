@@ -2,24 +2,28 @@ package kmu.maplayers.ownermap.owners.holders.base;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
+import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.ownermap.owners.holders.base.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 import static kmu.maplayers.ownermap.owners.holders.base.DecivilisedColonyHabitation.COUNTS_AS_UNPOPULATED;
+import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.GROUP_BLOC_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,9 +32,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit coverage for {@link HolderPass}: the construction guard, the two projections it offers over
- * one walk, the habitation value the cell and the spotlight both answer off, and that the pass names
- * the sector its own walk was opened over rather than one carried beside it.
+ * Unit coverage for {@link HolderPass}: the construction guard, the entry opening under the live
+ * settings, the two projections it offers over one walk, the habitation value the cell and the
+ * spotlight both answer off, the walk and economy guards every resolve shares, and that the pass
+ * names the sector its own walk was opened over rather than one carried beside it.
  *
  * <p>What each projection admits is settled in KMLib, where the rule lives. What is read here is
  * that the pass reaches the right one of them and holds both to the rule it was opened with - a
@@ -64,10 +69,6 @@ final class HolderPassTests {
     // ownership and discovery, so only the habitation fold's own sums vary it.
     private static final int COLONY_SIZE = 5;
 
-    // The bloc the two posed owners fold into where a case reads presence per bloc rather than per
-    // faction.
-    private static final String GROUP_BLOC_ID = "group-1";
-
     // The two positions the habitation rule takes, under the one fog, for the cases that are about
     // the rule itself. Written out here rather than taken from the shared fixture, whose readings
     // are the ones a case poses when it is about something else.
@@ -77,10 +78,17 @@ final class HolderPassTests {
     private static final ColonyReadRules DECIVILISED_UNPOPULATED =
         new ColonyReadRules(BASE_FOG, COUNTS_AS_UNPOPULATED);
 
-    private static final HolderGrouping ALLIED_HEGEMONY_AND_TRITACHYON = new HolderGrouping(
-        Map.of("hegemony", GROUP_BLOC_ID, "tritachyon", GROUP_BLOC_ID),
-        Map.of(GROUP_BLOC_ID, "hegemony"),
-        Map.of(GROUP_BLOC_ID, "Allied Powers"));
+    // The two posed owners folded into one bloc, for the cases reading presence per bloc rather than
+    // per faction.
+    private static final HolderGrouping ALLIED_HEGEMONY_AND_TRITACHYON =
+        HolderGroupingFixture.buildGroupOf("hegemony", "tritachyon");
+
+    private final StaticSeams seams = new StaticSeams();
+
+    @AfterEach
+    void closeSeams() {
+        seams.closeEverySeam();
+    }
 
     @Nested
     class Constructor {
@@ -90,7 +98,8 @@ final class HolderPassTests {
 
             assertThatThrownBy(() ->
                     new HolderPass(new SectorPassIndex(null), UNDER_THE_FOG, null))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("grouping");
         }
 
         @Test
@@ -101,7 +110,8 @@ final class HolderPassTests {
             // should and says nothing about why.
             assertThatThrownBy(() ->
                     new HolderPass(new SectorPassIndex(null), null, HolderGrouping.identity()))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("colonyReadRules");
         }
 
         @Test
@@ -111,7 +121,39 @@ final class HolderPassTests {
             // an index over a null sector, which answers an empty set and is perfectly legal.
             assertThatThrownBy(() ->
                     new HolderPass(null, UNDER_THE_FOG, HolderGrouping.identity()))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("sectorIndex");
+        }
+    }
+
+    @Nested
+    class ReadFromLunaSettings {
+
+        @Test
+        void opensUnderTheLiveColonyRulesAndTheHandedGrouping() {
+            // The one entry with no rules on the call, so the settings read is all the pass has to
+            // reach. Both halves are posed away from the shipped reading, so a pass taking either
+            // from anywhere else reads this sector differently: the reveal shows on the pass's
+            // knowledge, and the unpopulated position empties the system of its decivilised world.
+            seams.openSeam(ColonyReadRules.class)
+                .when(ColonyReadRules::readFromLunaSettings)
+                .thenReturn(new ColonyReadRules(UNDER_THE_REVEAL, COUNTS_AS_UNPOPULATED));
+
+            var sector = SectorOwnershipFixtures.buildSectorWith(SYSTEM_ID);
+            var system = SectorOwnershipFixtures.buildOnlySystem(sector);
+
+            DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(system);
+
+            var pass = HolderPass.readFromLunaSettings(sector, ALLIED_HEGEMONY_AND_TRITACHYON);
+
+            assertThat(pass.colonyKnowledge().rule())
+                .isEqualTo(UNDER_THE_REVEAL);
+            assertThat(pass.readInhabitingColoniesIn(system))
+                .isEmpty();
+            assertThat(pass.grouping())
+                .isSameAs(ALLIED_HEGEMONY_AND_TRITACHYON);
+            assertThat(pass.sector())
+                .isSameAs(sector);
         }
     }
 
@@ -617,6 +659,60 @@ final class HolderPassTests {
                 .isFalse();
             assertThat(habitation.blocIds())
                 .isEmpty();
+        }
+    }
+
+    @Nested
+    class ReadSystems {
+
+        @Test
+        void walksNothingForAPassOverNoSector() {
+            // Stated so a resolve can walk without guarding the unreachable sector first.
+            assertThat(HolderPass.createOver(null, UNDER_THE_FOG, HolderGrouping.identity()).readSystems())
+                .isEmpty();
+        }
+
+        @Test
+        void walksTheSectorsSystemsInItsOwnOrder() {
+
+            var sector = SectorOwnershipFixtures.buildSectorWithSystems(
+                List.of(),
+                SectorOwnershipFixtures.listSystemMarkets("corvus"),
+                SectorOwnershipFixtures.listSystemMarkets("askonia"));
+
+            assertThat(HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()).readSystems())
+                .extracting(StarSystemAPI::getId)
+                .containsExactly("corvus", "askonia");
+        }
+    }
+
+    @Nested
+    class CanReadEconomy {
+
+        @Test
+        void isFalseForAPassOverNoSector() {
+
+            assertThat(HolderPass.createOver(null, UNDER_THE_FOG, HolderGrouping.identity()).canReadEconomy())
+                .isFalse();
+        }
+
+        @Test
+        void isFalseForASectorWhoseEconomyIsNotUpYet() {
+            // The mid-load sector: it has a system to walk, so only the economy check stops a
+            // weighing resolve reporting an empty sector there.
+            var sector = SectorOwnershipFixtures.buildEconomylessSectorWithSystem(SYSTEM_ID);
+
+            assertThat(HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()).canReadEconomy())
+                .isFalse();
+        }
+
+        @Test
+        void isTrueForASectorWithItsEconomyUp() {
+
+            var sector = SectorOwnershipFixtures.buildSectorWith(SYSTEM_ID);
+
+            assertThat(HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()).canReadEconomy())
+                .isTrue();
         }
     }
 
