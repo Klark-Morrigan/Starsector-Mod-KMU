@@ -273,7 +273,7 @@ In short:
 MAJOR for save-breaking changes,
 MINOR for save-safe new features,
 PATCH for fixes and tweaks.
-The same policy defines how KMU pins the KMLib dependency in both `mod_info.base.json` and `.github/workflows/*.yml`.
+The same policy defines how KMU pins the KMLib dependency in both `mod_info.base.json` and `.github/workflows/release.yml`.
 
 ### Build And Release
 
@@ -322,6 +322,16 @@ That generated file is never committed.
 The task doing it is `writeVersionFile`,
 which KMLib's shared Starsector conventions register for any mod that commits a template -
 KMU states no build wiring of its own for it.
+
+[publish-badges.yml](.github/workflows/publish-badges.yml) refreshes the download badges daily and on demand,
+through KMLib's reusable
+[publish-download-badges](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#reusable-ci--release-actions)
+pipeline.
+It counts the release zips only,
+not the `.version` files that update checkers poll on every game start,
+and publishes the figures to this repo's `badges` branch.
+It calls KMLib at `master` rather than at the release pin,
+since it publishes figures and cannot affect a release.
 
 ### Localisation
 

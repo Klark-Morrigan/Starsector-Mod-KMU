@@ -1,0 +1,30 @@
+# KMU's download-badge entry point. Runs daily and on demand, and delegates
+# to KMLib's reusable publish-download-badges workflow, which reads
+# everything it needs from this repo's mod_info.base.json - so this caller
+# passes no inputs.
+#
+# Pinned to KMLib's master rather than a tag, unlike release.yml. This
+# pipeline publishes figures and cannot corrupt a release, so tying it to the
+# KMLib release pin would buy nothing, and a change to it reaches KMU without
+# waiting on a KMLib release.
+#
+# The run holds a write token, so only the schedule and someone with write
+# access can start it: no push or pull-request trigger.
+name: Publish badges
+
+on:
+  # Daily at 04:23 UTC. Off the top of the hour, where GitHub's scheduler is
+  # busiest and most likely to delay or drop a run.
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+
+# A reusable workflow's permissions are capped by its caller, so the push to
+# the badges branch needs the grant repeated here. No token can be scoped to
+# one branch; the repository's rulesets fence every other one.
+permissions:
+  contents: write
+
+jobs:
+  publish-badges:
+    uses: Klark-Morrigan/Starsector-Mod-KMLib/.github/workflows/publish-download-badges.yml@master
