@@ -20,11 +20,13 @@
 
 #### 新增
 
+- **`ColonyKind.isUngoverned()`**：某处是否住着不受任何权力管辖的人，供每个区分有人管辖与无人管辖殖民地的读取方使用。
 - **`FactionStanding.isWeighed()`**：本次计算是否为该势力的殖民地计算过权重，按种类分支的读取方据此询问，而不必检查密封类型。
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
+- **`HolderPass.palettes()`** 和 **`DominancePass.palettes()`**：本次计算唯一的配色读取，会为本次计算记住每个集团的配色，因此一次重建中的每个解析和每条色带都通过同一个对象为集团着色。
+- **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**：一次构建的绘制方案，只读取一次，再交给构建中按它着色的每个部分。
 - **`PoliticalHolderView`**，政治地图的每个视图都实现它：联盟集合的修订号（作为视图的内容修订号）、争夺中谁与谁站在一起、持有者类别，以及势力读取。
 - **`SectorBlocPalettes.readFactionPalette(SectorAPI, String)`**：一个势力的配色，供本身持有势力 ID 的读取方使用。
-- **`ColonyKind.isUngoverned()`**：某处是否住着不受任何权力管辖的人，供每个区分有人管辖与无人管辖殖民地的读取方使用。
 
 #### 公共契约变更（**破坏性**）
 
@@ -53,7 +55,7 @@
 | `FactionNameFormatChoice`、`FactionPaletteSlot`、`FactionlessStyleResolver` 和 `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`、`OwnerPaletteSlot`、`UnownedStyleResolver` 和 `OwnerPaletteChoice` |
 | `HolderOwnerReading` | `FactionOwnerReading`，以及为绘制联盟的图层建立在其上的 `AllianceOwnerReading` |
 | `OwnerMapCategory`、`OwnerMapInhabitation` 和 `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`、`HolderInhabitation` 和 `DominanceHolderProvider` |
-| `OwnerMapCache` 与 `OwnerMapDrawables` 的 `getFactionLabels()`、`OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` 和 `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`、`resolveOwnerPaintOf(String, SystemOwner)` 和 `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` |
+| `OwnerMapCache` 与 `OwnerMapDrawables` 的 `getFactionLabels()`、`OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` 和 `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`、`resolveOwnerPaintOf(SystemOwner)` 和 `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)`。所有者的 ID 取自 `SystemOwner` 本身 |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` 及其 `strings.json` 键 | `POLITICAL_MAP_CTL_FACTION_NAMES`，政治地图自己的标题 |
 | `ownermap.owners.OwnerPalette` | KMLib 的 `kmlib.colour.ColourPair`，势力的配色本就是它。`SectorBlocPalettes.adoptFactionPalette(FactionPalette)` 已移除 |
 | `HolderPass.over(SectorAPI, ColonyReadRules, HolderGrouping)` | `HolderPass.createOver(SectorAPI, ColonyReadRules, HolderGrouping)` |
@@ -81,6 +83,9 @@
 | `StandingRowResolver.resolveRows(SectorAPI, List, HolderGrouping, FactionAccountResolver)` | 每个悬停框调用一次 `StandingRowResolver.createForBox(SectorAPI, HolderGrouping, FactionAccountResolver)`，再对每个区块调用 `resolveRows(List)` |
 | 公开的 `FactionPresentation`，带有 `fullName()` | 改为包私有，带有 `labelText()`。标记为某势力的行改用 `FactionTooltipLine.resolveCrestMark(SectorAPI, String)` |
 | 成员列表为空的 `GroupStanding(String, int, List)` | 以 `IllegalArgumentException` 拒绝：势力组只能通过位于该星系的成员出现在其中 |
+| `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader, SectorBlocPalettes)` 和 `FilteredPolitics.resolveSpotlitHolder(SectorAPI, HolderGrouping, String)` | `resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)` 和 `resolveSpotlitHolder(BlocPaletteReader, String)`：集团的配色取自本次计算自身的 `palettes()` |
+| `DebugBorderTracingBuilder.buildDebugDrawables(CellGeometryCache, ResolvedOwners, OwnerCategories, ContentInputs)` 和 `ClusterLabelStylingSnapshot.resolveForTracing(Map, ViewReading, ContentInputs, FontAtlas)` | `buildDebugDrawables(CellGeometryCache, ResolvedOwners, MapStyling)` 和 `resolveForTracing(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)`，两者都接收边界描绘重建读取的同一个 `MapStyling`。快照的 `desaturationPalette` 和 `categories` 组件改为其 `mapStyling` |
+| 记录类型 `OwnerMapBuildInputs`、`RibbonPlanRules` 和 `RibbonPlan` | 改为 final 类，构造函数和访问器不变。`OwnerMapBuildInputs` 会记住每个所有者的绘制方式，按引用比较；`RibbonPlan` 仍按其色段比较 |
 
 </details>
 

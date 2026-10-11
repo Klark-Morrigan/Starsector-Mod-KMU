@@ -4,7 +4,6 @@ import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
 
-import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
@@ -18,11 +17,9 @@ import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.Map;
@@ -32,8 +29,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins the reads that turn a finished build, or a diagnostic's traced owners, into the values a
@@ -53,7 +48,7 @@ final class ClusterLabelStylingSnapshotTests {
     class ResolveFrom {
 
         @Test
-        void carriesTheClustersOwnHoldersAndDesaturationPalette() {
+        void carriesTheClustersOwnHolders() {
 
             var holderBySystemKey = Map.of(
                 buildCellKey("corvus"),
@@ -61,10 +56,8 @@ final class ClusterLabelStylingSnapshotTests {
                     SPOTLIT_OWNER_ID,
                     new ColourPair(Color.BLUE, Color.DARK_GRAY)));
 
-            var desaturationPalette = new ColourPair(Color.LIGHT_GRAY, Color.GRAY);
             var clusters = buildClusters(
                 holderBySystemKey,
-                desaturationPalette,
                 buildViewReading(),
                 buildSpotlightPicks());
 
@@ -75,31 +68,27 @@ final class ClusterLabelStylingSnapshotTests {
             // reads them live rather than taking a copy that a later refresh would leave behind.
             assertThat(styling.ownerBySystemKey())
                 .isSameAs(clusters.getOccupancy().getOwnerBySystemKey());
-
-            assertThat(styling.desaturationPalette())
-                .isSameAs(desaturationPalette);
         }
 
         @Test
-        void carriesTheBuildsReadingCategoriesAndSampledPicksWhole() {
-            // Taken as the retained values rather than re-resolved, so the reading a label is named
-            // under, the categories its name style comes from, the filter it recedes by and the
-            // format it is spelled in cannot come from two passes.
+        void carriesTheBuildsStylingReadingAndSampledPicksWhole() {
+            // Taken as the retained values rather than re-resolved, so the scheme a label is
+            // coloured by, the reading it is named under, the filter it recedes by and the format
+            // it is spelled in cannot come from two passes.
             var viewReading = buildViewReading();
             var contentInputs = buildSpotlightPicks();
 
             var clusters = buildClusters(
                 Map.of(),
-                new ColourPair(Color.GRAY, Color.GRAY),
                 viewReading,
                 contentInputs);
 
             var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
 
+            assertThat(styling.mapStyling())
+                .isSameAs(clusters.getBuildInputs().styling());
             assertThat(styling.reading())
                 .isSameAs(viewReading.reading());
-            assertThat(styling.categories())
-                .isSameAs(clusters.getBuildInputs().styling().categories());
             assertThat(styling.contentInputs())
                 .isSameAs(contentInputs);
         }
@@ -111,7 +100,6 @@ final class ClusterLabelStylingSnapshotTests {
             var styling = ClusterLabelStylingSnapshot.resolveFrom(
                 buildClusters(
                     Map.of(),
-                    new ColourPair(Color.GRAY, Color.GRAY),
                     buildViewReading(),
                     ContentInputs.createEmpty()),
                 LABEL_FACE);
@@ -127,7 +115,6 @@ final class ClusterLabelStylingSnapshotTests {
             var styling = ClusterLabelStylingSnapshot.resolveFrom(
                 buildClusters(
                     Map.of(),
-                    new ColourPair(Color.GRAY, Color.GRAY),
                     buildViewReading(),
                     ContentInputs.createEmpty()),
                 StarsectorFont.VANILLA_INSIGNIA_25);
@@ -140,61 +127,33 @@ final class ClusterLabelStylingSnapshotTests {
     @Nested
     class ResolveForTracing {
 
-        // The global darkening the inert theme carries, applied to the reading's recede shades:
-        // light grey and dark grey kept at 70%.
-        private static final ColourPair DARKENED_RECEDE_PALETTE =
-            new ColourPair(new Color(134, 134, 134), new Color(45, 45, 45));
-
         @Test
-        void carriesTheTracedOwnersAndTheViewsReadingAndCategories() {
-
+        void carriesTheTracedOwnersTheHandedStylingAndTheViewsReading() {
+            // The styling is the one the overlay's outlines were traced under, carried by identity:
+            // a snapshot re-reading the theme for itself could style the names under knobs the
+            // outlines beneath them were not traced under.
             var ownerBySystemKey = Map.of(
                 buildCellKey("corvus"),
                 new SystemOwner(SPOTLIT_OWNER_ID, new ColourPair(Color.BLUE, Color.DARK_GRAY)));
 
-            var viewReading = buildViewReading();
+            var mapStyling = buildStyling();
+            var reading = OwnerReadingFake.createAnsweringNothing();
 
-            when(viewReading.view().resolveCategories())
-                .thenReturn(OwnerCategoriesFake.SHARED_FAKE);
+            var styling = ClusterLabelStylingSnapshot.resolveForTracing(
+                ownerBySystemKey,
+                mapStyling,
+                reading,
+                ContentInputs.createEmpty(),
+                LABEL_FACE);
 
-            try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
-
-                stubInertGlobalStyle(styleReaderMock);
-
-                var styling = ClusterLabelStylingSnapshot.resolveForTracing(
-                    ownerBySystemKey,
-                    viewReading,
-                    ContentInputs.createEmpty(),
-                    LABEL_FACE);
-
-                assertThat(styling.ownerBySystemKey())
-                    .isSameAs(ownerBySystemKey);
-                assertThat(styling.reading())
-                    .isSameAs(viewReading.reading());
-                assertThat(styling.categories())
-                    .isSameAs(OwnerCategoriesFake.SHARED_FAKE);
-                assertThat(styling.labelFace())
-                    .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_42);
-            }
-        }
-
-        @Test
-        void darkensTheReadingsRecedeShadesByTheThemesDarkening() {
-            // The diagnostic builds no drawables to borrow the palette from, so it is resolved
-            // through the theme's darkening, exactly as a production build resolves it.
-            try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
-
-                stubInertGlobalStyle(styleReaderMock);
-
-                var styling = ClusterLabelStylingSnapshot.resolveForTracing(
-                    Map.of(),
-                    buildViewReading(),
-                    ContentInputs.createEmpty(),
-                    LABEL_FACE);
-
-                assertThat(styling.desaturationPalette())
-                    .isEqualTo(DARKENED_RECEDE_PALETTE);
-            }
+            assertThat(styling.ownerBySystemKey())
+                .isSameAs(ownerBySystemKey);
+            assertThat(styling.mapStyling())
+                .isSameAs(mapStyling);
+            assertThat(styling.reading())
+                .isSameAs(reading);
+            assertThat(styling.labelFace())
+                .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_42);
         }
 
         @Test
@@ -204,50 +163,44 @@ final class ClusterLabelStylingSnapshotTests {
             // still spelled the way the player asked.
             var spotlightPicks = buildSpotlightPicks();
 
-            try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
+            var styling = ClusterLabelStylingSnapshot.resolveForTracing(
+                Map.of(),
+                buildStyling(),
+                OwnerReadingFake.createAnsweringNothing(),
+                spotlightPicks,
+                LABEL_FACE);
 
-                stubInertGlobalStyle(styleReaderMock);
-
-                var styling = ClusterLabelStylingSnapshot.resolveForTracing(
-                    Map.of(),
-                    buildViewReading(),
-                    spotlightPicks,
-                    LABEL_FACE);
-
-                assertThat(styling.contentInputs().isFiltering())
-                    .isFalse();
-                assertThat(styling.contentInputs().nameFormat())
-                    .isEqualTo(spotlightPicks.nameFormat());
-            }
-        }
-
-        private static void stubInertGlobalStyle(MockedStatic<RenderStyleReader> styleReaderMock) {
-
-            styleReaderMock
-                .when(RenderStyleReader::readGlobalStyle)
-                .thenReturn(ThemeFixtures.createInertGlobalStyle());
+            assertThat(styling.contentInputs().isFiltering())
+                .isFalse();
+            assertThat(styling.contentInputs().nameFormat())
+                .isEqualTo(spotlightPicks.nameFormat());
         }
     }
 
     private static OwnerMapClusters buildClusters(
             Map<SystemKey, SystemOwner> holderBySystemKey,
-            ColourPair desaturationPalette,
             ViewReading viewReading,
             ContentInputs contentInputs) {
 
         return new OwnerMapClusters(
             SystemOccupancy.createCopyOf(holderBySystemKey, Set.of(), Set.of()),
             new OwnerMapBuildInputs(
-                new MapStyling(
-                    null,
-                    OwnerCategoriesFake.SHARED_FAKE,
-                    OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                    desaturationPalette,
-                    OwnerMapClusterFixtures.NEUTRAL_PALETTE),
+                buildStyling(),
                 viewReading,
                 contentInputs,
                 Set.of(),
                 Set.of()));
+    }
+
+    // A scheme no case reads into: the snapshot carries it whole, so only its identity matters.
+    private static MapStyling buildStyling() {
+
+        return new MapStyling(
+            null,
+            OwnerCategoriesFake.SHARED_FAKE,
+            OwnerMapClusterFixtures.NEUTRAL_PALETTE,
+            new ColourPair(Color.LIGHT_GRAY, Color.GRAY),
+            OwnerMapClusterFixtures.NEUTRAL_PALETTE);
     }
 
     // The view is a seam the snapshot never reads, so a mock stands in for whichever concrete view

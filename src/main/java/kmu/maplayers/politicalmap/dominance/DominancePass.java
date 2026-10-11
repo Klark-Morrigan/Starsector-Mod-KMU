@@ -9,6 +9,7 @@ import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHabitation;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
@@ -134,6 +135,16 @@ public record DominancePass(
      */
     public HolderGrouping grouping() {
         return holding.grouping();
+    }
+
+    /**
+     * Where a bloc's two shades are read, over this pass's sector and grouping.
+     *
+     * @return the holder pass's own palette read, so a holder this pass resolves is coloured as
+     *         every band over the same rebuild is
+     */
+    public SectorBlocPalettes palettes() {
+        return holding.palettes();
     }
 
     /**

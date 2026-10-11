@@ -104,7 +104,7 @@ final class FilteredClaimsTests {
 
                 filteredPoliticsMock
                     .when(() -> FilteredPolitics
-                        .resolveSpotlitHolder(sectorMock, grouping, "hegemony"))
+                        .resolveSpotlitHolder(pass.palettes(), "hegemony"))
                     .thenReturn(SPOTLIT_HOLDER);
 
                 var resolved = FilteredClaims.resolveFilteredClaims(
@@ -142,7 +142,7 @@ final class FilteredClaimsTests {
 
                 filteredPoliticsMock
                     .when(() -> FilteredPolitics
-                        .resolveSpotlitHolder(sectorMock, grouping, "hegemony"))
+                        .resolveSpotlitHolder(pass.palettes(), "hegemony"))
                     .thenReturn(null);
 
                 var resolved = FilteredClaims.resolveFilteredClaims(

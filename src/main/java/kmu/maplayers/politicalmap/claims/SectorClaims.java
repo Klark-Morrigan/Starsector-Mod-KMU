@@ -60,11 +60,10 @@ public final class SectorClaims {
             ClaimReader claimReader) {
 
         var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
-        var palettes = new SectorBlocPalettes(pass.sector(), pass.grouping());
 
         for (var system : pass.readSystems()) {
 
-            var holder = resolveClaimingHolderIn(system, pass, claimReader, palettes);
+            var holder = resolveClaimingHolderIn(system, pass, claimReader);
 
             if (holder != null) {
                 ownerBySystemKey.put(SystemKey.readKeyOf(system), holder);
@@ -83,16 +82,15 @@ public final class SectorClaims {
      *
      * @param system      the system to read; null yields null
      * @param pass        the reading of the sector, whose grouping folds the claimant into its bloc
+     *                    and whose palettes colour that bloc
      * @param claimReader the claim source, opened over that same pass
-     * @param palettes    the shades a bloc paints in, over the pass's own sector and grouping
      * @return the claiming holder, or null where nobody claims the system or the claimant's colour
      *         faction does not resolve
      */
     public static SystemOwner resolveClaimingHolderIn(
             StarSystemAPI system,
             HolderPass pass,
-            ClaimReader claimReader,
-            SectorBlocPalettes palettes) {
+            ClaimReader claimReader) {
 
         if (system == null) {
             return null;
@@ -101,6 +99,6 @@ public final class SectorClaims {
 
         return claimantId == null
             ? null
-            : palettes.resolveOwnerOf(pass.grouping().resolveBlocId(claimantId));
+            : pass.palettes().resolveOwnerOf(pass.grouping().resolveBlocId(claimantId));
     }
 }

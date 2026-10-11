@@ -14,6 +14,7 @@ import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
+import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
@@ -177,8 +178,9 @@ final class OwnerMapDrawables {
      *
      * <p>The owners it traces are the active view's own, resolved through its source over the
      * rebuild's walk with nothing spotlit - so the overlay traces the borders the map would draw,
-     * and asks the layer nothing the production build does not. One resolve serves the overlay and
-     * the anchors beside it, so the two cannot disagree about who owns a cell.
+     * and asks the layer nothing the production build does not. One resolve and one reading of the
+     * theme serve the overlay and the anchors beside it, so the two cannot disagree about who owns
+     * a cell or how it is styled.
      *
      * @param cellGeometry  the cells to trace, carrying the cut they stand at
      * @param walk          the rebuild's walk of the sector, which the source reads over
@@ -194,12 +196,15 @@ final class OwnerMapDrawables {
         // The overlay never spotlights, so the pick goes in as nobody: it traces the owners the
         // map has rather than one pick's footprint.
         var owners = viewReading.source().resolveOwners(walk, null);
+        var styling = MapStyling.readFromLunaSettings(
+            viewReading.view().resolveCategories(),
+            viewReading.reading(),
+            contentInputs);
 
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
             cellGeometry.cells(),
             owners,
-            viewReading.view().resolveCategories(),
-            contentInputs);
+            styling);
 
         clusters = null;
 
@@ -208,7 +213,8 @@ final class OwnerMapDrawables {
             cellGeometry,
             ClusterLabelStylingSnapshot.resolveForTracing(
                 owners.ownerBySystemKey(),
-                viewReading,
+                styling,
+                viewReading.reading(),
                 contentInputs,
                 labelFaceSource.get()));
     }

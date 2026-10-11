@@ -327,6 +327,11 @@ So a word of one axis never stands in for another:
 | kind (of a place or a record a reader branches on, in the changelog) | 种类 | the plain word for a sort of thing, kept apart from 类别 |
 | grouping (how factions fold into blocs, in the changelog) | 分组 | the plain word for sorting things into groups |
 | sampling (one read of a live value, in the changelog) | 采样 | the usual word for taking one reading of something that changes |
+| pass (one rebuild's reading of the sector, in the changelog) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
+| rebuild (the map's drawing worked out again, in the changelog) | 重建 | the usual word for building something again |
+| paint scheme (the theme and palettes one build styles by, in the changelog) | 绘制方案 | 绘制, to draw, with 方案, a scheme |
+| border tracing (the dev overlay showing each smoothing stage) | 边界描绘 | the Dev tab's own header for it |
+| run (one owner's stretch of a band, in the changelog) | 色段 | 色, colour, with 段, a segment |
 | shades (an owner's two colours, in the changelog) | 配色 | as in vanilla's 界面配色, a set of colours worn together |
 | seam (an interface a layer answers through, in the changelog) | 接缝 | where two parts are joined, which a seam between layers is |
 | reading (an owner's looks and names, in the changelog) | 读取 | the plain word for reading something off; a reader is 读取方 |

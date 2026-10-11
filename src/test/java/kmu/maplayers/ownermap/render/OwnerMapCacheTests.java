@@ -20,6 +20,7 @@ import kmu.maplayers.ownermap.OwnerPaintedViewFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
+import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -378,6 +379,9 @@ final class OwnerMapCacheTests {
         seams.openSeam(ClusterLabelStylingSnapshot.class);
         seams.openSeam(LabelsBuilder.class);
 
+        // The debug view reads its theme off settings no test JVM holds.
+        seams.openSeam(MapStyling.class);
+
         // The label face is settled against the installed atlases, which no test JVM has.
         labelFontsMock = seams.openSeam(LabelFonts.class);
 
@@ -386,7 +390,7 @@ final class OwnerMapCacheTests {
 
         debugBuilderMock = seams.openSeam(DebugBorderTracingBuilder.class);
         debugBuilderMock
-            .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any(), any()))
+            .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any()))
             .thenReturn(debugOverlay);
 
         productionBuilderMock = seams.openSeam(OwnerMapBuilder.class);

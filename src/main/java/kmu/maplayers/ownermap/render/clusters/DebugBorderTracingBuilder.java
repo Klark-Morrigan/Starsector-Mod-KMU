@@ -13,11 +13,9 @@ import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.RenderStyle;
-import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.ownermap.render.style.UnownedStyleResolver;
 
 import java.util.List;
@@ -60,8 +58,7 @@ public final class DebugBorderTracingBuilder {
     public static ClusterBorderStageOverlay buildDebugDrawables(
             CellGeometryCache geometryCache,
             ResolvedOwners owners,
-            OwnerCategories categories,
-            ContentInputs contentInputs) {
+            MapStyling styling) {
 
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
         // as and that system to its owner ID.
@@ -79,11 +76,12 @@ public final class DebugBorderTracingBuilder {
         // because the unowned pass below indexes into it by category - read twice, the outlines
         // could be gated by one reading of the knobs and smoothed by another.
         //
-        // The categories are the painting layer's, and the preferences arrive with the rebuild
-        // rather than being read: a category's style may ride on a sidebar pick, sampled once per
-        // rebuild, and a second reading here could show cells the production draw would not.
+        // The theme arrives with the rebuild rather than being read here: the names over this
+        // overlay are styled from the same scheme, and a second reading could style them under
+        // knobs the outlines were not traced under.
         var borderTrace = ClusterBorderTrace.readFromLunaSettings();
-        var renderStyle = RenderStyleReader.readRenderStyle(categories, contentInputs);
+        var renderStyle = styling.renderStyle();
+        var categories = styling.categories();
 
         var stageCollector = new ClusterBorderStageCollector();
 

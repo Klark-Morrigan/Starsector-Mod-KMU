@@ -644,6 +644,32 @@ The name-format choice is likewise read once per rebuild rather than per label,
 and the label face is asked once per fit and recorded on the fit's fingerprint for everything after it,
 the face itself having been [settled once for the sector](#settled-faces).
 
+A bloc's two shades are read once per pass.
+`SectorBlocPalettes` remembers each bloc's pair on first ask,
+a bloc whose colour faction has gone included,
+and the `HolderPass` holds the one instance every reader of that pass shares:
+the holder resolves,
+the spotlight,
+the claim resolves
+and the band bake.
+Each of them asks per system or per cell,
+so without it one faction would be looked up once per cell of the map.
+Holding it on the pass rather than on each reader is also what keeps them agreeing:
+a fill and the band inside it are coloured through the same object,
+under the same sector and grouping.
+It dies with the pass,
+so a faction's colours changed mid-session are read again by the next rebuild.
+
+An owner's paint is resolved once per build.
+`OwnerMapBuildInputs` remembers each owner's style decision carried down to its shades,
+since every cell of an owner and its cluster group ask for the same one.
+It lives as long as the build inputs do,
+across incremental refreshes,
+which is safe because everything it is resolved from is fixed with them.
+
+The laying rules settle a band's uncontested lengths when they are sampled,
+rather than once per uncontested cell asking for them.
+
 The map's name labels are the one place KMU mints its own GL text.
 Each [`Label`](../../src/main/java/kmu/maplayers/base/labels/Label.java)
 owns a `DrawableString` and its vertex buffer,

@@ -6,7 +6,6 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
@@ -113,6 +112,6 @@ public final class SectorPolitics {
         if (dominantBlocId == null) {
             return null;
         }
-        return new SectorBlocPalettes(pass.sector(), pass.grouping()).resolveOwnerOf(dominantBlocId);
+        return pass.palettes().resolveOwnerOf(dominantBlocId);
     }
 }

@@ -33,8 +33,9 @@ import java.util.Set;
  * of its own, so a pass cannot name one sector while answering out of another.
  *
  * <p>A class rather than a record because it remembers as well as carries - the colony walk, each
- * colony's kind and each system's habitation are memoised snapshots - so two passes over one sector
- * are two readings and value equality would be wrong. Not safe for concurrent use.
+ * colony's kind, each system's habitation and each bloc's shades are memoised snapshots - so two
+ * passes over one sector are two readings and value equality would be wrong. Not safe for
+ * concurrent use.
  */
 public final class HolderPass {
 
@@ -49,6 +50,7 @@ public final class HolderPass {
     private final ColonyKnowledge colonyKnowledge;
     private final ColonyReadRules colonyReadRules;
     private final HolderGrouping grouping;
+    private final SectorBlocPalettes palettes;
     private final SectorPassIndex sectorIndex;
 
     /**
@@ -80,6 +82,8 @@ public final class HolderPass {
         this.colonyKnowledge = ColonyKnowledge.over(
             sectorIndex.getSector(),
             colonyReadRules.colonyVisibility());
+
+        this.palettes = new SectorBlocPalettes(sectorIndex.getSector(), grouping);
     }
 
     /**
@@ -134,6 +138,18 @@ public final class HolderPass {
      */
     public ColonyKnowledge colonyKnowledge() {
         return colonyKnowledge;
+    }
+
+    /**
+     * Where a bloc's two shades are read, over this pass's sector and grouping.
+     *
+     * <p>One per pass, so every resolve and every band over one rebuild colours a bloc off the
+     * same snapshot, and each bloc's shades are read once for all of them.
+     *
+     * @return the pass's palette read
+     */
+    public SectorBlocPalettes palettes() {
+        return palettes;
     }
 
     /**

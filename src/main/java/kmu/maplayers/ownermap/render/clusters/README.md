@@ -291,7 +291,7 @@ where a keyed one is a rule somebody has to keep true.
 
 ### `OwnerMapBuildInputs`: what the build was baked under
 
-Everything a rebuild retained to build under lives in its own record,
+Everything a rebuild retained to build under lives in one value of its own,
 reached through `getBuildInputs`:
 the `MapStyling` (the theme, the layer's categories and the three unowned palettes),
 the `ViewReading` (the view, the owner reading it was styled and named by,
@@ -303,20 +303,23 @@ The source rides there for the incremental refresh alone,
 which reopens a per-system resolve under the sampling it patches;
 nothing styles or names by it.
 
-They are one record because they are fixed together:
+They are one value because they are fixed together:
 set once when the build ends and read until the next one,
 where the occupancy beside them is folded per marked system.
-A reader takes the record and names which snapshot it reads -
+A reader takes the value and names which snapshot it reads -
 `styling()`,
 `viewReading()`,
 `contentInputs()` -
 rather than reaching one field of it through a flat getter on the built map,
 which would let a pass compose a cell out of one snapshot's theme and another's reading without the type saying so.
-`resolveOwnerPaintOf` sits on the record for the same reason:
+`resolveOwnerPaintOf` sits on it for the same reason:
 it cascades the reading, the categories, the picks and the theme's shades into the one thing an element is painted from
 (`ResolvedOwnerPaint`, in [`render.style`](../style/README.md)),
 so it belongs to the type that holds all four.
-`wasBuilt` is the record's answer to whether a build ran under it at all:
+It answers once per owner and remembers the paint,
+every input to it being fixed with the build -
+which is why the type is a class rather than a record.
+`wasBuilt` is its answer to whether a build ran under it at all:
 the placeholder a failed first build stands behind resolved no reading,
 so the incremental refresh and the picker preview ask it before reaching for one.
 The bundle-and-adjustment step behind it stays private:

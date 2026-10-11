@@ -1,16 +1,14 @@
 package kmu.maplayers.politicalmap.dominance;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.BlocPaletteReader;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
-import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.LinkedHashMap;
@@ -188,18 +186,16 @@ public final class FilteredPolitics {
      * present one. The synthetic key stays this class's secret: a caller holds the returned holder
      * opaquely and never has to name the key.
      *
-     * @param sector         the sector whose faction palette is read
-     * @param grouping       the grouping naming the bloc's colour faction
+     * @param palettes       where the bloc's shades are read - the rebuild pass's own, so the
+     *                       spotlight paints the bloc in the colours its bands take
      * @param selectedBlocId the spotlighted bloc to draw the system under
      * @return the spotlight holder, or null when the bloc's colour faction does not resolve
      */
     public static SystemOwner resolveSpotlitHolder(
-            SectorAPI sector,
-            HolderGrouping grouping,
+            BlocPaletteReader palettes,
             String selectedBlocId) {
 
-        var palette = new SectorBlocPalettes(sector, grouping)
-            .readBlocPalette(selectedBlocId);
+        var palette = palettes.readBlocPalette(selectedBlocId);
 
         if (palette == null) {
             return null;
@@ -248,10 +244,7 @@ public final class FilteredPolitics {
             return resolveRealHolder(system, pass, footprintByBlocId);
         }
 
-        var spotlit = resolveSpotlitHolder(
-            pass.sector(),
-            pass.grouping(),
-            selectedBlocId);
+        var spotlit = resolveSpotlitHolder(pass.palettes(), selectedBlocId);
 
         // A selectable bloc's colour faction resolves; this fallback only guards the degenerate
         // case where it vanished mid-session, so the system still draws (as its real receded

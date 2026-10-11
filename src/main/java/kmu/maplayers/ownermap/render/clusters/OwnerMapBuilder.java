@@ -16,13 +16,9 @@ import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
-import kmu.maplayers.ownermap.render.style.MapPalettes;
-import kmu.maplayers.ownermap.render.style.OwnerCategories;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 
 import java.util.Map;
 
@@ -132,10 +128,15 @@ public final class OwnerMapBuilder {
 
         try (var rebuildScope = profiler.open(REBUILD_SECTION)) {
 
-            var styling = readMapStyling(
+            var styling = MapStyling.readFromLunaSettings(
                 viewReading.view().resolveCategories(),
                 viewReading.reading(),
                 contentInputs);
+
+            // Stated once here, ahead of any geometry, because it does not vary across the bodies
+            // this pass then cuts: it is the heading the per-body hatch lines are read under, and
+            // the one place their units are given.
+            HatchBuildDiagnostics.logHatchSpecification(styling.renderStyle().global().hatch());
 
             var clusters = new OwnerMapClusters(
                 // Copied out of the owners rather than adopted: the incremental refresh folds
@@ -161,42 +162,6 @@ public final class OwnerMapBuilder {
 
             return clusters;
         }
-    }
-
-    // The paint scheme this build styles every cell from: the whole theme read once through the
-    // single reader seam for the layer's own categories, the reading's unowned shade, and the two
-    // palettes a spotlight separates its subject from its backdrop with. Held on the clusters so the
-    // incremental refresh re-shapes cells against the same snapshot this pass used.
-    private static MapStyling readMapStyling(
-            OwnerCategories categories,
-            OwnerReading reading,
-            ContentInputs contentInputs) {
-
-        var renderStyle = RenderStyleReader.readRenderStyle(categories, contentInputs);
-        var neutralColour = reading.resolveUnownedColour();
-
-        // Stated once here, ahead of any geometry, because it does not vary across the bodies this
-        // pass then cuts: it is the heading the per-body hatch lines are read under, and the one
-        // place their units are given.
-        HatchBuildDiagnostics.logHatchSpecification(renderStyle.global().hatch());
-
-        return new MapStyling(
-            renderStyle,
-            categories,
-            MapPalettes.resolveNeutralPalette(neutralColour),
-            // The receded background desaturates to one uniform palette, the reading's recede
-            // shades darkened by the live setting so it sits below the quieter owners' own space -
-            // a spotlit owner at full strength therefore reads distinctly against it.
-            MapPalettes.resolveDesaturationPalette(
-                reading.resolveRecedePalette(),
-                renderStyle.global().desaturationDarkening()),
-            // The other end of that separation: the neutral a spared unowned cell paints in,
-            // lifted toward white so it clears the greys the recede just sank. Resolved beside its
-            // counterpart, both once per pass, so the two ends cannot be read from different
-            // snapshots of the same two knobs.
-            MapPalettes.resolvePresencePalette(
-                neutralColour,
-                renderStyle.global().presenceLightening()));
     }
 
     // Turns the cached raw cells into the two draw lists: each cell shaped against the holding and

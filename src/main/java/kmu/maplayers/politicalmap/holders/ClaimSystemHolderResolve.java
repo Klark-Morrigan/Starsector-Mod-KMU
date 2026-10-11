@@ -7,7 +7,6 @@ import kmlib.starsector.systems.claims.ClaimReaderSource;
 
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
@@ -29,12 +28,10 @@ public final class ClaimSystemHolderResolve implements SystemHolderResolve {
 
     private final HolderPass pass;
     private final ClaimReader claimReader;
-    private final SectorBlocPalettes palettes;
 
     private ClaimSystemHolderResolve(HolderPass pass, ClaimReader claimReader) {
         this.pass = pass;
         this.claimReader = claimReader;
-        this.palettes = new SectorBlocPalettes(pass.sector(), pass.grouping());
     }
 
     /**
@@ -54,6 +51,6 @@ public final class ClaimSystemHolderResolve implements SystemHolderResolve {
 
     @Override
     public SystemOwner resolveHolderIn(StarSystemAPI system) {
-        return SectorClaims.resolveClaimingHolderIn(system, pass, claimReader, palettes);
+        return SectorClaims.resolveClaimingHolderIn(system, pass, claimReader);
     }
 }

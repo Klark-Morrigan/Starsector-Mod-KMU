@@ -26,8 +26,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what one bake's band inputs are read from: the palettes built off the pass's own sector and
- * grouping, the pass, affiliation and rules carried as handed, and the grouping and habitation
+ * Pins what one bake's band inputs are read from: the pass's own palettes, the pass, affiliation
+ * and rules carried as handed, and the grouping and habitation
  * answered by the pass rather than by a read of their own.
  *
  * <p>The pass is stood in for, since what it answers is pinned in its own suite; what belongs here
@@ -49,13 +49,23 @@ final class RibbonPlanInputsTests {
     class CreateForPass {
 
         @Test
-        void readsABlocsShadesOffThePassesSectorAndGrouping() {
-            // A group bloc is shaded by its lead member, which only a palette folding under the
-            // pass's grouping and reading the pass's sector can answer.
+        void readsABlocsShadesThroughThePassesOwnPalettes() {
+            // The pass's own palette read rather than one built beside it, so a band colours a bloc
+            // through the very object the fills of the same rebuild were coloured through. A group
+            // bloc is shaded by its lead member, which only a palette folding under the pass's
+            // grouping and reading the pass's sector can answer.
             var sectorMock = SectorFactionFixtures.buildSectorShadingFaction("hegemony", BRIGHT, DARK);
-            var passMock = stubPassOver(sectorMock, buildGroupOf("hegemony", "persean"));
+            var grouping = buildGroupOf("hegemony", "persean");
+            var passMock = stubPassOver(sectorMock, grouping);
+            var palettes = new SectorBlocPalettes(sectorMock, grouping);
+
+            when(passMock.palettes())
+                .thenReturn(palettes);
+
             var inputs = RibbonPlanInputs.createForPass(passMock, AFFILIATION, RULES);
 
+            assertThat(inputs.palettes())
+                .isSameAs(palettes);
             assertThat(inputs.palettes().readBlocPalette(GROUP_BLOC_ID))
                 .isEqualTo(new ColourPair(BRIGHT, DARK));
         }

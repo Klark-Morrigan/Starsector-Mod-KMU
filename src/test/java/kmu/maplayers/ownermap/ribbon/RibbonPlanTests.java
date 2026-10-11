@@ -27,6 +27,7 @@ import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.TRITACHYON_B
 import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.TRITACHYON_DARK;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pins the segment rule on hand-built presences: which cells get a band at all, what length its
@@ -589,6 +590,20 @@ final class RibbonPlanTests {
 
             assertThat(plan.segments())
                 .containsExactly(new RibbonSegment(HEGEMONY_BRIGHT, 3));
+        }
+
+        @Test
+        void refusesAnyChangeToAPlannedRibbon() {
+            // A planned ribbon keeps the list it was laid into rather than a copy, so the list it
+            // hands out is the plan itself and must not be open to a reader's edits.
+            var plan = RibbonPlan.planCellRibbon(
+                Optional.of(HEGEMONY),
+                List.of(buildHegemonyPresence(1), buildTriTachyonPresence(1)),
+                OwnerAffiliation.NONE,
+                STANDARD_RULES);
+
+            assertThatThrownBy(() -> plan.segments().add(new RibbonSegment(TRITACHYON_BRIGHT, 3)))
+                .isInstanceOf(UnsupportedOperationException.class);
         }
     }
 

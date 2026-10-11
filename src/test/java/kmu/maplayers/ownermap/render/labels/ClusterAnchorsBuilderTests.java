@@ -25,15 +25,14 @@ import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
-import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
@@ -113,6 +112,7 @@ final class ClusterAnchorsBuilderTests {
     private static final Color TRITACHYON_PRIMARY = Color.CYAN;
     private static final SystemOwner HEGEMONY_HOLDER =
         new SystemOwner(HEGEMONY, new ColourPair(HEGEMONY_PRIMARY, Color.BLUE));
+
     private static final SystemOwner TRITACHYON_HOLDER =
         new SystemOwner(TRITACHYON, new ColourPair(TRITACHYON_PRIMARY, Color.DARK_GRAY));
 
@@ -211,7 +211,7 @@ final class ClusterAnchorsBuilderTests {
     private MockedStatic<KmuOwnerMapDiagnosticsSettings> settingsMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
     private MockedStatic<LazyFontCache> fontsMock;
-    private MockedStatic<RenderStyleReader> styleReaderMock;
+
     // The owners the debug path is handed; nobody's unless a case says otherwise.
     private Map<SystemKey, SystemOwner> ownerBySystemKey = Map.of();
 
@@ -221,7 +221,6 @@ final class ClusterAnchorsBuilderTests {
         settingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class);
         specificationMock = mockStatic(LabelAnchorSpecification.class);
         fontsMock = mockStatic(LazyFontCache.class);
-        styleReaderMock = mockStatic(RenderStyleReader.class);
 
         // The live tuning and name styling arrive as the data the rebuild reads them into, so a
         // case states its gate and its styling and nothing about the dozens of knobs behind them.
@@ -232,9 +231,6 @@ final class ClusterAnchorsBuilderTests {
             .thenReturn(NAME_STYLE_BY_CATEGORY);
         when(categoriesMock.resolveFullStrengthCategory())
             .thenReturn(StandInCategoryFake.OWNED);
-        styleReaderMock
-            .when(RenderStyleReader::readGlobalStyle)
-            .thenReturn(ThemeFixtures.createInertGlobalStyle());
 
         // No label font resolves outside the game, which is the fallback the fit is designed to
         // take: the aspect stand-in sizes a band and no name is drawn from it. The placements are
@@ -260,7 +256,6 @@ final class ClusterAnchorsBuilderTests {
     @AfterEach
     void closeTheSettingsHolderAndFontSeams() {
 
-        styleReaderMock.close();
         fontsMock.close();
         specificationMock.close();
         settingsMock.close();
@@ -271,6 +266,7 @@ final class ClusterAnchorsBuilderTests {
 
         @Test
         void fitsOneLabelPerContiguousCluster() {
+
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
@@ -315,6 +311,7 @@ final class ClusterAnchorsBuilderTests {
 
         @Test
         void drawsEachClusterInItsOwnOwnersShade() {
+
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
@@ -345,8 +342,7 @@ final class ClusterAnchorsBuilderTests {
                 cellGeometry,
                 new ClusterLabelStylingSnapshot(
                     Map.of(buildCellKey(RIVAL_SYSTEM), TRITACHYON_HOLDER),
-                    DESATURATION_PALETTE,
-                    categoriesMock,
+                    buildMapStylingDesaturatingTo(DESATURATION_PALETTE),
                     OwnerReadingFake.createAnsweringNothing(),
                     buildSpotlitPicksDrawingNames(
                         HEGEMONY,
@@ -688,10 +684,10 @@ final class ClusterAnchorsBuilderTests {
     // at full strength, with a palette nothing should recolour to since no owner recedes off filter.
     private ClusterLabelStylingSnapshot buildUnfilteredStyling(
             Map<String, SystemOwner> holderBySystemId) {
+
         return new ClusterLabelStylingSnapshot(
             buildKeyedValues(holderBySystemId),
-            UNUSED_PALETTE,
-            categoriesMock,
+            buildMapStylingDesaturatingTo(UNUSED_PALETTE),
             OwnerReadingFake.createAnsweringNothing(),
             contentInputs,
             SETTLED_LABEL_FACE);
@@ -700,13 +696,25 @@ final class ClusterAnchorsBuilderTests {
     // The styling the border-tracing diagnostic hands over: the owners it traced, under a reading
     // placing all of them at full strength.
     private ClusterLabelStylingSnapshot buildTracedStyling() {
+
         return new ClusterLabelStylingSnapshot(
             ownerBySystemKey,
-            UNUSED_PALETTE,
-            categoriesMock,
+            buildMapStylingDesaturatingTo(UNUSED_PALETTE),
             OwnerReadingFake.createAnsweringNothing(),
             contentInputs,
             SETTLED_LABEL_FACE);
+    }
+
+    // The scheme a label pass reads two things off: the categories its name styles come from, and
+    // the shades a desaturated owner's name recolours to. Nothing else in it reaches a label.
+    private MapStyling buildMapStylingDesaturatingTo(ColourPair desaturationPalette) {
+
+        return new MapStyling(
+            null,
+            categoriesMock,
+            UNUSED_PALETTE,
+            desaturationPalette,
+            UNUSED_PALETTE);
     }
 
     // The one reading this suite needs that no other does: a spotlight up AND the names drawn. The
@@ -733,6 +741,7 @@ final class ClusterAnchorsBuilderTests {
     }
 
     private void stubAnchorOverlay(boolean isOverlayShown) {
+
         settingsMock
             .when(KmuOwnerMapDiagnosticsSettings::getOwnerMapShowClusterAnchors)
             .thenReturn(isOverlayShown);
@@ -746,6 +755,7 @@ final class ClusterAnchorsBuilderTests {
     // A placement left over from an earlier pass, for the cases that ask whether the standing list
     // is cleared. Only its presence is read, so every field is inert.
     private static ClusterAnchor buildStaleAnchor() {
+
         return new ClusterAnchor(
             new ClusterIdentity("stale", Set.of(buildCellKey("stale"))),
             0f,
@@ -764,6 +774,7 @@ final class ClusterAnchorsBuilderTests {
     // asking what a rebuild reports having disturbed - the stale placement above accepted no line,
     // so it takes up nothing and its going disturbs nobody.
     private static ClusterAnchor buildStandingAnchorOccupyingRoom() {
+
         return new ClusterAnchor(
             new ClusterIdentity("stale", Set.of(buildCellKey("stale"))),
             0f,
@@ -781,6 +792,7 @@ final class ClusterAnchorsBuilderTests {
     // The three fixture cells in first-seen order, so which cluster a case reads back at index 0 is
     // fixed by the map rather than by a hash.
     private static Map<String, List<CellEdge>> listOrderedEdges() {
+
         var edgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
 
         edgesByCellId.put(HELD_SYSTEM, List.of(
@@ -807,10 +819,13 @@ final class ClusterAnchorsBuilderTests {
     // Every cell drawing as its own star - the partition the cluster walk runs over when no system
     // holds cells beyond its own.
     private static Map<SystemKey, SystemKey> listIdentityCellsFor(Iterable<SystemKey> cellKeys) {
+
         var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
+
         for (var cellKey : cellKeys) {
             systemKeyByCellKey.put(cellKey, cellKey);
         }
+
         return systemKeyByCellKey;
     }
 

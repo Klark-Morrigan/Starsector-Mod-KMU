@@ -71,10 +71,7 @@ public final class FilteredClaims {
 
         // Resolved once for the whole walk: every system the bloc claims joins the same spotlight
         // territory, so they all carry the identical holder.
-        var spotlitHolder = FilteredPolitics.resolveSpotlitHolder(
-            sector,
-            pass.grouping(),
-            selectedBlocId);
+        var spotlitHolder = FilteredPolitics.resolveSpotlitHolder(pass.palettes(), selectedBlocId);
         var spotlitClaims = new LinkedHashMap<SystemKey, SystemOwner>();
 
         for (var claim : claimingHolderBySystemKey.entrySet()) {

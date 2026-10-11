@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Wires the claim resolve against a stubbed sector and a {@link ClaimReaderFake}: the claimant
  * comes from the faked port, the palette from a mocked {@code FactionAPI}, so this exercises
- * {@link SectorClaims} together with {@link SystemOwner#resolveForBloc} - the shared bloc
+ * {@link SectorClaims} together with {@link SectorBlocPalettes#resolveOwnerOf} - the shared bloc
  * colouring a claim reuses - end to end. The systems carry no markets, since a claim is read from
  * the port, not the economy, so a marketless (unpopulated or decivilised) system is exactly the
  * case a claim resolves for.
@@ -121,7 +121,7 @@ final class SectorClaimsIntegrationTests {
             var pass = buildHolderPassOver(null);
 
             assertThat(SectorClaims.resolveClaimingHolderIn(
-                    null, pass, new ClaimReaderFake(), buildPalettesOver(pass))).isNull();
+                    null, pass, new ClaimReaderFake())).isNull();
         }
 
         @Test
@@ -131,7 +131,7 @@ final class SectorClaimsIntegrationTests {
                     List.of(buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT)), listSystemMarkets("unclaimed")));
 
             assertThat(SectorClaims.resolveClaimingHolderIn(
-                    pass.readSystems().get(0), pass, new ClaimReaderFake(), buildPalettesOver(pass))).isNull();
+                    pass.readSystems().get(0), pass, new ClaimReaderFake())).isNull();
         }
 
         @Test
@@ -151,14 +151,10 @@ final class SectorClaimsIntegrationTests {
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderIn(
-                    pass.readSystems().get(0), pass, claimReaderFake, buildPalettesOver(pass)))
+                    pass.readSystems().get(0), pass, claimReaderFake))
                     .isEqualTo(new SystemOwner(
                             "alliance-1",
                             new ColourPair(HEGEMONY_FACTION_BRIGHT, buildDarkTheme(HEGEMONY_FACTION_BRIGHT))));
-        }
-
-        private static SectorBlocPalettes buildPalettesOver(HolderPass pass) {
-            return new SectorBlocPalettes(pass.sector(), pass.grouping());
         }
     }
 }

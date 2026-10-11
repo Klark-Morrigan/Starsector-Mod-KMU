@@ -5,6 +5,7 @@ import kmlib.colour.ColourPair;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,17 +57,32 @@ import java.util.Optional;
  * in the order the owners were handed over, so the ribbon cannot disagree with the fill about
  * who leads a system it re-ranked for itself.
  *
- * @param segments the ribbon's runs in draw order, starting from the cell's top centre;
- *                 empty when the cell draws no ribbon at all
+ * <p>A value: two plans of the same runs are equal. A class rather than a record so a plan laid
+ * here can keep the list it was laid into, where a plan built from a caller's list copies it.
  */
-public record RibbonPlan(
-    List<RibbonSegment> segments) {
+public final class RibbonPlan {
 
     // The cell draws no band: nothing is present in it, so there is no footprint to report.
     public static final RibbonPlan NONE = new RibbonPlan(List.of());
 
-    public RibbonPlan {
-        segments = List.copyOf(segments);
+    private final List<RibbonSegment> segments;
+
+    /**
+     * A plan of the given runs, copied, so a caller reusing the list it built from cannot lengthen
+     * a ribbon already planned.
+     *
+     * @param segments the ribbon's runs in draw order, starting from the cell's top centre; empty
+     *                 when the cell draws no ribbon at all
+     */
+    public RibbonPlan(List<RibbonSegment> segments) {
+        this.segments = List.copyOf(segments);
+    }
+
+    // A plan over runs laid here, kept rather than copied: the list was built for this plan alone
+    // and goes nowhere else, so a copy would guard against nobody. Reached through
+    // adoptLaidSegments, which names what sets it apart from the public constructor.
+    private RibbonPlan(ArrayList<RibbonSegment> laidSegments) {
+        this.segments = Collections.unmodifiableList(laidSegments);
     }
 
     /**
@@ -112,6 +128,14 @@ public record RibbonPlan(
     }
 
     /**
+     * @return the ribbon's runs in draw order, starting from the cell's top centre; empty when the
+     *         cell draws no ribbon at all
+     */
+    public List<RibbonSegment> segments() {
+        return segments;
+    }
+
+    /**
      * How far the whole ribbon runs, in ribbon widths.
      *
      * <p>The budget the drawn size is settled against: a cell whose perimeter cannot hold
@@ -127,6 +151,26 @@ public record RibbonPlan(
             lengthUnits += segment.lengthUnits();
         }
         return lengthUnits;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof RibbonPlan plan && segments.equals(plan.segments);
+    }
+
+    @Override
+    public int hashCode() {
+        return segments.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "RibbonPlan[segments=" + segments + "]";
+    }
+
+    // The plan over a list laid by this class, kept as it is.
+    private static RibbonPlan adoptLaidSegments(ArrayList<RibbonSegment> laidSegments) {
+        return new RibbonPlan(laidSegments);
     }
 
     // Lays the whole band: every owner's run in the order handed over, each closed off by its own
@@ -159,7 +203,7 @@ public record RibbonPlan(
             appendOwnerRun(segments, presence, lengths);
             outgoingOwner = presence;
         }
-        return new RibbonPlan(segments);
+        return adoptLaidSegments(segments);
     }
 
     // Whether the band would say anything the cell's own fill does not, which is what decides the

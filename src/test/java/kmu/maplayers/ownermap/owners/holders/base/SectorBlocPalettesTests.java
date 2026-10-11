@@ -16,6 +16,8 @@ import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.G
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -70,6 +72,49 @@ final class SectorBlocPalettesTests {
             // with no colour rather than throwing on the way to a map nobody is looking at.
             assertThat(readPaletteFrom(null, GROUP_BLOC_ID))
                 .isNull();
+        }
+
+        @Test
+        void answersASecondAskWithTheShadesTheFirstRead() {
+
+            var palettes = new SectorBlocPalettes(
+                SectorFactionFixtures.buildSectorShadingFaction(LEAD_MEMBER, BRIGHT, DARK),
+                buildGroupLedByTheLeadMember());
+
+            palettes.readBlocPalette(GROUP_BLOC_ID);
+
+            assertThat(palettes.readBlocPalette(GROUP_BLOC_ID))
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
+        }
+
+        @Test
+        void asksTheSectorForABlocsColourFactionOnce() {
+            // Every system's holder and every cell's band asks per bloc, so a pass that went back to
+            // the sector each time would look the same faction up once per cell.
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(LEAD_MEMBER, BRIGHT, DARK);
+            var palettes = new SectorBlocPalettes(sectorMock, buildGroupLedByTheLeadMember());
+
+            palettes.readBlocPalette(GROUP_BLOC_ID);
+            palettes.readBlocPalette(GROUP_BLOC_ID);
+
+            verify(sectorMock, times(1))
+                .getFaction(LEAD_MEMBER);
+        }
+
+        @Test
+        void remembersABlocWhoseColourFactionIsGone() {
+            // The absence is remembered as well as a palette is: a bloc the sector cannot name is
+            // asked about as often as one it can.
+            var sectorMock = mock(SectorAPI.class);
+            var palettes = new SectorBlocPalettes(sectorMock, buildGroupLedByTheLeadMember());
+
+            palettes.readBlocPalette(GROUP_BLOC_ID);
+
+            assertThat(palettes.readBlocPalette(GROUP_BLOC_ID))
+                .isNull();
+
+            verify(sectorMock, times(1))
+                .getFaction(LEAD_MEMBER);
         }
     }
 
@@ -148,6 +193,7 @@ final class SectorBlocPalettesTests {
     // The palettes as one group's bloc reads them: the bloc folds to its lead member, which is
     // the faction the sector is asked for.
     private static ColourPair readPaletteFrom(SectorAPI sector, String blocId) {
+
         return new SectorBlocPalettes(sector, buildGroupLedByTheLeadMember())
             .readBlocPalette(blocId);
     }

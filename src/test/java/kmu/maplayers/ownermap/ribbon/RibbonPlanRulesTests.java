@@ -42,5 +42,15 @@ final class RibbonPlanRulesTests {
             assertThat(lengths)
                 .isEqualTo(new RibbonSegmentLengths(4, 2));
         }
+
+        @Test
+        void answersEveryCellWithTheLengthsSettledWhenTheRulesWereMade() {
+            // Asked once per uncontested cell, so the shortened pair is settled once rather than
+            // built again for each of them.
+            var rules = new RibbonPlanRules(AUTHORED_LENGTHS, new UncontestedRibbonRuns(true));
+
+            assertThat(rules.resolveUncontestedLengths())
+                .isSameAs(rules.resolveUncontestedLengths());
+        }
     }
 }

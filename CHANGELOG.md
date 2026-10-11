@@ -21,11 +21,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Added
 
+- **`ColonyKind.isUngoverned()`**: whether a place is people living under nobody's authority, for every reader telling governed colonies from ungoverned ones.
 - **`FactionStanding.isWeighed()`**: whether the pass weighed the faction's colonies, so a reader branching on the kind asks rather than testing the sealed type.
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**: the mark a faction's line opens on, for a line marked as that faction's.
+- **`HolderPass.palettes()`** and **`DominancePass.palettes()`**: the pass's one palette read, which remembers each bloc's shades for the pass, so every resolve and band over one rebuild colours a bloc through the same object.
+- **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**: one build's paint scheme, read once and handed to every part of the build that styles by it.
 - **`PoliticalHolderView`**, which every political map view implements: the alliance set's revision as its content revision, who stands together in a contest, the holder categories, and the faction reading.
 - **`SectorBlocPalettes.readFactionPalette(SectorAPI, String)`**: one faction's shades, for a reader that holds the faction ID itself.
-- **`ColonyKind.isUngoverned()`**: whether a place is people living under nobody's authority, for every reader telling governed colonies from ungoverned ones.
 
 #### Public contracts changed (**breaking**)
 
@@ -54,7 +56,7 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `FactionNameFormatChoice`, `FactionPaletteSlot`, `FactionlessStyleResolver` and `kmu.settings.FactionPaletteChoice` | `OwnerNameFormatChoice`, `OwnerPaletteSlot`, `UnownedStyleResolver` and `OwnerPaletteChoice` |
 | `HolderOwnerReading` | `FactionOwnerReading`, and `AllianceOwnerReading` over it for a layer painting alliances |
 | `OwnerMapCategory`, `OwnerMapInhabitation` and `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`, `HolderInhabitation` and `DominanceHolderProvider` |
-| `getFactionLabels()` on `OwnerMapCache` and `OwnerMapDrawables`, `OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` and `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`, `resolveOwnerPaintOf(String, SystemOwner)` and `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` |
+| `getFactionLabels()` on `OwnerMapCache` and `OwnerMapDrawables`, `OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` and `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`, `resolveOwnerPaintOf(SystemOwner)` and `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)`. The owner's ID is the `SystemOwner`'s own |
 | `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` and its `strings.json` key | `POLITICAL_MAP_CTL_FACTION_NAMES`, the political map's own caption |
 | `ownermap.owners.OwnerPalette` | KMLib's `kmlib.colour.ColourPair`, which a faction's pair already is. `SectorBlocPalettes.adoptFactionPalette(FactionPalette)` is gone |
 | `HolderPass.over(SectorAPI, ColonyReadRules, HolderGrouping)` | `HolderPass.createOver(SectorAPI, ColonyReadRules, HolderGrouping)` |
@@ -82,6 +84,9 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `StandingRowResolver.resolveRows(SectorAPI, List, HolderGrouping, FactionAccountResolver)` | `StandingRowResolver.createForBox(SectorAPI, HolderGrouping, FactionAccountResolver)` once per box, then `resolveRows(List)` per block |
 | `FactionPresentation`, public, with `fullName()` | Package-private, with `labelText()`. A line marked as a faction's takes `FactionTooltipLine.resolveCrestMark(SectorAPI, String)` |
 | `GroupStanding(String, int, List)` over an empty member list | Refused with an `IllegalArgumentException`: a group stands in a system only through a member there |
+| `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader, SectorBlocPalettes)` and `FilteredPolitics.resolveSpotlitHolder(SectorAPI, HolderGrouping, String)` | `resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)` and `resolveSpotlitHolder(BlocPaletteReader, String)`: a bloc's shades come off the pass's own `palettes()` |
+| `DebugBorderTracingBuilder.buildDebugDrawables(CellGeometryCache, ResolvedOwners, OwnerCategories, ContentInputs)` and `ClusterLabelStylingSnapshot.resolveForTracing(Map, ViewReading, ContentInputs, FontAtlas)` | `buildDebugDrawables(CellGeometryCache, ResolvedOwners, MapStyling)` and `resolveForTracing(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)`, both handed the one `MapStyling` the tracing rebuild reads. The snapshot's `desaturationPalette` and `categories` components are its `mapStyling` |
+| `OwnerMapBuildInputs`, `RibbonPlanRules` and `RibbonPlan`, records | Final classes with the same constructors and accessors. `OwnerMapBuildInputs` remembers each owner's paint and compares by identity; `RibbonPlan` still compares by its runs |
 
 </details>
 

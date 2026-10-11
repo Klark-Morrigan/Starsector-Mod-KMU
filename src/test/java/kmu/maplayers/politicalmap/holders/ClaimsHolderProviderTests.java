@@ -117,7 +117,7 @@ final class ClaimsHolderProviderTests {
 
                 filteredPoliticsMock
                     .when(() -> FilteredPolitics
-                        .resolveSpotlitHolder(sectorMock, grouping, "hegemony"))
+                        .resolveSpotlitHolder(pass.palettes(), "hegemony"))
                     .thenReturn(spotlightHolder);
 
                 var resolution = provider.resolveHolder(pass, "hegemony");
@@ -167,7 +167,7 @@ final class ClaimsHolderProviderTests {
                 // is that no claimed system carries this bloc, not that the holder is missing.
                 filteredPoliticsMock
                     .when(() -> FilteredPolitics
-                        .resolveSpotlitHolder(sectorMock, grouping, "tritachyon"))
+                        .resolveSpotlitHolder(pass.palettes(), "tritachyon"))
                     .thenReturn(spotlightHolder);
 
                 var resolution = provider.resolveHolder(pass, "tritachyon");

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -75,8 +74,7 @@ final class ClaimSystemHolderResolveTests {
                     .when(() -> SectorClaims.resolveClaimingHolderIn(
                         same(systemMock),
                         same(pass),
-                        same(claimReaderMock),
-                        any()))
+                        same(claimReaderMock)))
                     .thenReturn(claimant);
 
                 assertThat(resolve.resolveHolderIn(systemMock))

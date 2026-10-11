@@ -15,13 +15,10 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 import kmu.settings.KmuMapLabelSettings;
 
@@ -44,8 +41,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -73,13 +68,6 @@ import static org.mockito.Mockito.when;
 final class DebugBorderTracingBuilderTests {
 
     private static final String HEGEMONY = "hegemony";
-
-    // The picks the overlay is handed. Only the uninhabited outline in them reaches this builder,
-    // and every case but one stubs the theme whole - so which category actually outlines is stated
-    // by the stubbed bundles, and the pick stands for "the rebuild sampled one". The case that the
-    // pick is what the theme is read under is the exception.
-    private static final ContentInputs OUTLINE_DRAWN =
-        ContentInputsFixtures.createInputsOutlining(true);
 
     // Two cells of one owner meeting along x = 2000, so the pair proves the trace fuses them; the
     // other two share no edge with anything, each enclosed by the reach bound alone.
@@ -144,8 +132,10 @@ final class DebugBorderTracingBuilderTests {
     private Map<String, SystemOwner> ownerBySystemId = Map.of();
     private Set<SystemKey> inhabitedSystemKeys = Set.of();
 
+    // The scheme the rebuild hands the overlay, stated per case through stubTheme.
+    private MapStyling styling;
+
     private MockedStatic<KmuMapLabelSettings> settingsMock;
-    private MockedStatic<RenderStyleReader> styleReaderMock;
 
     @BeforeEach
     void openTheSettingsSeams() {
@@ -159,16 +149,12 @@ final class DebugBorderTracingBuilderTests {
             .when(KmuMapLabelSettings::getMapBorderMiterLimit)
             .thenReturn(MITER_SPIKE_LIMIT);
 
-        styleReaderMock = mockStatic(RenderStyleReader.class);
-
         // An empty sector by default, so a case names only the cells it is about.
         stubTheme(buildNoSmoothing(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
     }
 
     @AfterEach
     void closeTheSettingsSeams() {
-
-        styleReaderMock.close();
         settingsMock.close();
     }
 
@@ -187,8 +173,7 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
                 stateOwners(),
-                OwnerCategoriesFake.SHARED_FAKE,
-                OUTLINE_DRAWN);
+                styling);
 
             // One loop rather than two: the shared edge is a same-owner seam, exactly as in the
             // production trace this stage is supposed to be showing.
@@ -212,8 +197,7 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM),
                 stateOwners(),
-                OwnerCategoriesFake.SHARED_FAKE,
-                OUTLINE_DRAWN);
+                styling);
 
             assertThat(drawables.baseLoops())
                 .hasSize(1);
@@ -232,8 +216,7 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM),
                 stateOwners(),
-                OwnerCategoriesFake.SHARED_FAKE,
-                OUTLINE_DRAWN);
+                styling);
 
             // Rounding feeds off whatever the previous stage left, so with sanding off it rounds
             // the base - and the skipped stage stays empty rather than standing in for it.
@@ -252,8 +235,7 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM),
                 stateOwners(),
-                OwnerCategoriesFake.SHARED_FAKE,
-                OUTLINE_DRAWN);
+                styling);
 
             // The decivilised world's cell resolves to the decivilised bundle and draws; the
             // uninhabited one resolves to the bundle the player switched off and is skipped,
@@ -270,8 +252,7 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM),
                 stateOwners(),
-                OwnerCategoriesFake.SHARED_FAKE,
-                OUTLINE_DRAWN);
+                styling);
 
             assertThat(drawables.isEmpty())
                 .isTrue();
@@ -286,8 +267,7 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM),
                 stateOwners(),
-                OwnerCategoriesFake.SHARED_FAKE,
-                OUTLINE_DRAWN);
+                styling);
 
             // One loop with both unowned outlines on: the cell is grouped, so the unowned
             // pass steps over it instead of stroking a second ring inside its cluster border.
@@ -310,8 +290,7 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 geometryCacheMock,
                 stateOwners(),
-                OwnerCategoriesFake.SHARED_FAKE,
-                OUTLINE_DRAWN);
+                styling);
 
             // An owner whose cells carry no edges traces nothing, and the overlay drops it rather
             // than capturing an empty stage entry the renderer would walk.
@@ -328,36 +307,12 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(TINY_SYSTEM),
                 stateOwners(),
-                OwnerCategoriesFake.SHARED_FAKE,
-                OUTLINE_DRAWN);
+                styling);
 
             // The cell is narrower than twice the border inset, so insetting leaves no polygon
             // at all - dropped rather than flattened into a degenerate run.
             assertThat(drawables.isEmpty())
                 .isTrue();
-        }
-
-        @Test
-        void readsTheThemeUnderTheOutlinePickItWasHanded() {
-            // The one pick from the rebuild's sampling that reaches this builder. The overlay
-            // exists to show the cells the production draw would show, so the theme it indexes
-            // categories into has to be read under the same outline answer the fills were - read
-            // here off the preference instead, a flip between the two would have the diagnostic
-            // showing uninhabited cells the map is not drawing, or hiding ones it is.
-            stubInhabitedSystems(DECIVILISED_SYSTEM);
-            stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
-
-            var contentInputs = ContentInputsFixtures.createInputsOutlining(false);
-
-            DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM),
-                stateOwners(),
-                OwnerCategoriesFake.SHARED_FAKE,
-                contentInputs);
-
-            styleReaderMock.verify(() -> RenderStyleReader.readRenderStyle(
-                same(OwnerCategoriesFake.SHARED_FAKE),
-                same(contentInputs)));
         }
 
         @Test
@@ -369,8 +324,7 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(DECIVILISED_SYSTEM),
                 stateOwners(),
-                OwnerCategoriesFake.SHARED_FAKE,
-                OUTLINE_DRAWN);
+                styling);
 
             // A lone convex cell has no needle protrusions to sand, so its two stages are the raw
             // inset and its rounded corners - the sanding gate being on does not invent a third.
@@ -437,9 +391,10 @@ final class DebugBorderTracingBuilderTests {
                 CornerRounding.ROUND_EVERY_CORNER));
     }
 
-    // The theme as the builder reads it: the smoothing profile it stages the passes by, and the
+    // The theme the builder is handed: the smoothing profile it stages the passes by, and the
     // two unowned bundles whose outlines decide which unowned cells are drawn at all. The
-    // owned bundles never gate anything here, so they take the drawn outline throughout.
+    // owned bundles never gate anything here, so they take the drawn outline throughout. The
+    // palettes never reach the tracing, so they are the inert neutral.
     private void stubTheme(
             BorderSmoothingStyle smoothing,
             ElementStyle decivilisedOutline,
@@ -464,9 +419,12 @@ final class DebugBorderTracingBuilderTests {
                 0.2),
             categories);
 
-        styleReaderMock
-            .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
-            .thenReturn(renderStyle);
+        styling = new MapStyling(
+            renderStyle,
+            OwnerCategoriesFake.SHARED_FAKE,
+            OwnerMapClusterFixtures.NEUTRAL_PALETTE,
+            OwnerMapClusterFixtures.NEUTRAL_PALETTE,
+            OwnerMapClusterFixtures.NEUTRAL_PALETTE);
     }
 
     // The owners the overlay is to trace. Stated rather than resolved: what owns a system is the

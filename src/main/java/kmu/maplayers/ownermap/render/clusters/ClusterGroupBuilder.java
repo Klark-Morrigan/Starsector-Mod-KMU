@@ -80,9 +80,9 @@ public final class ClusterGroupBuilder {
         // the shades those resolve against - a desaturated owner swapping to the pass's shared
         // desaturation palette, exactly as its cells' seams do off this same call.
         //
-        // Every system of an owner shares its palette, so any member resolves the same colours.
+        // Every system of an owner is held by the one owner the cells were grouped by, so any member
+        // resolves the same paint.
         var ownerPaint = buildInputs.resolveOwnerPaintOf(
-            ownerId,
             clusters
                 .getOccupancy()
                 .readOwnerOf(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0))));

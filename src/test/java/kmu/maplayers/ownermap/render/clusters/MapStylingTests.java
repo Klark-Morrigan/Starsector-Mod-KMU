@@ -2,18 +2,26 @@ package kmu.maplayers.ownermap.render.clusters;
 
 import kmlib.colour.ColourPair;
 
+import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.ownermap.ContentInputsFixtures;
+import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
+import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.awt.Color;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the paint scheme's two answers: the shade its neutral pair reads as, and what a build that
- * never resolved a theme carries in place of one.
+ * Pins the paint scheme's answers: what one build's read of the theme and the reading carries, the
+ * shade its neutral pair reads as, and what a build that never resolved a theme carries in place of
+ * one.
  *
  * <p>The placeholder is worth pinning precisely because nothing paints it. A slot left null there
  * would surface as a crash on the frame after a failed first build - the one frame no test of the
@@ -53,6 +61,85 @@ final class MapStylingTests {
             assertThat(styling.readNeutralColour())
                 .isNotEqualTo(Color.MAGENTA)
                 .isNotEqualTo(Color.PINK);
+        }
+    }
+
+    @Nested
+    class ReadFromLunaSettings {
+
+        // The global darkening the inert theme carries, applied to the reading's recede shades:
+        // light grey and dark grey kept at 70%.
+        private static final ColourPair DARKENED_RECEDE_PALETTE =
+            new ColourPair(new Color(134, 134, 134), new Color(45, 45, 45));
+
+        @Test
+        void carriesTheThemeReadForTheLayersCategoriesUnderThePicks() {
+            // The picks go to the theme read rather than being sampled again, since a category's
+            // style may ride on one and the rebuild has already decided which picks it was owed by.
+            var contentInputs = ContentInputsFixtures.createInertInputs();
+            var theme = buildInertTheme();
+
+            try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
+
+                styleReaderMock
+                    .when(() -> RenderStyleReader.readRenderStyle(OwnerCategoriesFake.SHARED_FAKE, contentInputs))
+                    .thenReturn(theme);
+
+                var styling = MapStyling.readFromLunaSettings(
+                    OwnerCategoriesFake.SHARED_FAKE,
+                    OwnerReadingFake.createAnsweringNothing(),
+                    contentInputs);
+
+                assertThat(styling.renderStyle())
+                    .isSameAs(theme);
+                assertThat(styling.categories())
+                    .isSameAs(OwnerCategoriesFake.SHARED_FAKE);
+            }
+        }
+
+        @Test
+        void holdsTheReadingsUnownedShadeInBothNeutralSlots() {
+
+            try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
+
+                stubInertTheme(styleReaderMock);
+
+                assertThat(readStylingOverTheFakeReading().neutralPalette())
+                    .isEqualTo(new ColourPair(Color.GRAY, Color.GRAY));
+            }
+        }
+
+        @Test
+        void darkensTheReadingsRecedeShadesByTheThemesDarkening() {
+
+            try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
+
+                stubInertTheme(styleReaderMock);
+
+                assertThat(readStylingOverTheFakeReading().desaturationPalette())
+                    .isEqualTo(DARKENED_RECEDE_PALETTE);
+            }
+        }
+
+        private static MapStyling readStylingOverTheFakeReading() {
+
+            return MapStyling.readFromLunaSettings(
+                OwnerCategoriesFake.SHARED_FAKE,
+                OwnerReadingFake.createAnsweringNothing(),
+                ContentInputsFixtures.createInertInputs());
+        }
+
+        private static void stubInertTheme(MockedStatic<RenderStyleReader> styleReaderMock) {
+
+            styleReaderMock
+                .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
+                .thenReturn(buildInertTheme());
+        }
+
+        private static RenderStyle buildInertTheme() {
+
+            return OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
+                OwnerMapClusterFixtures.createInertCategoryStyle());
         }
     }
 

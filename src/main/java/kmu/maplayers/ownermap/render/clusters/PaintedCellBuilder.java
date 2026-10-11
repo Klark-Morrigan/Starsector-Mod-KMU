@@ -102,7 +102,7 @@ public final class PaintedCellBuilder {
             SystemOwner owner,
             ShapedCell shaped) {
 
-        var ownerPaint = buildInputs.resolveOwnerPaintOf(owner.ownerId(), owner);
+        var ownerPaint = buildInputs.resolveOwnerPaintOf(owner);
         var style = ownerPaint.style();
 
         return new PaintedCell(

@@ -231,9 +231,9 @@ public final class ClusterAnchorsBuilder {
             cells.getSiteBySystemKey(),
             cellGrouping);
 
-        // The desaturation palette is handed in already resolved - off the production build's
-        // drawables, or by the debug path from the same profile seam - so a desaturated owner's
-        // name matches its recoloured fill and border exactly without re-reading the profile here.
+        // The desaturation palette is handed in already resolved - off the scheme the build beneath
+        // the names was styled by, production or tracing - so a desaturated owner's name matches its
+        // recoloured fill and border exactly without re-reading the profile here.
         // The style decision every label follows is the same one the fills read
         // (OwnerStyleResolver.resolveOwnerStyleDecision), cached per owner since the colour
         // resolver reads both halves of it - the category and the adjustment:
@@ -241,9 +241,10 @@ public final class ClusterAnchorsBuilder {
         // receded name matches its receded fill and a spotlit name stays full, the drift a
         // filter opens.
         var contentInputs = styling.contentInputs();
+        var categories = styling.mapStyling().categories();
         var styleDecisionByOwnerId = ClusterLabelStyling.newOwnerStyleDecisionResolver(
             styling.reading(),
-            styling.categories(),
+            categories,
             contentInputs);
 
         FontToleranceAnnouncement.announceIfMoved(spec);
@@ -254,9 +255,9 @@ public final class ClusterAnchorsBuilder {
             new ClusterLabelResolvers(
                 ClusterLabelStyling.newLabelColourResolver(
                     ownerBySystemKey,
-                    new OwnerNameStyles(styling.categories().readNameStyles()),
+                    new OwnerNameStyles(categories.readNameStyles()),
                     styleDecisionByOwnerId,
-                    styling.desaturationPalette()),
+                    styling.mapStyling().desaturationPalette()),
                 ClusterLabelStyling.newNameEstimatorResolver(
                     styling.reading(),
                     contentInputs,

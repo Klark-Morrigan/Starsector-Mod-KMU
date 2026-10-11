@@ -10,6 +10,8 @@ import kmu.maplayers.ownermap.render.style.OwnerStyleResolver;
 import kmu.maplayers.ownermap.render.style.OwnerStyling;
 import kmu.maplayers.ownermap.render.style.ResolvedOwnerPaint;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -20,7 +22,7 @@ import java.util.Set;
  *
  * <p>Fixed once the build ends, which is what parts it from the {@link SystemOccupancy} beside it:
  * the occupancy is folded per marked system as what stands there comes and goes, while nothing
- * here moves until the next rebuild samples afresh. A reader takes this record and names which
+ * here moves until the next rebuild samples afresh. A reader takes these inputs and names which
  * snapshot it reads, so a pass cannot compose a cell out of one build's theme and another's
  * reading without the type saying so.
  *
@@ -29,24 +31,51 @@ import java.util.Set;
  * off the sidebar. What this adds is the two derived sets, which belong to no one of them - they
  * come off the owner source, and a fill split reads them beside the paint.
  *
- * @param styling             the resolved paint scheme every cell and cluster group is styled from
- * @param viewReading         the view painted, the owner reading it was styled by, and the source
- *                            its owners came from, which a batch re-derives a marked system through
- * @param contentInputs       the sidebar picks the build sampled, as its one reading of them
- * @param unfilledSystemKeys  the owned systems drawn with no fill: held by their owner for border
- *                            and label but painting nothing inside its one frontier, so the
- *                            boundary between what an owner holds and what its view extends it
- *                            with reads as a seam where the fill stops
- * @param contestedSystemKeys the spotlit systems the owner is present in but does not win, so their
- *                            cells hatch inside the one spotlit frontier while the ones it wins
- *                            fill solid; empty off filter
+ * <p>A class rather than a record because it remembers as well as carries: each owner's paint is
+ * resolved on first ask and kept for as long as these inputs are, every input to it being fixed with
+ * them. Not safe for concurrent use.
  */
-public record OwnerMapBuildInputs(
-    MapStyling styling,
-    ViewReading viewReading,
-    ContentInputs contentInputs,
-    Set<SystemKey> unfilledSystemKeys,
-    Set<SystemKey> contestedSystemKeys) {
+public final class OwnerMapBuildInputs {
+
+    // Each owner's paint, resolved on first ask. Every cell of an owner and its cluster group ask
+    // for the same paint, so a map of a few owners and many cells resolves it a few times rather
+    // than once per cell.
+    private final Map<SystemOwner, ResolvedOwnerPaint> paintByOwner = new HashMap<>();
+
+    private final Set<SystemKey> contestedSystemKeys;
+    private final ContentInputs contentInputs;
+    private final MapStyling styling;
+    private final Set<SystemKey> unfilledSystemKeys;
+    private final ViewReading viewReading;
+
+    /**
+     * @param styling             the resolved paint scheme every cell and cluster group is styled
+     *                            from
+     * @param viewReading         the view painted, the owner reading it was styled by, and the
+     *                            source its owners came from, which a batch re-derives a marked
+     *                            system through
+     * @param contentInputs       the sidebar picks the build sampled, as its one reading of them
+     * @param unfilledSystemKeys  the owned systems drawn with no fill: held by their owner for
+     *                            border and label but painting nothing inside its one frontier, so
+     *                            the boundary between what an owner holds and what its view extends
+     *                            it with reads as a seam where the fill stops
+     * @param contestedSystemKeys the spotlit systems the owner is present in but does not win, so
+     *                            their cells hatch inside the one spotlit frontier while the ones it
+     *                            wins fill solid; empty off filter
+     */
+    public OwnerMapBuildInputs(
+            MapStyling styling,
+            ViewReading viewReading,
+            ContentInputs contentInputs,
+            Set<SystemKey> unfilledSystemKeys,
+            Set<SystemKey> contestedSystemKeys) {
+
+        this.contestedSystemKeys = contestedSystemKeys;
+        this.contentInputs = contentInputs;
+        this.styling = styling;
+        this.unfilledSystemKeys = unfilledSystemKeys;
+        this.viewReading = viewReading;
+    }
 
     /**
      * The inert inputs a build that never ran carries - what the empty placeholder the render path
@@ -69,6 +98,31 @@ public record OwnerMapBuildInputs(
             ContentInputs.createEmpty(),
             Set.of(),
             Set.of());
+    }
+
+    /** @return the spotlit systems the owner is present in but does not win; empty off filter */
+    public Set<SystemKey> contestedSystemKeys() {
+        return contestedSystemKeys;
+    }
+
+    /** @return the sidebar picks the build sampled */
+    public ContentInputs contentInputs() {
+        return contentInputs;
+    }
+
+    /** @return the resolved paint scheme every cell and cluster group is styled from */
+    public MapStyling styling() {
+        return styling;
+    }
+
+    /** @return the owned systems drawn with no fill */
+    public Set<SystemKey> unfilledSystemKeys() {
+        return unfilledSystemKeys;
+    }
+
+    /** @return the view painted, with the owner reading and source the build was styled by */
+    public ViewReading viewReading() {
+        return viewReading;
     }
 
     /**
@@ -94,14 +148,23 @@ public record OwnerMapBuildInputs(
      * input is this build's own retained reading, so an owner's fill, its cluster border, and its
      * cells' interior seams all resolve from the same read and cannot diverge.
      *
-     * @param ownerId the owner to style - an owner ID, or one of the filter's synthetic keys
-     * @param owner   whose shades it paints in where nothing desaturates it
+     * <p>Resolved once per owner and remembered, since nothing it is resolved from moves while
+     * these inputs stand.
+     *
+     * @param owner whose elements to paint: its ID - an owner ID, or one of the filter's synthetic
+     *              keys - names its style, and its shades are what it paints in where nothing
+     *              desaturates it
      * @return the bundle, the adjustment over it, and the shades its elements pick from
      */
-    public ResolvedOwnerPaint resolveOwnerPaintOf(String ownerId, SystemOwner owner) {
+    public ResolvedOwnerPaint resolveOwnerPaintOf(SystemOwner owner) {
+        return paintByOwner.computeIfAbsent(owner, this::resolveUncachedOwnerPaintOf);
+    }
+
+    // The paint resolved afresh, for the memo above to remember.
+    private ResolvedOwnerPaint resolveUncachedOwnerPaintOf(SystemOwner owner) {
 
         return ResolvedOwnerPaint.resolveFrom(
-            resolveOwnerStyling(ownerId),
+            resolveOwnerStyling(owner.ownerId()),
             owner,
             styling.desaturationPalette());
     }

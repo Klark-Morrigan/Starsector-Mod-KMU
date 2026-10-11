@@ -8,6 +8,10 @@ import kmlib.starsector.factions.SectorFactions;
 
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * The live binding of {@link BlocPaletteReader}: a bloc's two shades read off the faction it
  * paints in.
@@ -19,8 +23,16 @@ import kmu.maplayers.ownermap.owners.SystemOwner;
  *
  * <p>Holds the sector and grouping the pass sampled rather than reading either live, so everything
  * one pass colours for a bloc is coloured off the one snapshot the fills were.
+ *
+ * <p>Remembers each bloc's shades on first ask, for as long as the pass that holds it. Every
+ * system's holder, every cell's band and the spotlight each ask per bloc, so a pass asks of a
+ * handful of blocs many times over. Not safe for concurrent use.
  */
 public final class SectorBlocPalettes implements BlocPaletteReader {
+
+    // Each bloc's shades as first read, a bloc whose colour faction has gone held as empty so its
+    // absence is remembered too.
+    private final Map<String, Optional<ColourPair>> paletteByBlocId = new HashMap<>();
 
     private final SectorAPI sector;
     private final HolderGrouping grouping;
@@ -52,7 +64,10 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
 
     @Override
     public ColourPair readBlocPalette(String blocId) {
-        return readFactionPalette(sector, grouping.resolveColourFactionId(blocId));
+
+        return paletteByBlocId
+            .computeIfAbsent(blocId, this::findBlocPalette)
+            .orElse(null);
     }
 
     /**
@@ -76,5 +91,10 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
         return palette == null
             ? null
             : new SystemOwner(blocId, palette);
+    }
+
+    // One bloc's shades read off the sector, for the memo above to remember.
+    private Optional<ColourPair> findBlocPalette(String blocId) {
+        return Optional.ofNullable(readFactionPalette(sector, grouping.resolveColourFactionId(blocId)));
     }
 }

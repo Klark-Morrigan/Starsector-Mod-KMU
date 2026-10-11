@@ -18,6 +18,7 @@ import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
+import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -35,6 +36,7 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 
@@ -69,6 +71,9 @@ final class OwnerMapDrawablesTests {
     // The face the drawables settle their labels on. Any face does: no case here reads one, every
     // stage that would being stood in for.
     private static final Supplier<FontAtlas> LABEL_FACE_SOURCE = () -> StarsectorFont.VANILLA_INSIGNIA_42;
+
+    // The scheme the debug build reads once, stood in for so a case can tell it apart by identity.
+    private static final MapStyling TRACING_STYLING = MapStyling.createEmpty();
 
     private final OwnerPaintedView viewMock = mock(OwnerPaintedView.class);
 
@@ -151,6 +156,10 @@ final class OwnerMapDrawablesTests {
         // traces and the anchor fit that rides along are each pinned where they live.
         private final StaticSeams seams = new StaticSeams();
 
+        // The stood-in anchor fit, opened by traceBordersThrough, for a case reading what it was
+        // handed.
+        private MockedStatic<ClusterAnchorsBuilder> anchorsBuilderMock;
+
         @AfterEach
         void closeSeams() {
             seams.closeEverySeam();
@@ -193,8 +202,24 @@ final class OwnerMapDrawablesTests {
             builderMock.verify(() -> DebugBorderTracingBuilder.buildDebugDrawables(
                 any(),
                 same(owners),
-                any(),
                 any()));
+        }
+
+        @Test
+        void tracesTheOutlinesAndNamesTheOwnersUnderOneStyling() {
+            // One reading of the theme for both halves, so the names over the overlay cannot be
+            // styled under knobs its outlines were not traced under.
+            var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
+            var builderMock = traceBordersThrough(drawables, new OwnerSourceFake());
+
+            builderMock.verify(() -> DebugBorderTracingBuilder.buildDebugDrawables(
+                any(),
+                any(),
+                same(TRACING_STYLING)));
+            anchorsBuilderMock.verify(() -> ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
+                any(),
+                any(),
+                argThat(snapshot -> snapshot.mapStyling() == TRACING_STYLING)));
         }
 
         @Test
@@ -224,10 +249,15 @@ final class OwnerMapDrawablesTests {
             var builderMock = seams.openSeam(DebugBorderTracingBuilder.class);
 
             builderMock
-                .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any(), any()))
+                .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any()))
                 .thenReturn(TRACED_OVERLAY);
 
-            seams.openSeam(ClusterAnchorsBuilder.class);
+            seams
+                .openSeam(MapStyling.class)
+                .when(() -> MapStyling.readFromLunaSettings(any(), any(), any()))
+                .thenReturn(TRACING_STYLING);
+
+            anchorsBuilderMock = seams.openSeam(ClusterAnchorsBuilder.class);
 
             drawables.rebuildBorderTracingOverlay(
                 CELL_GEOMETRY,

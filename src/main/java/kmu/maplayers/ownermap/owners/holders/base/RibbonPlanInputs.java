@@ -44,9 +44,9 @@ public record RibbonPlanInputs(
     /**
      * Samples the bake's inputs over a pass the caller has already opened.
      *
-     * <p>The palette source is built here, once, off the pass's own sector and grouping - so every
-     * mechanic counting the same map reads a bloc's colours through one object, and none can
-     * colour a bloc under a grouping the counts were not folded under.
+     * <p>The palette source is the pass's own, over its sector and grouping - so every mechanic
+     * counting the same map reads a bloc's colours through the one object the fills were coloured
+     * through, and none can colour a bloc under a grouping the counts were not folded under.
      *
      * <p>The affiliation arrives rather than being read here, for the reason the pass does: which
      * reading of the live sector a bake is stated over is the caller's to settle, and a read taken
@@ -64,7 +64,7 @@ public record RibbonPlanInputs(
 
         return new RibbonPlanInputs(
             pass,
-            new SectorBlocPalettes(pass.sector(), pass.grouping()),
+            pass.palettes(),
             affiliation,
             rules);
     }

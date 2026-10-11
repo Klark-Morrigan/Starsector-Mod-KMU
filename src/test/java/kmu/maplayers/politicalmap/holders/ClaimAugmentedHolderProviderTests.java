@@ -176,7 +176,7 @@ final class ClaimAugmentedHolderProviderTests {
 
                 filteredPoliticsMock
                     .when(() -> FilteredPolitics
-                        .resolveSpotlitHolder(sectorMock, grouping, "hegemony"))
+                        .resolveSpotlitHolder(pass.palettes(), "hegemony"))
                     .thenReturn(spotlightHolder);
 
                 var resolution = provider.resolveHolder(pass, "hegemony");

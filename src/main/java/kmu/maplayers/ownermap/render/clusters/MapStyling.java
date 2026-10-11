@@ -3,7 +3,11 @@ package kmu.maplayers.ownermap.render.clusters;
 import kmlib.colour.ColourPair;
 
 import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.ownermap.ContentInputs;
+import kmu.maplayers.ownermap.owners.OwnerReading;
+import kmu.maplayers.ownermap.render.style.MapPalettes;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
+import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 
 import java.awt.Color;
 
@@ -76,6 +80,47 @@ public record MapStyling(
             PLACEHOLDER_PALETTE,
             PLACEHOLDER_PALETTE,
             PLACEHOLDER_PALETTE);
+    }
+
+    /**
+     * The paint scheme one build styles everything from: the whole theme read once through the
+     * single reader seam for the layer's own categories, the reading's unowned shade, and the two
+     * palettes a spotlight separates its subject from its backdrop with.
+     *
+     * <p>Read once per build and handed to every part of it, so the production fills, the tracing
+     * overlay and the names over either cannot be styled by two readings of the same knobs.
+     *
+     * @param categories    the painting layer's categories the theme is read for
+     * @param reading       the painting layer's reading, which names the unowned and recede shades
+     * @param contentInputs the sidebar picks the rebuild sampled, which a category's style may ride
+     *                      on
+     * @return the scheme the build styles by
+     */
+    public static MapStyling readFromLunaSettings(
+            OwnerCategories categories,
+            OwnerReading reading,
+            ContentInputs contentInputs) {
+
+        var renderStyle = RenderStyleReader.readRenderStyle(categories, contentInputs);
+        var neutralColour = reading.resolveUnownedColour();
+
+        return new MapStyling(
+            renderStyle,
+            categories,
+            MapPalettes.resolveNeutralPalette(neutralColour),
+            // The receded background desaturates to one uniform palette, the reading's recede
+            // shades darkened by the live setting so it sits below the quieter owners' own space -
+            // a spotlit owner at full strength therefore reads distinctly against it.
+            MapPalettes.resolveDesaturationPalette(
+                reading.resolveRecedePalette(),
+                renderStyle.global().desaturationDarkening()),
+            // The other end of that separation: the neutral a spared unowned cell paints in,
+            // lifted toward white so it clears the greys the recede just sank. Resolved beside its
+            // counterpart, both once per build, so the two ends cannot be read from different
+            // snapshots of the same two knobs.
+            MapPalettes.resolvePresencePalette(
+                neutralColour,
+                renderStyle.global().presenceLightening()));
     }
 
     /**
