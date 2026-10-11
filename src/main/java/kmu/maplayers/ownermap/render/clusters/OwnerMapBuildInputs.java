@@ -6,6 +6,7 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerStyleResolver;
 import kmu.maplayers.ownermap.render.style.OwnerStyling;
 import kmu.maplayers.ownermap.render.style.ResolvedOwnerPaint;

@@ -644,8 +644,8 @@ The name-format choice is likewise read once per rebuild rather than per label,
 and the label face is asked once per fit and recorded on the fit's fingerprint for everything after it,
 the face itself having been [settled once for the sector](#settled-faces).
 
-A bloc's two shades are read once per pass.
-`SectorBlocPalettes` remembers each bloc's pair on first ask,
+A bloc's owner and its two shades are read once per pass.
+`SectorBlocPalettes` remembers each bloc's owner on first ask,
 a bloc whose colour faction has gone included,
 and the `HolderPass` holds the one instance every reader of that pass shares:
 the holder resolves,
@@ -666,6 +666,14 @@ since every cell of an owner and its cluster group ask for the same one.
 It lives as long as the build inputs do,
 across incremental refreshes,
 which is safe because everything it is resolved from is fixed with them.
+
+The paint scheme is read once per rebuild,
+as one `MapStyling` handed to everything the rebuild builds:
+the fills or the border-tracing overlay,
+and the names over either.
+It carries the border trace too,
+so a cluster group the incremental refresh redraws is traced under the same knobs as its neighbours
+rather than under a live read taken per group.
 
 The laying rules settle a band's uncontested lengths when they are sampled,
 rather than once per uncontested cell asking for them.

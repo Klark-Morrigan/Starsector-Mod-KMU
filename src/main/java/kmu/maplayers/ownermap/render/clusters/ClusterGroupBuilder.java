@@ -8,7 +8,6 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
-import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.FillSplit;
 import kmu.maplayers.base.render.clusters.SplitFillBuilder;
 import kmu.maplayers.base.render.clusters.StyledCluster;
@@ -97,8 +96,9 @@ public final class ClusterGroupBuilder {
 
         // One trace for the whole cluster group: the cluster border's rings, and - for a spotlit
         // footprint - the per-state sub-cluster rings its fill splits into, so border and fill
-        // offset under identical parameters and cannot drift apart.
-        var borderTrace = ClusterBorderTrace.readFromLunaSettings();
+        // offset under identical parameters and cannot drift apart. The build's own, so a group the
+        // incremental refresh redraws is traced as the full build traced its neighbours.
+        var borderTrace = buildInputs.styling().borderTrace();
         var insetRings = borderTrace.traceRings(
             memberCellKeys,
             geometryCache.getCellEdgesByCellKey(),

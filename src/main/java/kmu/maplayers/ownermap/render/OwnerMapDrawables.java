@@ -14,12 +14,12 @@ import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
-import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -196,10 +196,7 @@ final class OwnerMapDrawables {
         // The overlay never spotlights, so the pick goes in as nobody: it traces the owners the
         // map has rather than one pick's footprint.
         var owners = viewReading.source().resolveOwners(walk, null);
-        var styling = MapStyling.readFromLunaSettings(
-            viewReading.view().resolveCategories(),
-            viewReading.reading(),
-            contentInputs);
+        var styling = readStylingOf(viewReading, contentInputs);
 
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
             cellGeometry.cells(),
@@ -247,7 +244,8 @@ final class OwnerMapDrawables {
             cellGeometry.cells(),
             viewReading,
             contentInputs,
-            owners);
+            owners,
+            readStylingOf(viewReading, contentInputs));
         borderStageOverlay = null;
 
         // The cells go over carrying the revision they stand at rather than the live
@@ -286,5 +284,15 @@ final class OwnerMapDrawables {
      */
     public void rebuildLabels(boolean areNamesDrawn) {
         LabelsBuilder.rebuildLabels(ownerLabels, standingAnchors, areNamesDrawn);
+    }
+
+    // The paint scheme one rebuild styles everything it builds from, read once here for whichever
+    // view it builds, so the fills or outlines and the names over them share one reading.
+    private static MapStyling readStylingOf(ViewReading viewReading, ContentInputs contentInputs) {
+
+        return MapStyling.readFromLunaSettings(
+            viewReading.view().resolveCategories(),
+            viewReading.reading(),
+            contentInputs);
     }
 }

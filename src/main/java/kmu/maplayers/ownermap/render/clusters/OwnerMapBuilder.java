@@ -19,6 +19,7 @@ import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.Map;
 
@@ -106,9 +107,9 @@ public final class OwnerMapBuilder {
 
     // Shapes the cached raw cells into merged clusters and partitions them into the
     // cluster-filled (owned) and per-cell (settled/uninhabited) draw lists, baking in each
-    // cell's colours, opacities, and widths resolved from the current settings, then
-    // flattens each to GL-ready vertex runs. Reads the settings once per category, not
-    // per cell. The view's reading arrives with it, retained on the clusters so an incremental
+    // cell's colours, opacities, and widths resolved from the handed styling, then
+    // flattens each to GL-ready vertex runs. The view's reading arrives with it, retained on the
+    // clusters so an incremental
     // re-shape classifies against the same view, reading and source.
     //
     // The reading arrives rather than being resolved here because the owners were resolved through
@@ -117,21 +118,18 @@ public final class OwnerMapBuilder {
     // sidebar preferences arrive for a like reason: the rebuild sampled them once when it decided it
     // was owed, so reading them again here could paint the map under a pick the decision never saw.
     // The owners arrive for a third: they may be the answer a previous rebuild got, kept because
-    // nothing they read has moved since.
+    // nothing they read has moved since. The styling arrives for a fourth: the rebuild reads it once
+    // for everything it builds, the names fitted after these cells included.
     public static OwnerMapClusters buildClusters(
             CellGeometryCache geometryCache,
             ViewReading viewReading,
             ContentInputs contentInputs,
-            ResolvedOwners owners) {
+            ResolvedOwners owners,
+            MapStyling styling) {
 
         var profiler = ActiveProfiler.resolveProfiler();
 
         try (var rebuildScope = profiler.open(REBUILD_SECTION)) {
-
-            var styling = MapStyling.readFromLunaSettings(
-                viewReading.view().resolveCategories(),
-                viewReading.reading(),
-                contentInputs);
 
             // Stated once here, ahead of any geometry, because it does not vary across the bodies
             // this pass then cuts: it is the heading the per-body hatch lines are read under, and

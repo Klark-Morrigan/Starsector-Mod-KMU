@@ -12,6 +12,7 @@ import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
@@ -239,6 +240,7 @@ final class OwnerMapBuildInputsTests {
             new MapStyling(
                 OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
                     OwnerMapClusterFixtures.createInertCategoryStyle()),
+                OwnerMapClusterFixtures.BORDER_TRACE,
                 OwnerCategoriesFake.SHARED_FAKE,
                 OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                 DESATURATION_PALETTE,

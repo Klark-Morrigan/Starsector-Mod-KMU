@@ -22,6 +22,7 @@ import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
@@ -645,6 +646,7 @@ final class PaintedCellBuilderTests {
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         buildUnownedTheme(STYLE, STYLE, buildRoundingGlobalStyle()),
+                        OwnerMapClusterFixtures.BORDER_TRACE,
                         OwnerCategoriesFake.SHARED_FAKE,
                         new ColourPair(UNOWNED_NEUTRAL, UNOWNED_NEUTRAL),
                         new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
@@ -721,6 +723,7 @@ final class PaintedCellBuilderTests {
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         theme,
+                        OwnerMapClusterFixtures.BORDER_TRACE,
                         OwnerCategoriesFake.SHARED_FAKE,
                         new ColourPair(UNOWNED_NEUTRAL, UNOWNED_NEUTRAL),
                         new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
@@ -813,6 +816,7 @@ final class PaintedCellBuilderTests {
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         OwnerMapClusterFixtures.createRenderStyleForEveryCategory(STYLE),
+                        OwnerMapClusterFixtures.BORDER_TRACE,
                         OwnerCategoriesFake.SHARED_FAKE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
@@ -842,6 +846,7 @@ final class PaintedCellBuilderTests {
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         OwnerMapClusterFixtures.createRenderStyleForEveryCategory(STYLE),
+                        OwnerMapClusterFixtures.BORDER_TRACE,
                         OwnerCategoriesFake.SHARED_FAKE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),

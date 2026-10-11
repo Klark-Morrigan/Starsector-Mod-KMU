@@ -15,6 +15,7 @@ import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.UnownedStyleResolver;
 
@@ -31,8 +32,7 @@ import java.util.Set;
  * resolved through the active view's own source - the resolve the normal build would have made,
  * the normal build being skipped in debug mode - so it is no extra cost, just spent here instead.
  *
- * <p>It traces the same inset rings the production
- * {@link kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder} does and runs
+ * <p>It traces the same inset rings the production {@link OwnerMapBuilder} does and runs
  * them through the shared {@link BorderSmoothing} passes, keeping the result after each
  * stage rather than only the final one. The two smoothing gates are honored exactly as in
  * production: a stage is captured only when its pass ran, and sanding (when on) feeds
@@ -79,7 +79,7 @@ public final class DebugBorderTracingBuilder {
         // The theme arrives with the rebuild rather than being read here: the names over this
         // overlay are styled from the same scheme, and a second reading could style them under
         // knobs the outlines were not traced under.
-        var borderTrace = ClusterBorderTrace.readFromLunaSettings();
+        var borderTrace = styling.borderTrace();
         var renderStyle = styling.renderStyle();
         var categories = styling.categories();
 

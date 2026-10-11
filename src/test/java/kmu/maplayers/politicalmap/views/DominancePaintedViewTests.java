@@ -101,7 +101,6 @@ final class DominancePaintedViewTests {
             // painted.
             var inputs = new RibbonPlanInputs(
                 new HolderPass(new SectorPassIndex(null), UNDER_THE_FOG, HolderGrouping.identity()),
-                blocId -> null,
                 OwnerAffiliation.NONE,
                 STANDARD_RULES);
             var plannerMock = mock(HeldOrClaimedSystemRibbonPlanner.class);

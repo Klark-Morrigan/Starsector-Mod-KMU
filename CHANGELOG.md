@@ -14,6 +14,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Minor optimisations**. The political map does less repeated work when it redraws: faction colours, each owner's paint and the border settings are read once per redraw rather than once per system or cell.
+
 ### For developers
 
 <details>
@@ -24,10 +28,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`ColonyKind.isUngoverned()`**: whether a place is people living under nobody's authority, for every reader telling governed colonies from ungoverned ones.
 - **`FactionStanding.isWeighed()`**: whether the pass weighed the faction's colonies, so a reader branching on the kind asks rather than testing the sealed type.
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**: the mark a faction's line opens on, for a line marked as that faction's.
-- **`HolderPass.palettes()`** and **`DominancePass.palettes()`**: the pass's one palette read, which remembers each bloc's shades for the pass, so every resolve and band over one rebuild colours a bloc through the same object.
+- **`HolderPass.palettes()`** and **`DominancePass.palettes()`**: the pass's one palette read, which remembers each bloc's owner and shades for the pass, so every resolve and band over one rebuild colours a bloc through the same object.
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**: one build's paint scheme, read once and handed to every part of the build that styles by it.
 - **`PoliticalHolderView`**, which every political map view implements: the alliance set's revision as its content revision, who stands together in a contest, the holder categories, and the faction reading.
-- **`SectorBlocPalettes.readFactionPalette(SectorAPI, String)`**: one faction's shades, for a reader that holds the faction ID itself.
 
 #### Public contracts changed (**breaking**)
 
@@ -45,6 +48,7 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | The faction lines of `ownermap.tooltip` | `ownermap.owners.holders.factions` |
 | `ownermap.tooltip.TermTooltipLine` | `base.tooltip.content.TermTooltipLine`. `ownermap.tooltip` is gone |
 | `ownermap.sidebar.BodyControlTarget` | `base.sidebar.BodyControlTarget` |
+| `ownermap.render.clusters.MapStyling` | `ownermap.render.style.MapStyling`, beside the theme reader it is read through |
 | `BlocAffiliation`, `ContestSide`, `ContestSides` and `BlocRelations` | `ownermap.owners.holders.alliances` |
 | `BlocFriendliness`, with `areBlocsFriendly(Set, Set)` | KMLib's `kmlib.starsector.factions.relation.FactionSetFriendliness`, with `areSetsFriendly(Set, Set)` and `createForSector(SectorAPI)` |
 
@@ -87,6 +91,9 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader, SectorBlocPalettes)` and `FilteredPolitics.resolveSpotlitHolder(SectorAPI, HolderGrouping, String)` | `resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)` and `resolveSpotlitHolder(BlocPaletteReader, String)`: a bloc's shades come off the pass's own `palettes()` |
 | `DebugBorderTracingBuilder.buildDebugDrawables(CellGeometryCache, ResolvedOwners, OwnerCategories, ContentInputs)` and `ClusterLabelStylingSnapshot.resolveForTracing(Map, ViewReading, ContentInputs, FontAtlas)` | `buildDebugDrawables(CellGeometryCache, ResolvedOwners, MapStyling)` and `resolveForTracing(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)`, both handed the one `MapStyling` the tracing rebuild reads. The snapshot's `desaturationPalette` and `categories` components are its `mapStyling` |
 | `OwnerMapBuildInputs`, `RibbonPlanRules` and `RibbonPlan`, records | Final classes with the same constructors and accessors. `OwnerMapBuildInputs` remembers each owner's paint and compares by identity; `RibbonPlan` still compares by its runs |
+| `MapStyling(RenderStyle, OwnerCategories, ColourPair, ColourPair, ColourPair)` | `MapStyling(RenderStyle, ClusterBorderTrace, OwnerCategories, ColourPair, ColourPair, ColourPair)`: the build's border trace rides with its theme, so a cluster group is never traced under a live read of its own |
+| `OwnerMapBuilder.buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners)`, reading the styling itself | `buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners, MapStyling)`: the rebuild reads the styling once for everything it builds |
+| `RibbonPlanInputs(HolderPass, BlocPaletteReader, OwnerAffiliation, RibbonPlanRules)` and `RibbonPlanInputs.createForPass(HolderPass, OwnerAffiliation, RibbonPlanRules)` | `RibbonPlanInputs(HolderPass, OwnerAffiliation, RibbonPlanRules)`. `palettes()` answers the pass's own, so a band cannot be coloured through anything the fills were not |
 
 </details>
 

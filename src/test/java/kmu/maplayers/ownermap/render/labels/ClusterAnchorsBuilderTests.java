@@ -30,7 +30,7 @@ import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
-import kmu.maplayers.ownermap.render.clusters.MapStyling;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
@@ -710,6 +710,7 @@ final class ClusterAnchorsBuilderTests {
     private MapStyling buildMapStylingDesaturatingTo(ColourPair desaturationPalette) {
 
         return new MapStyling(
+            null,
             null,
             categoriesMock,
             UNUSED_PALETTE,

@@ -176,8 +176,8 @@ final class FilteredClaimsTests {
                     claimReaderMock,
                     "hegemony");
 
-                // There is no faction palette to read a spotlight holder from, so the selection is
-                // not acted on at all - the claim resolve's own empty answer stands.
+                // A pass over no sector walks no systems, so there is no claim for the selection to
+                // spotlight - the claim resolve's own empty answer stands.
                 assertThat(resolved)
                     .isEmpty();
             }

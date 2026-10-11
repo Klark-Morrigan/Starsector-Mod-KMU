@@ -4,6 +4,7 @@ import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
+import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
@@ -23,6 +24,7 @@ import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
@@ -66,6 +68,12 @@ public final class OwnerMapClusterFixtures {
      */
     public static final ColourPair NEUTRAL_PALETTE =
         new ColourPair(NEUTRAL_COLOUR, NEUTRAL_COLOUR);
+
+    /**
+     * The trace a build's cluster borders are drawn by, wherever a case does not vary it: a weld
+     * tolerance tight enough for hand-built corners, and the miter limit the shipped border uses.
+     */
+    public static final ClusterBorderTrace BORDER_TRACE = new ClusterBorderTrace(1e-3, 4.0);
 
     // Fixtures only; never instantiated.
     private OwnerMapClusterFixtures() {
@@ -279,6 +287,7 @@ public final class OwnerMapClusterFixtures {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     null, // No render style.
+                    BORDER_TRACE,
                     OwnerCategoriesFake.SHARED_FAKE,
                     NEUTRAL_PALETTE, // Neutral palette.
                     NEUTRAL_PALETTE, // Desaturation palette.
@@ -331,6 +340,7 @@ public final class OwnerMapClusterFixtures {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     renderStyle,
+                    BORDER_TRACE,
                     OwnerCategoriesFake.SHARED_FAKE,
                     NEUTRAL_PALETTE, // Neutral palette.
                     NEUTRAL_PALETTE, // Desaturation palette.

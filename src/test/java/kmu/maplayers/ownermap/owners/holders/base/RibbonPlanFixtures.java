@@ -21,6 +21,9 @@ import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /**
  * What every holder band suite is posed against: the blocs, the shades they draw in, the design's
  * own proportions, and the bake's inputs over a stubbed sector.
@@ -36,9 +39,9 @@ import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures
  * sector, and two of them could disagree about what "the design's proportions" are while both
  * passing.
  *
- * <p>The colours are exported alongside the palette they are read through, since what a case
- * asserts is the run's colour: a palette a suite cannot name the shades of is a palette it cannot
- * read a band back from.
+ * <p>The colours are exported alongside the sector shading they are read through, since what a case
+ * asserts is the run's colour: a shade a suite cannot name is a shade it cannot read a band back
+ * from.
  */
 public final class RibbonPlanFixtures {
 
@@ -91,26 +94,24 @@ public final class RibbonPlanFixtures {
     private static final Color NEUTRAL_BRIGHT = new Color(170, 170, 170);
     private static final Color NEUTRAL_DARK = new Color(70, 70, 70);
 
-    // The shades every bloc draws in, read by bloc ID exactly as the live map reads them. A bloc
-    // absent from this map has no colour to resolve, which is the drop case VANISHED_BLOC poses.
+    // The shades every faction these fixtures name draws in, which the sector a band is coloured
+    // off answers by faction ID exactly as the live sector does. A faction absent from this map has
+    // no colour to resolve, which is the drop case VANISHED_BLOC poses.
     //
     // The group bloc draws in the Hegemony's shades because that is its colour faction: every group
-    // these fixtures pose is led by the Hegemony, and a bloc paints in the shades of the member it
-    // was folded around rather than in any of its own.
-    private static final BlocPaletteReader PALETTES = Map.of(
-            HEGEMONY,
-            new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK),
-            HolderGroupingFixture.GROUP_BLOC_ID,
-            new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK),
-            TRITACHYON,
-            new ColourPair(TRITACHYON_BRIGHT, TRITACHYON_DARK),
-            PERSEAN,
-            new ColourPair(PERSEAN_BRIGHT, PERSEAN_DARK),
-            DIKTAT,
-            new ColourPair(DIKTAT_BRIGHT, DIKTAT_DARK),
-            NEUTRAL,
-            new ColourPair(NEUTRAL_BRIGHT, NEUTRAL_DARK))
-        ::get;
+    // these fixtures pose is led by the Hegemony, and the pass's grouping folds it to that member
+    // before the sector is asked.
+    private static final Map<String, ColourPair> PALETTE_BY_FACTION_ID = Map.of(
+        HEGEMONY,
+        new ColourPair(HEGEMONY_BRIGHT, HEGEMONY_DARK),
+        TRITACHYON,
+        new ColourPair(TRITACHYON_BRIGHT, TRITACHYON_DARK),
+        PERSEAN,
+        new ColourPair(PERSEAN_BRIGHT, PERSEAN_DARK),
+        DIKTAT,
+        new ColourPair(DIKTAT_BRIGHT, DIKTAT_DARK),
+        NEUTRAL,
+        new ColourPair(NEUTRAL_BRIGHT, NEUTRAL_DARK));
 
     // The Hegemony and Tri-Tachyon standing together, every other bloc outside. Stated as an
     // affiliation rather than as a grouping, which is the distinction the type exists for: a case
@@ -145,12 +146,13 @@ public final class RibbonPlanFixtures {
         for (var index = 0; index < factionIds.length; index++) {
             colonies[index] = buildVisibleMarket(buildFaction(factionIds[index]), COLONY_SIZE);
         }
+
         return buildSectorWith(systemId, colonies);
     }
 
     /**
-     * The bake's inputs over a stubbed sector: a pass opening its own walk of it, the shared
-     * palettes, and the design's proportions.
+     * The bake's inputs over a stubbed sector: a pass opening its own walk of it, the sector
+     * shaded with this fixture's colours, and the design's proportions.
      *
      * @param sector           the stubbed sector the colonies are read from
      * @param grouping         the grouping the counts are folded under
@@ -217,15 +219,64 @@ public final class RibbonPlanFixtures {
         return buildInputsFor(pass, ALLIED_HEGEMONY_AND_TRITACHYON, SHORTENED_UNCONTESTED_RULES);
     }
 
+    /**
+     * The palette read a stood-in pass answers, over a sector shading every faction these fixtures
+     * name and the identity grouping - what a suite posing the pass itself hands it, so a band
+     * reads the same shades a pass opened over a stubbed sector would.
+     *
+     * @return the palettes over the shaded sector
+     */
+    public static SectorBlocPalettes buildShadedPalettes() {
+        return new SectorBlocPalettes(shadeFactionsOn(mock(SectorAPI.class)), HolderGrouping.identity());
+    }
+
     // The inputs under an affiliation the caller states. Held private because a case wanting one
     // wants the shape above: an affiliation is only visible against the shortening, and a suite
     // free to pair the two differently could pose a cell whose reading nothing can be read back
     // from.
+    //
+    // The pass's sector is shaded here, so every suite reads a band in the shades this fixture
+    // exports whatever its sector was built to answer for the fills. A stood-in pass names no
+    // sector, and answers its own palettes.
     private static RibbonPlanInputs buildInputsFor(
             HolderPass pass,
             OwnerAffiliation affiliation,
             RibbonPlanRules rules) {
 
-        return new RibbonPlanInputs(pass, PALETTES, affiliation, rules);
+        var sector = pass.sector();
+        if (sector != null) {
+            shadeFactionsOn(sector);
+        }
+
+        return new RibbonPlanInputs(pass, affiliation, rules);
+    }
+
+    // Has the stubbed sector answer every faction these fixtures name with its shades, the way the
+    // live sector answers a faction's authored UI pair.
+    //
+    // A faction the sector already answers keeps everything else it was built with - its names
+    // above all, which the boxes over a band read - and only takes these shades; one it does not
+    // answer is registered fresh.
+    private static SectorAPI shadeFactionsOn(SectorAPI sectorMock) {
+
+        for (var factionPalette : PALETTE_BY_FACTION_ID.entrySet()) {
+
+            var factionId = factionPalette.getKey();
+            var registeredFaction = sectorMock.getFaction(factionId);
+            var factionMock = registeredFaction == null
+                ? buildFaction(factionId)
+                : registeredFaction;
+
+            when(factionMock.getBrightUIColor())
+                .thenReturn(factionPalette.getValue().primaryColour());
+            when(factionMock.getDarkUIColor())
+                .thenReturn(factionPalette.getValue().secondaryColour());
+
+            if (registeredFaction == null) {
+                when(sectorMock.getFaction(factionId))
+                    .thenReturn(factionMock);
+            }
+        }
+        return sectorMock;
     }
 }

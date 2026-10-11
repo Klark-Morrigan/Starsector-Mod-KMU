@@ -141,6 +141,17 @@ sampled once per rebuild.
 Read here it would be a second reading of a value the rebuild has already decided it is owed a rebuild for,
 free to disagree with it.
 
+`MapStyling` is what one rebuild makes of the read:
+the theme,
+the border trace,
+the layer's categories,
+and the three palettes an unowned cell can paint in,
+resolved once by `MapStyling.readFromLunaSettings`.
+The rebuild reads it once and hands it to everything it builds -
+the fills or the border-tracing overlay,
+and the names over either -
+so no two parts of one map are styled by two readings of the same knobs.
+
 ## The resolvers: choices into colours
 
 Rules that both the fills and the cluster-name labels read,

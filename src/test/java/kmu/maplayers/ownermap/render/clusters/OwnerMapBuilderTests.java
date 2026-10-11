@@ -21,17 +21,13 @@ import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.SystemOwnerResolve;
-import kmu.maplayers.ownermap.render.style.MapPalettes;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.Map;
@@ -42,23 +38,19 @@ import static kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures.cre
 import static kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures.createRenderStyleForEveryCategory;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.same;
-import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins what a build hands down and what it keeps: the walk it was given, at the source the owners
- * are asked of, and the view's reading it was handed, retained whole for every stage after it.
+ * are asked of, and the view's reading and styling it was handed, retained whole for every stage
+ * after it.
  *
  * <p>Two halves, because a rebuild has two. The owners are a reading of the sector, asked of the
  * layer's source on a row of their own; the build paints over whatever owners it is handed, from
  * this rebuild or a previous one, and never asks the source again.
  *
- * <p>Everything the build reads apart from that is stood in for: the theme and the palettes read
- * live sources no test JVM answers, and the sidebar picks arrive as a stated reading rather than
- * being read at all. None of them is what a case here is about. The geometry is empty, so the
- * shaping and tracing stages run over nothing and the build reduces to the reads this suite names.
+ * <p>The styling and the sidebar picks arrive as stated readings rather than being read at all.
+ * The geometry is empty, so the shaping and tracing stages run over nothing and the build reduces
+ * to the reads this suite names.
  */
 final class OwnerMapBuilderTests {
 
@@ -82,29 +74,19 @@ final class OwnerMapBuilderTests {
     private static final ContentInputs SPOTLIGHTING_INPUTS =
         ContentInputsFixtures.createInputsSpotlighting("hegemony");
 
+    // The scheme every build here is handed: no case is about what it says, only that the build
+    // keeps the one it was given.
+    private static final MapStyling STYLING = new MapStyling(
+        createRenderStyleForEveryCategory(createInertCategoryStyle()),
+        OwnerMapClusterFixtures.BORDER_TRACE,
+        OwnerCategoriesFake.SHARED_FAKE,
+        OwnerMapClusterFixtures.NEUTRAL_PALETTE,
+        OwnerMapClusterFixtures.NEUTRAL_PALETTE,
+        OwnerMapClusterFixtures.NEUTRAL_PALETTE);
+
     // A walk over no sector: the source is stood in for, so nothing reads it, and only which walk
     // reached the source matters.
     private final SectorWalk walk = new SectorWalk(new SectorPassIndex(null), MapVisibilityRules.BASE);
-
-    private MockedStatic<RenderStyleReader> styleReaderMock;
-    private MockedStatic<MapPalettes> palettesMock;
-
-    @BeforeEach
-    void openTheLiveSeams() {
-
-        styleReaderMock = mockStatic(RenderStyleReader.class);
-        palettesMock = mockStatic(MapPalettes.class);
-
-        styleReaderMock
-            .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
-            .thenReturn(createRenderStyleForEveryCategory(createInertCategoryStyle()));
-    }
-
-    @AfterEach
-    void closeTheLiveSeams() {
-        palettesMock.close();
-        styleReaderMock.close();
-    }
 
     @Nested
     class ResolveOwners {
@@ -172,10 +154,8 @@ final class OwnerMapBuilderTests {
             // the source for an answer it already holds.
             var sourceFake = new OwnerSourceFake();
 
-            var clusters = OwnerMapBuilder.buildClusters(
-                new CellGeometryCache(),
+            var clusters = buildClustersOver(
                 buildReadingOver(sourceFake),
-                UNFILTERED_INPUTS,
                 buildOwnersHolding(HELD_SYSTEM, HELD_BY));
 
             assertThat(sourceFake.readOwnerWalks())
@@ -190,11 +170,7 @@ final class OwnerMapBuilderTests {
             // rebuild have to still say what they said - so what the build holds is its own.
             var owners = buildOwnersHolding(HELD_SYSTEM, HELD_BY);
 
-            var clusters = OwnerMapBuilder.buildClusters(
-                new CellGeometryCache(),
-                buildReadingOver(new OwnerSourceFake()),
-                UNFILTERED_INPUTS,
-                owners);
+            var clusters = buildClustersOver(buildReadingOver(new OwnerSourceFake()), owners);
 
             clusters.getOccupancy().recordOwnerOf(HELD_SYSTEM, null);
 
@@ -209,10 +185,8 @@ final class OwnerMapBuilderTests {
             var contested = buildCellKey("askonia");
             var unfilled = buildCellKey("eos");
 
-            var clusters = OwnerMapBuilder.buildClusters(
-                new CellGeometryCache(),
+            var clusters = buildClustersOver(
                 buildReadingOver(new OwnerSourceFake()),
-                UNFILTERED_INPUTS,
                 new ResolvedOwners(Map.of(), Set.of(contested), Set.of(unfilled), Set.of(), Set.of()));
 
             assertThat(clusters.getBuildInputs().contestedSystemKeys())
@@ -228,14 +202,22 @@ final class OwnerMapBuilderTests {
             // the reading retained here is the very one the owners were resolved beside.
             var viewReading = buildReadingOver(new OwnerSourceFake());
 
-            var clusters = OwnerMapBuilder.buildClusters(
-                new CellGeometryCache(),
-                viewReading,
-                UNFILTERED_INPUTS,
-                ResolvedOwners.createEmpty());
+            var clusters = buildClustersOver(viewReading, ResolvedOwners.createEmpty());
 
             assertThat(clusters.getBuildInputs().viewReading())
                 .isSameAs(viewReading);
+        }
+
+        @Test
+        void retainsTheHandedStylingWhole() {
+            // The rebuild reads its styling once for everything it builds, so the scheme the
+            // incremental refresh and the names read back is the very one it was handed.
+            var clusters = buildClustersOver(
+                buildReadingOver(new OwnerSourceFake()),
+                ResolvedOwners.createEmpty());
+
+            assertThat(clusters.getBuildInputs().styling())
+                .isSameAs(STYLING);
         }
 
         @Test
@@ -243,10 +225,8 @@ final class OwnerMapBuilderTests {
             // The number the shaping stage's duration is read against. Nothing is shaped over an
             // empty geometry, which is what the zero states - the counter is on the row either way,
             // so a reader can tell a stage that shaped nothing from one that never ran.
-            var capture = RecordedCapture.recordWhile(() -> OwnerMapBuilder.buildClusters(
-                new CellGeometryCache(),
+            var capture = RecordedCapture.recordWhile(() -> buildClustersOver(
                 buildReadingOver(new OwnerSourceFake()),
-                UNFILTERED_INPUTS,
                 ResolvedOwners.createEmpty()));
 
             var shapeRow = capture.findNode(SHAPE_AND_STYLE_SECTION);
@@ -257,22 +237,16 @@ final class OwnerMapBuilderTests {
                 .isEqualTo("styled=0 owners=0");
         }
 
-        @Test
-        void derivesTheUnownedPaletteFromTheReadingsUnownedShade() {
-            // The shade an unowned cell paints in is the layer's answer, not an owner the tier
-            // reads for itself.
-            var clusters = OwnerMapBuilder.buildClusters(
-                new CellGeometryCache(),
-                buildReadingOver(new OwnerSourceFake()),
-                UNFILTERED_INPUTS,
-                ResolvedOwners.createEmpty());
+        // A build over no geometry under the shared picks and styling, differing per case in the
+        // reading and the owners alone.
+        private static OwnerMapClusters buildClustersOver(ViewReading viewReading, ResolvedOwners owners) {
 
-            palettesMock.verify(() -> MapPalettes.resolveNeutralPalette(OwnerReadingFake.UNOWNED_COLOUR));
-            palettesMock.verify(() -> MapPalettes.resolveDesaturationPalette(
-                same(OwnerReadingFake.RECEDE_PALETTE),
-                anyDouble()));
-            assertThat(clusters.getBuildInputs().styling().categories())
-                .isSameAs(OwnerCategoriesFake.SHARED_FAKE);
+            return OwnerMapBuilder.buildClusters(
+                new CellGeometryCache(),
+                viewReading,
+                UNFILTERED_INPUTS,
+                owners,
+                STYLING);
         }
     }
 

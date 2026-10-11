@@ -15,7 +15,6 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
-import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 
 import java.awt.Color;
@@ -44,11 +43,12 @@ public final class FactionOwnerReading
     }
 
     // Read straight off the faction: the owner ID is the faction ID, so there is no colour faction to
-    // resolve through a grouping first.
+    // resolve through a grouping first. A faction gone from the sector has no shades, which every
+    // caller drops the owner on.
     @Override
     public ColourPair resolvePalette(String ownerId) {
 
-        return SectorBlocPalettes.readFactionPalette(sector, ownerId);
+        return FactionColours.findPalette(SectorFactions.findFaction(sector, ownerId));
     }
 
     @Override

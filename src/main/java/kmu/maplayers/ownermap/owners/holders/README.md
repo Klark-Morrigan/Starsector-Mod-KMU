@@ -41,7 +41,7 @@ flowchart LR
 
 | Package | What is in it |
 | --- | --- |
-| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation and where a spotlit bloc lives (`HolderInhabitation`), the grouping seam (`HolderGrouping`), a bloc's or one faction's shades (`SectorBlocPalettes`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
+| `base` | what every holder shares: the colony pass (`HolderPass`) and the rules it reads under, habitation and where a spotlit bloc lives (`HolderInhabitation`), the grouping seam (`HolderGrouping`), a bloc's owner and shades, read once per pass (`SectorBlocPalettes`), the four `HolderCategory` values and their styles, the colony count behind a band (`ColonyCellRibbons`), the holder source and the view shape that assembles it |
 | `base.picker` | the picker every holder view shares: its assembly (`BlocPickerAssembly`), the standing mode it appends, and the colony size metric and modes a view ranks by |
 | `factions` | one faction as one owner: `FactionOwnerReading`, and the faction lines of the hover box |
 | `alliances` | a group of factions as one owner: `AllianceOwnerReading`, the contest axis (`BlocAffiliation`, `ContestSides`) and the lines naming a holder's allies and rivals |
@@ -254,14 +254,14 @@ in `base`,
 counts every cell on every layer painting holders:
 the pass's **habitation projection** of the system's colonies,
 folded into a count per bloc under the pass's grouping,
-then coloured through the bake's `BlocPaletteReader`.
+then coloured through the pass's own palette read (`HolderPass.palettes()`),
+the one the fills were coloured through.
 The count is read off the pass's `SystemHabitation`,
 which folds each system once per pass:
 the band, the picker's sizes and the spotlight then name one owner per colony,
 the market's own faction ID,
 and an owner with no ID is counted as nobody's.
 `RibbonPlanInputs` carries the pass,
-the palette port,
 the `OwnerAffiliation` the contest is judged against and the laying rules,
 so every mechanic of a composed planner counts off a single walk of each system
 and judges its contests against one affiliation.

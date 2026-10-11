@@ -6,8 +6,8 @@ import kmlib.starsector.ui.font.FontAtlas;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.Map;
 

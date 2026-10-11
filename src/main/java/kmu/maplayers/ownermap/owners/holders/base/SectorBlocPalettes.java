@@ -24,15 +24,16 @@ import java.util.Optional;
  * <p>Holds the sector and grouping the pass sampled rather than reading either live, so everything
  * one pass colours for a bloc is coloured off the one snapshot the fills were.
  *
- * <p>Remembers each bloc's shades on first ask, for as long as the pass that holds it. Every
+ * <p>Remembers each bloc's owner on first ask, for as long as the pass that holds it. Every
  * system's holder, every cell's band and the spotlight each ask per bloc, so a pass asks of a
  * handful of blocs many times over. Not safe for concurrent use.
  */
 public final class SectorBlocPalettes implements BlocPaletteReader {
 
-    // Each bloc's shades as first read, a bloc whose colour faction has gone held as empty so its
-    // absence is remembered too.
-    private final Map<String, Optional<ColourPair>> paletteByBlocId = new HashMap<>();
+    // Each bloc's owner as first resolved, a bloc whose colour faction has gone held as empty so its
+    // absence is remembered too. The owner rather than the bare shades, since it carries them and
+    // every system that bloc holds can then share the one value.
+    private final Map<String, Optional<SystemOwner>> ownerByBlocId = new HashMap<>();
 
     private final SectorAPI sector;
     private final HolderGrouping grouping;
@@ -47,27 +48,13 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
         this.grouping = grouping;
     }
 
-    /**
-     * One faction's shades, for a reader that already holds the faction ID and so has no grouping to
-     * resolve it through.
-     *
-     * <p>Null for a faction gone from the sector, which every caller drops the owner on: painting it
-     * a stand-in colour would put colour on the map for something the map cannot name.
-     *
-     * @param sector    the sector the faction is read from; null yields null
-     * @param factionId the faction to colour
-     * @return the faction's shades, or null when the sector knows no such faction
-     */
-    public static ColourPair readFactionPalette(SectorAPI sector, String factionId) {
-        return FactionColours.findPalette(SectorFactions.findFaction(sector, factionId));
-    }
-
     @Override
     public ColourPair readBlocPalette(String blocId) {
 
-        return paletteByBlocId
-            .computeIfAbsent(blocId, this::findBlocPalette)
-            .orElse(null);
+        var owner = resolveOwnerOf(blocId);
+        return owner == null
+            ? null
+            : owner.palette();
     }
 
     /**
@@ -79,22 +66,28 @@ public final class SectorBlocPalettes implements BlocPaletteReader {
      * element uses which slot is the player's choice, made downstream in the render stages.
      *
      * <p>Every holder source turns a bloc into an owner this way, and the filter's own presence
-     * resolver reuses it under a synthetic key.
+     * resolver reuses its shades under a synthetic key.
      *
      * @param blocId the bloc to colour, carried on the returned owner as its ID
-     * @return the render-ready owner, or null when the colour faction does not resolve, which
-     *         drops the system as unowned
+     * @return the render-ready owner, the same value on every ask, or null when the colour faction
+     *         does not resolve, which drops the system as unowned
      */
     public SystemOwner resolveOwnerOf(String blocId) {
 
-        var palette = readBlocPalette(blocId);
-        return palette == null
-            ? null
-            : new SystemOwner(blocId, palette);
+        return ownerByBlocId
+            .computeIfAbsent(blocId, this::findOwnerOf)
+            .orElse(null);
     }
 
-    // One bloc's shades read off the sector, for the memo above to remember.
-    private Optional<ColourPair> findBlocPalette(String blocId) {
-        return Optional.ofNullable(readFactionPalette(sector, grouping.resolveColourFactionId(blocId)));
+    // One bloc's owner read off the sector, for the memo above to remember. A faction gone from the
+    // sector yields none: painting it a stand-in colour would put colour on the map for something
+    // the map cannot name.
+    private Optional<SystemOwner> findOwnerOf(String blocId) {
+
+        var colourFaction = SectorFactions.findFaction(sector, grouping.resolveColourFactionId(blocId));
+
+        return Optional
+            .ofNullable(FactionColours.findPalette(colourFaction))
+            .map(palette -> new SystemOwner(blocId, palette));
     }
 }

@@ -14,15 +14,12 @@ import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
-import kmu.settings.KmuMapLabelSettings;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -38,7 +35,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -95,10 +91,6 @@ final class ClusterGroupBuilderTests {
     private static final double BORDER_OPACITY = 0.25;
     private static final double BORDER_WIDTH = 3.0;
 
-    // The live Dev-tab trace parameters, stubbed at their read: a weld tolerance loose enough to
-    // chain the hand-built corners, and the miter limit the shipped border uses.
-    private static final double WELD_TOLERANCE = 1e-3;
-    private static final double MITER_SPIKE_LIMIT = 4.0;
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
         HELD_SYSTEM, List.of(
             buildEdgeFacing(0, 0, 2000, 0, null),
@@ -125,27 +117,6 @@ final class ClusterGroupBuilderTests {
             buildEdgeFacing(22000, 0, 22000, 2000, null),
             buildEdgeFacing(22000, 2000, 20000, 2000, null),
             buildEdgeFacing(20000, 2000, 20000, 0, null)));
-
-    // The trace reads its parameters off the live settings, so the seam stands for every case
-    // here; without it the two Dev-tab reads would fault outside the game.
-    private MockedStatic<KmuMapLabelSettings> settingsMock;
-
-    @BeforeEach
-    void openTheBorderTraceSeam() {
-
-        settingsMock = mockStatic(KmuMapLabelSettings.class);
-        settingsMock
-            .when(KmuMapLabelSettings::getMapBorderWeldTolerance)
-            .thenReturn(WELD_TOLERANCE);
-        settingsMock
-            .when(KmuMapLabelSettings::getMapBorderMiterLimit)
-            .thenReturn(MITER_SPIKE_LIMIT);
-    }
-
-    @AfterEach
-    void closeTheBorderTraceSeam() {
-        settingsMock.close();
-    }
 
     @Nested
     class BuildClusterGroup {
@@ -570,6 +541,7 @@ final class ClusterGroupBuilderTests {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     OwnerMapClusterFixtures.createRenderStyleForEveryCategory(style),
+                    OwnerMapClusterFixtures.BORDER_TRACE,
                     OwnerCategoriesFake.SHARED_FAKE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     new ColourPair(Color.GREEN, Color.YELLOW),

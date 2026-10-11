@@ -143,7 +143,6 @@ final class ClaimsViewTests {
             // does, and open the band on a bloc the cell is not painted for.
             var inputs = new RibbonPlanInputs(
                 HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity()),
-                blocId -> null,
                 OwnerAffiliation.NONE,
                 STANDARD_RULES);
             var plannerMock = mock(ClaimedSystemRibbonPlanner.class);

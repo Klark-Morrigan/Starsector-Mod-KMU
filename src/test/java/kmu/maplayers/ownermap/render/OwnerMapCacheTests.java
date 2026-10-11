@@ -20,14 +20,15 @@ import kmu.maplayers.ownermap.OwnerPaintedViewFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
-import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapLabelSettings;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 import kmu.settings.KmuOwnerMapGeometrySettings;
 
@@ -379,8 +380,13 @@ final class OwnerMapCacheTests {
         seams.openSeam(ClusterLabelStylingSnapshot.class);
         seams.openSeam(LabelsBuilder.class);
 
-        // The debug view reads its theme off settings no test JVM holds.
-        seams.openSeam(MapStyling.class);
+        // Either view's styling reads its theme and its border trace off settings no test JVM
+        // holds; the styling itself runs for real over what these answer.
+        seams.openSeam(RenderStyleReader.class)
+            .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
+            .thenReturn(OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
+                OwnerMapClusterFixtures.createInertCategoryStyle()));
+        seams.openSeam(KmuMapLabelSettings.class);
 
         // The label face is settled against the installed atlases, which no test JVM has.
         labelFontsMock = seams.openSeam(LabelFonts.class);
@@ -395,7 +401,7 @@ final class OwnerMapCacheTests {
 
         productionBuilderMock = seams.openSeam(OwnerMapBuilder.class);
         productionBuilderMock
-            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any()))
+            .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()))
             .thenReturn(builtClusters);
 
         // The bake is asked for by the production view on every rebuild, so it has to hand back

@@ -18,16 +18,19 @@ import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.render.clusters.DebugBorderTracingBuilder;
-import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.style.MapStyling;
+import kmu.maplayers.ownermap.render.style.RenderStyleReader;
+import kmu.settings.KmuMapLabelSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 import java.util.List;
@@ -71,9 +74,6 @@ final class OwnerMapDrawablesTests {
     // The face the drawables settle their labels on. Any face does: no case here reads one, every
     // stage that would being stood in for.
     private static final Supplier<FontAtlas> LABEL_FACE_SOURCE = () -> StarsectorFont.VANILLA_INSIGNIA_42;
-
-    // The scheme the debug build reads once, stood in for so a case can tell it apart by identity.
-    private static final MapStyling TRACING_STYLING = MapStyling.createEmpty();
 
     private final OwnerPaintedView viewMock = mock(OwnerPaintedView.class);
 
@@ -211,15 +211,16 @@ final class OwnerMapDrawablesTests {
             // styled under knobs its outlines were not traced under.
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
             var builderMock = traceBordersThrough(drawables, new OwnerSourceFake());
+            var stylingCaptor = ArgumentCaptor.forClass(MapStyling.class);
 
             builderMock.verify(() -> DebugBorderTracingBuilder.buildDebugDrawables(
                 any(),
                 any(),
-                same(TRACING_STYLING)));
+                stylingCaptor.capture()));
             anchorsBuilderMock.verify(() -> ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 any(),
                 any(),
-                argThat(snapshot -> snapshot.mapStyling() == TRACING_STYLING)));
+                argThat(snapshot -> snapshot.mapStyling() == stylingCaptor.getValue())));
         }
 
         @Test
@@ -252,10 +253,7 @@ final class OwnerMapDrawablesTests {
                 .when(() -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any()))
                 .thenReturn(TRACED_OVERLAY);
 
-            seams
-                .openSeam(MapStyling.class)
-                .when(() -> MapStyling.readFromLunaSettings(any(), any(), any()))
-                .thenReturn(TRACING_STYLING);
+            openStylingSeams(seams);
 
             anchorsBuilderMock = seams.openSeam(ClusterAnchorsBuilder.class);
 
@@ -316,8 +314,9 @@ final class OwnerMapDrawablesTests {
         // Builds the production view over stood-in builders, the one handing back the given clusters.
         private void buildProductionThrough(OwnerMapDrawables drawables, OwnerMapClusters clusters) {
 
+            openStylingSeams(seams);
             seams.openSeam(OwnerMapBuilder.class)
-                .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any()))
+                .when(() -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()))
                 .thenReturn(clusters);
             seams.openSeam(ClusterAnchorsBuilder.class);
             seams.openSeam(CellRibbonsBaker.class)
@@ -385,5 +384,17 @@ final class OwnerMapDrawablesTests {
             assertThat(drawables.getOwnerLabels())
                 .isEmpty();
         }
+    }
+
+    // The live reads behind a rebuild's one styling read, stood in for: the theme and the two
+    // border-trace knobs, none of which a test JVM answers. The styling itself runs for real, so a
+    // case reading what a builder was handed reads the value the drawables built.
+    private static void openStylingSeams(StaticSeams seams) {
+
+        seams.openSeam(RenderStyleReader.class)
+            .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
+            .thenReturn(OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
+                OwnerMapClusterFixtures.createInertCategoryStyle()));
+        seams.openSeam(KmuMapLabelSettings.class);
     }
 }

@@ -1,43 +1,47 @@
-package kmu.maplayers.ownermap.render.clusters;
+package kmu.maplayers.ownermap.render.style;
 
 import kmlib.colour.ColourPair;
 
+import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerReading;
-import kmu.maplayers.ownermap.render.style.MapPalettes;
-import kmu.maplayers.ownermap.render.style.OwnerCategories;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 
 import java.awt.Color;
 
 /**
  * The resolved paint scheme one build styles every cell and cluster group from: the theme (its
- * global tier plus one style per category), the painting layer's categories the theme was read
- * for, and the three palettes an unowned cell can paint in - the plain neutral, the sunk one a
- * desaturated owner recolours to, and the lifted one a spared cell takes under a spotlight.
+ * global tier plus one style per category), the trace its cluster borders are drawn by, the
+ * painting layer's categories the theme was read for, and the three palettes an unowned cell can
+ * paint in - the plain neutral, the sunk one a desaturated owner recolours to, and the lifted one a
+ * spared cell takes under a spotlight.
  *
  * <p>All three palettes are resolved once per build rather than per cell. The neutral is a palette
  * here rather than the bare colour it is made of for that reason: an unowned cell wants the pair,
  * and building one per cell would allocate on the most numerous cell type the map has - the
  * uninhabited backdrop covering every corner of the sector nothing holds.
  *
+ * <p>The trace rides here rather than being read by each cluster group, so every border one build
+ * draws - and every one the incremental refresh later redraws - is traced under one reading of its
+ * knobs.
+ *
  * <p>Held on the built clusters so an incremental re-shape bakes a rebuilt cell against the
  * same scheme the full build used, and every global knob resolves once off the one theme.
  *
  * @param renderStyle         the theme, one style per category {@code categories} declares
+ * @param borderTrace         the trace every cluster border of the build is drawn by
  * @param categories          the painting layer's categories: which one an unowned cell falls
  *                            to, and which one a desaturated owner's fill opacity is held at
  * @param neutralPalette      the shared neutral in both slots, as
- *                            {@link kmu.maplayers.ownermap.render.style.MapPalettes#resolveNeutralPalette}
- *                            builds it - an unowned cell names no owner, so whichever slot an
- *                            element picks paints the same shade, which is what lets
- *                            {@link #readNeutralColour()} read either
+ *                            {@link MapPalettes#resolveNeutralPalette} builds it - an unowned cell
+ *                            names no owner, so whichever slot an element picks paints the same
+ *                            shade, which is what lets {@link #readNeutralColour()} read either
  * @param desaturationPalette the shades a receded owner sinks to
  * @param presencePalette     the shades an unowned cell the spotlight spares lifts to
  */
 public record MapStyling(
     RenderStyle renderStyle,
+    ClusterBorderTrace borderTrace,
     OwnerCategories categories,
     ColourPair neutralPalette,
     ColourPair desaturationPalette,
@@ -62,19 +66,20 @@ public record MapStyling(
      *
      * <p>Every value in it is a stand-in that is never read. The null theme is the honest record
      * of the failure (no theme was resolved), and the render path skips an empty overlay before it
-     * would reach the global tier; the null categories say the same of the layer's declaration,
-     * which nothing classifies against without a theme to index. The palettes are there because
-     * the slots must hold something, not because anything paints them.
+     * would reach the global tier; the null trace and categories say the same of the knobs and the
+     * layer's declaration, which nothing traces or classifies against without a theme to index. The
+     * palettes are there because the slots must hold something, not because anything paints them.
      *
      * <p>Named here rather than spelt out by the caller for the same reason
      * {@code ContentInputs.createEmpty()} is: "no scheme yet" is one value every such pass shares,
-     * and a caller assembling it by hand is choosing five stand-ins that only look arbitrary until
+     * and a caller assembling it by hand is choosing six stand-ins that only look arbitrary until
      * one of them turns out not to be.
      *
      * @return the placeholder scheme
      */
     public static MapStyling createEmpty() {
         return new MapStyling(
+            null,
             null,
             null,
             PLACEHOLDER_PALETTE,
@@ -84,8 +89,8 @@ public record MapStyling(
 
     /**
      * The paint scheme one build styles everything from: the whole theme read once through the
-     * single reader seam for the layer's own categories, the reading's unowned shade, and the two
-     * palettes a spotlight separates its subject from its backdrop with.
+     * single reader seam for the layer's own categories, the border trace, the reading's unowned
+     * shade, and the two palettes a spotlight separates its subject from its backdrop with.
      *
      * <p>Read once per build and handed to every part of it, so the production fills, the tracing
      * overlay and the names over either cannot be styled by two readings of the same knobs.
@@ -106,6 +111,7 @@ public record MapStyling(
 
         return new MapStyling(
             renderStyle,
+            ClusterBorderTrace.readFromLunaSettings(),
             categories,
             MapPalettes.resolveNeutralPalette(neutralColour),
             // The receded background desaturates to one uniform palette, the reading's recede

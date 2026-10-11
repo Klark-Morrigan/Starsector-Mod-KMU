@@ -30,12 +30,22 @@ see the [mod README](../../../../../../../../README.md) for project context.
 
 `OwnerMapBuilder` is the orchestration only:
 it resolves who holds each system,
-reads the theme,
 shapes the cached cells into merged clusters,
 and drives the per-item builders.
-Its job is to sample every input exactly once so the whole pass keys off one snapshot -
+Every input arrives sampled once,
+so the whole pass keys off one snapshot -
 which is what lets an incremental re-shape reuse those same builders on a handful of cells
 and land on a result identical to a full rebuild.
+The paint scheme is one of them:
+the rebuild reads one `MapStyling`
+(in [`render.style`](../style/README.md))
+and hands it to the build,
+or to the border-tracing overlay that replaces it,
+and the names fitted afterwards style from the same one.
+It carries the border trace as well as the theme,
+so every cluster group a build draws,
+and every one the incremental refresh redraws,
+is traced under one reading of the trace's knobs.
 
 - `PaintedCellBuilder` bakes one cell,
   choosing which form of `StyledCell` it takes.
@@ -293,7 +303,7 @@ where a keyed one is a rule somebody has to keep true.
 
 Everything a rebuild retained to build under lives in one value of its own,
 reached through `getBuildInputs`:
-the `MapStyling` (the theme, the layer's categories and the three unowned palettes),
+the `MapStyling` (the theme, the border trace, the layer's categories and the three unowned palettes),
 the `ViewReading` (the view, the owner reading it was styled and named by,
 and the owner source it was resolved under),
 the `ContentInputs` it sampled,

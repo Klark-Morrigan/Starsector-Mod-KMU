@@ -161,10 +161,16 @@ public final class FilteredPolitics {
             return new HolderResolution(ownerBySystemKey, contestedSystemKeys, Set.of());
         }
 
+        // Resolved once for the whole walk: every system the bloc is present in joins the same
+        // spotlight territory, so they all carry the identical holder.
+        var spotlight = new Spotlight(
+            selectedBlocId,
+            resolveSpotlitHolder(pass.palettes(), selectedBlocId));
+
         for (var system : pass.readSystems()) {
 
             var systemKey = SystemKey.readKeyOf(system);
-            var holder = resolveHolder(system, systemKey, pass, selectedBlocId, contestedSystemKeys);
+            var holder = resolveHolder(system, systemKey, pass, spotlight, contestedSystemKeys);
 
             if (holder != null) {
                 ownerBySystemKey.put(systemKey, holder);
@@ -224,7 +230,7 @@ public final class FilteredPolitics {
             StarSystemAPI system,
             SystemKey systemKey,
             DominancePass pass,
-            String selectedBlocId,
+            Spotlight spotlight,
             Set<SystemKey> contestedSystemKeys) {
 
         var footprintByBlocId = pass.readBlocFootprints(system);
@@ -237,20 +243,14 @@ public final class FilteredPolitics {
         var presence = classifySelectedBlocPresence(
             footprintByBlocId,
             presentBlocIds,
-            selectedBlocId,
+            spotlight.blocId(),
             pass.resolveRankingRulesFor(system));
 
-        if (presence == SelectedBlocPresence.ABSENT) {
-            return resolveRealHolder(system, pass, footprintByBlocId);
-        }
-
-        var spotlit = resolveSpotlitHolder(pass.palettes(), selectedBlocId);
-
-        // A selectable bloc's colour faction resolves; this fallback only guards the degenerate
+        // A selectable bloc's colour faction resolves; a missing holder only guards the degenerate
         // case where it vanished mid-session, so the system still draws (as its real receded
         // holder) rather than dropping off the map - and a system that fell back is not spotlit,
         // so it is not recorded contested.
-        if (spotlit == null) {
+        if (presence == SelectedBlocPresence.ABSENT || spotlight.holder() == null) {
             return resolveRealHolder(system, pass, footprintByBlocId);
         }
 
@@ -258,7 +258,7 @@ public final class FilteredPolitics {
             contestedSystemKeys.add(systemKey);
         }
 
-        return spotlit;
+        return spotlight.holder();
     }
 
     // The system's real dominant holder, unchanged from the normal pass, for a system the
@@ -271,5 +271,13 @@ public final class FilteredPolitics {
             Map<String, MarketFootprint> footprintByBlocId) {
 
         return SectorPolitics.resolveDominantHolder(system, pass, footprintByBlocId);
+    }
+
+    // The spotlighted bloc and the one holder every system it is present in draws as, resolved
+    // together once per walk so no system can pair the bloc with a holder resolved apart from it.
+    // The holder is null in the degenerate case of a colour faction gone mid-session.
+    private record Spotlight(
+        String blocId,
+        SystemOwner holder) {
     }
 }

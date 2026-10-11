@@ -13,13 +13,14 @@ import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
  * <p>They travel together through every planner because no one of them is usable without the
  * others - a run is a count of colonies, coloured, judged for contest, laid to a rule - and because
  * each is the bake's own one-time read. Carried as one value so a planner cannot be built from this
- * bake's rules and a stale palette source, and so every mechanic counting one map shares a single
+ * bake's rules and another bake's pass, and so every mechanic counting one map shares a single
  * walk of each system rather than each opening a pass of its own.
  *
  * <p>The pass is what makes the counting rule the same rule on every layer. It names the sector,
- * the grouping factions fold into blocs under, and the whole colony rule - so a band cannot be
- * counted under a different fog or a different fold from the fill it sits inside, and no counter
- * needs a settings read of its own to find out which.
+ * the grouping factions fold into blocs under, the whole colony rule and where a bloc's shades are
+ * read - so a band cannot be counted under a different fog or a different fold from the fill it
+ * sits inside, nor coloured through anything but the fills' own palette read, and no counter needs
+ * a settings read of its own to find out which.
  *
  * <p>The affiliation rides beside it as a second reading of the same sector, deliberately not the
  * pass's: the counts fold under the grouping the fills were painted with, while whether the cell is
@@ -27,9 +28,13 @@ import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
  * readings are the bake's one sampling, a planner having no way to count under this bake's fold and
  * judge against an affiliation from another.
  *
+ * <p>Each part arrives rather than being read here: which reading of the live sector a bake is
+ * stated over is the caller's to settle, and a read taken here would be a second one the bake never
+ * asked for.
+ *
  * @param pass        the bake's reading of the sector: which sector, the grouping, the colony
- *                    rule, and the one walk of each system every count is folded from
- * @param palettes    where each present bloc's two shades are read from
+ *                    rule, where a bloc's shades are read, and the one walk of each system every
+ *                    count is folded from; opened once by whoever begins the bake
  * @param affiliation who among the blocs present stands together, which decides only the length a
  *                    band's runs are laid at; {@link OwnerAffiliation#NONE} where nobody does
  * @param rules       how a band is laid: the run lengths, and how far they reach on a cell nobody
@@ -37,36 +42,17 @@ import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
  */
 public record RibbonPlanInputs(
     HolderPass pass,
-    BlocPaletteReader palettes,
     OwnerAffiliation affiliation,
     RibbonPlanRules rules) {
 
     /**
-     * Samples the bake's inputs over a pass the caller has already opened.
+     * Where each present bloc's two shades are read: the pass's own palette read, so a band colours a
+     * bloc through the very object the fills of the same rebuild were coloured through.
      *
-     * <p>The palette source is the pass's own, over its sector and grouping - so every mechanic
-     * counting the same map reads a bloc's colours through the one object the fills were coloured
-     * through, and none can colour a bloc under a grouping the counts were not folded under.
-     *
-     * <p>The affiliation arrives rather than being read here, for the reason the pass does: which
-     * reading of the live sector a bake is stated over is the caller's to settle, and a read taken
-     * here would be a second one the bake never asked for.
-     *
-     * @param pass        the bake's reading of the sector, opened once by whoever begins the bake
-     * @param affiliation who stands together this bake, sampled once by whoever begins it
-     * @param rules       how a band is laid, sampled once by the bake
-     * @return the inputs every planner in the bake is stated over
+     * @return the pass's palettes
      */
-    public static RibbonPlanInputs createForPass(
-            HolderPass pass,
-            OwnerAffiliation affiliation,
-            RibbonPlanRules rules) {
-
-        return new RibbonPlanInputs(
-            pass,
-            pass.palettes(),
-            affiliation,
-            rules);
+    public BlocPaletteReader palettes() {
+        return pass.palettes();
     }
 
     /**

@@ -42,6 +42,7 @@ import kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
@@ -432,11 +433,19 @@ final class RelayOwnerLayerIntegrationTests {
                 buildCellKey(SETTLED_SYSTEM)),
             Set.of());
 
+        var viewReading = new ViewReading(viewMock, new RelayReadingFake(), OwnerSourceFake.createAnswering(owners));
+        var contentInputs = ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL);
+
+        // The styling read once for the rebuild, as the drawables read it.
         return OwnerMapBuilder.buildClusters(
             geometryCacheMock,
-            new ViewReading(viewMock, new RelayReadingFake(), OwnerSourceFake.createAnswering(owners)),
-            ContentInputsFixtures.createInputsSpellingNames(OwnerNameFormatChoice.FULL),
-            owners);
+            viewReading,
+            contentInputs,
+            owners,
+            MapStyling.readFromLunaSettings(
+                viewMock.resolveCategories(),
+                viewReading.reading(),
+                contentInputs));
     }
 
     // That map's names, fitted the way a production rebuild fits them.

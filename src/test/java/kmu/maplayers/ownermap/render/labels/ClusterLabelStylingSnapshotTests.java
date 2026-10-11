@@ -11,11 +11,11 @@ import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 
 import org.junit.jupiter.api.Nested;
@@ -196,6 +196,7 @@ final class ClusterLabelStylingSnapshotTests {
     private static MapStyling buildStyling() {
 
         return new MapStyling(
+            null,
             null,
             OwnerCategoriesFake.SHARED_FAKE,
             OwnerMapClusterFixtures.NEUTRAL_PALETTE,

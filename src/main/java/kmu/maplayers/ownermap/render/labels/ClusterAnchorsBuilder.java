@@ -100,7 +100,7 @@ public final class ClusterAnchorsBuilder {
      * @param cellGeometry    the cells the fit clips and trims against, carrying the revision that
      *                        names them, so no path can fit against one reading of the geometry
      *                        and label its placements with another
-     * @param styling         everything the pass was baked under that styles a label
+     * @param labelStyling    everything the pass was baked under that styles a label
      * @return which names this pass moved: the list left behind says where every name ended up
      *         and nothing about which are new, and this is the only point where both lists exist
      *         at once. Reported by the gated-off path too, where every standing name vanishing is
@@ -109,12 +109,12 @@ public final class ClusterAnchorsBuilder {
     public static ClusterNameDisturbance rebuildClusterAnchors(
             StandingClusterAnchors standingAnchors,
             RevisedCellGeometry cellGeometry,
-            ClusterLabelStylingSnapshot styling) {
+            ClusterLabelStylingSnapshot labelStyling) {
 
         // Read ahead of the gate rather than inside it, because the standing pair needs
         // labelling either way: a rebuild that fits nothing still leaves a list behind, and an
         // unlabelled one is indistinguishable from one fitted under rules that still hold.
-        var fitFingerprint = readFitFingerprint(cellGeometry.revision(), styling);
+        var fitFingerprint = readFitFingerprint(cellGeometry.revision(), labelStyling);
 
         // Indexed before this pass replaces the pair, since that is where the previous one
         // survives - the two move together, so there is no window where the list is emptied
@@ -126,7 +126,7 @@ public final class ClusterAnchorsBuilder {
         // this pass's own output as what stood before it.
         var standingNames = List.copyOf(standingAnchors.getAnchors());
 
-        if (!styling.contentInputs().nameFormat().areNamesDrawn()
+        if (!labelStyling.contentInputs().nameFormat().areNamesDrawn()
                 && !KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
             standingAnchors.replaceAnchors(List.of(), fitFingerprint);
 
@@ -137,7 +137,7 @@ public final class ClusterAnchorsBuilder {
         // drift apart on a rebuild that straddles a settings change.
         var fittedAnchors = fitClusterAnchors(
             cellGeometry,
-            styling,
+            labelStyling,
             fitFingerprint,
             reusableAnchors);
 
@@ -160,13 +160,13 @@ public final class ClusterAnchorsBuilder {
      * @param standingAnchors the caller's placements and what they were fitted under, replaced
      *                        here with this pass's
      * @param cellGeometry    the cells the fit clips and trims against, carrying their revision
-     * @param styling         the styling the traced owners are named under, from
+     * @param labelStyling    the styling the traced owners are named under, from
      *                        {@link ClusterLabelStylingSnapshot#resolveForTracing}
      */
     public static void rebuildDiagnosticClusterAnchors(
             StandingClusterAnchors standingAnchors,
             RevisedCellGeometry cellGeometry,
-            ClusterLabelStylingSnapshot styling) {
+            ClusterLabelStylingSnapshot labelStyling) {
 
         if (!KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
             // The fit is what the toggle is guarding, so it is skipped - but the list it leaves
@@ -175,10 +175,10 @@ public final class ClusterAnchorsBuilder {
             // skip cannot leave the two disagreeing.
             standingAnchors.replaceAnchors(
                 List.of(),
-                readFitFingerprint(cellGeometry.revision(), styling));
+                readFitFingerprint(cellGeometry.revision(), labelStyling));
             return;
         }
-        rebuildClusterAnchors(standingAnchors, cellGeometry, styling);
+        rebuildClusterAnchors(standingAnchors, cellGeometry, labelStyling);
     }
 
     // The sweep itself, measured as its own row: past the gate the skipped path never reaches, and
@@ -188,20 +188,20 @@ public final class ClusterAnchorsBuilder {
     // rebuild does with it stay two statements.
     private static List<ClusterAnchor> fitClusterAnchors(
             RevisedCellGeometry cellGeometry,
-            ClusterLabelStylingSnapshot styling,
+            ClusterLabelStylingSnapshot labelStyling,
             AnchorFitFingerprint fitFingerprint,
             Map<ClusterIdentity, ClusterAnchor> reusableAnchors) {
 
         try (var fitScope = ActiveProfiler.resolveProfiler().open(FIT_ANCHORS_SECTION)) {
             return fitClusterAnchorsInScope(
-                cellGeometry, styling, fitFingerprint, reusableAnchors, fitScope);
+                cellGeometry, labelStyling, fitFingerprint, reusableAnchors, fitScope);
         }
     }
 
     // The sweep inside its scope, reporting what it ran onto it.
     private static List<ClusterAnchor> fitClusterAnchorsInScope(
             RevisedCellGeometry cellGeometry,
-            ClusterLabelStylingSnapshot styling,
+            ClusterLabelStylingSnapshot labelStyling,
             AnchorFitFingerprint fitFingerprint,
             Map<ClusterIdentity, ClusterAnchor> reusableAnchors,
             ProfileScope fitScope) {
@@ -215,7 +215,7 @@ public final class ClusterAnchorsBuilder {
         // the fills do.
         var cells = cellGeometry.cells();
         var edgesByCellKey = cells.getCellEdgesByCellKey();
-        var ownerBySystemKey = styling.ownerBySystemKey();
+        var ownerBySystemKey = labelStyling.ownerBySystemKey();
         var cellGrouping = SystemOwner.mapCellGrouping(
             cells.getSystemKeyByCellKey(),
             ownerBySystemKey);
@@ -240,10 +240,10 @@ public final class ClusterAnchorsBuilder {
         // under a filter it recedes every non-spotlit owner and leaves the spotlit one full, so a
         // receded name matches its receded fill and a spotlit name stays full, the drift a
         // filter opens.
-        var contentInputs = styling.contentInputs();
-        var categories = styling.mapStyling().categories();
+        var contentInputs = labelStyling.contentInputs();
+        var categories = labelStyling.mapStyling().categories();
         var styleDecisionByOwnerId = ClusterLabelStyling.newOwnerStyleDecisionResolver(
-            styling.reading(),
+            labelStyling.reading(),
             categories,
             contentInputs);
 
@@ -257,9 +257,9 @@ public final class ClusterAnchorsBuilder {
                     ownerBySystemKey,
                     new OwnerNameStyles(categories.readNameStyles()),
                     styleDecisionByOwnerId,
-                    styling.mapStyling().desaturationPalette()),
+                    labelStyling.mapStyling().desaturationPalette()),
                 ClusterLabelStyling.newNameEstimatorResolver(
-                    styling.reading(),
+                    labelStyling.reading(),
                     contentInputs,
                     fitFingerprint.labelFace())),
             reusableAnchors);
@@ -291,12 +291,12 @@ public final class ClusterAnchorsBuilder {
     // no path can fit under one reading and report another.
     private static AnchorFitFingerprint readFitFingerprint(
             int geometryRevision,
-            ClusterLabelStylingSnapshot styling) {
+            ClusterLabelStylingSnapshot labelStyling) {
 
         return new AnchorFitFingerprint(
             LabelAnchorSpecification.readFromLunaSettings(),
             geometryRevision,
-            styling.labelFace());
+            labelStyling.labelFace());
     }
 
     // Writes what a fit ran onto its scope, apart from the sweep so the sweep reads as the fit

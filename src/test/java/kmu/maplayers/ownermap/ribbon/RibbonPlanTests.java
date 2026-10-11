@@ -573,6 +573,33 @@ final class RibbonPlanTests {
     }
 
     @Nested
+    class EqualsAndHashCode {
+
+        @Test
+        void equatesTwoPlansOfTheSameRuns() {
+            // A plan is a value: a laid plan and one built from the same runs are one band, which is
+            // what lets a cell's standing band be compared with a re-baked one.
+            var laid = RibbonPlan.planCellRibbon(
+                Optional.of(HEGEMONY),
+                List.of(buildHegemonyPresence(1)),
+                OwnerAffiliation.NONE,
+                STANDARD_RULES);
+            var built = new RibbonPlan(List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3)));
+
+            assertThat(laid)
+                .isEqualTo(built)
+                .hasSameHashCodeAs(built);
+        }
+
+        @Test
+        void tellsApartTwoPlansOfDifferentRuns() {
+
+            assertThat(new RibbonPlan(List.of(new RibbonSegment(HEGEMONY_BRIGHT, 3))))
+                .isNotEqualTo(new RibbonPlan(List.of(new RibbonSegment(TRITACHYON_BRIGHT, 3))));
+        }
+    }
+
+    @Nested
     class Segments {
 
         @Test

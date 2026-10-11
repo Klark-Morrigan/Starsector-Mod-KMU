@@ -4,17 +4,20 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
+import kmu.starsector.SectorFactionFixtures;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
 import java.util.List;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
@@ -34,8 +37,9 @@ import static org.mockito.Mockito.when;
 /**
  * Unit coverage for {@link HolderPass}: the construction guard, the entry opening under the live
  * settings, the two projections it offers over one walk, the habitation value the cell and the
- * spotlight both answer off, the walk and economy guards every resolve shares, and that the pass
- * names the sector its own walk was opened over rather than one carried beside it.
+ * spotlight both answer off, the walk and economy guards every resolve shares, that the pass
+ * names the sector its own walk was opened over rather than one carried beside it, and the one
+ * palette read it colours blocs through.
  *
  * <p>What each projection admits is settled in KMLib, where the rule lives. What is read here is
  * that the pass reaches the right one of them and holds both to the rule it was opened with - a
@@ -82,6 +86,10 @@ final class HolderPassTests {
     // per faction.
     private static final HolderGrouping ALLIED_HEGEMONY_AND_TRITACHYON =
         HolderGroupingFixture.buildGroupOf("hegemony", "tritachyon");
+
+    // The two shades the palette cases' faction is authored in, distinct so a swapped slot shows.
+    private static final Color PALETTE_BRIGHT = new Color(140, 160, 220);
+    private static final Color PALETTE_DARK = new Color(40, 60, 120);
 
     private final StaticSeams seams = new StaticSeams();
 
@@ -734,6 +742,37 @@ final class HolderPassTests {
             // stood in for.
             assertThat(HolderPass.createOver(null, UNDER_THE_FOG, HolderGrouping.identity()).sector())
                 .isNull();
+        }
+    }
+
+    @Nested
+    class Palettes {
+
+        @Test
+        void answersOnePaletteReadForThePass() {
+            // Every resolve and band over one rebuild reads a bloc's shades through the same object,
+            // which is what lets each bloc be looked up once for all of them.
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+
+            assertThat(pass.palettes())
+                .isSameAs(pass.palettes());
+        }
+
+        @Test
+        void coloursBlocsUnderThePassesSectorAndGrouping() {
+            // A group bloc is shaded by its lead member, which only a read folding under the pass's
+            // grouping and asking the pass's sector can answer.
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(
+                "hegemony",
+                PALETTE_BRIGHT,
+                PALETTE_DARK);
+            var pass = HolderPass.createOver(
+                sectorMock,
+                UNDER_THE_FOG,
+                HolderGroupingFixture.buildGroupOf("hegemony"));
+
+            assertThat(pass.palettes().readBlocPalette(GROUP_BLOC_ID))
+                .isEqualTo(new ColourPair(PALETTE_BRIGHT, PALETTE_DARK));
         }
     }
 

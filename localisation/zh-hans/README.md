@@ -329,9 +329,16 @@ So a word of one axis never stands in for another:
 | sampling (one read of a live value, in the changelog) | 采样 | the usual word for taking one reading of something that changes |
 | pass (one rebuild's reading of the sector, in the changelog) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
 | rebuild (the map's drawing worked out again, in the changelog) | 重建 | the usual word for building something again |
+| redraw (the map drawn again, in the changelog) | 重绘 | 重, again, with 绘, to draw; the word earlier entries already use |
+| Minor optimisations (in the changelog) | 小幅优化 | 小幅, slight, with 优化, the usual word for optimisation |
 | paint scheme (the theme and palettes one build styles by, in the changelog) | 绘制方案 | 绘制, to draw, with 方案, a scheme |
+| theme (every style the map is drawn in, in the changelog) | 主题 | the usual UI word for a set of styles worn together |
+| cluster group (one owner's clusters drawn together, in the changelog) | 区域组 | from 区域, a cluster, with 组, a group |
 | border tracing (the dev overlay showing each smoothing stage) | 边界描绘 | the Dev tab's own header for it |
 | run (one owner's stretch of a band, in the changelog) | 色段 | 色, colour, with 段, a segment |
+| record (a Java value type, in the changelog) | 记录类型 | the usual computing word, 记录 with 类型, a type |
+| final class (one nothing may extend, in the changelog) | 不可继承的类 | said plainly rather than left as the keyword |
+| paint (everything one owner's elements draw from, in the changelog) | 绘制方式 | 绘制, to draw, with 方式, a manner; kept apart from 上色, colouring a territory |
 | shades (an owner's two colours, in the changelog) | 配色 | as in vanilla's 界面配色, a set of colours worn together |
 | seam (an interface a layer answers through, in the changelog) | 接缝 | where two parts are joined, which a seam between layers is |
 | reading (an owner's looks and names, in the changelog) | 读取 | the plain word for reading something off; a reader is 读取方 |

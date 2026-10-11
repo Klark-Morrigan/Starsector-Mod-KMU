@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins how a bloc's two shades are found: through the grouping's colour faction rather than
  * through the bloc ID, and as nothing at all when that faction is gone - and the owner built from
- * them, which carries the bloc's own ID beside the shades.
+ * them, which carries the bloc's own ID beside the shades and is resolved once per pass.
  *
  * <p>Both matter because a bloc is not always a faction. A group carries a synthetic bloc ID no
  * {@code FactionAPI} answers to, so asking the sector for it directly would leave every group
@@ -158,35 +158,31 @@ final class SectorBlocPalettesTests {
                     .resolveOwnerOf("vanished"))
                 .isNull();
         }
-    }
-
-    @Nested
-    class ReadFactionPalette {
 
         @Test
-        void readsTheShadesOfTheNamedFactionItself() {
-            // No grouping stands between: the ID handed over is the faction asked for.
-            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(
-                LEAD_MEMBER,
-                BRIGHT,
-                DARK);
+        void answersEveryAskWithTheOneOwner() {
+            // Every system a bloc holds asks for its owner, so the pass hands each of them the one
+            // value rather than a new owner per system.
+            var palettes = new SectorBlocPalettes(
+                SectorFactionFixtures.buildSectorShadingFaction(LEAD_MEMBER, BRIGHT, DARK),
+                HolderGrouping.identity());
 
-            assertThat(SectorBlocPalettes.readFactionPalette(sectorMock, LEAD_MEMBER))
-                .isEqualTo(new ColourPair(BRIGHT, DARK));
+            assertThat(palettes.resolveOwnerOf(LEAD_MEMBER))
+                .isSameAs(palettes.resolveOwnerOf(LEAD_MEMBER));
         }
 
         @Test
-        void readsNoPaletteForAFactionThatIsGone() {
+        void sharesItsLookupWithThePaletteRead() {
+            // One memo answers both reads, so a holder resolve and a band over the same bloc look
+            // its colour faction up once between them.
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(LEAD_MEMBER, BRIGHT, DARK);
+            var palettes = new SectorBlocPalettes(sectorMock, HolderGrouping.identity());
 
-            assertThat(SectorBlocPalettes.readFactionPalette(mock(SectorAPI.class), "vanished"))
-                .isNull();
-        }
+            palettes.resolveOwnerOf(LEAD_MEMBER);
+            palettes.readBlocPalette(LEAD_MEMBER);
 
-        @Test
-        void readsNoPaletteWithoutASector() {
-
-            assertThat(SectorBlocPalettes.readFactionPalette(null, LEAD_MEMBER))
-                .isNull();
+            verify(sectorMock, times(1))
+                .getFaction(LEAD_MEMBER);
         }
     }
 

@@ -43,8 +43,8 @@ public final class FilteredClaims {
      * spotlight - the entry the claim-reading providers call in place of
      * {@link SectorClaims#resolveClaimingHolderBySystemKey}.
      *
-     * <p>Off filter, or with no sector to read a palette from, this is that plain claim resolve
-     * unchanged. A claim of the selected bloc whose spotlight holder does not resolve is dropped,
+     * <p>Off filter this is that plain claim resolve unchanged. A claim of the selected bloc whose
+     * spotlight holder does not resolve is dropped,
      * matching how the presence pass drops a spotlit system whose colour faction has gone.
      *
      * @param pass           the rebuild's reading of the sector - the systems walked, and the
@@ -63,9 +63,8 @@ public final class FilteredClaims {
         var claimingHolderBySystemKey = SectorClaims.resolveClaimingHolderBySystemKey(
             pass,
             claimReader);
-        var sector = pass.sector();
 
-        if (sector == null || selectedBlocId == null) {
+        if (selectedBlocId == null) {
             return claimingHolderBySystemKey;
         }
 

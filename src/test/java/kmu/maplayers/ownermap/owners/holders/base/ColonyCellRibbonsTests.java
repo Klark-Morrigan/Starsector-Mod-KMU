@@ -216,10 +216,14 @@ final class ColonyCellRibbonsTests {
                 BlocHabitation::addHabitation);
         }
 
+        // Built ahead of the stubbing below, since it stubs mocks of its own.
+        var palettes = RibbonPlanFixtures.buildShadedPalettes();
         var passMock = mock(HolderPass.class);
 
         when(passMock.readHabitationIn(system))
             .thenReturn(new SystemHabitation(List.of(), habitationByBlocId));
+        when(passMock.palettes())
+            .thenReturn(palettes);
 
         return passMock;
     }

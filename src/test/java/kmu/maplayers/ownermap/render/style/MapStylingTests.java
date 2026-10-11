@@ -1,13 +1,16 @@
-package kmu.maplayers.ownermap.render.clusters;
+package kmu.maplayers.ownermap.render.style;
 
 import kmlib.colour.ColourPair;
 
+import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
-import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
+import kmu.settings.KmuMapLabelSettings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -19,9 +22,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the paint scheme's answers: what one build's read of the theme and the reading carries, the
- * shade its neutral pair reads as, and what a build that never resolved a theme carries in place of
- * one.
+ * Pins the paint scheme's answers: what one build's read of the theme, the border trace and the
+ * reading carries, the shade its neutral pair reads as, and what a build that never resolved a
+ * theme carries in place of one.
  *
  * <p>The placeholder is worth pinning precisely because nothing paints it. A slot left null there
  * would surface as a crash on the frame after a failed first build - the one frame no test of the
@@ -38,6 +41,7 @@ final class MapStylingTests {
             // colour is whichever slot you look at.
             var styling = new MapStyling(
                 null,
+                null,
                 OwnerCategoriesFake.SHARED_FAKE,
                 new ColourPair(Color.CYAN, Color.CYAN),
                 new ColourPair(Color.MAGENTA, Color.ORANGE),
@@ -52,6 +56,7 @@ final class MapStylingTests {
             // The three palettes sit in adjacent same-typed slots, so a colour read from the wrong
             // one would still compile and still answer a Color. Only distinct shades catch it.
             var styling = new MapStyling(
+                null,
                 null,
                 OwnerCategoriesFake.SHARED_FAKE,
                 new ColourPair(Color.CYAN, Color.CYAN),
@@ -71,6 +76,43 @@ final class MapStylingTests {
         // light grey and dark grey kept at 70%.
         private static final ColourPair DARKENED_RECEDE_PALETTE =
             new ColourPair(new Color(134, 134, 134), new Color(45, 45, 45));
+
+        // Trace parameters no default lands on, so the read is seen to take them.
+        private static final double WELD_TOLERANCE = 7.0;
+        private static final double MITER_SPIKE_LIMIT = 3.0;
+
+        // The trace reads its two parameters off the Dev tab, which no test JVM answers.
+        private MockedStatic<KmuMapLabelSettings> labelSettingsMock;
+
+        @BeforeEach
+        void openTheBorderTraceSeam() {
+
+            labelSettingsMock = mockStatic(KmuMapLabelSettings.class);
+            labelSettingsMock
+                .when(KmuMapLabelSettings::getMapBorderWeldTolerance)
+                .thenReturn(WELD_TOLERANCE);
+            labelSettingsMock
+                .when(KmuMapLabelSettings::getMapBorderMiterLimit)
+                .thenReturn(MITER_SPIKE_LIMIT);
+        }
+
+        @AfterEach
+        void closeTheBorderTraceSeam() {
+            labelSettingsMock.close();
+        }
+
+        @Test
+        void carriesTheBorderTraceItReads() {
+            // Read here once for the build, so every cluster group it draws - and every one the
+            // incremental refresh redraws - is traced under the same parameters.
+            try (var styleReaderMock = mockStatic(RenderStyleReader.class)) {
+
+                stubInertTheme(styleReaderMock);
+
+                assertThat(readStylingOverTheFakeReading().borderTrace())
+                    .isEqualTo(new ClusterBorderTrace(7.0, 3.0));
+            }
+        }
 
         @Test
         void carriesTheThemeReadForTheLayersCategoriesUnderThePicks() {

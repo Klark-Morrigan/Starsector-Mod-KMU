@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.dominance;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics.SelectedBlocPresence;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
@@ -7,6 +9,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,8 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins {@link FilteredPolitics}'s pure rules on hand-built footprints and presence sets: the
  * three-way classification that decides how a spotlighted bloc draws in each system - including
- * that a bloc living in a system nothing weighed for it still draws - and the group-key helper the
- * render layer reads to tell a spotlit cell from a receding one. The presence-aware
+ * that a bloc living in a system nothing weighed for it still draws - the spotlight holder built
+ * from a bloc's shades, and the group-key helper the render layer reads to tell a spotlit cell
+ * from a receding one. The presence-aware
  * holder assembly - the synthetic key, palette reuse, the contested set, and the real-holder
  * fallback - reads the live economy, so it is covered in {@link FilteredPoliticsIntegrationTests}.
  */
@@ -134,6 +138,33 @@ class FilteredPoliticsTests {
                     "pirates",
                     OPEN_CONTEST))
                 .isEqualTo(SelectedBlocPresence.PRESENT_BUT_DOMINATED);
+        }
+    }
+
+    @Nested
+    class ResolveSpotlitHolder {
+
+        private static final ColourPair HEGEMONY_SHADES = new ColourPair(Color.ORANGE, Color.DARK_GRAY);
+
+        @Test
+        void carriesTheBlocsShadesUnderTheSpotlitKey() {
+            // The one key every spotlit system fuses under, painted in the bloc's own shades so the
+            // spotlight reads as that bloc rather than as a territory of its own.
+            var holder = FilteredPolitics.resolveSpotlitHolder(
+                blocId -> "hegemony".equals(blocId) ? HEGEMONY_SHADES : null,
+                "hegemony");
+
+            assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
+                .isTrue();
+            assertThat(holder.palette())
+                .isEqualTo(new ColourPair(Color.ORANGE, Color.DARK_GRAY));
+        }
+
+        @Test
+        void answersNoHolderForABlocWithNoShades() {
+            // A colour faction gone mid-session: the caller draws the real receded holder instead.
+            assertThat(FilteredPolitics.resolveSpotlitHolder(blocId -> null, "hegemony"))
+                .isNull();
         }
     }
 

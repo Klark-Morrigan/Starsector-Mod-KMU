@@ -17,16 +17,14 @@ import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
-import kmu.settings.KmuMapLabelSettings;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;
@@ -42,7 +40,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -61,9 +58,8 @@ import static org.mockito.Mockito.when;
  * {@link kmu.maplayers.base.render.clusters.ClusterBorderTraceIntegrationTests}, the smoothing
  * passes by their own suites - so it runs for real here and is only ever counted, never measured.
  * Cells are hand-built 2000-unit squares, comfortably clear of the fixed border channel, so which
- * cells touch is plain to read. The owners and the settled systems arrive stated, as the source's
- * answer the overlay is handed; the two settings reads are stubbed, none of them answering outside
- * the game.
+ * cells touch is plain to read. The owners, the settled systems and the styling arrive stated, as
+ * the rebuild hands them over.
  */
 final class DebugBorderTracingBuilderTests {
 
@@ -81,11 +77,6 @@ final class DebugBorderTracingBuilderTests {
     private static final String TINY_SYSTEM = "tiny";
     private static final SystemOwner HEGEMONY_OWNER =
         new SystemOwner(HEGEMONY, new ColourPair(Color.RED, Color.BLUE));
-
-    // The live Dev-tab trace parameters, stubbed at their read: a weld tolerance loose enough to
-    // chain the hand-built corners, and the miter limit the shipped border uses.
-    private static final double WELD_TOLERANCE = 1e-3;
-    private static final double MITER_SPIKE_LIMIT = 4.0;
 
     // A smoothing profile whose shape is well inside a 2000-unit square, so whether a pass ran is
     // never confused with a pass that ran and degenerated the loop away.
@@ -135,27 +126,10 @@ final class DebugBorderTracingBuilderTests {
     // The scheme the rebuild hands the overlay, stated per case through stubTheme.
     private MapStyling styling;
 
-    private MockedStatic<KmuMapLabelSettings> settingsMock;
-
     @BeforeEach
-    void openTheSettingsSeams() {
-
-        settingsMock = mockStatic(KmuMapLabelSettings.class);
-
-        settingsMock
-            .when(KmuMapLabelSettings::getMapBorderWeldTolerance)
-            .thenReturn(WELD_TOLERANCE);
-        settingsMock
-            .when(KmuMapLabelSettings::getMapBorderMiterLimit)
-            .thenReturn(MITER_SPIKE_LIMIT);
-
+    void stubTheInertTheme() {
         // An empty sector by default, so a case names only the cells it is about.
         stubTheme(buildNoSmoothing(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
-    }
-
-    @AfterEach
-    void closeTheSettingsSeams() {
-        settingsMock.close();
     }
 
     @Nested
@@ -421,6 +395,7 @@ final class DebugBorderTracingBuilderTests {
 
         styling = new MapStyling(
             renderStyle,
+            OwnerMapClusterFixtures.BORDER_TRACE,
             OwnerCategoriesFake.SHARED_FAKE,
             OwnerMapClusterFixtures.NEUTRAL_PALETTE,
             OwnerMapClusterFixtures.NEUTRAL_PALETTE,
