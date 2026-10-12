@@ -3,7 +3,10 @@ package kmu.maplayers.ownermap.render.style;
 import kmlib.colour.ColourPair;
 
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
+import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
@@ -16,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -224,6 +228,53 @@ final class MapStylingTests {
                 .isEqualTo(new ColourPair(placeholder, placeholder));
             assertThat(styling.presencePalette())
                 .isEqualTo(new ColourPair(placeholder, placeholder));
+        }
+    }
+
+    @Nested
+    class ResolveUnownedStyle {
+
+        // Two bundles told apart by their outline width alone, so the answer names the category
+        // it was looked up under.
+        private static final CategoryStyle SETTLED_STYLE = createStyleOutlinedAt(2.0);
+        private static final CategoryStyle EMPTY_STYLE = createStyleOutlinedAt(3.0);
+
+        @Test
+        void answersTheSettledCategorysStyleForASettledCell() {
+
+            assertThat(buildStylingOverTheTwoBundles().resolveUnownedStyle(true))
+                .isEqualTo(SETTLED_STYLE);
+        }
+
+        @Test
+        void answersTheEmptyCategorysStyleForAnEmptyCell() {
+
+            assertThat(buildStylingOverTheTwoBundles().resolveUnownedStyle(false))
+                .isEqualTo(EMPTY_STYLE);
+        }
+
+        private static MapStyling buildStylingOverTheTwoBundles() {
+
+            var renderStyle = new RenderStyle(
+                ThemeFixtures.createInertGlobalStyle(),
+                Map.of(
+                    StandInCategoryFake.SETTLED, SETTLED_STYLE,
+                    StandInCategoryFake.EMPTY, EMPTY_STYLE));
+
+            return new MapStyling(
+                renderStyle,
+                null,
+                OwnerCategoriesFake.SHARED_FAKE,
+                new ColourPair(Color.CYAN, Color.CYAN),
+                new ColourPair(Color.MAGENTA, Color.ORANGE),
+                new ColourPair(Color.PINK, Color.WHITE));
+        }
+
+        private static CategoryStyle createStyleOutlinedAt(double outerWidth) {
+
+            var element = new ElementStyle(OwnerPaletteSlot.PRIMARY, 1.0);
+
+            return new CategoryStyle(element, element, 1.0, element, outerWidth);
         }
     }
 }

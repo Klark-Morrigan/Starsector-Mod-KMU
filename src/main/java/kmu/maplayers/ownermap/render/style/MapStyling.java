@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render.style;
 import kmlib.colour.ColourPair;
 
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
+import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerReading;
@@ -142,5 +143,20 @@ public record MapStyling(
      */
     public Color readNeutralColour() {
         return neutralPalette.primaryColour();
+    }
+
+    /**
+     * The style an unowned cell draws in: the category the layer declares for a settled or an
+     * empty cell, looked up in this build's theme.
+     *
+     * <p>Stated once because the production fills and the border-tracing overlay both classify
+     * unowned cells, and the overlay is only worth reading while it shows the cells the map would.
+     *
+     * @param isSettled whether something stands in the cell's system, as
+     *                  {@link UnownedStyleResolver#isSettledSystem} answers it
+     * @return the cell's category style
+     */
+    public CategoryStyle resolveUnownedStyle(boolean isSettled) {
+        return renderStyle.categoryStyle(categories.resolveUnownedCategory(isSettled));
     }
 }

@@ -76,6 +76,7 @@ public final class PaintedCellBuilder {
         if (shaped.fillPolygon().isEmpty()) {
             return null;
         }
+
         // The two snapshots a cell is drawn from, named apart: who is in the system is the live
         // one the refresh folds, and what the build was baked under is fixed until the next one.
         var occupancy = clusters.getOccupancy();
@@ -87,6 +88,7 @@ public final class PaintedCellBuilder {
         var owner = systemKey == null
             ? null
             : occupancy.readOwnerOf(systemKey);
+
         return owner == null
             ? buildUnownedCell(occupancy, buildInputs, systemKey, shaped)
             : buildOwnedCell(buildInputs, owner, shaped);
@@ -141,11 +143,12 @@ public final class PaintedCellBuilder {
             occupancy.getInhabitedSystemKeys(),
             systemKey);
 
-        var style = mapStyling.renderStyle().categoryStyle(
-            mapStyling.categories().resolveUnownedCategory(isSettled));
+        var style = mapStyling.resolveUnownedStyle(isSettled);
+
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
             return null;
         }
+
         // An unowned cell has no owner palette, so both slots hold the shared neutral colour:
         // whichever slot an element names, it paints neutral - unless the recede desaturates the
         // cell, in which case it recolours off the pass's desaturation palette exactly as a
@@ -215,6 +218,7 @@ public final class PaintedCellBuilder {
         if (!cornerRounding.shouldRoundCorners()) {
             return shaped.fillPolygon();
         }
+
         // Through the shared pass rather than the smoothing library directly, so this outline
         // and the cluster borders around it round to one profile and cannot drift apart.
         return BorderSmoothing.roundLoopCorners(

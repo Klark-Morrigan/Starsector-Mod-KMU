@@ -87,6 +87,16 @@ public final class PoliticalMapRebuildSeams {
     }
 
     /**
+     * Flips the player's visibility settings, as {@link OwnerMapRebuildSeams#flipVisibilitySettings}
+     * does.
+     *
+     * @param rules the rules the visibility read answers from here on
+     */
+    public void flipVisibilitySettings(MapVisibilityRules rules) {
+        ownerMapSeams.flipVisibilitySettings(rules);
+    }
+
+    /**
      * @return the seam standing in for the player's visibility settings, as
      *         {@link OwnerMapRebuildSeams} hands it
      */

@@ -335,6 +335,10 @@ So a word of one axis never stands in for another:
 | theme (every style the map is drawn in, in the changelog) | 主题 | the usual UI word for a set of styles worn together |
 | cluster group (one owner's clusters drawn together, in the changelog) | 区域组 | from 区域, a cluster, with 组, a group |
 | border tracing (the dev overlay showing each smoothing stage) | 边界描绘 | the Dev tab's own header for it |
+| smoothing (the sanding and rounding of a border, in the changelog) | 平滑 | the usual graphics word; one of its passes is 一道平滑处理 |
+| stage (a border's shape after one smoothing pass, in the changelog) | 阶段 | the plain word for one step of a process |
+| gate (the switch a smoothing pass runs under, in the changelog) | 开关 | the plain word for a switch, as the settings' own toggles are |
+| unowned cell (a cell no owner on the layer holds, in the changelog) | 无所有者单元 | 无, no, with 所有者 and 单元; kept apart from 无主, a market the Neutral faction holds |
 | run (one owner's stretch of a band, in the changelog) | 色段 | 色, colour, with 段, a segment |
 | record (a Java value type, in the changelog) | 记录类型 | the usual computing word, 记录 with 类型, a type |
 | final class (one nothing may extend, in the changelog) | 不可继承的类 | said plainly rather than left as the keyword |

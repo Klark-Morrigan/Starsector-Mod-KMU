@@ -54,9 +54,13 @@ public final class OwnerMapRebuildSeams {
     private final StaticSeams seams = new StaticSeams();
 
     private final MockedStatic<Global> globalSeam;
+    private final MockedStatic<KmuLunaSettings> lunaSettingsSeam;
     private final MockedStatic<KmuOwnerMapRibbonSettings> ribbonSettingsSeam;
     private final MockedStatic<MapVisibilityRules> visibilityRulesSeam;
     private final MockedStatic<FilterSelection> filterSelectionSeam;
+
+    // What the settings revision reads as, moved by each flip of a setting this arrangement poses.
+    private int settingsRevision;
 
     private OwnerMapRebuildSeams() {
 
@@ -65,7 +69,8 @@ public final class OwnerMapRebuildSeams {
         // The dev reveal and the settings behind the knob reads, both LunaLib-backed: no rebuild
         // case turns on either, so the seam's own answers stand for them.
         seams.openSeam(KmuMapVisibilitySettings.class);
-        seams.openSeam(KmuLunaSettings.class);
+
+        lunaSettingsSeam = seams.openSeam(KmuLunaSettings.class);
 
         // The label face is settled against the installed atlases, which no test JVM has, so it
         // settles as the face labels ask for. Whether that face then loads is the caller's to say,
@@ -164,8 +169,30 @@ public final class OwnerMapRebuildSeams {
     }
 
     /**
-     * @return the seam standing in for the player's visibility settings, for a caller posing a gate
-     *         flipped between two rebuilds
+     * Flips the player's visibility settings to the given rules, as a LunaLib save does: the rules
+     * the next read answers, and a settings revision moved past the last, which is what tells a
+     * rebuild the settings it read are stale.
+     *
+     * @param rules the rules the visibility read answers from here on
+     */
+    public void flipVisibilitySettings(MapVisibilityRules rules) {
+
+        visibilityRulesSeam
+            .when(MapVisibilityRules::readFromLunaSettings)
+            .thenReturn(rules);
+
+        settingsRevision++;
+
+        var announcedRevision = settingsRevision;
+
+        lunaSettingsSeam
+            .when(KmuLunaSettings::getSettingsRevision)
+            .thenReturn(announcedRevision);
+    }
+
+    /**
+     * @return the seam standing in for the player's visibility settings, for a caller counting how
+     *         often a rebuild reads them; a caller flipping them takes {@link #flipVisibilitySettings}
      */
     public MockedStatic<MapVisibilityRules> resolveVisibilityRulesSeam() {
         return visibilityRulesSeam;

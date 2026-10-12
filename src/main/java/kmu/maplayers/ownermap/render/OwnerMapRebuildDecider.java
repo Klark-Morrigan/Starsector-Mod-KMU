@@ -21,12 +21,10 @@ import java.util.Set;
  * clusters have to be rebuilt, and whether the holding the last rebuild read can be painted
  * over again rather than read afresh.
  *
- * <p>Apart from the cache that acts on the answer, because the two run at different cadences.
- * Nearly every frame the map is open asks this and stops: the answer comes off revisions and
- * settings alone, costs a handful of int compares, and opens no reading of the sector. A rebuild
- * is the rare frame, and it opens one. Holding the decision beside the rebuild paths put the
- * cheap question and the expensive answer behind one class, where a reader of either had to read
- * both.
+ * <p>Kept apart from the cache that acts on the answer, because the two run at different cadences:
+ * nearly every frame the map is open asks this and stops, while a rebuild is the rare frame. The
+ * answer comes off revisions, the sidebar picks and settings read again only when LunaLib reports
+ * a change, so it opens no reading of the sector.
  *
  * <p>What it holds is the baselines the question is asked against - the revisions the standing
  * map was built under and what its cells were cut from - and those advance only when the cache
@@ -41,6 +39,10 @@ final class OwnerMapRebuildDecider {
     // The content revision's seed, below any revision the settings fold can report on a built
     // map, so a cache's first frame finds the draw lists stale and builds them.
     private static final int UNBUILT_REVISION = -1;
+
+    // The settings revision's seed, below any the settings can report, so the first frame reads
+    // what the cells are cut from.
+    private static final int UNREAD_SETTINGS_REVISION = -1;
 
     // The machinery installed on the sector the map draws, whose board every revision here is
     // read off.
@@ -68,6 +70,13 @@ final class OwnerMapRebuildDecider {
     // record can hold is one the player can actually be under - and it is what makes a cache's
     // first frame cut, whatever the signal happens to say.
     private CellCutInputs lastCellCut;
+
+    // The last sampling of what the cells are cut from, and the settings revision it was read
+    // under. Its seed inputs and visibility rules are all KMU LunaLib fields, and every change to
+    // one moves that revision, so while it holds they are reused rather than read again - a dozen
+    // field reads and a gate resolve saved on every frame the map is open.
+    private CellCutInputs sampledCellCut;
+    private int sampledSettingsRevision = UNREAD_SETTINGS_REVISION;
 
     OwnerMapRebuildDecider(SectorMapMachinery machinery, OwnerMapBodyPreferences bodyPreferences) {
 
@@ -254,11 +263,27 @@ final class OwnerMapRebuildDecider {
     // under one rule and painted under another.
     private CellCutInputs sampleCellCutInputs() {
 
-        return new CellCutInputs(
-            machinery.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
-            new CellSeedInputs(
-                KmuOwnerMapGeometrySettings.getOwnerMapCellBoundSegments(),
-                KmuOwnerMapGeometrySettings.getOwnerMapCellRadius()),
-            MapVisibilityRules.readFromLunaSettings());
+        var geometryRevision = machinery.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
+        var settingsRevision = KmuLunaSettings.getSettingsRevision();
+
+        if (settingsRevision != sampledSettingsRevision) {
+
+            sampledSettingsRevision = settingsRevision;
+            sampledCellCut = new CellCutInputs(
+                geometryRevision,
+                new CellSeedInputs(
+                    KmuOwnerMapGeometrySettings.getOwnerMapCellBoundSegments(),
+                    KmuOwnerMapGeometrySettings.getOwnerMapCellRadius()),
+                MapVisibilityRules.readFromLunaSettings());
+
+        } else if (geometryRevision != sampledCellCut.geometryRevision()) {
+
+            sampledCellCut = new CellCutInputs(
+                geometryRevision,
+                sampledCellCut.seedInputs(),
+                sampledCellCut.visibilityRules());
+        }
+
+        return sampledCellCut;
     }
 }

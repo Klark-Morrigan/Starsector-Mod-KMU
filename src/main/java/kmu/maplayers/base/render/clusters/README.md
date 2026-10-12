@@ -77,17 +77,19 @@ which is how one same-owner body is carved into clusters that meet without a gap
   so a lone cell's outline and the cluster border beside it round to one profile and cannot drift apart,
   and neither pass has the other's numbers in scope to be handed by mistake.
   Each pass also always does what its name says:
-  `smoothBorderLoops` applies each half's own gate in the order the passes must run,
-  while a caller capturing every stage gates them itself,
-  and both smooth identically.
+  `smoothBorderLoops` alone applies each half's own gate,
+  in the order the passes must run.
+  A caller showing every stage hands it a `SmoothingStageSink`,
+  which it tells of each pass that ran,
+  so the stages shown are ordered and gated as the finished loops are.
 - `debug/` -
-  the diagnostic view of those two passes,
-  for the caller that gates them itself.
+  the diagnostic view of those two passes.
   `ClusterBorderStageOverlay` holds each stage's loops apart -
   traced,
   despiked,
   rounded -
-  `ClusterBorderStageCollector` gathers them as the producer runs the passes,
+  `ClusterBorderStageCollector` gathers them,
+  the traced base from the producer and the two passes as the smoothing's sink,
   and `ClusterBorderStageRenderer` strokes them base under despiked under rounded,
   in the three grades of the [`DiagnosticPalette`](../../labels/README.md) and at tapering widths,
   so an earlier stage haloes out from under the one drawn over it.

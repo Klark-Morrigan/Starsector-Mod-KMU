@@ -22,6 +22,8 @@ public final class OwnerPaintedViewFake implements OwnerPaintedView {
     private final OwnerReadingFake readingFake;
     private final OwnerSource ownerSource;
 
+    private int contentRevision;
+
     OwnerPaintedViewFake() {
         this(new OwnerSourceFake());
     }
@@ -49,10 +51,19 @@ public final class OwnerPaintedViewFake implements OwnerPaintedView {
     }
 
     // Samples nothing live, so the board it is handed contributes nothing and the fingerprint holds
-    // constant - the "never forces a rebuild on its own" case the seam allows.
+    // constant - the "never forces a rebuild on its own" case the seam allows - until a case moves it.
     @Override
     public int getContentRevision(MapLayerRefreshBoard board) {
-        return 0;
+        return contentRevision;
+    }
+
+    /**
+     * Moves the fingerprint, as a view whose live inputs changed would.
+     *
+     * @param contentRevision what {@link #getContentRevision} answers from here on
+     */
+    public void setContentRevision(int contentRevision) {
+        this.contentRevision = contentRevision;
     }
 
     // A fixture layer's categories, so no suite over the tier borrows a real layer's set.

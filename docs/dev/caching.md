@@ -332,8 +332,11 @@ What a frame owes is
 answer,
 asked first and acted on:
 the decider holds what each half was built against and compares this frame's revisions and settings to it,
-which is a handful of int compares and opens no reading of the sector,
+which opens no reading of the sector,
 so nearly every frame stops at it.
+The settings the cells are cut from are read again only when KMU's settings revision moves,
+since every one of them is a LunaLib field and LunaLib reports each change;
+on any other frame the last reading stands.
 The two are apart because they run at different cadences -
 the question every frame,
 the rebuild rarely -

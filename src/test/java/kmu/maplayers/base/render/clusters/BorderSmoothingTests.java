@@ -14,6 +14,11 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * Pins what the smoothing passes contribute over the geometry library they call: that a pass
@@ -112,13 +117,19 @@ class BorderSmoothingTests {
     // double[], and arrays compare by identity, which would make every equality assertion pass
     // or fail for the wrong reason.
     private static List<List<Double>> flattenLoops(List<List<double[]>> loops) {
+
         var flattened = new ArrayList<List<Double>>(loops.size());
+
         for (var loop : loops) {
+
             var coordinates = new ArrayList<Double>(loop.size() * 2);
+
             for (var vertex : loop) {
+
                 coordinates.add(vertex[0]);
                 coordinates.add(vertex[1]);
             }
+
             flattened.add(coordinates);
         }
         return flattened;
@@ -129,6 +140,7 @@ class BorderSmoothingTests {
 
         @Test
         void returnsTheLoopsUntouchedWhenBothGatesAreOff() {
+
             var loops = List.of(NEEDLED);
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, BOTH_GATES_OFF);
 
@@ -140,6 +152,7 @@ class BorderSmoothingTests {
 
         @Test
         void runsOnlyTheSandingPassWhenOnlyThatGateIsOn() {
+
             var loops = List.of(NEEDLED);
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, SANDING_ONLY);
 
@@ -153,6 +166,7 @@ class BorderSmoothingTests {
 
         @Test
         void runsOnlyTheRoundingPassWhenOnlyThatGateIsOn() {
+
             var loops = List.of(SQUARE);
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, ROUNDING_ONLY);
 
@@ -164,6 +178,7 @@ class BorderSmoothingTests {
 
         @Test
         void sandsBeforeItRoundsWhenBothGatesAreOn() {
+
             var loops = List.of(NEEDLED);
             var smoothed = BorderSmoothing.smoothBorderLoops(loops, BOTH_GATES_ON);
 
@@ -176,6 +191,44 @@ class BorderSmoothingTests {
 
             assertThat(flattenLoops(smoothed))
                 .isEqualTo(flattenLoops(sandedThenRounded));
+        }
+
+        @Test
+        void reportsNoStageWhenBothGatesAreOff() {
+            // An empty stage is how the overlay says a pass did not run, so a pass that did not run
+            // must not be reported with the loops it would have been handed.
+            var stageSinkMock = mock(SmoothingStageSink.class);
+
+            BorderSmoothing.smoothBorderLoops(List.of(NEEDLED), BOTH_GATES_OFF, stageSinkMock);
+
+            verifyNoInteractions(stageSinkMock);
+        }
+
+        @Test
+        void reportsOnlyTheDespikedStageWhenOnlySandingIsOn() {
+
+            var stageSinkMock = mock(SmoothingStageSink.class);
+            var smoothed = BorderSmoothing.smoothBorderLoops(List.of(NEEDLED), SANDING_ONLY, stageSinkMock);
+
+            verify(stageSinkMock)
+                .captureDespikedStage(smoothed);
+
+            verifyNoMoreInteractions(stageSinkMock);
+        }
+
+        @Test
+        void reportsEachStageItRanWithTheLoopsThatPassMade() {
+            // The rounded stage is the finished loops, so a diagnostic showing it shows what the map
+            // drew; the despiked stage is what the rounding was handed.
+            var stageSinkMock = mock(SmoothingStageSink.class);
+            var loops = List.of(NEEDLED);
+            var smoothed = BorderSmoothing.smoothBorderLoops(loops, BOTH_GATES_ON, stageSinkMock);
+            var sanded = flattenLoops(BorderSmoothing.sandBorderSpikes(loops, BOTH_GATES_ON.spikeSanding()));
+
+            verify(stageSinkMock)
+                .captureDespikedStage(argThat(despiked -> flattenLoops(despiked).equals(sanded)));
+            verify(stageSinkMock)
+                .captureRoundedStage(smoothed);
         }
     }
 
@@ -202,13 +255,17 @@ class BorderSmoothingTests {
 
         @Test
         void dropsTheReversedHalfOfACrossing() {
+
             var loops = BorderSmoothing.resolveSmoothedBorderLoops(
                 List.of(BOW_TIE), BOTH_GATES_OFF);
 
             // One clean triangle: the counter-clockwise half, closed at the crossing, with
             // nothing of the other half left as a stray loop or a notch.
-            assertThat(loops).hasSize(1);
-            assertThat(loops.get(0)).hasSize(3);
+            assertThat(loops)
+                .hasSize(1);
+            assertThat(loops.get(0))
+                .hasSize(3);
+
             assertLoopHasPoints(
                 loops.get(0),
                 new double[] {0, 0},
@@ -218,13 +275,16 @@ class BorderSmoothingTests {
 
         @Test
         void windsALoneRingToFillWhicheverWayItArrived() {
+
             var loops = BorderSmoothing.resolveSmoothedBorderLoops(
                 List.of(FOLDED_OVER), BOTH_GATES_OFF);
 
             // Not dropped, and not a hole: a lone ring's own winding is taken for the plane's,
             // so the resolve hands a folded ring back as a body. Pinned because it is the reason
             // a fold has to be caught by whoever still holds the raw ring, before this runs.
-            assertThat(loops).hasSize(1);
+            assertThat(loops)
+                .hasSize(1);
+
             assertLoopHasPoints(
                 loops.get(0),
                 new double[] {0, 0},
@@ -235,10 +295,13 @@ class BorderSmoothingTests {
 
         @Test
         void leavesACleanLoopWithItsOwnCorners() {
+
             var loops = BorderSmoothing.resolveSmoothedBorderLoops(
                 List.of(SQUARE), BOTH_GATES_OFF);
 
-            assertThat(loops).hasSize(1);
+            assertThat(loops)
+                .hasSize(1);
+
             assertLoopHasPoints(
                 loops.get(0),
                 new double[] {0, 0},
@@ -249,28 +312,37 @@ class BorderSmoothingTests {
 
         @Test
         void smoothsBetweenTheTwoResolves() {
+
             var loops = BorderSmoothing.resolveSmoothedBorderLoops(
                 List.of(SQUARE), ROUNDING_ONLY);
 
             // Rounded, so the ring grew and no corner survives - the same test the rounding pass
             // is held to, met here through the composition rather than the pass alone.
-            assertThat(loops).hasSize(1);
-            assertThat(loops.get(0)).hasSizeGreaterThan(SQUARE.size());
-            assertThat(loops.get(0)).noneMatch(vertex -> vertex[0] == 0 && vertex[1] == 0);
+            assertThat(loops)
+                .hasSize(1);
+            assertThat(loops.get(0))
+                .hasSizeGreaterThan(SQUARE.size());
+            assertThat(loops.get(0))
+                .noneMatch(vertex -> vertex[0] == 0 && vertex[1] == 0);
         }
 
         // Each expected point found once, in any order and within rounding, since the resolve
         // is free to start the loop anywhere and to place a crossing by its own arithmetic.
         private void assertLoopHasPoints(List<double[]> loop, double[]... expected) {
 
-            assertThat(loop).hasSize(expected.length);
+            assertThat(loop)
+                .hasSize(expected.length);
 
             for (var point : expected) {
+
                 assertThat(loop)
                     .as("a corner at %.0f,%.0f", point[0], point[1])
                     .anySatisfy(vertex -> {
-                        assertThat(vertex[0]).isCloseTo(point[0], within(SAME_POINT));
-                        assertThat(vertex[1]).isCloseTo(point[1], within(SAME_POINT));
+
+                        assertThat(vertex[0])
+                            .isCloseTo(point[0], within(SAME_POINT));
+                        assertThat(vertex[1])
+                            .isCloseTo(point[1], within(SAME_POINT));
                     });
             }
         }
@@ -281,20 +353,27 @@ class BorderSmoothingTests {
 
         @Test
         void splicesOutTheNeedleApex() {
+
             var sanded = BorderSmoothing.sandBorderSpikes(List.of(NEEDLED), SANDING_SHAPE);
 
-            assertThat(sanded.get(0)).noneMatch(vertex -> vertex[1] > 100);
-            assertThat(sanded.get(0)).hasSize(NEEDLED.size() - 1);
+            assertThat(sanded.get(0))
+                .noneMatch(vertex -> vertex[1] > 100);
+            assertThat(sanded.get(0))
+                .hasSize(NEEDLED.size() - 1);
         }
 
         @Test
         void sandsEveryLoopRatherThanOnlyTheFirst() {
+
             var sanded = BorderSmoothing.sandBorderSpikes(
                 List.of(NEEDLED, NEEDLED),
                 SANDING_SHAPE);
 
-            assertThat(sanded).hasSize(2);
-            assertThat(sanded).allSatisfy(loop -> assertThat(loop).hasSize(NEEDLED.size() - 1));
+            assertThat(sanded)
+                .hasSize(2);
+            assertThat(sanded)
+                .allSatisfy(loop -> assertThat(loop)
+                    .hasSize(NEEDLED.size() - 1));
         }
     }
 
@@ -303,27 +382,34 @@ class BorderSmoothingTests {
 
         @Test
         void replacesEachSharpCornerWithAnArc() {
+
             var rounded = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_SHAPE);
 
             // Every corner becomes several vertices, so the ring grows; and no original corner
             // point survives, since each is stepped back from on both sides.
-            assertThat(rounded.get(0)).hasSizeGreaterThan(SQUARE.size());
-            assertThat(rounded.get(0)).noneMatch(vertex -> vertex[0] == 0 && vertex[1] == 0);
+            assertThat(rounded.get(0))
+                .hasSizeGreaterThan(SQUARE.size());
+            assertThat(rounded.get(0))
+                .noneMatch(vertex -> vertex[0] == 0 && vertex[1] == 0);
         }
 
         @Test
         void roundsEveryLoopRatherThanOnlyTheFirst() {
+
             var rounded = BorderSmoothing.roundBorderCorners(
                 List.of(SQUARE, SQUARE),
                 ROUNDING_SHAPE);
 
-            assertThat(rounded).hasSize(2);
-            assertThat(rounded).allSatisfy(
-                loop -> assertThat(loop).hasSizeGreaterThan(SQUARE.size()));
+            assertThat(rounded)
+                .hasSize(2);
+            assertThat(rounded)
+                .allSatisfy(loop -> assertThat(loop)
+                    .hasSizeGreaterThan(SQUARE.size()));
         }
 
         @Test
         void worksToTheProfileItIsGivenRatherThanOneFixedShape() {
+
             var narrow = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_SHAPE);
             var wide = BorderSmoothing.roundBorderCorners(
                 List.of(SQUARE),
@@ -344,6 +430,7 @@ class BorderSmoothingTests {
 
         @Test
         void matchesWhatTheSameLoopGetsInsideASetOfLoops() {
+
             var alone = BorderSmoothing.roundLoopCorners(SQUARE, ROUNDING_SHAPE);
             var withinLoops = BorderSmoothing.roundBorderCorners(List.of(SQUARE), ROUNDING_SHAPE);
 

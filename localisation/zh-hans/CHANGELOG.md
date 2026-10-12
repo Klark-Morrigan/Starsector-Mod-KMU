@@ -29,7 +29,9 @@
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
 - **`HolderPass.palettes()`** 和 **`DominancePass.palettes()`**：本次计算唯一的配色读取，会为本次计算记住每个集团的所有者和配色，因此一次重建中的每个解析和每条色带都通过同一个对象为集团着色。
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**：一次构建的绘制方案，只读取一次，再交给构建中按它着色的每个部分。
+- **`MapStyling.resolveUnownedStyle(boolean)`**：无所有者单元所用的样式，使地图填充与边界描绘以同一方式查找它。
 - **`PoliticalHolderView`**，政治地图的每个视图都实现它：联盟集合的修订号（作为视图的内容修订号）、争夺中谁与谁站在一起、持有者类别，以及势力读取。
+- **`SmoothingStageSink`** 和 **`BorderSmoothing.smoothBorderLoops(List, BorderSmoothingStyle, SmoothingStageSink)`**：平滑会报告实际运行的每一道平滑处理，因此展示各阶段的调用方按地图绘制时的顺序和开关展示它们。`ClusterBorderStageCollector` 即为其一。
 
 #### 公共契约变更（**破坏性**）
 

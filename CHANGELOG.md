@@ -30,7 +30,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**: the mark a faction's line opens on, for a line marked as that faction's.
 - **`HolderPass.palettes()`** and **`DominancePass.palettes()`**: the pass's one palette read, which remembers each bloc's owner and shades for the pass, so every resolve and band over one rebuild colours a bloc through the same object.
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**: one build's paint scheme, read once and handed to every part of the build that styles by it.
+- **`MapStyling.resolveUnownedStyle(boolean)`**: the style an unowned cell draws in, so the map's fills and the border-tracing overlay look it up the same way.
 - **`PoliticalHolderView`**, which every political map view implements: the alliance set's revision as its content revision, who stands together in a contest, the holder categories, and the faction reading.
+- **`SmoothingStageSink`** and **`BorderSmoothing.smoothBorderLoops(List, BorderSmoothingStyle, SmoothingStageSink)`**: the smoothing reports each pass that ran, so a caller showing the stages shows them in the order and under the gates the map drew by. `ClusterBorderStageCollector` is one.
 
 #### Public contracts changed (**breaking**)
 

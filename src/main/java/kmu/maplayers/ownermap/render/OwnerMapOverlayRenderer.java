@@ -12,6 +12,7 @@ import kmu.maplayers.base.render.MapFrameCompositor;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
+import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
 import kmu.maplayers.ownermap.render.ribbon.CellPresenceRibbonRenderer;
@@ -80,6 +81,10 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // Diagnostic: ensures the first map render logs exactly once, so a map that draws nothing can
     // be told from one whose render never fired.
     private boolean hasLoggedFirstRender;
+
+    // The highlight's view of the draw lists, kept while the cache holds the same clusters, so a
+    // frame with the cursor on the map allocates nothing for it.
+    private OwnerMapHoverHighlightSource hoverHighlightSource;
 
     /**
      * @param cache            the draw lists every band is emitted from, made for the same sector's
@@ -213,11 +218,24 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // on rather than reading the layer's model itself.
     private void renderHoverHighlight(MapFrame mapFrame) {
 
+        var clusters = cache.getClusters();
+
         hoverHighlightRenderer.renderCursorHighlightOnMap(
-            new OwnerMapHoverHighlightSource(cache.getClusters()),
-            cache.getClusters().getGlobalStyle().hoverHighlight(),
+            resolveHoverHighlightSource(clusters),
+            clusters.getGlobalStyle().hoverHighlight(),
             hoverState.getHover(),
             mapFrame);
+    }
+
+    // The source over these clusters: the one held while they are the ones drawn, a new one after a
+    // rebuild replaced them.
+    private OwnerMapHoverHighlightSource resolveHoverHighlightSource(OwnerMapClusters clusters) {
+
+        if (hoverHighlightSource == null || hoverHighlightSource.clusters() != clusters) {
+            hoverHighlightSource = new OwnerMapHoverHighlightSource(clusters);
+        }
+
+        return hoverHighlightSource;
     }
 
     // The per-cell presence bands, and the debug overlay explaining them straight after: the path

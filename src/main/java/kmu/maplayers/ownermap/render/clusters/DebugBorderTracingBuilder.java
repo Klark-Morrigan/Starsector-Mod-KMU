@@ -33,7 +33,7 @@ import java.util.Set;
  *
  * <p>It traces the same inset rings the production {@link OwnerMapBuilder} does and runs
  * them through the shared {@link BorderSmoothing} passes, keeping the result after each
- * stage rather than only the final one. The two smoothing gates are honored exactly as in
+ * stage rather than only the final one. The two smoothing gates are honoured exactly as in
  * production: a stage is captured only when its pass ran, and sanding (when on) feeds
  * rounding, so with sanding off the rounded stage rounds the base directly. The overlay's
  * layers therefore mirror the pipeline the normal render would have produced.
@@ -51,9 +51,16 @@ public final class DebugBorderTracingBuilder {
     private DebugBorderTracingBuilder() {
     }
 
-    // Traces every owned cluster (plus the drawn unowned cells) into the three stage lists.
-    // Independent of the production drawables, so the plugin builds this instead of them in debug
-    // mode, not alongside.
+    /**
+     * Traces every owned cluster, and every unowned cell the map outlines, into the three stage
+     * lists. Built instead of the production drawables while the debug toggle is on, not beside
+     * them.
+     *
+     * @param geometryCache the cut cells the production build would shape
+     * @param owners        the owners the active view's source resolved for this rebuild
+     * @param styling       the rebuild's one reading of the theme and the border trace
+     * @return the overlay, one loop list per stage
+     */
     public static ClusterBorderStageOverlay buildDebugDrawables(
             CellGeometryCache geometryCache,
             ResolvedOwners owners,
@@ -99,12 +106,13 @@ public final class DebugBorderTracingBuilder {
 
         var borderTrace = styling.borderTrace();
         var borderSmoothing = styling.renderStyle().global().borderSmoothing();
+        var cellEdgesByCellKey = geometryCache.getCellEdgesByCellKey();
 
         for (var memberCellKeys : cellGrouping.groupCellKeysByOwner().values()) {
 
             var insetRings = borderTrace.traceRings(
                 memberCellKeys,
-                geometryCache.getCellEdgesByCellKey(),
+                cellEdgesByCellKey,
                 cellGrouping);
 
             if (!insetRings.isEmpty()) {
@@ -134,8 +142,8 @@ public final class DebugBorderTracingBuilder {
         }
     }
 
-    // buildClusterGroup's pipeline with each stage kept: base first, then sand and round only when
-    // gated on, so what is captured is what each pass was handed.
+    // buildClusterGroup's pipeline with each stage kept: the resolved base, then whichever passes
+    // the smoothing ran, reported to the collector by the smoothing itself.
     //
     // Short of it by the resolve that pipeline runs AFTER rounding, which is not a stage of its own
     // to capture - it tidies the rounded loops rather than shaping them, and a crossing it closes
@@ -149,25 +157,7 @@ public final class DebugBorderTracingBuilder {
         var base = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
 
         stageCollector.captureBaseStage(base);
-
-        var smoothed = base;
-
-        if (borderSmoothing.spikeSanding().shouldSandSpikes()) {
-
-            smoothed = BorderSmoothing.sandBorderSpikes(
-                smoothed,
-                borderSmoothing.spikeSanding());
-
-            stageCollector.captureDespikedStage(smoothed);
-        }
-        if (borderSmoothing.cornerRounding().shouldRoundCorners()) {
-
-            smoothed = BorderSmoothing.roundBorderCorners(
-                smoothed,
-                borderSmoothing.cornerRounding());
-
-            stageCollector.captureRoundedStage(smoothed);
-        }
+        BorderSmoothing.smoothBorderLoops(base, borderSmoothing, stageCollector);
     }
 
     // One unowned cell's two stages: its raw inset as the base and, when rounding is gated on, its
@@ -190,23 +180,22 @@ public final class DebugBorderTracingBuilder {
             return;
         }
 
-        var base = List.of(shaped.fillPolygon());
+        stageCollector.captureBaseStage(List.of(shaped.fillPolygon()));
 
-        stageCollector.captureBaseStage(base);
-
+        // Through the single-loop entry the production lone cell rounds by, so the two outlines
+        // cannot round apart.
         if (cornerRounding.shouldRoundCorners()) {
 
-            stageCollector.captureRoundedStage(
-                BorderSmoothing.roundBorderCorners(base, cornerRounding));
+            stageCollector.captureRoundedStage(List.of(
+                BorderSmoothing.roundLoopCorners(shaped.fillPolygon(), cornerRounding)));
         }
     }
 
     // Whether the normal render outlines this cell as unowned. An owned cell is traced as part of
     // its cluster instead, and a category whose outline is "No colour" draws nothing.
     //
-    // The category resolves through the system the cell draws as, settled or empty - a cell with no
-    // system of its own is empty - and indexes straight into the rebuild's theme: the same lookup
-    // the production draw makes.
+    // The cell is settled or empty by the system it draws as - a cell with no system of its own is
+    // empty - and takes its style through the lookup the production fills make.
     private static boolean isUnownedOutlineDrawn(
             SystemKey cellKey,
             CellGrouping cellGrouping,
@@ -218,12 +207,9 @@ public final class DebugBorderTracingBuilder {
         }
 
         var drawnSystemKey = cellGrouping.resolveDrawnSystemKeyOf(cellKey);
-        var category = styling.categories().resolveUnownedCategory(
-            UnownedStyleResolver.isSettledSystem(inhabitedSystemKeys, drawnSystemKey));
 
         return styling
-            .renderStyle()
-            .categoryStyle(category)
+            .resolveUnownedStyle(UnownedStyleResolver.isSettledSystem(inhabitedSystemKeys, drawnSystemKey))
             .outer()
             .isDrawn();
     }

@@ -26,11 +26,12 @@ import java.util.function.UnaryOperator;
  * angle, so neither pass can be handed the other's numbers at all.
  *
  * <p>Each pass is also honest mechanism - it always does what its name says. The on/off
- * decision is each half's own gate, applied by {@link #smoothBorderLoops} for a caller
- * that wants the finished loops, and left to the call site for a caller that captures every
- * stage as it goes.
+ * decision is each half's own gate, applied by {@link #smoothBorderLoops} alone. A caller that
+ * shows every stage hands it a {@link SmoothingStageSink} rather than running the passes itself,
+ * so the stages it shows are ordered and gated as the finished loops are.
  */
 public final class BorderSmoothing {
+
     private BorderSmoothing() {
     }
 
@@ -47,13 +48,36 @@ public final class BorderSmoothing {
             List<List<double[]>> loops,
             BorderSmoothingStyle style) {
 
+        return smoothBorderLoops(loops, style, SmoothingStageSink.IGNORING_SINK);
+    }
+
+    /**
+     * The same smoothing, reporting the loops after each pass that ran.
+     *
+     * @param loops     the resolved border loops, one closed ring each
+     * @param style     the sector-wide smoothing profile, both halves' gates included
+     * @param stageSink told of each pass's output as it runs, and of no pass that did not
+     * @return the smoothed loops; the same loops when both gates are off
+     */
+    public static List<List<double[]>> smoothBorderLoops(
+            List<List<double[]>> loops,
+            BorderSmoothingStyle style,
+            SmoothingStageSink stageSink) {
+
         var smoothed = loops;
+
         if (style.spikeSanding().shouldSandSpikes()) {
+
             smoothed = sandBorderSpikes(smoothed, style.spikeSanding());
+            stageSink.captureDespikedStage(smoothed);
         }
+
         if (style.cornerRounding().shouldRoundCorners()) {
+
             smoothed = roundBorderCorners(smoothed, style.cornerRounding());
+            stageSink.captureRoundedStage(smoothed);
         }
+
         return smoothed;
     }
 
@@ -90,8 +114,8 @@ public final class BorderSmoothing {
     /**
      * Splices out of every clean border loop the needle protrusions and inward cusps too thin
      * for rounding to fix (the arc's step-back clamps to their tiny edges), so a rounding pass
-     * afterwards runs on clean geometry. Always sands - a caller staging the passes itself
-     * gates this on the style's own spike-sanding switch.
+     * afterwards runs on clean geometry. Always sands; {@link #smoothBorderLoops} is where the
+     * style's own spike-sanding switch is read.
      *
      * @param loops the border loops to sand
      * @param style the sanding half of the profile, supplying the spike height and angle
@@ -112,8 +136,8 @@ public final class BorderSmoothing {
     /**
      * Rounds each border loop's corners into arcs with the style's corner shape, applied to
      * the resolved envelope rather than a self-crossing inset (a crossing would clip the arc
-     * back to a sharp point). Always rounds - a caller staging the passes itself gates this on
-     * the style's own corner-rounding switch.
+     * back to a sharp point). Always rounds; {@link #smoothBorderLoops} is where the style's own
+     * corner-rounding switch is read.
      *
      * @param loops the border loops to round
      * @param style the rounding half of the profile, supplying the corner shape
@@ -156,9 +180,11 @@ public final class BorderSmoothing {
             UnaryOperator<List<double[]>> pass) {
 
         var passed = new ArrayList<List<double[]>>(loops.size());
+
         for (var loop : loops) {
             passed.add(pass.apply(loop));
         }
+
         return passed;
     }
 }

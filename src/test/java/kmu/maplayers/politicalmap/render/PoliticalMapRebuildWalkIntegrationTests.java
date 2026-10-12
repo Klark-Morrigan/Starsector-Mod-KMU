@@ -300,12 +300,10 @@ final class PoliticalMapRebuildWalkIntegrationTests {
                 CellSeedRule.SEED_DRAWN_SYSTEMS);
 
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
-            seams
-                .resolveVisibilityRulesSeam()
-                .when(MapVisibilityRules::readFromLunaSettings)
-                .thenReturn(UNDISCOVERED_REVEALED);
+            seams.flipVisibilitySettings(UNDISCOVERED_REVEALED);
 
             requestTheNextRebuild();
+
             cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
 
             var territories = cache.getClusters();
@@ -461,6 +459,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             CellSeedRule.SEED_DRAWN_SYSTEMS);
 
         return captureRefreshesOf(profiler -> {
+
             try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
                 cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
             }
@@ -482,6 +481,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
                 cache.refreshDrawLists(FactionsView.INSTANCE, SCREEN);
             }
+
             requestTheNextRebuild();
 
             try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
@@ -542,8 +542,8 @@ final class PoliticalMapRebuildWalkIntegrationTests {
     private SectorAPI buildContestedSectorWithASettledNeighbour() {
 
         var sector = buildContestedSectorWithAnEmptyNeighbour();
-        settleTheEmptyNeighbour(sector);
 
+        settleTheEmptyNeighbour(sector);
         return sector;
     }
 
@@ -609,8 +609,8 @@ final class PoliticalMapRebuildWalkIntegrationTests {
     private SectorAPI installAsTheRebuildsSector(SectorAPI sector) {
 
         SectorOwnershipFixtures.placeEverySystemInHyperspace(sector);
-        machinery = new SectorMapMachinery(sector);
 
+        machinery = new SectorMapMachinery(sector);
         seams
             .resolveGlobalSeam()
             .when(Global::getSector)
@@ -669,6 +669,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
     // one arrangement under two colony kinds.
     @FunctionalInterface
     private interface ColonyStaging {
+
         MarketAPI stageColony(FactionAPI faction, int size);
     }
 }
