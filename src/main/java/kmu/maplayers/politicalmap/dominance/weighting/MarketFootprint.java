@@ -1,7 +1,5 @@
 package kmu.maplayers.politicalmap.dominance.weighting;
 
-import kmu.maplayers.politicalmap.dominance.SystemDominance;
-
 /**
  * One holder's market footprint within a single star system: how many markets it
  * holds there, plus the three weight quantities the dominance rule compares. Named
@@ -17,8 +15,8 @@ import kmu.maplayers.politicalmap.dominance.SystemDominance;
  * of its own because it folds along exactly the two paths the weights do, so a count
  * can never end up summed over a different set of markets than the weights beside it.
  *
- * <p>A plain value with no Starsector types so {@link SystemDominance} stays free of
- * the live economy: {@link KnownMarketFootprints} reads the live economy and folds
+ * <p>A plain value with no Starsector types so
+ * {@link kmu.maplayers.politicalmap.dominance.SystemDominance} stays free of the live economy: {@link KnownMarketFootprints} reads the live economy and folds
  * each owned market into its holder's footprint, while the rule only ever sees
  * these totals.
  */

@@ -289,10 +289,10 @@ final class AlliancesViewTests {
             // resolveGrouping samples Nex live, so it is stubbed to the alliance grouping the (mocked)
             // stats read is keyed against; the presence gate is the shared read's job, so both blocs
             // arrive already present.
-            var view = spy(AlliancesView.INSTANCE);
+            var viewMock = spy(AlliancesView.INSTANCE);
 
             doReturn(ALLIANCE_GROUPING)
-                .when(view)
+                .when(viewMock)
                 .resolveGrouping();
 
             var sectorMock = mock(SectorAPI.class);
@@ -315,7 +315,7 @@ final class AlliancesViewTests {
                         Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
                         OwnerPresenceIndex.EMPTY));
 
-                assertThat(view.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG).picker().items())
+                assertThat(viewMock.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG).picker().items())
                     .containsExactly(new RankedOwner<>(
                         new SelectableOwner(
                             "rebel_pact",

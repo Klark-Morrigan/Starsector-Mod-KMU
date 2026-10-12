@@ -476,7 +476,7 @@ so shelving them under either mechanic would make that mechanic name the other.
 | `views` | the three views (`FactionsView`, `AlliancesView`, `ClaimsView`), every view's shared answers (`PoliticalHolderView`), and the contest-painted views' (`DominancePaintedView`) |
 | `holders` | the holding rules the views state to the tier's holder source: the three [ownership sources](#the-ownership-sources) and the two per-system resolves, `DominanceSystemHolderResolve` and `ClaimSystemHolderResolve` |
 | `dominance` | the market contest: the pass, `SectorPolitics`, `FilteredPolitics`, `SystemDominance`, the tie-break and the ranking rules, `BlocCandidacy`, the stats and sort modes |
-| `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`) |
+| `dominance/weighting` | what one colony is worth (`MarketWeights`, its breakdown and factors) and the rules it is weighed under, and the footprints folded from them (`KnownMarketFootprints`); the build keeps it from naming the rest of `dominance`, which weighs through it |
 | `dominance/standings` | one hovered system's ranked standings, per group and per faction |
 | [`dominance/ribbon`](dominance/ribbon/README.md) | the band ranking on a cell the contest painted |
 | `dominance/tooltip` | the [domination box](#the-domination-box) |

@@ -1,13 +1,12 @@
 package kmu.maplayers.politicalmap.dominance.weighting;
 
-import kmu.maplayers.politicalmap.dominance.SystemDominance;
 import kmu.settings.KmuPoliticalMapDominanceSettings;
 
 /**
  * The dominance-weighting rules in force for one resolution pass: the master stability
  * switch and the three per-market weight factors - base size, an attached station, and
- * fielded patrols - the footprint read applies before {@link SystemDominance} compares
- * factions.
+ * fielded patrols - the footprint read applies before
+ * {@link kmu.maplayers.politicalmap.dominance.SystemDominance} compares factions.
  *
  * <p>Bundling the rules into one value lets a pass read the player's LunaLib settings
  * once up front and thread a single argument down the footprint read, rather than a

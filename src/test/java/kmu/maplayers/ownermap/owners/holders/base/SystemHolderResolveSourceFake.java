@@ -34,7 +34,7 @@ public final class SystemHolderResolveSourceFake implements SystemHolderResolveS
     /**
      * States who holds one system, for every resolve this source hands out.
      *
-     * @param systemId the system's own id
+     * @param systemId the system's own ID
      * @param holder   the holder to answer with, or null for a system nobody holds
      */
     public void recordHolderOf(String systemId, SystemOwner holder) {

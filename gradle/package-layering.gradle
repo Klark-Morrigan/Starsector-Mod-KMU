@@ -115,6 +115,11 @@ enforcePackageLayering {
                       'kmu.maplayers.base.visibility.structures',
                       'kmu.maplayers.base.visibility.systems']
 
+    // The contest weighs colonies through weighting, so weighting may not reach back into it.
+    forbidImport under: 'kmu.maplayers.politicalmap.dominance.weighting',
+                 of: [under: 'kmu.maplayers.politicalmap.dominance',
+                      except: 'kmu.maplayers.politicalmap.dominance.weighting']
+
     forbidImport under: 'kmu.svg',
                  of: 'kmu.maplayers'
 

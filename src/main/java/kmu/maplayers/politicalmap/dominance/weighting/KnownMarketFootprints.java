@@ -7,7 +7,6 @@ import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.maplayers.politicalmap.dominance.SystemDominance;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,8 +21,9 @@ import java.util.Map;
  * handed the system's {@link Colonies} and takes the known projection over it - the same
  * projection the ribbon counts and the cell classifies on - so a colony this weighs and a colony
  * another surface names are the one set read once rather than two walks that can part company. The
- * pure comparison of the footprints it produces is {@link SystemDominance}'s job; turning the
- * winner into draw colours is
+ * pure comparison of the footprints it produces is
+ * {@link kmu.maplayers.politicalmap.dominance.SystemDominance}'s job; turning the winner into draw
+ * colours is
  * {@link kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes#resolveOwnerOf}'s.
  *
  * <p>Every weight is worked out once, as a {@link MarketWeightBreakdown} the scalar

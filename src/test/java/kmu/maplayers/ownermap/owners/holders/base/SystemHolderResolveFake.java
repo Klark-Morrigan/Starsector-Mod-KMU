@@ -25,7 +25,7 @@ public final class SystemHolderResolveFake implements SystemHolderResolve {
     /**
      * A resolve answering the stated holding per system id.
      *
-     * @param holderBySystemId who holds each system, by the system's own id
+     * @param holderBySystemId who holds each system, by the system's own ID
      * @return the resolve
      */
     public static SystemHolderResolveFake createHolding(Map<String, SystemOwner> holderBySystemId) {
