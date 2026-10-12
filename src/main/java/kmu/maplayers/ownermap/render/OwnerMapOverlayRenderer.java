@@ -121,17 +121,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
         // twice and could state it two ways.
         var isPaintingFills = layout.fillBand() == band;
 
-        // Swap production and debug base render on which view the cache built: the debug overlay
-        // replaces the normal render, and the cache built exactly one of the two.
-        if (cache.isDebug()) {
-            if (isPaintingFills) {
-                ClusterBorderStageRenderer.renderOnMap(
-                    cache.getBorderStageOverlay(),
-                    mapFrame);
-            }
-        } else {
-            renderProductionBaseView(mapFrame, isPaintingFills, layout.borderBand() == band);
-        }
+        renderBaseView(mapFrame, isPaintingFills, layout.borderBand() == band);
 
         // The anchor overlay layers over whichever base view just drew - independent of the swap
         // above, so the two debug toggles compose. Gated on its own toggle here (not by the list
@@ -155,6 +145,24 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
         }
     }
 
+    // Swaps production and debug base render on which view the cache built: the debug overlay
+    // replaces the normal render, and the cache built exactly one of the two.
+    private void renderBaseView(
+            MapFrame mapFrame,
+            boolean isPaintingFills,
+            boolean isPaintingBorders) {
+
+        if (!cache.isDebug()) {
+            renderProductionBaseView(mapFrame, isPaintingFills, isPaintingBorders);
+
+        } else if (isPaintingFills) {
+
+            ClusterBorderStageRenderer.renderOnMap(
+                cache.getBorderStageOverlay(),
+                mapFrame);
+        }
+    }
+
     // The production base view and the two highlights over it, in stack order. Apart from the band
     // dispatch because the debug overlay replaces all four at once: none has anything to draw from
     // once the cache built the overlay instead.
@@ -164,6 +172,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
             boolean isPaintingBorders) {
 
         if (isPaintingFills) {
+
             ClusterRenderer.renderFillsOnMap(
                 cache.getClusters(),
                 mapFrame);
@@ -172,6 +181,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
         // After the fills wherever the two meet, which the layout guarantees: the borders can be
         // lifted clear of a fogged fill, but never sunk under their own fill.
         if (isPaintingBorders) {
+
             ClusterRenderer.renderBordersOnMap(
                 cache.getClusters(),
                 mapFrame);
@@ -202,6 +212,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // wrapped as the highlight's source, so the framework's pass asks this layer what the cursor is
     // on rather than reading the layer's model itself.
     private void renderHoverHighlight(MapFrame mapFrame) {
+
         hoverHighlightRenderer.renderCursorHighlightOnMap(
             new OwnerMapHoverHighlightSource(cache.getClusters()),
             cache.getClusters().getGlobalStyle().hoverHighlight(),
@@ -229,9 +240,11 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // so the once-flag only trips when the line actually emits. Set KMU log verbosity to DEBUG in
     // LunaLib to see it.
     private void logFirstRenderOnce(MapFrame mapFrame) {
+
         if (hasLoggedFirstRender || !LOG.isDebugEnabled()) {
             return;
         }
+
         hasLoggedFirstRender = true;
 
         // Reported in the terms of whichever view is live, the same words the rebuild's own line

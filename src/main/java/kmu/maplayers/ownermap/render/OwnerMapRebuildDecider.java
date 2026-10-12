@@ -70,6 +70,7 @@ final class OwnerMapRebuildDecider {
     private CellCutInputs lastCellCut;
 
     OwnerMapRebuildDecider(SectorMapMachinery machinery, OwnerMapBodyPreferences bodyPreferences) {
+
         this.machinery = machinery;
         this.bodyPreferences = bodyPreferences;
     }
@@ -115,21 +116,7 @@ final class OwnerMapRebuildDecider {
             ScreenMemoryScope memoryScope,
             boolean hasNothingBuilt) {
 
-        // What the cells would be cut from right now. The reachable-set revision alone does not
-        // answer that: the frontier resolution, the cell reach and the two visibility overrides
-        // each reseed every cell without it moving, so all four are read into one value and the
-        // staleness question is asked of that value rather than of the signal.
-        //
-        // This is also the rebuild's one sampling of the visibility rules: the cut, the fills and
-        // the bands all resolve under what it holds, so a gate flipped mid-rebuild cannot leave
-        // cells cut under one rule and painted under another.
-        var cellCut = new CellCutInputs(
-            machinery.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
-            new CellSeedInputs(
-                KmuOwnerMapGeometrySettings.getOwnerMapCellBoundSegments(),
-                KmuOwnerMapGeometrySettings.getOwnerMapCellRadius()),
-            MapVisibilityRules.readFromLunaSettings());
-
+        var cellCut = sampleCellCutInputs();
         var isCellCutStale = !cellCut.equals(lastCellCut);
 
         // The rebuild's one sampling of the sidebar preferences, taken here beside the cut's for
@@ -149,11 +136,7 @@ final class OwnerMapRebuildDecider {
         // Read once and folded into both revisions below, so the two cannot be taken over two
         // readings of the settings or the view's live inputs.
         var viewRevision = computeViewRevision(view);
-
         var contentRevision = computeContentRevision(viewRevision, contentInputs);
-        var isContentStale = isCellCutStale
-            || hasNothingBuilt
-            || contentRevision != lastContentRevision;
 
         return new StaleHalves(
             cellCut,
@@ -161,7 +144,7 @@ final class OwnerMapRebuildDecider {
             contentInputs,
             contentRevision,
             computeHoldingRevision(viewRevision, contentInputs),
-            isContentStale);
+            isContentStale(isCellCutStale, hasNothingBuilt, contentRevision));
     }
 
     /**
@@ -242,9 +225,40 @@ final class OwnerMapRebuildDecider {
     // what keeps the shared pipeline free of any one view's vocabulary: a view that samples nothing
     // contributes a constant and is never churned by a change it does not render.
     private int computeViewRevision(OwnerPaintedView view) {
+
         return Objects.hash(
             KmuLunaSettings.getSettingsRevision(),
             view.getId(),
             view.getContentRevision(machinery.resolveRefreshBoard()));
+    }
+
+    // The clusters rebuild over any recut, since every cell they group was reseeded; before the
+    // first build, whatever the revision says; and on any move of the content revision.
+    private boolean isContentStale(
+            boolean isCellCutStale,
+            boolean hasNothingBuilt,
+            int contentRevision) {
+
+        return isCellCutStale
+            || hasNothingBuilt
+            || contentRevision != lastContentRevision;
+    }
+
+    // What the cells would be cut from right now. The reachable-set revision alone does not answer
+    // that: the frontier resolution, the cell reach and the two visibility overrides each reseed
+    // every cell without it moving, so all four are read into one value and the staleness question
+    // is asked of that value rather than of the signal.
+    //
+    // This is also the rebuild's one sampling of the visibility rules: the cut, the fills and the
+    // bands all resolve under what it holds, so a gate flipped mid-rebuild cannot leave cells cut
+    // under one rule and painted under another.
+    private CellCutInputs sampleCellCutInputs() {
+
+        return new CellCutInputs(
+            machinery.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
+            new CellSeedInputs(
+                KmuOwnerMapGeometrySettings.getOwnerMapCellBoundSegments(),
+                KmuOwnerMapGeometrySettings.getOwnerMapCellRadius()),
+            MapVisibilityRules.readFromLunaSettings());
     }
 }

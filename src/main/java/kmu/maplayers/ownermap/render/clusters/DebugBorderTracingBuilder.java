@@ -3,20 +3,19 @@ package kmu.maplayers.ownermap.render.clusters;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
-import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
-import kmu.maplayers.base.theme.RenderStyle;
+import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.style.MapStyling;
-import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.UnownedStyleResolver;
 
 import java.util.List;
@@ -66,40 +65,20 @@ public final class DebugBorderTracingBuilder {
             geometryCache.getSystemKeyByCellKey(),
             owners.ownerBySystemKey());
 
-        // The same inhabitation answer the production build classifies its unowned cells by,
-        // off the same source, so the overlay shows the cells the map would show.
-        var inhabitedSystemKeys = owners.inhabitedSystemKeys();
-
-        // The same trace and the same theme the production build reads, so a stage captured here is
-        // the geometry the normal render would have drawn rather than one this builder assembled
-        // from its own reads of the same knobs. The whole theme rather than the smoothing alone,
-        // because the unowned pass below indexes into it by category - read twice, the outlines
-        // could be gated by one reading of the knobs and smoothed by another.
-        //
-        // The theme arrives with the rebuild rather than being read here: the names over this
-        // overlay are styled from the same scheme, and a second reading could style them under
-        // knobs the outlines were not traced under.
-        var borderTrace = styling.borderTrace();
-        var renderStyle = styling.renderStyle();
-        var categories = styling.categories();
-
         var stageCollector = new ClusterBorderStageCollector();
 
-        addClusterOutlines(
-            geometryCache,
-            cellGrouping,
-            borderTrace,
-            renderStyle.global().borderSmoothing(),
-            stageCollector);
+        // Both passes take the rebuild's one styling whole rather than reading the knobs here: the
+        // names over this overlay are styled from the same scheme, and a second reading could trace
+        // or gate the outlines under knobs the names were not styled under.
+        addClusterOutlines(geometryCache, cellGrouping, styling, stageCollector);
 
-        // Only the rounding half: the unowned pass has no sanding stage to capture, so the
-        // sanding numbers never reach it.
+        // The same inhabitation answer the production build classifies its unowned cells by,
+        // off the same source, so the overlay shows the cells the map would show.
         addUnownedOutlines(
             geometryCache,
             cellGrouping,
-            inhabitedSystemKeys,
-            renderStyle,
-            categories,
+            owners.inhabitedSystemKeys(),
+            styling,
             stageCollector);
 
         return stageCollector.buildOverlay();
@@ -109,12 +88,17 @@ public final class DebugBorderTracingBuilder {
     // clusters, so no neighbour is coincident: every boundary edge takes the uniform channel,
     // exactly as the drawn cluster border does. A cluster whose trace yields no ring has nothing
     // to show at any stage and is skipped.
+    //
+    // The same trace and smoothing the production build reads, so a stage captured here is the
+    // geometry the normal render would have drawn.
     private static void addClusterOutlines(
             CellGeometryCache geometryCache,
             CellGrouping cellGrouping,
-            ClusterBorderTrace borderTrace,
-            BorderSmoothingStyle borderSmoothing,
+            MapStyling styling,
             ClusterBorderStageCollector stageCollector) {
+
+        var borderTrace = styling.borderTrace();
+        var borderSmoothing = styling.renderStyle().global().borderSmoothing();
 
         for (var memberCellKeys : cellGrouping.groupCellKeysByOwner().values()) {
 
@@ -129,54 +113,23 @@ public final class DebugBorderTracingBuilder {
         }
     }
 
-    // Appends each drawn unowned cell's outline as a base loop and, when rounding is
-    // gated on, a rounded loop. An unowned cell is a single convex inset polygon - no
-    // chaining, no spikes to sand - so its two stages are the raw inset (base) and its
-    // rounded corners, produced through the same shared rounding the clusters use. Skips
-    // owned cells (traced as clusters above) and any category whose outline is "No color",
-    // matching the normal render's visibility so the overlay stays legible.
+    // Appends each unowned cell the normal render outlines, so the overlay stays as legible as
+    // the map it explains.
     private static void addUnownedOutlines(
             CellGeometryCache geometryCache,
             CellGrouping cellGrouping,
             Set<SystemKey> inhabitedSystemKeys,
-            RenderStyle renderStyle,
-            OwnerCategories categories,
+            MapStyling styling,
             ClusterBorderStageCollector stageCollector) {
 
-        // The rebuild's one reading of the theme, handed over whole rather than re-read here, so a
-        // category resolved by the shared rule indexes straight into it - the same lookup the
-        // production draw makes, which is what keeps the overlay showing the cells the map would
-        // show.
-        var cornerRounding = renderStyle.global().borderSmoothing().cornerRounding();
+        // Only the rounding half: an unowned cell has no sanding stage to capture, so the sanding
+        // numbers never reach it.
+        var cornerRounding = styling.renderStyle().global().borderSmoothing().cornerRounding();
 
         for (var entry : geometryCache.getCellEdgesByCellKey().entrySet()) {
-            if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {
-                continue;
-            }
-            // An unowned cell resolves its settled or empty style through the system it
-            // draws as; a cell with no system of its own is empty.
-            var drawnSystemKey = cellGrouping.resolveDrawnSystemKeyOf(entry.getKey());
-            var style = renderStyle.categoryStyle(categories.resolveUnownedCategory(
-                UnownedStyleResolver.isSettledSystem(inhabitedSystemKeys, drawnSystemKey)));
 
-            if (!style.outer().isDrawn()) {
-                continue;
-            }
-            var shaped = CellShaper.shapeCell(
-                entry.getValue(),
-                null,
-                cellGrouping.ownerBySystemKey(),
-                EdgeInset.asTheMapDraws());
-
-            if (shaped.fillPolygon().isEmpty()) {
-                continue;
-            }
-            var base = List.of(shaped.fillPolygon());
-            stageCollector.captureBaseStage(base);
-
-            if (cornerRounding.shouldRoundCorners()) {
-                stageCollector.captureRoundedStage(
-                    BorderSmoothing.roundBorderCorners(base, cornerRounding));
+            if (isUnownedOutlineDrawn(entry.getKey(), cellGrouping, inhabitedSystemKeys, styling)) {
+                captureUnownedStages(entry.getValue(), cellGrouping, cornerRounding, stageCollector);
             }
         }
     }
@@ -194,10 +147,13 @@ public final class DebugBorderTracingBuilder {
             ClusterBorderStageCollector stageCollector) {
 
         var base = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
+
         stageCollector.captureBaseStage(base);
+
         var smoothed = base;
 
         if (borderSmoothing.spikeSanding().shouldSandSpikes()) {
+
             smoothed = BorderSmoothing.sandBorderSpikes(
                 smoothed,
                 borderSmoothing.spikeSanding());
@@ -205,11 +161,70 @@ public final class DebugBorderTracingBuilder {
             stageCollector.captureDespikedStage(smoothed);
         }
         if (borderSmoothing.cornerRounding().shouldRoundCorners()) {
+
             smoothed = BorderSmoothing.roundBorderCorners(
                 smoothed,
                 borderSmoothing.cornerRounding());
 
             stageCollector.captureRoundedStage(smoothed);
         }
+    }
+
+    // One unowned cell's two stages: its raw inset as the base and, when rounding is gated on, its
+    // rounded corners through the same shared rounding the clusters use. An unowned cell is a
+    // single convex inset polygon - no chaining, no spikes to sand. A cell whose shape comes back
+    // empty has nothing to show at either stage.
+    private static void captureUnownedStages(
+            List<CellEdge> cellEdges,
+            CellGrouping cellGrouping,
+            CornerRoundingStyle cornerRounding,
+            ClusterBorderStageCollector stageCollector) {
+
+        var shaped = CellShaper.shapeCell(
+            cellEdges,
+            null,
+            cellGrouping.ownerBySystemKey(),
+            EdgeInset.asTheMapDraws());
+
+        if (shaped.fillPolygon().isEmpty()) {
+            return;
+        }
+
+        var base = List.of(shaped.fillPolygon());
+
+        stageCollector.captureBaseStage(base);
+
+        if (cornerRounding.shouldRoundCorners()) {
+
+            stageCollector.captureRoundedStage(
+                BorderSmoothing.roundBorderCorners(base, cornerRounding));
+        }
+    }
+
+    // Whether the normal render outlines this cell as unowned. An owned cell is traced as part of
+    // its cluster instead, and a category whose outline is "No colour" draws nothing.
+    //
+    // The category resolves through the system the cell draws as, settled or empty - a cell with no
+    // system of its own is empty - and indexes straight into the rebuild's theme: the same lookup
+    // the production draw makes.
+    private static boolean isUnownedOutlineDrawn(
+            SystemKey cellKey,
+            CellGrouping cellGrouping,
+            Set<SystemKey> inhabitedSystemKeys,
+            MapStyling styling) {
+
+        if (cellGrouping.resolveOwnerOf(cellKey) != null) {
+            return false;
+        }
+
+        var drawnSystemKey = cellGrouping.resolveDrawnSystemKeyOf(cellKey);
+        var category = styling.categories().resolveUnownedCategory(
+            UnownedStyleResolver.isSettledSystem(inhabitedSystemKeys, drawnSystemKey));
+
+        return styling
+            .renderStyle()
+            .categoryStyle(category)
+            .outer()
+            .isDrawn();
     }
 }
