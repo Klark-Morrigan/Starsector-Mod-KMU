@@ -152,7 +152,7 @@ the layering gate closes it to `exerelin`.
 | An ally keeps a concealed colony's secret | live alliance membership | `MapLayers.registerFactionAlliances` -> `FactionAllianceRegistry` |
 | Alliance changes repaint | alliance fingerprint, every poll | `PoliticalMapStalenessSource.markAllianceSetChange` |
 | A conquest repaints at once | `InvasionListener.reportMarketTransfered` | relay -> `PoliticalMapMarketTransferListener` |
-| Filter-row toggle tooltip mentions alliances | mod presence | `VanillaMapLayerToggleAttacher` |
+| Filter-row toggle tooltip mentions alliances | mod presence | `MapLayers.registerAllianceViewAvailability` -> `VanillaMapLayerToggleAttacher` |
 
 An alliance change reaches the picture through the poll.
 The fingerprint moving raises `PoliticalMapRefreshSignal.ALLIANCES`;

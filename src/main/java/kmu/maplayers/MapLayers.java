@@ -1,9 +1,13 @@
 package kmu.maplayers;
 
+import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
 import kmlib.starsector.settings.VanillaCommonDataStore;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 
+import kmu.maplayers.base.chrome.VanillaMapLayerToggleAttacher;
 import kmu.maplayers.base.compatibility.MapLayerGameReach;
+import kmu.maplayers.base.hover.cover.MapCover;
+import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.layer.LiveMapLayerArrangement;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
@@ -19,6 +23,7 @@ import kmu.maplayers.politicalmap.views.AlliancesView;
 import kmu.maplayers.politicalmap.views.ClaimsView;
 import kmu.maplayers.politicalmap.views.FactionsView;
 import kmu.mods.nexerelin.NexerelinAlliances;
+import kmu.mods.rat.RandomAssortmentOfThingsMinimapCover;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,8 +58,8 @@ public final class MapLayers {
 
     /**
      * Registers the layers the on-map bar shows, where the player's own arrangement of that bar is
-     * read from, the concealed colonies the sector openly points at, and where the live alliance set
-     * is read from.
+     * read from, the concealed colonies the sector openly points at, where the live alliance set
+     * is read from, and what the installed optional mods add to the hover and the filter row.
      * Called once at application load, before any
      * sector map can open. No Layer leads so the "show nothing" pick is the first tab; the
      * political-map tab hosts the view-selector radio over the roster {@link #selectPoliticalMapViews}
@@ -65,6 +70,8 @@ public final class MapLayers {
 
         registerOpenlyKnownColonies();
         registerFactionAlliances();
+        registerOptionalModCovers();
+        registerAllianceViewAvailability();
 
         // KMU's own two, in the order they stand on the strip. The empty view leads it without
         // offering itself as the pick, which is what leaves a fresh save opening on the political map.
@@ -124,9 +131,38 @@ public final class MapLayers {
     static void registerFactionAlliances() {
 
         if (NexerelinAlliances.isAvailable()) {
+
             FactionAllianceRegistry.registerAllianceSource(
                 NexerelinAlliances::resolveFactionAlliances);
         }
+    }
+
+    /**
+     * Hands the hover the covers the installed optional mods lay over the map, so the framework
+     * never names an adapter.
+     *
+     * <p>Composed only where the mod is present, which is safe to settle here: the mod set is fixed
+     * for the launch. An install without the mod then never holds the cover, rather than asking one
+     * every frame that could only ever answer no.
+     */
+    static void registerOptionalModCovers() {
+
+        var covers = new ArrayList<MapCover>();
+
+        if (RandomAssortmentOfThingsPresence.isModEnabled()) {
+            covers.add(RandomAssortmentOfThingsMinimapCover.createForLiveScreen());
+        }
+
+        MapCoverReader.registerOptionalModCovers(covers);
+    }
+
+    /**
+     * Tells the filter row's tick box whether the political map offers an alliances view, so its
+     * hover lists the views the radio actually has. The same gate {@link #selectPoliticalMapViews}
+     * registers the view behind.
+     */
+    static void registerAllianceViewAvailability() {
+        VanillaMapLayerToggleAttacher.registerAllianceViewAvailability(NexerelinAlliances::isAvailable);
     }
 
     /**
@@ -143,6 +179,7 @@ public final class MapLayers {
     static List<OwnerPaintedView> selectPoliticalMapViews() {
 
         var views = new ArrayList<OwnerPaintedView>();
+
         views.add(FactionsView.INSTANCE);
 
         if (NexerelinAlliances.isAvailable()) {
@@ -150,6 +187,7 @@ public final class MapLayers {
         }
 
         views.add(ClaimsView.INSTANCE);
+
         return List.copyOf(views);
     }
 }

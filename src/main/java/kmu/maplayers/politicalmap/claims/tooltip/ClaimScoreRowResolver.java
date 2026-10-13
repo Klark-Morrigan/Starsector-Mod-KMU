@@ -13,6 +13,7 @@ import kmu.maplayers.base.tooltip.content.TermTooltipLine;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.tooltip.AccountedColony;
 import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -109,6 +110,7 @@ final class ClaimScoreRowResolver {
         if (standing instanceof WeighedClaimStanding weighedStanding) {
             return resolveWeighedRows(weighedStanding, listedMarkets, reading);
         }
+
         return resolvePresenceOnlyRows(listedMarkets, reading);
     }
 
@@ -154,6 +156,7 @@ final class ClaimScoreRowResolver {
         if (isEveryListedMarketCounted(listedMarkets)) {
             resolveSiblingEntry(standing).ifPresent(entries::add);
         }
+
         return List.copyOf(entries);
     }
 
@@ -173,6 +176,7 @@ final class ClaimScoreRowResolver {
         var entries = new ArrayList<CellTooltipEntry>(listedMarkets.size());
 
         for (var market : listedMarkets) {
+
             entries.add(resolveMarketEntry(
                 createMarketLine(
                     market,
@@ -182,6 +186,7 @@ final class ClaimScoreRowResolver {
                 NOTHING_TOOK_THE_SYSTEM,
                 reading));
         }
+
         return List.copyOf(entries);
     }
 
@@ -205,12 +210,13 @@ final class ClaimScoreRowResolver {
         if (siblingMarketCount <= NO_SIBLING_MARKETS) {
             return Optional.empty();
         }
+
         // A note about the list rather than one of the faction's holdings - the arithmetic of a term
         // all of them share - so it reads as quietly as the working inside any other value, down to
         // its name, and only the points it comes to stay a finding.
         return Optional.of(CellTooltipEntry.createEntry(TermTooltipLine
             .buildTermLine(
-                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_BONUS),
+                KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_BONUS),
                 formatBonus(siblingMarketCount))
             .derivesValueFrom(formatSiblingWorking(siblingMarketCount))
             .readsAsAside()));
@@ -238,7 +244,7 @@ final class ClaimScoreRowResolver {
         // for every box at once. Stated here, the precedence would be a second copy of a rule the
         // sharing exists to have one of.
         var leadingFinding = isHoldingTheClaim
-            ? KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER)
+            ? KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER)
             : NO_LEADING_FINDING;
 
         // Described whatever the contest made of the market, because neither what sort of place a
@@ -288,7 +294,7 @@ final class ClaimScoreRowResolver {
         // other number on screen accounts for.
         return line.indexedAt(
             KmuStringKeys.format(
-                KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION,
+                KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION,
                 KmlibNumbers.formatGroupedInteger(market.listingPosition())),
             indexOutcome);
     }
@@ -315,7 +321,9 @@ final class ClaimScoreRowResolver {
             market.marketNameplate().displayName(),
             resolveContestScore(market));
 
-        return market.isScoredOnItsOwnAccount() ? line : line.statesUncountedValue();
+        return market.isScoredOnItsOwnAccount()
+            ? line
+            : line.statesUncountedValue();
     }
 
     // A market the box may not name, carrying a number only where the faction's own line above already
@@ -336,7 +344,9 @@ final class ClaimScoreRowResolver {
             ? RedactedMarketLines.createCountedRedactedLine(market, resolveContestScore(market))
             : RedactedMarketLines.createRedactedLine(market, CellTooltipEntryLine.NO_SCORE);
 
-        return market.isScoredOnItsOwnAccount() ? line : line.statesUncountedValue();
+        return market.isScoredOnItsOwnAccount()
+            ? line
+            : line.statesUncountedValue();
     }
 
     // Whether a blocked-out row states a number at all: the nought of a market the contest never
@@ -346,7 +356,8 @@ final class ClaimScoreRowResolver {
             MarketClaimBreakdown market,
             boolean isCarryingTheStanding) {
 
-        return !market.isScoredOnItsOwnAccount() || isCarryingTheStanding;
+        return !market.isScoredOnItsOwnAccount()
+            || isCarryingTheStanding;
     }
 
     // What a market brought to the contest. An open market brings its score; a hidden one brings
@@ -358,7 +369,10 @@ final class ClaimScoreRowResolver {
     // the arithmetic's, and a nought printed against a size the reader can see needs the word beside
     // it to be a finding rather than a fault.
     private static int resolveContestScore(MarketClaimBreakdown market) {
-        return market.isScoredOnItsOwnAccount() ? market.computeTotalScore() : NO_CONTEST_SCORE;
+
+        return market.isScoredOnItsOwnAccount()
+            ? market.computeTotalScore()
+            : NO_CONTEST_SCORE;
     }
 
     // The terms of one market's score that are the market's own: the size it starts from, and what a
@@ -388,16 +402,17 @@ final class ClaimScoreRowResolver {
 
             return List.of();
         }
+
         var entries = new ArrayList<CellTooltipEntry>();
 
         // Always stated, even where it is the whole score: it is the term the sum starts from, and a
         // market listing no term at all would read as a number with no account behind it.
         entries.add(TermTooltipLine.buildTermEntry(
-            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
+            KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
             KmlibNumbers.formatGroupedInteger(market.marketSize())));
 
         market.militaryBonus().ifPresent(bonus -> entries.add(TermTooltipLine.buildTermEntry(
-            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY),
+            KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY),
             formatBonus(bonus))));
 
         return entries;
@@ -408,8 +423,9 @@ final class ClaimScoreRowResolver {
     // reaches it, unlike the dominance side's (MarketFactorText): a claim score is a small whole number
     // of points with no grid behind it.
     private static String formatBonus(int amount) {
+
         return KmuStringKeys.format(
-            KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_BONUS,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_BONUS,
             KmlibNumbers.formatGroupedInteger(amount));
     }
 
@@ -422,8 +438,9 @@ final class ClaimScoreRowResolver {
     // does not count as its own sibling. The two sides nevertheless read the same number, because the
     // mechanic pays a flat point per sibling: the count is the term.
     private static String formatSiblingWorking(int siblingMarketCount) {
+
         return KmuStringKeys.format(
-            KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_WORKING,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_WORKING,
             KmlibNumbers.formatGroupedInteger(siblingMarketCount + THE_MARKET_BEING_SCORED));
     }
 
@@ -458,6 +475,7 @@ final class ClaimScoreRowResolver {
     // one the listing rule draws, so the list can be contradicted by an uncounted line but never
     // falls short of the count.
     private static boolean isEveryListedMarketCounted(List<MarketClaimBreakdown> listedMarkets) {
+
         return listedMarkets
             .stream()
             .noneMatch(MarketClaimBreakdown::isOffEconomyMarket);

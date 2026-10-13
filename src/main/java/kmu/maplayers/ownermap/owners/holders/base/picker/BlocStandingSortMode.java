@@ -10,6 +10,7 @@ import kmu.maplayers.ownermap.picker.OwnerMetricSortMode;
 import kmu.maplayers.ownermap.picker.OwnerMetrics;
 import kmu.maplayers.ownermap.picker.OwnerSortModeComposer;
 import kmu.maplayers.ownermap.picker.RankedOwner;
+import kmu.util.KmuOwnerMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.awt.Color;
@@ -157,7 +158,7 @@ public final class BlocStandingSortMode<S extends OwnerMetrics>
      */
     @Override
     public String resolveLabelText() {
-        return KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_SORT_ATTITUDE);
+        return KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_SORT_ATTITUDE);
     }
 
     /**
@@ -199,7 +200,7 @@ public final class BlocStandingSortMode<S extends OwnerMetrics>
         return List.of(
             lowestRun,
             new TextSpan(
-                KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_SORT_ATTITUDE_RANGE_SEPARATOR),
+                KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_SORT_ATTITUDE_RANGE_SEPARATOR),
                 defaultColour).joinsPreviousRun(),
             resolveRelationRun(range.highest()).joinsPreviousRun());
     }

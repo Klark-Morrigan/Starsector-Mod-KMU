@@ -1,6 +1,6 @@
 package kmu.conditions.ui.editor;
 
-import kmu.ui.context.KmuMarketUiContext;
+import kmu.conditions.ui.context.KmuMarketUiContext;
 
 import java.util.Optional;
 

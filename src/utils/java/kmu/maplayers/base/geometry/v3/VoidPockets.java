@@ -3,10 +3,10 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
-import kmu.maplayers.base.geometry.BareVoidBoundary;
 import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidHole;
+import kmu.maplayers.base.geometry.walls.BareVoidBoundary;
 import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 
 import java.util.ArrayList;

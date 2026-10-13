@@ -9,7 +9,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.factions.FactionTooltipLine;
 import kmu.maplayers.politicalmap.dominance.standings.FactionStanding;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
-import kmu.maplayers.politicalmap.dominance.standings.StandingFraction;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -134,7 +134,7 @@ public final class StandingRowResolver {
         }
 
         return line.qualifiedWith(KmuStringKeys.format(
-            KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION,
             fraction.count(),
             fraction.total()));
     }

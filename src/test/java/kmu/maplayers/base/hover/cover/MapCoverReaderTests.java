@@ -1,15 +1,12 @@
 package kmu.maplayers.base.hover.cover;
 
-import kmlib.mods.console.ConsoleCommandsPresence;
-import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
-
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins the composition rule the covers are asked under: any one of them covers the map, and the
@@ -72,62 +69,53 @@ final class MapCoverReaderTests {
     @Nested
     class ComposeLiveCovers {
 
-        @Test
-        void asksWhateverStandsTheSidebarDownBeforeTheSidebarItself() {
-            // Load-bearing rather than incidental, and the one ordering a later cover could break by
-            // being inserted between them: a modal and the codex each stand the sidebar down, so
-            // behind either the sidebar's cover resolves placements for a panel that is not drawn,
-            // to reach a false it can no longer avoid. Pinned on its own because the full-list
-            // assertion below would report a break in it as a mismatch about optional mods.
-            // Presence stubbed for the same reason the case below stubs it: both are always-present
-            // covers, so what the optional mods would add says nothing about the order between them.
-            try (var consoleMock = mockStatic(ConsoleCommandsPresence.class);
-                    var minimapModMock = mockStatic(RandomAssortmentOfThingsPresence.class)) {
-
-                consoleMock
-                    .when(ConsoleCommandsPresence::isModEnabled)
-                    .thenReturn(false);
-                minimapModMock
-                    .when(RandomAssortmentOfThingsPresence::isModEnabled)
-                    .thenReturn(false);
-
-                var coverTypes = MapCoverReader.composeLiveCovers()
-                    .stream()
-                    .map(Object::getClass)
-                    .toList();
-
-                assertThat(coverTypes.indexOf(ModalDialogMapCover.class))
-                    .isLessThan(coverTypes.indexOf(SidebarMapCover.class));
-                assertThat(coverTypes.indexOf(CodexMapCover.class))
-                    .isLessThan(coverTypes.indexOf(SidebarMapCover.class));
-            }
+        @AfterEach
+        void forgetTheRegisteredCovers() {
+            // Process state, so a case that registers covers would otherwise leave them composed
+            // into every reader a later suite builds.
+            MapCoverReader.registerOptionalModCovers(List.of());
         }
 
         @Test
-        void leavesAnOptionalModsCoverOutWhereThatModIsNotInstalled() {
-            // Presence cannot move within a run, so it is settled here rather than asked per frame
-            // by a cover that could only ever answer no. Without the gate the two would be composed
-            // on every install, and the dearest of them walks the whole core UI.
-            try (var consoleMock = mockStatic(ConsoleCommandsPresence.class);
-                    var minimapModMock = mockStatic(RandomAssortmentOfThingsPresence.class)) {
+        void asksTheScreenClaimBeforeTheSidebar() {
+            // Load-bearing rather than incidental, and the one ordering a later cover could break by
+            // being inserted between them: everything the claim reads stands the sidebar down, so
+            // behind it the sidebar's cover resolves placements for a panel that is not drawn, to
+            // reach a false it can no longer avoid. Pinned on its own because the full-list
+            // assertion below would report a break in it as a mismatch about the whole set.
+            var coverTypes = MapCoverReader.composeLiveCovers()
+                .stream()
+                .map(Object::getClass)
+                .toList();
 
-                consoleMock
-                    .when(ConsoleCommandsPresence::isModEnabled)
-                    .thenReturn(false);
-                minimapModMock
-                    .when(RandomAssortmentOfThingsPresence::isModEnabled)
-                    .thenReturn(false);
+            assertThat(coverTypes.indexOf(ScreenClaimMapCover.class))
+                .isLessThan(coverTypes.indexOf(SidebarMapCover.class));
+        }
 
-                assertThat(MapCoverReader.composeLiveCovers())
-                    .hasExactlyElementsOfTypes(
-                        HeldPointerMapCover.class,
-                        PauseMenuMapCover.class,
-                        ArrangementDialogMapCover.class,
-                        CodexMapCover.class,
-                        ModalDialogMapCover.class,
-                        SidebarMapCover.class,
-                        VanillaChromeMapCover.class);
-            }
+        @Test
+        void composesTheFrameworksOwnCoversWhereNoOptionalModRegisteredOne() {
+            // An install with no optional mod: the composition root registers nothing, so nothing
+            // is asked per frame that could only ever answer no.
+            assertThat(MapCoverReader.composeLiveCovers())
+                .hasExactlyElementsOfTypes(
+                    HeldPointerMapCover.class,
+                    PauseMenuMapCover.class,
+                    ScreenClaimMapCover.class,
+                    SidebarMapCover.class,
+                    VanillaChromeMapCover.class);
+        }
+
+        @Test
+        void asksTheRegisteredCoversAfterTheFrameworksOwn() {
+            // The optional mods' covers are the dearest - the minimap's walks the whole core UI - so
+            // they are asked only once every cover of the framework's own has answered no.
+            var registeredCoverFake = new MapCoverFake(IS_COVERING);
+
+            MapCoverReader.registerOptionalModCovers(List.of(registeredCoverFake));
+
+            assertThat(MapCoverReader.composeLiveCovers())
+                .last()
+                .isSameAs(registeredCoverFake);
         }
     }
 }

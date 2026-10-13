@@ -1,7 +1,5 @@
 package kmu.conditions.ui.picker.render;
 
-import kmu.ui.geometry.KmuUiSize;
-
 /**
  * Pure geometry helpers for sizing condition icon buttons.
  * Kept separate from {@link KmuConditionIconButton} so the grid and

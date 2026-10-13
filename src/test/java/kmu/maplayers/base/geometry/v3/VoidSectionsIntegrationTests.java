@@ -3,6 +3,8 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
+import kmu.maplayers.base.geometry.LoadedSectors;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -12,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static kmu.maplayers.base.geometry.LoadedSectors.loadFixture;
 import static kmu.maplayers.base.geometry.v3.SectorPipeline.layEveryWall;
-import static kmu.maplayers.base.geometry.v3.SectorPipeline.loadFixture;
 import static kmu.maplayers.base.geometry.v3.SectorPipeline.traceContinentCoast;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class VoidSectionsIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     // What a key of each kind opens with, spelled out rather than read off the code that
     // builds them, so a prefix that drifted would be caught here rather than followed.

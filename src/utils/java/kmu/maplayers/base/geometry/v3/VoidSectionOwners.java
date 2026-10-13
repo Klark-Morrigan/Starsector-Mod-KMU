@@ -72,7 +72,7 @@ public final class VoidSectionOwners {
          *
          * @return whether it was contested at all
          */
-        boolean isContested() {
+        public boolean isContested() {
             return claims.size() > 1;
         }
     }
@@ -85,7 +85,7 @@ public final class VoidSectionOwners {
      *                    site is unowned
      * @return the owner and the field it beat
      */
-    static SectionOwner resolveSectionOwner(
+    public static SectionOwner resolveSectionOwner(
             VoidSection section,
             List<String> ownerBySite) {
 

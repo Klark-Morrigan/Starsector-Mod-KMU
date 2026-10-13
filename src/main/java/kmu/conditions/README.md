@@ -22,6 +22,7 @@ see the [mod README](../../../../../README.md) for project context.
 | Package | What is in it |
 | --- | --- |
 | `domain` | the conditions the game knows (`KmuConditionRepository`), the market being edited (`KmuEditableMarket`), which conditions may be offered (`KmuConditionOfferPolicy`), and the service that lists and adds them (`KmuConditionService`) |
+| `ui.context` | which market a UI is open on (`KmuMarketUiContext`), the resolver that finds it, and the tracker that remembers it (`StarsectorMarketUiContextTracker`, installed by `MarketUiContextInstaller`) |
 | `ui.editor` | the entry point that finds the market and opens an editor over it (`KmuConditionEditorEntryPoint`), the editor seam (`KmuConditionEditor`), and the check that the market is one the editor may open on |
 | `ui.picker` | the picker editor: its model, the dialog it opens in, the action a click makes, and how its rows and tooltips are drawn |
 
@@ -29,7 +30,7 @@ see the [mod README](../../../../../README.md) for project context.
 
 `KmuOpenMarketConditionManagerCommand` (`kmu.mods.console.commands`) builds the entry point and asks it to open.
 `KmuConditionEditorEntryPoint` resolves which market the player is looking at
-through `kmu.ui.context`,
+through `ui.context`,
 checks the editor may open on it,
 and hands it to `KmuConditionPickerEditor`.
 The picker opens in an interaction dialog (`StarsectorInteractionDialogPickerOpener`):
@@ -81,9 +82,6 @@ so a player who has not asked for the editor runs none of it.
 
 ## What is not here
 
-- **`kmu.ui.context`** -
-  which market a UI is open on,
-  and the tracker behind it.
 - **[The optional-mod adapters](../mods/README.md)** -
   the console command that opens the picker.
 - **[Settings](../settings/README.md)** -

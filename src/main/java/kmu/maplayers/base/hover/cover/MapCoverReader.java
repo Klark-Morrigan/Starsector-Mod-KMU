@@ -1,11 +1,5 @@
 package kmu.maplayers.base.hover.cover;
 
-import kmlib.mods.console.ConsoleCommandsPresence;
-import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
-
-import kmu.mods.console.ConsoleMapCover;
-import kmu.mods.rat.RandomAssortmentOfThingsMinimapCover;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,33 +18,34 @@ import java.util.List;
  * cover states only its own reading and a further one is a class plus a line in
  * {@link #createForLiveScreen()}.
  *
- * <p>That factory is also where the optional mods' covers join or do not: a mod's cover is
- * composed only where the mod is installed at all, the same gate its installer stands behind.
- * Presence is the one condition that cannot move within a run, so it is answered once at
- * composition; everything that can move - a console opening, the compatibility mode, the minimap's
- * own switch - stays each cover's own live read.
+ * <p>The optional mods' covers are registered by the composition root, which is the one place that
+ * names what is installed, so this framework never names an adapter. The root registers a mod's
+ * cover only where the mod is installed at all, the same gate its installer stands behind. Presence
+ * is the one condition that cannot move within a run, so it is answered once; everything that can
+ * move - the compatibility mode, the minimap's own switch - stays each cover's own live read.
  */
 public final class MapCoverReader {
+
+    // The optional mods' covers, registered once at application load and asked after every cover
+    // of the framework's own. Empty until then, which is what an install with no such mod reads.
+    private static List<MapCover> optionalModCovers = List.of();
 
     // The order the covers are asked in, stated here and nowhere else. Ascending cost, since the
     // first cover to answer ends the read:
     //
     // 1. HeldPointerMapCover - a polled mouse flag;
     // 2. PauseMenuMapCover - a published one-call read;
-    // 3. ArrangementDialogMapCover - this mod's own dialog state;
-    // 4. ConsoleMapCover - the console's settled flag;
-    // 5. CodexMapCover - one hop off the app state;
-    // 6. ModalDialogMapCover - a walk of the core UI's own children;
-    // 7. SidebarMapCover - arithmetic over a box this mod laid out;
-    // 8. VanillaChromeMapCover - a walk into the map tab's own layout;
-    // 9. RandomAssortmentOfThingsMinimapCover - a walk of the surfaces another mod put on screen,
-    //    the dearest because it is rooted above every tab.
+    // 3. ScreenClaimMapCover - a console's settled flag, one hop off the app state for the codex,
+    //    this mod's own dialog state, then a walk of the core UI's own children for a modal;
+    // 4. SidebarMapCover - arithmetic over a box this mod laid out;
+    // 5. VanillaChromeMapCover - a walk into the map tab's own layout;
+    // 6. the optional mods' covers, in the order they were registered - a walk of the surfaces
+    //    another mod put on screen being the dearest, because it is rooted above every tab.
     //
-    // The codex and the modal sit ahead of the sidebar for a reason beyond their cost, stated where
-    // they are composed.
+    // The claim sits ahead of the sidebar for a reason beyond its cost, stated where it is composed.
     //
-    // How many there are is the composition's, not this field's: the two that belong to optional
-    // mods are absent on an install without them, and the order of whatever remains is unchanged.
+    // How many there are is the composition's, not this field's: the optional mods' covers are
+    // absent on an install without them, and the order of whatever remains is unchanged.
     private final List<MapCover> covers;
 
     /**
@@ -67,6 +62,17 @@ public final class MapCoverReader {
      */
     public static MapCoverReader createForLiveScreen() {
         return new MapCoverReader(composeLiveCovers());
+    }
+
+    /**
+     * Records the covers the installed optional mods lay over the map. Called once by the
+     * composition root at application load, before any sector map can open, and so before any
+     * reader is composed.
+     *
+     * @param covers the covers of the mods installed, cheapest first; an empty list where none is
+     */
+    public static void registerOptionalModCovers(List<MapCover> covers) {
+        optionalModCovers = List.copyOf(covers);
     }
 
     /**
@@ -88,31 +94,15 @@ public final class MapCoverReader {
         covers.add(new HeldPointerMapCover());
         covers.add(new PauseMenuMapCover());
 
-        // Beside those two rather than beside the modal walk it behaves like, because it is read like
-        // these: a field on a panel this mod stood up itself, with nothing to search.
-        covers.add(new ArrangementDialogMapCover());
-
-        // Composed only where the mod is present, which is safe to settle here: the mod set is
-        // fixed for the launch, and this factory runs no earlier than the renderer's first ask,
-        // long after the game has stood that set up. An install without the mod then never holds
-        // the cover, rather than asking one every frame that could only ever answer no.
-        if (ConsoleCommandsPresence.isModEnabled()) {
-            covers.add(ConsoleMapCover.createForLiveScreen());
-        }
-
-        // Both of these stand the sidebar down, so they sit ahead of its cover for a reason beyond
-        // their own cost: on every frame either answers, the cover below them is resolving
+        // Everything here stands the sidebar down, so it sits ahead of the sidebar's cover for a
+        // reason beyond its own cost: on every frame it answers, the cover below it is resolving
         // placements for a panel that is not drawn - work spent to reach a false it can no longer
-        // reach anything but. The codex goes first of the two, being one hop where the modal is a
-        // walk; that they are separate covers at all is CodexMapCover's own to explain.
-        covers.add(new CodexMapCover());
-        covers.add(new ModalDialogMapCover());
+        // reach anything but.
+        covers.add(new ScreenClaimMapCover());
         covers.add(new SidebarMapCover());
         covers.add(new VanillaChromeMapCover());
 
-        if (RandomAssortmentOfThingsPresence.isModEnabled()) {
-            covers.add(RandomAssortmentOfThingsMinimapCover.createForLiveScreen());
-        }
+        covers.addAll(optionalModCovers);
         return covers;
     }
 }

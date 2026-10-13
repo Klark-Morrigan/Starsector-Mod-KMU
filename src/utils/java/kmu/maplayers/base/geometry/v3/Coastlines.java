@@ -1005,7 +1005,7 @@ public final class Coastlines {
      * @param point  the {x, y} point to place
      * @return whether any ring holds it
      */
-    static boolean isInsideCoast(List<List<double[]>> coasts, double[] point) {
+    public static boolean isInsideCoast(List<List<double[]>> coasts, double[] point) {
 
         for (var coast : coasts) {
 

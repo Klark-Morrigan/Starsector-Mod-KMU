@@ -5,7 +5,7 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmu.maplayers.ownermap.picker.OwnerMetricSortMode;
 import kmu.maplayers.ownermap.picker.OwnerMetrics;
 import kmu.maplayers.ownermap.picker.RankedOwner;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuOwnerMapStringKeys;
 
 import java.util.List;
 import java.util.function.ToIntFunction;
@@ -47,7 +47,7 @@ public interface SizedBlocMetrics
 
         return new OwnerMetricSortMode<>(
             MARKET_SIZE_PERSISTENCE_KEY,
-            KmuStringKeys.OWNER_MAP_CTL_SORT_MARKET_SIZE,
+            KmuOwnerMapStringKeys.OWNER_MAP_CTL_SORT_MARKET_SIZE,
             SizedBlocMetrics::marketSize,
             canonicalMetricChain);
     }

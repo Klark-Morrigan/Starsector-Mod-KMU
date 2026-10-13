@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmu.maplayers.base.geometry.LoadedSectors;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -18,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class CoastFrontagesIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     @Nested
     class CollectPinchedCells {

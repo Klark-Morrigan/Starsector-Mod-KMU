@@ -16,6 +16,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.UnweighedColony;
 import kmu.maplayers.politicalmap.tooltip.AccountedColony;
 import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.settings.HiddenMarketScalingChoice;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -239,6 +240,7 @@ public final class MarketWeightRowResolver {
         if (!reading.detailLevel().isReadingAtLeast(HoverTooltipDetailLevel.MARKET_STATS)) {
             return List.of();
         }
+
         var rules = reading.rules();
         var entries = new ArrayList<CellTooltipEntry>();
 
@@ -246,8 +248,9 @@ public final class MarketWeightRowResolver {
         // weighting off it moves no factor, and a line for it would read as a cause of cuts that
         // are all zero.
         if (rules.isStabilityWeighted()) {
+
             entries.add(TermTooltipLine.buildTermEntry(
-                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY),
+                KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY),
                 MarketFactorText.formatStability(breakdown.marketStability())));
         }
         entries.add(resolveBaseSizeEntry(breakdown, rules));
@@ -280,10 +283,13 @@ public final class MarketWeightRowResolver {
             MarketWeightBreakdown breakdown,
             StationFactor station) {
 
-        var stationName = station.stationNameplate().displayName();
+        var stationName = station
+            .stationNameplate()
+            .displayName();
 
         if (breakdown.isStationMarket()
                 && stationName.equals(breakdown.marketNameplate().displayName())) {
+
             return MarketFactorText.formatMilitaryStationName(stationName);
         }
         return stationName;
@@ -302,13 +308,15 @@ public final class MarketWeightRowResolver {
 
         var isFixedRating = isFixedRating(breakdown, rules);
         var line = TermTooltipLine.buildTermLine(
-            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
+            KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
             MarketFactorText.formatBaseSize(breakdown.baseSize(), isFixedRating));
 
         if (isFixedRating) {
+
             line = line.derivesValueFrom(
                 MarketFactorText.formatRawSizeWorking(breakdown.baseSize().rawMarketSize()));
         }
+
         return CellTooltipEntry.createEntry(line);
     }
 
@@ -316,6 +324,7 @@ public final class MarketWeightRowResolver {
     // rather than its own. Read off the rule and the colony together, because the token applies
     // only where both hold - a visible colony always counts by its real size.
     private static boolean isFixedRating(MarketWeightBreakdown breakdown, DominanceRules rules) {
+
         return breakdown.isHiddenMarket()
             && rules.baseSize().hiddenMarketScaling() == HiddenMarketScalingChoice.FIXED;
     }
@@ -328,7 +337,7 @@ public final class MarketWeightRowResolver {
 
         return CellTooltipEntry
             .createEntry(TermTooltipLine.buildTermLine(
-                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS),
+                KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS),
                 MarketFactorText.formatPatrols(patrols)))
             .nesting(resolveTierEntries(patrols, detailLevel));
     }
@@ -345,11 +354,12 @@ public final class MarketWeightRowResolver {
         if (!detailLevel.isReadingAtLeast(HoverTooltipDetailLevel.PATROL_DETAILS)) {
             return List.of();
         }
+
         var entries = new ArrayList<CellTooltipEntry>();
 
-        appendTierEntry(entries, KmuStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_SMALL, patrols.small());
-        appendTierEntry(entries, KmuStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_MEDIUM, patrols.medium());
-        appendTierEntry(entries, KmuStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_LARGE, patrols.large());
+        appendTierEntry(entries, KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_SMALL, patrols.small());
+        appendTierEntry(entries, KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_MEDIUM, patrols.medium());
+        appendTierEntry(entries, KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_LARGE, patrols.large());
 
         return entries;
     }
@@ -369,9 +379,10 @@ public final class MarketWeightRowResolver {
         if (tier.count() <= NO_PATROLS) {
             return;
         }
+
         var line = TermTooltipLine.buildTermLine(
                 KmuStringKeys.format(
-                    KmuStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_TIER,
+                    KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_TIER,
                     KmuStringKeys.get(tierNameKey),
                     tier.count()),
                 MarketFactorText.formatPatrolTierTotal(tier))

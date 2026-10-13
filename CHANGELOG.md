@@ -53,6 +53,14 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `ownermap.render.clusters.MapStyling` | `ownermap.render.style.MapStyling`, beside the theme reader it is read through |
 | `BlocAffiliation`, `ContestSide`, `ContestSides` and `BlocRelations` | `ownermap.owners.holders.alliances` |
 | `BlocFriendliness`, with `areBlocsFriendly(Set, Set)` | KMLib's `kmlib.starsector.factions.relation.FactionSetFriendliness`, with `areSetsFriendly(Set, Set)` and `createForSector(SectorAPI)` |
+| `base.labels.anchor.DiagnosticPalette` | `base.render.DiagnosticPalette`, which the label and cluster overlays share |
+| `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`, final, beside the register it writes into. Its sweep is `recordSightingsByInhabitants()`, and it no longer implements `MapLayerStalenessSource` |
+| `politicalmap.dominance.standings.StandingFraction` | `politicalmap.dominance.tooltip.StandingFraction`, beside the box that reads it |
+| `kmu.mods.nexerelin.alliances.AllianceGroupingFactory` | `ownermap.owners.holders.alliances.AllianceGroupingFactory`: it reads no Nexerelin type |
+| `kmu.ui.context` and `kmu.ui.geometry.KmuUiSize` | `kmu.conditions.ui.context` and `kmu.conditions.ui.picker.render.KmuUiSize`, in the one feature they serve. `kmu.ui` is gone |
+| `KmuStringKeys`' string IDs | One key class per reader in `kmu.util`: `KmuMapStringKeys`, `KmuOwnerMapStringKeys`, `KmuPoliticalMapStringKeys` and `KmuMarketConditionStringKeys`. `KmuStringKeys` keeps the category, `get(String)`, `format(String, Object...)` and the LunaLib settings pair |
+
+The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.maplayers` to each other, and `kmu.settings` and `kmu.util` to both features.
 
 ##### Renames
 
@@ -63,7 +71,8 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `HolderOwnerReading` | `FactionOwnerReading`, and `AllianceOwnerReading` over it for a layer painting alliances |
 | `OwnerMapCategory`, `OwnerMapInhabitation` and `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`, `HolderInhabitation` and `DominanceHolderProvider` |
 | `getFactionLabels()` on `OwnerMapCache` and `OwnerMapDrawables`, `OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` and `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`, `resolveOwnerPaintOf(SystemOwner)` and `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)`. The owner's ID is the `SystemOwner`'s own |
-| `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` and its `strings.json` key | `POLITICAL_MAP_CTL_FACTION_NAMES`, the political map's own caption |
+| `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` and its `strings.json` key | `KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_FACTION_NAMES`, the political map's own caption |
+| The nine `KmuStringKeys.OWNER_MAP_TOOLTIP_*` constants and their `strings.json` keys | `KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_*`: only the political map's boxes read them |
 | `ownermap.owners.OwnerPalette` | KMLib's `kmlib.colour.ColourPair`, which a faction's pair already is. `SectorBlocPalettes.adoptFactionPalette(FactionPalette)` is gone |
 | `HolderPass.over(SectorAPI, ColonyReadRules, HolderGrouping)` | `HolderPass.createOver(SectorAPI, ColonyReadRules, HolderGrouping)` |
 | `SystemColonyReading.readColoniesIn(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` | `readColonyReadingOf(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` |
@@ -90,7 +99,11 @@ The owner-map tier's core knows nothing of what an owner is. What the layers pai
 | `StandingRowResolver.resolveRows(SectorAPI, List, HolderGrouping, FactionAccountResolver)` | `StandingRowResolver.createForBox(SectorAPI, HolderGrouping, FactionAccountResolver)` once per box, then `resolveRows(List)` per block |
 | `FactionPresentation`, public, with `fullName()` | Package-private, with `labelText()`. A line marked as a faction's takes `FactionTooltipLine.resolveCrestMark(SectorAPI, String)` |
 | `GroupStanding(String, int, List)` over an empty member list | Refused with an `IllegalArgumentException`: a group stands in a system only through a member there |
-| `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader, SectorBlocPalettes)` and `FilteredPolitics.resolveSpotlitHolder(SectorAPI, HolderGrouping, String)` | `resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)` and `resolveSpotlitHolder(BlocPaletteReader, String)`: a bloc's shades come off the pass's own `palettes()` |
+| `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader, SectorBlocPalettes)` | `resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)`: a bloc's shades come off the pass's own `palettes()` |
+| `FilteredPolitics.resolveSpotlitHolder(SectorAPI, HolderGrouping, String)` and `SpotlitOwners.readSpotlitOwnerKey()` | `SpotlitOwners.createSpotlitOwner(ColourPair)`, handed the bloc's shades off the pass's own `palettes()`, so the claims resolve spotlights without naming the dominance package |
+| `ArrangementDialogMapCover`, `CodexMapCover`, `ModalDialogMapCover` and `kmu.mods.console.ConsoleMapCover` | One `ScreenClaimMapCover`, reading `ScreenClaim.isScreenClaimed()` |
+| `MapCoverReader.createForLiveScreen()` composing the optional mods' covers itself | `MapCoverReader.registerOptionalModCovers(List)`, called by `MapLayers` with the covers of the mods installed |
+| `VanillaMapLayerToggleAttacher()` asking Nexerelin whether the alliances view is offered | `VanillaMapLayerToggleAttacher.registerAllianceViewAvailability(BooleanSupplier)`, called by `MapLayers` |
 | `DebugBorderTracingBuilder.buildDebugDrawables(CellGeometryCache, ResolvedOwners, OwnerCategories, ContentInputs)` and `ClusterLabelStylingSnapshot.resolveForTracing(Map, ViewReading, ContentInputs, FontAtlas)` | `buildDebugDrawables(CellGeometryCache, ResolvedOwners, MapStyling)` and `resolveForTracing(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)`, both handed the one `MapStyling` the tracing rebuild reads. The snapshot's `desaturationPalette` and `categories` components are its `mapStyling` |
 | `OwnerMapBuildInputs`, `RibbonPlanRules` and `RibbonPlan`, records | Final classes with the same constructors and accessors. `OwnerMapBuildInputs` remembers each owner's paint and compares by identity; `RibbonPlan` still compares by its runs |
 | `MapStyling(RenderStyle, OwnerCategories, ColourPair, ColourPair, ColourPair)` | `MapStyling(RenderStyle, ClusterBorderTrace, OwnerCategories, ColourPair, ColourPair, ColourPair)`: the build's border trace rides with its theme, so a cluster group is never traced under a live read of its own |

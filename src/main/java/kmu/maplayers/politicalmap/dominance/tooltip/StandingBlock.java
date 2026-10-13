@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.dominance.tooltip;
 
 import kmu.maplayers.politicalmap.tooltip.ContestBlockHeading;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 import java.util.function.Function;
 
@@ -31,17 +31,17 @@ public enum StandingBlock implements ContestBlockHeading {
      * The bloc the map fills the system in the colour of. The strongest of those in the running,
      * which is what keeps the box an explanation of the cell beneath it.
      */
-    HOLDER(wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED),
+    HOLDER(wording -> KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED),
 
     /** The blocs the alliance set folds into the holder's own, which are not contesting it. */
-    ALLIED(wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER),
+    ALLIED(wording -> KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER),
 
     /**
      * The blocs on good terms with the holder without standing in its alliance, taken from what
      * alliance left standing against it - see
      * {@link kmu.maplayers.ownermap.owners.holders.alliances.ContestSides}.
      */
-    FRIENDLY(wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_SYSTEM_HOLDER),
+    FRIENDLY(wording -> KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_SYSTEM_HOLDER),
 
     /**
      * The blocs standing against the holder - or merely standing beside it, on an install where no
@@ -55,7 +55,7 @@ public enum StandingBlock implements ContestBlockHeading {
      * and never named as holding it. Which blocs those are is
      * {@link kmu.maplayers.politicalmap.dominance.BlocCandidacy}'s answer.
      */
-    NON_POLITICAL(wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_NON_POLITICAL);
+    NON_POLITICAL(wording -> KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_NON_POLITICAL);
 
     private final Function<ContestWording, String> headingKeySource;
 

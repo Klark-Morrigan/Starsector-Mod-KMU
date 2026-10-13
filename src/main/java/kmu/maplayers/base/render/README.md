@@ -5,6 +5,9 @@ The engine gives the sector map's render pass to a terrain plugin;
 this is that plugin,
 and the seam through which it hands the frame to whichever layer the player has selected.
 It names no layer and knows nothing of what any of them paints.
+It also holds `DiagnosticPalette`,
+the three grades every dev overlay paints its stages in,
+so the label and cluster overlays share it without reaching into each other.
 
 Part of [the map layers](../../README.md),
 in Klark Morrigan's Utilities (KMU);

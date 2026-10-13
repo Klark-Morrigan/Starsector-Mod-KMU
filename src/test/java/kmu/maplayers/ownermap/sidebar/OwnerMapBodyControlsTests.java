@@ -25,6 +25,7 @@ import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
 import kmu.maplayers.ownermap.preferences.UninhabitedOutlinePreference;
 import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuOwnerMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.AfterEach;
@@ -356,13 +357,13 @@ final class OwnerMapBodyControlsTests {
                 stubControlLabels(stringsMock);
 
                 stringsMock
-                    .when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_FULL))
+                    .when(() -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_FULL))
                     .thenReturn("Full");
                 stringsMock
-                    .when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_SHORT))
+                    .when(() -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_SHORT))
                     .thenReturn("Short");
                 stringsMock
-                    .when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_NONE))
+                    .when(() -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_NONE))
                     .thenReturn("No");
 
                 var radio = (HorizontalRadioSpec) OwnerMapBodyControls

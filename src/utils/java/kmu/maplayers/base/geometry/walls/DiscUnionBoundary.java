@@ -65,7 +65,7 @@ import java.util.Map;
  * <p><b>Reading the void with nothing laid across it does not come through here.</b> It is the
  * same sweep with no walls given, but that reading is sound in a way this one is not - none of
  * the accommodations a zero-width wall forced is reached when there are no walls - so it has a
- * door of its own at {@link kmu.maplayers.base.geometry.BareVoidBoundary}, outside this
+ * door of its own at {@link kmu.maplayers.base.geometry.walls.BareVoidBoundary}, outside this
  * package, and what may only have the bare void is shut off from this one.
  */
 public final class DiscUnionBoundary {

@@ -8,7 +8,7 @@ import kmu.maplayers.ownermap.owners.holders.base.picker.SizedBlocMetrics;
 import kmu.maplayers.ownermap.picker.OwnerMetricSortMode;
 import kmu.maplayers.ownermap.picker.OwnerSortModeComposer;
 import kmu.maplayers.ownermap.picker.RankedOwner;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 import java.util.List;
 import java.util.function.ToIntFunction;
@@ -59,14 +59,14 @@ public final class ClaimSortModes {
     public static final ListSortMode<RankedOwner<ClaimStats>> NAME =
         new OwnerMetricSortMode<>(
             "name",
-            KmuStringKeys.POLITICAL_MAP_CTL_SORT_NAME,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_NAME,
             null,
             CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedOwner<ClaimStats>> CLAIMS =
         new OwnerMetricSortMode<>(
             "claims",
-            KmuStringKeys.POLITICAL_MAP_CTL_SORT_CLAIMS,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_CLAIMS,
             CLAIMS_METRIC,
             CANONICAL_METRIC_CHAIN);
 

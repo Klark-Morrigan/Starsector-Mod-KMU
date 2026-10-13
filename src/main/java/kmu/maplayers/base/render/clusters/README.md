@@ -91,7 +91,7 @@ which is how one same-owner body is carved into clusters that meet without a gap
   `ClusterBorderStageCollector` gathers them,
   the traced base from the producer and the two passes as the smoothing's sink,
   and `ClusterBorderStageRenderer` strokes them base under despiked under rounded,
-  in the three grades of the [`DiagnosticPalette`](../../labels/README.md) and at tapering widths,
+  in the three grades of the [`DiagnosticPalette`](../README.md) and at tapering widths,
   so an earlier stage haloes out from under the one drawn over it.
   A stage is filled only when its gate was on,
   so an empty one reads as "that pass did not run" rather than "it ran and changed nothing" -

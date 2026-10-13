@@ -2,12 +2,12 @@ package kmu.conditions.ui.picker;
 
 import kmu.conditions.domain.KmuConditionService;
 import kmu.conditions.domain.StarsectorEditableMarket;
+import kmu.conditions.ui.context.KmuMarketUiContext;
 import kmu.conditions.ui.editor.KmuConditionEditor;
 import kmu.conditions.ui.picker.action.KmuConditionPickerActionHandler;
 import kmu.conditions.ui.picker.dialog.KmuConditionPickerDialogDelegate;
 import kmu.conditions.ui.picker.dialog.KmuConditionPickerDialogOpener;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModelFactory;
-import kmu.ui.context.KmuMarketUiContext;
 
 import java.util.Objects;
 

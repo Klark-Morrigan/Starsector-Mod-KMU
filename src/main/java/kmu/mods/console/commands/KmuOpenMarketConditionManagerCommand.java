@@ -9,6 +9,7 @@ import kmu.KmuErrorReporter;
 import kmu.conditions.domain.KmuConditionService;
 import kmu.conditions.domain.StarsectorConditionOfferPolicy;
 import kmu.conditions.domain.StarsectorConditionRepository;
+import kmu.conditions.ui.context.StarsectorMarketUiContextResolver;
 import kmu.conditions.ui.editor.KmuConditionEditorEntryPoint;
 import kmu.conditions.ui.editor.KmuConditionEditorOpenResult;
 import kmu.conditions.ui.editor.KmuConditionEditorOpenStatus;
@@ -16,7 +17,6 @@ import kmu.conditions.ui.picker.KmuConditionPickerEditor;
 import kmu.conditions.ui.picker.dialog.StarsectorInteractionDialogPickerOpener;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuMarketConditionSettings;
-import kmu.ui.context.StarsectorMarketUiContextResolver;
 
 import java.util.Objects;
 import java.util.function.BooleanSupplier;

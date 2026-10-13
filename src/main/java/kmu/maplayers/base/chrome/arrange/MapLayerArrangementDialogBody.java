@@ -13,6 +13,7 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmlib.starsector.ui.render.gl.UiFill;
 import kmlib.starsector.ui.screen.VanillaScreen;
 
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
@@ -139,7 +140,7 @@ final class MapLayerArrangementDialogBody {
         // the body text under it, which leaves the two reading as one paragraph rather than as a head
         // and the line it heads.
         header.setTitleOrbitronLarge();
-        header.addTitle(KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_TITLE));
+        header.addTitle(KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_TITLE));
 
         composeHint().addTo(header, ArrangementBoxLayout.TITLE_GAP);
     }
@@ -157,8 +158,8 @@ final class MapLayerArrangementDialogBody {
     static void fillFooter(TooltipMakerAPI footer) {
 
         footer.addButton(
-            KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_APPLY),
-            KmuStringKeys.MAP_LAYER_ARRANGE_APPLY,
+            KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_APPLY),
+            KmuMapStringKeys.MAP_LAYER_ARRANGE_APPLY,
             ArrangementBoxLayout.APPLY_BUTTON_WIDTH,
             ArrangementBoxLayout.CONTROL_HEIGHT,
             ArrangementBoxLayout.NO_PAD);
@@ -176,10 +177,10 @@ final class MapLayerArrangementDialogBody {
         var highlight = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
 
         return new HighlightedParagraph(
-            KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_HINT),
-            Highlight.of(KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_MOVE_UP), highlight),
-            Highlight.of(KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_MOVE_DOWN), highlight),
-            Highlight.of(KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_HINT_UNCHECK), highlight));
+            KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_HINT),
+            Highlight.of(KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_MOVE_UP), highlight),
+            Highlight.of(KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_MOVE_DOWN), highlight),
+            Highlight.of(KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_HINT_UNCHECK), highlight));
     }
 
     // The rule around the box, as the game's own rectangle component rather than as anything drawn: a

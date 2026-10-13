@@ -40,6 +40,9 @@ two passes being two boxes over one pick.
 held behind a seam because standing a control on another party's widget is a reach into the running game's tree,
 and `VanillaMapLayerToggleAttacher` is that reach,
 over KMLib's `MapFilterToggle`.
+Whether the box's hover lists an alliances view turns on which mods are installed,
+so the composition root registers that answer with the attacher
+rather than the framework asking the mod.
 
 ### Failing open, and what it costs
 

@@ -154,7 +154,9 @@ nor changes with which map layer the player is looking at.
 
 The register behind the observations is `ColonySightings` over `SectorColonySightings`,
 written by `ColonySightingRecorder` as the player travels
-and by the substrate's own poll (`base/refresh`) for what a place's own inhabitants can see;
+and by `ColonySightingsPoll`,
+which [the substrate's own poll](../refresh/README.md#the-substrates-poll) drives,
+for what a place's own inhabitants can see;
 `ColonySightingInstaller` stands the travelling half up on load.
 The player's arrival writes the gated shapes alone;
 the inhabitants' sweep also writes the collapsed worlds their word is the only thing showing,
@@ -290,5 +292,7 @@ and `observations` may not import `colonies`,
 `structures` or `systems` -
 the register is the shared half
 and would stop being shareable the moment it named one of its families.
+Nothing here may import `base/refresh`,
+which drives the sightings sweep and reads what is drawn.
 Declared in [`gradle/package-layering.gradle`](../../../../../../../gradle/package-layering.gradle)
 and enforced by the build.

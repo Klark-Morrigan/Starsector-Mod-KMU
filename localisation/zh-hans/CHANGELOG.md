@@ -52,6 +52,14 @@
 | `ownermap.render.clusters.MapStyling` | `ownermap.render.style.MapStyling`，与读取它所经由的主题读取器放在一起 |
 | `BlocAffiliation`、`ContestSide`、`ContestSides` 和 `BlocRelations` | `ownermap.owners.holders.alliances` |
 | `BlocFriendliness` 及其 `areBlocsFriendly(Set, Set)` | KMLib 的 `kmlib.starsector.factions.relation.FactionSetFriendliness`，及其 `areSetsFriendly(Set, Set)` 和 `createForSector(SectorAPI)` |
+| `base.labels.anchor.DiagnosticPalette` | `base.render.DiagnosticPalette`，供标签与区域的调试显示共用 |
+| `base.refresh.MapSubstrateStalenessSource` | `base.visibility.colonies.ColonySightingsPoll`，不可继承，与它写入的登记放在一起。其扫描为 `recordSightingsByInhabitants()`，不再实现 `MapLayerStalenessSource` |
+| `politicalmap.dominance.standings.StandingFraction` | `politicalmap.dominance.tooltip.StandingFraction`，与读取它的悬停框放在一起 |
+| `kmu.mods.nexerelin.alliances.AllianceGroupingFactory` | `ownermap.owners.holders.alliances.AllianceGroupingFactory`：它不读取任何 Nexerelin 类型 |
+| `kmu.ui.context` 和 `kmu.ui.geometry.KmuUiSize` | `kmu.conditions.ui.context` 和 `kmu.conditions.ui.picker.render.KmuUiSize`，位于它们唯一服务的功能中。`kmu.ui` 已移除 |
+| `KmuStringKeys` 的字符串 ID | `kmu.util` 中每个读取方一个键类：`KmuMapStringKeys`、`KmuOwnerMapStringKeys`、`KmuPoliticalMapStringKeys` 和 `KmuMarketConditionStringKeys`。`KmuStringKeys` 保留字符串类别、`get(String)`、`format(String, Object...)` 和 LunaLib 设置的一对键 |
+
+构建禁止 `kmu.maplayers.base` 导入 `kmu.mods`，禁止 `kmu.conditions` 与 `kmu.maplayers` 相互导入，并禁止 `kmu.settings` 和 `kmu.util` 导入这两个功能。
 
 ##### 重命名
 
@@ -62,7 +70,8 @@
 | `HolderOwnerReading` | `FactionOwnerReading`，以及为绘制联盟的图层建立在其上的 `AllianceOwnerReading` |
 | `OwnerMapCategory`、`OwnerMapInhabitation` 和 `politicalmap.holders.DefaultHolderProvider` | `HolderCategory`、`HolderInhabitation` 和 `DominanceHolderProvider` |
 | `OwnerMapCache` 与 `OwnerMapDrawables` 的 `getFactionLabels()`、`OwnerMapBuildInputs.resolveBlocPaintOf(String, SystemOwner)` 和 `OwnerStyleResolver.resolveBlocStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)` | `getOwnerLabels()`、`resolveOwnerPaintOf(SystemOwner)` 和 `resolveOwnerStyleDecision(String, OwnerReading, OwnerCategories, ContentInputs)`。所有者的 ID 取自 `SystemOwner` 本身 |
-| `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` 及其 `strings.json` 键 | `POLITICAL_MAP_CTL_FACTION_NAMES`，政治地图自己的标题 |
+| `KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES` 及其 `strings.json` 键 | `KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_FACTION_NAMES`，政治地图自己的标题 |
+| 九个 `KmuStringKeys.OWNER_MAP_TOOLTIP_*` 常量及其 `strings.json` 键 | `KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_*`：只有政治地图的悬停框读取它们 |
 | `ownermap.owners.OwnerPalette` | KMLib 的 `kmlib.colour.ColourPair`，势力的配色本就是它。`SectorBlocPalettes.adoptFactionPalette(FactionPalette)` 已移除 |
 | `HolderPass.over(SectorAPI, ColonyReadRules, HolderGrouping)` | `HolderPass.createOver(SectorAPI, ColonyReadRules, HolderGrouping)` |
 | `SystemColonyReading.readColoniesIn(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` | `readColonyReadingOf(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` |
@@ -89,7 +98,11 @@
 | `StandingRowResolver.resolveRows(SectorAPI, List, HolderGrouping, FactionAccountResolver)` | 每个悬停框调用一次 `StandingRowResolver.createForBox(SectorAPI, HolderGrouping, FactionAccountResolver)`，再对每个区块调用 `resolveRows(List)` |
 | 公开的 `FactionPresentation`，带有 `fullName()` | 改为包私有，带有 `labelText()`。标记为某势力的行改用 `FactionTooltipLine.resolveCrestMark(SectorAPI, String)` |
 | 成员列表为空的 `GroupStanding(String, int, List)` | 以 `IllegalArgumentException` 拒绝：势力组只能通过位于该星系的成员出现在其中 |
-| `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader, SectorBlocPalettes)` 和 `FilteredPolitics.resolveSpotlitHolder(SectorAPI, HolderGrouping, String)` | `resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)` 和 `resolveSpotlitHolder(BlocPaletteReader, String)`：集团的配色取自本次计算自身的 `palettes()` |
+| `SectorClaims.resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader, SectorBlocPalettes)` | `resolveClaimingHolderIn(StarSystemAPI, HolderPass, ClaimReader)`：集团的配色取自本次计算自身的 `palettes()` |
+| `FilteredPolitics.resolveSpotlitHolder(SectorAPI, HolderGrouping, String)` 和 `SpotlitOwners.readSpotlitOwnerKey()` | `SpotlitOwners.createSpotlitOwner(ColourPair)`，接收取自本次计算自身 `palettes()` 的集团配色，因此宣称的解析无需提及主导包即可聚焦 |
+| `ArrangementDialogMapCover`、`CodexMapCover`、`ModalDialogMapCover` 和 `kmu.mods.console.ConsoleMapCover` | 一个 `ScreenClaimMapCover`，读取 `ScreenClaim.isScreenClaimed()` |
+| 自行组合可选 Mod 遮挡的 `MapCoverReader.createForLiveScreen()` | `MapCoverReader.registerOptionalModCovers(List)`，由 `MapLayers` 以已安装 Mod 的遮挡调用 |
+| 向 Nexerelin 询问是否提供联盟视图的 `VanillaMapLayerToggleAttacher()` | `VanillaMapLayerToggleAttacher.registerAllianceViewAvailability(BooleanSupplier)`，由 `MapLayers` 调用 |
 | `DebugBorderTracingBuilder.buildDebugDrawables(CellGeometryCache, ResolvedOwners, OwnerCategories, ContentInputs)` 和 `ClusterLabelStylingSnapshot.resolveForTracing(Map, ViewReading, ContentInputs, FontAtlas)` | `buildDebugDrawables(CellGeometryCache, ResolvedOwners, MapStyling)` 和 `resolveForTracing(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)`，两者都接收边界描绘重建读取的同一个 `MapStyling`。快照的 `desaturationPalette` 和 `categories` 组件改为其 `mapStyling` |
 | 记录类型 `OwnerMapBuildInputs`、`RibbonPlanRules` 和 `RibbonPlan` | 改为不可继承的类，构造函数和访问器不变。`OwnerMapBuildInputs` 会记住每个所有者的绘制方式，只与自身相等；`RibbonPlan` 仍按其色段判断是否相等 |
 | `MapStyling(RenderStyle, OwnerCategories, ColourPair, ColourPair, ColourPair)` | `MapStyling(RenderStyle, ClusterBorderTrace, OwnerCategories, ColourPair, ColourPair, ColourPair)`：构建的边界描绘参数随主题一同携带，区域组不会再按各自的实时读取来描绘 |

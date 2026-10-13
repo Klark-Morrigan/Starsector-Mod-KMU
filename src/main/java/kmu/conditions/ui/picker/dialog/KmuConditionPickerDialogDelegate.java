@@ -21,6 +21,7 @@ import kmu.conditions.ui.picker.render.KmuConditionIconGrid;
 import kmu.conditions.ui.picker.render.KmuConditionPickerContainer;
 import kmu.conditions.ui.picker.render.KmuConditionPickerRenderResult;
 import kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerSummaryParagraphFactory;
+import kmu.util.KmuMarketConditionStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -28,7 +29,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class KmuConditionPickerDialogDelegate implements CustomDialogDelegate {
+public final class KmuConditionPickerDialogDelegate
+        implements CustomDialogDelegate {
+
     private static final float DEFAULT_WIDTH = KmuConditionIconGrid.computeDefaultTotalWidth();
     private static final float DEFAULT_HEIGHT = 560f;
     private static final float BODY_BG_ALPHA = 0.85f;
@@ -39,6 +42,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
     private final float height;
     private final CustomUIPanelPlugin panelPlugin = new ActionPanelPlugin();
     private final List<UIComponentAPI> renderedCustomComponents = new ArrayList<>();
+
     private CustomPanelAPI panel;
 
     // Labels (location, summary) live in a non-scrollable element so they stay
@@ -55,6 +59,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
             KmuConditionPickerActionHandler actionHandler,
             float width,
             float height) {
+
         this(actionHandler, new StarsectorConditionPickerFeedbackSink(), width, height);
     }
 
@@ -63,6 +68,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
             KmuConditionPickerFeedbackSink feedbackSink,
             float width,
             float height) {
+
         this.actionHandler = Objects.requireNonNull(actionHandler, "actionHandler");
         this.feedbackSink = Objects.requireNonNull(feedbackSink, "feedbackSink");
         this.width = width;
@@ -87,6 +93,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
 
     @Override
     public void createCustomDialog(CustomPanelAPI panel, CustomDialogCallback callback) {
+
         this.panel = Objects.requireNonNull(panel, "panel");
         refreshBody();
     }
@@ -98,7 +105,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
 
     @Override
     public String getConfirmText() {
-        return KmuStringKeys.get(KmuStringKeys.DIALOG_CLOSE);
+        return KmuStringKeys.get(KmuMarketConditionStringKeys.DIALOG_CLOSE);
     }
 
     @Override
@@ -120,11 +127,17 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
     }
 
     void handleAction(KmuConditionPickerAction action) {
+
         if (action.isPresentAtRender()) {
             return;
         }
+
         var result = actionHandler.handle(action);
-        actionHandler.getFeedback().ifPresent(feedbackSink::report);
+
+        actionHandler
+            .getFeedback()
+            .ifPresent(feedbackSink::report);
+
         updateRenderedState(result);
     }
 
@@ -140,13 +153,17 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
     }
 
     private void refreshBody() {
+
         if (panel == null) {
             return;
         }
+
         removeRenderedCustomComponents();
+
         if (headerBody != null) {
             panel.removeComponent(headerBody);
         }
+
         if (gridBody != null) {
             panel.removeComponent(gridBody);
         }
@@ -159,9 +176,12 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         headerBody.setBgAlpha(BODY_BG_ALPHA);
 
         gridBody = panel.createUIElement(width, gridH, true);
+
         gridBody.setBgAlpha(BODY_BG_ALPHA);
         gridBody.setActionListenerDelegate((buttonId, data) -> {
-            resolveActionFromUiEvent(buttonId, data).ifPresent(this::handleAction);
+
+            resolveActionFromUiEvent(buttonId, data)
+                .ifPresent(this::handleAction);
         });
 
         renderResult = new KmuConditionPickerContainer(panel).render(
@@ -172,11 +192,13 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
             width);
 
         renderedCustomComponents.addAll(renderResult.getCustomComponents());
+
         panel.addUIElement(headerBody).inTL(0f, 0f);
         panel.addUIElement(gridBody).inTL(0f, headerH);
     }
 
     private void updateRenderedState(KmuConditionAddResult result) {
+
         if (renderResult == null) {
             return;
         }
@@ -197,24 +219,32 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         if (!conditionId.isPresent()) {
             return;
         }
-        actionHandler.getModel()
+
+        actionHandler
+            .getModel()
             .findEntry(conditionId.get())
             .ifPresent(renderResult::updateEntry);
     }
 
     private void removeRenderedCustomComponents() {
+
         for (var component : renderedCustomComponents) {
+
             try {
                 panel.removeComponent(component);
+
             } catch (RuntimeException exception) {
                 // A nested component may already have been removed with its parent UI element.
             }
         }
+
         renderedCustomComponents.clear();
         renderResult = null;
     }
 
-    private final class ActionPanelPlugin implements CustomUIPanelPlugin {
+    private final class ActionPanelPlugin
+            implements CustomUIPanelPlugin {
+
         @Override
         public void positionChanged(PositionAPI position) {
         }
@@ -237,6 +267,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
 
         @Override
         public void buttonPressed(Object buttonId) {
+
             resolveActionFromUiEvent(buttonId, null)
                     .ifPresent(KmuConditionPickerDialogDelegate.this::handleAction);
         }

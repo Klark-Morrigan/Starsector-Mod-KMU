@@ -8,7 +8,7 @@ import kmu.maplayers.ownermap.owners.holders.base.picker.SizedBlocMetrics;
 import kmu.maplayers.ownermap.picker.OwnerMetricSortMode;
 import kmu.maplayers.ownermap.picker.OwnerSortModeComposer;
 import kmu.maplayers.ownermap.picker.RankedOwner;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 import java.util.List;
 import java.util.function.ToIntFunction;
@@ -56,28 +56,28 @@ public final class DominanceSortModes {
     public static final ListSortMode<RankedOwner<DominanceStats>> NAME =
         new OwnerMetricSortMode<>(
             "name",
-            KmuStringKeys.POLITICAL_MAP_CTL_SORT_NAME,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_NAME,
             null,
             CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedOwner<DominanceStats>> DOMINATION =
         new OwnerMetricSortMode<>(
             "domination",
-            KmuStringKeys.POLITICAL_MAP_CTL_SORT_DOMINATION,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_DOMINATION,
             DOMINATION_METRIC,
             CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedOwner<DominanceStats>> PRESENCE =
         new OwnerMetricSortMode<>(
             "presence",
-            KmuStringKeys.POLITICAL_MAP_CTL_SORT_PRESENCE,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_PRESENCE,
             PRESENCE_METRIC,
             CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedOwner<DominanceStats>> SCORE =
         new OwnerMetricSortMode<>(
             "score",
-            KmuStringKeys.POLITICAL_MAP_CTL_SORT_SCORE,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_SCORE,
             SCORE_METRIC,
             CANONICAL_METRIC_CHAIN);
 

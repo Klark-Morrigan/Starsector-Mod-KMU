@@ -19,7 +19,7 @@ import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.settings.KmuLoggingSettings;
 import kmu.util.KmuCompatibilityConsumers;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuMapStringKeys;
 
 import org.apache.log4j.Logger;
 
@@ -355,8 +355,8 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
             // reading, so what a failed binding costs is said here and once.
             ModelviewMatrixReaders.selectForActiveRenderer(KmuCompatibilityConsumers.describeConsumer(
                 MAP_CURSOR_FEATURE_KEY,
-                KmuStringKeys.COMPATIBILITY_LOST_MAP_CURSOR,
-                KmuStringKeys.COMPATIBILITY_UNAFFECTED_MAP_CURSOR)),
+                KmuMapStringKeys.COMPATIBILITY_LOST_MAP_CURSOR,
+                KmuMapStringKeys.COMPATIBILITY_UNAFFECTED_MAP_CURSOR)),
             () -> soundPlayer.playCueIfPresent(MapHoverCues.composeCellArrivalCue()),
             // Taken from the shared permission rather than composed here, so this pass and the box
             // that reports what it finds answer from one reading: a hover resolved on a frame no box

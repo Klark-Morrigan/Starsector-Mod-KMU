@@ -5,6 +5,7 @@ import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
+import kmu.util.KmuMarketConditionStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.awt.Color;
@@ -48,44 +49,52 @@ public final class KmuConditionPickerSummaryParagraphFactory {
 
         // Each separator carries the spacing its language needs around a highlighted count: the game
         // highlights a run only where the characters beside it are whitespace or ASCII punctuation.
-        var groupSeparator = KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_GROUP_SEPARATOR);
-        var itemSeparator = KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_ITEM_SEPARATOR);
+        var groupSeparator = KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_GROUP_SEPARATOR);
+        var itemSeparator = KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_ITEM_SEPARATOR);
 
         var countsLine = new CountsLine();
 
         if (visible > 0) {
+
             countsLine.appendHighlightedPart(
                 itemSeparator,
-                KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_VISIBLE, visible),
+                KmuStringKeys.format(KmuMarketConditionStringKeys.CONDITION_MANAGER_SUMMARY_VISIBLE, visible),
                 StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve());
         }
+
         if (suppressed > 0) {
+
             countsLine.appendHighlightedPart(
                 groupSeparator,
-                KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_SUPPRESSED, suppressed),
+                KmuStringKeys.format(KmuMarketConditionStringKeys.CONDITION_MANAGER_SUMMARY_SUPPRESSED, suppressed),
                 StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve());
         }
+
         // Present draws in the body colour, so it takes no highlight.
         if (present > 0) {
+
             countsLine.appendPart(
                 itemSeparator,
-                KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_PRESENT, present));
+                KmuStringKeys.format(KmuMarketConditionStringKeys.CONDITION_MANAGER_SUMMARY_PRESENT, present));
         }
+
         if (hidden > 0) {
+
             countsLine.appendHighlightedPart(
                 itemSeparator,
-                KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_HIDDEN, hidden),
+                KmuStringKeys.format(KmuMarketConditionStringKeys.CONDITION_MANAGER_SUMMARY_HIDDEN, hidden),
                 StarsectorUiColour.LIGHT_BLUE.resolve());
         }
+
         countsLine.appendHighlightedTail(
             groupSeparator,
-            KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_AVAILABLE, model.getAvailableCount())
+            KmuStringKeys.format(KmuMarketConditionStringKeys.CONDITION_MANAGER_SUMMARY_AVAILABLE, model.getAvailableCount())
                 + itemSeparator
-                + KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_TOTAL, model.getEntryCount()),
+                + KmuStringKeys.format(KmuMarketConditionStringKeys.CONDITION_MANAGER_SUMMARY_TOTAL, model.getEntryCount()),
             StarsectorUiColour.VANILLA_GRAY.resolve());
 
         var headerParagraph = new HighlightedParagraph(
-            KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_SUMMARY),
+            KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_SUMMARY),
             StarsectorUiColour.VANILLA_GRAY.resolve());
 
         return List.of(headerParagraph, countsLine.buildParagraph());
@@ -124,6 +133,7 @@ public final class KmuConditionPickerSummaryParagraphFactory {
             if (!lineText.isEmpty()) {
                 lineText.append(separator);
             }
+
             lineText.append(partText);
         }
 

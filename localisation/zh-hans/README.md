@@ -352,6 +352,13 @@ So a word of one axis never stands in for another:
 | recede control (in the changelog) | 退后控件 | 退后 with 控件, the usual UI word for a control |
 | overload (one of several same-named methods, in the changelog) | 重载 | the usual computing word |
 | remark (the note a hover line carries about a colony, in the changelog) | 备注 | the plain word for a note added to something |
+| dev display (an overlay a Dev setting draws over the map, in the changelog) | 调试显示 | 调试, the usual word for debugging, with 显示, a display |
+| register (a record the map keeps in sector memory, in the changelog) | 登记 | the plain word for writing something into a record |
+| sweep (one walk of the whole sector, in the changelog) | 扫描 | the usual word for a pass over everything |
+| string ID, key class (in the changelog) | 字符串 ID, 键类 | 字符串, the computing word for a string; a key class is the class holding one reader's string IDs |
+| strings category (the namespace in strings.json, in the changelog) | 字符串类别 | 字符串 before 类别, kept apart from a map's 类别 |
+| cover (anything drawn over the map where the cursor rests, in the changelog) | 遮挡 | to block from view, which a cover does to the cells under it |
+| import, compose (in the changelog) | 导入, 组合 | the usual computing words for a package naming another and for putting parts together |
 | spotlight | 聚焦 | to focus on, which spotlighting a bloc does |
 | recede | 退后 | to step back, which a receded bloc does on the map |
 | Muted / Desaturated | 淡化 / 去色 | 淡化, to fade, and 去色, to strip colour, the usual image-editing word |

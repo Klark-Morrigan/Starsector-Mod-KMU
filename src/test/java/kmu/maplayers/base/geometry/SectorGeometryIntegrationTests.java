@@ -3,8 +3,6 @@ package kmu.maplayers.base.geometry;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.base.geometry.v3.SectorPipeline;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -15,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.base.geometry.v3.SectorPipeline.loadFixture;
+import static kmu.maplayers.base.geometry.LoadedSectors.loadFixture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SectorGeometryIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     // A vertex may sit a hair on the far side of its own bisector after clipping; the
     // nearest-site check tolerates that rather than chasing floating-point dust.

@@ -1,8 +1,8 @@
 package kmu.conditions.ui.editor;
 
 import kmu.KmuErrorReporter;
-import kmu.ui.context.KmuMarketUiContext;
-import kmu.ui.context.KmuMarketUiContextResolver;
+import kmu.conditions.ui.context.KmuMarketUiContext;
+import kmu.conditions.ui.context.KmuMarketUiContextResolver;
 
 import java.util.Objects;
 import java.util.Optional;

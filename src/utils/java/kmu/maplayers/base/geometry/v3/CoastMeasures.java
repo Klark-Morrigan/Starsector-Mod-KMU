@@ -41,7 +41,7 @@ public final class CoastMeasures {
      * @return one pair per crossing - how deep it goes, and how many stretches were skipped
      *         across it, where zero means the two were neighbours - deepest first
      */
-    static List<double[]> measureCrossingGaps(Coastlines.TracedCoasts traced) {
+    public static List<double[]> measureCrossingGaps(Coastlines.TracedCoasts traced) {
 
         var places = mapWalkPlaces(traced);
 
@@ -60,7 +60,7 @@ public final class CoastMeasures {
      * @return one pair per crossing - how deep it goes, and how long the crossed cell's
      *         frontage is - deepest first
      */
-    static List<double[]> measureCrossingFrontages(Coastlines.TracedCoasts traced) {
+    public static List<double[]> measureCrossingFrontages(Coastlines.TracedCoasts traced) {
 
         var marks = mapMarksByCircle(traced);
 
@@ -77,7 +77,7 @@ public final class CoastMeasures {
      * @param traced the coast, as it was traced
      * @return every stretch of coast, as the length of border it offers
      */
-    static List<Double> measureFrontages(Coastlines.TracedCoasts traced) {
+    public static List<Double> measureFrontages(Coastlines.TracedCoasts traced) {
 
         var frontages = new ArrayList<Double>();
 
@@ -173,7 +173,7 @@ public final class CoastMeasures {
      * @param traced the coast, as it was traced
      * @return how many stretches there are in total, across every run
      */
-    static int countCoastMarks(Coastlines.TracedCoasts traced) {
+    public static int countCoastMarks(Coastlines.TracedCoasts traced) {
 
         var marks = 0;
 

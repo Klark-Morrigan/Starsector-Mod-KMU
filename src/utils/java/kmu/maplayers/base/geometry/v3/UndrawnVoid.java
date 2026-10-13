@@ -100,7 +100,7 @@ public final class UndrawnVoid {
      *              of and which map - as drawn, or the void's true extent - is being asked about
      * @return one entry per patch, widest first
      */
-    static List<UnfilledPatch> findUnfilledVoid(LaidCoast laid, FilledWater water) {
+    public static List<UnfilledPatch> findUnfilledVoid(LaidCoast laid, FilledWater water) {
 
         var parameters = laid.parameters();
         var shaping = water.shaping();

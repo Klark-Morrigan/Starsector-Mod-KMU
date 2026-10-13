@@ -3,6 +3,7 @@ package kmu.maplayers.base.tooltip.layout;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
@@ -54,7 +55,7 @@ final class WithheldEntriesLine {
     static CellTooltipEntryLine buildLine(List<CellTooltipEntry> withheldEntries) {
 
         var labelText = KmuStringKeys.format(
-            KmuStringKeys.MAP_LAYER_TOOLTIP_WITHHELD_ENTRIES,
+            KmuMapStringKeys.MAP_LAYER_TOOLTIP_WITHHELD_ENTRIES,
             withheldEntries.size());
 
         return sumCountedValues(withheldEntries)

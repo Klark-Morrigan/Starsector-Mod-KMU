@@ -41,7 +41,7 @@ or handed to someone else.
 | Package | What is in it |
 | --- | --- |
 | *(root)* | the fixture and what every construction shares: a real sector's sites and owners (`SectorFixture`), its geometry at a set of knobs (`SectorGeometry`, `SectorGeometryParameters`), the partition before the reach clip (`UnboundedCells`), the union of reach discs whose complement is the void (`DiscUnion`), and the values the constructions trade in (`CellGap`, `Chord`, `CellEdges`, `VoidHole`, `VoidKeys`, `NamedRegion`) |
-| `walls` | the boundary of the disc union as closed arcs (`DiscUnionBoundary`), and the walls laid across the void (`Walls`, `WallMouths`) |
+| `walls` | the boundary of the disc union as closed arcs (`DiscUnionBoundary`), the same trace with nothing laid across it (`BareVoidBoundary`), and the walls laid across the void (`Walls`, `WallMouths`) |
 | `v3` | the first void construction: the void walked once per kind of thing sought - pockets, coasts, bridges, sections - and the answers reconciled afterwards; `v3.ui` draws it |
 | [`v4`](v4/README.md) | the void as one planar division, every line laid into a single walk and the pieces read off it; `v4.ui` makes the pieces drawable |
 | `render` | the painting every surface shares: what the map is painted with (`MapLook`), how one fill looks (`FillLook`, `FillSheet`), and the Java2D moves (`MapPainting`) |
@@ -50,6 +50,7 @@ or handed to someone else.
 | `ui.overlays` | the cells, the named void sections and the names on the map |
 | `ui.settings` | the knob panel: one section per construction, the row shapes bound to the redraws they cost (`SettingRows`), and the settings the viewer runs read without a window (`SavedViewerSettings`) |
 | `output` | the two writers, and `SectorSvgWriter`, which draws the geometry to an SVG file |
+| `output.v3` | the reports the void dump writes over v3's construction - coasts, walls, sections, refusals and a picked point's check - and the figures they share (`ReportFigures`) |
 
 ## Outside the geometry tree
 
@@ -74,10 +75,16 @@ The root reaches none of `output`,
 `render`,
 `settings` or `ui`,
 so a construction is asked its question under a rule record rather than under the viewer's state.
+Nor does it reach `walls`,
+`v3` or `v4`:
+it is what they all build on.
 v3 and v4 do not import each other:
 v4 is a construction beside v3 rather than a layer on top of it,
 and what crosses between them crosses as root values,
 handed over by the viewer.
 `walls` reaches neither version,
 and nothing in `render` or `output` reaches `ui`.
-`kmu.svg` reaches nothing under `kmu.maplayers`.
+`render` and `settings` reach neither version's overlays (`v3.ui`, `v4.ui`);
+`settings` does read v3 itself,
+taking its defaults from v3's own rules.
+`kmu.svg` and `kmu.desktop` reach nothing under `kmu.maplayers`.

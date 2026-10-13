@@ -7,7 +7,7 @@ import kmlib.starsector.compatibility.ModIntegration;
 
 import kmu.KmuWiringSteps;
 import kmu.util.KmuCompatibilityConsumers;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 /**
  * Registers KMU's relay for Nexerelin's colony transfers only when Nexerelin is present. The relay
@@ -91,8 +91,8 @@ public final class NexerelinInvasionListenerInstaller {
             NexerelinPresence.MOD_NAME,
             KmuCompatibilityConsumers.describeConsumer(
                 COLONY_TRANSFERS_FEATURE_KEY,
-                KmuStringKeys.COMPATIBILITY_LOST_NEXERELIN_COLONY_TRANSFERS,
-                KmuStringKeys.COMPATIBILITY_UNAFFECTED_NEXERELIN_COLONY_TRANSFERS));
+                KmuPoliticalMapStringKeys.COMPATIBILITY_LOST_NEXERELIN_COLONY_TRANSFERS,
+                KmuPoliticalMapStringKeys.COMPATIBILITY_UNAFFECTED_NEXERELIN_COLONY_TRANSFERS));
     }
 
     // Isolates the only reference to the Nexerelin-coupled relay. The classloader resolves this

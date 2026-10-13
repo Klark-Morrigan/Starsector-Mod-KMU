@@ -30,7 +30,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolve;
 import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
 import kmu.mods.nexerelin.NexerelinAlliances;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -80,8 +80,9 @@ final class ClaimsViewTests {
 
         @Test
         void isTheClaimsRadioLabel() {
+
             assertThat(ClaimsView.INSTANCE.getSegmentLabelKey())
-                .isEqualTo(KmuStringKeys.POLITICAL_MAP_CTL_CLAIMS);
+                .isEqualTo(KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_CLAIMS);
         }
     }
 
@@ -145,6 +146,7 @@ final class ClaimsViewTests {
                 HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity()),
                 OwnerAffiliation.NONE,
                 STANDARD_RULES);
+
             var plannerMock = mock(ClaimedSystemRibbonPlanner.class);
 
             try (var plannerFactoryMock = mockStatic(ClaimedSystemRibbonPlanner.class)) {
@@ -172,6 +174,7 @@ final class ClaimsViewTests {
             stubNamedFaction(sectorMock, "hegemony", "Hegemony");
 
             try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+
                 alliancesMock
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(HolderGroupingFixture.buildGroupOf("hegemony", "persean"));
@@ -249,7 +252,6 @@ final class ClaimsViewTests {
             var claimReaderMock = mock(ClaimReader.class);
             var openedOver = new ArrayList<SectorPassIndex>();
             var openedUnder = new ArrayList<KnownColonyReader>();
-
             var aggregatedPasses = new ArrayList<HolderPass>();
 
             var view = new ClaimsView((knownColonyReader, sectorIndex) -> {

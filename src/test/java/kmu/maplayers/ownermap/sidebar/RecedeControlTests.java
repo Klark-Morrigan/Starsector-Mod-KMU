@@ -13,6 +13,7 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
 import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuOwnerMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.AfterEach;
@@ -242,9 +243,9 @@ final class RecedeControlTests {
     // lands in which position - without depending on the live strings table. The caption is the
     // caller's own string, passed in, so it needs no stub.
     private static void stubCheckboxLabels(MockedStatic<KmuStringKeys> stringsMock) {
-        stringsMock.when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_MUTED))
+        stringsMock.when(() -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_MUTED))
                 .thenReturn("Muted");
-        stringsMock.when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_DESATURATED))
+        stringsMock.when(() -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_DESATURATED))
                 .thenReturn("Desaturated");
     }
 }

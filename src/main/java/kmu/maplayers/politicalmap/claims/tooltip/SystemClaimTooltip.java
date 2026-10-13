@@ -28,6 +28,7 @@ import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.mods.nexerelin.NexerelinContestWording;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -60,7 +61,8 @@ import java.util.function.BiFunction;
  *
  * <p>Stateless past the seams it is built around, so one shared instance serves the layer.
  */
-public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
+public final class SystemClaimTooltip
+        extends PoliticalMapCellTooltip {
 
     /**
      * The one shared instance, explaining vanilla claims - the same mechanic the layer's fills are
@@ -125,6 +127,7 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
             ContestWordingSource contestWordingSource) {
 
         super(claimBreakdownReader, holderGroupingSource, contestWordingSource);
+
         this.breakdownReaderOpener = breakdownReaderOpener;
         this.accountEntriesSource = accountEntriesSource;
     }
@@ -175,7 +178,6 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         // a later block be handed one of them from somewhere else - or read at a depth another was
         // not.
         var reading = new HoveredClaimReading(sector, contest, colonyReading, detailLevel);
-
         var body = CellTooltipBody.openBody(detailLevel);
 
         body.appendBannerSection(statusRow);
@@ -189,7 +191,7 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         // block whose contents turn on what the banner answered, and every other is placed by how a
         // faction stands to the claimant this one names.
         body.appendSection(
-            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
+            KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
             buildClaimEntries(reading, statusRow.isPresent()));
 
         // Everyone present other than the claimant, in the blocks their standing to it puts them in,
@@ -235,7 +237,8 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         // The deeper tiers account for the colonies behind the factions this box lists, so a box
         // listing none has nothing for them to account for: every level would state the same claim
         // line and the key would do nothing the player could see.
-        return resolveDeepestHeldLevel(readListedContest(sector, system).hasListedStanding());
+        return resolveDeepestHeldLevel(readListedContest(sector, system)
+            .hasListedStanding());
     }
 
     // The vanilla breakdown over one hover's sector, under the colony rule that hover sampled. The
@@ -284,8 +287,9 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         var standingLine = buildStandingLine(sector, standing);
 
         if (isStatingEligibilityOnLine && !standing.isTerritorial()) {
+
             return standingLine.qualifiedWith(
-                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL));
+                KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL));
         }
         return standingLine;
     }
@@ -308,7 +312,10 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
     // other calls held. The whole rule rather than the reveal alone, so a reader taking one term of
     // it cannot be drawing under a rule the rest of the box is not.
     private static ColonyVisibility readColonyVisibility() {
-        return MapVisibilityRules.readFromLunaSettings().colonyVisibility();
+
+        return MapVisibilityRules
+            .readFromLunaSettings()
+            .colonyVisibility();
     }
 
     // The hovered system's contest as this box may state it: the whole scored read, the colony rule
@@ -360,11 +367,13 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         var claimantFactionId = breakdown.claimantFactionId();
 
         if (!KmlibStrings.hasText(claimantFactionId)) {
+
             return CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                 CellTooltipMark.NO_MARK,
-                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_NONE),
+                KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_NONE),
                 CellTooltipEntryLine.NO_SCORE));
         }
+
         // The claimant's own standing, or none at all when it holds nothing the box may list. Two
         // states arrive here, both of them decreed, a claim won by score always resting on a market
         // the listing keeps: a core imposed on a system its faction has no colony in, claimed
@@ -389,9 +398,11 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         // decree questions - the claimant matching the decree rather than a decree merely existing -
         // so the marker states what its line shows.
         if (breakdown.isClaimedByDecree()) {
+
             claimantLine = claimantLine.qualifiedWith(
-                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CORE_MARKER));
+                KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_CORE_MARKER));
         }
+
         return CellTooltipEntry
             .createEntry(claimantLine)
             .nesting(standing
@@ -411,13 +422,16 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         var entries = new ArrayList<CellTooltipEntry>(standings.size());
 
         for (var standing : standings) {
-            entries.add(CellTooltipEntry
-                .createEntry(buildListedLine(
-                    reading.sector(),
-                    standing,
-                    isStatingEligibilityOnLine))
-                .nesting(resolveAdmittedAccountEntries(reading, standing)));
+
+            entries.add(
+                CellTooltipEntry
+                    .createEntry(buildListedLine(
+                        reading.sector(),
+                        standing,
+                        isStatingEligibilityOnLine))
+                    .nesting(resolveAdmittedAccountEntries(reading, standing)));
         }
+
         return entries;
     }
 
@@ -432,6 +446,7 @@ public final class SystemClaimTooltip extends PoliticalMapCellTooltip {
         if (!reading.detailLevel().isAdmittingAccounts()) {
             return List.of();
         }
+
         return resolveAccountEntries(
             reading.contest(),
             standing,

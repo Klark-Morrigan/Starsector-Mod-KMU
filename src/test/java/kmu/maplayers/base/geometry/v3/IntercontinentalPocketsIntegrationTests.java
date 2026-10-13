@@ -6,6 +6,7 @@ import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.Chord;
+import kmu.maplayers.base.geometry.LoadedSectors;
 import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.walls.Walls;
 
@@ -45,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class IntercontinentalPocketsIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     // Whether the spans sharing an anchor are thinned, which is how the map lays the inlet
     // spans: the thinned set is what the map lays, and an unthinned one is a different laying for the

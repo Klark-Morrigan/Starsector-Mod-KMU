@@ -4,6 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.conditions.ui.context.MarketUiContextInstaller;
 import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
@@ -21,7 +22,6 @@ import kmu.mods.rat.RandomAssortmentOfThingsCompatibilityMode;
 import kmu.mods.rat.RandomAssortmentOfThingsSettings;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuLunaSettings;
-import kmu.ui.context.MarketUiContextInstaller;
 
 import java.util.List;
 

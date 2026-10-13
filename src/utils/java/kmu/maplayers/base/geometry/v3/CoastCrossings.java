@@ -84,7 +84,7 @@ public final class CoastCrossings {
      * @param traced the coast, as it was traced
      * @return one entry per offending run, in the order they are drawn
      */
-    static List<Penetration> findPenetrations(Coastlines.TracedCoasts traced) {
+    public static List<Penetration> findPenetrations(Coastlines.TracedCoasts traced) {
 
         var found = new ArrayList<Penetration>();
 
@@ -171,7 +171,7 @@ public final class CoastCrossings {
      * @return the deepest any straight run of coast reaches inside a cell, which is zero when
      *         none of them enters one
      */
-    static double measureDeepestIncursion(Coastlines.TracedCoasts traced) {
+    public static double measureDeepestIncursion(Coastlines.TracedCoasts traced) {
 
         var deepest = 0.0;
 

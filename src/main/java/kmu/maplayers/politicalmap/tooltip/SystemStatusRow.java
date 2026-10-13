@@ -6,6 +6,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
@@ -75,8 +76,8 @@ public final class SystemStatusRow {
         // governed colonies and the collapsed one and nothing else, so with no governed colony
         // found anything still in hand is a collapse, and nothing in hand is nobody at all.
         var statusKey = inhabitingColonies.isEmpty()
-            ? KmuStringKeys.OWNER_MAP_TOOLTIP_UNPOPULATED
-            : KmuStringKeys.OWNER_MAP_TOOLTIP_DECIVILISED;
+            ? KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_UNPOPULATED
+            : KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_DECIVILISED;
 
         // Set across the box, crestless: the status qualifies the whole system rather than being one
         // entry of a list, so it is spoken for the box the way any banner above it is - laid in the

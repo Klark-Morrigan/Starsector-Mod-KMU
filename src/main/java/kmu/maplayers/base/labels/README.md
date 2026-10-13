@@ -41,7 +41,7 @@ see the [mod README](../../../../../../../README.md) for project context.
   which reads the room the drawn lines take.
 - `base.labels.anchor` -
   the placement subsystem that decides where each name sits and paints its debug overlay,
-  plus the `DiagnosticPalette` every diagnostic grades its stages by.
+  in the grades of the render surface's `DiagnosticPalette`.
 - `base.labels.anchor.specifications` -
   the search's tuning surface,
   read once per rebuild:

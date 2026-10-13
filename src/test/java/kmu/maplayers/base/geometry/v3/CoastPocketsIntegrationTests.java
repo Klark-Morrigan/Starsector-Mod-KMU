@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
+import kmu.maplayers.base.geometry.LoadedSectors;
 import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 
 import org.junit.jupiter.api.Nested;
@@ -12,8 +13,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.ArrayList;
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.LoadedSectors.loadFixture;
 import static kmu.maplayers.base.geometry.v3.SectorPipeline.PARAMETERS;
-import static kmu.maplayers.base.geometry.v3.SectorPipeline.loadFixture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class CoastPocketsIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     // The floor the coast is traced at everywhere else, and one coarser setting to raise it
     // to. A pair is enough to pin the property: the fault is that raising the floor at all

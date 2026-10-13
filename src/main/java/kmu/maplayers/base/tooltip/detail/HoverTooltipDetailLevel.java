@@ -1,5 +1,6 @@
 package kmu.maplayers.base.tooltip.detail;
 
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 /**
@@ -29,16 +30,16 @@ import kmu.util.KmuStringKeys;
 public enum HoverTooltipDetailLevel {
 
     /** Who holds the system: the groups holding it, and the factions gathered inside one. */
-    FACTIONS(0, KmuStringKeys.MAP_LAYER_TOOLTIP_FOOTER_COLLAPSE_FACTIONS),
+    FACTIONS(0, KmuMapStringKeys.MAP_LAYER_TOOLTIP_FOOTER_COLLAPSE_FACTIONS),
 
     /** Adds the markets each faction holds the system with. */
-    SYSTEM_COMPOSITION(1, KmuStringKeys.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_SYSTEM_COMPOSITION),
+    SYSTEM_COMPOSITION(1, KmuMapStringKeys.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_SYSTEM_COMPOSITION),
 
     /** Adds stability, size and the patrol total per market. */
-    MARKET_STATS(2, KmuStringKeys.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_MARKET_STATS),
+    MARKET_STATS(2, KmuMapStringKeys.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_MARKET_STATS),
 
     /** Adds the small/medium/large split behind each patrol total. */
-    PATROL_DETAILS(3, KmuStringKeys.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_PATROL_DETAILS);
+    PATROL_DETAILS(3, KmuMapStringKeys.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_PATROL_DETAILS);
 
     // How far under the box's own voice a line breaking down a listed one stands - what an account
     // *is*, rather than which level first admits one. The same one step the laying-out takes when it

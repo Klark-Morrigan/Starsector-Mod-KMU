@@ -5,7 +5,7 @@ import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmu.maplayers.politicalmap.dominance.tooltip.StandingBlock;
 import kmu.maplayers.politicalmap.tooltip.ContestBlockHeading;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 import java.util.List;
 import java.util.function.Function;
@@ -35,7 +35,7 @@ enum ClaimContestBlock implements ContestBlockHeading {
 
     /** Everyone present standing with the claim holder by alliance, of either eligibility. */
     ALLIED(
-        wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER,
+        wording -> KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER,
         ListedClaimContest::selectAlliedStandings,
         ClaimContestBlock.IS_STATING_ELIGIBILITY_ON_LINE),
 
@@ -45,7 +45,7 @@ enum ClaimContestBlock implements ContestBlockHeading {
      * {@link kmu.maplayers.ownermap.owners.holders.alliances.ContestSides}.
      */
     FRIENDLY(
-        wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER,
+        wording -> KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER,
         ListedClaimContest::selectFriendlyStandings,
         ClaimContestBlock.IS_STATING_ELIGIBILITY_ON_LINE),
 
@@ -65,7 +65,7 @@ enum ClaimContestBlock implements ContestBlockHeading {
      * there. Listed with whatever the contest weighed them at, and never named as claiming it.
      */
     NON_TERRITORIAL(
-        wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL,
+        wording -> KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL,
         contest -> contest.selectRivalStandings(standing -> !standing.isTerritorial()),
         ClaimContestBlock.IS_ELIGIBILITY_LEFT_TO_THE_HEADING);
 

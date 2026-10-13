@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmu.maplayers.base.geometry.LoadedSectors;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -20,7 +22,7 @@ class BridgedContinentsIntegrationTests {
     class LayLakeSpans {
 
         @ParameterizedTest
-        @MethodSource(SectorPipeline.SECTORS)
+        @MethodSource(LoadedSectors.SECTORS)
         void whereTheThinningAgreesTheSpansAreTheLayingsOwn(String sector) {
             // Not an equal set searched again but the same one: two readers set alike pay for
             // the search once.
@@ -31,7 +33,7 @@ class BridgedContinentsIntegrationTests {
         }
 
         @ParameterizedTest
-        @MethodSource(SectorPipeline.SECTORS)
+        @MethodSource(LoadedSectors.SECTORS)
         void theOtherThinningIsSearchedOnceAndKept(String sector) {
             // Asked on every refresh of whatever lays it, so searching it each time would pay
             // the dearest search here per refresh.
@@ -43,7 +45,7 @@ class BridgedContinentsIntegrationTests {
         }
 
         @ParameterizedTest
-        @MethodSource(SectorPipeline.SECTORS)
+        @MethodSource(LoadedSectors.SECTORS)
         void unthinnedKeepsEveryThinnedSpanAndMore(String sector) {
             // Thinning only drops, so the unthinned set is the thinned one with the chains and
             // fans put back - and on both fixtures there are some to put back, or the switch

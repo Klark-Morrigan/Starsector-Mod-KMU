@@ -4,6 +4,7 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.Chord;
+import kmu.maplayers.base.geometry.LoadedSectors;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.walls.Walls;
@@ -19,10 +20,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static kmu.maplayers.base.geometry.LoadedSectors.loadFixture;
 import static kmu.maplayers.base.geometry.v3.SectorPipeline.COAST_RULES;
 import static kmu.maplayers.base.geometry.v3.SectorPipeline.PARAMETERS;
 import static kmu.maplayers.base.geometry.v3.SectorPipeline.layLinks;
-import static kmu.maplayers.base.geometry.v3.SectorPipeline.loadFixture;
 import static kmu.maplayers.base.geometry.v3.SectorPipeline.traceContinentCoast;
 import static kmu.maplayers.base.geometry.v3.SectorPipeline.traceLinkedCoasts;
 
@@ -42,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class IntercontinentalCoastsIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     // Whether the spans sharing an anchor are thinned, which is how the map lays the inlet
     // spans: the thinned set is what the map lays, and an unthinned one is a different laying for the

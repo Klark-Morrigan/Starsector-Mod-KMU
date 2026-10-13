@@ -6,10 +6,10 @@ import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,6 +22,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
@@ -94,7 +95,7 @@ final class FilteredClaimsTests {
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
-                    var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
+                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
@@ -102,9 +103,8 @@ final class FilteredClaimsTests {
                         claimReaderMock))
                     .thenReturn(claims);
 
-                filteredPoliticsMock
-                    .when(() -> FilteredPolitics
-                        .resolveSpotlitHolder(pass.palettes(), "hegemony"))
+                spotlitOwnersMock
+                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
                     .thenReturn(SPOTLIT_HOLDER);
 
                 var resolved = FilteredClaims.resolveFilteredClaims(
@@ -132,7 +132,7 @@ final class FilteredClaimsTests {
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
-                    var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
+                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
@@ -140,9 +140,8 @@ final class FilteredClaimsTests {
                         claimReaderMock))
                     .thenReturn(claims);
 
-                filteredPoliticsMock
-                    .when(() -> FilteredPolitics
-                        .resolveSpotlitHolder(pass.palettes(), "hegemony"))
+                spotlitOwnersMock
+                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
                     .thenReturn(null);
 
                 var resolved = FilteredClaims.resolveFilteredClaims(

@@ -7,7 +7,6 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 import kmu.maplayers.politicalmap.dominance.standings.FactionStanding;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
-import kmu.maplayers.politicalmap.dominance.standings.StandingFraction;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 
 import org.junit.jupiter.api.Nested;

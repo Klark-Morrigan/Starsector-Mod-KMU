@@ -10,6 +10,7 @@ import kmlib.testfixtures.starsector.compatibility.CompatibilityFailureFixture;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 import kmlib.testfixtures.statics.StaticSeams;
 
+import kmu.conditions.ui.context.MarketUiContextInstaller;
 import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
@@ -27,7 +28,6 @@ import kmu.mods.rat.RandomAssortmentOfThingsSettings;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapHoverSettings;
-import kmu.ui.context.MarketUiContextInstaller;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

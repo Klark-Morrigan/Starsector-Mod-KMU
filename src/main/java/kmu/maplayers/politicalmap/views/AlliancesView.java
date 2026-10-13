@@ -15,6 +15,7 @@ import kmu.maplayers.ownermap.preferences.RecedePreferences;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import kmu.mods.nexerelin.NexerelinAlliances;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
@@ -67,7 +68,7 @@ public final class AlliancesView
     public String getSegmentLabelKey() {
         // "Alliances" - this view's segment on the view-selector radio, sibling to the faction and
         // claims ones.
-        return KmuStringKeys.POLITICAL_MAP_CTL_ALLIANCES;
+        return KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_ALLIANCES;
     }
 
     @Override
@@ -114,7 +115,7 @@ public final class AlliancesView
         // view's.
         return RecedeControl.buildControls(
             NON_ALLIED_RECEDE,
-            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION),
+            KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION),
             target);
     }
 }

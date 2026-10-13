@@ -480,3 +480,5 @@ and a player who ordered their bar once does not order it again per save.
   The live alliance set is one such fact:
   it is wired past the same mod-enabled gate the alliances view is chosen behind,
   so an install without that mod reads a rule with nothing registered.
+  So are the optional mods' map covers and whether the filter row's hover lists an alliances view,
+  which is what lets the build close the framework to `kmu.mods` outright.

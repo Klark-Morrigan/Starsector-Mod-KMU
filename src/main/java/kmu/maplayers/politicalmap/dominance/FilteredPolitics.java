@@ -6,7 +6,6 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.base.BlocPaletteReader;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
@@ -162,10 +161,11 @@ public final class FilteredPolitics {
         }
 
         // Resolved once for the whole walk: every system the bloc is present in joins the same
-        // spotlight territory, so they all carry the identical holder.
+        // spotlight territory, so they all carry the identical holder. The rebuild pass's own
+        // palettes, so the spotlight paints the bloc in the colours its bands take.
         var spotlight = new Spotlight(
             selectedBlocId,
-            resolveSpotlitHolder(pass.palettes(), selectedBlocId));
+            SpotlitOwners.createSpotlitOwner(pass.palettes().readBlocPalette(selectedBlocId)));
 
         for (var system : pass.readSystems()) {
 
@@ -178,36 +178,6 @@ public final class FilteredPolitics {
         }
 
         return new HolderResolution(ownerBySystemKey, contestedSystemKeys, Set.of());
-    }
-
-    /**
-     * The holder that draws a system as part of the selected bloc's single spotlight territory: the
-     * bloc's palette - its own for a faction, its dominant member's for an alliance - carried on the
-     * one synthetic spotlight key, so a cell holding it paints at the bloc's full strength and
-     * clusters into that one bordered frontier rather than a territory of its own.
-     *
-     * <p>Keying any system this way fuses it into the spotlight, whether the bloc reaches it through
-     * a market its presence pass reads or through a tie that pass never sees - so a system the
-     * normal resolve would leave out can still be drawn under the spotlight, keyed exactly as a
-     * present one. The synthetic key stays this class's secret: a caller holds the returned holder
-     * opaquely and never has to name the key.
-     *
-     * @param palettes       where the bloc's shades are read - the rebuild pass's own, so the
-     *                       spotlight paints the bloc in the colours its bands take
-     * @param selectedBlocId the spotlighted bloc to draw the system under
-     * @return the spotlight holder, or null when the bloc's colour faction does not resolve
-     */
-    public static SystemOwner resolveSpotlitHolder(
-            BlocPaletteReader palettes,
-            String selectedBlocId) {
-
-        var palette = palettes.readBlocPalette(selectedBlocId);
-
-        if (palette == null) {
-            return null;
-        }
-
-        return new SystemOwner(SpotlitOwners.readSpotlitOwnerKey(), palette);
     }
 
     // Resolves one system's presence-aware holder: the selected bloc under the spotlit key where

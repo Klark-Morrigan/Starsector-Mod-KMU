@@ -7,7 +7,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import kmu.mods.nexerelin.NexerelinAlliances;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -53,7 +53,7 @@ final class FactionsViewTests {
         void isTheFactionsRadioLabel() {
 
             assertThat(FactionsView.INSTANCE.getSegmentLabelKey())
-                .isEqualTo(KmuStringKeys.POLITICAL_MAP_CTL_FACTIONS);
+                .isEqualTo(KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_FACTIONS);
         }
     }
 

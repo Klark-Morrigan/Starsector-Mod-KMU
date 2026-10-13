@@ -34,6 +34,7 @@ import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.dominance.DominanceSortModes;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.settings.KmuMapKeybindSettings;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.Nested;
@@ -592,7 +593,7 @@ final class PoliticalMapLayerTests {
             try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
                 stringsMock
-                    .when(() -> KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TAB_POLITICAL_MAP))
+                    .when(() -> KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TAB_POLITICAL_MAP))
                     .thenReturn("Political Map");
 
                 assertThat(layer.resolveTabLabelText())

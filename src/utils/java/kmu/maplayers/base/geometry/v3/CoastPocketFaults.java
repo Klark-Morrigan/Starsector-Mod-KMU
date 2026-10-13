@@ -97,7 +97,7 @@ public final class CoastPocketFaults {
      *         no pockets - which should be the channel, and is nothing when the inset is
      *         missing
      */
-    static double measureClosestApproach(List<WalledPocket> pockets, List<double[]> sites) {
+    public static double measureClosestApproach(List<WalledPocket> pockets, List<double[]> sites) {
 
         var closest = Double.MAX_VALUE;
 

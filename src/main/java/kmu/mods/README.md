@@ -23,7 +23,7 @@ see the [mod README](../../../../../README.md) for project context.
 
 | Package | What is in it |
 | --- | --- |
-| `console` | the cover a text-entry console lays over the map (`ConsoleMapCover`), and KMU's console commands under `console.commands` |
+| `console` | KMU's console commands, under `console.commands` |
 | `nexerelin` | the live alliance set read three ways (`NexerelinAlliances`), the contest wording an install with colony transfers calls for (`NexerelinContestWording`), and the relay that passes Nexerelin's colony transfers on (`NexerelinMarketTransferRelay`, installed by `NexerelinInvasionListenerInstaller`) |
 | `rat` | the compatibility mode for Random Assortment of Things' minimap: the switch (`RandomAssortmentOfThingsCompatibilityMode`), what it stands up (`RandomAssortmentOfThingsCompatibilityInstaller`), the cover confining the hover to the minimap, the widget it may switch off, and the mod's settings as KMU reads them |
 
@@ -40,7 +40,7 @@ Presence cannot change within a run,
 so where an adapter joins a set -
 a map cover,
 a feature switch -
-presence is settled once where the set is built,
+presence is settled once by the composition root that builds the set,
 rather than asked of a part that could only ever answer no.
 
 An optional mod read through its settings rather than its types needs the gate and nothing more:
@@ -83,6 +83,9 @@ so a save that does carry a copy is repaired by the load.
 `gradle/package-layering.gradle` closes every other package tree to the optional mods' packages,
 listed tree by tree for the reason stated there;
 a new top-level tree has to join the list to be covered.
+The map-layer framework is closed to `kmu.mods` itself as well:
+what an adapter adds to it is handed in by the composition roots,
+so the framework never depends on which mods are installed.
 LazyLib and LunaLib are not optional mods:
 KMU is compiled against them and cannot run without them,
 so they belong with the code that uses them.
@@ -99,8 +102,8 @@ so a player can run KMU without Nexerelin while a developer cannot build it with
 
 - **KMLib's `kmlib.mods`** -
   the presence checks and the reads of each mod that any mod built on KMLib shares.
-- **[The map covers](../maplayers/base/hover/cover/README.md#two-from-optional-mods)** -
-  where the console and minimap covers join the hover's set.
+- **[The map covers](../maplayers/base/hover/cover/README.md#covers-from-optional-mods)** -
+  where the minimap cover joins the hover's set.
 - **[Political map refresh](../maplayers/politicalmap/refresh/README.md#the-colony-transfer-relay)** -
   the listener the Nexerelin relay tells about each colony transfer.
 - **[The Nexerelin notes](../../../../../docs/dev/nexerelin.md)** -

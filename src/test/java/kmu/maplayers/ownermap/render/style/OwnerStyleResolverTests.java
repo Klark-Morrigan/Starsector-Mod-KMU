@@ -1,5 +1,7 @@
 package kmu.maplayers.ownermap.render.style;
 
+import kmlib.colour.ColourPair;
+
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.OwnerReading;
@@ -7,6 +9,8 @@ import kmu.maplayers.ownermap.owners.SpotlitOwners;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.awt.Color;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
@@ -110,8 +114,10 @@ final class OwnerStyleResolverTests {
                 StandInCategoryFake.RECEDED,
                 new ElementStyleAdjustment(0.5, true));
 
+            var spotlitOwner = SpotlitOwners.createSpotlitOwner(new ColourPair(Color.ORANGE, Color.DARK_GRAY));
+
             var decision = OwnerStyleResolver.resolveOwnerStyleDecision(
-                SpotlitOwners.readSpotlitOwnerKey(),
+                spotlitOwner.ownerId(),
                 readingMock,
                 OwnerCategoriesFake.SHARED_FAKE,
                 ContentInputsFixtures.createInputsRecedingBehind(

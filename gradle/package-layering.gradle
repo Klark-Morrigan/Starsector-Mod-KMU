@@ -17,8 +17,8 @@
 // a single 'under: kmu' edge would shut kmu.mods off from the very mods its
 // adapters exist to adapt. A new top-level tree has to be added here to be
 // covered - the list is the rule.
-def treesClosedToOptionalMods = ['kmu.conditions', 'kmu.diagnostics',
-    'kmu.maplayers', 'kmu.settings', 'kmu.starsector', 'kmu.svg', 'kmu.ui', 'kmu.util']
+def treesClosedToOptionalMods = ['kmu.conditions', 'kmu.desktop', 'kmu.diagnostics',
+    'kmu.maplayers', 'kmu.promo', 'kmu.settings', 'kmu.starsector', 'kmu.svg', 'kmu.util']
 
 // The mods KMU may run without, named only by the adapters under kmu.mods. Why,
 // and why LazyLib and LunaLib are not among them, is src/main/java/kmu/mods/README.md.
@@ -38,9 +38,30 @@ enforcePackageLayering {
 
     // Group bans:
 
+    // The framework names no layer built on it and no adapter. What the optional mods add to it is
+    // handed in by the composition root, the one place that names what is installed.
     forbidImport under: 'kmu.maplayers.base',
                  of: ['kmu.maplayers.ownermap',
-                      'kmu.maplayers.politicalmap']
+                      'kmu.maplayers.politicalmap',
+                      'kmu.mods']
+
+    // The two features stand side by side, neither built on the other.
+    forbidImport under: 'kmu.conditions',
+                 of: 'kmu.maplayers'
+
+    forbidImport under: 'kmu.maplayers',
+                 of: 'kmu.conditions'
+
+    // The shared substrate every feature reads, so it may name none of them.
+    ['kmu.settings', 'kmu.util'].each { substrate ->
+        forbidImport under: substrate,
+                     of: ['kmu.conditions',
+                          'kmu.maplayers']
+    }
+
+    // The desktop toolkit is generic Swing furniture, which the geometry viewer builds on.
+    forbidImport under: 'kmu.desktop',
+                 of: 'kmu.maplayers'
 
     forbidImport under: 'kmu.maplayers.base.faces',
                  of: ['kmu.maplayers.base.labels',
@@ -70,11 +91,17 @@ enforcePackageLayering {
     forbidImport under: 'kmu.maplayers.base.geometry.render',
                  of: ['kmu.maplayers.base.geometry.output',
                       'kmu.maplayers.base.geometry.settings',
-                      'kmu.maplayers.base.geometry.ui']
+                      'kmu.maplayers.base.geometry.ui',
+                      'kmu.maplayers.base.geometry.v3.ui',
+                      'kmu.maplayers.base.geometry.v4.ui']
 
+    // The viewer's settings take their defaults from v3's own rules and resolve the rule values v3
+    // is run under, so v3 itself stays open to them; only the overlays it is drawn with are closed.
     forbidImport under: 'kmu.maplayers.base.geometry.settings',
                  of: ['kmu.maplayers.base.geometry.output',
-                      'kmu.maplayers.base.geometry.ui']
+                      'kmu.maplayers.base.geometry.ui',
+                      'kmu.maplayers.base.geometry.v3.ui',
+                      'kmu.maplayers.base.geometry.v4.ui']
 
     forbidImport under: 'kmu.maplayers.base.geometry.v4',
                  of: ['kmu.maplayers.base.geometry.output',
@@ -103,6 +130,11 @@ enforcePackageLayering {
                  of: ['kmu.maplayers.base.tooltip.content',
                       'kmu.maplayers.base.tooltip.layout']
 
+    // The refresh machinery drives the colony sightings poll and reads what is drawn, so the
+    // registers it reads may not reach back into it.
+    forbidImport under: 'kmu.maplayers.base.visibility',
+                 of: 'kmu.maplayers.base.refresh'
+
     forbidImport under: 'kmu.maplayers.base.visibility.colonies',
                  of: 'kmu.maplayers.base.visibility.systems'
 
@@ -120,16 +152,18 @@ enforcePackageLayering {
     forbidImport under: 'kmu.svg',
                  of: 'kmu.maplayers'
 
-    forbidImport under: 'kmu.ui',
-                 of: 'kmu.maplayers'
-
     // Exact bans:
 
+    // The geometry root is what every generation of the void prototype builds on, so it names none
+    // of them nor anything drawn from them.
     forbidImport exactly: 'kmu.maplayers.base.geometry',
                  of: ['kmu.maplayers.base.geometry.output',
                       'kmu.maplayers.base.geometry.render',
                       'kmu.maplayers.base.geometry.settings',
-                      'kmu.maplayers.base.geometry.ui']
+                      'kmu.maplayers.base.geometry.ui',
+                      'kmu.maplayers.base.geometry.v3',
+                      'kmu.maplayers.base.geometry.v4',
+                      'kmu.maplayers.base.geometry.walls']
 
     forbidImport exactly: 'kmu.maplayers.base.geometry.ui.settings',
                  of: 'kmu.maplayers.base.geometry.ui'

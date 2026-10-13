@@ -3,9 +3,9 @@ package kmu.mods.nexerelin;
 import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 
+import kmu.maplayers.ownermap.owners.holders.alliances.AllianceGroupingFactory;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.mods.nexerelin.alliances.AllianceFingerprint;
-import kmu.mods.nexerelin.alliances.AllianceGroupingFactory;
 
 /**
  * KMU's readings of the live alliance set: a {@link HolderGrouping} for the political map, a

@@ -7,7 +7,6 @@ import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.PresenceOnlyFactionStanding;
-import kmu.maplayers.politicalmap.dominance.standings.StandingFraction;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 import kmu.starsector.StarsectorSettingsFake;
 

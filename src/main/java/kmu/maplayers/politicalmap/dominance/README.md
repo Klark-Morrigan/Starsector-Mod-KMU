@@ -160,7 +160,9 @@ Widening them would put such a bloc into the ranking that hands out systems,
 and a spotlight must never move a fill.
 
 The spotlit bloc's whole footprint carries one synthetic key,
-which `SpotlitOwners` mints and recognises.
+which `SpotlitOwners` mints and recognises:
+it builds the spotlit owner from the bloc's palette,
+so the claims resolve spotlights a claim the same way without reaching into this package.
 The geometry fuses it into one territory under one border,
 and the contested systems are reported apart (`HolderResolution.contestedSystemKeys`),
 so the fill splits per cell inside that border.

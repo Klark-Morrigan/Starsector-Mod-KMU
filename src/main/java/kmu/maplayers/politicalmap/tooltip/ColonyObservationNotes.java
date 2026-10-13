@@ -13,7 +13,7 @@ import kmu.maplayers.base.visibility.observations.ObservationAxis;
 import kmu.maplayers.base.visibility.observations.ObservationNotes;
 import kmu.maplayers.base.visibility.observations.ObservationRecency;
 import kmu.maplayers.base.visibility.observations.ObservationRecency.RecalledObservation;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 import java.util.HashSet;
 import java.util.List;
@@ -186,7 +186,7 @@ public final class ColonyObservationNotes {
         // and the date are composed in the words every axis shares.
         return ObservationNotes.resolveNoteForAxes(
             clock,
-            List.of(new ObservationAxis(KmuStringKeys.OWNER_MAP_TOOLTIP_LAST_SEEN, recency)));
+            List.of(new ObservationAxis(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_LAST_SEEN, recency)));
     }
 
     // What the register recalls of one colony, in the triad's recalled shape. The place the

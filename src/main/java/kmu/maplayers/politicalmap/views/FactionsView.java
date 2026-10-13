@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.views;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -35,7 +35,7 @@ public final class FactionsView
     @Override
     public String getSegmentLabelKey() {
         // "Factions" - this view's segment on the view-selector radio.
-        return KmuStringKeys.POLITICAL_MAP_CTL_FACTIONS;
+        return KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_FACTIONS;
     }
 
     @Override

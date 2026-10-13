@@ -4,6 +4,7 @@ import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
+import kmu.maplayers.base.geometry.LoadedSectors;
 import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.walls.Walls;
 
@@ -45,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class CoastWaterIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     // How finely a lake's middle is sampled when asking whether anything paints it. Well inside
     // the smallest lake on either fixture, since what is being asked is whether the middle is

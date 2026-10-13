@@ -4,9 +4,15 @@ import kmlib.starsector.strings.StarsectorStrings;
 
 /**
  * KMU's localisation entry point. Holds the category KMU registers in
- * {@code data/strings/strings.json}, the IDs of the strings inside it,
+ * {@code data/strings/strings.json}, the IDs of the strings the whole mod reads,
  * and thin {@link #get(String)} / {@link #format(String, Object...)}
  * accessors that bind that category so call sites never repeat it.
+ *
+ * <p>Every other string ID lives in the key class of the feature that reads it, as the settings
+ * are split by reader: {@link KmuMapStringKeys}, {@link KmuOwnerMapStringKeys},
+ * {@link KmuPoliticalMapStringKeys} and {@link KmuMarketConditionStringKeys}. So no package imports
+ * more of the wording than the part it draws, and a tier's words stay out of reach of the tiers
+ * below it.
  *
  * <p>The lookup and fallback behaviour live in KMLib's
  * {@link StarsectorStrings}; this class is a category-bound shortcut,
@@ -16,19 +22,6 @@ public final class KmuStringKeys {
 
     /** strings.json category namespacing every KMU-owned string. */
     public static final String CATEGORY = "kmu";
-
-    /**
-     * What a session loses where the renderer binding the map's cursor read stands on stops
-     * holding, for the consequence slot of KMLib's compatibility notice. "Won't respond to the
-     * cursor" rather than the highlight alone, which understates it - the hover box is keyed to the
-     * same resolved cell and goes with it - and rather than "overlays will not work", which
-     * overstates it: the overlays still draw, and the sidebar previews are keyed off a row the
-     * pointer is over rather than off the cursor's place on the map.
-     */
-    public static final String COMPATIBILITY_LOST_MAP_CURSOR = "compatibility_lost_map_cursor";
-
-    /** What a Fast Rendering mismatch does not cost, for the notice's optional "No effect" row. */
-    public static final String COMPATIBILITY_UNAFFECTED_MAP_CURSOR = "compatibility_unaffected_map_cursor";
 
     /**
      * What a session loses where a LunaLib settings listener did not register: KMU no longer
@@ -43,211 +36,6 @@ public final class KmuStringKeys {
     /** What a failed LunaLib binding does not cost, for the notice's optional "No effect" row. */
     public static final String COMPATIBILITY_UNAFFECTED_LUNALIB_SETTINGS =
         "compatibility_unaffected_lunalib_settings";
-
-    // What each of the map layers' reaches into the game costs when a game release breaks it, and
-    // what it does not: one pair per MapLayerGameReach constant, which is where each loss is described.
-
-    /**
-     * "May not show", and on either map, because the sector map and the intel screen's are read
-     * apart and either can break alone.
-     */
-    public static final String COMPATIBILITY_LOST_MAP_VIEW = "compatibility_lost_map_view";
-    public static final String COMPATIBILITY_UNAFFECTED_MAP_VIEW = "compatibility_unaffected_map_view";
-
-    /** Says the layers stay shown, since a map with no tick box has no way to hide them. */
-    public static final String COMPATIBILITY_LOST_FILTER_ROW_TOGGLE = "compatibility_lost_filter_row_toggle";
-    public static final String COMPATIBILITY_UNAFFECTED_FILTER_ROW_TOGGLE =
-        "compatibility_unaffected_filter_row_toggle";
-
-    public static final String COMPATIBILITY_LOST_ARRANGE_DIALOG = "compatibility_lost_arrange_dialog";
-    public static final String COMPATIBILITY_UNAFFECTED_ARRANGE_DIALOG = "compatibility_unaffected_arrange_dialog";
-    public static final String COMPATIBILITY_LOST_SCREEN_COVERS = "compatibility_lost_screen_covers";
-    public static final String COMPATIBILITY_UNAFFECTED_SCREEN_COVERS = "compatibility_unaffected_screen_covers";
-    public static final String COMPATIBILITY_LOST_MAP_TOOLTIPS = "compatibility_lost_map_tooltips";
-    public static final String COMPATIBILITY_UNAFFECTED_MAP_TOOLTIPS = "compatibility_unaffected_map_tooltips";
-    public static final String COMPATIBILITY_LOST_STARSCAPE_RESEAT = "compatibility_lost_starscape_reseat";
-    public static final String COMPATIBILITY_UNAFFECTED_STARSCAPE_RESEAT =
-        "compatibility_unaffected_starscape_reseat";
-    public static final String COMPATIBILITY_LOST_STARSCAPE_TERRAIN = "compatibility_lost_starscape_terrain";
-    public static final String COMPATIBILITY_UNAFFECTED_STARSCAPE_TERRAIN =
-        "compatibility_unaffected_starscape_terrain";
-
-    /**
-     * What a map layer that threw and was switched off loses. One slot: the layer's tab name.
-     *
-     * <p>Names the two ways to bring it back, since the player can do either and both retry it.
-     */
-    public static final String COMPATIBILITY_LOST_MAP_LAYER = "compatibility_lost_map_layer";
-    public static final String COMPATIBILITY_UNAFFECTED_MAP_LAYER = "compatibility_unaffected_map_layer";
-
-    /**
-     * What a session loses where the relay for Nexerelin's colony transfers did not install. A delay
-     * rather than a missing repaint, because the political map's own poll still finds the new holder
-     * within seconds; the relay only makes it immediate.
-     */
-    public static final String COMPATIBILITY_LOST_NEXERELIN_COLONY_TRANSFERS =
-        "compatibility_lost_nexerelin_colony_transfers";
-    public static final String COMPATIBILITY_UNAFFECTED_NEXERELIN_COLONY_TRANSFERS =
-        "compatibility_unaffected_nexerelin_colony_transfers";
-
-    public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
-    public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
-    public static final String CONDITION_MANAGER_LOCATION_OWNED_BY = "condition_manager_location_owned_by";
-    public static final String CONDITION_MANAGER_SUMMARY = "condition_manager_summary";
-    public static final String CONDITION_MANAGER_SUMMARY_VISIBLE = "condition_manager_summary_visible";
-    public static final String CONDITION_MANAGER_SUMMARY_SUPPRESSED = "condition_manager_summary_suppressed";
-    public static final String CONDITION_MANAGER_SUMMARY_PRESENT = "condition_manager_summary_present";
-    public static final String CONDITION_MANAGER_SUMMARY_HIDDEN = "condition_manager_summary_hidden";
-    public static final String CONDITION_MANAGER_SUMMARY_AVAILABLE = "condition_manager_summary_available";
-    public static final String CONDITION_MANAGER_SUMMARY_TOTAL = "condition_manager_summary_total";
-    public static final String CONDITION_MANAGER_GROUP_SEPARATOR = "condition_manager_group_separator";
-    public static final String CONDITION_MANAGER_ITEM_SEPARATOR = "condition_manager_item_separator";
-    public static final String CONDITION_MANAGER_EMPTY = "condition_manager_empty";
-    public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE =
-        "condition_manager_tooltip_suppressed_title";
-    public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY = "condition_manager_tooltip_suppressed_body";
-    public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE = "condition_manager_tooltip_hidden_title";
-    public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY = "condition_manager_tooltip_hidden_body";
-    public static final String DIALOG_CLOSE = "dialog_close";
-    public static final String MAP_LAYER_ARRANGE_TITLE = "map_layer_arrange_title";
-    public static final String MAP_LAYER_ARRANGE_HINT = "map_layer_arrange_hint";
-    public static final String MAP_LAYER_ARRANGE_HINT_UNCHECK = "map_layer_arrange_hint_uncheck";
-    public static final String MAP_LAYER_ARRANGE_MOVE_UP = "map_layer_arrange_move_up";
-    public static final String MAP_LAYER_ARRANGE_MOVE_DOWN = "map_layer_arrange_move_down";
-    public static final String MAP_LAYER_ARRANGE_APPLY = "map_layer_arrange_apply";
-    public static final String MAP_LAYER_TAB_NO_LAYER = "map_layer_tab_no_layer";
-    public static final String MAP_LAYER_CTL_COLUMNS_CAPTION = "map_layer_ctl_columns_caption";
-    public static final String MAP_LAYER_CTL_FILTER_ROW_TOGGLE = "map_layer_ctl_filter_row_toggle";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE =
-        "map_layer_tooltip_filter_row_toggle";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_LAYERS =
-        "map_layer_tooltip_filter_row_toggle_layers";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER =
-        "map_layer_tooltip_filter_row_toggle_supplier";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL =
-        "map_layer_tooltip_filter_row_toggle_uninstall";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING =
-        "map_layer_tooltip_filter_row_toggle_uninstall_warning";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION =
-        "map_layer_tooltip_filter_row_toggle_uninstall_warning_action";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL =
-        "map_layer_tooltip_filter_row_toggle_uninstall_warning_label";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE =
-        "map_layer_tooltip_filter_row_toggle_uninstall_disable";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE =
-        "map_layer_tooltip_filter_row_toggle_uninstall_save";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD =
-        "map_layer_tooltip_filter_row_toggle_settings_mod";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS_QUALIFIED =
-        "map_layer_tooltip_filter_row_toggle_view_claims_qualified";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_POLITICAL_MAP =
-        "map_layer_tooltip_filter_row_toggle_view_political_map";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_FACTIONS =
-        "map_layer_tooltip_filter_row_toggle_view_factions";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_ALLIANCES =
-        "map_layer_tooltip_filter_row_toggle_view_alliances";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS =
-        "map_layer_tooltip_filter_row_toggle_view_claims";
-    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_SEPARATOR =
-        "map_layer_tooltip_filter_row_toggle_view_separator";
-    public static final String MAP_LAYER_TOOLTIP_FOOTER_COLLAPSE_FACTIONS =
-        "map_layer_tooltip_footer_collapse_factions";
-    public static final String MAP_LAYER_TOOLTIP_FOOTER_EXPAND_SYSTEM_COMPOSITION =
-        "map_layer_tooltip_footer_expand_system_composition";
-    public static final String MAP_LAYER_TOOLTIP_FOOTER_EXPAND_MARKET_STATS =
-        "map_layer_tooltip_footer_expand_market_stats";
-    public static final String MAP_LAYER_TOOLTIP_FOOTER_EXPAND_PATROL_DETAILS =
-        "map_layer_tooltip_footer_expand_patrol_details";
-    public static final String MAP_LAYER_TOOLTIP_FOOTER_WITHHELD =
-        "map_layer_tooltip_footer_withheld";
-    public static final String MAP_LAYER_TOOLTIP_WITHHELD_ENTRIES =
-        "map_layer_tooltip_withheld_entries";
-    public static final String OBSERVATION_SPAN_TODAY = "observation_span_today";
-    public static final String OBSERVATION_SPAN_A_DAY_AGO = "observation_span_a_day_ago";
-    public static final String OBSERVATION_SPAN_DAYS_AGO = "observation_span_days_ago";
-    public static final String POLITICAL_MAP_TAB_POLITICAL_MAP = "political_map_tab_political_map";
-    public static final String OWNER_MAP_CTL_UNINHABITED = "owner_map_ctl_uninhabited";
-    public static final String OWNER_MAP_CTL_NAME_FULL = "owner_map_ctl_name_full";
-    public static final String OWNER_MAP_CTL_NAME_SHORT = "owner_map_ctl_name_short";
-    public static final String OWNER_MAP_CTL_NAME_NONE = "owner_map_ctl_name_none";
-    public static final String POLITICAL_MAP_CTL_FACTIONS = "political_map_ctl_factions";
-    public static final String POLITICAL_MAP_CTL_FACTION_NAMES = "political_map_ctl_faction_names";
-    public static final String POLITICAL_MAP_CTL_ALLIANCES = "political_map_ctl_alliances";
-    public static final String POLITICAL_MAP_CTL_CLAIMS = "political_map_ctl_claims";
-    public static final String POLITICAL_MAP_CTL_NON_ALLIED_CAPTION = "political_map_ctl_non_allied_caption";
-    public static final String OWNER_MAP_CTL_MUTED = "owner_map_ctl_muted";
-    public static final String OWNER_MAP_CTL_DESATURATED = "owner_map_ctl_desaturated";
-    public static final String POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION = "political_map_ctl_filter_recede_caption";
-    public static final String POLITICAL_MAP_CTL_SORT_NAME = "political_map_ctl_sort_name";
-    public static final String POLITICAL_MAP_CTL_SORT_DOMINATION = "political_map_ctl_sort_domination";
-    public static final String POLITICAL_MAP_CTL_SORT_PRESENCE = "political_map_ctl_sort_presence";
-    public static final String POLITICAL_MAP_CTL_SORT_SCORE = "political_map_ctl_sort_score";
-    public static final String OWNER_MAP_CTL_SORT_MARKET_SIZE = "owner_map_ctl_sort_market_size";
-    public static final String POLITICAL_MAP_CTL_SORT_CLAIMS = "political_map_ctl_sort_claims";
-    public static final String OWNER_MAP_CTL_SORT_ATTITUDE = "owner_map_ctl_sort_attitude";
-    public static final String OWNER_MAP_CTL_SORT_ATTITUDE_RANGE_SEPARATOR =
-        "owner_map_ctl_sort_attitude_range_separator";
-    public static final String OWNER_MAP_TOOLTIP_DECIVILISED = "owner_map_tooltip_decivilised";
-    public static final String OWNER_MAP_TOOLTIP_UNPOPULATED = "owner_map_tooltip_unpopulated";
-    public static final String POLITICAL_MAP_TOOLTIP_CORE_TERRITORY = "political_map_tooltip_core_territory";
-    public static final String POLITICAL_MAP_TOOLTIP_CORE_MARKER = "political_map_tooltip_core_marker";
-    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_NONE = "political_map_tooltip_claim_none";
-    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER = "political_map_tooltip_claim_holder";
-    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION =
-        "political_map_tooltip_claim_listing_position";
-    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_BONUS =
-        "political_map_tooltip_claim_sibling_bonus";
-    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_WORKING =
-        "political_map_tooltip_claim_sibling_working";
-    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY = "political_map_tooltip_claim_military";
-    public static final String POLITICAL_MAP_TOOLTIP_CLAIM_BONUS = "political_map_tooltip_claim_bonus";
-    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_SEPARATOR =
-        "owner_map_tooltip_qualifier_separator";
-    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_ABANDONED =
-        "owner_map_tooltip_qualifier_abandoned";
-    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_DECIVILISED =
-        "owner_map_tooltip_qualifier_decivilised";
-    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_UNDISCOVERED =
-        "owner_map_tooltip_qualifier_undiscovered";
-    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_HIDDEN =
-        "owner_map_tooltip_qualifier_hidden";
-    public static final String OWNER_MAP_TOOLTIP_QUALIFIER_UNLISTED =
-        "owner_map_tooltip_qualifier_unlisted";
-    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL =
-        "political_map_tooltip_qualifier_non_territorial";
-    public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION =
-        "political_map_tooltip_qualifier_fraction";
-    public static final String OWNER_MAP_TOOLTIP_LAST_SEEN = "owner_map_tooltip_last_seen";
-    public static final String POLITICAL_MAP_TOOLTIP_SECTION_CLAIM = "political_map_tooltip_section_claim";
-    public static final String POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER =
-        "political_map_tooltip_section_allied_with_holder";
-    public static final String POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER =
-        "political_map_tooltip_section_friendly_with_claim_holder";
-    public static final String POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED = "political_map_tooltip_section_contested";
-    public static final String POLITICAL_MAP_TOOLTIP_SECTION_PRESENT = "political_map_tooltip_section_present";
-    public static final String POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL =
-        "political_map_tooltip_section_non_territorial";
-    public static final String POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED = "political_map_tooltip_section_dominated";
-    public static final String POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER =
-        "political_map_tooltip_section_allied_with_system_holder";
-    public static final String POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_SYSTEM_HOLDER =
-        "political_map_tooltip_section_friendly_with_system_holder";
-    public static final String POLITICAL_MAP_TOOLTIP_SECTION_NON_POLITICAL =
-        "political_map_tooltip_section_non_political";
-    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY = "political_map_tooltip_factor_stability";
-    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_SIZE = "political_map_tooltip_factor_size";
-    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS = "political_map_tooltip_factor_patrols";
-    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_FIXED = "political_map_tooltip_factor_fixed";
-    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_STATION_MILITARY =
-        "political_map_tooltip_factor_station_military";
-    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_RATED = "political_map_tooltip_factor_rated";
-    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED = "political_map_tooltip_factor_counted";
-    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_JOINED = "political_map_tooltip_factor_joined";
-    public static final String POLITICAL_MAP_TOOLTIP_FACTOR_PENALTY = "political_map_tooltip_factor_penalty";
-    public static final String POLITICAL_MAP_TOOLTIP_PATROL_TIER = "political_map_tooltip_patrol_tier";
-    public static final String POLITICAL_MAP_TOOLTIP_PATROL_SMALL = "political_map_tooltip_patrol_small";
-    public static final String POLITICAL_MAP_TOOLTIP_PATROL_MEDIUM = "political_map_tooltip_patrol_medium";
-    public static final String POLITICAL_MAP_TOOLTIP_PATROL_LARGE = "political_map_tooltip_patrol_large";
 
     private KmuStringKeys() {
     }

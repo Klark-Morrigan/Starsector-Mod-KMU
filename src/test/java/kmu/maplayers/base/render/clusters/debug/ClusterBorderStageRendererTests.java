@@ -1,6 +1,6 @@
 package kmu.maplayers.base.render.clusters.debug;
 
-import kmu.maplayers.base.labels.anchor.DiagnosticPalette;
+import kmu.maplayers.base.render.DiagnosticPalette;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

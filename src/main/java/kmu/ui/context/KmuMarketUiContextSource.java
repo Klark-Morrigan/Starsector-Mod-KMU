@@ -1,9 +1,0 @@
-package kmu.ui.context;
-
-public enum KmuMarketUiContextSource {
-    CURRENTLY_OPEN_MARKET,
-    INTERACTION_DIALOG_TARGET,
-    PLAYER_FLEET_INTERACTION_TARGET,
-    TRACKED_CORE_UI_MARKET,
-    REFLECTED_CORE_PANEL
-}

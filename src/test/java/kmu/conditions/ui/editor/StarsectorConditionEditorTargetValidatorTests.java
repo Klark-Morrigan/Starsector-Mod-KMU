@@ -3,8 +3,8 @@ package kmu.conditions.ui.editor;
 import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.ui.context.KmuMarketUiContext;
-import kmu.ui.context.KmuMarketUiContextSource;
+import kmu.conditions.ui.context.KmuMarketUiContext;
+import kmu.conditions.ui.context.KmuMarketUiContextSource;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

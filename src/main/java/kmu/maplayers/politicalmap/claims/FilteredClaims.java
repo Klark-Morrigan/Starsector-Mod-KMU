@@ -3,10 +3,9 @@ package kmu.maplayers.politicalmap.claims;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
-import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
-import kmu.maplayers.politicalmap.dominance.SectorPolitics;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -15,8 +14,9 @@ import java.util.Map;
  * Resolves who paints each claimed star system while the filter spotlights one bloc: the selected
  * bloc's claims carry its one synthetic spotlight key, every rival's claim keeps its own.
  *
- * <p>The claim counterpart to {@link FilteredPolitics}, standing to {@link SectorClaims} exactly as
- * that class stands to {@link SectorPolitics} - the same resolve, answered under a spotlight. The
+ * <p>The claim counterpart to the dominance package's {@code FilteredPolitics}, standing to
+ * {@link SectorClaims} exactly as that class stands to {@code SectorPolitics} - the same resolve,
+ * answered under a spotlight. The
  * key is what the style layer reads: a rekeyed claim draws at full strength, a claim left on its
  * plain bloc key mutes and desaturates, so a claim always shares the fate of the territory it
  * belongs to.
@@ -70,7 +70,7 @@ public final class FilteredClaims {
 
         // Resolved once for the whole walk: every system the bloc claims joins the same spotlight
         // territory, so they all carry the identical holder.
-        var spotlitHolder = FilteredPolitics.resolveSpotlitHolder(pass.palettes(), selectedBlocId);
+        var spotlitHolder = SpotlitOwners.createSpotlitOwner(pass.palettes().readBlocPalette(selectedBlocId));
         var spotlitClaims = new LinkedHashMap<SystemKey, SystemOwner>();
 
         for (var claim : claimingHolderBySystemKey.entrySet()) {

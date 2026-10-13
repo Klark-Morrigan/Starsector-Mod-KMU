@@ -15,6 +15,7 @@ import kmu.maplayers.ownermap.MapLayerViewRegistry;
 import kmu.maplayers.ownermap.preferences.NameFormatPreference;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.util.KmuOwnerMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public final class OwnerMapBodyControls {
             CheckboxSpec.lit(
                 // The plain text tone: the box states an option rather than calling anything out.
                 new TextSpan(
-                    KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_UNINHABITED),
+                    KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_UNINHABITED),
                     StarsectorUiColour.VANILLA_TEXT.resolve()),
                 outline.isOutlineDrawn(target.memoryScope()),
                 cellIndex -> PanelToggles.flipToggle(
@@ -125,9 +126,9 @@ public final class OwnerMapBodyControls {
     private static String resolveNameSegmentLabel(OwnerNameFormatChoice choice) {
 
         return switch (choice) {
-            case FULL -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_FULL);
-            case SHORT -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_SHORT);
-            case NONE -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_NONE);
+            case FULL -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_FULL);
+            case SHORT -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_SHORT);
+            case NONE -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_NONE);
         };
     }
 

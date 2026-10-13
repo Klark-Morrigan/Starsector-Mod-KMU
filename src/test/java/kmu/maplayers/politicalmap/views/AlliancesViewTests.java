@@ -30,6 +30,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuOwnerMapStyleSettings;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.Nested;
@@ -95,7 +96,7 @@ final class AlliancesViewTests {
         void isTheAlliancesRadioLabel() {
 
             assertThat(AlliancesView.INSTANCE.getSegmentLabelKey())
-                .isEqualTo(KmuStringKeys.POLITICAL_MAP_CTL_ALLIANCES);
+                .isEqualTo(KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_ALLIANCES);
         }
     }
 
@@ -134,7 +135,7 @@ final class AlliancesViewTests {
                     var stringsMock = mockStatic(KmuStringKeys.class)) {
 
                 stringsMock
-                    .when(() -> KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))
+                    .when(() -> KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))
                     .thenReturn("Non-allied factions are");
                 controlMock
                     .when(() -> RecedeControl.buildControls(

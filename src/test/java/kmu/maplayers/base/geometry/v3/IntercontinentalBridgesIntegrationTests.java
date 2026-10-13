@@ -5,6 +5,7 @@ import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.DiscUnion;
+import kmu.maplayers.base.geometry.LoadedSectors;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class IntercontinentalBridgesIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     // Whether the spans sharing an anchor are thinned, which is how the map lays the inlet
     // spans: the thinned set is what the map lays, and an unthinned one is a different laying for the
