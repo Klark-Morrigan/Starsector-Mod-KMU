@@ -1,0 +1,193 @@
+package kmu.conditions.ui.picker.action;
+
+import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.CampaignUIAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.util.Misc;
+
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+
+import kmu.starsector.StarsectorSettingsFake;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+
+import java.awt.Color;
+
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * Pins the message a picker action leaves in the campaign's message list: its colour by outcome, and that a
+ * campaign unable to take it never breaks the action that reported it.
+ */
+class StarsectorConditionPickerFeedbackSinkTests {
+
+    // Distinct shades, so a message tinted in the wrong one can be told apart.
+    private static final Color NEGATIVE_HIGHLIGHT = new Color(255, 60, 60);
+    private static final Color POSITIVE_HIGHLIGHT = new Color(60, 255, 60);
+
+    private static final String MESSAGE = "hot added";
+
+    private MockedStatic<Misc> miscMock;
+
+    @BeforeEach
+    void installHighlightColours() {
+
+        // Misc reads the settings as it loads, and a class that fails to load stays broken for every
+        // later suite in the JVM, so the settings go in first.
+        StarsectorSettingsFake.installSettings();
+
+        miscMock = mockStatic(Misc.class);
+        miscMock
+            .when(Misc::getNegativeHighlightColor)
+            .thenReturn(NEGATIVE_HIGHLIGHT);
+        miscMock
+            .when(Misc::getPositiveHighlightColor)
+            .thenReturn(POSITIVE_HIGHLIGHT);
+    }
+
+    @AfterEach
+    void closeHighlightColours() {
+
+        miscMock.close();
+        StarsectorSettingsFake.clearSettings();
+    }
+
+    @Nested
+    class Report {
+
+        @Test
+        void showsSuccessInPositiveHighlight() {
+
+            // Stubbed before the static stubbing is opened, never inside its argument: Mockito reads
+            // a mock arranged mid-statement as an unfinished stubbing of the outer one.
+            var campaignUiMock = mock(CampaignUIAPI.class);
+            var sectorMock = stubSectorShowing(campaignUiMock);
+            var feedbackMock = stubFeedback(false);
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                new StarsectorConditionPickerFeedbackSink().report(feedbackMock);
+            }
+
+            verify(campaignUiMock)
+                .addMessage(MESSAGE, POSITIVE_HIGHLIGHT);
+        }
+
+        @Test
+        void showsFailureInNegativeHighlight() {
+
+            var campaignUiMock = mock(CampaignUIAPI.class);
+            var sectorMock = stubSectorShowing(campaignUiMock);
+            var feedbackMock = stubFeedback(true);
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                new StarsectorConditionPickerFeedbackSink().report(feedbackMock);
+            }
+
+            verify(campaignUiMock)
+                .addMessage(MESSAGE, NEGATIVE_HIGHLIGHT);
+        }
+
+        @Test
+        void passesQuietlyWithNoSector() {
+
+            // The picker can outlive the campaign it was opened in, as on a return to the title screen.
+            var feedbackMock = stubFeedback(false);
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                assertThatCode(() -> new StarsectorConditionPickerFeedbackSink().report(feedbackMock))
+                    .doesNotThrowAnyException();
+            }
+        }
+
+        @Test
+        void passesQuietlyWithNoCampaignUi() {
+
+            var sectorMock = stubSectorShowing(null);
+            var feedbackMock = stubFeedback(false);
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                assertThatCode(() -> new StarsectorConditionPickerFeedbackSink().report(feedbackMock))
+                    .doesNotThrowAnyException();
+            }
+        }
+
+        @Test
+        void containsFailureRaisedByTheMessageList() {
+
+            // The condition is already added by the time the message is posted, so a message that
+            // cannot be shown must not turn a finished action into a failed one.
+            var campaignUiMock = mock(CampaignUIAPI.class);
+
+            doThrow(new IllegalStateException("message list closed"))
+                .when(campaignUiMock)
+                .addMessage(anyString(), any(Color.class));
+
+            var sectorMock = stubSectorShowing(campaignUiMock);
+            var feedbackMock = stubFeedback(false);
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                assertThatCode(() -> new StarsectorConditionPickerFeedbackSink().report(feedbackMock))
+                    .doesNotThrowAnyException();
+            }
+        }
+    }
+
+    private static SectorAPI stubSectorShowing(CampaignUIAPI campaignUi) {
+
+        var sectorMock = mock(SectorAPI.class);
+
+        when(sectorMock.getCampaignUI())
+            .thenReturn(campaignUi);
+
+        return sectorMock;
+    }
+
+    // The wording is the feedback's own and is not this sink's to pin, so it is handed in whole.
+    private static KmuConditionPickerFeedback stubFeedback(boolean isFailure) {
+
+        var feedbackMock = mock(KmuConditionPickerFeedback.class);
+
+        when(feedbackMock.getMessage())
+            .thenReturn(MESSAGE);
+        when(feedbackMock.isFailure())
+            .thenReturn(isFailure);
+
+        return feedbackMock;
+    }
+}

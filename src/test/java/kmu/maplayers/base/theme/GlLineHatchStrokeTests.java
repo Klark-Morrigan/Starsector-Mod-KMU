@@ -32,6 +32,7 @@ final class GlLineHatchStrokeTests {
 
         @Test
         void theInkCoversTheSameShareOfTheGapAtEveryZoom() {
+
             var stroke = new GlLineHatchStroke(GlLineQuality.ALIASED, 0.25);
 
             // Zoomed out, the gap is 50 screen pixels; zoomed in an order of magnitude, 500. A
@@ -50,6 +51,7 @@ final class GlLineHatchStrokeTests {
             var stroke = new GlLineHatchStroke(GlLineQuality.ALIASED, 0.9);
 
             for (var factor = 0.01f; factor < 1f; factor += 0.01f) {
+
                 assertThat(stroke.computeWidthPixelsAt(SPACING, factor))
                     .isLessThan((float) SPACING * factor);
             }
@@ -57,6 +59,7 @@ final class GlLineHatchStrokeTests {
 
         @Test
         void aHeavierFractionInksMoreOfTheSameGap() {
+
             var light = new GlLineHatchStroke(GlLineQuality.ALIASED, 0.1);
             var heavy = new GlLineHatchStroke(GlLineQuality.ALIASED, 0.8);
 

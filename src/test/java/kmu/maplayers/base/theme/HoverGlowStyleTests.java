@@ -3,6 +3,9 @@ package kmu.maplayers.base.theme;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
@@ -20,30 +23,39 @@ import static org.assertj.core.api.Assertions.within;
  * the renderer reads.
  */
 final class HoverGlowStyleTests {
+
     private static final double TOLERANCE = 1e-9;
+
+    // How many layers the two shared halos stack.
+    private static final int HALO_LAYERS = 4;
 
     // A four-layer halo reaching 20 pixels at full opacity, and breathing down to half
     // brightness over a two-second cycle - values picked so each layer, the crest, and the
     // trough land on exact fractions.
     private static HoverGlowStyle buildBreathingHalo() {
-        return new HoverGlowStyle(1, 20, 4, 0.5, 2);
+        return new HoverGlowStyle(1, 20, HALO_LAYERS, 0.5, 2);
     }
 
     // The same halo with its pulse off, so a layer's alpha reads as its falloff alone.
     private static HoverGlowStyle buildSteadyHalo() {
-        return new HoverGlowStyle(1, 20, 4, 0, 2);
+        return new HoverGlowStyle(1, 20, HALO_LAYERS, 0, 2);
     }
 
     @Nested
     class ComputeLayerWidth {
         @Test
         void theLayersWidenEvenlyOutToTheHalosFullWidth() {
+
             var style = buildSteadyHalo();
 
-            assertThat(style.computeLayerWidth(0)).isCloseTo(5, within(TOLERANCE));
-            assertThat(style.computeLayerWidth(1)).isCloseTo(10, within(TOLERANCE));
-            assertThat(style.computeLayerWidth(2)).isCloseTo(15, within(TOLERANCE));
-            assertThat(style.computeLayerWidth(3)).isCloseTo(20, within(TOLERANCE));
+            assertThat(style.computeLayerWidth(0))
+                .isCloseTo(5, within(TOLERANCE));
+            assertThat(style.computeLayerWidth(1))
+                .isCloseTo(10, within(TOLERANCE));
+            assertThat(style.computeLayerWidth(2))
+                .isCloseTo(15, within(TOLERANCE));
+            assertThat(style.computeLayerWidth(3))
+                .isCloseTo(20, within(TOLERANCE));
         }
 
         @Test
@@ -51,7 +63,8 @@ final class HoverGlowStyleTests {
             // With nothing to fall off across, the one layer is both innermost and outermost.
             var style = new HoverGlowStyle(1, 20, 1, 0, 2);
 
-            assertThat(style.computeLayerWidth(0)).isCloseTo(20, within(TOLERANCE));
+            assertThat(style.computeLayerWidth(0))
+                .isCloseTo(20, within(TOLERANCE));
         }
     }
 
@@ -59,12 +72,17 @@ final class HoverGlowStyleTests {
     class ComputeLayerAlpha {
         @Test
         void theLayersFadeOutwardFromTheFullOpacityAtTheRim() {
+
             var style = buildSteadyHalo();
 
-            assertThat(style.computeLayerAlpha(0, 0)).isCloseTo(1, within(TOLERANCE));
-            assertThat(style.computeLayerAlpha(1, 0)).isCloseTo(0.75, within(TOLERANCE));
-            assertThat(style.computeLayerAlpha(2, 0)).isCloseTo(0.5, within(TOLERANCE));
-            assertThat(style.computeLayerAlpha(3, 0)).isCloseTo(0.25, within(TOLERANCE));
+            assertThat(style.computeLayerAlpha(0, 0))
+                .isCloseTo(1, within(TOLERANCE));
+            assertThat(style.computeLayerAlpha(1, 0))
+                .isCloseTo(0.75, within(TOLERANCE));
+            assertThat(style.computeLayerAlpha(2, 0))
+                .isCloseTo(0.5, within(TOLERANCE));
+            assertThat(style.computeLayerAlpha(3, 0))
+                .isCloseTo(0.25, within(TOLERANCE));
         }
 
         @Test
@@ -72,55 +90,81 @@ final class HoverGlowStyleTests {
             // The falloff is what makes the stack read as a halo rather than a thick line, so
             // its direction is pinned rather than left to the arithmetic.
             var style = buildSteadyHalo();
+            var alphas = new ArrayList<Double>();
+            var widths = new ArrayList<Double>();
 
-            for (var layer = 1; layer < style.layers(); layer++) {
-                assertThat(style.computeLayerAlpha(layer, 0))
-                        .isLessThan(style.computeLayerAlpha(layer - 1, 0));
-                assertThat(style.computeLayerWidth(layer))
-                        .isGreaterThan(style.computeLayerWidth(layer - 1));
+            for (var layer = 0; layer < HALO_LAYERS; layer++) {
+
+                alphas.add(style.computeLayerAlpha(layer, 0));
+                widths.add(style.computeLayerWidth(layer));
             }
+
+            assertThat(alphas)
+                .isSortedAccordingTo(Comparator.reverseOrder())
+                .doesNotHaveDuplicates();
+            assertThat(widths)
+                .isSorted()
+                .doesNotHaveDuplicates();
         }
 
         @Test
         void theBreathStartsFullBottomsOutMidwayAndReturns() {
+
             var style = buildBreathingHalo();
 
-            assertThat(style.computeLayerAlpha(0, 0)).isCloseTo(1, within(TOLERANCE));
-            assertThat(style.computeLayerAlpha(0, 1)).isCloseTo(0.5, within(TOLERANCE));
-            assertThat(style.computeLayerAlpha(0, 2)).isCloseTo(1, within(TOLERANCE));
+            assertThat(style.computeLayerAlpha(0, 0))
+                .isCloseTo(1, within(TOLERANCE));
+            assertThat(style.computeLayerAlpha(0, 1))
+                .isCloseTo(0.5, within(TOLERANCE));
+            assertThat(style.computeLayerAlpha(0, 2))
+                .isCloseTo(1, within(TOLERANCE));
         }
 
         @Test
         void theBreathScalesEveryLayerAlike() {
             // One pulse over the whole stack, so the halo breathes as one thing rather than
-            // its layers sliding against each other.
+            // its layers sliding against each other. At the trough each layer reads its steady
+            // 1, 0.75, 0.5 and 0.25, halved.
             var style = buildBreathingHalo();
 
+            assertThat(style.computeLayerAlpha(0, 1))
+                .isCloseTo(0.5, within(TOLERANCE));
+            assertThat(style.computeLayerAlpha(1, 1))
+                .isCloseTo(0.375, within(TOLERANCE));
             assertThat(style.computeLayerAlpha(2, 1))
-                    .isCloseTo(style.computeLayerAlpha(2, 0) * 0.5, within(TOLERANCE));
+                .isCloseTo(0.25, within(TOLERANCE));
+            assertThat(style.computeLayerAlpha(3, 1))
+                .isCloseTo(0.125, within(TOLERANCE));
         }
 
         @Test
         void theBreathNeverDimsPastItsStrengthAtAnyPhase() {
+
             var style = buildBreathingHalo();
 
             // Sampled across a whole cycle at a phase that hits neither crest nor trough
             // squarely, so an inverted or overdriven pulse shows up as an out-of-range alpha.
             for (var step = 0; step <= 40; step++) {
-                assertThat(style.computeLayerAlpha(0, step * 0.05)).isBetween(0.5, 1.0);
+
+                assertThat(style.computeLayerAlpha(0, step * 0.05))
+                    .isBetween(0.5, 1.0);
             }
         }
 
         @Test
         void aHaloWithNoPulseStrengthHoldsSteady() {
-            assertThat(buildSteadyHalo().computeLayerAlpha(0, 0.7)).isEqualTo(1);
+
+            assertThat(buildSteadyHalo().computeLayerAlpha(0, 0.7))
+                .isEqualTo(1);
         }
 
         @Test
         void aHaloWithNoPulsePeriodHoldsSteadyRatherThanDividingByZero() {
+
             var style = new HoverGlowStyle(1, 20, 4, 0.5, 0);
 
-            assertThat(style.computeLayerAlpha(0, 0.7)).isEqualTo(1);
+            assertThat(style.computeLayerAlpha(0, 0.7))
+                .isEqualTo(1);
         }
     }
 }

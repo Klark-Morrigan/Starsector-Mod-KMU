@@ -2,6 +2,7 @@ package kmu.conditions.ui.picker.render.paragraph;
 
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.testfixtures.starsector.ui.label.LabelHighlightRule;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
@@ -85,7 +86,8 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
 
             assertThat(paragraphs.get(0).getText())
                 .isEqualTo("Conditions:");
-            assertThat(paragraphs.get(0).getHighlightTexts())
+            assertThat(paragraphs.get(0).getHighlights())
+                .extracting(Highlight::getText)
                 .isEmpty();
         }
 
@@ -136,7 +138,8 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
             // (white). The tail from the dash on is one grey run, so it renders fully grey.
             var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(buildModel(listEntries()));
 
-            assertThat(paragraphs.get(1).getHighlightTexts())
+            assertThat(paragraphs.get(1).getHighlights())
+                .extracting(Highlight::getText)
                 .containsExactly(
                     "2 visible", "1 suppressed", "1 hidden",
                     "- 1 available, 4 total.");
@@ -147,7 +150,8 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
             // Colours align one-to-one with highlights above; the tail is grey.
             var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(buildModel(listEntries()));
 
-            assertThat(paragraphs.get(1).getHighlightColours())
+            assertThat(paragraphs.get(1).getHighlights())
+                .extracting(Highlight::getColour)
                 .containsExactly(GREEN, RED, BLUE, GRAY);
         }
 
@@ -167,7 +171,8 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
             var paragraphs = KmuConditionPickerSummaryParagraphFactory.createParagraphs(
                 buildModel(Collections.emptyList()));
 
-            assertThat(paragraphs.get(1).getHighlightTexts())
+            assertThat(paragraphs.get(1).getHighlights())
+                .extracting(Highlight::getText)
                 .containsExactly("0 available, 0 total.");
         }
 
@@ -178,7 +183,8 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
                 buildModel(Collections.singletonList(
                     buildEntry("hot", KmuConditionPickerEntryState.PRESENT, false, false))));
 
-            assertThat(paragraphs.get(1).getHighlightTexts())
+            assertThat(paragraphs.get(1).getHighlights())
+                .extracting(Highlight::getText)
                 .doesNotContain("0 suppressed");
         }
 
@@ -189,14 +195,10 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
                 buildModel(Collections.singletonList(
                     buildEntry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false))));
 
-            var highlights = paragraphs.get(1).getHighlightTexts();
-            var colours = paragraphs.get(1).getHighlightColours();
-            var suppIdx = Arrays.asList(highlights).indexOf("1 suppressed");
-
-            assertThat(suppIdx)
-                .isNotEqualTo(-1);
-            assertThat(colours[suppIdx])
-                .isEqualTo(RED);
+            assertThat(paragraphs.get(1).getHighlights())
+                .filteredOn(highlight -> highlight.getText().equals("1 suppressed"))
+                .extracting(Highlight::getColour)
+                .containsExactly(RED);
         }
     }
 

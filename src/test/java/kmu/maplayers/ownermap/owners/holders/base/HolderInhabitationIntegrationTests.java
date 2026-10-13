@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.owners.holders.base;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.systems.SystemKey;
 
@@ -48,7 +49,15 @@ final class HolderInhabitationIntegrationTests {
     // varying this would vary nothing the answer can see.
     private static final int COLONY_SIZE = 5;
 
+    // A rival colony larger than the spotlit bloc's, for the one case pinning that living in a system
+    // is not winning it: a read that ranked the blocs would drop the smaller one.
+    private static final int RIVAL_COLONY_SIZE = 9;
+
     private static final String SPOTLIT_BLOC_ID = "hegemony";
+
+    // Who owns the derelict the scenario fixture stages. Spotlit in the derelict case, so the read is
+    // asked about the very bloc the wreck names.
+    private static final String DERELICT_OWNER_ID = Factions.NEUTRAL;
 
     private static final FactionAPI HEGEMONY_FACTION = SectorOwnershipFixtures.buildFaction("hegemony");
     private static final FactionAPI TRITACHYON_FACTION = SectorOwnershipFixtures.buildFaction("tritachyon");
@@ -295,6 +304,67 @@ final class HolderInhabitationIntegrationTests {
                     SectorOwnershipFixtures.buildHolderPassOver(sector),
                     SPOTLIT_BLOC_ID,
                     Set.of(readSystemKey(sector, "corvus"))))
+                .isEmpty();
+        }
+
+        @Test
+        void answersNothingForAPassOverNoSector() {
+            // The unreachable-sector case: the pass walks no systems, so no candidate is answered for.
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(null),
+                    SPOTLIT_BLOC_ID,
+                    Set.of(buildCellKey(SETTLED_SYSTEM))))
+                .isEmpty();
+        }
+
+        @Test
+        void namesACandidateTheSpotlitBlocSharesWithALargerRival() {
+            // Living there, not winning there: a candidate has no holder, so there is no contest to
+            // win. A bloc living beside a larger rival counts exactly as one living alone does.
+            var sector = SectorOwnershipFixtures.buildSectorWith(
+                SETTLED_SYSTEM,
+                List.of(),
+                SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE),
+                SectorOwnershipFixtures.buildVisibleMarket(TRITACHYON_FACTION, RIVAL_COLONY_SIZE));
+
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    Set.of(buildCellKey(SETTLED_SYSTEM))))
+                .containsExactly(buildCellKey(SETTLED_SYSTEM));
+        }
+
+        @Test
+        void namesACandidateWhereTheSpotlitBlocHoldsOnlyAnUnregisteredColony() {
+            // The shape this read exists for. The economy never registered the bloc's one station,
+            // which is why nothing holds the system and why it is a candidate at all. Presence is
+            // read off the colonies rather than off the economy's listing, so the bloc still lives here.
+            var sector = SectorOwnershipFixtures.buildSectorWith(SETTLED_SYSTEM);
+
+            SectorOwnershipFixtures.placeMarketsOnSystemEntities(
+                SectorOwnershipFixtures.buildOnlySystem(sector),
+                SectorOwnershipFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE));
+
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    SPOTLIT_BLOC_ID,
+                    Set.of(buildCellKey(SETTLED_SYSTEM))))
+                .containsExactly(buildCellKey(SETTLED_SYSTEM));
+        }
+
+        @Test
+        void leavesOutACandidateWhoseOnlyMarketOfTheSpotlitBlocIsADerelict() {
+            // Presence is habitation, so a derelict's owner does not live here, however plainly the
+            // box over the cell names it. Sparing this cell would keep a fill over a system the same
+            // pass classified as empty backdrop.
+            var sector = SectorOwnershipFixtures.buildSectorWith(EMPTY_SYSTEM);
+
+            SectorScenarioFixtures.placeDerelictIn(SectorOwnershipFixtures.buildOnlySystem(sector));
+
+            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
+                    SectorOwnershipFixtures.buildHolderPassOver(sector),
+                    DERELICT_OWNER_ID,
+                    Set.of(buildCellKey(EMPTY_SYSTEM))))
                 .isEmpty();
         }
     }

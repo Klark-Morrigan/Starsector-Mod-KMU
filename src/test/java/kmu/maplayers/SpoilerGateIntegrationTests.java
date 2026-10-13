@@ -81,7 +81,7 @@ final class SpoilerGateIntegrationTests {
     }
 
     @Nested
-    class ReadKnownColoniesIn {
+    class ReadKnownColonyFactionIds {
 
         @Test
         void withholdsADerelictAndAConcealedBaseFromAnUnvisitedEmptySystem() {

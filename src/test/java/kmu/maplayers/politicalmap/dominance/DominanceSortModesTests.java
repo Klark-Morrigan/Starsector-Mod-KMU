@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.dominance;
 
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
-import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.maplayers.ownermap.picker.RankedOwner;
 
@@ -18,12 +17,14 @@ import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.listIdsInModeOrder
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins what this vocabulary declares: the frozen persistence keys a save round-trips through, which
- * number each mode reads, the direction that follows from it, and the order ties break down the
- * canonical chain. What a declared mode answers at all, and the shape the ranking is then laid out in
- * - the promoted key, the flip, the name and by-ID tail - are both shared and are pinned in their own
- * suites, so a case here fails only when this vocabulary's own declaration changes. All exercised on
- * hand-built blocs, since the mode carries no Starsector types.
+ * Pins what this vocabulary declares: the modes it offers and its default, the frozen persistence keys
+ * a save round-trips through, which number each mode reads, and the order ties break down the
+ * canonical chain.
+ *
+ * <p>What a mode does with its number is shared and pinned in its own suites: its direction, which
+ * number its ranking leads with, and the shape the ranking is laid out in. So a case here fails only
+ * when this vocabulary's own declaration changes. All exercised on hand-built blocs, since the mode
+ * carries no Starsector types.
  */
 final class DominanceSortModesTests {
 
@@ -125,45 +126,7 @@ final class DominanceSortModesTests {
     }
 
     @Nested
-    class DefaultDirection {
-
-        @Test
-        void isDescendingForANumericMode() {
-
-            // A numeric mode leads with the bigger bloc, so its natural order runs high-to-low.
-            assertThat(DominanceSortModes.DOMINATION.defaultDirection())
-                .isEqualTo(SortDirection.DESCENDING);
-            assertThat(DominanceSortModes.MARKET_SIZE.defaultDirection())
-                .isEqualTo(SortDirection.DESCENDING);
-        }
-
-        @Test
-        void isAscendingForTheNameMode() {
-
-            // The name mode reads A-to-Z, so its natural order runs ascending.
-            assertThat(DominanceSortModes.NAME.defaultDirection())
-                .isEqualTo(SortDirection.ASCENDING);
-        }
-    }
-
-    @Nested
     class Comparator {
-
-        @Test
-        void ranksANumericModeByItsOwnMetric() {
-
-            var low = buildOwner(
-                "low",
-                "Low",
-                new DominanceStats(1, 0, 0, 0));
-            var high = buildOwner(
-                "high",
-                "High",
-                new DominanceStats(9, 0, 0, 0));
-
-            assertThat(listIdsInModeOrder(DominanceSortModes.DOMINATION, low, high))
-                .containsExactly("high", "low");
-        }
 
         @Test
         void breaksTiesDownTheCanonicalChainInOrder() {

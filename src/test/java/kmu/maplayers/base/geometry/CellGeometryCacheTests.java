@@ -27,14 +27,16 @@ import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.F
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link CellGeometryCache}: the first update builds cells for the
  * reachable systems and skips inaccessible ones; a later update rebuilds only the
  * cells near a changed system, leaving distant ones in place (asserted by object
- * identity); a removed system's cell is dropped; and every update reports what it recomputed and
- * which of its two outcomes it was onto the scope it opens.
+ * identity); a removed system's cell is dropped; every update reports what it recomputed and
+ * which of its two outcomes it was onto the scope it opens; and a clear makes the next update cut
+ * every cell afresh, a site moved under its old key included.
  */
 final class CellGeometryCacheTests {
 
@@ -68,6 +70,78 @@ final class CellGeometryCacheTests {
     // The force override on, which admits every system whatever the normal gates say - the one
     // widening that needs no economy staged behind it to change the participating set.
     private static final MapVisibilityRules FORCED_ONTO_MAP = FORCED_UNDER_THE_FOG;
+
+    // Where the bisector between a site at the origin and a neighbour on the x axis falls: halfway,
+    // for the neighbour at 1000 the cells were first cut around and at 3000 where it moved to.
+    private static final double FIRST_BISECTOR_X = 500.0;
+    private static final double MOVED_BISECTOR_X = 1500.0;
+
+    @Nested
+    class ClearCachedCells {
+
+        @Test
+        void dropsEveryCachedCell() {
+
+            var cache = new CellGeometryCache();
+
+            updateAtDefaultResolution(
+                cache,
+                buildReachableSystemAt("a", 0, 0),
+                buildReachableSystemAt("b", 1000, 0));
+
+            cache.clearCachedCells();
+
+            assertThat(cache.getCellEdgesByCellKey())
+                .isEmpty();
+            assertThat(cache.getSystemKeyByCellKey())
+                .isEmpty();
+            assertThat(cache.getSiteBySystemKey())
+                .isEmpty();
+        }
+
+        @Test
+        void cutsASiteMovedUnderTheSameKeyAroundItsNewPositionOnTheNextUpdate() {
+            // What the clear is for: another sector can hold a system under the same key at a
+            // different position, and only a cut from scratch moves the shared edge to the new
+            // halfway line.
+            var cache = new CellGeometryCache();
+
+            updateAtDefaultResolution(
+                cache,
+                buildReachableSystemAt("a", 0, 0),
+                buildReachableSystemAt("b", 1000, 0));
+
+            cache.clearCachedCells();
+
+            updateAtDefaultResolution(
+                cache,
+                buildReachableSystemAt("a", 0, 0),
+                buildReachableSystemAt("b", 3000, 0));
+
+            assertThat(readEdgeXFacing(cache, "a", "b"))
+                .isCloseTo(MOVED_BISECTOR_X, within(1e-6));
+        }
+
+        @Test
+        void keepsTheCellCutAroundTheOldPositionWithoutIt() {
+            // The contrast that makes the clear necessary: the diff compares keys alone, so a site
+            // that moved under its old key reads as no change and the old cell is served on.
+            var cache = new CellGeometryCache();
+
+            updateAtDefaultResolution(
+                cache,
+                buildReachableSystemAt("a", 0, 0),
+                buildReachableSystemAt("b", 1000, 0));
+
+            updateAtDefaultResolution(
+                cache,
+                buildReachableSystemAt("a", 0, 0),
+                buildReachableSystemAt("b", 3000, 0));
+
+            assertThat(readEdgeXFacing(cache, "a", "b"))
+                .isCloseTo(FIRST_BISECTOR_X, within(1e-6));
+        }
+    }
 
     @Nested
     class UpdateFromSector {
@@ -500,6 +574,25 @@ final class CellGeometryCacheTests {
             }
         }
         return neighbours;
+    }
+
+    // The x a cell's edge facing one neighbour starts at. The two sites in the clear cases sit on
+    // the x axis, so that edge is vertical and its x is where the cut put the line between them.
+    private static double readEdgeXFacing(
+            CellGeometryCache cache,
+            String systemId,
+            String neighbourSystemId) {
+
+        var neighbour = new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId));
+
+        return cache
+            .getCellEdgesByCellKey()
+            .get(buildCellKey(systemId))
+            .stream()
+            .filter(edge -> edge.target().equals(neighbour))
+            .findFirst()
+            .orElseThrow()
+            .x1();
     }
 
     // Runs an update at the default frontier resolution with no movers, the count

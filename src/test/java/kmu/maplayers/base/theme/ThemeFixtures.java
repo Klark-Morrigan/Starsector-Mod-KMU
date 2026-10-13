@@ -64,6 +64,7 @@ public final class ThemeFixtures {
      * @return a live global tier, inert but for its rounding
      */
     public static GlobalStyle createGlobalStyleRoundingBy(CornerRoundingStyle cornerRounding) {
+
         return new GlobalStyle(
             createHatchStyle(0, 0, 0),
             new BorderSmoothingStyle(

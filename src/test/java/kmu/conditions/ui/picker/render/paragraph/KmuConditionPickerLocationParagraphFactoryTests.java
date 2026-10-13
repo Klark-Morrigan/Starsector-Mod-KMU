@@ -2,6 +2,8 @@ package kmu.conditions.ui.picker.render.paragraph;
 
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.ui.highlight.Highlight;
+
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
@@ -76,9 +78,11 @@ class KmuConditionPickerLocationParagraphFactoryTests {
                 .isEqualTo("Location:");
             assertThat(paragraphs.get(1).getText())
                 .isEqualTo("Unknown");
-            assertThat(paragraphs.get(1).getHighlightTexts())
+            assertThat(paragraphs.get(1).getHighlights())
+                .extracting(Highlight::getText)
                 .containsExactly("Unknown");
-            assertThat(paragraphs.get(1).getHighlightColours())
+            assertThat(paragraphs.get(1).getHighlights())
+                .extracting(Highlight::getColour)
                 .containsExactly(GOLD);
         }
 
@@ -90,7 +94,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
 
             assertThat(paragraphs.get(0).getText())
                 .isEqualTo("Location:");
-            assertThat(paragraphs.get(0).getHighlightTexts())
+            assertThat(paragraphs.get(0).getHighlights())
+                .extracting(Highlight::getText)
                 .isEmpty();
         }
 
@@ -198,7 +203,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
 
             assertThat(systemParagraph.getText())
                 .isEqualTo("Kumari System (Kumari A, Yellow Dwarf)");
-            assertThat(systemParagraph.getHighlightTexts())
+            assertThat(systemParagraph.getHighlights())
+                .extracting(Highlight::getText)
                 .containsExactly("Kumari System", "Kumari A");
         }
 
@@ -213,7 +219,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
 
             assertThat(systemParagraph.getText())
                 .isEqualTo("Agreus System (Black Hole)");
-            assertThat(systemParagraph.getHighlightTexts())
+            assertThat(systemParagraph.getHighlights())
+                .extracting(Highlight::getText)
                 .containsExactly("Agreus System");
         }
 
@@ -229,7 +236,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
 
             assertThat(systemParagraph.getText())
                 .isEqualTo("Kumari Star System (Kumari Barycenter)");
-            assertThat(systemParagraph.getHighlightTexts())
+            assertThat(systemParagraph.getHighlights())
+                .extracting(Highlight::getText)
                 .containsExactly("Kumari Star System");
         }
 
@@ -239,7 +247,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
                 buildModel(createLocation()));
 
-            assertThat(paragraphs.get(1).getHighlightTexts())
+            assertThat(paragraphs.get(1).getHighlights())
+                .extracting(Highlight::getText)
                 .containsExactly("Valis", "Hegemony", "Vengeful (-100 / 100)");
         }
 
@@ -249,7 +258,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
                 buildModel(createLocation()));
 
-            assertThat(paragraphs.get(2).getHighlightTexts())
+            assertThat(paragraphs.get(2).getHighlights())
+                .extracting(Highlight::getText)
                 .containsExactly("Corvus Star System");
         }
 
@@ -259,7 +269,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
                 buildModel(createLocation()));
 
-            assertThat(paragraphs.get(3).getHighlightTexts())
+            assertThat(paragraphs.get(3).getHighlights())
+                .extracting(Highlight::getText)
                 .containsExactly("Corvus");
         }
 
@@ -269,7 +280,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
                 buildModel(createLocation()));
 
-            assertThat(paragraphs.get(1).getHighlightColours())
+            assertThat(paragraphs.get(1).getHighlights())
+                .extracting(Highlight::getColour)
                 .containsExactly(GOLD, FACTION, RELATIONSHIP);
         }
 
@@ -279,7 +291,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
                 buildModel(createLocation()));
 
-            assertThat(paragraphs.get(2).getHighlightColours())
+            assertThat(paragraphs.get(2).getHighlights())
+                .extracting(Highlight::getColour)
                 .containsExactly(GOLD);
         }
 
@@ -289,7 +302,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
                 buildModel(createLocation()));
 
-            assertThat(paragraphs.get(3).getHighlightColours())
+            assertThat(paragraphs.get(3).getHighlights())
+                .extracting(Highlight::getColour)
                 .containsExactly(GOLD);
         }
 
@@ -302,7 +316,8 @@ class KmuConditionPickerLocationParagraphFactoryTests {
                     new KmuPickerFaction("Hegemony", null, null, "Vengeful (-100 / 100)", null),
                     null, null, null, null)));
 
-            assertThat(paragraphs.get(1).getHighlightColours())
+            assertThat(paragraphs.get(1).getHighlights())
+                .extracting(Highlight::getColour)
                 .containsExactly(TEXT, TEXT);
         }
     }

@@ -23,7 +23,7 @@ class ElementStyleAdjustmentTests {
             var dimmer = new ElementStyleAdjustment(0.7, false);
 
             assertThat(muted.mergeRecede(dimmer))
-                    .isEqualTo(new ElementStyleAdjustment(0.3, false));
+                .isEqualTo(new ElementStyleAdjustment(0.3, false));
         }
 
         @Test
@@ -33,15 +33,17 @@ class ElementStyleAdjustmentTests {
             var desaturating = new ElementStyleAdjustment(1.0, true);
             var opaque = new ElementStyleAdjustment(1.0, false);
 
-            assertThat(desaturating.mergeRecede(opaque).shouldDesaturate()).isTrue();
+            assertThat(desaturating.mergeRecede(opaque).shouldDesaturate())
+                .isTrue();
         }
 
         @Test
         void leavesADesaturateNeitherSideSets() {
+
             var opaque = new ElementStyleAdjustment(0.5, false);
 
             assertThat(opaque.mergeRecede(new ElementStyleAdjustment(0.8, false)).shouldDesaturate())
-                    .isFalse();
+                .isFalse();
         }
 
         @Test
@@ -51,7 +53,7 @@ class ElementStyleAdjustmentTests {
             var recede = new ElementStyleAdjustment(0.3, true);
 
             assertThat(ElementStyleAdjustment.NONE.mergeRecede(recede))
-                    .isEqualTo(new ElementStyleAdjustment(0.3, true));
+                .isEqualTo(new ElementStyleAdjustment(0.3, true));
         }
 
         @Test
@@ -60,7 +62,8 @@ class ElementStyleAdjustmentTests {
             // element two reasons both recede from muting twice.
             var recede = new ElementStyleAdjustment(0.4, true);
 
-            assertThat(recede.mergeRecede(recede)).isEqualTo(recede);
+            assertThat(recede.mergeRecede(recede))
+                .isEqualTo(recede);
         }
     }
 }

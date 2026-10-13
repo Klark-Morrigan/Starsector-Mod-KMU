@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.claims;
 
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
-import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.maplayers.ownermap.picker.RankedOwner;
 
@@ -18,12 +17,14 @@ import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.listIdsInModeOrder
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins what this vocabulary declares: the frozen persistence keys a save round-trips through, which
- * number each mode reads, the direction that follows from it, the order ties break down the canonical
- * chain, and where the blocs that claim nowhere land. What a declared mode answers at all, and the
- * shape the ranking is then laid out in - the promoted key, the flip, the name and by-ID tail - are
- * both shared and are pinned in their own suites, so a case here fails only when this vocabulary's own
- * declaration changes. All exercised on hand-built blocs, since the mode carries no Starsector types.
+ * Pins what this vocabulary declares: the modes it offers and its default, the frozen persistence keys
+ * a save round-trips through, which number each mode reads, the order ties break down the canonical
+ * chain, and where the blocs that claim nowhere land under the default.
+ *
+ * <p>What a mode does with its number is shared and pinned in its own suites: its direction, which
+ * number its ranking leads with, and the shape the ranking is laid out in. So a case here fails only
+ * when this vocabulary's own declaration changes. All exercised on hand-built blocs, since the mode
+ * carries no Starsector types.
  */
 final class ClaimSortModesTests {
 
@@ -109,39 +110,7 @@ final class ClaimSortModesTests {
     }
 
     @Nested
-    class DefaultDirection {
-
-        @Test
-        void isDescendingForANumericMode() {
-
-            // A numeric mode leads with the bigger claimant, so its natural order runs high-to-low.
-            assertThat(ClaimSortModes.CLAIMS.defaultDirection())
-                .isEqualTo(SortDirection.DESCENDING);
-            assertThat(ClaimSortModes.MARKET_SIZE.defaultDirection())
-                .isEqualTo(SortDirection.DESCENDING);
-        }
-
-        @Test
-        void isAscendingForTheNameMode() {
-
-            // The name mode reads A-to-Z, so its natural order runs ascending.
-            assertThat(ClaimSortModes.NAME.defaultDirection())
-                .isEqualTo(SortDirection.ASCENDING);
-        }
-    }
-
-    @Nested
     class Comparator {
-
-        @Test
-        void ranksANumericModeByItsOwnMetric() {
-
-            var low = buildOwner("low", "Low", new ClaimStats(1, 0));
-            var high = buildOwner("high", "High", new ClaimStats(9, 0));
-
-            assertThat(listIdsInModeOrder(ClaimSortModes.CLAIMS, low, high))
-                .containsExactly("high", "low");
-        }
 
         @Test
         void breaksTiesDownTheCanonicalChainInOrder() {
@@ -166,17 +135,6 @@ final class ClaimSortModesTests {
 
             assertThat(listIdsInModeOrder(ClaimSortModes.CLAIMS, holder, claimant))
                 .containsExactly("claimant", "holder");
-        }
-
-        @Test
-        void interleavesTheClaimlessBlocsUnderTheNameMode() {
-            // Alphabetical means alphabetical: sorting by name mixes the claimless rows in among the
-            // claimants rather than keeping the tail the claims mode groups them into.
-            var claimant = buildOwner("b", "Beta", new ClaimStats(4, 0));
-            var holder = buildOwner("a", "Alpha", new ClaimStats(0, 90));
-
-            assertThat(listIdsInModeOrder(ClaimSortModes.NAME, claimant, holder))
-                .containsExactly("a", "b");
         }
     }
 

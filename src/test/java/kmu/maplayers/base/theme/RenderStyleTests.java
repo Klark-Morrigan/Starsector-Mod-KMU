@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * to that one enum would still satisfy all of them and only fail the second layer that arrives.
  */
 final class RenderStyleTests {
+
     private static final double MARKED_WIDTH = 3;
     private static final double OTHER_MARKED_WIDTH = 7;
 
@@ -26,28 +27,33 @@ final class RenderStyleTests {
     // qualified: the @Nested group below is named for the method under test, which shadows the
     // simple name throughout this class.
     private static kmu.maplayers.base.theme.CategoryStyle buildStyleMarkedBy(double outerWidth) {
+
         return new kmu.maplayers.base.theme.CategoryStyle(
-                ElementStyle.NOT_DRAWN,
-                ElementStyle.NOT_DRAWN,
-                outerWidth,
-                ElementStyle.NOT_DRAWN,
-                0);
+            ElementStyle.NOT_DRAWN,
+            ElementStyle.NOT_DRAWN,
+            outerWidth,
+            ElementStyle.NOT_DRAWN,
+            0);
     }
 
     @Nested
     class CategoryStyle {
+
         @Test
         void aLayerReadsBackTheBundleItStoredUnderItsOwnCategory() {
+
             Map<MapStyleCategory, kmu.maplayers.base.theme.CategoryStyle> categories =
-                    new LinkedHashMap<>();
+                new LinkedHashMap<>();
+
             categories.put(HazardCategory.IRRADIATED, buildStyleMarkedBy(MARKED_WIDTH));
             categories.put(HazardCategory.BENIGN, buildStyleMarkedBy(OTHER_MARKED_WIDTH));
+
             var theme = new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);
 
             assertThat(theme.categoryStyle(HazardCategory.IRRADIATED).outerWidth())
-                    .isEqualTo(MARKED_WIDTH);
+                .isEqualTo(MARKED_WIDTH);
             assertThat(theme.categoryStyle(HazardCategory.BENIGN).outerWidth())
-                    .isEqualTo(OTHER_MARKED_WIDTH);
+                .isEqualTo(OTHER_MARKED_WIDTH);
         }
 
         @Test
@@ -56,12 +62,14 @@ final class RenderStyleTests {
             // bundle even though it is a different object - which is what lets a layer resolve
             // its categories fresh per draw rather than holding the exact constants it seeded.
             Map<MapStyleCategory, kmu.maplayers.base.theme.CategoryStyle> categories =
-                    new LinkedHashMap<>();
+                new LinkedHashMap<>();
+
             categories.put(new NamedCategory("irradiated"), buildStyleMarkedBy(MARKED_WIDTH));
+
             var theme = new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);
 
             assertThat(theme.categoryStyle(new NamedCategory("irradiated")).outerWidth())
-                    .isEqualTo(MARKED_WIDTH);
+                .isEqualTo(MARKED_WIDTH);
         }
 
         @Test
@@ -70,18 +78,23 @@ final class RenderStyleTests {
             // simply absent rather than falling back to some default bundle a caller would then
             // paint without noticing.
             Map<MapStyleCategory, kmu.maplayers.base.theme.CategoryStyle> categories =
-                    new LinkedHashMap<>();
+                new LinkedHashMap<>();
+
             categories.put(HazardCategory.IRRADIATED, buildStyleMarkedBy(MARKED_WIDTH));
+
             var theme = new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);
 
-            assertThat(theme.categoryStyle(HazardCategory.BENIGN)).isNull();
+            assertThat(theme.categoryStyle(HazardCategory.BENIGN))
+                .isNull();
         }
     }
 
     // A set of categories no part of the political map declares - the stand-in for whatever a
     // second layer divides the sector by. An enum, since that is the shape a layer is expected to
     // reach for.
-    private enum HazardCategory implements MapStyleCategory {
+    private enum HazardCategory
+            implements MapStyleCategory {
+
         IRRADIATED,
         BENIGN
     }
@@ -89,6 +102,8 @@ final class RenderStyleTests {
     // A category carrying its identity in a component rather than in a constant, which is the
     // other shape the key allows: anything whose equals and hashCode agree between the rebuild
     // that fills the theme and the draws that read it.
-    private record NamedCategory(String id) implements MapStyleCategory {
+    private record NamedCategory(
+        String id)
+            implements MapStyleCategory {
     }
 }

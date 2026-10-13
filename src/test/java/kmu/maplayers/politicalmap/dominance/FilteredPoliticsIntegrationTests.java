@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -31,7 +30,6 @@ import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildAbandonedStationMarket;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildDarkTheme;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildHolderPassOver;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWithSystems;
@@ -57,9 +55,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * can hold the colony that makes the two part company: a station the economy does not list, which
  * raises no footprint and still puts its bloc in the system.
  *
- * <p>Covers the same class's read for systems the holder assembly never reaches - the ones a
- * narrow holding rule leaves unattributed - since that read answers presence off the same
- * economy walk and must agree with the assembly about where a bloc lives.
+ * <p>Where a bloc lives is {@link HolderInhabitation}'s read and is pinned in its own suite. The
+ * presence cases here pin only that this assembly reads presence from it rather than from the weights.
  */
 class FilteredPoliticsIntegrationTests {
 
@@ -122,8 +119,8 @@ class FilteredPoliticsIntegrationTests {
         @Test
         void keepsTheRealRecedingHolderWhereTheSelectedBlocIsAbsent() {
             // The selected hegemony owns nothing in the tritachyon system, so that cell keeps its
-            // real tritachyon holder - which isSpotlitBloc rejects, so the caller recedes it - and is
-            // never reported contested.
+            // real tritachyon holder - a real owner ID rather than the spotlit key, so the caller
+            // recedes it - and is never reported contested.
             var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
@@ -136,8 +133,6 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(holder.ownerId())
                 .isEqualTo("tritachyon");
-            assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
-                .isFalse();
             assertThat(filtered.contestedSystemKeys())
                 .doesNotContain(buildCellKey("tritachyon-system"));
             assertThat(holder.palette().primaryColour())
@@ -382,139 +377,6 @@ class FilteredPoliticsIntegrationTests {
             assertThat(filtered.contestedSystemKeys())
                 .containsExactly(buildCellKey("owned-system"));
             assertThat(filtered.unfilledSystemKeys())
-                .isEmpty();
-        }
-    }
-
-    @Nested
-    class FindPresentSystemKeys {
-
-        @Test
-        void reportsACandidateTheSelectedBlocOwnsAMarketIn() {
-            // The claims view's case: pirates hold a colony but claim nothing, so the system reaches
-            // the render pass with no holder. The read has to find them there, or the cell over
-            // their own colony sinks into the receded background.
-            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
-            var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
-
-            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
-                    buildHolderPassOver(sector),
-                    "pirates",
-                    Set.of(buildCellKey("haven"))))
-                .containsExactly(buildCellKey("haven"));
-        }
-
-        @Test
-        void reportsACandidateTheSelectedBlocOwnsAMarketInEvenWhenARivalOutweighsIt() {
-            // Presence, not dominance: a holderless system has no contest to win, so a bloc living
-            // beside a larger rival counts exactly as one living alone does.
-            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
-            var independent = buildFaction("independent", PERSEAN_FACTION_BRIGHT);
-            var sector = buildSectorWith(
-                "haven",
-                List.of(pirates, independent),
-                buildVisibleMarket(pirates, 2),
-                buildVisibleMarket(independent, 6));
-
-            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
-                    buildHolderPassOver(sector),
-                    "pirates",
-                    Set.of(buildCellKey("haven"))))
-                .containsExactly(buildCellKey("haven"));
-        }
-
-        @Test
-        void reportsACandidateTheSelectedBlocOnlyHoldsAnUnregisteredColonyIn() {
-            // The shape this read exists for, presence being read off the colonies rather than
-            // off the weights: a haven whose one station the economy never registered, which
-            // is why nothing holds the system and why it reached this read at all.
-            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
-            var sector = buildSectorWith("haven", List.of(pirates));
-
-            placeMarketsOnSystemEntities(
-                buildOnlySystem(sector),
-                buildVisibleMarket(pirates, 4));
-
-            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
-                    buildHolderPassOver(sector),
-                    "pirates",
-                    Set.of(buildCellKey("haven"))))
-                .containsExactly(buildCellKey("haven"));
-        }
-
-        @Test
-        void omitsACandidateWhoseOnlyMarketOfTheSelectedBlocIsADerelict() {
-            // Presence is habitation, so a derelict's owner is not living here however plainly the box
-            // over the cell may name it. Sparing this cell would keep a bloc's fill over a system
-            // the same pass classified as empty backdrop - which is the one disagreement the two
-            // reads coming off one value exist to rule out.
-            var sector = buildSectorWith("haven", List.of(buildFaction(Factions.NEUTRAL)));
-
-            placeMarketsOnSystemEntities(
-                buildOnlySystem(sector),
-                buildAbandonedStationMarket(4));
-
-            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
-                    buildHolderPassOver(sector),
-                    Factions.NEUTRAL,
-                    Set.of(buildCellKey("haven"))))
-                .isEmpty();
-        }
-
-        @Test
-        void omitsACandidateTheSelectedBlocOwnsNothingIn() {
-
-            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
-            var independent = buildFaction("independent", PERSEAN_FACTION_BRIGHT);
-            var sector = buildSectorWith(
-                "haven",
-                List.of(pirates, independent),
-                buildVisibleMarket(independent, 6));
-
-            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
-                    buildHolderPassOver(sector),
-                    "pirates",
-                    Set.of(buildCellKey("haven"))))
-                .isEmpty();
-        }
-
-        @Test
-        void omitsASystemOutsideTheCandidateSetTheSelectedBlocLivesIn() {
-            // The candidate set is the whole of what the read answers for. A system the holding
-            // already attributed to somebody draws in that territory, so re-reporting it here would
-            // spare a cell a recede its own bloc is meant to take.
-            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
-            var sector = buildSectorWithSystems(
-                List.of(pirates),
-                listSystemMarkets("held", buildVisibleMarket(pirates, 5)),
-                listSystemMarkets("haven", buildVisibleMarket(pirates, 4)));
-
-            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
-                    buildHolderPassOver(sector),
-                    "pirates",
-                    Set.of(buildCellKey("haven"))))
-                .containsExactly(buildCellKey("haven"));
-        }
-
-        @Test
-        void isEmptyWhenNoBlocIsSelected() {
-
-            var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
-            var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
-
-            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
-                    buildHolderPassOver(sector),
-                    null,
-                    Set.of(buildCellKey("haven"))))
-                .isEmpty();
-        }
-
-        @Test
-        void isEmptyForNullSector() {
-            assertThat(HolderInhabitation.findSpotlitPresenceSystemKeys(
-                    buildHolderPassOver(null),
-                    "pirates",
-                    Set.of(buildCellKey("haven"))))
                 .isEmpty();
         }
     }

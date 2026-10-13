@@ -8,6 +8,8 @@ import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MapSubstrateSectorWatcher;
+import kmu.maplayers.ownermap.FilterSelectionHeal;
+import kmu.maplayers.ownermap.MapLayerViewRegistry;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapSectorWatcher;
 import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapColonisationListener;
 import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapColonySizeListener;
@@ -15,10 +17,12 @@ import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapMarketTransferListener;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.ArrayList;
 import java.util.function.Consumer;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -29,13 +33,17 @@ import static kmu.maplayers.politicalmap.refresh.MarketRefreshFixtures.mockMarke
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the political map's per-frame watcher as a transient script built fresh per load, and the
+ * Pins the save heal running ahead of every registration, each step of the install surviving another's
+ * failure, the political map's per-frame watcher as a transient script built fresh per load, and the
  * taking back of every live repaint when the layers are switched off.
  *
  * <p>And, for each listener install, that the listener is built against the sector it is being
@@ -50,6 +58,98 @@ import static org.mockito.Mockito.when;
  * pass an assertion about the field.
  */
 class PoliticalMapInstallerTests {
+
+    @Nested
+    class InstallAll {
+
+        private final RecordingListenerManager listenerManager = new RecordingListenerManager();
+        private final SectorAPI sectorMock = mock(SectorAPI.class);
+        private final MapLayerViewRegistry viewRegistryMock = mock(MapLayerViewRegistry.class);
+
+        @BeforeEach
+        void answerTheListenerManager() {
+            when(sectorMock.getListenerManager())
+                .thenReturn(listenerManager);
+        }
+
+        @Test
+        void healsTheSpotlightBeforeAnythingIsRegistered() {
+            // The terrain reads the spotlight the heal repairs, so a repaint registered ahead of it
+            // could act on a selection the active view does not offer. Counted at the moment the heal
+            // runs: nothing may have touched the sector yet.
+            var sectorCallCountsSeenByTheHeal = new ArrayList<Integer>();
+
+            try (var healMock = mockStatic(FilterSelectionHeal.class)) {
+
+                healMock
+                    .when(() -> FilterSelectionHeal.healStaleSelectionAgainstActiveView(
+                        sectorMock,
+                        viewRegistryMock))
+                    .thenAnswer(call -> {
+
+                        sectorCallCountsSeenByTheHeal.add(mockingDetails(sectorMock).getInvocations().size());
+                        return null;
+                    });
+
+                PoliticalMapInstaller.installAll(sectorMock, viewRegistryMock);
+            }
+
+            assertThat(sectorCallCountsSeenByTheHeal)
+                .containsExactly(0);
+            assertThat(listenerManager.getAddedListeners())
+                .hasSize(5);
+        }
+
+        @Test
+        void installsEveryRepaintPastAHealThatFailed() {
+            // The heal reads the save, which is the step most likely to meet something it did not
+            // expect. A spotlight left dangling is a smaller loss than a map that stops updating live.
+            try (var healMock = mockStatic(FilterSelectionHeal.class)) {
+
+                healMock
+                    .when(() -> FilterSelectionHeal.healStaleSelectionAgainstActiveView(any(), any()))
+                    .thenThrow(new IllegalStateException("A save the heal cannot read"));
+
+                PoliticalMapInstaller.installAll(sectorMock, viewRegistryMock);
+            }
+
+            assertThat(listenerManager.getAddedListeners())
+                .extracting(Object::getClass)
+                .containsExactly(
+                    PoliticalMapDiscoveryListener.class,
+                    PoliticalMapColonySizeListener.class,
+                    PoliticalMapDecivListener.class,
+                    PoliticalMapColonisationListener.class,
+                    PoliticalMapMarketTransferListener.class);
+
+            verify(sectorMock)
+                .addTransientScript(any(PoliticalMapSectorWatcher.class));
+        }
+
+        @Test
+        void installsTheListenersOnEitherSideOfAWatcherThatFailed() {
+            // The watcher sits between the first listener and the other four, so a failure there that
+            // escaped its own step would leave the map deaf to every colony that resizes, decivilises,
+            // is founded or changes hands.
+            doThrow(new IllegalStateException("A sector refusing the script"))
+                .when(sectorMock)
+                .addTransientScript(any());
+
+            try (var healMock = mockStatic(FilterSelectionHeal.class)) {
+
+                PoliticalMapInstaller.installAll(sectorMock, viewRegistryMock);
+            }
+
+            assertThat(listenerManager.getAddedListeners())
+                .extracting(Object::getClass)
+                .containsExactly(
+                    PoliticalMapDiscoveryListener.class,
+                    PoliticalMapColonySizeListener.class,
+                    PoliticalMapDecivListener.class,
+                    PoliticalMapColonisationListener.class,
+                    PoliticalMapMarketTransferListener.class);
+        }
+    }
 
     @Nested
     class InstallMapLayerSectorWatcher {

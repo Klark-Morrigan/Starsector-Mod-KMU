@@ -66,6 +66,7 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.MEMBER_INDEN
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readOpeningWords;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
@@ -409,7 +410,11 @@ final class SystemDominationTooltipTests {
             // not allowed to reach is the point: the four headings around it name relations and a
             // candidacy that hold whether or not anybody can act on them, and a wording read by the
             // loop that draws all five could move any of them.
-            contestWording = ContestWording.PRESENT;
+            //
+            // Read as the same box drawn twice, once under each wording, so every line it holds is
+            // compared - an entry's crest, value and indent as well as the headings.
+            var rivalHeadingRow = 6;
+
             allianceSet = buildGroupOf(CORE_FACTION, ALLY_FACTION);
 
             stubFaction(sectorMock, FRIENDLY_FACTION, "The Luddic Church", MEMBER_CREST);
@@ -429,19 +434,26 @@ final class SystemDominationTooltipTests {
                     createNamedGroupEntry("Persean League"),
                     createPlaceholderGroupEntry()));
 
-            assertThat(readSectionOpeningWords(
-                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections()))
-                .containsExactly(
-                    "Dominated by:",
-                    "Rebel Pact",
-                    "Allied with the system holder:",
-                    "Tri-Tachyon",
-                    "Friendly with the system holder:",
-                    "The Luddic Church",
-                    "Present:",
-                    "Persean League",
-                    "Non-political:",
-                    "Neutral");
+            var contestedRows = readBodyRows();
+
+            contestWording = ContestWording.PRESENT;
+
+            var presentRows = readBodyRows();
+
+            assertThat(presentRows)
+                .hasSameSizeAs(contestedRows);
+            assertThat(presentRows.subList(0, rivalHeadingRow))
+                .isEqualTo(contestedRows.subList(0, rivalHeadingRow));
+            assertThat(presentRows.subList(rivalHeadingRow + 1, presentRows.size()))
+                .isEqualTo(contestedRows.subList(rivalHeadingRow + 1, contestedRows.size()));
+
+            // The heading line itself keeps its kind and changes its words alone.
+            assertThat(presentRows.get(rivalHeadingRow).lineStyle())
+                .isEqualTo(contestedRows.get(rivalHeadingRow).lineStyle());
+            assertThat(readOpeningWords(contestedRows.get(rivalHeadingRow)))
+                .isEqualTo("Contested by:");
+            assertThat(readOpeningWords(presentRows.get(rivalHeadingRow)))
+                .isEqualTo("Present:");
         }
 
         @Test

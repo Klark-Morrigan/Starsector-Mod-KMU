@@ -221,6 +221,7 @@ final class SystemClaimTooltipTests {
 
     @BeforeEach
     void installColoursAndTheSystemStatusSeam() {
+
         CellTooltipPaletteFake.installPalette();
 
         // The status line has its own suite and would otherwise demand a live economy here, so it is
@@ -248,8 +249,10 @@ final class SystemClaimTooltipTests {
 
     @AfterEach
     void clearColoursAndTheSystemStatusSeam() {
+
         visibilityRulesMock.close();
         statusRowMock.close();
+
         CellTooltipPaletteFake.clearPalette();
     }
 
@@ -320,7 +323,11 @@ final class SystemClaimTooltipTests {
             // Posed over the whole chain, like the five-block case it mirrors, because what the
             // wording is not allowed to reach is the point: the blocks around it name a claim, two
             // relations and an eligibility, none of which an install can make false.
-            contestWording = ContestWording.PRESENT;
+            //
+            // Read as the same box drawn twice, once under each wording, so every line it holds is
+            // compared - an entry's crest, score and indent as well as the headings.
+            var rivalHeadingRow = 6;
+
             holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
 
             stubFaction(sectorMock, LUDDIC_CHURCH, "The Luddic Church", null);
@@ -339,19 +346,26 @@ final class SystemClaimTooltipTests {
                         OUTSIDER_SCORE,
                         IS_NON_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(
-                    tooltip.composeBody(sectorMock, systemMock, FACTIONS).blocks().readSections()))
-                .containsExactly(
-                    "Claim:",
-                    "The Hegemony",
-                    "Allied with the claim holder:",
-                    "Tri-Tachyon",
-                    "Friendly with the claim holder:",
-                    "The Luddic Church",
-                    "Present:",
-                    "Pirates",
-                    "Non-territorial:",
-                    "Neutral");
+            var contestedRows = readBodyRows();
+
+            contestWording = ContestWording.PRESENT;
+
+            var presentRows = readBodyRows();
+
+            assertThat(presentRows)
+                .hasSameSizeAs(contestedRows);
+            assertThat(presentRows.subList(0, rivalHeadingRow))
+                .isEqualTo(contestedRows.subList(0, rivalHeadingRow));
+            assertThat(presentRows.subList(rivalHeadingRow + 1, presentRows.size()))
+                .isEqualTo(contestedRows.subList(rivalHeadingRow + 1, contestedRows.size()));
+
+            // The heading line itself keeps its kind and changes its words alone.
+            assertThat(presentRows.get(rivalHeadingRow).lineStyle())
+                .isEqualTo(contestedRows.get(rivalHeadingRow).lineStyle());
+            assertThat(CellTooltipRowReads.readOpeningWords(contestedRows.get(rivalHeadingRow)))
+                .isEqualTo("Contested by:");
+            assertThat(CellTooltipRowReads.readOpeningWords(presentRows.get(rivalHeadingRow)))
+                .isEqualTo("Present:");
         }
 
         @Test
@@ -645,6 +659,7 @@ final class SystemClaimTooltipTests {
                     "The Hegemony",
                     "Friendly with the claim holder:",
                     "Pirates");
+
             assertThat(readLabelRun(readTableRow(sections, friendlyEntryRow), QUALIFIER_RUN))
                 .isEqualTo(new TextSpan("non-territorial", HIGHLIGHT));
         }
@@ -1780,6 +1795,7 @@ final class SystemClaimTooltipTests {
     // press-time read, taken at the shallowest level since the depth reported is a fact about the
     // system rather than about how deep this particular paint was asked to read.
     private HoverTooltipDetailLevel readComposedDepth() {
+
         return tooltip
             .composeBody(sectorMock, systemMock, HoverTooltipDetailLevel.FACTIONS)
             .deepestHeldLevel();
@@ -1811,6 +1827,7 @@ final class SystemClaimTooltipTests {
     // Concealment rather than an absence from the economy's listing, arbitrarily: the two suppress
     // scoring identically and no case here is about which of them did it.
     private static MarketClaimBreakdown buildConcealedMarket(String marketName, int listingPosition) {
+
         return ClaimMarketFixture
             .startMarket(marketName)
             .setListingPosition(listingPosition)
@@ -1823,6 +1840,7 @@ final class SystemClaimTooltipTests {
     // The same market on a colony nobody has discovered, listed after the one above it, for the case
     // about which rule decides whether it is drawn at all.
     private static MarketClaimBreakdown buildUndiscoveredMarket(String marketName, int marketSize) {
+
         return ClaimMarketFixture
             .startMarket(marketName)
             .setListingPosition(SECOND_LISTED)
@@ -1840,6 +1858,7 @@ final class SystemClaimTooltipTests {
     // and a mark on every line would run through the reading-order assertions these cases are
     // actually about.
     private static MarketClaimBreakdown buildMarket(String marketName, int marketSize) {
+
         return ClaimMarketFixture
             .startMarket(marketName)
             .setListingPosition(FIRST_LISTED)
@@ -1849,6 +1868,7 @@ final class SystemClaimTooltipTests {
     }
 
     private static String readLabelText(List<TooltipSection> sections, int rowIndex) {
+
         return CellTooltipRowReads.readOpeningWords(
             TooltipSection.readRowsInOrder(sections).get(rowIndex));
     }
@@ -1857,6 +1877,7 @@ final class SystemClaimTooltipTests {
     // a centred line is a legal shape for one, but every line these cases assert on lays into the box's
     // columns - which is where the crest and value slots live.
     private static TooltipRow.TableRow readTableRow(List<TooltipSection> sections, int rowIndex) {
+
         return (TooltipRow.TableRow) TooltipSection
             .readRowsInOrder(sections)
             .get(rowIndex);
@@ -1864,12 +1885,20 @@ final class SystemClaimTooltipTests {
 
     // A box whose accounts come from the source handed in, reading every hover off the one reader.
     private SystemClaimTooltip buildTooltipAccountingThrough(ClaimAccountSourceFake accountSourceFake) {
+
         return new SystemClaimTooltip(
             claimBreakdownReaderFake,
             (sector, colonyVisibility) -> claimBreakdownReaderFake,
             accountSourceFake,
             HolderGrouping::identity,
             ContestWordingFixtures.CONTESTED_WORDING);
+    }
+
+    // The body at the shallowest level, read top to bottom as the lines a player sees.
+    private List<TooltipRow> readBodyRows() {
+
+        return TooltipSection.readRowsInOrder(
+            tooltip.composeBody(sectorMock, systemMock, FACTIONS).blocks().readSections());
     }
 
     /**
@@ -1887,6 +1916,7 @@ final class SystemClaimTooltipTests {
 
         @Override
         public List<CellTooltipEntry> apply(FactionClaimStanding standing, ClaimAccountReading reading) {
+
             requestedLevels.add(reading.detailLevel());
             return List.of();
         }

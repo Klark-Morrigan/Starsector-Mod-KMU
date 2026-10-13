@@ -14,7 +14,6 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
-import kmu.KmuMod;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
@@ -131,70 +130,6 @@ final class PoliticalMapLayerTests {
         new PoliticalMapLayer(List.of(viewWithoutControlsMock), viewWithoutControlsMock);
 
     @Nested
-    class GetBodyControlsPreferences {
-
-        // Each choice's slot under the asking panel's screen, pinned as literals: every one is a key a
-        // save already holds, so a rename must break this test rather than ship and quietly return
-        // every save's choice to its default.
-        private static final String NAME_FORMAT_KEY = "$kmu_political_name_format_test";
-        private static final String UNINHABITED_OUTLINE_KEY = "$kmu_political_uninhabited_outline_test";
-        private static final String FILTER_RECEDE_MUTE_KEY = "$kmu_political_filter_recede_mute_test";
-        private static final String FILTER_RECEDE_DESATURATE_KEY =
-            "$kmu_political_filter_recede_desaturate_test";
-
-        @Test
-        void getBodyControlsStoresTheNameFormatUnderThePoliticalMapsFrozenKey() {
-
-            var preferences = captureBodyPreferences();
-
-            try (var sectorMemoryFake = new SectorMemoryFake()) {
-
-                preferences.nameFormat().selectNameFormat(
-                    BODY_SCREEN,
-                    OwnerNameFormatChoice.SHORT,
-                    new MapLayerRefreshBoard());
-
-                assertThat(sectorMemoryFake.readStoredValue(NAME_FORMAT_KEY))
-                    .isEqualTo(OwnerNameFormatChoice.SHORT.persistenceKey());
-            }
-        }
-
-        @Test
-        void getBodyControlsStoresTheOutlineUnderThePoliticalMapsFrozenKey() {
-
-            var preferences = captureBodyPreferences();
-
-            try (var sectorMemoryFake = new SectorMemoryFake()) {
-
-                preferences.uninhabitedOutline().setOutlineDrawn(
-                    BODY_SCREEN,
-                    true,
-                    new MapLayerRefreshBoard());
-
-                assertThat(sectorMemoryFake.readStoredValue(UNINHABITED_OUTLINE_KEY))
-                    .isEqualTo(true);
-            }
-        }
-
-        @Test
-        void getBodyControlsStoresTheFilterRecedeUnderThePoliticalMapsFrozenKeys() {
-
-            var filterRecede = captureBodyPreferences().filterRecede();
-
-            try (var sectorMemoryFake = new SectorMemoryFake()) {
-
-                filterRecede.setMuted(BODY_SCREEN, true, new MapLayerRefreshBoard());
-                filterRecede.setDesaturated(BODY_SCREEN, false, new MapLayerRefreshBoard());
-
-                assertThat(sectorMemoryFake.readStoredValue(FILTER_RECEDE_MUTE_KEY))
-                    .isEqualTo(true);
-                assertThat(sectorMemoryFake.readStoredValue(FILTER_RECEDE_DESATURATE_KEY))
-                    .isEqualTo(false);
-            }
-        }
-    }
-
-    @Nested
     class ResolveStanding {
 
         @Test
@@ -247,6 +182,78 @@ final class PoliticalMapLayerTests {
 
     @Nested
     class GetBodyControls {
+
+        // Each choice's slot under the asking panel's screen, pinned as literals: every one is a key a
+        // save already holds, so a rename must break this test rather than ship and quietly return
+        // every save's choice to its default.
+        private static final String NAME_FORMAT_KEY = "$kmu_political_name_format_test";
+        private static final String UNINHABITED_OUTLINE_KEY = "$kmu_political_uninhabited_outline_test";
+        private static final String FILTER_RECEDE_MUTE_KEY = "$kmu_political_filter_recede_mute_test";
+        private static final String FILTER_RECEDE_DESATURATE_KEY =
+            "$kmu_political_filter_recede_desaturate_test";
+
+        // The value the short name format is stored as. A literal for the same reason as the keys:
+        // a save holds this spelling, so a rename must fail here.
+        private static final String SHORT_NAME_FORMAT_VALUE = "short";
+
+        // The prefix every key this mod's picker stores leads with. Frozen, since each existing save's
+        // spotlight, sort and column picks sit under it.
+        private static final String MAP_STORE_KEY_PREFIX = "$kmu_map_";
+
+        // The rows of the political map's sort selector: name, domination, presence, score and market
+        // size.
+        private static final int SORT_MODE_ROW_COUNT = 5;
+
+        @Test
+        void storesTheNameFormatUnderThePoliticalMapsFrozenKey() {
+
+            var preferences = captureBodyPreferences();
+
+            try (var sectorMemoryFake = new SectorMemoryFake()) {
+
+                preferences.nameFormat().selectNameFormat(
+                    BODY_SCREEN,
+                    OwnerNameFormatChoice.SHORT,
+                    new MapLayerRefreshBoard());
+
+                assertThat(sectorMemoryFake.readStoredValue(NAME_FORMAT_KEY))
+                    .isEqualTo(SHORT_NAME_FORMAT_VALUE);
+            }
+        }
+
+        @Test
+        void storesTheOutlineUnderThePoliticalMapsFrozenKey() {
+
+            var preferences = captureBodyPreferences();
+
+            try (var sectorMemoryFake = new SectorMemoryFake()) {
+
+                preferences.uninhabitedOutline().setOutlineDrawn(
+                    BODY_SCREEN,
+                    true,
+                    new MapLayerRefreshBoard());
+
+                assertThat(sectorMemoryFake.readStoredValue(UNINHABITED_OUTLINE_KEY))
+                    .isEqualTo(true);
+            }
+        }
+
+        @Test
+        void storesTheFilterRecedeUnderThePoliticalMapsFrozenKeys() {
+
+            var filterRecede = captureBodyPreferences().filterRecede();
+
+            try (var sectorMemoryFake = new SectorMemoryFake()) {
+
+                filterRecede.setMuted(BODY_SCREEN, true, new MapLayerRefreshBoard());
+                filterRecede.setDesaturated(BODY_SCREEN, false, new MapLayerRefreshBoard());
+
+                assertThat(sectorMemoryFake.readStoredValue(FILTER_RECEDE_MUTE_KEY))
+                    .isEqualTo(true);
+                assertThat(sectorMemoryFake.readStoredValue(FILTER_RECEDE_DESATURATE_KEY))
+                    .isEqualTo(false);
+            }
+        }
 
         @Test
         void appendsTheSelectedViewsControlsAfterTheSelector() {
@@ -424,7 +431,7 @@ final class PoliticalMapLayerTests {
                 assertThat(sortRow.leftColumn())
                     .hasSize(1);
                 assertThat(sortRow.leftColumn().get(0).labels())
-                    .hasSize(DominanceSortModes.MODES.modes().size());
+                    .hasSize(SORT_MODE_ROW_COUNT);
 
                 // The right half is the recede: its caption, then the two toggles.
                 assertThat(sortRow.rightColumn().get(0))
@@ -569,7 +576,7 @@ final class PoliticalMapLayerTests {
                 pickerMock.verify(
                     () -> ListPickerBinder.buildPicker(
                         argThat(slot ->
-                            KmuMod.MAP_STORE_NAMESPACE.equals(slot.screenSlot().namespace())),
+                            MAP_STORE_KEY_PREFIX.equals(slot.screenSlot().namespace().keyPrefix())),
                         any(),
                         any(),
                         any())));
@@ -765,8 +772,6 @@ final class PoliticalMapLayerTests {
             .orElseThrow();
     }
 
-    // Stubs the two view-agnostic pieces to their sentinels so a test asserts only the composition
-    // order the layer imposes, not the pieces' own contents.
     // The preferences this layer hands its shared controls when a body is built - the ones every
     // choice on the panel is written through. Captured off the build rather than asked of the layer,
     // since what is pinned is what the panel writes to.
@@ -801,6 +806,8 @@ final class PoliticalMapLayerTests {
         }
     }
 
+    // Stubs the two view-agnostic pieces to their sentinels so a test asserts only the composition
+    // order the layer imposes, not the pieces' own contents.
     private static void stubSharedControlsAndSelector(
             MockedStatic<OwnerMapBodyControls> controlsMock) {
 

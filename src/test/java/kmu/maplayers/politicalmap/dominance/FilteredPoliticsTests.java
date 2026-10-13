@@ -21,11 +21,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins {@link FilteredPolitics}'s pure rules on hand-built footprints and presence sets: the
  * three-way classification that decides how a spotlighted bloc draws in each system - including
- * that a bloc living in a system nothing weighed for it still draws - the spotlight holder built
- * from a bloc's shades, and the group-key helper the render layer reads to tell a spotlit cell
- * from a receding one. The presence-aware
- * holder assembly - the synthetic key, palette reuse, the contested set, and the real-holder
- * fallback - reads the live economy, so it is covered in {@link FilteredPoliticsIntegrationTests}.
+ * that a bloc living in a system nothing weighed for it still draws - and the spotlight holder built
+ * from a bloc's shades. The presence-aware holder assembly - the synthetic key, palette reuse, the
+ * contested set, and the real-holder fallback - reads the live economy, so it is covered in
+ * {@link FilteredPoliticsIntegrationTests}.
+ *
+ * <p>Telling the spotlit key from a real owner ID is {@link SpotlitOwners}'s, and is pinned in its own
+ * suite. Here it only reads which key a holder carries.
  */
 class FilteredPoliticsTests {
 
@@ -165,18 +167,6 @@ class FilteredPoliticsTests {
             // A colour faction gone mid-session: the caller draws the real receded holder instead.
             assertThat(FilteredPolitics.resolveSpotlitHolder(blocId -> null, "hegemony"))
                 .isNull();
-        }
-    }
-
-    @Nested
-    class IsSpotlitBloc {
-
-        @Test
-        void returnsFalseForARealFactionId() {
-            // The synthetic key uses a sentinel a real ID cannot carry, so no faction is ever
-            // mistaken for the spotlighted bloc and wrongly kept at full strength.
-            assertThat(SpotlitOwners.isSpotlitOwner("hegemony"))
-                .isFalse();
         }
     }
 
