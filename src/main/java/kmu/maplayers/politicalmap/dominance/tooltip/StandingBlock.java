@@ -37,9 +37,9 @@ public enum StandingBlock implements ContestBlockHeading {
     ALLIED(wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER),
 
     /**
-     * The blocs on good terms with the holder without standing in its alliance. Inside the allied
-     * block rather than beside it: an ally who is merely favourable is still an ally, so disposition
-     * sorts only what alliance left standing against the holder.
+     * The blocs on good terms with the holder without standing in its alliance, taken from what
+     * alliance left standing against it - see
+     * {@link kmu.maplayers.ownermap.owners.holders.alliances.ContestSides}.
      */
     FRIENDLY(wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_SYSTEM_HOLDER),
 

@@ -5,9 +5,10 @@ package kmu.maplayers.politicalmap.dominance.standings;
  * every colony it holds there is one the economy does not list, so it is present without ever
  * having been weighed.
  *
- * <p>Every term of a dominance weight is economy-fed - industries, conditions, computed stability -
- * so an unregistered colony has nothing for the arithmetic to read. A faction holding nothing else
- * in the system raises no footprint at all, and this is what it gets instead of no standing: the
+ * <p>An unregistered colony is never weighed
+ * (<a href="../README.md#only-the-economys-colonies-are-weighed">the market contest</a> says why), so
+ * a faction holding nothing else in the system raises no footprint at all, and this is what it gets
+ * instead of no standing: the
  * alternative is a box naming nobody while the map plainly draws a station in that faction's
  * colours and the band beneath the cell draws its run.
  *

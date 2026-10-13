@@ -26,10 +26,10 @@ import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
  * registered included.
  *
  * <p>Presence in these stats is therefore not the same as painting something. Dominance weight is
- * what these layers paint by, and it is economy-fed - a colony the economy does not list has no
- * industries, no conditions and no computed stability - so a bloc present through such colonies
- * alone folds in at a score of nought and paints nowhere. That is what {@link #isPaintingNothing}
- * answers.
+ * what these layers paint by, and only the colonies the economy lists are weighed
+ * (<a href="README.md#only-the-economys-colonies-are-weighed">the market contest</a> says why), so
+ * a bloc present through unlisted colonies alone folds in at a score of nought and paints nowhere.
+ * That is what {@link #isPaintingNothing} answers.
  *
  * <p>Plain data with no Starsector types, so the aggregation runs without a live economy.
  *

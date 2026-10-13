@@ -12,12 +12,9 @@ import kmu.util.KmuStringKeys;
 /**
  * Registers KMU's relay for Nexerelin's colony transfers only when Nexerelin is present. The relay
  * implements a Nexerelin interface, so an install without Nexerelin must never load it: the sole
- * reference to that coupled type lives in the nested {@link Installer} holder, which the
- * classloader does not resolve until the mod-enabled gate has passed. That keeps such an install
- * from seeking {@code exerelin.utilities.InvasionListener} and failing with a missing-class error -
- * the same isolation KMLib's Abyssal Fracture matcher uses for Random Assortment of Things. An
- * optional mod read through settings rather than through its own types needs none of this: there
- * is no class to defer, only a mod-enabled gate in front of the read.
+ * reference to it lives in the nested {@link Installer} holder, which the classloader does not
+ * resolve until the mod-enabled gate has passed - the deferral
+ * <a href="../README.md#deferring-a-coupled-class">the adapters' register</a> describes.
  *
  * <p>Nexerelin is the only source of colony ownership transfers, which vanilla fires no listener
  * for. One relay per sector carries them to whatever listens for them, so what listens is

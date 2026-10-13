@@ -4,6 +4,12 @@ What the map layers say to the profiler beyond a section's name:
 the counters a rebuild's stages add to,
 the terms a rebuild step registers its section on,
 and the one bound that arrives from outside the framework.
+Below them,
+what is measured at all and what the readout writes.
+
+Part of [the map layers](../../README.md),
+in Klark Morrigan's Utilities (KMU);
+see the [mod README](../../../../../../../README.md) for project context.
 
 ## Index
 
@@ -11,6 +17,8 @@ and the one bound that arrives from outside the framework.
 - [Counters](#counters)
 - [Rebuild step terms](#rebuild-step-terms)
 - [The frame beat bound](#the-frame-beat-bound)
+- [What is measured](#what-is-measured)
+- [The readout](#the-readout)
 
 ## Why a package
 
@@ -49,6 +57,18 @@ so each of its steps is an event a reader following the rebuild through the log 
 the fast ones included.
 A step that should say more or less than the others changes its own registration rather than this.
 
+Each call's line carries the duration the row was accumulated from,
+what the call counted,
+and what it named itself.
+So a step carries one measurement,
+read in the log as a rebuild happens or in the report afterwards,
+rather than a hand-written log line beside the row that could disagree with it.
+The lines follow the profiler,
+which is the price of that single measurement:
+with the level knob off,
+a rebuild says nothing at all,
+even with the log at debug.
+
 Stating any threshold at all also marks a section's calls as events rather than per-frame cost,
 and the library reads such a call for whether it was its row's first
 and how far the JVM's compilation clock moved under it (`first jitMs=412`).
@@ -83,3 +103,47 @@ and could disagree with the row while looking authoritative.
 Nothing is lost by it -
 a bound is only ever consulted while a capture is running,
 and the same root binds both.
+
+## What is measured
+
+Nothing is recorded unless a profiler is bound:
+the library's default keeps nothing and allocates nothing,
+so an unmeasured frame pays a virtual call per beat and no more.
+Which one is bound follows the `Profiling level` knob on `Map - Dev`,
+which ships off,
+so a player who never opens the readout is not measured at all.
+The frame's beats are coarse,
+so any running capture times them;
+what a level rules out is the finer work inside a per-item loop.
+
+## The readout
+
+The `kmu_profiling` console command writes a reading of the capture rather than the capture itself:
+
+- `tree` is the beats as they were measured,
+  each row under the one it ran inside;
+- `flat` puts the rows that spent the time first,
+  each named by its whole path;
+- `walks` keeps only the rows that traversed the sector,
+  worst call first,
+  which is the witness the refresh's one-walk bound is stated against.
+
+`namespace=` narrows any of them to one layer's rows,
+keeping the beats those rows sit inside so a share is still readable against the whole,
+and `top=` keeps only as many rows as are wanted.
+
+`perframe` divides the totals by the calls of `mapLayer.prepare`,
+the beat that runs once a frame,
+so a figure means the same whether the map was left open for four seconds or four minutes.
+A capture holding no call of it says so and leaves the totals alone.
+
+Every reading goes to `starsector-core/starsector.log`,
+and the console gets a line saying so.
+The table is wider than the console overlay can lay out,
+and the log is the file a capture asked for in a bug report has to end up in anyway.
+The notice is printed rather than nothing,
+since a command that visibly did nothing reads as one that failed.
+
+The beats themselves,
+and the bounds they are held to,
+are [the frame sequence](../render/README.md#what-a-frame-costs)'s.

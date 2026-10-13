@@ -112,8 +112,8 @@ record ListedClaimContest(
      * claim holder by alliance and yet on good terms with it, of either eligibility.
      *
      * <p>Taken out of what the alliance set left standing against the holder and out of nothing
-     * else, alliance being the outer axis: an ally who is merely favourable is still an ally,
-     * and one gone sour is still an ally too.
+     * else, for the reason {@link kmu.maplayers.ownermap.owners.holders.alliances.ContestSides}
+     * states.
      */
     List<FactionClaimStanding> selectFriendlyStandings() {
         return selectStandingsOn(ContestSide.RIVAL)

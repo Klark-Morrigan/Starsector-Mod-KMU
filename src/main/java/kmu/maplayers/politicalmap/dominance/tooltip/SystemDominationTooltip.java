@@ -10,7 +10,6 @@ import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBlocks;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.ComposedCellBody;
-import kmu.maplayers.ownermap.owners.holders.alliances.ContestSides;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.maplayers.politicalmap.dominance.BlocCandidacy;
@@ -26,37 +25,17 @@ import kmu.mods.nexerelin.NexerelinContestWording;
 import java.util.List;
 
 /**
- * The domination breakdown a political-map layer shows for the hovered star system: what the system
- * is, then who dominates it, who stands with them by alliance, who stands with them in disposition,
- * who contests it, and who was never in the running - ranked under the injecting view's own grouping
- * and weighting, and beneath every faction named, the colonies it holds the system with and the
- * factors each colony's weight was summed from. The {@link MapHoverTooltip} the faction and alliance
- * views both inject, each holding one bound to its own grouping.
+ * The {@link MapHoverTooltip} the faction and alliance views inject: the ranked contest behind a held
+ * fill, and beneath each faction the colonies and factors its score was summed from.
  *
- * <p>The ranking reads as a contest rather than as a list: the group the map fills the system in the
- * colour of is named as dominating it, so who holds the system is stated outright instead of being
- * inferred from which line sits at the top. Which group that is and where every other one is listed is
- * {@link StandingBlockRouting}'s answer, taken once per hover; why an ally or a friend of the holder is
- * lifted out of the rivals is {@link ContestSides}'. The headline stays on the group the map painted
- * the cell for rather than on its alliance, which is what keeps the box an explanation of the cell
- * beneath it.
+ * <p>One box per view, each bound to the grouping that view paints under, so the standings are
+ * ranked under the view whose fills they explain and no second layer's pick can reach them. The
+ * headline names the group the cell is painted for rather than its alliance, which keeps the box an
+ * explanation of the cell beneath it.
  *
- * <p>The two-tier shape at the top is settled where the group's kind is known
- * ({@link StandingRowResolver}): a lone-faction group reads as one flat line, an alliance bloc as a
- * line over its member factions. The colonies hang under the faction flying them rather than under the
- * bloc, since a bloc's score is the sum over its members'.
- *
- * <p>The account beneath each faction is one tree read to whatever depth was asked for and composed
- * only as far as the cut draws it ({@link CellTooltipBody}), so the shallowest level pays for no colony
- * read at all. Its parts come from the very pass that ranked the groups
- * ({@link DominancePass#readWeightBreakdownsByFaction}), so the lines always add up to the number the
- * top line and the map's own fills show. Every colony line says what the box has found out about the
- * place beyond its weight ({@link SystemColonyReading}).
- *
- * <p>Stateless past the seams it is built around - the painting view's grouping, the live economy, the
- * alliance set and the settings are read afresh each paint. The grouping the ranking runs under is
- * handed over by the view that injects the box, so a box is always ranked under that view and no
- * second layer's pick can reach it.
+ * <p>Stateless past the seams it is built around: the grouping, the live economy, the alliance set
+ * and the settings are read afresh each paint. How the box is composed and cut, and what each block
+ * holds, is <a href="README.md">the domination box</a>'s register.
  */
 public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
 
@@ -175,8 +154,7 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
 
         // The colonies the pass could not weigh, selected beside the ones it did. They stay a
         // separate read rather than becoming a second kind of breakdown because the pass must see
-        // only the markets it can weigh: a colony the economy does not list has nothing to weigh,
-        // and one admitted there would hand its owner weight nobody worked out.
+        // only the markets it can weigh.
         var unweighedColoniesByFactionId = pass.readUnweighedColoniesByFaction(system);
 
         // What the box may say about each colony beyond its weight, settled once for the whole box
@@ -204,10 +182,9 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
     // different questions of one reading.
     //
     // Judged on the ranking rather than on the status line the body heads itself with, which answers
-    // a different question of the same pass: the line says whether anybody runs the place, while the
-    // standings name everyone the player may be told about. A system whose colonies are all collapsed
-    // or derelict is headed Decivilised or Unpopulated and still ranks whoever holds them - and those
-    // colonies are exactly what a deeper level opens up.
+    // a different question of the same pass (SystemStatusRow states which). A system whose colonies
+    // are all collapsed or derelict still ranks whoever holds them - and those colonies are exactly
+    // what a deeper level opens up.
     private static boolean hasAnyStanding(RankedStandings ranking) {
         return ranking.routing().hasAnyStanding();
     }
@@ -284,10 +261,7 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
         // a known system. The status resolves under this pass's rule, the same filter the standings
         // were ranked through, so neither can admit a colony the other withholds.
         //
-        // It answers a different question of that one rule, though: the line says whether people
-        // live here, while the standings name everyone the player may be told about. A system whose
-        // only market is a derelict is therefore headed "Unpopulated" over a list naming the
-        // derelict - which is what both surfaces are for, rather than a disagreement between them.
+        // It answers a different question of that one rule, though, which SystemStatusRow states.
         // Off the pass's own walk of the system - the very one the standings were ranked from - so
         // the line and the list beneath it are two readings of one traversal rather than two.
         body.appendBannerSection(SystemStatusRow.resolveStatusRow(

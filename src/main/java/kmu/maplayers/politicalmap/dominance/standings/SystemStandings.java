@@ -28,7 +28,7 @@ import java.util.Set;
  * <p>Presence is what puts a faction on the list, not weight - so the list is built from who is in
  * the system, with the weighed factions among them, rather than from the weighing plus whatever it
  * missed. A faction holding nothing in the system but a colony the economy does not list raises no
- * footprint - every term of a dominance weight being economy-fed - and takes a
+ * footprint, and takes a
  * {@link PresenceOnlyFactionStanding} at nought rather than going unlisted, so the box over a cell
  * names every faction the band inside it draws a run for. Such a standing settles at the foot of
  * its group on the score it carries, and cannot move a fill: holding is resolved off the

@@ -31,69 +31,20 @@ import static kmlib.testfixtures.starsector.settings.LunaSettingsTable.SETTINGS_
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the shipped LunaLib settings table against the code that reads it. A Radio field's stored value
- * is its selected option's label, so a label that drifts between the CSV and its {@link LabeledChoice}
- * enum fails silently in play: the read finds no match, falls back to the default, and the player's
- * pick simply does nothing with no error to trace. Nothing else checks the two agree - the enums say so
- * only in a doc comment - so this reads the real data file rather than a fixture.
+ * Pins the shipped LunaLib settings table against the code that reads it.
  *
- * <p>Every check here is one of the two readings held against the other, or against a table stated
- * below: {@link LunaSettingsTable} is the shipped file as rows and cells, {@link
- * LunaSettingsSourceText} the shipped Java as the constants a row is reached through. Both are
- * KMLib's, the shapes they read being LunaLib's rather than this mod's. Neither judges anything,
- * which is what this file is for - what each reading ought to say is the whole of what is written
- * here, and the tables that say it are the only thing a pass over the settings screen has to keep
- * current.
+ * <p>Every drift between the two fails silently in play. A Radio option the enum cannot name reads
+ * back as the default; a renamed field ID leaves the player's stored value unreachable; a mistyped
+ * tab opens a tab of its own holding one row. Nothing else checks the two agree, so this reads the
+ * real data file rather than a fixture.
  *
- * <p>An option label is therefore a stored key wearing the costume of a caption, and is frozen for the
- * same reason a field ID is: tidying the wording of one resets that setting for every player who had
- * picked it. The label check is only as wide as the table below, so the coverage walk holds every Radio
- * row in the file against that table - a row added or reworded by a pass over the settings screen has to
- * be classified here before the suite goes green, rather than slipping past the guard unnoticed.
- *
- * <p>The field ID one column left is stored the same way and drifts the same way, so the last two walks
- * hold the rows and the sources that name them against each other. They read the IDs out of the source
- * text because they are private constants of whichever class reads the field, and they are not all in one
- * class: the two keybind IDs sit with the tabs they bind.
- *
- * <p>Both directions are walked because they fail differently. A row no source names is a row whose value
- * nothing can reach - a renamed row or a renamed constant, since either leaves the ID unread. An ID no row
- * declares is the opposite: a getter reading a key the shipped file never writes, which returns its
- * fallback forever and so looks exactly like a setting the player has not touched. The prefix alone does
- * not mark a string as a setting - unrelated IDs such as the terrain plugin's share it - so that second
- * walk names its exceptions rather than assuming there are none.
- *
- * <p>A Boolean row's default column is held the same way where the value is a decision rather than a
- * taste: the hover tiers ship on so that switching them is the player's move and not the file's, the
- * visibility overrides ship off so that a fresh player is shown what the ordinary rules admit and
- * nothing beyond it, the unfinished feature ships off so that nothing the mod does not yet stand
- * behind runs unasked, the escape hatch over the vanilla filter row ships on so that the control it
- * gates is there before anyone needs it, the decivilised-territory switch ships on so that the
- * reading the map already drew is the one a player keeps by doing nothing, and
- * the Java fallback beside each getter cannot stand in for that - it answers only while LunaLib has
- * no stored value, so it is this column a fresh player is actually given. Which way a switch ships is
- * that one table's business; that the two spellings of it agree is every Boolean row's, so the
- * fallback beside each is walked against its own column exactly as the numeric ones are - the two
- * checks reading the same column for different reasons, one for what it says and one for whether
- * anything else says it differently.
- *
- * <p>That same fallback is held against a choice row's default column, for the case the sentence above
- * sets aside: the two answer at different moments - the constant while LunaLib has nothing stored, the
- * column once it has - so two spellings of one default give a panel one look before the settings load
- * and another after, with nothing on screen to say why. The constants are private, so the walk reads
- * them out of the source text rather than calling the getters.
- *
- * <p>The last column fails the same way one column at a time: LunaLib creates a tab by being named, so a
- * mistyped tab name opens a new tab holding that row alone rather than raising anything. The tab walk
- * holds every row's placement against the set the screen is laid out into, which is why the layout is
- * spelled out here rather than left implicit in the file.
- *
- * <p>Two row types are drawn and forgotten rather than stored, so their displayed text is the one thing
- * here free to change: a section caption, and a note carrying in one place what every description under
- * it would otherwise repeat. Both are drawn from the default-value column and the columns beside it are
- * inert, so an edit to one of those lands nowhere: the build stays green, the screen is unchanged, and
- * nothing says why. A caption carries its text in two columns and is held to keeping them equal; a note
- * draws from one of them alone, and is held to filling that one and leaving the other empty.
+ * <p>Every check holds one of two readings against the other, or against a table stated below:
+ * {@link LunaSettingsTable} is the shipped file as rows and cells, {@link LunaSettingsSourceText} the
+ * shipped Java as the constants a row is reached through. Both are KMLib's, the shapes they read
+ * being LunaLib's. Neither judges anything: what each reading ought to say is the whole of what is
+ * written here, and the tables that say it are the only thing a pass over the settings screen has
+ * to keep current. Each nested class holds one column or one walk, and its assertion message states
+ * what a drift there costs.
  */
 final class LunaSettingsCsvIntegrationTests {
 
@@ -349,6 +300,10 @@ final class LunaSettingsCsvIntegrationTests {
         }
     }
 
+    // An option label is a stored key wearing the costume of a caption, frozen for the reason a field
+    // ID is: rewording one resets that setting for every player who had picked it. The label check
+    // is only as wide as the tables above, so this holds every Radio row in the file against them -
+    // a row added or reworded has to be classified before the suite goes green.
     @Nested
     class RadioFieldCoverage {
 

@@ -37,11 +37,9 @@ import java.util.Optional;
  * <p>A bloc paints and reads exactly as on the factions view, through the faction reading and
  * categories every view of this layer shares.
  *
- * <p>Its spotlight picker is its own, not the held layers': the blocs it offers are the ones that
- * claim a system or live in one, and they carry claim metrics rather than domination ones, so the
- * sort selector can only offer numbers this layer is actually painted by. A bloc that holds colonies
- * while claiming nothing is listed receded at a count of zero rather than dropped, so the list
- * accounts for every faction the player can see instead of appearing to have forgotten one.
+ * <p>Its spotlight picker is its own, not the held layers': its blocs carry claim metrics rather
+ * than domination ones, so the sort selector can only offer numbers this layer is actually painted
+ * by. Who it lists is {@link #resolveBlocPickerRead}'s to state.
  *
  * <p>The market-inferred claims that make up most of what is painted move with the colonies behind
  * them, and a colony change already marks its system stale - through the refresh listeners, or the
@@ -130,16 +128,15 @@ public final class ClaimsView
     }
 
     /**
-     * The claims picker: every bloc the sector walk surfaced - each one that claims a system or
-     * lives in one - carrying its whole-sector {@link ClaimStats}, ranked by the
+     * The claims picker: every bloc the sector walk surfaced, carrying its whole-sector
+     * {@link ClaimStats}, ranked by the
      * {@link ClaimSortModes} vocabulary and whatever the shared assembly offers behind it.
      *
-     * <p>No gate of its own, so the list is whoever paints or lives somewhere. A faction that claims
-     * a system but holds no colony anywhere is listed because it paints territory here; a faction
-     * with colonies but no claim is listed because leaving it out reads as the map having forgotten
-     * a faction the player can plainly see, and its row says what it is - receded, with a claim count
-     * of zero - before the pick is made. A bloc with neither never reached the fold, so the list is
-     * everyone who paints or lives somewhere, not every faction in the sector.
+     * <p>No gate of its own, so the list is everyone who paints or lives somewhere, not every faction
+     * in the sector. A faction that claims a system but holds no colony anywhere is listed because it
+     * paints territory here; a faction with colonies but no claim is listed because leaving it out
+     * reads as the map having forgotten a faction the player can plainly see, and its row says what
+     * it is - receded, with a claim count of zero - before the pick is made.
      *
      * <p>A claimless bloc stays pickable. Spotlighting one paints no territory, which is the honest
      * answer to "show me what this faction claims" when the answer is nowhere - but the systems it
@@ -159,8 +156,6 @@ public final class ClaimsView
             SectorAPI sector,
             ColonyReadRules colonyReadRules) {
 
-        // No gate of its own: this view offers every bloc its walk surfaced, which is the shared
-        // seam's default.
         return readPickerUnderOneGrouping(sector, grouping -> {
 
             // The layer-generic pass: this layer is painted by claims, and a claim count and a

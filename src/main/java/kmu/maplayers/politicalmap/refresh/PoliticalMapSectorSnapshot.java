@@ -38,9 +38,9 @@ import java.util.Map;
  * selection answers the poll's other passengers - and that one set answers both outputs here:
  * whether anybody lives there, which the pass composes membership from, and the footprints the
  * dominance rule weighs. Membership is asked of the pass rather than derived from those
- * footprints, since a footprint is weighed only for a colony the
- * economy lists - a system settled by an unregistered one alone lives, and would go
- * missing from the fingerprint that notices it appear. The concerns stay separated: the
+ * footprints, since a footprint is weighed only for a colony the economy lists. A system settled by
+ * an unregistered colony alone is drawn, and derived from the footprints it would be missing from
+ * the fingerprint, which would then never move for it. The concerns stay separated: the
  * visibility contribution is {@link MapVisibilityFingerprint}'s and the dominant holder is
  * {@link SystemDominance}'s; this coordinator only sequences the shared walk.
  *
@@ -114,15 +114,10 @@ public record PoliticalMapSectorSnapshot(
 
         for (var system : sector.getStarSystems()) {
 
-            // Asked of the pass rather than derived from the footprints below, which is the
-            // narrower question: a footprint is only ever weighed for an economy-listed colony,
-            // so a system settled by an unregistered one alone would read as empty here while the
-            // drawn set - which asks the pass - draws it. The fingerprint would then never move
-            // for it, and the map would go on showing whatever it last built there.
-            //
-            // Asked first so that an undrawn system costs nothing beyond it: everything below is
-            // spent per drawn system, and the colony read it makes is the one the pass has already
-            // memoised answering this.
+            // Asked of the pass rather than derived from the footprints below, for the reason the
+            // class states. Asked first so that an undrawn system costs nothing beyond it:
+            // everything below is spent per drawn system, and the colony read it makes is the one
+            // the pass has already memoised answering this.
             if (!pass.isDrawn(system)) {
                 continue;
             }

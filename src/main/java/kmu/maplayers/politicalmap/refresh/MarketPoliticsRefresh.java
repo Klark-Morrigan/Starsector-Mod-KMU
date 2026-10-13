@@ -28,7 +28,9 @@ import org.apache.log4j.Logger;
  * change can repaint nothing), and marks just that system stale via
  * {@link MapLayerRefreshBoard#markSystemGroupingStale} - the fine-grained refresh
  * that re-derives only the named system and its neighbours rather than rescanning
- * the whole economy. Reachability changes (a system joining or leaving the map)
+ * the whole economy. Whether the change actually flips the holder is decided later, when the
+ * overlay re-derives that one system, so a change that moves no winner costs only that re-derive.
+ * Reachability changes (a system joining or leaving the map)
  * are a separate axis owned by {@link PoliticalMapStalenessSource}.
  *
  * <p>The same event also writes down what the system's inhabitants can see. That

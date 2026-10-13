@@ -49,10 +49,9 @@ public final class KnownMarketFootprints {
      * Folds each faction's markets in one system into the footprint the dominance
      * rule compares.
      *
-     * <p>Only the colonies the sector's economy lists are weighed. Every term of a dominance
-     * weight is economy-fed - industries, conditions, computed stability - so an unlisted colony
-     * has nothing for the arithmetic to read, and admitting one would hand its owner weight
-     * nobody worked out. It is named instead, by {@link #readUnweighedColoniesByFaction}.
+     * <p>Only the colonies the sector's economy lists are weighed, for the reason
+     * <a href="../README.md#only-the-economys-colonies-are-weighed">the market contest</a> states.
+     * The rest are named instead, by {@link #readUnweighedColoniesByFaction}.
      *
      * <p>Condition-only markets (the placeholder market every uninhabited planet
      * carries for hazard and atmosphere conditions) never reach here: the colony set is
@@ -133,10 +132,7 @@ public final class KnownMarketFootprints {
      *
      * <p>Vanilla builds a colony that way on purpose, so a player can be looking at a station in a
      * faction's colours that {@link #readBreakdownByFaction} cannot see. A box accounting for the
-     * system has to name it; the pass must not, every term of a dominance weight being economy-fed
-     * - an unlisted market has no industries, no conditions and no computed stability, so admitting
-     * one would hand its owner weight nobody worked out and could change which faction the map
-     * paints the system for.
+     * system has to name it; the pass must not weigh it.
      *
      * <p>A separate read rather than a widening of the weighed one, so a caller that must not see
      * these colonies cannot be handed them by accident. Both are selected out of the one colony

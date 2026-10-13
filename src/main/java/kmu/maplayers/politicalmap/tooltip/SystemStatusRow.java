@@ -20,6 +20,13 @@ import java.util.Optional;
  * its system unpopulated would be false, and saying nothing would leave a cell drawn as settled
  * with no account of who is there.
  *
+ * <p>The line asks a different question of the colony rule from the listing a box draws beneath
+ * it. The line asks about habitation: whether anybody lives here. The listing asks what the player
+ * may be told about. So a system whose only market is a derelict is headed "Unpopulated" over a box
+ * naming the derelict's owner, and a system whose colonies have all collapsed is headed
+ * "Decivilised" over a box still ranking whoever holds them. Neither is a disagreement: nobody has
+ * ever been aboard a derelict, and somebody has seen it.
+ *
  * <p>A shared row rather than each tooltip's own empty state, because it is a fact about the
  * system, not about the layer looking at it - a layer that says nothing else about such a system
  * still has to say that much, and two layers wording or placing it differently would read as two
@@ -43,10 +50,8 @@ public final class SystemStatusRow {
     /**
      * Resolves the status line for a system nobody the player knows of lives in.
      *
-     * <p>Answered off habitation rather than off the listing beneath it, because the line says
-     * whether people live here while the listing names everything the player may be told about. A
-     * system holding one derelict and nothing else is unpopulated space, and the box beneath still
-     * names the derelict.
+     * <p>Answered off habitation rather than off the listing beneath it, for the reason the class
+     * states.
      *
      * @param colonies        the hovered system's colonies, as one walk of it reported
      * @param colonyKnowledge what the player may be told about a colony, passed by the caller so

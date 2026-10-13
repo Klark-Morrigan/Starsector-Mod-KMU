@@ -16,6 +16,11 @@ import java.util.function.Function;
  * <p>The holder travels beside the affiliation rather than arriving per call, because both sides
  * of one contest are read against the one holder and passed apart they could be read against two.
  *
+ * <p>This is the outer axis of every contest a surface reports, and disposition only ever sorts
+ * inside it. A surface that sets apart the contestants on good terms with the holder takes them from
+ * the {@link ContestSide#RIVAL} side and from nowhere else: an ally who is merely favourable is still
+ * an ally, and one gone sour is still an ally too.
+ *
  * @param holderBlocId the bloc holding the system, as the layer's mechanic found it; no bloc at all
  *                     where nobody holds it, which leaves every contestant on the rival side, there
  *                     being nobody for them to be standing with

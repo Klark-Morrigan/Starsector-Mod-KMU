@@ -8,8 +8,7 @@ import kmlib.math.ranges.Ranges;
  *
  * <p>These sit on the framework's {@code Map - Dev} tab because the geometry they move is the
  * framework's, and they are filed here because the owner-painted tier is what reads them - the
- * framework takes the values as parameters and never fetches a setting. A knob is filed by who
- * reads it, not by whose geometry it moves.
+ * framework takes the values as parameters and never fetches a setting.
  *
  * <p>The cell knobs reseed the partition itself, so they feed the geometry rebuild; every border
  * and hatch knob below restyles fixed geometry through the drawables rebuild. Which of the two a

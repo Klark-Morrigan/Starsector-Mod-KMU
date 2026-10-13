@@ -3,12 +3,8 @@ package kmu.settings;
 /**
  * Every key the map overlay answers to: what the {@code Map - Keybinds} tab holds, and nothing else.
  *
- * <p>A section of the map-layer knobs rather than a reader of its own. The split that
- * matters is by which package reads a knob, and these are read from the same place the rest of the
- * framework's chrome settings are - so this buys no isolation and is not claiming to. What it buys
- * is that one screen of the settings dialog has one class behind it: a key added to the tab has one
- * obvious home, and a reader wanting to know what the player can rebind reads a file rather than
- * sifting a large one.
+ * <p>A section of the map-layer knobs rather than a reader of its own, named for its tab; the
+ * settings package's README says what that buys.
  *
  * <p>The two readings here are different in kind, which is the other reason they sit together.
  * A layer's tab key is looked up by an ID the caller supplies, because a layer owns the row its own
@@ -24,9 +20,7 @@ package kmu.settings;
  * part the day one of them moved, silently. So a read that cannot reach a row answers unbound, which
  * every path taking a keycode already treats as no key at all.
  *
- * <p>What each key does for the player is stated once, in the description column of that same table,
- * and how any of them are rebound once more, in that tab's own note row. The prose here answers only
- * what those cannot: what a caller has to know to use the value.
+ * <p>How any of the keys is rebound is stated once, in that tab's own note row.
  */
 public final class KmuMapKeybindSettings {
 

@@ -5,11 +5,9 @@ import kmlib.profiling.ProfileLevel;
 /**
  * How much of what the mod does is measured.
  *
- * <p>Its own class beside the knob classes {@link KmuLunaSettings} lists, and split from them by
- * the same rule: this is read where the mod's start-up wiring is composed rather than by any
- * feature. Which profiler is bound is a decision about the whole mod, and the map layers - which
- * are what a capture mostly measures - must not be the ones deciding whether they are being
- * watched.
+ * <p>Read where the mod's start-up wiring is composed rather than by any feature. Which profiler
+ * is bound is a decision about the whole mod, and the map layers - which are what a capture mostly
+ * measures - must not be the ones deciding whether they are being watched.
  *
  * <p>The frame-beat budget is the other row of the same section, and is here beside the level even
  * though the measured code is what reads it back. It reaches that code as a bound value the

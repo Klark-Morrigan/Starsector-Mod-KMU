@@ -1,6 +1,6 @@
 # Void pockets, v4
 
-Part of the [geometry viewer](../../../../../../../../README.md)'s prototype tree.
+Part of the [geometry viewer](../README.md)'s prototype tree.
 
 The sector's void as one division rather than as a set of separately traced shapes.
 Where v3 walks the void once per kind of thing it is looking for and reconciles the answers afterwards,

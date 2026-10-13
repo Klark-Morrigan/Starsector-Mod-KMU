@@ -366,40 +366,10 @@ and a player who ordered their bar once does not order it again per save.
   and otherwise the first face down KMLib's fallback walk that does.
 - **[Installed machinery](base/machinery/README.md)** -
   one sector's map machinery as a thing a caller can hold,
-  since everything the layers draw is derived from one sector
-  and everything under that drawing is keyed by each system's `SystemKey`.
-  `SectorMapMachinery` holds the refresh board,
-  the motion tracker,
-  the hover holder and the sector itself;
-  what a *layer* derives from the sector goes in through `InstalledMachinery`,
-  so machinery owns those lifetimes without naming the packages downstream of it.
-  `SectorMapMachineryIndex` indexes one per sector and settles the lifetime -
-  replace on reinstall,
-  release on removal,
-  discard every one on load.
+  indexed per sector with its lifetime settled there.
 - **[The render surface](base/render/README.md)** -
-  `MapLayerRenderer`,
-  the seam a layer draws through -
-  its overlay and the hover box over one cell of it -
-  and the terrain that owns the map's render pass.
-  It asks the drawn layer for a renderer and hands it the frame,
-  so it names no layer;
-  a layer that only switches (No Layer) supplies none,
-  which is read as nothing to draw.
-  A layer painting from a cache need not take the frame raw:
-  `SequencedMapLayerRenderer` runs the frame every such layer runs,
-  over the parts the layer supplies.
-  Which sector it draws it finds through its own terrain entity,
-  that being the one handle a plugin rebuilt from the save has.
-  More than one terrain surface can paint one frame,
-  so the per-frame work behind a layer is claimed rather than assumed:
-  `MapFramePreparationClaim` grants it to the first surface of that sector to reach each frame,
-  one claim per machinery so two maps drawing in one frame each get their own.
-  The cursor read is the exception,
-  being taken per pass so the surface that drew last owns the answer.
-  Where a second surface is a minimap its owner has parked off screen,
-  the compatibility mode stops it rendering
-  rather than arbitrating between the two passes it would otherwise contribute.
+  the terrain that owns the map's render pass,
+  and the seam a layer draws its overlay and hover box through.
 - **[Clusters](base/render/clusters/README.md)** -
   the shape work under that surface:
   turning shaped cells and opaque owner IDs into borders,

@@ -426,72 +426,11 @@ The stand-down reads sit inside the beat and outside that row,
 so a frame with nothing to draw reports what standing down cost
 and opens no row for a layer that never ran.
 
-A rebuild's own steps say so in the log as they close.
-Each registers its section on `RebuildStepTerms.LOGGED_EVERY_CALL` (in `kmu.maplayers.base.profiling`),
-so every call of it is a debug line carrying the duration the row was accumulated from,
-what the call counted,
-and what it named itself.
-So a step carries one measurement,
-read in the log as a rebuild happens or in the report afterwards,
-rather than a hand-written log line beside the row that could disagree with it.
-The counts themselves are the three in `MapBuildCounters`,
-beside the library's own sector counters -
-few on purpose,
-since every counter a shown row touches widens the reading it appears in;
-anything that is a detail of one call rides on that call's name instead.
-
-Stating a threshold also buys those calls a reading of their own conditions,
-written straight after the duration as `first` and `jitMs=`:
-a step's first call of a session runs on code the JIT has not compiled yet
-and can cost half again what every warm call after it does,
-which is a reading to discount rather than a regression to chase.
-That is why the mark is worth having exactly here -
-a rebuild step runs a handful of times a session,
-so its first call is a large share of what a reader sees,
-where a beat that runs every frame has warmed up before anyone looks.
-
-Those lines follow the profiler,
-which is the trade the single measurement is worth:
-with the level knob off,
-a rebuild says nothing at all,
-even with the log at debug.
-Turning the knob on is what a reader after them does,
-and it is the same switch that gives them the report.
-
-Nothing is recorded unless a profiler is bound:
-the library's default keeps nothing and allocates nothing,
-so an unmeasured frame pays a virtual call per beat and no more.
-Which one is bound follows the `Profiling level` knob on `Map - Dev`,
-which ships off -
-so a player who never opens the `kmu_profiling` readout is not measured at all.
-The beats above are coarse and so are timed by any capture that is running;
-what a level rules out is the finer work inside a per-item loop.
-
-What the readout writes is a reading of the capture rather than the capture itself.
-`tree` is the beats as they were measured,
-each row under the one it ran inside;
-`flat` puts the rows that spent the time first,
-each named by its whole path;
-and `walks` keeps only the rows that traversed the sector,
-worst call first,
-which is the same witness the refresh's bound is stated against.
-`namespace=` narrows any of them to one layer's rows -
-the beats those rows sit inside kept,
-so a share is still readable against the whole -
-and `top=` keeps only as many as are wanted.
-
-`perframe` divides the totals by the calls of `mapLayer.prepare`,
-which is the beat that runs once a frame,
-so a figure means the same whether the map was left open for four seconds or four minutes;
-a capture holding no call of it says so and leaves the totals alone.
-
-Every reading goes to `starsector-core/starsector.log`,
-and the console gets a line saying so.
-The table is wider than the overlay can lay out,
-so what the overlay would show is a wrapped copy of what the log holds aligned -
-and the log is the file a capture asked for in a bug report has to end up in anyway.
-The notice is printed rather than nothing,
-since a command that visibly did nothing reads as one that failed.
+A rebuild's own steps log every call they make,
+and nothing is recorded at all unless a profiler is bound.
+Both,
+and what the `kmu_profiling` readout writes,
+are [the profiling vocabulary](../profiling/README.md#the-readout)'s.
 
 ## Silencing a minimap parked off screen
 

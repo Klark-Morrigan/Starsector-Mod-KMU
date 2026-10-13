@@ -23,31 +23,6 @@ import java.util.function.Supplier;
  * map drawn is somebody else's minimap; without this, that permission would answer the cursor over
  * the whole screen, since the map geometry underneath happily resolves a system for every pixel.
  *
- * <p>Reads in two steps, and the first is the whole of the non-interference guarantee. On a frame
- * where a vanilla map is showing, this answers before a box is read at all, so a minimap panel
- * travelling across the screen cannot reach the {@code M} map or the intel visor even in principle.
- * That read is redundant against the permission this pairs with - game space excludes every vanilla
- * host by construction - and it is kept anyway, because a guarantee resting on two reads agreeing
- * about what "no screen" means is one refactor away from resting on nothing.
- *
- * <p>The second step is the confinement, over a box read live every frame and never kept. A panel is
- * created off screen and walks to its resting place over many frames, so a box held even for the
- * length of that walk describes where the minimap has been rather than where it is.
- *
- * <p>That live box is also why no collapsed or expanded state is detected. A parked minimap's box is
- * off screen, so every cursor position is outside it and the same comparison covers the frame whole;
- * one halfway through its slide confines to where it has actually got to. The mod has no such state
- * either - only a position - so there is nothing to read even if it were wanted.
- *
- * <p>Exactly one map on screen is the confinement's precondition, and more than one covers exactly
- * as none does. The frame carries one transform and the hover resolves through whichever pass drew
- * last, so a box can only be opened up while there is no question which pass it belongs to: two
- * embedded maps drawn in one frame would let a hover over the first resolve through the second's
- * transform, which is a wrong answer rather than a missing one. That the surface is a single one is
- * {@link SingleEmbeddedMapReader}'s reading rather than this cover's own, shared with the rule that
- * switches such a surface off - the reason for needing one is per-rule and stated here, while two
- * copies of the reading could answer differently about the same frame.
- *
  * <p><b>Fails closed</b>, against the rule every other cover here follows. Those must not be able to
  * switch the hover off, because there is a legitimate hover behind them to protect. Here there is
  * not: on these frames nothing is pointable except the one box, so a finder coming back with nothing
@@ -103,6 +78,22 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
             new VanillaCursorPosition());
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Read in two steps, and the first is the whole of the non-interference guarantee. On a frame
+     * where a vanilla map is showing, this answers before a box is read at all, so a minimap panel
+     * travelling across the screen cannot reach the {@code M} map or the intel visor even in
+     * principle. That read is redundant against the permission this pairs with - game space excludes
+     * every vanilla host by construction - and it is kept anyway, because a guarantee resting on two
+     * reads agreeing about what "no screen" means is one refactor away from resting on nothing.
+     *
+     * <p>The second step is the confinement, over a box read live every frame and never kept. A
+     * panel walks to its resting place over many frames, so a box held even for that long describes
+     * where the minimap has been rather than where it is. The live box is also why no collapsed or
+     * expanded state is read: a parked minimap's box is off screen, so every cursor position falls
+     * outside it, and one halfway through its slide confines to where it has got to.
+     */
     @Override
     public boolean isCoveringCursor() {
 
@@ -112,7 +103,7 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
             return false;
         }
         // A vanilla host owns this frame, so the confinement does not apply to it at all. Answered
-        // before any box is read - see the guarantee this class states.
+        // before any box is read - the guarantee stated above.
         if (isAnyMapShowing.getAsBoolean()) {
             return false;
         }
@@ -125,6 +116,13 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
     // The box the cursor may be confined to, or null when no single box can stand for the frame -
     // no single map on screen, or one that is not drawn anywhere the player could point at. Both
     // cover, which is this cover's failing closed.
+    //
+    // Exactly one map is the precondition, and more than one covers exactly as none does. The frame
+    // carries one transform and the hover resolves through whichever pass drew last, so two
+    // embedded maps in one frame would let a hover over the first resolve through the second's
+    // transform - a wrong answer rather than a missing one. Which surface is the single one is
+    // SingleEmbeddedMapReader's reading, shared with the rule that switches such a surface off, so
+    // the two cannot answer differently about the same frame.
     private Rectangle resolveConfinableMinimapBox() {
         var minimap = findSingleEmbeddedMap.get();
 

@@ -256,9 +256,10 @@ public record DominancePass(
      * colony the player may be shown, whether or not this mechanic could weigh it.
      *
      * <p>Beside the footprints rather than derived from them, and that is the whole of the
-     * separation: every term of a dominance weight is economy-fed, so a faction holding nothing the
-     * economy lists raises no footprint at all, and reading presence off the weights would leave it
-     * out of every listing while the band beneath the cell went on counting it. The wider set is
+     * separation: a faction holding nothing the economy lists raises no footprint at all
+     * (<a href="README.md#only-the-economys-colonies-are-weighed">the market contest</a> says why),
+     * and reading presence off the weights would leave it out of every listing while the band
+     * beneath the cell went on counting it. The wider set is
      * the one to read: it can only ever be a superset of what was weighed, so a caller ranking a
      * system cannot lose a faction to a filter applied on the weighed side.
      *

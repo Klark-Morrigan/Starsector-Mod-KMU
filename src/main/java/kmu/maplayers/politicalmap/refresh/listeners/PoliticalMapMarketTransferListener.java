@@ -4,29 +4,19 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.refresh.MarketPoliticsRefresh;
-import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
 import kmu.starsector.listeners.MarketTransferListener;
 
 /**
  * Marks a conquered colony's system politics-stale when it changes hands, so a colony taken in an
  * invasion or a war repaints its new faction colour live rather than only on reload.
  *
- * <p>A market changing holder is the central political-map event - it is how war redraws borders -
- * but vanilla fires no holding-transfer listener, so the sibling listeners cannot catch it: an
- * invasion keeps the colony's size, never decivilises it, and reveals nothing. This translates a
- * transfer into the same targeted refresh ({@link MapLayerRefreshBoard#markSystemGroupingStale})
- * the holding-axis siblings use: only the transferred colony's system and its neighbours are
- * re-derived, reading the post-transfer holder. Reachability changes remain
- * {@link PoliticalMapStalenessSource}'s axis.
+ * <p>A market changing holder is how war redraws borders, but vanilla fires no listener for it, and
+ * the siblings cannot catch it: an invasion keeps the colony's size, never decivilises it, and
+ * reveals nothing. A transfer goes through {@link MarketPoliticsRefresh} like their events do.
  *
- * <p>Registered like its vanilla-driven siblings and reached through {@link MarketTransferListener},
- * so it names no mod's types: whatever reports transfers on this sector tells it, and on an install
- * where nothing does it is never called.
- *
- * <p>Holds the sector it was installed on, so a conquest is reported against that sector's overlay
- * rather than against whichever sector is currently loaded.
+ * <p>Reached through {@link MarketTransferListener}, so it names no mod's types: whatever reports
+ * transfers on this sector tells it, and on an install where nothing does it is never called.
  */
 public class PoliticalMapMarketTransferListener implements MarketTransferListener {
 

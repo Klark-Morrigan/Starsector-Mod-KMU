@@ -20,10 +20,8 @@ import java.util.Map;
  * side of that holder by {@link ContestSides} - the one placement every surface reporting a contest
  * routes through - rather than by comparing blocs again here.
  *
- * <p>Disposition sorts inside that split and never across it. What stands with the holder by
- * alliance is already out, so a bloc on good terms with it is taken from what alliance left standing
- * against it and from nowhere else: an ally who is merely favourable is still an ally, and one gone
- * sour is still an ally too.
+ * <p>Disposition sorts inside that split and never across it, for the reason {@link ContestSides}
+ * states.
  *
  * <p>How that side then divides - which blocs are on good terms with the holder, which are not, and
  * which are of two minds and are listed under both headings - is {@link RivalDispositionSplit}'s, so

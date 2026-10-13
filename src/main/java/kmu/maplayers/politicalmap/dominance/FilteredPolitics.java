@@ -66,8 +66,8 @@ public final class FilteredPolitics {
      * handed and nothing else.
      *
      * <p>Presence and dominance are two questions, and this takes an answer to each rather than
-     * inferring the first from the second. A footprint is economy-fed in every term, so a bloc whose
-     * only colony here is one the economy does not list raises none - and a spotlight that read
+     * inferring the first from the second. A bloc whose only colony here is one the economy does not
+     * list raises no footprint - and a spotlight that read
      * presence off the footprints would dim the very system the player picked that bloc to see,
      * while the band inside the same cell drew its run. A present bloc that also wins the dominance
      * comparison dominates; a present bloc that does not - outranked, or holding nothing anybody
@@ -217,8 +217,8 @@ public final class FilteredPolitics {
     // them with both the classification and the real-holder fallback.
     //
     // Presence is read beside them rather than taken off them: the footprints answer who wins the
-    // system, and every term of that arithmetic is economy-fed, so a bloc whose only colony here is
-    // unregistered wins nothing and is still living in the system. Widening the footprints instead
+    // system, and a bloc whose only colony here is unregistered wins nothing and is still living in
+    // the system. Widening the footprints instead
     // would put such a bloc into the map the dominant-holder rank is taken over, where an
     // all-weightless system would hand it the system outright - a spotlight moving a fill, which
     // it must never do.

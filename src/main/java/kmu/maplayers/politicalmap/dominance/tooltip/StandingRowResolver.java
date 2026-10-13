@@ -140,8 +140,8 @@ public final class StandingRowResolver {
     }
 
     // One member's line: its crest, its name, and what the pass weighed it at. A presence-only
-    // standing is one the pass weighed nothing for - every term of a dominance weight being
-    // economy-fed and its colonies unregistered - so its nought is drawn quiet.
+    // standing is one the pass weighed nothing for, its colonies all unregistered, so its nought is
+    // drawn quiet.
     private CellTooltipEntryLine buildMemberLine(FactionStanding member) {
 
         return FactionTooltipLine.buildCountedFactionLine(

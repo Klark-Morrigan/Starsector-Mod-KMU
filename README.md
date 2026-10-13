@@ -408,6 +408,8 @@ Three Gradle tasks run it:
 - `writeSectorSvg` writes every sector fixture to SVG, frontier off and on, into `build/reports`.
 - `writeVoidRegions` traces the void between cells and reports how it divides.
 
+[The geometry viewer's README](src/utils/java/kmu/maplayers/base/geometry/README.md) maps its packages.
+
 Four more scripts sit beside the lint shims:
 
 - [scripts/setup-hooks.sh](scripts/setup-hooks.sh)
@@ -450,6 +452,11 @@ Package documentation lives beside the Java packages it describes under [src/mai
 a README per package that owns behaviour worth explaining,
 each with Mermaid diagrams inline where a picture carries more than prose.
 Start from [map layers](src/main/java/kmu/maplayers/README.md).
+Outside the map,
+[settings](src/main/java/kmu/settings/README.md),
+[the optional-mod adapters](src/main/java/kmu/mods/README.md)
+and [the Market Condition Manager](src/main/java/kmu/conditions/README.md)
+each have one too.
 
 Diagrams are Mermaid,
 written inline in the README that needs them.
