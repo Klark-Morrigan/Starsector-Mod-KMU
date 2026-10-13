@@ -233,8 +233,8 @@ which every KM mod's shares.
 | No Layer | 无图层 | 无, none, before 图层: the tab that shows no layer |
 | map screen | 星图界面 | the screen Tab opens; vanilla's tab reads 星图 |
 | overlay | 叠加层 | the usual Chinese UI word for a layer drawn over another |
-| overlay control box | 叠加层控制框 | from 叠加层, with 控制框 for the box holding its controls |
 | sidebar | 侧边栏 | the usual Chinese UI word |
+| Map sidebar (the sidebar's name, wherever the player reads it) | 地图侧边栏 | 地图 as in 地图图层, whose controls it holds on the map screen and the intel screen; one name, never 叠加层侧边栏, 地图图层侧边栏, 叠加层控制框 or 可折叠侧边栏 |
 | tab | 标签页 | the usual Chinese UI word; 标签 alone would read as a label |
 | tab bar | 标签栏 | from 标签页, with 栏 for a bar, as in 筛选栏 |
 | filter row | 筛选栏 | the row holding 星景, 续航距离 and 名称 |

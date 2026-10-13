@@ -255,6 +255,9 @@ The English README's Languages section says the same to an English reader.
 - EN: Random Assortment of Things minimap.
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+
+### Sector examples
+
 - EN: Sector examples
   - ZH: 星域示例
 - EN: image `promo/en/sector-1-vanilla.png`
@@ -275,6 +278,9 @@ The English README's Languages section says the same to an English reader.
 - EN: Heavily modded.
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+
+### How to access map layers
+
 - EN: How to access map layers
   - ZH: 如何打开地图图层
 - EN: KMU comes with Sector Map Layers feature turned on by default.
@@ -484,6 +490,9 @@ The English README's Languages section says the same to an English reader.
 - EN: and there's a non-territorial faction (Independent) present.
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+
+## Spoiler protection
+
 - EN: Spoiler protection
   - ZH: 防剧透
   - Notes: spoilers as in Visibility overrides (SPOILERS) in [settings][kmu-settings].

@@ -49,35 +49,35 @@ kmu_map_visuals_contentsNote,,,,,,Text,"可用设置：
   - 变暗强度",,,,,,,,,地图 - 外观
 ,,,,,,,,,,,,,,,,
 kmu_map_visuals_layers_header,,,,地图图层,,Header,地图图层,,,,,,,,,地图 - 外观
-kmu_map_visuals_layers_hideFadeSeconds,,,,隐藏渐隐时间,,Double,0.25,,,,"地图图层被隐藏时淡出屏幕所需的时间（再次显示时淡入的时间相同），单位为秒。图层绘制的所有内容一同渐变：叠加层、其上的名称以及叠加层控制框。0 表示无动画直接关闭；数值越大渐变越慢越平滑，最多 2 秒。
+kmu_map_visuals_layers_hideFadeSeconds,,,,隐藏渐隐时间,,Double,0.25,,,,"地图图层被隐藏时淡出屏幕所需的时间（再次显示时淡入的时间相同），单位为秒。图层绘制的所有内容一同渐变：叠加层、其上的名称以及地图侧边栏。0 表示无动画直接关闭；数值越大渐变越慢越平滑，最多 2 秒。
 [默认值：0.25]",,,0,2,地图 - 外观
 ,,,,,,,,,,,,,,,,
 kmu_map_visuals_sidebar_header,,,,地图侧边栏,,Header,地图侧边栏,,,,,,,,,地图 - 外观
-kmu_map_visuals_sidebar_borderWidth,,,,边框粗细,,Int,1,,,,"叠加层控制框外边框的线宽，单位为像素；0 表示不绘制边框。
+kmu_map_visuals_sidebar_borderWidth,,,,边框粗细,,Int,1,,,,"地图侧边栏外边框的线宽，单位为像素；0 表示不绘制边框。
 [默认值：1]",,,0,8,地图 - 外观
-kmu_map_visuals_sidebar_opacity,,,,不透明度,,Int,80,,,,"叠加层控制框背景的不透明度，以百分比表示：50 是最透明的程度，100 为完全不透明。框内文字始终以实色绘制，因此背景只需暗到足以衬托文字即可。
+kmu_map_visuals_sidebar_opacity,,,,不透明度,,Int,80,,,,"地图侧边栏背景的不透明度，以百分比表示：50 是最透明的程度，100 为完全不透明。框内文字始终以实色绘制，因此背景只需暗到足以衬托文字即可。
 [默认值：80]",,,50,100,地图 - 外观
-kmu_map_visuals_sidebar_scrollbarThickness,,,,滚动条粗细,,Int,3,,,,"叠加层控制框右侧滚动条的粗细，单位为像素，包括滑轨和其中的滑块。超过 3 时，控制框本身会加宽以容纳更粗的滚动条，列表行保持原位，而不会被滚动条遮住。
+kmu_map_visuals_sidebar_scrollbarThickness,,,,滚动条粗细,,Int,3,,,,"地图侧边栏右侧滚动条的粗细，单位为像素，包括滑轨和其中的滑块。超过 3 时，侧边栏本身会加宽以容纳更粗的滚动条，列表行保持原位，而不会被滚动条遮住。
 [默认值：3]",,,1,12,地图 - 外观
-kmu_map_visuals_sidebar_collapseSeconds,,,,折叠时间,,Double,0.25,,,,"点击折叠手柄时，叠加层控制框收起到停靠栏（以及再次展开）所需的时间，单位为秒。0 表示无动画瞬间完成；数值越大滑动越慢越平滑，最多 2 秒。
+kmu_map_visuals_sidebar_collapseSeconds,,,,折叠时间,,Double,0.25,,,,"点击折叠手柄时，地图侧边栏收起到停靠栏（以及再次展开）所需的时间，单位为秒。0 表示无动画瞬间完成；数值越大滑动越慢越平滑，最多 2 秒。
 [默认值：0.25]",,,0,2,地图 - 外观
-kmu_map_visuals_sidebar_paddingTop,,,,地图界面顶部边距,,Int,36,,,,"叠加层控制框距屏幕顶部边缘的距离，单位为像素，用于让开星图的标签栏，避免与其重叠。
+kmu_map_visuals_sidebar_paddingTop,,,,地图界面顶部边距,,Int,36,,,,"地图侧边栏距屏幕顶部边缘的距离，单位为像素，用于让开星图的标签栏，避免与其重叠。
 [默认值：36]",,,0,600,地图 - 外观
-kmu_map_visuals_sidebar_paddingLeft,,,,地图界面左侧边距,,Int,9,,,,"叠加层控制框距屏幕左侧边缘的距离，单位为像素。
+kmu_map_visuals_sidebar_paddingLeft,,,,地图界面左侧边距,,Int,9,,,,"地图侧边栏距屏幕左侧边缘的距离，单位为像素。
 [默认值：9]",,,0,600,地图 - 外观
-kmu_map_visuals_sidebar_paddingBottom,,,,地图界面底部边距,,Int,79,,,,"叠加层控制框与屏幕底部边缘之间必须保留的距离，单位为像素。控制框的高度以此边距为上限，因此不会超出屏幕底部；当势力/联盟列表超出剩余空间时，列表会在框内滚动，上方的控件保持固定。
+kmu_map_visuals_sidebar_paddingBottom,,,,地图界面底部边距,,Int,79,,,,"地图侧边栏与屏幕底部边缘之间必须保留的距离，单位为像素。侧边栏的高度以此边距为上限，因此不会超出屏幕底部；当势力/联盟列表超出剩余空间时，列表会在框内滚动，上方的控件保持固定。
 [默认值：79]",,,0,600,地图 - 外观
-kmu_map_visuals_sidebar_intelPaddingTop,,,,情报信息界面地图视窗顶部边距,,Int,21,,,,"叠加层控制框距情报信息界面地图预览（视窗）顶部边缘的距离，单位为像素。它将控制框推到该地图顶部原版星景与续航距离开关的下方，并保留这些开关之间同样的三像素间隔。控制框叠加在视窗上，紧贴其左边缘，高度以视窗底部为上限。
+kmu_map_visuals_sidebar_intelPaddingTop,,,,情报信息界面地图视窗顶部边距,,Int,21,,,,"地图侧边栏距情报信息界面地图预览（视窗）顶部边缘的距离，单位为像素。它将侧边栏推到该地图顶部原版星景与续航距离开关的下方，并保留这些开关之间同样的三像素间隔。侧边栏叠加在视窗上，紧贴其左边缘，高度以视窗底部为上限。
 [默认值：21]",,,0,600,地图 - 外观
 ,,,,,,,,,,,,,,,,
 kmu_map_visuals_sidebar_colours_header,,,,地图侧边栏 - 颜色,,Header,地图侧边栏 - 颜色,,,,,,,,,地图 - 外观
-kmu_map_visuals_sidebar_colours_scheme,,,,配色方案,,Radio,UI palette,"UI palette, Chrome grey, Player faction",,,"叠加层控制框使用哪套配色：框架、控件和标签行一同变化。UI palette 使用游戏自身的按钮颜色，也就是控制框周围所有原版面板所用的颜色，因此你的势力变色时控制框不会跟着变。Chrome grey 完全去掉强调色，以游戏书写文字所用的纯灰色绘制控制框。Player faction 使用你所属势力自己的颜色。在未修改的游戏中，UI palette 与 Player faction 看起来相同；一旦某个势力改变了颜色（Nexerelin 与 Mod 玩家势力都会这样），两者就会不同。
+kmu_map_visuals_sidebar_colours_scheme,,,,配色方案,,Radio,UI palette,"UI palette, Chrome grey, Player faction",,,"地图侧边栏使用哪套配色：框架、控件和标签行一同变化。UI palette 使用游戏自身的按钮颜色，也就是侧边栏周围所有原版面板所用的颜色，因此你的势力变色时侧边栏不会跟着变。Chrome grey 完全去掉强调色，以游戏书写文字所用的纯灰色绘制侧边栏。Player faction 使用你所属势力自己的颜色。在未修改的游戏中，UI palette 与 Player faction 看起来相同；一旦某个势力改变了颜色（Nexerelin 与 Mod 玩家势力都会这样），两者就会不同。
 [默认值：UI palette]
 
 UI palette：界面配色
 Chrome grey：纯灰
 Player faction：你的势力",,,,,地图 - 外观
-kmu_map_visuals_sidebar_colours_chevron,,,,折叠凹口箭头颜色,,Radio,Gold,"Gold, Panel accent",,,"叠加层控制框折叠手柄上的箭头以哪种颜色绘制。Gold 使用标准高亮色，使箭头在其所挂靠的框上显得醒目。Panel accent 则使用控制框自身的颜色（即上方配色方案所指定的那套），光标指向时变亮，使手柄看起来是框架的一部分。
+kmu_map_visuals_sidebar_colours_chevron,,,,折叠凹口箭头颜色,,Radio,Gold,"Gold, Panel accent",,,"地图侧边栏折叠手柄上的箭头以哪种颜色绘制。Gold 使用标准高亮色，使箭头在其所挂靠的框上显得醒目。Panel accent 则使用侧边栏自身的颜色（即上方配色方案所指定的那套），光标指向时变亮，使手柄看起来是框架的一部分。
 [默认值：Gold]
 
 Gold：金色
@@ -306,7 +306,7 @@ kmu_map_politics_visuals_hoverHighlight_wash_outlineWidth,,,,单元覆色轮廓�
 [默认值：2]",,,0.5,20,地图 - 政治 - 外观
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_previewHighlight_header,,,,筛选列表预览,,Header,筛选列表预览,,,,,,,,,地图 - 政治 - 外观
-kmu_map_politics_visuals_previewHighlight_colour,,,,高亮颜色,,Radio,Secondary faction color,"Primary faction color, Secondary faction color",,,"当你指向叠加层控制框列表中的某个势力或联盟时，预览以其哪种配色点亮它的星系，包括被点亮单元上的覆色及其周围的细描线。整组使用同一种颜色，取自该势力而非各个被点亮的单元，因此即使地图已被聚焦筛选褪色，预览仍以自己的颜色显示；并且默认与光标自身的高亮使用同一色调，使两者看起来一致。
+kmu_map_politics_visuals_previewHighlight_colour,,,,高亮颜色,,Radio,Secondary faction color,"Primary faction color, Secondary faction color",,,"当你指向地图侧边栏列表中的某个势力或联盟时，预览以其哪种配色点亮它的星系，包括被点亮单元上的覆色及其周围的细描线。整组使用同一种颜色，取自该势力而非各个被点亮的单元，因此即使地图已被聚焦筛选褪色，预览仍以自己的颜色显示；并且默认与光标自身的高亮使用同一色调，使两者看起来一致。
 [默认值：Secondary faction color]
 
 Primary faction color：势力主色
@@ -407,14 +407,14 @@ kmu_map_politics_domination_patrols_weight_penalty_lowStability,,,,巡逻队低�
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
-kmu_map_sound_sidebar_header,,,,可折叠侧边栏,,Header,可折叠侧边栏,,,,,,,,,地图 - 音效
-kmu_map_sound_sidebar_arrival_panelChrome,,,,光标移至面板部件,,Double,0.5,,,,"光标到达叠加层控制框自身部件（标题中的标签页或折叠手柄）时发出的声音大小。1 是游戏自身的悬停音量，即所有原版按钮使用的音量；低于此值时控制框比周围的界面部件更安静，0 则让这一类部件静音。此项与下方两项都为 0 时，控制框在光标下完全不发出声音。
+kmu_map_sound_sidebar_header,,,,地图侧边栏,,Header,地图侧边栏,,,,,,,,,地图 - 音效
+kmu_map_sound_sidebar_arrival_panelChrome,,,,光标移至面板部件,,Double,0.5,,,,"光标到达地图侧边栏自身部件（标题中的标签页或折叠手柄）时发出的声音大小。1 是游戏自身的悬停音量，即所有原版按钮使用的音量；低于此值时侧边栏比周围的界面部件更安静，0 则让这一类部件静音。此项与下方两项都为 0 时，侧边栏在光标下完全不发出声音。
 [默认值：0.5]",,,0,1,地图 - 音效
 kmu_map_sound_sidebar_arrival_singleOptionControl,,,,光标移至控件,,Double,0.5,,,,"光标到达只有一种响应的控件（复选框、开关）时发出的声音大小。与上方同一刻度：1 是游戏自身的悬停音量，0 为静音。
 [默认值：0.5]",,,0,1,地图 - 音效
-kmu_map_sound_sidebar_arrival_listedItem,,,,光标移至列表项,,Double,0.25,,,,"光标到达众多同类项之一（一排选项中的一个，列表中的一行）时发出的声音大小。设得比上面两项低，是因为光标穿过控制框时，在到达目标之前会扫过好几个这样的项；如果调到与它们相同，一列列表项会让控制框响个不停。0 为静音。
+kmu_map_sound_sidebar_arrival_listedItem,,,,光标移至列表项,,Double,0.25,,,,"光标到达众多同类项之一（一排选项中的一个，列表中的一行）时发出的声音大小。设得比上面两项低，是因为光标穿过侧边栏时，在到达目标之前会扫过好几个这样的项；如果调到与它们相同，一列列表项会让侧边栏响个不停。0 为静音。
 [默认值：0.25]",,,0,1,地图 - 音效
-kmu_map_sound_sidebar_listScroll,,,,列表滚动,,Double,0.5,,,,"滚轮滚动叠加层控制框列表时发出的声音大小。整个滚动动作只发出一次声音，而不是每有一行经过静止的光标就响一次，因为你只转动了一次滚轮。0 为静音。
+kmu_map_sound_sidebar_listScroll,,,,列表滚动,,Double,0.5,,,,"滚轮滚动地图侧边栏列表时发出的声音大小。整个滚动动作只发出一次声音，而不是每有一行经过静止的光标就响一次，因为你只转动了一次滚轮。0 为静音。
 [默认值：0.5]",,,0,1,地图 - 音效
 ,,,,,,,,,,,,,,,,
 kmu_map_sound_map_header,,,,地图悬停,,Header,地图悬停,,,,,,,,,地图 - 音效

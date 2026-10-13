@@ -137,6 +137,7 @@ Under all of them is `observations`,
 which states how old the news about a concealed fact is,
 in the same words whatever the fact is about.
 It is gated against importing `colonies`,
+`installations`,
 `structures` and `systems`,
 which is what keeps it from learning what a colony is -
 a shared rule that named one family would be that family's rule with extra callers.

@@ -185,7 +185,7 @@ since vanilla offers no extension point on the map chrome.
 Recommendation:
 **Option A.** It is the only option that satisfies "a small sidebar on the sector map" without touching vanilla tabs.
 The render hooks are confirmed present
-([CampaignUIRenderingListener.java:9](../../../../../../starsector-core/starfarer.api.zip)),
+(`CampaignUIRenderingListener.java:9` in `starsector-core/starfarer.api.zip`),
 and `CampaignUIAPI.getCurrentCoreTab()` returns `CoreUITabId.MAP` so the panel can be shown only on the map.
 Vanilla's `SlipstreamVisibilityManager` is a precedent for keying behaviour off `CoreUITabId.MAP`.
 

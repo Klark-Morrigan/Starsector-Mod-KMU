@@ -286,6 +286,7 @@ rather than failing the pass that consulted it.
 
 `colonies` may not import `systems`,
 and `observations` may not import `colonies`,
+`installations`,
 `structures` or `systems` -
 the register is the shared half
 and would stop being shareable the moment it named one of its families.
