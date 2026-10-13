@@ -65,7 +65,6 @@ public final class ViewerSettings {
     // which is how anyone reading a map thinks about how far a cell sticks out.
     public static final double CONTINENT_MIN_FRONTAGE_DEFAULT =
         Coastlines.DEFAULT_RULES.minFrontageShare();
-    public static final double FRONTAGE_PERCENT_SCALE = 100.0;
 
     // The puddle floor, read off the coast's own default for the reason the frontage floor
     // is. A share of one cell's area; the slider asks for it as a percentage.

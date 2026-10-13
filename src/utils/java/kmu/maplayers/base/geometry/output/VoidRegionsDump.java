@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry.output;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.VoronoiCellBuilder;
+import kmlib.math.percentages.Percentages;
 
 import kmu.maplayers.base.geometry.BareVoidBoundary;
 import kmu.maplayers.base.geometry.CellEdges;
@@ -48,10 +49,6 @@ import java.util.Locale;
  * <p>Run it with {@code gradlew writeVoidRegions}.
  */
 public final class VoidRegionsDump {
-
-    // A share printed as a percentage rather than a fraction, which is how every share in
-    // this report reads.
-    private static final double PERCENT_SCALE = 100.0;
 
     // The knobs the map is shipped at, once for the whole report. Every measure below is
     // about the map a reader would open, so re-deriving them per measure buys nothing and
@@ -150,12 +147,14 @@ public final class VoidRegionsDump {
             }
         }
 
+        // A share printed as a percentage rather than a fraction, which is how every share in
+        // this report reads.
         System.out.printf(
             Locale.ROOT,
             "cells: %d, of which %d touch void (%.1f%%)%n",
             cells.size(),
             touching,
-            PERCENT_SCALE * touching / cells.size());
+            Percentages.convertFractionToPercent((double) touching / cells.size()));
     }
 
     // How wide the gap between a cell's fill and what lies across it actually is, split by

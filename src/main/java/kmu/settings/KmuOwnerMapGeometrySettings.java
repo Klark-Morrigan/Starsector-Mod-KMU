@@ -1,5 +1,6 @@
 package kmu.settings;
 
+import kmlib.math.percentages.Percentages;
 import kmlib.math.ranges.Ranges;
 
 /**
@@ -237,8 +238,8 @@ public final class KmuOwnerMapGeometrySettings {
         var widthPercent =
             KmuLunaSettings.readDouble(HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH_PERCENT);
 
-        return Ranges.clampInto(widthPercent, MIN_HATCH_WIDTH_PERCENT, MAX_HATCH_WIDTH_PERCENT)
-            / KmuLunaSettings.PERCENT_PER_UNIT;
+        return Percentages.convertPercentToFraction(
+            Ranges.clampInto(widthPercent, MIN_HATCH_WIDTH_PERCENT, MAX_HATCH_WIDTH_PERCENT));
     }
 
     /**
@@ -256,9 +257,8 @@ public final class KmuOwnerMapGeometrySettings {
      *         percentage of the spacing and converted here
      */
     public static double getOwnerMapHatchJoinToleranceFraction() {
-        return KmuLunaSettings.readDouble(
+        return Percentages.convertPercentToFraction(KmuLunaSettings.readDouble(
             HATCH_JOIN_TOLERANCE_FIELD,
-            DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT)
-            / KmuLunaSettings.PERCENT_PER_UNIT;
+            DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT));
     }
 }

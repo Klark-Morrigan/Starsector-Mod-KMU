@@ -1,5 +1,6 @@
 package kmu.settings;
 
+import kmlib.math.percentages.Percentages;
 import kmlib.math.ranges.Ranges;
 
 /**
@@ -196,7 +197,7 @@ public final class KmuMapSidebarSettings {
             MIN_SIDEBAR_OPACITY_PERCENT,
             MAX_SIDEBAR_OPACITY_PERCENT);
 
-        return clamped / (float) KmuLunaSettings.PERCENT_PER_UNIT;
+        return (float) Percentages.convertPercentToFraction(clamped);
     }
 
     /**

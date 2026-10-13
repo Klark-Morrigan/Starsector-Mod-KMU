@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
+import kmlib.math.percentages.Percentages;
 import kmlib.text.KmlibNumbers;
 
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
@@ -39,10 +40,6 @@ import kmu.util.KmuStringKeys;
  * eventually word differently.
  */
 public final class MarketFactorText {
-
-    // A fraction as a whole-number percentage, which is how every cut in the box is stated: a
-    // penalty is a player-set fraction, and the digits past a percent of it are float noise.
-    private static final int PERCENT_SCALE = 100;
 
     // The reading at which a cut has taken nothing and so is left unsaid.
     private static final int NO_PENALTY_PERCENT = 0;
@@ -215,9 +212,10 @@ public final class MarketFactorText {
 
     // Runs a value on into a cut taken off it, and leaves it alone where nothing was taken. Applied
     // once per cut rather than per factor, so a factor that takes two states them the same way a
-    // factor that takes one states its single cut.
+    // factor that takes one states its single cut. Every cut is stated as a whole percent: a penalty
+    // is a player-set fraction, and the digits past a percent of it are float noise.
     private static String appendPenalty(String valueText, double penaltyFraction) {
-        var penaltyPercent = (int) Math.round(penaltyFraction * PERCENT_SCALE);
+        var penaltyPercent = Percentages.convertFractionToWholePercent(penaltyFraction);
 
         if (penaltyPercent <= NO_PENALTY_PERCENT) {
             return valueText;

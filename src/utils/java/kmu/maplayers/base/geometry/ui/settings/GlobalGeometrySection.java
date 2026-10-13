@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry.ui.settings;
 
+import kmlib.math.percentages.Percentages;
+
 import kmu.desktop.ui.swing.CollapsibleSection;
 import kmu.desktop.ui.swing.SliderRows;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
@@ -214,11 +216,10 @@ final class GlobalGeometrySection extends PanelSection {
                 new SliderRows.SliderRange(
                     MIN_FRONTAGE_MINIMUM,
                     MIN_FRONTAGE_MAXIMUM,
-                    ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT
-                        * ViewerSettings.FRONTAGE_PERCENT_SCALE),
+                    Percentages.convertFractionToPercent(ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT)),
                 new SliderRows.SliderWork(
                     percent -> settings.continentMinFrontageShare =
-                        percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
+                        Percentages.convertPercentToFraction(percent),
                     refreshes::refreshCoastlines,
                     () -> { })),
             new SliderRows.SliderSpec(
@@ -227,11 +228,10 @@ final class GlobalGeometrySection extends PanelSection {
                 new SliderRows.SliderRange(
                     MIN_LAKE_MINIMUM,
                     MIN_LAKE_MAXIMUM,
-                    ViewerSettings.MIN_LAKE_SHARE_DEFAULT
-                        * ViewerSettings.FRONTAGE_PERCENT_SCALE),
+                    Percentages.convertFractionToPercent(ViewerSettings.MIN_LAKE_SHARE_DEFAULT)),
                 new SliderRows.SliderWork(
                     percent -> settings.minLakeShare =
-                        percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
+                        Percentages.convertPercentToFraction(percent),
                     refreshes::refreshCoastlines,
                     () -> { }))));
     }

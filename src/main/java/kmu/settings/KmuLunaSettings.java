@@ -28,20 +28,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <a href="README.md">the settings register</a>'s. The mod ID, the revision and the reads stay
  * here because they are mod-wide: a second layer's settings would want the same reads against the
  * same ID.
+ *
+ * <p>A row whose caller works in a 0..1 fraction is authored as a percentage, and its accessor
+ * converts it. The settings slider rounds a Double to two decimals, which a fraction authored
+ * directly could not survive being dragged.
  */
 public final class KmuLunaSettings {
-
-    /**
-     * What a row authored as a percentage is divided by to reach the 0..1 fraction its caller
-     * works in.
-     *
-     * <p>Several rows are stated as percentages because the settings slider rounds a Double to two
-     * decimals, which a fraction authored directly could not survive being dragged. Held here
-     * rather than restated per reader so no accessor reaches for its own row's ceiling to divide
-     * by: a bound doing duty as a unit is correct only while that bound happens to be a hundred,
-     * and silently rescales the setting the day it is narrowed.
-     */
-    static final double PERCENT_PER_UNIT = 100.0;
 
     // The ID every read below is scoped by. What the log-level binding needs beside it - the field
     // the player sets and the logger subtree it tunes - is named in KmuLoggingSettings with the rest
