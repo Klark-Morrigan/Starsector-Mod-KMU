@@ -23,8 +23,8 @@ import java.util.List;
  * picks - which layer is active there and whether its layers show at all - the reseed that opens the panel at
  * the fold a loaded save was left at, and the shortcut key that jumps to a layer. A concrete host supplies
  * its own fold selection and its own screen's picks - both under that screen's own scope, and its own
- * opening default - and answers the questions that actually differ between screens: whether its screen is up, where it anchors,
- * which frame edges it strokes, and how that screen's own view state reads.
+ * opening default - and answers the questions that actually differ between screens: whether its screen
+ * is up, where it anchors, which frame edges it strokes, and how that screen's own view state reads.
  *
  * <p>The shortcut jump lives here because the panel draws one body of tabs wherever it shows, so the key
  * that reaches a tab should not depend on which screen the player is looking at. It writes the host's own

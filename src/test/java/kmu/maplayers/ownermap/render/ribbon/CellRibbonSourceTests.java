@@ -249,8 +249,8 @@ final class CellRibbonSourceTests {
 
         @Test
         void drawsNoBandForACellWhosePlanIsEmpty() {
-            // The single-holder cell: the owner that painted it is the only one present, so there
-            // is nothing a band could report that the fill beneath it has not said already.
+            // A settled cell where nothing the layer counts is present, so there is no footprint
+            // for a band to report.
             assertThat(buildWith(system -> RibbonPlan.NONE)
                     .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope))
                 .isEqualTo(CellRibbon.NONE);
@@ -259,8 +259,7 @@ final class CellRibbonSourceTests {
         @Test
         void walksNoRingForACellWhosePlanIsEmpty() {
             // The cost half of that gate, and why it is answered here rather than by the geometry.
-            // Most of the sector is single-holder cells, and each of them walking a ring for a
-            // band nothing would be laid on is a rebuild's worth of inset and arc-length work
+            // Walking a ring for a band nothing would be laid on is inset and arc-length work
             // spent on nothing - so no ring is walked and none is kept.
             var ringPathCache = new CellRingPathCache();
             var bakeScopeMock = mock(IterationScope.class);

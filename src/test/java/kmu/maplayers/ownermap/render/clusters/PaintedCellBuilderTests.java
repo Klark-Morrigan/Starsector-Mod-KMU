@@ -694,7 +694,7 @@ final class PaintedCellBuilderTests {
             return new RenderStyle(globalStyle, categories);
         }
 
-        // The shared unowned backdrop: the theme plus the pass's spotlight state, since a
+        // The shared unowned backdrop: the theme plus the pass's spotlight state, since an
         // unowned cell's recede is the filter's. What the null-system cases read off it is
         // that a cell drawing as no system resolves no holder and is not taken for settled; that
         // neither read reaches its collection with a null key at all is the resolver's own rule,
@@ -752,7 +752,7 @@ final class PaintedCellBuilderTests {
                     1.0), 1.0);
         }
 
-        // The decivilised shape: both a fill and an outline drawn, each in the neutral colour a
+        // The decivilised shape: both a fill and an outline drawn, each in the neutral colour an
         // unowned cell resolves a PRIMARY slot to.
         private static CategoryStyle buildFilledOutlineStyle() {
             return new CategoryStyle(
@@ -764,7 +764,7 @@ final class PaintedCellBuilderTests {
                     null, 1.0), 1.0);
         }
 
-        // A fill with its outline zeroed out - the one setting combination that can hide a
+        // A fill with its outline zeroed out - the one setting combination that can hide an
         // unowned outline, since neither element carries a colour choice.
         private static CategoryStyle buildFillOnlyStyle() {
             return new CategoryStyle(

@@ -155,11 +155,10 @@ public final class MapLayerScreens {
      * either screen: a caller unwinding one and not the other would leave an arrangement no session can
      * actually be in, one screen acting on its stored hide and the other refusing to.
      *
-     * <p>Owed on every campaign load, which is what makes this the running game's business rather than
-     * only a test's. These two are held for the process while the picks beneath them read the loaded
-     * sector's memory, so a campaign hidden with a box standing would otherwise lend its word to the
-     * next campaign loaded in the same session - which has no box on any row yet, and may turn out to
-     * be unable to take one.
+     * <p>Owed on every campaign load. These two are held for the process while the picks beneath them
+     * read the loaded sector's memory, so a campaign hidden with a box standing would otherwise lend its
+     * word to the next campaign loaded in the same session - which has no box on any row yet, and may
+     * turn out to be unable to take one.
      */
     public static void forgetControlsAttached() {
 
@@ -174,8 +173,8 @@ public final class MapLayerScreens {
      * ever consulted while that screen is switched off and part-way through a dissolve, and a campaign
      * load takes both controls back - so both screens read as shown until a box stands again, and the
      * first frame of a new campaign catches its own pick before any dissolve could ask for one. What
-     * needs this is a process that poses a switched-off screen without drawing one first, which is a
-     * suite rather than a session.
+     * needs this is a process that poses a switched-off screen without drawing one first, which a
+     * running game never does.
      */
     static void forgetDrawnLayers() {
 

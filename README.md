@@ -21,6 +21,7 @@
   - [Build And Release](#build-and-release)
   - [Localisation](#localisation)
   - [Local linting](#local-linting)
+  - [Developer tooling](#developer-tooling)
   - [Caching](#caching)
   - [Nexerelin](#nexerelin)
   - [Documentation](#documentation)
@@ -44,7 +45,7 @@ Each release carries one zip per language, named for it:
 `KMU-<version>-en.zip` is English and `KMU-<version>-zh-hans.zip` is Simplified Chinese.
 Install one.
 Each is the whole mod;
-they differ only in the text of the settings screen, the Map Layers sidebar, the hover boxes and the notices,
+they differ only in the text of the settings screen, the Map sidebar, the hover boxes and the notices,
 in the launcher's mod list entry,
 and in the language of the `CHANGELOG.md` inside.
 Settings carry over between them.
@@ -89,11 +90,9 @@ and on each release page, collapsed under 简体中文 below the English notes.
 
 ## Features
 
-This mod comes with a suite of **LunaLib** settings that allow you to tweak,
-visuals,
+This mod comes with a suite of **LunaLib** settings that allow you to tweak visuals,
 sound volume,
-keybinds,
-underlying mechanics.
+keybinds and underlying mechanics.
 
 ### Map layers
 
@@ -103,11 +102,11 @@ the intel screen **(E, 1)**,
 the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have **Random Assortment of Things** installed.
 
 Everything is calculated and drawn off of game data,
-and it gets updated as the state of the sector shanges.
+and it gets updated as the state of the sector changes.
 Map layers don't alter any of the data being used to draw it,
 making map layers **read-only** by design.
 
-The map layers feature **turned on by default**.
+The map layers feature is **turned on by default**.
 After loading a save or starting a new game,
 when you open the map screen or the intel screen,
 you'll see a new `Map layers` button among map filter buttons.
@@ -127,7 +126,7 @@ See [more on map layers](src/main/java/kmu/maplayers/README.md).
   (e.g. all colonies in a system are **decivilised**).
 - *Any given system can be painted by only a single faction*,
   so each system draws a **presence ribbon** hugging its border that represents each populated colony with the color of the faction holding them.
-  Ribbons are shortened to represent **solidified control** when only a single faction or alliance is present is a system,
+  Ribbons are shortened to represent **solidified control** when only a single faction or alliance is present in a system,
   while that presence is in no violation of **unconditional claims**.
 - **Expandable system tooltips**
   provide detailed information on how each market affects the balance of power.
@@ -167,7 +166,7 @@ The **Political Map** comes with 3 views:
   If you filter by a non-territorial faction,
   unclaimed systems with their presence will be spotlit.
 
-See [more on the political map](src/main/java/kmu/maplayers/README.md).
+See [more on the political map](src/main/java/kmu/maplayers/politicalmap/README.md).
 
 #### Spoiler protection
 
@@ -187,13 +186,15 @@ map layers operate on a vanilla-derived **visibility** system:
   They are also listed on **Claims** tooltips because vanilla uses them in claim calculations,
   but are redacted.
 - **Decivilised markets** are not revealed unless they start so,
-  or until the player visits their system.
+  or until the player performs a *Full* survey on them (adjustable in settings).
+  A visible colony of another faction in the same system reveals them too.
 - **Unowned markets** with the **Abandoned Station** condition follow visibility rules of **hidden markets**.
 
 ### Console commands
 
 | Command | Syntax | What it does |
 | --- | --- | --- |
+| `kmu_mcm_open` | No arguments | Opens the **Market Condition Manager (MCM)** for the market in front of you. The MCM is unfinished and ships switched off: **requires Enable Market Condition Manager (MCM) to be switched on in the *Features* settings tab.** |
 | `kmu_profiling` | `[tree\|flat\|walks] [namespace=<prefix>] [top=<count>] [perframe] [reset]` | Writes full or scoped performance measurements to game logs on demand. Calls exceeding the budget are logged automatically without this command. **Requires profiling to be enabled in settings.** |
 
 ### Compatibility
@@ -203,6 +204,12 @@ And to be visible in the **Starscape** mode,
 the *starscape terrain variant* is tagged as a **slipstream**.
 Custom terrain is the only thing that has to be serialised into saves as Java class references,
 and that's why a clean uninstall is required for disabling the mod.
+
+KMU is safe to install mid-run.
+To uninstall it cleanly,
+switch **Enable map layers** off on the *Features* settings tab,
+save,
+then remove the mod.
 
 The game reuses the map widget,
 and so do many mods.
@@ -241,7 +248,7 @@ the mod has been made specifically compatible with:
 
 ## Creative applications
 
-- [Manipulating territorial visualisaion into a video player](https://www.reddit.com/r/starsector/comments/1wl36nq/finally_bad_apple_thanks_kmu/).
+- [Manipulating territorial visualisation into a video player](https://www.reddit.com/r/starsector/comments/1wl36nq/finally_bad_apple_thanks_kmu/).
 
 ## For developers
 
@@ -380,10 +387,37 @@ lists what each half runs:
 (and its [.bat](scripts/fix-permissions.bat)) re-stages the executable bit on tracked `*.sh` files,
 which Windows checkouts drop;
 run it after adding a shell script so the `check-sh-executable` gate stays green.
-[.gitattributes](.gitattributes) pins line endings surgically -
-`*.sh` and `gradlew` to LF,
-`*.bat` and `gradlew.bat` to CRLF -
-and leaves binary / data assets to git's own detection.
+[.gitattributes](.gitattributes) keeps every text file LF,
+whatever `core.autocrlf` says,
+and batch files CRLF,
+which `cmd.exe` requires.
+Binary files are left to git's own detection.
+
+### Developer tooling
+
+The `utils` source set,
+[src/utils](src/utils),
+holds tooling that is neither shipped nor a test:
+the sector fixture,
+the pipeline that assembles it into shapes,
+and the tools that draw them.
+Its own source set keeps it out of the mod's jar while the tests share its fixture.
+Three Gradle tasks run it:
+
+- `viewSectorGeometry` opens the sector geometry viewer, with live sliders over a real sector.
+- `writeSectorSvg` writes every sector fixture to SVG, frontier off and on, into `build/reports`.
+- `writeVoidRegions` traces the void between cells and reports how it divides.
+
+Four more scripts sit beside the lint shims:
+
+- [scripts/setup-hooks.sh](scripts/setup-hooks.sh)
+  wires the repo's `.githooks/` into git, once per clone, so the pre-commit hook runs.
+- [scripts/run-ci-gradle.sh](scripts/run-ci-gradle.sh)
+  runs the Gradle build and tests locally as CI's Gradle gate does.
+- [scripts/fix-whitespace.sh](scripts/fix-whitespace.sh)
+  trims trailing whitespace from the tracked Markdown and Gradle scripts.
+- [scripts/extract-sector-fixture-from-save.sh](scripts/extract-sector-fixture-from-save.sh)
+  regenerates the political map's sector fixture from a save, the newest one when given none.
 
 ### Caching
 

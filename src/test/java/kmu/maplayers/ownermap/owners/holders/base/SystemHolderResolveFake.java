@@ -23,7 +23,7 @@ public final class SystemHolderResolveFake implements SystemHolderResolve {
     }
 
     /**
-     * A resolve answering the stated holding per system id.
+     * A resolve answering the stated holding per system ID.
      *
      * @param holderBySystemId who holds each system, by the system's own ID
      * @return the resolve

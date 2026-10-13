@@ -15,8 +15,7 @@ import java.util.Set;
  *
  * <p>Stateless and shared as one instance, the way the views it serves are. The faction and
  * alliance views resolve under {@link ClaimAugmentedHolderProvider}, which layers claims on top of
- * this one; the layer also hands this one to the tier bare, as the holding its diagnostic overlays
- * read.
+ * this one; nothing resolves through this one bare.
  */
 public final class DominanceHolderProvider implements HolderProvider {
 

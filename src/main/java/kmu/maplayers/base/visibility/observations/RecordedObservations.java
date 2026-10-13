@@ -3,7 +3,7 @@ package kmu.maplayers.base.visibility.observations;
 import java.util.Optional;
 
 /**
- * What the register holds about each subject, asked by the subject's own id.
+ * What the register holds about each subject, asked by the subject's own ID.
  *
  * <p>Handed out as a lookup over the stored entries rather than as a copy of them. A register is
  * opened once per pass and asked about many subjects, so a copy taken there would cost the whole

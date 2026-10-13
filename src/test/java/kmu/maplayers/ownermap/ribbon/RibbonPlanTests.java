@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * <p>Both readings are then stated a third time over an affiliation, since who counts as a rival
  * is the one thing an affiliation moves: an owner standing with the painter, and a pair standing
  * together on a cell no fill covers, fall to the shortened runs, and an outsider beside either of
- * them puts the cell back on the authored ones. A cell no fill covers is stated once more with a
+ * them puts the cell back on the authored ones. A cell no fill covers is stated once more with an
  * owner listed ahead of the rest holding nothing, since who such a cell is judged against is only
  * visible where standing together changes the answer. Every other case here is posed under
  * {@link OwnerAffiliation#NONE}, which is both a layer where nobody stands together and the

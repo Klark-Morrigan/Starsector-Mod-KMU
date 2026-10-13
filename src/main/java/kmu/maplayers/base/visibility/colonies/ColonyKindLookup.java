@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * What kind of place each of one location's colonies is, asked by the colony's own id.
+ * What kind of place each of one location's colonies is, asked by the colony's own ID.
  *
  * <p>For a reader that meets a colony by identity rather than as a colony - an account built from
  * a claim contest, where each row carries the ID of the market it was scored from and nothing of

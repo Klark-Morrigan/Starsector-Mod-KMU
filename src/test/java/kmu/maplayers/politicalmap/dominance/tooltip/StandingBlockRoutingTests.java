@@ -62,7 +62,7 @@ class StandingBlockRoutingTests {
     private static final String HOLDER_ALLIANCE_BLOC = "holder-alliance";
     private static final String RIVAL_ALLIANCE_BLOC = "rival-alliance";
 
-    // What bars a bloc, in the shape the routing takes it: a predicate over bloc ids.
+    // What bars a bloc, in the shape the routing takes it: a predicate over bloc IDs.
     private static final Predicate<String> IS_POLITICAL_BLOC = blocId ->
         !PLACEHOLDER_BLOC.equals(blocId) && !OTHER_PLACEHOLDER_BLOC.equals(blocId);
 
@@ -248,7 +248,7 @@ class StandingBlockRoutingTests {
         void liftsABlocOnGoodTermsWithEveryMemberOfAnAllianceHolder() {
             // The alliances view's own shape, which no other case here poses: the holder is the
             // alliance bloc the fills were painted for, so the membership the rival is measured
-            // against is read out of the fold rather than being the holder's own id.
+            // against is read out of the fold rather than being the holder's own ID.
             var routing = StandingBlockRouting.routeRankedStandings(
                 List.of(
                     new GroupStanding(

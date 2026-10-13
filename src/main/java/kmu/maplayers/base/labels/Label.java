@@ -24,8 +24,8 @@ import java.awt.Color;
  * string's colour costs no buffer rebuild (there is no per-substring colour data), so the
  * per-frame refade stays cheap.
  *
- * <p>Lives in the render package rather than {@code render.model} because it is not pure
- * data: the {@link DrawableString} owns a GL vertex buffer that must be
+ * <p>Not pure data, which is why it lives in the labels package beside the builder and the
+ * renderer: the {@link DrawableString} owns a GL vertex buffer that must be
  * {@link DrawableString#dispose() disposed} when the label is rebuilt. Caching it (rather
  * than rebuilding a string per frame) is what keeps the name draw a buffered blit instead
  * of per-frame VBO churn; the builder disposes the previous strings whenever it rebuilds

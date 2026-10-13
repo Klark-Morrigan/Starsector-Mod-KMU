@@ -37,8 +37,8 @@ public final class SidebarMapCover implements MapCover {
 
     @Override
     public boolean isCoveringCursor() {
-        // Arithmetic over a box this mod already laid out, which is what puts it between the
-        // console's settled flag and the chrome's walk of the live widget tree.
+        // Arithmetic over a box this mod already laid out. Where that ranks this cover is
+        // MapCoverReader's to state.
         return sidebarPresence.isAnySidebarOverPoint(cursor.getUiX(), cursor.getUiY());
     }
 }

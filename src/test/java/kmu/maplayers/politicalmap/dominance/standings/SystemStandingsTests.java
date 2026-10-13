@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * free of any live economy: groups rank by summed score and members rank within, ties breaking by ID
  * at both tiers. The faction cases prove the identity grouping renders every faction its own
  * singleton group; the alliance cases prove members fold into one bloc whose summed score can outrank
- * a lone faction no single member would. Each input lists the higher-scoring or higher-id entry first
+ * a lone faction no single member would. Each input lists the higher-scoring or higher-ID entry first
  * so the ordering is shown to come from the rule, not the map's walk order.
  *
  * <p>The presence cases pin the second input: a faction the pass could weigh nothing for is still
@@ -295,7 +295,7 @@ class SystemStandingsTests {
 
         @Test
         void leavesOutAWeighedFactionTheGroupingCanNameNoBlocFor() {
-            // A colony a mod hung on a faction carrying no id. A nameless key would travel on as a
+            // A colony a mod hung on a faction carrying no ID. A nameless key would travel on as a
             // bloc the box cannot name, and the group tie-break would fault on it the moment a
             // second group stood beside it - which is the ordinary case.
             var footprints = listOrderedFootprints(

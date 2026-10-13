@@ -7,7 +7,7 @@ import java.util.Set;
 
 /**
  * Which of one location's concealed colonies are concealed in name only, asked by the colony's own
- * id.
+ * ID.
  *
  * <p>For the reader {@link ColonyKindLookup} serves and folded on the same walk: an account built
  * from a contest meets a colony as an ID beside a number, and whether the place behind it is a

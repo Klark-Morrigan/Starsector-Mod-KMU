@@ -229,12 +229,12 @@ something is revealing it now,
 the record recalls it from a moment,
 or nothing ever established it -
 sealed so a fourth state cannot be added without every reader being asked about it,
-and folded rather than switched over since the mod targets Java
-17. `ObservationRecency.resolveRecency` is the one place a live reading is ranked above a record and a record above nothing.
-    `RevealedFact` pairs that state with the value an axis conceals,
-    where it conceals one;
-    a fact nobody ever established cannot be built holding a value,
-    so the words for an unknown are the reader's to supply.
+and folded rather than switched over since the mod targets Java 17.
+`ObservationRecency.resolveRecency` is the one place a live reading is ranked above a record and a record above nothing.
+`RevealedFact` pairs that state with the value an axis conceals,
+where it conceals one;
+a fact nobody ever established cannot be built holding a value,
+so the words for an unknown are the reader's to supply.
 
 `ObservationNoteFormatter` puts an age into words -
 how long ago,

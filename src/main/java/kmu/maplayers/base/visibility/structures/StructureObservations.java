@@ -2,7 +2,7 @@ package kmu.maplayers.base.visibility.structures;
 
 /**
  * What has been observed of each structure - who was holding it, what state it was in, and when
- * each of those was last established - asked by the structure's own entity id.
+ * each of those was last established - asked by the structure's own entity ID.
  *
  * <p>Says nothing about who did the observing. The player standing in a system, a colony living in
  * one, and a relay heard over its own network are all observations, and one register holds them

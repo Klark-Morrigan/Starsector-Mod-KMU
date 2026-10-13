@@ -223,7 +223,6 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // walk runs - repairs what the terrain then reads.
         MapLayerStandings.applyArrangementTo(sector);
 
-        // Before the hover box, which asks the frame preparation claim this stands up for a frame.
         MapSurfaceInstaller.installAll(sector);
 
         SidebarInstaller.installAll(sector);

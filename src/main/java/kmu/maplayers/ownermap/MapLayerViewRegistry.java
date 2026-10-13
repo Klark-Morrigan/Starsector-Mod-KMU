@@ -117,7 +117,7 @@ public final class MapLayerViewRegistry {
     /**
      * @param memoryScope the screen whose radio is being lit
      * @return the index of that screen's selected view in {@link #getViews()} - its radio's lit
-     *         segment - or {@link kmlib.starsector.ui.controls.ControlSpec#NO_SELECTION} when off
+     *         segment - or {@link ControlSpec#NO_SELECTION} when off
      */
     public int getSelectedViewIndex(ScreenMemoryScope memoryScope) {
         var selected = getSelectedView(memoryScope);

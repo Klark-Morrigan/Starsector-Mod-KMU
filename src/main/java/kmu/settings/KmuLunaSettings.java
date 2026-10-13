@@ -79,7 +79,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * persisted class or memory key cannot be renamed. LunaLib only ever adds - it seeds a default
  * for every row the shipped table declares and prunes nothing - so a value left behind by a
  * renamed or withdrawn row stays in the player's settings file unread rather than being
- * cleaned up, and would be handed to any later field that reused the id.
+ * cleaned up, and would be handed to any later field that reused the ID.
  */
 public final class KmuLunaSettings {
 

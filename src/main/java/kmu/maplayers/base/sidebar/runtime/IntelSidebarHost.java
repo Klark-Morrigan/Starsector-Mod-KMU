@@ -67,8 +67,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // vanilla row's nineteen, and the buttons drawn from it stand the full nineteen - they reach a hairline
     // below the band to lay their bottom border on the body's own, so the band gives up that pixel to the
     // panel beneath it while the button keeps it. Content-space - the panel strokes its own top border
-    // above the band, so the drawn strip stands the border width taller. Package-private so the departure
-    // is checkable without a live sector, which the style built from it needs to resolve its colours.
+    // above the band, so the drawn strip stands the border width taller.
     static final float HEADER_BAND_HEIGHT = 18f;
 
     // How close the box's bottom must sit to the visor's bottom to count as flush, in pixels: the box lands
@@ -158,10 +157,11 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // Which frame edges the box reserves inset space for, decided before layout so a dropped edge collapses
     // its strip rather than leaving it bare. The left is always dropped (the box sits flush against the
     // visor's left edge, so reserving a left border would leave a gap between the visor and the content);
-    // the top and right frame the sidebar inside the visor; the bottom keeps its reserved inset for now -
-    // its stroke still drops when the box reaches the visor bottom (see decideBorderEdges), but collapsing
-    // the bottom strip too is deferred. The left is dropped here and by decideBorderEdges alike, so the
-    // reserved space and the stroke never disagree on it.
+    // the top and right frame the sidebar inside the visor. The left is dropped here and by
+    // decideBorderEdges alike, so the reserved space and the stroke never disagree on it.
+    //
+    // TODO: Collapse the bottom strip when the box reaches the visor bottom. Its stroke drops there (see
+    //  decideBorderEdges), but its reserved inset stays, so a flush box keeps a thin bare strip under it.
     static Set<BoxEdge> layoutBorderEdges() {
         return EnumSet.of(BoxEdge.TOP, BoxEdge.RIGHT, BoxEdge.BOTTOM);
     }
@@ -169,8 +169,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // Which frame edges to stroke for a box anchored to the visor's top-left: the edges it reserved space
     // for, minus the bottom when the box's bottom reaches the visor's bottom (flush there, within the
     // rounding tolerance) so a shared bottom border does not double the visor's frame. Derived from the
-    // reserved edges so the left, dropped there, is never stroked here. The bottom stroke drops on flush
-    // while its reserved inset stays, so a flush box keeps a thin bottom strip until that collapse lands.
+    // reserved edges so the left, dropped there, is never stroked here.
     static Set<BoxEdge> decideBorderEdges(float boxBottomY, Rectangle mapVisorRect) {
         var edges = EnumSet.copyOf(layoutBorderEdges());
         var isBottomFlush = mapVisorRect != null

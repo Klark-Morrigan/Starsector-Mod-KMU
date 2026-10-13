@@ -21,8 +21,8 @@ import org.apache.log4j.Logger;
  * resize, a market discovery, a decivilisation, and any added later) applies the
  * same seat guard and emits the same log line instead of copying them.
  *
- * <p>Holder on the map is decided per system from combined colony size, so an
- * event that changes a colony's holder or size can only shift dominance in that
+ * <p>Holder on the map is decided per system from each faction's summed colony
+ * weights, so an event that changes a colony's holder or size can only shift dominance in that
  * colony's own system. This resolves the market's seated system, ignores a
  * market not seated in one (a deep-hyperspace station seeds no cell, so its
  * change can repaint nothing), and marks just that system stale via

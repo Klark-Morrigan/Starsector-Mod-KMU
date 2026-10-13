@@ -30,9 +30,9 @@ see the [mod README](../../../../../../../../README.md) for project context.
 
 ## The classes that build one
 
-Six collaborators with deliberately different jobs,
-since the names are close enough to be worth stating apart,
-plus the phases they mark what they spend on:
+The collaborators have deliberately different jobs,
+and the names are close enough to be worth stating apart.
+`RibbonBakePhases` sits beside them as the phases they mark what they spend on:
 
 | Class | Scope | Job |
 | --- | --- | --- |
@@ -85,10 +85,12 @@ It also settles which cells get a band at all,
 in three refusals read in one place:
 a cell nobody lives in or with nowhere to start from,
 a system the sector no longer lists,
-and a cell whose plan came back empty.
-Each is a cost gate as much as an answer -
+and a cell whose plan came back empty because nothing the layer counts is present in it.
+Every cell with something counted in it bands,
+contested or not.
+Each refusal is a cost gate as much as an answer -
 a planner may walk everything a system holds for its count,
-and the empty plan is what spares the single-owner cell a ring walk.
+and the empty plan is what spares a cell with nothing counted a ring walk.
 
 The second of those refusals is answered against the pass's own systems-by-key index
 rather than one this bake traverses the sector for.

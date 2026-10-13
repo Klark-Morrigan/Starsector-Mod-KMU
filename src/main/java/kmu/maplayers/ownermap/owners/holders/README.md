@@ -197,7 +197,7 @@ the picker read is memoised against settings and grouping,
 not reputation,
 so a snapshot would hold the ranking still until some unrelated knob moved.
 Within one sort each bloc is read once,
-since one read can walk every market in the sector to settle whether the player's identity is established.
+since one read walks the bloc's whole membership for its relations.
 
 It is offered from the shared assembly rather than from any vocabulary,
 which is the same boundary one layer up:

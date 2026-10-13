@@ -22,7 +22,7 @@ import java.util.Set;
  *
  * <p><strong>An absent holder is the never-established reading, not an unheld structure.</strong> A
  * structure genuinely held by nobody is held by the neutral faction, which is a faction like any
- * other and is recorded by its own id.
+ * other and is recorded by its own ID.
  *
  * <p><strong>A running hack is deliberately not a field here.</strong> The sniffer a hack installs
  * pushes into the player's own comm queue for as long as it lasts, so the state reports itself from

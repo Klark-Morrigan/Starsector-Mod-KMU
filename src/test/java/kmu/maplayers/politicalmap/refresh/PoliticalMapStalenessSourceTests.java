@@ -35,16 +35,15 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the political map's staleness routing: it reads the snapshot in one walk and sends
- * each axis to its own refresh - a visibility or moving-set move rebuilds geometry, an
+ * each axis to its own refresh - a visibility or moving-set move rebuilds geometry, a
  * holder-map diff marks exactly the changed systems politics-stale under their keys (the same
  * set the event listeners feed), and an alliance-fingerprint move bumps the alliance revision - while the
  * first poll only establishes the baselines. Asserts on a real {@link MapLayerRefreshBoard},
  * stubbing the snapshot scan and the alliance fingerprint across polls. The board is the one its own
  * machinery holds, so a run reads only what it raised.
  *
- * <p>Also pins what this poll no longer does: the observation each system's own inhabitants make of
- * the colonies a revelation gate holds back rode it while this was the only sector-wide sweep
- * running, and is the substrate's now.
+ * <p>Also pins what this poll leaves alone: the observation each system's own inhabitants make of
+ * the colonies a revelation gate holds back is the substrate's sweep to write.
  */
 final class PoliticalMapStalenessSourceTests {
 
@@ -146,7 +145,7 @@ final class PoliticalMapStalenessSourceTests {
         void ownerFlipInOneOfTwoSystemsSharingAnIdMarksThatSystemAlone() {
             // The collision the key exists for, met at the diff: the sector holds two systems
             // answering to one ID, and only the second changes hands. Diffed by key, the mark
-            // names the twin that flipped and nothing else - diffed by ID, the pair was one
+            // names the twin that flipped and nothing else - diffed by ID, the pair would be one
             // baseline holding whichever the walk reached last, and a flip in the other could
             // never be noticed at all.
             var outcome = pollThenReadRefreshOutcome(
@@ -245,19 +244,19 @@ final class PoliticalMapStalenessSourceTests {
 
         @Test
         void writesNoObservationsTheSubstratesSweepOwns() {
-            // The sweep that records what each system's own inhabitants can see used to ride this
-            // poll. It is the substrate's now, the register being shared by every map family - so
-            // a layer left writing it too would double the write, and would go on deciding when
-            // the record accrued from behind a preference about which map is on screen.
+            // The sweep that records what each system's own inhabitants can see is the substrate's,
+            // the register being shared by every map family - so a layer writing it too would
+            // double the write, and would decide when the record accrued from behind a preference
+            // about which map is on screen.
             try (var sightingsMock = mockStatic(SectorColonySightings.class)) {
 
                 pollThenReadRefreshOutcome(
                     PollInputs.buildForSnapshotChange(STEADY_SNAPSHOT, STEADY_SNAPSHOT),
                     2);
 
-                // The write alone, not every reach: this poll still opens the register to read
-                // it, the visibility rule its pass carries being answered against what has been
-                // observed. What moved is who writes it.
+                // The write alone, not every reach: this poll does open the register to read it,
+                // the visibility rule its pass carries being answered against what has been
+                // observed. What is pinned is who writes it.
                 sightingsMock.verify(
                     () -> SectorColonySightings.recordSightingsByInhabitants(
                         any(),
@@ -294,8 +293,8 @@ final class PoliticalMapStalenessSourceTests {
 
         @Test
         void pollsTheSectorItsMachineryWasMadeForRatherThanTheRunningOne() {
-            // Vanilla drives this poll's cadence and names no sector, so it used to ask the running
-            // game which one it was polling - right only while the sector it was installed on and
+            // Vanilla drives this poll's cadence and names no sector, so asking the running game
+            // which one it is polling would be right only while the sector it was installed on and
             // the sector loaded are the same. Posed with the two apart: a poll that read the loaded
             // one would diff its holders against another sector's baselines and stage its drift
             // into another sector's tracker, neither of which anything on screen would report.

@@ -13,7 +13,7 @@ import java.util.List;
  * against.
  *
  * <p>What an incremental refresh edits, gathered because they are edited together. The placements
- * and the labels are the plugin's own overlays rather than part of the clusters, yet a batch
+ * and the labels are the drawables' own overlays rather than part of the clusters, yet a batch
  * that moves a border has to move them with it - so a redraw that reached only three of the four
  * would leave a name standing over an owner that no longer holds the cell beneath it. Carrying them
  * as one value is what stops a step of that redraw being handed a different three.

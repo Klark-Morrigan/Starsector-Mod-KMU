@@ -8,19 +8,19 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The holding a single build resolves to drive the whole render pass: who paints each
- * star system, and which of those owned systems draw as a fill exception - hatched, or with
- * no fill at all - rather than solid inside their bloc's one border.
+ * What a layer's {@link HolderProvider} answers for one walk: who paints each star system, and
+ * which of those owned systems draw as a fill exception - hatched, or with no fill at all - rather
+ * than solid inside their bloc's one border.
  *
- * <p>The one value the pipeline reads holding through, so the builder consumes this and
- * never names the concrete source that produced it - the same way it consumes the view's
- * grouping without knowing how the view derived it. That decoupling is what lets one view
- * resolve holding from the live economy while another resolves it some other way, with no
- * fork in the pass that shapes, borders, and labels the result.
+ * <p>The holding half of a {@link kmu.maplayers.ownermap.owners.ResolvedOwners}.
+ * {@link HolderOwnerSource} adds the habitation reads off the same pass and hands the whole to the
+ * tier, so no build stage names the provider that produced it. That is what lets one view resolve
+ * holding from the live economy while another resolves it some other way, with no fork in the pass
+ * that shapes, borders, and labels the result.
  *
- * <p>The two exception sets ride inside this one value rather than the builder resolving them
- * through a second named source, because they are co-produced with the holder map in the one
- * pass that resolves it: a system's holder and how its fill is drawn are decided together.
+ * <p>The two exception sets ride inside this one value rather than through a second seam, because
+ * they are co-produced with the holder map in the one call that resolves it: a system's holder and
+ * how its fill is drawn are decided together.
  *
  * @param ownerBySystemKey the bloc painting each owned system, keyed by {@link SystemKey}; a
  *                        system with no holder is absent, so it draws as an uninhabited cell

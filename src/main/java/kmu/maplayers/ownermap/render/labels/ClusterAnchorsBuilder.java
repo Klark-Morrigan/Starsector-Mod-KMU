@@ -42,8 +42,8 @@ import java.util.Map;
  * {@link kmu.maplayers.ownermap.render.clusters.OwnerMapBuilder} because the anchors
  * are an independent overlay, not part of the production draw lists: they draw over the normal
  * render and the debug border-tracing overlay alike, so they cannot live inside either view's
- * build. The overlay list is owned by the terrain plugin and rebuilt in place here, whichever
- * base view a rebuild produced.
+ * build. The overlay list is owned by the owner map's drawables, beside both views, and rebuilt in
+ * place here, whichever base view a rebuild produced.
  *
  * <p>Both entry points take a {@link ClusterLabelStylingSnapshot} rather than the owners, the
  * palette, the categories and reading and the picks the pass was baked under one by one, so the two

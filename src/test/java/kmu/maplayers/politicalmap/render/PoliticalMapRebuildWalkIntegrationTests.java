@@ -56,15 +56,15 @@ import static org.mockito.Mockito.when;
  *
  * <p>Three of them ask each system who lives there - the cell cut deciding which systems are
  * drawn, the fills resolving who holds each, and the band bake counting how each splits - and each
- * is handed the rebuild's own reading rather than the sector it was opened over. What that costs,
- * if it is ever undone, is a walk of every entity in every system in the sector, twice over, on
+ * is handed the rebuild's own reading rather than the sector it was opened over. Handing them the
+ * sector instead would cost a walk of every entity in every system in the sector, twice over, on
  * every rebuild; and a rebuild runs whenever the drawn set moves, a toggle flips, a view switches
  * or a colony changes hands.
  *
- * <p>The rules are pinned here for the same reason. Each stage used to sample the player's
- * visibility settings for itself, so a gate flipped mid-rebuild left cells cut under one rule,
- * fills painted under a second and bands counted under a third, with nothing on screen reporting
- * which half was which.
+ * <p>The rules are pinned here for the same reason. A stage sampling the player's visibility
+ * settings for itself would let a gate flipped mid-rebuild leave cells cut under one rule, fills
+ * painted under a second and bands counted under a third, with nothing on screen reporting which
+ * half was which.
  *
  * <p>No unit can make either claim. How many times a system was walked, and how many times a knob
  * was read, are facts about the composition rather than about any stage of it: each stage, handed
@@ -76,11 +76,11 @@ import static org.mockito.Mockito.when;
  *
  * <p>Those counts are read off {@link MapFrameSections#REFRESH}, which is the row the frame opens
  * around exactly this call and the row carrying the framework's bound on what one refresh may
- * traverse. The one case still counting a vanilla call is the idle frame's, whose claim is that
+ * traverse. The one case counting a vanilla call is the idle frame's, whose claim is that
  * the sector was not read at all rather than how often it was.
  *
  * <p>What is stubbed is what no test JVM answers: the logger and the live LunaLib reads the
- * rebuild's stages are configured by, plus the sector lookup - which the rebuild itself no longer
+ * rebuild's stages are configured by, plus the sector lookup - which the rebuild itself never
  * makes, taking its sector off the machinery it belongs to, and which is staged only for the
  * incremental path a frame with nothing stale falls through to. Nothing standing in for a
  * collaborator.
@@ -179,7 +179,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
         @Test
         void selectsEachSystemsColoniesOnceForTheWholeRebuild() {
-            // The step's own claim. Every stage asks the same question of the same systems, so the
+            // The suite's own claim. Every stage asks the same question of the same systems, so the
             // rebuild opens one reading of the sector and hands it down; three stages each opening
             // a reading of their own is what this stops, and each would show here as another
             // reading of every colony in the sector.
@@ -233,8 +233,8 @@ final class PoliticalMapRebuildWalkIntegrationTests {
             // The frame this cache spends nearly all of its life on: the map is open, refresh runs,
             // and no input has moved. Both staleness questions are settled before a reading of the
             // sector is opened for exactly this reason - a reading opened first would put a walk of
-            // every system into every frame of an idle map, which is worse than the three walks the
-            // step set out to remove.
+            // every system into every frame of an idle map, which is worse than the three walks one
+            // shared reading saves.
             var sector = buildContestedSectorWithAnEmptyNeighbour();
             var cache = new OwnerMapCache(
                 machinery,
@@ -347,7 +347,7 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
         @Test
         void leavesOutTheTwinAloneWhenOneOfAPairSharingAnIdMoves() {
-            // The tracker and the cut address a system the same way now, so a mover leaves the
+            // The tracker and the cut address a system the same way, so a mover leaves the
             // partition as itself and its twin under the shared ID stays cut. Posed with the twin
             // moving - the one an address by ID would have folded into the first - so it is the
             // twin's own cell, and not the first system's, that goes.
@@ -416,9 +416,9 @@ final class PoliticalMapRebuildWalkIntegrationTests {
 
         @Test
         void cutsTheSectorItsMachineryWasMadeForRatherThanTheRunningOne() {
-            // The question this whole rework was for. Vanilla's map hook names no sector, so a
-            // rebuild used to ask the running game which one it was drawing - which is right only
-            // while the sector it holds cells for and the sector that is loaded are the same. Posed
+            // The question machinery per sector answers. Vanilla's map hook names no sector, so a
+            // rebuild asking the running game which one it is drawing would be right only while
+            // the sector it holds cells for and the sector that is loaded are the same. Posed
             // with them apart: the cells have to come from the sector the machinery was installed
             // on, and the running one has to reach nothing.
             buildContestedSectorWithASettledNeighbour();

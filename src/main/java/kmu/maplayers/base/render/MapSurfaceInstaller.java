@@ -13,9 +13,8 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  *
  * <p>Three render entities, the script that keeps the upper one above the map's nebula icons, and
  * the claim that keeps a frame's preparation to one. Grouped because they are one subject - what
- * exists for a layer to draw into - and because their order among themselves matters: an entity has
- * to be installed before the script that moves it, and the claim has to be registered before
- * anything asks it for a frame.
+ * exists for a layer to draw into. Their order among themselves does not matter: the script finds the
+ * entity it moves afresh on every advance, and the claim fails open until it is registered.
  *
  * <p>The parked-minimap suppressor is not among them, for all that it is a script over the same
  * map. Nothing about it is a surface - it neither draws nor is drawn into - and it answers a
@@ -63,9 +62,8 @@ public final class MapSurfaceInstaller {
             () -> installStarscapeTerrainReseater(sector),
             "Failed to install KMU sector map layer Starscape terrain reseater");
 
-        // Before the surfaces that ask it, and before the hover box installed after this one: the
-        // claim is what keeps a frame's preparation to one, and until it is registered the surfaces
-        // fall back to preparing per pass, so a late registration costs duplicated work rather than
+        // The claim is what keeps a frame's preparation to one. Until it is registered the surfaces
+        // fall back to preparing per pass, so a failed registration costs duplicated work rather than
         // a wrong picture.
         runGuardedStep(
             () -> installMapFramePreparationClaim(sector),

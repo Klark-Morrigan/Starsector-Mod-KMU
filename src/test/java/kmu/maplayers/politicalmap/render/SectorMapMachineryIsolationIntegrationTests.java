@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>No unit can make this claim. Isolation is a fact about the composition: each part, handed its
  * own machinery, behaves correctly whether or not the parts share one underneath, so a shared
- * holder reintroduced below any of them passes every suite but this. So the machinery, the
+ * holder introduced below any of them passes every suite but this. So the machinery, the
  * listeners, the watcher, the poll and the rebuild are all real here, and only what no test JVM
  * answers is stood in for.
  *
@@ -81,9 +81,8 @@ final class SectorMapMachineryIsolationIntegrationTests {
     private static final String PERSEAN_ID = "persean";
 
     // The system ID both sectors hold, which is the whole point of the pairing: every holder below
-    // keys on the sector's own naming of a system - the bare ID, or the key read off it - and
-    // nothing forbids two sectors from generating one alike, so this is the ID under which a shared
-    // holder would have one sector answer for the other.
+    // keys on the key read off a system, and nothing forbids two sectors from generating one alike,
+    // so this is the ID under which a shared holder would have one sector answer for the other.
     private static final String SHARED_SYSTEM_ID = "alpha";
 
     // The key that system carries in either sector: the ID alone, a staged system stating no
@@ -180,7 +179,7 @@ final class SectorMapMachineryIsolationIntegrationTests {
 
         @Test
         void cutsEachSectorsOwnCellsWhereBothHoldASystemUnderOneId() {
-            // The drawing itself. The geometry cache reconciles by system ID, so a cache serving two
+            // The drawing itself. The geometry cache reconciles by system key, so a cache serving two
             // sectors would not overwrite one sector's cell with the other's - it would keep the
             // first cut and leave the second sector drawing a cell around a place it does not hold.
             var firstSector = installMachineryOnAFirstSector();
@@ -199,10 +198,18 @@ final class SectorMapMachineryIsolationIntegrationTests {
 
             // The shared ID is held by a different faction in each, so the cell they both have an ID
             // for still paints each sector's own holder.
-            assertThat(firstTerritories.getOccupancy().getOwnerBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
+            assertThat(firstTerritories
+                    .getOccupancy()
+                    .getOwnerBySystemKey()
+                    .get(buildCellKey(SHARED_SYSTEM_ID))
+                    .ownerId())
                 .isEqualTo(HEGEMONY_ID);
 
-            assertThat(secondTerritories.getOccupancy().getOwnerBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
+            assertThat(secondTerritories
+                    .getOccupancy()
+                    .getOwnerBySystemKey()
+                    .get(buildCellKey(SHARED_SYSTEM_ID))
+                    .ownerId())
                 .isEqualTo(TRITACHYON_ID);
         }
 
@@ -211,9 +218,8 @@ final class SectorMapMachineryIsolationIntegrationTests {
             // The three halves joined, which is what neither of the two cases above does on its own:
             // a change marks one sector, that sector re-derives the system it marked, and the sector
             // nobody touched still draws what it drew. The re-derive is the targeted path rather
-            // than a whole rebuild, which is the one that used to ask the running game which sector
-            // it was folding - so a leak here reads as the other sector's cell changing hands to a
-            // faction it never held.
+            // than a whole rebuild, so the sector that path folds is what is under test - a leak here
+            // reads as the other sector's cell changing hands to a faction it never held.
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
 
@@ -229,12 +235,21 @@ final class SectorMapMachineryIsolationIntegrationTests {
                     mockMarketInSystem(SHARED_SYSTEM_ID),
                     PREVIOUS_COLONY_SIZE);
 
-            assertThat(firstMap.rebuild().getOccupancy().getOwnerBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
+            assertThat(firstMap
+                    .rebuild()
+                    .getOccupancy()
+                    .getOwnerBySystemKey()
+                    .get(buildCellKey(SHARED_SYSTEM_ID))
+                    .ownerId())
                 .isEqualTo(PERSEAN_ID);
 
             var untouchedTerritories = secondMap.readTerritories();
 
-            assertThat(untouchedTerritories.getOccupancy().getOwnerBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).ownerId())
+            assertThat(untouchedTerritories
+                    .getOccupancy()
+                    .getOwnerBySystemKey()
+                    .get(buildCellKey(SHARED_SYSTEM_ID))
+                    .ownerId())
                 .isEqualTo(TRITACHYON_ID);
 
             assertThat(untouchedTerritories.getStyledCellByCellKey())
@@ -266,7 +281,7 @@ final class SectorMapMachineryIsolationIntegrationTests {
 
         @Test
         void leavesTheOtherSectorsHoverParkedWhenACursorReadLandsOnOne() {
-            // A hover names a cell by bare system ID too, so a shared holder would light a cell on
+            // A hover names a cell by system key too, so a shared holder would light a cell on
             // the other sector's map and name that system in its box. Both ends go through the index
             // rather than through the handle the install returned, since what a render pass has is a
             // sector to resolve from.

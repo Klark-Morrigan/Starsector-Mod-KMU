@@ -507,7 +507,7 @@ final class HolderPassTests {
 
         @Test
         void leavesOutAnOwnerNoBlocCanBeNamedFor() {
-            // A colony a mod hung on a faction with no id. The same rule every per-bloc fold on the
+            // A colony a mod hung on a faction with no ID. The same rule every per-bloc fold on the
             // map applies: a nameless key would travel on as a bloc, and a surface asked to paint
             // or grey one has nothing to name it by.
             var sector = SectorOwnershipFixtures.buildSectorWith(
@@ -778,7 +778,7 @@ final class HolderPassTests {
 
     // A colony's owner, which is what every projection case here asserts on. Named once rather
     // than spelled at each assertion so a case reads as the set of owners it expects rather than
-    // as the walk down to an id.
+    // as the walk down to an ID.
     private static String readColonyFactionId(Colony colony) {
         return colony.market().getFaction().getId();
     }

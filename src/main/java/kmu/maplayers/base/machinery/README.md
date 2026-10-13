@@ -47,9 +47,9 @@ The revisions make it worse rather than better:
 shared counters leave neither sector able to be stale on its own,
 since either one's change rebuilds both.
 
-The tell that a holder belongs to a sector is that it used to need emptying when the sector changed.
-Every holder here once had a per-load discard;
-disposal replaced all of them.
+The tell that a holder belongs to a sector is that it would need emptying when the sector changed.
+Disposal is that emptying,
+once for every holder rather than a per-load discard each.
 
 ## What machinery holds
 
@@ -230,7 +230,7 @@ because a comparison that missed would take the whole overlay off screen instead
 
 It is also the only resolution that answers **null**,
 and deliberately.
-A surface exists because an machinery put its terrain there,
+A surface exists because a machinery put its terrain there,
 so a location with no machinery is a surface belonging to a sector nothing draws -
 a save carrying the terrain with the overlay switched off.
 Handing it the detached machinery would have it paint through the holder every sector-less caller shares,

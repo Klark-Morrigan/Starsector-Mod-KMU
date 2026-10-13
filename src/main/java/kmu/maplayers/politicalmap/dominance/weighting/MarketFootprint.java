@@ -6,8 +6,8 @@ package kmu.maplayers.politicalmap.dominance.weighting;
  * for what it aggregates - a holder's markets - and kept free of who the holder is,
  * so the same value serves any way markets are grouped into a holder.
  *
- * <p>Each of the three weights is a dominance weight - a market's size rating scaled
- * by its stability on the fixed-point grid {@link MarketWeights} defines - so
+ * <p>Each of the three weights is a dominance weight - a market's worth, each factor cut
+ * for low stability, on the fixed-point grid {@link MarketWeights} defines - so
  * the rule ranks what each market is worth, not merely how big it is. The count
  * beside them is deliberately unweighted: it answers how many holdings there are
  * rather than what they are worth, which is what a readout of a system's makeup needs
@@ -16,9 +16,9 @@ package kmu.maplayers.politicalmap.dominance.weighting;
  * can never end up summed over a different set of markets than the weights beside it.
  *
  * <p>A plain value with no Starsector types so
- * {@link kmu.maplayers.politicalmap.dominance.SystemDominance} stays free of the live economy: {@link KnownMarketFootprints} reads the live economy and folds
- * each owned market into its holder's footprint, while the rule only ever sees
- * these totals.
+ * {@link kmu.maplayers.politicalmap.dominance.SystemDominance} stays free of the live economy:
+ * {@link KnownMarketFootprints} reads the live economy and folds each owned market into its
+ * holder's footprint, while the rule only ever sees these totals.
  */
 public record MarketFootprint(
     int marketCount,

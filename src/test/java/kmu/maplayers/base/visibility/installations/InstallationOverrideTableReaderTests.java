@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>The path, the ID column and the owning mod are asserted as literals, because all three are a
  * contract with somebody else: the game finds the file by that path, folds every other mod's copy
- * of it onto ours by that column, and does the folding for that mod id. A rename here leaves the
+ * of it onto ours by that column, and does the folding for that mod ID. A rename here leaves the
  * mod reading nothing, and every mod that shipped rows for us writing into a file nobody opens.
  *
  * <p>The rest of the suite is about failing small. A file a mod update half-broke must still leave

@@ -7,14 +7,14 @@ import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 /**
  * The four whole-sector numbers the filter picker sorts and displays a bloc by on the layers
  * domination paints, computed once per grouped dominance pass and carried beside the bloc's identity
- * on {@link kmu.maplayers.ownermap.RankedOwner}. It exists so the picker can rank and label a
+ * on {@link kmu.maplayers.ownermap.picker.RankedOwner}. It exists so the picker can rank and label a
  * bloc without re-reading the economy: a single pass folds every system the bloc holds into these
  * totals, and the sidebar then reads the totals rather than walking the sector again per frame.
  *
  * <p>The four are deliberately distinct measures a player might sort by. Domination and presence are
  * system counts - how many systems the bloc wins outright versus how many it merely lives in - so a
  * bloc concentrated in a few contested systems reads differently from one spread thin.
- * Score is the summed dominance weight (the size-times-stability worth {@link MarketFootprint}
+ * Score is the summed dominance weight (the stability-cut worth {@link MarketFootprint}
  * carries), and market size is the summed raw {@code MarketAPI.getSize()}, so a heavily-weighted bloc
  * and a merely-large one are told apart. Market size is kept here rather than in {@link
  * MarketFootprint}, which stays scoped to the dominance-weight quantities the rule compares.

@@ -405,7 +405,8 @@ opens a fresh one rather than report a sector as it stood some flips ago.
 ### Cell geometry
 
 [`CellGeometryCache`](../../src/main/java/kmu/maplayers/base/geometry/CellGeometryCache.java)
-holds the raw Voronoi cells keyed by system id.
+holds the raw Voronoi cells keyed by `SystemKey`,
+since a system ID is not unique.
 It is updated by *diffing* the reachable set against what it holds
 and rebuilding only the affected cells:
 adding or removing one site changes that site's cell and the cells within twice the cell radius,
@@ -767,8 +768,8 @@ no transient marking required.
 That lifetime is exactly a sector's,
 and it has to be.
 Nothing else would notice a change of sector:
-the geometry cache reconciles by diffing system *IDs*,
-so a system present in both saves at a different position reads as unchanged.
+the geometry cache reconciles by diffing `SystemKey`s,
+so a system present in both saves under the same key at a different position reads as unchanged.
 So a cache serves one sector and one only -
 it is made when the layers are installed on that sector and released when they are removed,
 which a load does for every standing machinery before installing the loaded one ([the installed machinery](../../src/main/java/kmu/maplayers/base/machinery/README.md)

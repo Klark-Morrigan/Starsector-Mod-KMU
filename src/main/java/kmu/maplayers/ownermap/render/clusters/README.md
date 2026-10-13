@@ -421,7 +421,7 @@ over the marked systems' owner,
 inhabitation and spotlit presence,
 which `render.MarkedSystemRederive` reads back first -
 is `render.IncrementalOwnerRefresh`,
-at the render root alongside the plugin and the per-frame cache that drives it -
+at the render root alongside the layer renderer (`OwnerMapLayerRenderer`) and the per-frame cache that drives it -
 the composition root that wires these feature packages together.
 *Which* change triggers a full rebuild here and
 which one only re-shapes a handful of cells is [the caching notes](../../../../../../../../docs/dev/caching.md).

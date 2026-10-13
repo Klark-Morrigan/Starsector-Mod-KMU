@@ -49,9 +49,9 @@ import java.util.Set;
  *
  * <p>Which cells get a band at all is settled here, in three refusals read in one place: a cell
  * nothing lives in or with nowhere to start from, a system the sector no longer lists, and a cell
- * whose plan came back empty. The last of them is the one that has to be answered before the
- * geometry rather than inside it, since what it saves is the ring walk - the single-owner cell
- * is most of the sector, and it costs a bake nothing.
+ * whose plan came back empty, because nothing the layer counts is present in it. Every cell with
+ * something counted in it bands, contested or not. The empty plan has to be answered before the
+ * geometry rather than inside it, since what it saves is the ring walk.
  *
  * <p>A cell's ring is asked of the surface's store before it is traced and written back once it is,
  * which leaves a re-bake walking rings only for the cells a change actually re-shaped.
@@ -173,7 +173,7 @@ public final class CellRibbonSource {
         var plan = planner.planSystemRibbon(system);
         bakeScope.markPhase(RibbonBakePhases.PLAN_PHASE);
 
-        // The single-owner cell, and most of the sector: nothing was planned, so nothing is laid
+        // Nothing the layer counts is present here, so nothing was planned and nothing is laid
         // out. Answered here rather than by the geometry because what it saves is the ring walk -
         // a cell with nothing to say must not pay for a path nothing would be laid on.
         if (plan.sumLengthUnits() <= 0) {
@@ -196,7 +196,7 @@ public final class CellRibbonSource {
      * it.
      *
      * <p>Over the cells the band pass considered rather than every cell on the map: a band is only
-     * ever laid where an owner paints, so tracing the rest would bury the cells the overlay is asked
+     * ever laid where somebody lives, so tracing the rest would bury the cells the overlay is asked
      * about under a ring around every piece of empty space in the sector. What it adds to the pass
      * above is everything downstream of the ring - a cell whose plan came back empty, and one
      * refused the room to draw what it planned, both still show the path they would have used.

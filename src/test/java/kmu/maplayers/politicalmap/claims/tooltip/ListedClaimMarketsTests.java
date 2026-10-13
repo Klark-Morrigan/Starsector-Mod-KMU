@@ -203,7 +203,7 @@ final class ListedClaimMarketsTests {
         @Test
         void listsTheWithheldShapeUnderTheDevReveal() {
             // The reveal is the state a player has asked to be shown everything in, so the one
-            // market both grounds turn away is stated like any other.
+            // market both rules turn away is stated like any other.
             var market = ClaimMarketFixture
                 .startMarket(COLONY)
                 .setAdmission(ContestAdmission.OFF_ECONOMY)

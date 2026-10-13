@@ -22,8 +22,8 @@ import java.util.Optional;
  * present or who leads.
  *
  * <p>A system the contest settled on nobody is planned all the same, without a painter. Vanilla
- * leaves a settled system unclaimed for several reasons - see
- * {@link kmu.maplayers.ownermap.owners.holders} for which - and this layer's fill
+ * leaves a settled system unclaimed for several reasons - the claim mechanic section of
+ * {@code politicalmap/README.md} says which - and this layer's fill
  * <em>is</em> the claim, so it says nothing about such a system at all. The band is what does.
  *
  * <p>The counting itself is the shared rule's, off the pass's own walk of the system, which is why

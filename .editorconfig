@@ -10,8 +10,10 @@
 # here, so editor settings are not an alternative. root = true also keeps a
 # stray .editorconfig in a parent directory from reaching this tree.
 #
-# Values match the Eclipse formatter Spotless drives
-# (Common-Java/gradle/eclipse-formatter.xml): spaces, width 4, 120 columns.
+# Values state the house layout: spaces, width 4, 120 columns. No formatter
+# re-lays code to them: the Spotless pass build.gradle applies
+# (Common-Java/gradle/spotless-java.gradle, `gradlew formatJava`) makes
+# mechanical fixes only.
 root = true
 
 [*]

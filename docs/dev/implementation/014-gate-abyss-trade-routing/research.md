@@ -174,7 +174,7 @@ Starsector exposes `com.fs.starfarer.api.campaign.listeners.EconomyTickListener`
 
 Listeners are registered through `Global.getSector().getListenerManager().addListener(...)`.
 The seam is widely used by other mods
-(e.g. niko_morePlanetaryConditions `MPC_incomeTallyListener` and KMO's settlement manager placeholder in [KmoSettlementManager.kt](../../../../../KMO/src/main/kotlin/kmo/settlements/KmoSettlementManager.kt)),
+(e.g. niko_morePlanetaryConditions `MPC_incomeTallyListener` and KMO's settlement manager placeholder in [KmoSettlementManager.kt](../../../../../Starsector-Mod-KMO/src/main/kotlin/kmo/settlements/KmoSettlementManager.kt)),
 so it is the standard pattern and does not require an `EveryFrameScript`+days-accumulator workaround.
 
 For feature 003:

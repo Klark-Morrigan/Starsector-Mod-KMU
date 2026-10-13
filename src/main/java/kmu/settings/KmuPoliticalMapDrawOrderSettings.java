@@ -40,8 +40,8 @@ public final class KmuPoliticalMapDrawOrderSettings {
     }
 
     /**
-     * @return which side of the map's nebulae the territory fills paint on: BELOW dimmed by them
-     *         (the default), ABOVE clear of them. The contested hatch is part of a cluster's fill
+     * @return which side of the map's nebulae the territory fills paint on: BELOW dimmed by them,
+     *         ABOVE clear of them. The contested hatch is part of a cluster's fill
      *         and paints with it, and the hover highlight brightens a fill so it follows this too.
      *         Lifting the fills lifts the borders with them, since a fill painted over its own
      *         borders leaves a blank cell - a constraint resolved where the choices become a paint
@@ -53,8 +53,8 @@ public final class KmuPoliticalMapDrawOrderSettings {
 
     /**
      * @return which side of the map's nebulae the cluster boundaries, province seams, and
-     *         factionless outlines paint on: BELOW dimmed by them (the default), ABOVE clear of
-     *         them. Borders may be lifted alone but never sink below the fills, so a BELOW here is
+     *         factionless outlines paint on: BELOW dimmed by them, ABOVE clear of them.
+     *         Borders may be lifted alone but never sink below the fills, so a BELOW here is
      *         honoured only while the fills are BELOW as well
      */
     public static NebulaDrawOrderChoice getPoliticalMapBorderNebulaDrawOrder() {
@@ -62,8 +62,8 @@ public final class KmuPoliticalMapDrawOrderSettings {
     }
 
     /**
-     * @return which side of the map's nebulae the presence bands paint on: BELOW dimmed by them
-     *         (the default), ABOVE clear of them
+     * @return which side of the map's nebulae the presence bands paint on: BELOW dimmed by them,
+     *         ABOVE clear of them
      */
     public static NebulaDrawOrderChoice getPoliticalMapRibbonNebulaDrawOrder() {
         return KmuLunaSettings.readChoice(NEBULA_DRAW_ORDER_RIBBONS_FIELD, DEFAULT_NEBULA_DRAW_ORDER_RIBBONS);
@@ -71,8 +71,7 @@ public final class KmuPoliticalMapDrawOrderSettings {
 
     /**
      * @return which side of the map's nebulae the cluster names paint on: BELOW dimmed by them,
-     *         ABOVE clear of them (the default, a haze over words costing legibility rather than
-     *         strength of colour)
+     *         ABOVE clear of them. A haze over words costs legibility rather than strength of colour
      */
     public static NebulaDrawOrderChoice getPoliticalMapLabelNebulaDrawOrder() {
         return KmuLunaSettings.readChoice(NEBULA_DRAW_ORDER_LABELS_FIELD, DEFAULT_NEBULA_DRAW_ORDER_LABELS);

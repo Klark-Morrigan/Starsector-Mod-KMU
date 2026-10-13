@@ -160,7 +160,7 @@ final class OwnerSortModeComposerTests {
         @Test
         void fallsBackToAStableByIdOrderWhenEveryKeyIsLevel() {
 
-            // Same name and identical numbers, so every visible key is level; the by-id key gives a
+            // Same name and identical numbers, so every visible key is level; the by-ID key gives a
             // total order so the pair holds a fixed position rather than reshuffling frame to frame.
             var second = buildStandInOwner("bbb", "Same", 3, 3);
             var first = buildStandInOwner("aaa", "Same", 3, 3);
@@ -200,7 +200,7 @@ final class OwnerSortModeComposerTests {
         @Test
         void breaksAPairTheNameLeavesLevelById() {
 
-            // Level under the caller's order and sharing a label, so only the by-id key behind the name
+            // Level under the caller's order and sharing a label, so only the by-ID key behind the name
             // separates them - which is what keeps such a pair from reshuffling frame to frame.
             var second = buildStandInOwner("bbb", "Same", 0, 0);
             var first = buildStandInOwner("aaa", "Same", 0, 0);

@@ -188,11 +188,6 @@ A dev row rather than a visuals one for the same reason as the filter-row hatch 
 nothing here is set to taste,
 it is a hatch onto something otherwise correctly out of the way.
 
-Its words are the framework's own chrome rather than a layer's,
-so `KmuStringKeys` is read here -
-the same distinction the settings already make,
-and why this is not the bundle leak the tab label was.
-
 ## Fold persistence
 
 `SidebarFoldSelection` is where a fold is read from and recorded to;
@@ -329,9 +324,9 @@ not a statement about what the list holds,
 so it means the same thing under every scope -
 but a panel is a fixed width the list was laid out inside,
 and the two panels are two widths.
-Dropping the scope is what made the namespace load-bearing here first:
-with nothing else parting two mods' counts,
-a foreign picker's column pick re-wrapped this one's list.
+With the scope dropped,
+the namespace is the only thing parting two mods' counts:
+without it a foreign picker's column pick would re-wrap this one's list.
 
 The screen is an axis no picker is handed.
 A pick is reported by a widget that knows only that it was clicked,
@@ -510,7 +505,7 @@ and the list memo behind it
 (`.widgets.lists`, see [Picker state](#picker-state));
 this package supplies only the wiring KMLib cannot know.
 The *layer roster and each screen's active pick*,
-including the stale-id fallback behind them,
+including the stale-ID fallback behind them,
 are [`base/layer`](../layer/README.md)'s
 (`MapLayerRegistry` and `MapLayerScreens`).
 The *body composition* the panel lays out belongs to whichever layer is active -

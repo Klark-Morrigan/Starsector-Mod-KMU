@@ -23,16 +23,17 @@ import static org.mockito.Mockito.mockStatic;
  *
  * <p>The two skips are observed as "the bands were never read", so those checks hold without a
  * context and without mocking the driver. Worth holding because neither shows on screen when it
- * stops happening. A sector where no cell carries a band is the normal case rather than an edge
- * one, and reaching the emission for it - or for a frame the map has already faded out - costs a
- * state push, a blend-mode switch, and a walk, all for pixels that could not appear.
+ * stops happening. A sector where no cell carries a band, as with the bands switched off, is an
+ * ordinary case rather than an edge one. Reaching the emission for it - or for a frame the map has
+ * already faded out - costs a state push, a blend-mode switch, and a walk, all for pixels that could
+ * not appear.
  *
  * <p>The zoom case is the other direction and is observed at the GL entry point instead, since a
  * frame that goes on to draw cannot be watched from the band list without a context. Standing the
  * pass down over a scale is what it must never do: every size a band carries is settled in the
  * world, so how small it lands on screen is the map's own scaling of it and no judgement of this
- * pass - and a band withheld looks exactly like a system with no rival in it, which is the one
- * thing the readout exists to tell apart.
+ * pass - and a band withheld looks exactly like a system with nothing present in it, which is the
+ * one thing the readout exists to tell apart.
  */
 final class CellPresenceRibbonRendererTests {
 

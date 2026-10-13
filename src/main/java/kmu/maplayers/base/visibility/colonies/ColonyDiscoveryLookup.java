@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Which of one location's colonies the player has yet to discover, asked by the colony's own id.
+ * Which of one location's colonies the player has yet to discover, asked by the colony's own ID.
  *
  * <p>For the reader {@link ColonyKindLookup} serves and folded on the same walk: an account built
  * from a contest meets a colony as an ID beside a number, so a fact about the colony itself has to

@@ -172,7 +172,7 @@ public record HolderGrouping(
      * The faction whose authored palette a bloc paints in: a group's leading
      * member, or - for a faction bloc - the faction itself. Lets the render layer
      * colour a group's cluster in a real faction's shades without the bloc ID
-     * needing to be a faction id.
+     * needing to be a faction ID.
      *
      * @param blocId the bloc to colour; a bloc with no ID has no palette to name
      * @return the faction ID supplying the bloc's palette, or null for a bloc with no ID

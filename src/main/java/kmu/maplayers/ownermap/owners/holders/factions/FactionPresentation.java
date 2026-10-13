@@ -8,7 +8,7 @@ import kmlib.starsector.factions.SectorFactions;
 
 /**
  * How a faction appears wherever a hovered system's breakdown names it: the title it is called by and
- * the mark it is shown under, resolved together from its id.
+ * the mark it is shown under, resolved together from its ID.
  *
  * <p>The pair travels as one value because one box may name a faction on several unrelated lines,
  * and a faction that presents differently between two lines of one box reads as two factions.

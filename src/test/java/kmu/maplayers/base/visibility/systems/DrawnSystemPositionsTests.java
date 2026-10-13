@@ -48,7 +48,7 @@ class DrawnSystemPositionsTests {
 
     private static final String OWNING_FACTION = "hegemony";
 
-    // The keys of the two systems the sector lists under one id. Written out rather than read off
+    // The keys of the two systems the sector lists under one ID. Written out rather than read off
     // the systems they belong to, an expectation taken from the code under test being no
     // expectation at all.
     private static final SystemKey THE_FIRST_DEEP_SPACE = new SystemKey("deep space", "", "8b3");

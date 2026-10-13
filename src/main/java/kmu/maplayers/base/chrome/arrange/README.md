@@ -83,12 +83,12 @@ because the engine hands a custom panel's events to its children first and its p
 a press one of the dialog's controls acted on arrives at the claim rule already consumed,
 and the skip that leaves a consumed event alone is the whole of what protects the column.
 
-That order is why the first reading was wrong rather than merely cautious.
-Excepting the box by position left the events inside it untouched for *everything* under the dialog,
+That order is also why the box is not excepted by position.
+Such an exception would leave the events inside the box untouched for *everything* under the dialog,
 not only for the dialog -
-so a star beneath the dim went on raising its own tooltip while the same star out on the open map,
-where the claim did reach,
-answered nothing at all.
+so a star beneath the dim would go on raising its own tooltip while the same star out on the open map,
+where the claim does reach,
+would answer nothing at all.
 
 ## Raised and painted part company
 
@@ -119,10 +119,8 @@ a reopen during it keeps the panel and comes up from where the fade stood.
 A `CustomUIPanelPlugin` exists only inside a panel the game built,
 over a core UI that exists only while the game is running.
 Anything left inside one can be checked only by opening the dialog and clicking,
-so the package is arranged to leave as little there as possible -
-and the four things pulled out are the four that were each,
-at some point,
-the part nothing had verified:
+so the package is arranged to leave as little there as possible.
+Four things are pulled out of it:
 
 - **`ArrangementDialogEventResponse`** is the claim rule -
   including that a dismissed dialog still on screen claims nothing -
@@ -138,12 +136,11 @@ the part nothing had verified:
 - **`ArrangementBoxLayout`** is the arithmetic,
   because where an element sits and how tall the box stands are questions with answers,
   and a class that also needs a running game to build a panel can only answer them by being looked at.
-- **`ArrangementDialogPanel.isMapShowing`** is the one reading in this mod that fails *closed*,
-  and the direction is the whole of it:
-  a reach that raises means the widget tree cannot be walked,
-  and a dialog that cannot find the screen it was opened over comes down rather than standing on it.
-  It takes the reach rather than making it,
-  so only the raise needs a screen nothing can be built on.
+
+The panel's one reading of the screen is KMLib's `ShownMapTab.isMapTabShowing`,
+and it fails *closed*:
+a reach that raises means the widget tree cannot be walked,
+and a dialog that cannot find the screen it was opened over comes down rather than standing on it.
 
 What is left in the panel's own plugin is glue:
 it reads those answers and acts.
@@ -164,8 +161,8 @@ Under `kmu.maplayers.base` that other word means a system's polygon on the map -
 the geometry that shapes one,
 the edges it is classified by,
 the hit test that finds one under the pointer.
-This package borrowed it for the vanilla elements its box is laid out from,
-which is a table's word for something that is not one:
+Used for the vanilla elements this box is laid out from,
+it would be a table's word for something that is not one:
 the head and the foot are part of no row at all.
 The engine already names them -
 a `createUIElement` returns an element -
@@ -176,8 +173,8 @@ with this file exempted so the rule can name the word it forbids.
 The vocabulary matters here beyond tidiness,
 because an element has two left edges.
 The engine draws an element's contents inset from the element's own edge,
-so a placement and a drawn position are different numbers -
-which is why the frame once stood closer to the buttons on the right than to the words on the left.
+so a placement and a drawn position are different numbers,
+and mixing them stands the frame closer to the buttons on the right than to the words on the left.
 `ArrangementBoxLayout` names that inset once and takes both of the box's edges from it;
 `resolveElementWidth` is the other half,
 and its Javadoc records the one case that must not use it.

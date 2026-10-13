@@ -242,7 +242,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     // draws over the band it explains, so a band and the ring it was laid on read against each
     // other. The overlay is gated by the paths themselves rather than by a settings read: the bake
     // holds a path only while the player has it on, so an off toggle arrives as an empty map. The
-    // bands are gated the same way - a cell where no rival is present bakes none.
+    // bands are gated the same way - a cell where nothing is present bakes none.
     private void renderPresenceBands(MapFrame mapFrame) {
 
         CellPresenceRibbonRenderer.renderOnMap(

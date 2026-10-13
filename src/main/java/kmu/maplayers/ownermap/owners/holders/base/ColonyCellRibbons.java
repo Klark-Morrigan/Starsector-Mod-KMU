@@ -105,7 +105,7 @@ public final class ColonyCellRibbons {
     }
 
     // The counts in the order their runs are drawn: the mechanic's ranking first, then whatever it
-    // did not rank, by id. Read off the habitation's per-bloc fold, so two allies' colonies arrive as
+    // did not rank, by ID. Read off the habitation's per-bloc fold, so two allies' colonies arrive as
     // one bloc's count and the band names each colony's owner as every other surface does.
     //
     // The tail exists because the count and the ranking come from different places. A mechanic ranks

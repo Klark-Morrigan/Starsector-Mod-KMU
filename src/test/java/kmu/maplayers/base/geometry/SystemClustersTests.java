@@ -144,8 +144,8 @@ final class SystemClustersTests {
         @Test
         void twoAdjacentSystemsSharingAnIdFuseAsTwoMembersRatherThanOne() {
             // The collision the cell address is here to survive: both systems seed a cell, the
-            // shared seam fuses them, and the cluster reports the pair - where an id-keyed
-            // partition held one cell and one member for the two of them.
+            // shared seam fuses them, and the cluster reports the pair - where an ID-keyed
+            // partition would hold one cell and one member for the two of them.
             var first = new SystemKey("deep space", "", "8b3");
             var second = new SystemKey("deep space", "", "38d53");
             var edges = new LinkedHashMap<SystemKey, List<CellEdge>>();

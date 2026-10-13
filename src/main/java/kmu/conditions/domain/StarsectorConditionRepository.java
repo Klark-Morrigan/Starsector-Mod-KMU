@@ -32,7 +32,7 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
 
     static final String VANILLA_SOURCE_NAME = "Starsector";
 
-    // What a dropped spec is called in the log when it will not even say its own id.
+    // What a dropped spec is called in the log when it will not even say its own ID.
     private static final String UNNAMED_SPEC_ID = "<unnamed>";
 
     private static final Logger LOG = Global.getLogger(StarsectorConditionRepository.class);

@@ -147,7 +147,7 @@ class FilteredPoliticsIntegrationTests {
         @Test
         void keysADominatedAndAContestedSystemAlikeSoOneFrontierTracesTheWholeFootprint() {
             // The selected hegemony dominates one system and is present-but-dominated in another;
-            // the two now share one spotlit key so the geometry traces a single frontier over the
+            // the two share one spotlit key so the geometry traces a single frontier over the
             // whole footprint, with only the contested set - not the key - telling them apart.
             var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
@@ -243,7 +243,7 @@ class FilteredPoliticsIntegrationTests {
 
         @Test
         void keepsTheSpotlitBlocWhoseOnlyColonyHereTheEconomyDoesNotList() {
-            // The step's own case. Tri-Tachyon's one foothold is a station the economy never
+            // The widening's own case. Tri-Tachyon's one foothold is a station the economy never
             // registered, so no weight can be computed from it and the bloc raises no footprint -
             // yet it lives here, so its cell keys spotlit and is reported contested (hatched)
             // rather than falling back to hegemony's holder and receding.
@@ -323,8 +323,8 @@ class FilteredPoliticsIntegrationTests {
         @Test
         void leavesASystemNothingWasWeighedInWithNoHolderWhereTheSpotlitBlocIsAbsent() {
             // The widening is the spotlight's alone: a system whose every colony is unregistered
-            // still resolves no dominant holder, so an unspotlit one is left out of the holder map
-            // exactly as before. Presence keeps a bloc drawn; it never hands anybody a system.
+            // still resolves no dominant holder, so where the spotlit bloc is absent the system is
+            // left out of the holder map. Presence keeps a bloc drawn; it never hands anybody a system.
             var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
@@ -425,8 +425,8 @@ class FilteredPoliticsIntegrationTests {
 
         @Test
         void reportsACandidateTheSelectedBlocOnlyHoldsAnUnregisteredColonyIn() {
-            // The shape this read exists for, now that presence is read off the colonies rather
-            // than off the weights: a haven whose one station the economy never registered, which
+            // The shape this read exists for, presence being read off the colonies rather than
+            // off the weights: a haven whose one station the economy never registered, which
             // is why nothing holds the system and why it reached this read at all.
             var pirates = buildFaction("pirates", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates));

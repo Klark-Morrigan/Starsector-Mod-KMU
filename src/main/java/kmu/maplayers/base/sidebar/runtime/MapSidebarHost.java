@@ -45,8 +45,7 @@ public final class MapSidebarHost extends BaseSidebarHost {
 
     // How tall this screen's tab band stands: the on-map sidebar floats free beside the vanilla
     // Sector/System tabs and matches their weight. Content-space - the panel strokes its own top border
-    // above the band, so the drawn strip stands the border width taller. Package-private so the number is
-    // checkable without a live sector, which the style built from it needs to resolve its colours.
+    // above the band, so the drawn strip stands the border width taller.
     static final float HEADER_BAND_HEIGHT = 19f;
 
     // The fold a save that has never folded this panel opens at: out, since this panel is the player's

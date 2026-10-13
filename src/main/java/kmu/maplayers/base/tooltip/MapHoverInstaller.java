@@ -24,8 +24,6 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * pass gets no GL context, and the tick that lets a hover go has to run on the frames neither of
  * them does. So a failure to install any of them costs only its own half.
  *
- * <p>Installed after the surfaces, whose frame preparation claim the box asks for a frame.
- *
  * <p>Final class with a private constructor: pure-function utility, no instance state.
  */
 public final class MapHoverInstaller {
@@ -98,7 +96,7 @@ public final class MapHoverInstaller {
         // look, so the Starscape filter changes what is under the box rather than whether there is one.
         //
         // The step-aside is rooted at the shown surface rather than at the core tab, because the box
-        // now draws over a map another mod docked as well - and the frames such a panel is up are
+        // also draws over a map another mod docked - and the frames such a panel is up are
         // frames where no tab is up at all, so a walk fixed at the tab could never reach the tooltip
         // it has to stand aside for.
         SectorListeners.installListener(

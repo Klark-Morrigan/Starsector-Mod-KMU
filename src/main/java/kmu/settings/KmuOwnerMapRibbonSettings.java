@@ -67,7 +67,7 @@ public final class KmuOwnerMapRibbonSettings {
 
     /**
      * @return whether a cell draws the banded stroke naming the blocs that hold colonies in that
-     *         system; on by default. Off skips the counting as well as the drawing, so a rebuild
+     *         system. Off skips the counting as well as the drawing, so a rebuild
      *         pays nothing for the bands at all
      */
     public static boolean shouldDrawOwnerMapRibbons() {
@@ -76,7 +76,7 @@ public final class KmuOwnerMapRibbonSettings {
 
     /**
      * @return whether the band on a single-faction cell draws each colony at a single width rather
-     *         than at the authored run length; on by default. A cell some rival holds something in
+     *         than at the authored run length. A cell some rival holds something in
      *         draws at the authored length whatever this says
      */
     public static boolean shouldShortenOwnerMapUncontestedRibbonRuns() {
@@ -86,8 +86,8 @@ public final class KmuOwnerMapRibbonSettings {
     }
 
     /**
-     * @return whether a band breaks around each drawn cluster name lying over its cell; on by
-     *         default. Off lays every band along its whole ring and lets a name draw across it
+     * @return whether a band breaks around each drawn cluster name lying over its cell.
+     *         Off lays every band along its whole ring and lets a name draw across it
      */
     public static boolean shouldKeepOwnerMapRibbonsClearOfNames() {
         return KmuLunaSettings.readBoolean(
@@ -97,8 +97,8 @@ public final class KmuOwnerMapRibbonSettings {
 
     /**
      * @return how much of its ring a band gives up to a cluster name lying over it: FITTED_BOX the
-     *         whole box the name's placement reserved, WORDS each drawn line's own measured extent
-     *         (the default). Unread while the bands do not keep clear of the names at all
+     *         whole box the name's placement reserved, WORDS each drawn line's own measured extent.
+     *         Unread while the bands do not keep clear of the names at all
      */
     public static RibbonNameClearanceChoice getOwnerMapRibbonNameClearance() {
         return KmuLunaSettings.readChoice(
@@ -107,8 +107,8 @@ public final class KmuOwnerMapRibbonSettings {
     }
 
     /**
-     * @return whether a cell with a band to draw draws one even where its ring leaves no room; on
-     *         by default, giving up the covering name and then the inset rather than the band. Off,
+     * @return whether a cell with a band to draw draws one even where its ring leaves no room, giving
+     *         up the covering name and then the inset rather than the band. Off,
      *         such a cell draws nothing, which makes a bare cell ambiguous between having nothing
      *         to say and having been refused the room to say it
      */
@@ -119,7 +119,7 @@ public final class KmuOwnerMapRibbonSettings {
     }
 
     /**
-     * @return how thick the presence band is drawn, in world units; 200.0 by default. The size
+     * @return how thick the presence band is drawn, in world units. The size
      *         every other size in the band is a multiple of, and a world quantity so a band holds
      *         the same share of its cell's outline at every zoom
      */
@@ -128,15 +128,15 @@ public final class KmuOwnerMapRibbonSettings {
     }
 
     /**
-     * @return how far clear of the cell's own border the band's near edge runs, in world units;
-     *         200.0 by default. A cell with room for neither this gap nor the band's width draws
+     * @return how far clear of the cell's own border the band's near edge runs, in world units.
+     *         A cell with room for neither this gap nor the band's width draws
      *         no band
      */
     public static double getOwnerMapRibbonInsetPad() {
         return KmuLunaSettings.readDouble(RIBBON_INSET_PAD_FIELD, DEFAULT_RIBBON_INSET_PAD);
     }
 
-    /** @return how far the run one colony draws reaches, in band widths; 3 by default */
+    /** @return how far the run one colony draws reaches, in band widths */
     public static int getOwnerMapRibbonSegmentLength() {
         return KmuLunaSettings.readInt(
             RIBBON_SEGMENT_LENGTH_FIELD,
@@ -144,7 +144,7 @@ public final class KmuOwnerMapRibbonSettings {
     }
 
     /**
-     * @return how far a parting in the band reaches, in band widths; 1 by default. One length
+     * @return how far a parting in the band reaches, in band widths. One length
      *         serves both the parting between two colonies of one bloc and the one closing that
      *         bloc's run, since two parting lengths in one band would read as a claim about the
      *         blocs they part. The setting screen calls it a separator, the counting rule an

@@ -567,7 +567,7 @@ public final class SectorOwnershipFixtures {
     }
 
     /**
-     * The system a sector lists under one id.
+     * The system a sector lists under one ID.
      *
      * <p>Beside {@link #buildOnlySystem}, which serves the single-system sectors: a walk over
      * several systems has to name the one it is about, and reading it back off the sector is what

@@ -20,8 +20,8 @@ import java.util.List;
  * turning each ID into the name, crest, and number it presents as.
  *
  * <p>Separates "who ranks where" - {@code SystemStandings}, pure over the factions present and a
- * grouping - from "how a group and its factions present", the Starsector and grouping lookups
- * gathered here, so the render layer consumes plain entries.
+ * grouping - from "how a group and its factions present", settled here, so the render layer
+ * consumes plain entries.
  *
  * <p>It resolves into the shared entry model rather than into a model of its own, because a ranked
  * group already <em>is</em> what an entry is - a thing with a name, a mark, and a number, over whatever
@@ -33,9 +33,9 @@ import java.util.List;
  * cannot present as two. A group presents by its kind - a lone faction as its one member, an alliance
  * as its grouping names it - and that is settled here because this is the only side that knows the
  * kind. Keying on the kind rather than the size is what keeps a one-member alliance a bloc over its
- * member rather than collapsing it into a lone faction. A blank or absent crest resolves to a null
- * path the render layer draws around, so a group or member with no authored crest still shows its
- * name and score.
+ * member rather than collapsing it into a lone faction. An alliance's crest is its colour faction's,
+ * resolved by {@link FactionTooltipLine#resolveCrestMark(SectorAPI, String)} like a member's, so an
+ * alliance and a faction are marked by one rule - a missing crest drawing no mark on either.
  *
  * <p>Built once per box over what every row of that box shares - the sector, the grouping and the
  * account - so the rows are resolved against one set of them rather than each call threading all three.

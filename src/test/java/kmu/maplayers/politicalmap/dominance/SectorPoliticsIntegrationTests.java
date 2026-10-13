@@ -278,7 +278,7 @@ class SectorPoliticsIntegrationTests {
         @Test
         void resolveDominantHolderBreaksWeightTieByPlanetHolder() {
             // Equal-weight footprints: the faction on a planet outranks the one
-            // on a station, overriding the lower-faction-id tie-break that would
+            // on a station, overriding the lower-faction-ID tie-break that would
             // otherwise hand the cell to hegemony.
             var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
@@ -299,7 +299,7 @@ class SectorPoliticsIntegrationTests {
         void resolveDominantHolderBreaksAFullTieByMarketProximity() {
             // Two size-5 station colonies tie on every weight level, so the winner falls to the
             // tie-break. hegemony's market orbits nearer the star, so it takes the system even
-            // though the lowest-id fallback would hand it to blackrock - proximity, not id.
+            // though the lowest-ID fallback would hand it to blackrock - proximity, not ID.
             var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var blackrock = buildFaction("blackrock", TRITACHYON_FACTION_BRIGHT);
             var hegemonyMarket = buildVisibleMarket(hegemony, 5);
@@ -353,7 +353,7 @@ class SectorPoliticsIntegrationTests {
                 Map.of("greater_hegemony", "Greater Hegemony"));
 
             // Faction view: hegemony wins. Alliance view: the hegemony-led alliance wins the
-            // same system, painted in hegemony's palette under the alliance bloc id.
+            // same system, painted in hegemony's palette under the alliance bloc ID.
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
                     buildCellKey("rama"),
@@ -452,7 +452,7 @@ class SectorPoliticsIntegrationTests {
                 buildVisibleMarket(tritachyon, 3));
 
             // The single-system resolve returns the same winner and palette the bulk
-            // pass would put under this system's id.
+            // pass would put under this system's ID.
             assertThat(SectorPolitics.resolveDominantHolder(buildOnlySystem(sector), buildPassOver(sector)))
                 .isEqualTo(new SystemOwner(
                     "hegemony",

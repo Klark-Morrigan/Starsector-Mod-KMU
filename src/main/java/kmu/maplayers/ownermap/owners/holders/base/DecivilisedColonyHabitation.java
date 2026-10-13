@@ -38,10 +38,10 @@ public enum DecivilisedColonyHabitation {
     /**
      * The position the player's settings currently take.
      *
-     * <p>Called where a rebuild opens its pass and nowhere below it, so one rebuild resolves the
-     * whole sector under the setting that was in force when it began. A read taken per system
-     * could be answered one way for half the sector and the other way for the rest, leaving a map
-     * nothing on screen explains.
+     * <p>Called where a pass or a picker read opens and nowhere below it, so one walk resolves the
+     * whole sector under the setting that was in force when its pass opened. A read taken per
+     * system could be answered one way for half the sector and the other way for the rest, leaving
+     * a map nothing on screen explains.
      *
      * <p>No refresh work rides on it: every KMU settings change advances the revision the owner
      * map's rebuild decider folds into its content and holding revisions, so a flip already forces

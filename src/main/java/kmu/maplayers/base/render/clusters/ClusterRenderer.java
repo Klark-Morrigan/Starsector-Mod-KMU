@@ -30,8 +30,8 @@ import java.util.function.Function;
  * <p>The two are separate entries rather than one because a caller may need to put its own drawing
  * between them - the sector map lays its nebulae over the overlay mid-frame, and which side of that
  * each half lands on is the caller's call. Nothing here orders them: emitted back to back they
- * produce the single pass they used to be, and the fills-under-borders order that reads correctly
- * is the caller's to keep.
+ * produce a single pass, and the fills-under-borders order that reads correctly is the caller's to
+ * keep.
  *
  * <p>This is pure GL emission over an already-baked {@link ClusterDrawLists} - it scales each
  * world coordinate into map space and strokes/fills the flattened vertex runs, with no knowledge
@@ -129,10 +129,10 @@ public final class ClusterRenderer {
     // pre-clipped diagonal hatch lines where the layer marked it hatched, in the same colour and
     // opacity - so a partly-filled body still reads as one inside its boundary.
     //
-    // Hoisting every hatch run above every solid fill covers nothing that was visible before:
-    // cells are disjoint, so no owner's solid triangles can land on another owner's hatched
-    // fill, and typically only one owner (the filter's spotlit one) carries a non-empty hatch
-    // run at all. What the split buys is that the line state the hatch strokes under is set once
+    // Drawing every hatch run above every solid fill, rather than each owner's hatch over its own
+    // fill, covers nothing: cells are disjoint, so no owner's solid triangles can land on another
+    // owner's hatched fill, and typically only one owner (the filter's spotlit one) carries a
+    // non-empty hatch run at all. What the split buys is that the line state the hatch strokes under is set once
     // for the whole map rather than pushed and popped around every solid fill.
     private static void drawFills(ClusterMapFrame frame) {
         drawSolidFills(frame);

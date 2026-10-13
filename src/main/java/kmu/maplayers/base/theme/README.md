@@ -109,7 +109,7 @@ the whole of what a cut depends on,
 and therefore exactly what `Hatching.computeHatchRun` takes -
 so the cut is handed the pattern alone and never holds a per-frame number it could come to bake.
 The stroke is the one sealed interface here -
-`GlLineHatchStroke` today -
+with `GlLineHatchStroke` its one permitted form -
 because how a hatch reaches the screen decides which numbers it needs at all,
 and a flat record carrying every substrate's fields would leave combinations nothing can draw representable.
 The renderer dispatches on which arrived and reads only what that one carries.

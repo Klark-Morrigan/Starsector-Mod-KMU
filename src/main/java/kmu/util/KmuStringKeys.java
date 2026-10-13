@@ -103,7 +103,8 @@ public final class KmuStringKeys {
     public static final String CONDITION_MANAGER_GROUP_SEPARATOR = "condition_manager_group_separator";
     public static final String CONDITION_MANAGER_ITEM_SEPARATOR = "condition_manager_item_separator";
     public static final String CONDITION_MANAGER_EMPTY = "condition_manager_empty";
-    public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE = "condition_manager_tooltip_suppressed_title";
+    public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_TITLE =
+        "condition_manager_tooltip_suppressed_title";
     public static final String CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY = "condition_manager_tooltip_suppressed_body";
     public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE = "condition_manager_tooltip_hidden_title";
     public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY = "condition_manager_tooltip_hidden_body";

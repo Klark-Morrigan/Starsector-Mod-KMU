@@ -13,7 +13,7 @@ is what distinguishes one sector's geometry from another's - a save name would n
 
 WHY THIS IS A SCRIPT AND NOT PART OF THE BUILD
 It reads the save's obfuscated XStream serialisation, which is not a contract: class
-aliases (Sstm, cL), the id/ref scheme, and where a given object first appears all shift
+aliases (Sstm, cL), the ID/ref scheme, and where a given object first appears all shift
 with the game version and the mod set. Wiring that into the suite would let an unrelated
 game update turn every geometry test red. So this runs by hand, its output is committed,
 and no test ever opens a save.
@@ -22,7 +22,7 @@ THREE THINGS THE FORMAT DOES THAT ARE EASY TO GET WRONG
   1. XStream writes each object once, with z="<id>", and refers back with ref="<id>". It
      writes it at the object's FIRST appearance in document order, which for a star system
      can be inside something unrelated - a planet's containing location, or a Nexerelin
-     intel entry. Systems must therefore be resolved through the id map, never by assuming
+     intel entry. Systems must therefore be resolved through the ID map, never by assuming
      where they are nested.
   2. An object is named after the FIELD it was first written into, not after its class. A
      system's hyperspace anchor appears under several element names, so tokens are matched
@@ -80,8 +80,8 @@ def has_class(elem, alias):
 def count_defined_factions(root):
     """How many factions the save defines at all - the sector's modding weight.
 
-    This counts faction objects, not faction ids seen in passing: an id appears in fleets,
-    memory keys and mod bookkeeping for factions that hold nothing, so counting ids
+    This counts faction objects, not faction IDs seen in passing: an ID appears in fleets,
+    memory keys and mod bookkeeping for factions that hold nothing, so counting IDs
     overstates. Uses has_class because a faction is written both ways, the same trap that
     once cost 45% of the star systems.
     """
@@ -173,10 +173,10 @@ def collect_weights(root):
 
 
 def disambiguate_ids(systems):
-    """Suffixes repeated names so each row has a unique id.
+    """Suffixes repeated names so each row has a unique ID.
 
     Star system NAMES are not unique - a sector carries several "Deep Space" and several
-    "Unknown Location" - while the ids the real map keys cells by are. Names are kept
+    "Unknown Location" - while the SystemKey the real map keys cells by is. Names are kept
     because a failing test naming "Askonia" beats one naming an opaque handle, so a repeat
     takes a #N suffix in a stable order rather than silently collapsing into one entry.
     """

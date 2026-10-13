@@ -36,7 +36,7 @@ public final class MapLayerArrangementEditor {
     // hide the last, the dialog that would put it back being reached from the bar.
     private static final int LAST_VISIBLE_TAB_COUNT = 1;
 
-    // Nothing in the row list answers to this id.
+    // Nothing in the row list answers to this ID.
     private static final int NO_ROW = -1;
 
     // Which way a move goes, as the offset from a row to the neighbour it swaps with. Named because a

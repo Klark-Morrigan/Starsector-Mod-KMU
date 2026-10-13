@@ -51,9 +51,7 @@ public final class MapLayerTerrainInstaller {
     // Which terrain in hyperspace belongs to which variant, and the whole of what tells the three
     // apart: the plugin class its entity carries. Not the type ID, which two of them never report -
     // those entities answer with the engine's whitelisted map type instead, so nothing they say
-    // about themselves distinguishes one from the other. Package-private alongside the type IDs so
-    // the presence guard names the same constants the install path does rather than a restatement
-    // of them.
+    // about themselves distinguishes one from the other.
     private static final Class<? extends CampaignTerrainPlugin> SCHEMATIC_TERRAIN =
         SectorMapLayerTerrainPlugin.class;
 

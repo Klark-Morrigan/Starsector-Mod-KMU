@@ -10,8 +10,8 @@ import com.fs.starfarer.api.EveryFrameScript;
  * rather than a flag. The engine registers and clears transient scripts by exact class -
  * {@code getClass() != clazz}, no subtype - and KMLib's {@code SectorScripts.installTransientScript}
  * clears by the built script's own class, which for a subclass is the subclass. So two subclasses
- * here still install and clear on their own timetables, exactly as two unrelated classes did, and
- * what they stop sharing is only the three lines each was spelling for itself.
+ * here install and clear on their own timetables, exactly as two unrelated classes would, and share
+ * only the three lines each would otherwise spell for itself.
  *
  * <p>Never installed itself. A watcher is always one of the concrete subclasses, since registering
  * this one would be registering a lifetime nothing owns.

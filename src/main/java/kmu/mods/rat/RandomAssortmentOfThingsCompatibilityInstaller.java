@@ -11,11 +11,10 @@ import static kmu.KmuWiringSteps.runGuardedStep;
 /**
  * What adapting to Random Assortment of Things needs standing up on a loaded sector.
  *
- * <p>One script today: the one that stops that mod's minimap rendering while it is parked off
- * screen. A minimap nobody can see still renders a whole sector map and drives every terrain pass
- * in the sector, so the frame a player opened a vanilla map on carries a second transform - and
- * which of the two a cursor read resolves through is the engine's child order rather than a
- * contract.
+ * <p>One script: the one that stops that mod's minimap rendering while it is parked off screen. A
+ * minimap nobody can see still renders a whole sector map and drives every terrain pass in the
+ * sector, so the frame a player opened a vanilla map on carries a second transform - and which of
+ * the two a cursor read resolves through is the engine's child order rather than a contract.
  *
  * <p>Named for the mod rather than for the widget: nothing here is a rule about minimaps in
  * general. The generic half is KMLib's {@code OffScreenWidgetSuppressor}, and whose widget this

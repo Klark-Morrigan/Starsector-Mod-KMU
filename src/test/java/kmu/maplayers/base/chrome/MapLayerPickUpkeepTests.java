@@ -62,7 +62,7 @@ final class MapLayerPickUpkeepTests {
     private static final float PAUSED_FRAME = 0f;
 
     // The ID the arrangement store would name the layer that paints by, which nothing here arranges -
-    // stated because registration reads every layer's id.
+    // stated because registration reads every layer's ID.
     private static final String PAINTING_LAYER_ID = "painting";
 
     private final MapLayer paintingLayerMock = mock(MapLayer.class);

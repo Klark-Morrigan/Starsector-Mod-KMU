@@ -23,7 +23,7 @@ import java.util.List;
  * was laid on.
  *
  * <p>An <em>owned</em> cell contributes only its interior seams: its fill and cluster border
- * are per cluster, drawn from the tessellated cluster in {@link StyledCluster}, because a
+ * are per cluster, drawn from the tessellated cluster in {@link StyledCluster}, because an
  * owner's cells fuse into one frontier. Keeping the seams is what lets a footprint read as its
  * constituent cells rather than one smooth blob - the spotlighted owner included, where the
  * solid-to-hatched transition is such a border like any other.

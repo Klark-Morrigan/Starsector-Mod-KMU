@@ -30,9 +30,9 @@ import java.util.Map;
  *
  * <p>The orchestration only - each stage's actual work belongs to a collaborator, and this
  * class's job is to sample every input exactly once so the whole pass keys off one snapshot.
- * That is what lets an incremental re-shape reuse those same builders
- * ({@link PaintedCellBuilder} and {@link ClusterGroupBuilder}) on a handful of cells and
- * get a result identical to a full rebuild.
+ * That is what lets an incremental re-shape reuse those same builders ({@link PaintedCellBuilder}
+ * and {@link ClusterGroupBuilder}) on a handful of cells and get a result identical to a full
+ * rebuild.
  *
  * <p>Two entry points, because a rebuild has two halves that go stale for different reasons. The
  * owners - who owns what, who is where - are a reading of the sector, and are owed again only when
@@ -105,12 +105,11 @@ public final class OwnerMapBuilder {
         }
     }
 
-    // Shapes the cached raw cells into merged clusters and partitions them into the
-    // cluster-filled (owned) and per-cell (settled/uninhabited) draw lists, baking in each
-    // cell's colours, opacities, and widths resolved from the handed styling, then
-    // flattens each to GL-ready vertex runs. The view's reading arrives with it, retained on the
-    // clusters so an incremental
-    // re-shape classifies against the same view, reading and source.
+    // Shapes the cached raw cells into merged clusters and partitions them into the cluster-filled
+    // (owned) and per-cell (settled/uninhabited) draw lists, baking in each cell's colours,
+    // opacities, and widths resolved from the handed styling, then flattens each to GL-ready vertex
+    // runs. The view's reading arrives with it, retained on the clusters so an incremental re-shape
+    // classifies against the same view, reading and source.
     //
     // The reading arrives rather than being resolved here because the owners were resolved through
     // the source that came with it, both over one sampling of the view's live inputs - a reading

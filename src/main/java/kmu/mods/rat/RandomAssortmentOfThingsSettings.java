@@ -4,8 +4,7 @@ import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
 import kmlib.settings.LunaSettingsReader;
 
 /**
- * Random Assortment of Things' settings, as far as this mod reads them - which today is only the
- * moment they are saved.
+ * Random Assortment of Things' settings, as far as this mod reads them: the moment they are saved.
  *
  * <p>The compatibility follows that mod's own minimap switch as well as this mod's toggle, and
  * LunaLib announces every mod's saves to every listener, so the other mod's switch is as observable

@@ -24,8 +24,8 @@ import java.util.Map;
  * makes it unrepresentable.
  *
  * <p>The two paths that produce one differ in where the owners come from - the production
- * build hands over the clusters it just built, the border-tracing diagnostic resolves owners
- * straight from the sector and spotlights nothing - and agree on everything downstream, which is
+ * build hands over the clusters it just built, the border-tracing diagnostic hands over the owners
+ * the active view's source resolved with nothing spotlit - and agree on everything downstream, which is
  * the point of them meeting in one type.
  *
  * @param ownerBySystemKey the owner of each drawn system, keyed by {@link SystemKey}

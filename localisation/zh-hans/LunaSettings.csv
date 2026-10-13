@@ -22,14 +22,14 @@ kmu_map_visuals_contentsNote,,,,,,Text,"可用设置：
 
 - [地图图层]
   - 隐藏渐隐时间
-- [叠加层侧边栏]
+- [地图侧边栏]
   - 边框粗细
   - 不透明度
   - 滚动条粗细
   - 折叠时间
   - 地图界面顶部、左侧、底部边距
   - 情报信息界面地图视窗顶部边距
-- [叠加层侧边栏 - 颜色]
+- [地图侧边栏 - 颜色]
   - 配色方案
   - 折叠凹口箭头颜色
 - [地图标签]
@@ -52,7 +52,7 @@ kmu_map_visuals_layers_header,,,,地图图层,,Header,地图图层,,,,,,,,,地�
 kmu_map_visuals_layers_hideFadeSeconds,,,,隐藏渐隐时间,,Double,0.25,,,,"地图图层被隐藏时淡出屏幕所需的时间（再次显示时淡入的时间相同），单位为秒。图层绘制的所有内容一同渐变：叠加层、其上的名称以及叠加层控制框。0 表示无动画直接关闭；数值越大渐变越慢越平滑，最多 2 秒。
 [默认值：0.25]",,,0,2,地图 - 外观
 ,,,,,,,,,,,,,,,,
-kmu_map_visuals_sidebar_header,,,,叠加层侧边栏,,Header,叠加层侧边栏,,,,,,,,,地图 - 外观
+kmu_map_visuals_sidebar_header,,,,地图侧边栏,,Header,地图侧边栏,,,,,,,,,地图 - 外观
 kmu_map_visuals_sidebar_borderWidth,,,,边框粗细,,Int,1,,,,"叠加层控制框外边框的线宽，单位为像素；0 表示不绘制边框。
 [默认值：1]",,,0,8,地图 - 外观
 kmu_map_visuals_sidebar_opacity,,,,不透明度,,Int,80,,,,"叠加层控制框背景的不透明度，以百分比表示：50 是最透明的程度，100 为完全不透明。框内文字始终以实色绘制，因此背景只需暗到足以衬托文字即可。
@@ -70,8 +70,8 @@ kmu_map_visuals_sidebar_paddingBottom,,,,地图界面底部边距,,Int,79,,,,"�
 kmu_map_visuals_sidebar_intelPaddingTop,,,,情报信息界面地图视窗顶部边距,,Int,21,,,,"叠加层控制框距情报信息界面地图预览（视窗）顶部边缘的距离，单位为像素。它将控制框推到该地图顶部原版星景与续航距离开关的下方，并保留这些开关之间同样的三像素间隔。控制框叠加在视窗上，紧贴其左边缘，高度以视窗底部为上限。
 [默认值：21]",,,0,600,地图 - 外观
 ,,,,,,,,,,,,,,,,
-kmu_map_visuals_sidebar_colours_header,,,,叠加层侧边栏 - 颜色,,Header,叠加层侧边栏 - 颜色,,,,,,,,,地图 - 外观
-kmu_map_visuals_sidebar_colours_scheme,,,,配色方案,,Radio,UI palette,"UI palette, Chrome grey, Player faction",,,"叠加层控制框使用哪套配色：框架、控件和标签行一同变化。UI palette 使用游戏自身的按钮颜色，也就是控制框周围所有原版面板所用的颜色，因此你的势力变色时控制框不会跟着变。Chrome grey 完全去掉强调色，以游戏书写文字所用的纯灰色绘制控制框。Player faction 使用你所属势力自己的颜色，这也是此设置出现之前控制框的做法。在未修改的游戏中，UI palette 与 Player faction 看起来相同；一旦某个势力改变了颜色（Nexerelin 与 Mod 玩家势力都会这样），两者就会不同。
+kmu_map_visuals_sidebar_colours_header,,,,地图侧边栏 - 颜色,,Header,地图侧边栏 - 颜色,,,,,,,,,地图 - 外观
+kmu_map_visuals_sidebar_colours_scheme,,,,配色方案,,Radio,UI palette,"UI palette, Chrome grey, Player faction",,,"叠加层控制框使用哪套配色：框架、控件和标签行一同变化。UI palette 使用游戏自身的按钮颜色，也就是控制框周围所有原版面板所用的颜色，因此你的势力变色时控制框不会跟着变。Chrome grey 完全去掉强调色，以游戏书写文字所用的纯灰色绘制控制框。Player faction 使用你所属势力自己的颜色。在未修改的游戏中，UI palette 与 Player faction 看起来相同；一旦某个势力改变了颜色（Nexerelin 与 Mod 玩家势力都会这样），两者就会不同。
 [默认值：UI palette]
 
 UI palette：界面配色
@@ -244,7 +244,7 @@ kmu_map_politics_visuals_decivilised_fill_opacity,,,,填充不透明度,,Double,
 [默认值：0.15]",,,0,1,地图 - 政治 - 外观
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_uninhabited_header,,,,无人星系,,Header,无人星系,,,,,,,,,地图 - 政治 - 外观
-kmu_map_politics_visuals_uninhabited_border_opacity,,,,边界不透明度,,Double,0.15,,,,"无人星系的轮廓不透明度（仅在叠加层侧边栏的无人星系复选框勾选时绘制）。
+kmu_map_politics_visuals_uninhabited_border_opacity,,,,边界不透明度,,Double,0.15,,,,"无人星系的轮廓不透明度（仅在地图侧边栏的无人星系复选框勾选时绘制）。
 [默认值：0.15]",,,0,1,地图 - 政治 - 外观
 kmu_map_politics_visuals_uninhabited_border_width,,,,边界粗细,,Double,3,,,,"无人星系的轮廓线宽，单位为像素。
 [默认值：3]",,,0.5,100,地图 - 政治 - 外观

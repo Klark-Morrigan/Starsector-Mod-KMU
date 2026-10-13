@@ -1,10 +1,10 @@
 // KMU's layering rules: which of its package roots may not import which.
 //
 // Its own file because these are a description of the mod's architecture rather
-// than of its build. They outgrew the build file - there are more lines of them
-// than of everything else put together - and a reader opening build.gradle to
-// find out how the mod is assembled had to scroll past the whole shape of the
-// code first. The mechanism they are declared through stays in Common-Java's
+// than of its build. There are more lines of them than of everything else put
+// together, and a reader opening build.gradle to find out how the mod is
+// assembled should not have to scroll past the whole shape of the code first.
+// The mechanism they are declared through stays in Common-Java's
 // gradle/tasks/lint/structure/enforce-package-layering.gradle; this is only the
 // edges, which are a per-project fact.
 //

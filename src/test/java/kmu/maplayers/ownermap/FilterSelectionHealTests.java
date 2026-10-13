@@ -176,7 +176,7 @@ final class FilterSelectionHealTests {
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
                 // Each screen's slot under its own screen's view ID, which is the pairing a shared view
-                // read would collapse onto one id.
+                // read would collapse onto one ID.
                 assertThat(captureHealedSlots(selectionMock))
                     .extracting(SelectionSlot::scopeId)
                     .containsExactly("owners", "groups");

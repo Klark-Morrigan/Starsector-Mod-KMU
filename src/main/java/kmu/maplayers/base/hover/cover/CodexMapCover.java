@@ -31,9 +31,8 @@ import kmu.maplayers.base.compatibility.MapLayerGameReach;
 public final class CodexMapCover extends FlagMapCover {
 
     /**
-     * Reads the live app state - one hop off it and a memoised name lookup, which puts this beside
-     * the modal cover's walk of the core UI's own children rather than among the settled flags above
-     * it.
+     * Reads the live app state - one hop off it and a memoised name lookup. Where that ranks it is
+     * {@link MapCoverReader}'s to state.
      */
     public CodexMapCover() {
         super(() -> CodexView.isCodexShowing(MapLayerGameReach.SCREEN_COVERS.getReporter()));

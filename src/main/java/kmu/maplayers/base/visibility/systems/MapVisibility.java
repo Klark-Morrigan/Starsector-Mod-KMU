@@ -3,9 +3,10 @@ package kmu.maplayers.base.visibility.systems;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.ModdedSystemAccessRoutes;
 import kmlib.starsector.systems.StarSystems;
+
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 
 /**
  * Decides which star systems appear on a map layer. What that set hashes to, once decided, is
@@ -20,9 +21,8 @@ import kmlib.starsector.systems.StarSystems;
  * pass's own colony rule rather than anything decided here, so the cell, the band
  * inside it and the box over it are all reading the one rule.
  *
- * <p>Inhabitation is not asked here at all, and that is the change a collapsed colony being a
- * colony bought: it is {@link Colonies#hasInhabitingColony}'s answer, over the one
- * walk of the system a pass already made. A rule composed here instead would be a
+ * <p>Inhabitation is not asked here at all. It is {@link ColonyKnowledge#hasInhabitingColony}'s
+ * answer, over the one walk of the system a pass already made. A rule composed here instead would be a
  * second reading of who is present, free to disagree with the listing the box over the
  * same cell names its factions out of.
  *

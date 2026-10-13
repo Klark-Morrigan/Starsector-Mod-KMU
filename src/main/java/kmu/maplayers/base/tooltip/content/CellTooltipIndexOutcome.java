@@ -1,7 +1,7 @@
 package kmu.maplayers.base.tooltip.content;
 
 /**
- * What a line's {@linkplain CellTooltipEntryLine#indexText place} in an ordering did for it: nothing
+ * What a line's {@linkplain CellTooltipEntryLine#indexPlace place} in an ordering did for it: nothing
  * so far, or the winning or losing of whatever that ordering settles.
  *
  * <p>A place is ordinarily a bare identifier - which of these is which - and reads as quietly as any
@@ -9,9 +9,9 @@ package kmu.maplayers.base.tooltip.content;
  * the ordering has to decide between them: at that moment the number is no longer a label but the
  * reason one line beat another, and a reader scanning for why wants to find it rather than parse it.
  *
- * <p>Stated as an outcome rather than as a colour so that which shade says "this won" stays with the
- * {@linkplain CellTooltipRows line vocabulary}, and a layer states only what happened. Two layers
- * marking a decided ordering would otherwise eventually mark it in two different greens.
+ * <p>Stated as an outcome rather than as a colour so that the shade saying "this won" is picked in one
+ * place, where the line is laid out ({@code CellTooltipLabels}), and a layer states only what happened.
+ * Two layers picking their own shade could mark a decided ordering in two different greens.
  */
 public enum CellTooltipIndexOutcome {
 

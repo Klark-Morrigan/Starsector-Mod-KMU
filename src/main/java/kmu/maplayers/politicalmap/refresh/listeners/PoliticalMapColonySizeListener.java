@@ -12,14 +12,14 @@ import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
  * or shrinks, so a size change that hands the system to another faction repaints
  * without waiting on a reload.
  *
- * <p>Holder on the map is decided by combined colony size, so a resize is the
- * one economy change that can flip which faction dominates a system. The engine
- * fires no holding event, but it does fire {@link ColonySizeChangeListener} on
- * every resize - so this translates that into a targeted, politics-only refresh
- * of just the changed system, leaving the whole-economy rescan for the coarser
- * content refresh. Whether the resize actually flips the holder is decided later,
- * when the plugin re-derives that one system; a resize that does not change the
- * winner costs only that re-derivation, not a redraw.
+ * <p>Holder on the map is decided by each faction's summed colony weights, which a
+ * colony's size feeds, so a resize can flip which faction dominates a system. The
+ * engine fires no holding event, but it does fire {@link ColonySizeChangeListener}
+ * on every resize - so this translates that into a targeted, politics-only refresh
+ * of just the changed system rather than a whole-map rebuild. Whether the resize
+ * actually flips the holder is decided later, when the overlay re-derives that one
+ * system; a resize that does not change the winner costs only that re-derivation,
+ * not a redraw.
  *
  * <p>Only the changed market's own system is marked: a colony's size affects
  * dominance in its own system alone. Reachability changes (a colony appearing or

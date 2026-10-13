@@ -74,7 +74,8 @@ Two more belong to optional mods,
 live with those mods' own integrations,
 and join the set only where the mod is installed -
 presence being the one condition that cannot move within a run,
-so the factory settles it once instead of asking a cover that could only ever answer no. `ConsoleMapCover` (`kmu.mods.console`) is a text-entry console,
+so the factory settles it once instead of asking a cover that could only ever answer no.
+`ConsoleMapCover` (`kmu.mods.console`) is a text-entry console,
 which takes the whole screen and so reads no geometry at all.
 `RandomAssortmentOfThingsMinimapCover` (`kmu.mods.rat`) is everywhere that is *not* a docked minimap,
 on the frames the mode from `RandomAssortmentOfThingsCompatibilityMode` is engaged
@@ -86,21 +87,42 @@ so the three cannot act on different answers.
 
 ## Order, and failing open
 
-They are held in ascending cost -
-a polled mouse flag,
-then a published one-call read,
-then a settled flag,
-then arithmetic over a box this mod laid out,
-then the two that walk the live widget tree -
-so the order is the composition's and each cover states only its own reading.
+They are held in ascending cost,
+stated once on `MapCoverReader`'s list:
+
+1. `HeldPointerMapCover` -
+   a polled mouse flag;
+2. `PauseMenuMapCover` -
+   a published one-call read;
+3. `ArrangementDialogMapCover` -
+   this mod's own dialog state;
+4. `ConsoleMapCover`,
+   where the console mod is installed -
+   its settled flag;
+5. `CodexMapCover` -
+   one hop off the app state;
+6. `ModalDialogMapCover` -
+   a walk of the core UI's own children;
+7. `SidebarMapCover` -
+   arithmetic over a box this mod laid out;
+8. `VanillaChromeMapCover` -
+   a walk into the map tab's own layout;
+9. `RandomAssortmentOfThingsMinimapCover`,
+   where that mod is installed -
+   a walk of the surfaces another mod put on screen,
+   the dearest because it is rooted above every tab.
+
+The codex and the modal sit ahead of the sidebar for a reason beyond cost,
+given [above](#the-seven-always-in-the-set).
+So the order is the composition's and each cover states only its own reading.
 All but the last fail open:
 what cannot be established is not covering,
 since a read taken to refine the hover must not be able to switch it off.
 One set for every layer,
 not one per layer,
 because nothing about a cover is a layer's own -
-a layer holding its own could be given a cover its neighbour was not,
-which is how a console came to hide the sidebar while the map went on lighting cells behind it.
+a layer holding its own could be given a cover its neighbour was not -
+a console hiding the sidebar while the map went on lighting cells behind it.
 
 ## The minimap exception
 

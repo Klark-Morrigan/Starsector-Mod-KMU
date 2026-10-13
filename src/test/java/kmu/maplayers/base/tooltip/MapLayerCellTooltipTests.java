@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
 final class MapLayerCellTooltipTests {
 
     // The system under the cursor, named once so the hover, the sector's roster and the assertions
-    // cannot drift onto three different ids.
+    // cannot drift onto three different IDs.
     private static final String SYSTEM_ID = "system";
 
     private final MapHoverTooltip tooltipMock = mock(MapHoverTooltip.class);

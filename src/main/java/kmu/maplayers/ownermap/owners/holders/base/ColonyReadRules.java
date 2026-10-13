@@ -21,9 +21,9 @@ import java.util.Objects;
  * ignores it is worse than no bundle.
  *
  * <p>The two parts are two different types, so they cannot be transposed at a call site, and
- * neither has a default: a rule is resolved where a rebuild begins, from values the opener already
- * holds, so an unstated one is that resolve having gone wrong rather than a caller with nothing to
- * say.
+ * neither has a default: a rule is resolved where a pass or a picker read opens, from values the
+ * opener already holds, so an unstated one is that resolve having gone wrong rather than a caller
+ * with nothing to say.
  *
  * @param colonyVisibility            what lifts the fog over a colony the player has not found,
  *                                    and the gates holding back what a bare fog would leak
@@ -42,16 +42,17 @@ public record ColonyReadRules(
     /**
      * Both rules as the player's live settings state them, sampled together.
      *
-     * <p>The one place a live read assembles the pair, so every entry sampling the settings - a
-     * rebuild opening its pass, the picker path with no pass of its own - takes the same two
-     * answers. A caller composing the pair itself could take the visibility rule and assume the
-     * habitation one, settling out of sight whether a decivilised world offers its bloc while the
-     * map beside it settled that from the player's answer.
+     * <p>The one place a live read assembles the pair, so every entry sampling the settings - the
+     * picker read, and a pass opened outside a build - takes the same two answers. A caller
+     * composing the pair itself could take the visibility rule and assume the habitation one,
+     * settling out of sight whether a decivilised world offers its bloc while the map beside it
+     * settled that from the player's answer. A build's pass takes its visibility rule from the walk
+     * instead, since that is the rule its cells were cut under.
      *
-     * <p>Sampled once where a rebuild or a picker read begins, so everything below it resolves
-     * under the settings in force when it started, even if the player flips a toggle mid-walk.
-     * The whole visibility rule is taken rather than the reveal alone, so a surface cannot be
-     * handed one of its gates and not the other.
+     * <p>Sampled once where such a read begins, so everything below it resolves under the settings
+     * in force when it started, even if the player flips a toggle mid-walk. The whole visibility
+     * rule is taken rather than the reveal alone, so a surface cannot be handed one of its gates
+     * and not the other.
      *
      * @return the rules the player's live settings ask for
      */

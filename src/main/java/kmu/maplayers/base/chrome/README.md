@@ -50,7 +50,7 @@ a shape that no longer builds a drivable button,
 a read that throws -
 to no control,
 one line in the log,
-and a map behaving as it did before the box existed.
+and a map behaving as it would with no box at all.
 
 Which screen is up is read before any of that,
 and it is what makes the reach affordable:
@@ -148,12 +148,10 @@ thinning,
 after the pick has already moved to the empty view.
 See [the layer README](../layer/README.md#what-a-screen-is-drawing).
 
-This reverses a rule the framework used to state -
-that hiding a tab is not switching a layer off,
-so a save holding a hidden layer as its pick still painted it.
-That reading defended the pick and was right about the store,
+The store keeps a hidden ID,
 a hidden ID being no more a lost one than a hidden layer is an unregistered one.
-What it missed is that the player is looking at a bar:
+The pick still moves,
+because the player is looking at a bar:
 a layer painting from a tab that is not there is a map nothing on screen accounts for,
 and the only way back to it is a dialog they have to remember to open.
 The pick is preserved in the one way that shows,
@@ -210,7 +208,7 @@ a roster that throws throws again on the identical row.
 So the throwing row is recorded as done with:
 one attempt per row change rather than one per frame,
 said once per session however often it happens,
-and the bar behaving meanwhile as it did before the pass existed.
+and the bar behaving meanwhile as it would with no pass at all.
 The player arranging their bar afresh is what puts the screen back in play -
 whatever the fault was,
 it is not being asked the same question again.

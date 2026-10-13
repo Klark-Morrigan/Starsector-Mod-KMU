@@ -233,7 +233,7 @@ It hands that out as two entry points -
 `renderFillsOnMap` and `renderBordersOnMap` -
 because a caller may need to put its own drawing between the two halves,
 as the sector map does when it lays its nebulae over the overlay mid-frame.
-Called back to back they are the single pass they used to be;
+Called back to back they are a single pass;
 nothing here orders them,
 so keeping fills under borders is the caller's.
 Each carries the same guard -
@@ -250,7 +250,7 @@ because they are long continuous runs a player follows.
 The fills go down in two sweeps,
 all the solid triangle soups and then every hatch run,
 rather than both runs per owner.
-Hoisting the hatch above every solid fill covers nothing that was visible before -
+Drawing the hatch above every solid fill covers nothing -
 cells are disjoint,
 so no owner's triangles can land on another's hatched fill -
 and it buys the hatch a pass of its own,

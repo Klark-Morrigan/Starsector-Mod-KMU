@@ -147,7 +147,10 @@ final class OwnerMapClustersTests {
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-                    new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
+                    new ViewReading(
+                        mock(OwnerPaintedView.class),
+                        OwnerReadingFake.createAnsweringNothing(),
+                        new OwnerSourceFake()),
                     ContentInputs.createEmpty(),
                     Set.of(),
                     Set.of()));

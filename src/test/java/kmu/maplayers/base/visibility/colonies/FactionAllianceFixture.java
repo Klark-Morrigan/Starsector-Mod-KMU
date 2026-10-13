@@ -16,7 +16,7 @@ public final class FactionAllianceFixture {
 
     // The one alliance a case ever needs to name. Which alliance two factions are in says nothing
     // to any rule here - only whether it is the same one - so a case poses the membership and never
-    // the id.
+    // the ID.
     private static final String ALLIANCE_ID = "alliance_the_one_under_test";
 
     private FactionAllianceFixture() {

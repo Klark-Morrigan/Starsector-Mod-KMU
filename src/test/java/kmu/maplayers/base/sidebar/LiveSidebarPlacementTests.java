@@ -67,7 +67,7 @@ final class LiveSidebarPlacementTests {
     // A visor whose left edge is x = 100, bottom edge y = 50, and top edge y + height = 650.
     private static final Rectangle MAP_VISOR = new Rectangle(100f, 50f, 800f, 600f);
 
-    // The IDs two registered layers stand under, the arrangement naming its layers by id.
+    // The IDs two registered layers stand under, the arrangement naming its layers by ID.
     private static final String FIRST_PAINTING_LAYER_ID = "political";
     private static final String SECOND_PAINTING_LAYER_ID = "trade_routes";
 

@@ -41,7 +41,7 @@ final class InstallationsCsvIntegrationTests {
 
     private static final String COLUMN_SEPARATOR = ",";
 
-    // Vanilla's remnant station entities, which the theme generators add under these type ids.
+    // Vanilla's remnant station entities, which the theme generators add under these type IDs.
     private static final List<String> REMNANT_STATION_TYPES = List.of(
         "station_research_remnant",
         "station_mining_remnant",

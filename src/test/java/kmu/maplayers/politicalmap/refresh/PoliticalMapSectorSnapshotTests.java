@@ -306,7 +306,7 @@ class PoliticalMapSectorSnapshotTests {
     }
 
     // An unreachable system holding a revealed decivilised planet: on the map as a
-    // decivilised colony, yet unowned, so it drives visibility without an holder.
+    // decivilised colony, yet unowned, so it drives visibility without a holder.
     private static StarSystemAPI buildDecivilisedSystem(String id) {
 
         var systemMock = buildSystem(id);

@@ -37,7 +37,7 @@ public final class KmuMapRefreshSettings {
 
     /**
      * @return how long each map-layer staleness poll waits between sector reads, in campaign
-     *         seconds; 4 by default, held between 1 and 30. Clamped here as well as bounded on the
+     *         seconds, held between 1 and 30. Clamped here as well as bounded on the
      *         slider because LunaLib prunes nothing: a value left behind by an earlier spelling of
      *         a row is handed to whatever later reads that ID
      */

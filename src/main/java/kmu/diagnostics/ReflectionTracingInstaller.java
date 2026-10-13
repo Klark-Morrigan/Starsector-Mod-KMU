@@ -16,9 +16,9 @@ import kmu.settings.KmuLunaSettings;
  * saying why was spent hours earlier on a reader who was not asking.
  *
  * <p>So the switch moving to on is treated as a new reader arriving, and every class-wide warning a
- * reach into the game's widgets keeps is let speak again. On the edge rather than on every settings change, because LunaLib announces the
- * settings rather than the setting: re-arming on each announcement would let an unrelated knob
- * unmute a warning nobody asked to hear.
+ * reach into the game's widgets keeps is let speak again. On the edge rather than on every settings
+ * change, because LunaLib announces the settings rather than the setting: re-arming on each
+ * announcement would let an unrelated knob unmute a warning nobody asked to hear.
  */
 public final class ReflectionTracingInstaller {
 

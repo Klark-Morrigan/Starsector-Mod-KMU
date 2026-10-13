@@ -2,7 +2,7 @@ fieldID,,,,fieldName,,fieldType,defaultValue,secondaryValue,,,fieldDescription,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
-kmu_settingsNote,,,,,,Text,"All KMU settings [take effect immediatedly]. Navigate to the relevant tab and if it's big, there will be a [note at the top listing the settings] it contains. Each description ends with the default shipped value, for example [Default: 0.25].
+kmu_settingsNote,,,,,,Text,"All KMU settings [take effect immediately]. Navigate to the relevant tab and if it's big, there will be a [note at the top listing the settings] it contains. Each description ends with the default shipped value, for example [Default: 0.25].
 
 This tab decides which features run at all. Every other tab tunes how a feature runs.
 
@@ -22,14 +22,14 @@ kmu_map_visuals_contentsNote,,,,,,Text,"Available settings:
 
 - [Map layers]
   - Hide fade time
-- [Overlay sidebar]
+- [Map sidebar]
   - Border thickness
   - Opacity
   - Scrollbar thickness
   - Collapse time
   - Map screen top, left, bottom padding
   - Intel screen map visor top padding
-- [Overlay sidebar - colours]
+- [Map sidebar - colours]
   - Colour scheme
   - Collapse notch chevron colour
 - [Map labels]
@@ -52,7 +52,7 @@ kmu_map_visuals_layers_header,,,,Map layers,,Header,Map layers,,,,,,,,,Map - Vis
 kmu_map_visuals_layers_hideFadeSeconds,,,,Hide fade time,,Double,0.25,,,,"How long the map layers take to fade off the screen when they are hidden (and to fade back in when they are shown again), in seconds. Everything the layers draw fades together - the overlay, its names, and the overlay control box. 0 switches them straight off with no animation; higher makes the fade slower and smoother, up to 2 seconds.
 [Default: 0.25]",,,0,2,Map - Visuals
 ,,,,,,,,,,,,,,,,
-kmu_map_visuals_sidebar_header,,,,Overlay sidebar,,Header,Overlay sidebar,,,,,,,,,Map - Visuals
+kmu_map_visuals_sidebar_header,,,,Map sidebar,,Header,Map sidebar,,,,,,,,,Map - Visuals
 kmu_map_visuals_sidebar_borderWidth,,,,Border thickness,,Int,1,,,,"Line width of the outer border framing the overlay control box, in pixels; 0 draws no border.
 [Default: 1]",,,0,8,Map - Visuals
 kmu_map_visuals_sidebar_opacity,,,,Opacity,,Int,80,,,,"Background opacity of the overlay control box, as a percentage: 50 is the most see-through the box goes, 100 fully opaque. The box's text always draws solid, so the background only has to be dark enough to read that text against.
@@ -70,8 +70,8 @@ kmu_map_visuals_sidebar_paddingBottom,,,,Map screen bottom padding,,Int,79,,,,"H
 kmu_map_visuals_sidebar_intelPaddingTop,,,,Intel screen map visor top padding,,Int,21,,,,"How far down from the top edge of the intel screen's map preview (the visor) the overlay control box sits, in pixels - pushes the box below the vanilla Starscape and fuel-range toggles at the top of that map, leaving the same three-pixel channel those toggles keep between themselves. The box overlays the visor, flush against its left edge, and its height is capped by the visor's bottom.
 [Default: 21]",,,0,600,Map - Visuals
 ,,,,,,,,,,,,,,,,
-kmu_map_visuals_sidebar_colours_header,,,,Overlay sidebar - colours,,Header,Overlay sidebar - colours,,,,,,,,,Map - Visuals
-kmu_map_visuals_sidebar_colours_scheme,,,,Colour scheme,,Radio,UI palette,"UI palette, Chrome grey, Player faction",,,"Which palette the overlay control box is coloured from - its frame, its controls, and its tab row together. UI palette uses the game's own button colours, the same ones every vanilla panel around the box answers to, so the box does not change colour when your faction does. Chrome grey drops the accent hue entirely and draws the box in the plain greys the game writes its text in. Player faction paints it in your faction's own colours, which is what the box did before this setting existed. On an unmodified game UI palette and Player faction look the same; they part once a faction recolours (Nexerelin and modded player factions do).
+kmu_map_visuals_sidebar_colours_header,,,,Map sidebar - colours,,Header,Map sidebar - colours,,,,,,,,,Map - Visuals
+kmu_map_visuals_sidebar_colours_scheme,,,,Colour scheme,,Radio,UI palette,"UI palette, Chrome grey, Player faction",,,"Which palette the overlay control box is coloured from - its frame, its controls, and its tab row together. UI palette uses the game's own button colours, the same ones every vanilla panel around the box answers to, so the box does not change colour when your faction does. Chrome grey drops the accent hue entirely and draws the box in the plain greys the game writes its text in. Player faction paints it in your faction's own colours. On an unmodified game UI palette and Player faction look the same; they part once a faction recolours (Nexerelin and modded player factions do).
 [Default: UI palette]",,,,,Map - Visuals
 kmu_map_visuals_sidebar_colours_chevron,,,,Collapse notch chevron colour,,Radio,Gold,"Gold, Panel accent",,,"Which colour the arrow on the overlay control box's collapse handle draws in. Gold picks the standard highlight colour, so the arrow stands out from the box it hangs off. Panel accent draws it in the box's own colours instead - whichever palette the colour scheme above names - brightening when you point at it, so the handle reads as part of the frame.
 [Default: Gold]",,,,,Map - Visuals
@@ -213,7 +213,7 @@ kmu_map_politics_visuals_decivilised_fill_opacity,,,,Fill opacity,,Double,0.15,,
 [Default: 0.15]",,,0,1,Map - Politics - Visuals
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_uninhabited_header,,,,Uninhabited systems,,Header,Uninhabited systems,,,,,,,,,Map - Politics - Visuals
-kmu_map_politics_visuals_uninhabited_border_opacity,,,,Border opacity,,Double,0.15,,,,"Outline opacity for uninhabited systems (drawn only while the overlay sidebar's uninhabited-systems checkbox is on).
+kmu_map_politics_visuals_uninhabited_border_opacity,,,,Border opacity,,Double,0.15,,,,"Outline opacity for uninhabited systems (drawn only while the Map sidebar's uninhabited-systems checkbox is on).
 [Default: 0.15]",,,0,1,Map - Politics - Visuals
 kmu_map_politics_visuals_uninhabited_border_width,,,,Border thickness,,Double,3,,,,"Outline line width for uninhabited systems, in pixels.
 [Default: 3]",,,0.5,100,Map - Politics - Visuals
@@ -374,7 +374,7 @@ kmu_map_keybinds_filters_header,,,,Map filters,,Header,Map filters,,,,,,,,,Map -
 kmu_map_keybinds_filters_mapLayersToggle,,,,Map layers,,Keycode,50,,,,"Keyboard shortcut that ticks and unticks the [Map layers] box on the map's own filter row, showing and hiding everything the overlay draws. Live only on map and intel screens.
 [Default: M]",,,,,Map - Keybinds
 ,,,,,,,,,,,,,,,,
-kmu_map_keybinds_layers_header,,,,Map Sidebar,,Header,Map Sidebar,,,,,,,,,Map - Keybinds
+kmu_map_keybinds_layers_header,,,,Map sidebar,,Header,Map sidebar,,,,,,,,,Map - Keybinds
 kmu_map_keybinds_layers_noLayer,,,,No Layer tab key,,Keycode,49,,,,"Keyboard shortcut that jumps the political-map overlay's layer bar to the No Layer view, painting nothing.
 [Default: N]",,,,,Map - Keybinds
 kmu_map_keybinds_layers_factions,,,,Factions tab key,,Keycode,25,,,,"Keyboard shortcut that jumps the political-map overlay's layer bar to the Factions view, painting faction territory.

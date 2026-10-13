@@ -80,7 +80,7 @@ final class ListPickerBinderTests {
         new ListSortModes<>(List.of(AnomalySortMode.values()), AnomalySortMode.ALPHA);
 
     // The two items the picker lists, alpha-ordered as Drift then Storm, so a row index maps back to
-    // a known id.
+    // a known ID.
     private static final Anomaly STORM = new Anomaly("storm_1", "Storm", "crest_storm", 9, 8);
     private static final Anomaly DRIFT = new Anomaly("drift_1", "Drift", null, 2, 3);
 

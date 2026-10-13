@@ -36,7 +36,7 @@ import java.util.List;
  * containment, so rebuilding an owner from its current members alone re-splits or re-merges its
  * bodies when the incremental refresh gains or loses one.
  *
- * <p>Membership is the cells an owner draws, not the systems it holds: those differ wherever a
+ * <p>Membership is the cells an owner draws, not the systems it holds: those differ wherever an
  * owner's cluster group includes a cell no star of its own sits in, and it is the cells that carry the
  * edges a border is traced from.
  */

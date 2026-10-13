@@ -128,14 +128,16 @@ so each half is a package of its own -
 the gate closes a package root,
 and a parent root closes its own children with it.
 
-A fourth sits beside the first:
+Two more families sit beside `colonies`,
+each concealing a different fact for a different reason:
 `structures` keeps what was observed of the built things in orbit that are not colonies,
-which conceal a different fact for a different reason.
+and `installations` admits the stations that carry no market.
 
 Under all of them is `observations`,
 which states how old the news about a concealed fact is,
 in the same words whatever the fact is about.
-It is gated against importing any of the families above,
+It is gated against importing `colonies`,
+`structures` and `systems`,
 which is what keeps it from learning what a colony is -
 a shared rule that named one family would be that family's rule with extra callers.
 
@@ -364,7 +366,7 @@ and a player who ordered their bar once does not order it again per save.
 - **[Installed machinery](base/machinery/README.md)** -
   one sector's map machinery as a thing a caller can hold,
   since everything the layers draw is derived from one sector
-  and everything under that drawing is keyed by bare system id.
+  and everything under that drawing is keyed by each system's `SystemKey`.
   `SectorMapMachinery` holds the refresh board,
   the motion tracker,
   the hover holder and the sector itself;

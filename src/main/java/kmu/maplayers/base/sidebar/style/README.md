@@ -576,8 +576,7 @@ scrollbar thickness,
 collapse seconds,
 and both anchors' paddings are LunaLib fields read through `kmu.settings.KmuMapSidebarSettings`,
 as are the colour scheme and the chevron colour -
-those two in their own "Overlay sidebar -
-colours" section below the box's dimensions.
+those two in their own "Map sidebar - colours" section below the box's dimensions.
 The three arrival levels and the list-scroll level are `kmu.settings.KmuMapSoundSettings`' on the `Map - Sound` tab,
 which is where the volume half of the look is stated rather than beside the shades.
 Every knob either class holds is a look;

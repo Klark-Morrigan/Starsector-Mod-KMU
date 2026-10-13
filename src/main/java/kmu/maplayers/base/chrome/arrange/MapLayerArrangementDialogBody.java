@@ -25,8 +25,8 @@ import java.util.function.BiConsumer;
  *
  * <p>Apart from the dialog because the two change for different reasons. What the dialog is - when
  * it stands up, what it claims, when it comes down - is a question about a screen; what stands in
- * the box is a question about a layout. Together they were one class carrying a lifecycle and a
- * dozen measurements, and neither half could be read without the other.
+ * the box is a question about a layout. One class carrying a lifecycle and a dozen measurements could
+ * not be read a half at a time.
  *
  * <p>What a row is made of is {@link ArrangementRowWidgets}'s and where everything sits is
  * {@link ArrangementBoxLayout}'s, so this is left with the furniture around the column and the two
@@ -118,8 +118,8 @@ final class MapLayerArrangementDialogBody {
                 StarsectorUiColour.BLACK.resolve(),
                 BACKDROP_ALPHA * alphaMult));
 
-        // Read off the placement the layout settled rather than the numbers it was laid out from, exactly
-        // as the input claim is, so a resized window moves the fill with the box.
+        // Read off the placement the layout settled rather than the numbers it was laid out from, so a
+        // resized window moves the fill with the box.
         UiFill.renderQuad(
             VanillaPositions.toRectangle(boxPlacement),
             new UiElementPaint(

@@ -303,7 +303,7 @@ Political map pieces that moved onto the framework, merged, or answer a richer q
 ## [0.1.1] - 2026-09-15
 
 - Updated for [KMLib 0.3.0](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/tag/0.3.0) and [KMLib 0.3.1](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/tag/0.3.1).
-- The project is relicenced under under **LGPL-3.0-only**.
+- The project is relicensed under **LGPL-3.0-only**.
 
 ### Fixed
 
@@ -325,7 +325,7 @@ First tagged release, so there is no prior version to diff against.
   - Map layer toggle injected into the map filter bar.
   - Collapsible sidebar on the map screen and intel screen.
   - Star system tooltips.
-  - **Fast Rendering** compatibity.
+  - **Fast Rendering** compatibility.
   - **Nexerelin** compatibility.
   - **Random Assortment of Things** compatibility.
   - **LunaLib**-enabled settings.

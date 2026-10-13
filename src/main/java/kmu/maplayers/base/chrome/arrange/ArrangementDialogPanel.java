@@ -22,8 +22,8 @@ import java.util.function.Function;
  * <p>Apart from {@link MapLayerArrangementDialog} because the two answer different questions. What is
  * being arranged and when the player may start or stop is a question about an arrangement; where the
  * widgets stand, what the frame hooks do, and how long the box lingers after the press is a question
- * about a surface. Together they were one class holding a lifecycle, a clock, a panel and a claim
- * rule, and no half could be read without the other.
+ * about a surface. One class holding a lifecycle, a clock, a panel and a claim rule could not be read
+ * a half at a time.
  *
  * <p><b>Built from the game's own widgets</b> - a panel from {@code SettingsAPI.createCustom} stood in
  * the core UI's own tree by {@link CoreUiOverlayPanels}. Nothing here is painted into the map's render
@@ -112,8 +112,8 @@ final class ArrangementDialogPanel {
         if (panel == null && !standPanelUp()) {
             return false;
         }
-        fade.raiseDialog();
 
+        fade.raiseDialog();
         return true;
     }
 
@@ -121,9 +121,12 @@ final class ArrangementDialogPanel {
      * @return what this is doing on one frame, for whatever stands aside for it
      */
     OverlayPresence resolvePanelPresence() {
+
         // Shaped here rather than by the clock beneath, which is state and knows nothing of screens.
         // What is raised over one is this, so how that is reported is this one's to say.
-        return new OverlayPresence(fade.isDialogRaised(), fade.resolveFadeFraction());
+        return new OverlayPresence(
+            fade.isDialogRaised(),
+            fade.resolveFadeFraction());
     }
 
     /**
@@ -140,6 +143,7 @@ final class ArrangementDialogPanel {
         if (body != null) {
             body.removeFromPanel(panel);
         }
+
         body = buildBody.apply(panel);
     }
 
@@ -158,15 +162,19 @@ final class ArrangementDialogPanel {
             settings.getScreenHeight(),
             new DialogPanelPlugin());
 
-        var placement = CoreUiOverlayPanels.attachOverlayPanel(newPanel, MapLayerGameReach.ARRANGE_DIALOG.getReporter());
+        var placement = CoreUiOverlayPanels.attachOverlayPanel(
+            newPanel,
+            MapLayerGameReach.ARRANGE_DIALOG.getReporter());
+
         if (placement == null) {
             return false;
         }
+
         placement.inTL(NO_OFFSET, NO_OFFSET);
 
         panel = newPanel;
-        paintFadeOntoPanel();
 
+        paintFadeOntoPanel();
         return true;
     }
 

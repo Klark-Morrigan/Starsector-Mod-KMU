@@ -58,7 +58,7 @@ public final class BlocStandingSortMode<S extends OwnerMetrics>
     // The whole ranking, friendliest first: the scale position, then the low end of the range, then
     // the high end - every key descending, so a higher position and a higher reputation both lead.
     // The low end leads the high because a bloc is only as friendly as its least friendly member: an
-    // group holding one hostile is not ranked as though it were the ally inside it.
+    // a group holding one hostile is not ranked as though it were the ally inside it.
     private static final Comparator<StandingRankKey> FRIENDLIEST_FIRST_ORDER =
         Comparator.comparingInt(StandingRankKey::scalePosition)
             .thenComparingInt(StandingRankKey::lowestReputation)
@@ -233,8 +233,9 @@ public final class BlocStandingSortMode<S extends OwnerMetrics>
     // Blocs by the standings they hold right now, each bloc read once per sort.
     //
     // A sort compares every bloc many times over, and one standing read walks the bloc's whole
-    // membership for its relations. So the order keeps what it has read for its own lifetime. The picker asks this mode for a fresh comparator on every sort, which
-    // makes that lifetime exactly one sort: the ranking still follows reputation as it moves.
+    // membership for its relations. So the order keeps what it has read for its own lifetime. The
+    // picker asks this mode for a fresh comparator on every sort, which makes that lifetime exactly
+    // one sort: the ranking still follows reputation as it moves.
     private Comparator<RankedOwner<S>> buildFriendliestFirstOrder() {
 
         var rankKeysByBlocId = new HashMap<String, StandingRankKey>();

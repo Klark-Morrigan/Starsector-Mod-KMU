@@ -26,9 +26,8 @@ import kmu.maplayers.base.chrome.arrange.MapLayerArrangementDialog;
 public final class ArrangementDialogMapCover extends FlagMapCover {
 
     /**
-     * Reads the live dialog - a field on a panel this mod put on screen itself, which is what puts
-     * this among the cheapest covers rather than beside the walks that go looking for somebody
-     * else's widgets.
+     * Reads the live dialog - a field on a panel this mod put on screen itself, with no walk to go
+     * looking for somebody else's widgets. Where that ranks it is {@link MapCoverReader}'s to state.
      */
     public ArrangementDialogMapCover() {
         super(MapLayerArrangementDialog.INSTANCE::isDialogRaised);

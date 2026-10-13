@@ -209,7 +209,7 @@ public final class ColonyObservationNotes {
         return colonyIdsObservedByInhabitants;
     }
 
-    // The gated colonies the system's own people can see, by id. Asked of the visibility rule's own
+    // The gated colonies the system's own people can see, by ID. Asked of the visibility rule's own
     // reading rather than re-derived here, so the box's account of who can see what is the same one
     // the map is drawn under.
     //

@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the Map - Visibility knobs from the settings read to the colony listing every painting
- * surface composes over - the one link in that chain with nothing behind it until they shipped.
+ * surface composes over - the one link in that chain no other suite holds.
  *
  * <p>Driven through the live {@link MapVisibilityRules#readFromLunaSettings()} rather than a rule
  * written out here, because the wiring between a toggle and a colony is the subject. A case handing
@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the player arriving or the people already living there. A suite that moved only the toggles would
  * pass over a map that had stopped revealing anything at all.
  *
- * <p>The reveals are here on the same grounds, and for one rule beyond it: each toggle on this tab
+ * <p>The reveals are here for the same reason, and for one rule beyond it: each toggle on this tab
  * clears the one thing it names and nothing beside it. That is the failure a player cannot
  * diagnose - they turn one thing on and a second thing they never asked about appears with it - and
  * it is invisible to any case that moves one toggle over a colony only that toggle could reach.
@@ -87,8 +87,8 @@ final class SpoilerGateIntegrationTests {
         void withholdsADerelictAndAConcealedBaseFromAnUnvisitedEmptySystem() {
             // The shipped state, both gates in force. Nobody has been here and nobody lives here,
             // so neither the derelict nor the base has been seen by anyone the player could have
-            // heard
-            // it from - and the fog alone would have shown both, neither entity being discoverable.
+            // heard it from - and the fog alone would have shown both, neither entity being
+            // discoverable.
             var sector = buildUnvisitedSectorHoldingGatedPair(SYSTEM_ID);
 
             assertThat(readKnownOwnerIds(sector))

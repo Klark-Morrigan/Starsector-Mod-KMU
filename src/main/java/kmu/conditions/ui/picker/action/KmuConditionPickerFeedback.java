@@ -39,7 +39,7 @@ public final class KmuConditionPickerFeedback {
     }
 
     // Only the wording differs per status, so the label alone varies here and the single
-    // construction site above owns the shared "<label>: <condition id>" shape. The switch
+    // construction site above owns the shared "<label>: <condition ID>" shape. The switch
     // is exhaustive over the enum, so a new status breaks the build instead of reaching a
     // runtime throw.
     private static String describeStatus(KmuConditionAddStatus status) {

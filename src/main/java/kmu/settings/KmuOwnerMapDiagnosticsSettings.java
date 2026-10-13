@@ -26,8 +26,8 @@ public final class KmuOwnerMapDiagnosticsSettings {
 
     /**
      * @return whether an owner map draws the per-cluster label anchors - a dot at each
-     *         contiguous cluster's centre and, in green, the accepted label line its fit produced;
-     *         off by default. Master switch for the anchor overlay: the framework's rejected- and
+     *         contiguous cluster's centre and, in green, the accepted label line its fit produced.
+     *         Master switch for the anchor overlay: the framework's rejected- and
      *         unbiased-axis toggles only add lines while this is on
      */
     public static boolean getOwnerMapShowClusterAnchors() {
@@ -40,7 +40,7 @@ public final class KmuOwnerMapDiagnosticsSettings {
      * @return whether an owner map draws the ring each cell's presence band would run along,
      *         coloured by what that cell's room lets a band do with it - green where the authored
      *         inset held, yellow where the pad had to be given up, red where no band is laid at
-     *         all; off by default. Shows nothing while the bands themselves are switched off,
+     *         all. Shows nothing while the bands themselves are switched off,
      *         there being no layout to report on
      */
     public static boolean shouldShowOwnerMapRibbonPaths() {
@@ -52,7 +52,7 @@ public final class KmuOwnerMapDiagnosticsSettings {
     /**
      * @return whether to replace the normal owner-map render with the border-tracing diagnostic
      *         that layers the smoothing pipeline's stages (base, despiked, rounded) in distinct
-     *         colours; off by default. Respects the two smoothing gates, so a stage draws only when
+     *         colours. Respects the two smoothing gates, so a stage draws only when
      *         its pass ran
      */
     public static boolean shouldTraceBordersForDebug() {

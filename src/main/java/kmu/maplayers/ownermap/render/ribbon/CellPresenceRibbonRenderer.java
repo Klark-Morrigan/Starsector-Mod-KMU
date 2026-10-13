@@ -46,10 +46,10 @@ public final class CellPresenceRibbonRenderer {
     /**
      * Draws every cell's band for one map frame.
      *
-     * <p>Most of the sector carries no band - one is drawn only where an owner the cell was not
-     * painted for is present - so the usual frame pays an empty-map check and nothing else. A
-     * fully faded-out map emits nothing rather than every run at zero effective alpha, which
-     * would cost the whole pass for pixels that cannot appear.
+     * <p>Most of the sector carries no band - one is drawn only where something is present in the
+     * system - so the walk covers the settled cells and nothing else. A fully faded-out map emits
+     * nothing rather than every run at zero effective alpha, which would cost the whole pass for
+     * pixels that cannot appear.
      *
      * @param ribbons   the frame's baked bands, one per cell that draws one; the cells that draw
      *                  none are not among them. Taken as the bands alone rather than as the map

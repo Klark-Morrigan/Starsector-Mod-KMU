@@ -2,7 +2,7 @@ package kmu.maplayers.base.visibility.colonies;
 
 /**
  * What has been observed of each colony - where it was seen standing and when - asked by the
- * colony's own id.
+ * colony's own ID.
  *
  * <p>Says nothing about who did the observing. The player standing in a place and the place's own
  * inhabitants are both observations, and one register holds them alike - which is what keeps a

@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  * Breaks an exact dominance tie by which bloc holds the market nearest the system's centre,
- * so a tie resolves the same on every view instead of by the arbitrary ordering of bloc ids.
+ * so a tie resolves the same on every view instead of by the arbitrary ordering of bloc IDs.
  *
  * <p>A bloc ID is a faction ID on the faction view but an alliance's own ID on the alliances
  * view, so a tie falling to the lowest ID could flip holder between views purely because an

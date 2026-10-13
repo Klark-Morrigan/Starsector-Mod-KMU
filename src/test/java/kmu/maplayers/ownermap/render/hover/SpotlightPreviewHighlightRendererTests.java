@@ -153,7 +153,7 @@ final class SpotlightPreviewHighlightRendererTests {
         @Test
         void lightsNothingForAHoverReportedByAnotherModsPicker() {
             // The view ID is opaque and shared by nobody's agreement, so a foreign layer whose own
-            // picker lists a view under this one's name is a different list: its hovered row names a
+            // picker lists a view under this one's name is a different list: its hovered row names an
             // owner this view never surfaced, and lighting it would paint that mod's answer here.
             var view = stubViewFinding(buildIndexOf(OWNER_ID, PRESENT_SYSTEM_ID));
 

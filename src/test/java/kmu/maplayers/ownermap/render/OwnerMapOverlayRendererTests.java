@@ -217,7 +217,7 @@ final class OwnerMapOverlayRendererTests {
             // The highlight brightens a cell the cache's draw lists cut, so the hover it traces has
             // to be the one the pass over those very lists published. Read off whichever sector was
             // running instead, this would wash a cell the sector it is compositing never drew -
-            // nothing forbidding two sectors from holding a system under the same id.
+            // nothing forbidding two sectors from holding a system under the same ID.
             hoverState.publishHover(HOVERED_CELL);
 
             try (var hoverRendererConstructionMock = mockConstruction(HoverHighlightRenderer.class);

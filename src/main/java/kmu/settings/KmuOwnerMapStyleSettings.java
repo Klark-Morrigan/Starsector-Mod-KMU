@@ -133,7 +133,7 @@ public final class KmuOwnerMapStyleSettings {
 
     /**
      * @return which faction palette colour the outer (national) border draws in, or NONE to hide
-     *         it; the primary (bright) colour by default
+     *         it
      */
     public static OwnerPaletteChoice getFactionOuterBorderColour() {
         return KmuLunaSettings.readChoice(
@@ -141,14 +141,14 @@ public final class KmuOwnerMapStyleSettings {
             DEFAULT_FACTION_OUTER_BORDER_COLOUR);
     }
 
-    /** @return the outer (national) border opacity for faction systems, 0..1; 1.0 by default */
+    /** @return the outer (national) border opacity for faction systems, 0..1 */
     public static double getFactionOuterBorderOpacity() {
         return KmuLunaSettings.readDouble(
             FACTION_OUTER_BORDER_OPACITY_FIELD,
             DEFAULT_FACTION_OUTER_BORDER_OPACITY);
     }
 
-    /** @return the outer (national) border line width for faction systems, pixels; 3.0 by default */
+    /** @return the outer (national) border line width for faction systems, pixels */
     public static double getFactionOuterBorderWidth() {
         return KmuLunaSettings.readDouble(
             FACTION_OUTER_BORDER_WIDTH_FIELD,
@@ -157,7 +157,7 @@ public final class KmuOwnerMapStyleSettings {
 
     /**
      * @return which faction palette colour the inner (province seam) borders draw in, or NONE to
-     *         hide them; the primary (bright) colour by default
+     *         hide them
      */
     public static OwnerPaletteChoice getFactionInnerBorderColour() {
         return KmuLunaSettings.readChoice(
@@ -165,7 +165,7 @@ public final class KmuOwnerMapStyleSettings {
             DEFAULT_FACTION_INNER_BORDER_COLOUR);
     }
 
-    /** @return the inner (province seam) border opacity for faction systems, 0..1; 0.1 by default */
+    /** @return the inner (province seam) border opacity for faction systems, 0..1 */
     public static double getFactionInnerBorderOpacity() {
         return KmuLunaSettings.readDouble(
             FACTION_INNER_BORDER_OPACITY_FIELD,
@@ -173,8 +173,7 @@ public final class KmuOwnerMapStyleSettings {
     }
 
     /**
-     * @return the inner (province seam) border line width for faction systems, pixels; 10.0 by
-     *         default
+     * @return the inner (province seam) border line width for faction systems, pixels
      */
     public static double getFactionInnerBorderWidth() {
         return KmuLunaSettings.readDouble(
@@ -184,20 +183,20 @@ public final class KmuOwnerMapStyleSettings {
 
     /**
      * @return which faction palette colour the territory fill draws in, or NONE to leave it
-     *         unfilled; the primary (bright) colour by default
+     *         unfilled
      */
     public static OwnerPaletteChoice getFactionFillColour() {
         return KmuLunaSettings.readChoice(FACTION_FILL_COLOR_FIELD, DEFAULT_FACTION_FILL_COLOUR);
     }
 
-    /** @return the fill opacity for faction systems, 0..1; 0.4 by default */
+    /** @return the fill opacity for faction systems, 0..1 */
     public static double getFactionFillOpacity() {
         return KmuLunaSettings.readDouble(FACTION_FILL_OPACITY_FIELD, DEFAULT_FACTION_FILL_OPACITY);
     }
 
     /**
-     * @return the opacity a faction cluster's name draws at, 0..1 of its owner's colour; 1.0 by
-     *         default. The per-frame map-zoom fade the renderer applies composes on top of this
+     * @return the opacity a faction cluster's name draws at, 0..1 of its owner's colour.
+     *         The per-frame map-zoom fade the renderer applies composes on top of this
      */
     public static double getFactionNameOpacity() {
         return KmuLunaSettings.readDouble(FACTION_NAME_OPACITY_FIELD, DEFAULT_FACTION_NAME_OPACITY);
@@ -205,7 +204,7 @@ public final class KmuOwnerMapStyleSettings {
 
     /**
      * @return which independent palette colour the outer (national) border draws in, or NONE to
-     *         hide it; the primary (bright) colour by default
+     *         hide it
      */
     public static OwnerPaletteChoice getIndependentOuterBorderColour() {
         return KmuLunaSettings.readChoice(
@@ -214,8 +213,7 @@ public final class KmuOwnerMapStyleSettings {
     }
 
     /**
-     * @return the outer (national) border opacity for independent-held systems, 0..1; 0.5 by
-     *         default
+     * @return the outer (national) border opacity for independent-held systems, 0..1
      */
     public static double getIndependentOuterBorderOpacity() {
         return KmuLunaSettings.readDouble(
@@ -224,8 +222,7 @@ public final class KmuOwnerMapStyleSettings {
     }
 
     /**
-     * @return the outer (national) border line width for independent-held systems, pixels; 3.0 by
-     *         default
+     * @return the outer (national) border line width for independent-held systems, pixels
      */
     public static double getIndependentOuterBorderWidth() {
         return KmuLunaSettings.readDouble(
@@ -235,7 +232,7 @@ public final class KmuOwnerMapStyleSettings {
 
     /**
      * @return which independent palette colour the inner (province seam) borders draw in, or NONE
-     *         to hide them; the primary (bright) colour by default
+     *         to hide them
      */
     public static OwnerPaletteChoice getIndependentInnerBorderColour() {
         return KmuLunaSettings.readChoice(
@@ -244,8 +241,7 @@ public final class KmuOwnerMapStyleSettings {
     }
 
     /**
-     * @return the inner (province seam) border opacity for independent-held systems, 0..1; 0.1 by
-     *         default
+     * @return the inner (province seam) border opacity for independent-held systems, 0..1
      */
     public static double getIndependentInnerBorderOpacity() {
         return KmuLunaSettings.readDouble(
@@ -254,8 +250,7 @@ public final class KmuOwnerMapStyleSettings {
     }
 
     /**
-     * @return the inner (province seam) border line width for independent-held systems, pixels;
-     *         10.0 by default
+     * @return the inner (province seam) border line width for independent-held systems, pixels
      */
     public static double getIndependentInnerBorderWidth() {
         return KmuLunaSettings.readDouble(
@@ -265,7 +260,7 @@ public final class KmuOwnerMapStyleSettings {
 
     /**
      * @return which independent palette colour the territory fill draws in, or NONE to leave it
-     *         unfilled; the primary (bright) colour by default
+     *         unfilled
      */
     public static OwnerPaletteChoice getIndependentFillColour() {
         return KmuLunaSettings.readChoice(
@@ -273,7 +268,7 @@ public final class KmuOwnerMapStyleSettings {
             DEFAULT_INDEPENDENT_FILL_COLOUR);
     }
 
-    /** @return the fill opacity for independent-held systems, 0..1; 0.2 by default */
+    /** @return the fill opacity for independent-held systems, 0..1 */
     public static double getIndependentFillOpacity() {
         return KmuLunaSettings.readDouble(
             INDEPENDENT_FILL_OPACITY_FIELD,
@@ -281,8 +276,8 @@ public final class KmuOwnerMapStyleSettings {
     }
 
     /**
-     * @return the opacity an independent-held cluster's name draws at, 0..1 of its owner's colour;
-     *         1.0 by default. The per-frame map-zoom fade the renderer applies composes on top of
+     * @return the opacity an independent-held cluster's name draws at, 0..1 of its owner's colour.
+     *         The per-frame map-zoom fade the renderer applies composes on top of
      *         this
      */
     public static double getIndependentNameOpacity() {
@@ -294,7 +289,7 @@ public final class KmuOwnerMapStyleSettings {
     /**
      * @return whether a decivilised world counts as somebody living in its system, so the layer
      *         paints that system's cell, offers its owner in the bloc picker, bands it in the
-     *         presence ribbon and folds its size into the stats; on by default. Off moves only that
+     *         presence ribbon and folds its size into the stats. Off moves only that
      *         projection - the world is still found, still listed, and still named in the box over
      *         its cell - and the system falls to the uninhabited kind. It keeps a cell, but that
      *         kind carries no fill and its outline is the sidebar's uninhabited-systems checkbox
@@ -307,8 +302,8 @@ public final class KmuOwnerMapStyleSettings {
     }
 
     /**
-     * @return the outline opacity for decivilised systems, 0..1; 0.45 by default, 0 hiding the
-     *         outline, the neutral colour being the only shade a factionless cell has
+     * @return the outline opacity for decivilised systems, 0..1; 0 hides the outline, the neutral
+     *         colour being the only shade a factionless cell has
      */
     public static double getDecivilisedBorderOpacity() {
         return KmuLunaSettings.readDouble(
@@ -316,7 +311,7 @@ public final class KmuOwnerMapStyleSettings {
             DEFAULT_DECIVILISED_BORDER_OPACITY);
     }
 
-    /** @return the outline line width for decivilised systems, pixels; 3.0 by default */
+    /** @return the outline line width for decivilised systems, pixels */
     public static double getDecivilisedBorderWidth() {
         return KmuLunaSettings.readDouble(
             DECIVILISED_BORDER_WIDTH_FIELD,
@@ -324,8 +319,8 @@ public final class KmuOwnerMapStyleSettings {
     }
 
     /**
-     * @return the neutral-colour fill opacity for decivilised systems, 0..1; 0.15 by default, 0
-     *         leaving them unfilled so only the outline draws
+     * @return the neutral-colour fill opacity for decivilised systems, 0..1; 0 leaves them
+     *         unfilled so only the outline draws
      */
     public static double getDecivilisedFillOpacity() {
         return KmuLunaSettings.readDouble(
@@ -333,14 +328,14 @@ public final class KmuOwnerMapStyleSettings {
             DEFAULT_DECIVILISED_FILL_OPACITY);
     }
 
-    /** @return the outline opacity for uninhabited systems, 0..1; 0.15 by default */
+    /** @return the outline opacity for uninhabited systems, 0..1 */
     public static double getUninhabitedBorderOpacity() {
         return KmuLunaSettings.readDouble(
             UNINHABITED_BORDER_OPACITY_FIELD,
             DEFAULT_UNINHABITED_BORDER_OPACITY);
     }
 
-    /** @return the outline line width for uninhabited systems, pixels; 3.0 by default */
+    /** @return the outline line width for uninhabited systems, pixels */
     public static double getUninhabitedBorderWidth() {
         return KmuLunaSettings.readDouble(
             UNINHABITED_BORDER_WIDTH_FIELD,
@@ -349,7 +344,7 @@ public final class KmuOwnerMapStyleSettings {
 
     /**
      * @return the fraction of its normal opacity a non-allied bloc's borders, fills, and name draw
-     *         at while the alliances view mutes it, 0..1; 0.5 by default. Unread while the sidebar
+     *         at while the alliances view mutes it, 0..1. Unread while the sidebar
      *         Mute toggle is off
      */
     public static double getOwnerMapMutedOpacityModifier() {
@@ -360,7 +355,7 @@ public final class KmuOwnerMapStyleSettings {
 
     /**
      * @return how far a desaturated bloc's uniform Independent-based grey is sunk toward black, as
-     *         the fraction of brightness removed, 0..1; 0.5 by default. The render pipeline
+     *         the fraction of brightness removed, 0..1. The render pipeline
      *         resolves the palette once per pass, the view flagging only whether a bloc
      *         desaturates and never how dark
      */
@@ -371,8 +366,8 @@ public final class KmuOwnerMapStyleSettings {
     }
 
     /**
-     * @return how far a factionless cell the spotlight spares is washed toward white, 0..1; 1.0 by
-     *         default. Applied to RGB alone, so a grey stays the same grey and the cell cannot
+     * @return how far a factionless cell the spotlight spares is washed toward white, 0..1.
+     *         Applied to RGB alone, so a grey stays the same grey and the cell cannot
      *         drift into reading as a faction colour
      */
     public static double getOwnerMapPresenceLightening() {

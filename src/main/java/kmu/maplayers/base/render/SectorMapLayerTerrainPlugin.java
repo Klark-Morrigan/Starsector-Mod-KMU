@@ -60,6 +60,10 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     private static final EnumSet<CampaignEngineLayers> ACTIVE_LAYERS =
         EnumSet.noneOf(CampaignEngineLayers.class);
 
+    // Whether a vanilla map host is on screen. One binding shared by the render constraint and the
+    // warning below, so the two cannot disagree about what counts as a map being up.
+    private static final MapPresence MAP_PRESENCE = new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter());
+
     // Reports a pass that drew these layers without a map being on screen. Shared by all three
     // surfaces rather than one each: they would report a single foreign pass three times over, and
     // the stack in the line is what tells one caller from another anyway.
@@ -67,10 +71,6 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     // Static, and wired here rather than injected, because the engine constructs these plugins from
     // the save and there is no seam to hand one in through. Static also keeps it out of the save,
     // which an instance field on a serialised plugin would not.
-    // Whether a vanilla map host is on screen. One binding shared by the render constraint and the
-    // warning below, so the two cannot disagree about what counts as a map being up.
-    private static final MapPresence MAP_PRESENCE = new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter());
-
     private static final ForeignMapPassWarning FOREIGN_PASS_WARNING = new ForeignMapPassWarning(
         MAP_PRESENCE::isAnyMapShowing,
         EmbeddedMapHostTrace::describeEmbeddedMapHosts,

@@ -494,7 +494,10 @@ final class SidebarStylesTests {
         void lettersTheButtonsInTheFaceTheRunningSectorSettledAgainstKmusStringsAtItsOwnSize() {
             // The buttons carry layer names too, so they are held to KMU's strings alone, and drawn at the
             // settled atlas's size rather than the 10 the face asked for states.
-            lookScope.answerSettledFace(StarsectorFont.VANILLA_VICTOR_10, TAB_TEXTS, StarsectorFont.VANILLA_INSIGNIA_15);
+            lookScope.answerSettledFace(
+                StarsectorFont.VANILLA_VICTOR_10,
+                TAB_TEXTS,
+                StarsectorFont.VANILLA_INSIGNIA_15);
 
             assertThat(SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT).face())
                 .isEqualTo(new TextFace(StarsectorFont.VANILLA_INSIGNIA_15, 15d));

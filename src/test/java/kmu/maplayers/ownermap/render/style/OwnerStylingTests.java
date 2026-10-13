@@ -124,7 +124,7 @@ final class OwnerStylingTests {
         @Test
         void holdsTheFillAtTheCategoryTheLayerDeclaresFullStrength() {
             // The weight a desaturated owner holds is whichever category its layer names as full
-            // strength, not a category the tier knows by name: declared the other way round, a
+            // strength, not a category the tier knows by name: declared the other way round, an
             // owned-category owner takes the independent weight.
             var categoriesMock = mock(OwnerCategories.class);
             when(categoriesMock.resolveFullStrengthCategory())

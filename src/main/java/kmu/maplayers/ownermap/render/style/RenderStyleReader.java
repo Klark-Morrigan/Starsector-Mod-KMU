@@ -57,14 +57,13 @@ public final class RenderStyleReader {
             categories.readCategoryStyles(contentInputs));
     }
 
-    // Folds the sector-wide knobs into the global tier: the hatch over contested cells,
-    // the cluster-border smoothing, the two highlight tiers, and the two strengths a spotlight separates
-    // its subject from its backdrop by - how far a receded owner's recede grey darkens,
-    // and how far a spared cell's neutral lifts. The hatch angle is authored in degrees and
-    // converted to
-    // radians at the reader so the hatch math downstream stays in radians. The player's hatch
-    // width and smoothing are properties of the stroke rather than of the pattern, so both are
-    // read into the stroke the renderer dispatches on rather than sitting loose beside the layout.
+    // Folds the sector-wide knobs into the global tier: the hatch over contested cells, the
+    // cluster-border smoothing, the two highlight tiers, and the two strengths a spotlight separates
+    // its subject from its backdrop by - how far a receded owner's recede grey darkens, and how far
+    // a spared cell's neutral lifts. The hatch angle is authored in degrees and the settings getter
+    // converts it, so the hatch math downstream stays in radians. The player's hatch width and
+    // smoothing are properties of the stroke rather than of the pattern, so both are read into the
+    // stroke the renderer dispatches on rather than sitting loose beside the layout.
     public static GlobalStyle readGlobalStyle() {
 
         return new GlobalStyle(

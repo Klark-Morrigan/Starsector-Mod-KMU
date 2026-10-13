@@ -13,7 +13,7 @@ import java.util.Objects;
  * to name a different colony than the line does.
  *
  * @param kind              what sort of place the colony is; null states nothing, an unstated kind
- *                          being no grounds for a finding
+ *                          being no basis for a finding
  * @param leadingFinding    a finding the painting layer states ahead of every other, already
  *                          worded for the reader - what its own mechanic makes of this colony;
  *                          null states none

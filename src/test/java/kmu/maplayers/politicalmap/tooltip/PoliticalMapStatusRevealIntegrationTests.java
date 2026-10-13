@@ -50,8 +50,8 @@ import static org.mockito.Mockito.when;
  * <p>Each box resolves its status through a different route - the faction layer off the pass it
  * ranks under, the claims layer off a direct settings read - and each suite verifies only its own
  * route. That leaves the two free to drift apart onto different toggles while both suites stay
- * green, which is exactly the state this pair was in before: one layer calling a system
- * unpopulated while the other, a keystroke away, said nothing about it.
+ * green: one layer calling a system unpopulated while the other, a keystroke away, says nothing
+ * about it.
  *
  * <p>Integration rather than unit, because the agreement is a property of the whole chain - the
  * dev toggle, the pass built from it, the shared status row, and the discovery filter underneath -
@@ -136,11 +136,14 @@ final class PoliticalMapStatusRevealIntegrationTests {
 
             var sector = buildSectorHolding(buildConcealedBase(true));
 
-            // The leak that started this: the claims layer counted the unknown base and drew no
-            // status, so its absence told the player a base was hiding there.
+            // The leak this guards: a layer counting the unknown base draws no status, so its
+            // absence tells the player a base is hiding there.
             assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isEqualTo("Unpopulated");
-            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
+            assertThat(readStatus(dominationTooltip
+                    .composeBody(sector, systemMock, PATROL_DETAILS)
+                    .blocks()
+                    .readSections()))
                 .isEqualTo("Unpopulated");
         }
 
@@ -153,7 +156,10 @@ final class PoliticalMapStatusRevealIntegrationTests {
             // this system empty. Both layers must agree it is not.
             assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isNull();
-            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
+            assertThat(readStatus(dominationTooltip
+                    .composeBody(sector, systemMock, PATROL_DETAILS)
+                    .blocks()
+                    .readSections()))
                 .isNull();
         }
 
@@ -168,7 +174,10 @@ final class PoliticalMapStatusRevealIntegrationTests {
             // layer reads it directly, and the same unknown base has to satisfy both.
             assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isNull();
-            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
+            assertThat(readStatus(dominationTooltip
+                    .composeBody(sector, systemMock, PATROL_DETAILS)
+                    .blocks()
+                    .readSections()))
                 .isNull();
         }
     }

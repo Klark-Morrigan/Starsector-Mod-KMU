@@ -27,8 +27,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the default holding provider's one job: delegating to the same two resolvers the
- * render pass used to call inline, branching on whether a bloc is spotlighted. Off filter it
+ * Pins the held-dominance holding provider's one job: delegating to one of two resolvers,
+ * branching on whether a bloc is spotlighted. Off filter it
  * reproduces {@link SectorPolitics#resolveDominantHolderBySystemKey} with nothing contested;
  * under a filter it hands on {@link FilteredPolitics#resolveFilteredHolder}'s resolution whole.
  * The resolvers themselves read the live economy, so they are stubbed here and covered end to end

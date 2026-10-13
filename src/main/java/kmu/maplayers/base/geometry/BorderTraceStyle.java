@@ -11,9 +11,9 @@ package kmu.maplayers.base.geometry;
  * signature could catch, three being doubles that compile in any order and the fourth deciding
  * whether the first of them applies at all.
  *
- * <p>The rule travels with the depth for that reason above every other. Handed in separately it
- * became possible to cut the cells by one rule and outline them by another, which is how a
- * cluster's fill and its border came to stop in two different places.
+ * <p>The rule travels with the depth for that reason above every other. Handed in apart, the cells
+ * could be cut by one rule and outlined by another, and a cluster's fill and its border would
+ * stop in two different places.
  *
  * @param insetRule           which edges the channel is cut into; the same rule
  *                            {@link CellShaper} is given, so a cluster's outline and its cells'

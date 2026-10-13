@@ -73,7 +73,7 @@ public final class KmuMapHoverSettings {
     }
 
     /**
-     * @return whether the map answers the cursor at all; on by default. The master over both kinds
+     * @return whether the map answers the cursor at all. The master over both kinds
      *         of hover feedback on every layer, so with it off no cursor read runs and nothing
      *         hover-driven is drawn
      */
@@ -83,7 +83,7 @@ public final class KmuMapHoverSettings {
 
     /**
      * @return whether hover effects - the halo over the hovered cluster and the wash on its cell -
-     *         are on across every map layer; on by default. Under the hovering master, and over
+     *         are on across every map layer. Under the hovering master, and over
      *         each layer's own effects switch
      */
     public static boolean areMapHoverEffectsEnabled() {
@@ -93,7 +93,7 @@ public final class KmuMapHoverSettings {
     }
 
     /**
-     * @return whether the hover tooltip is on across every map layer; on by default. Under the
+     * @return whether the hover tooltip is on across every map layer. Under the
      *         hovering master, and over each layer's own tooltip switch. Read live each frame, so
      *         toggling it needs no rebuild
      */
@@ -105,7 +105,7 @@ public final class KmuMapHoverSettings {
 
     /**
      * @return whether the layers may only draw while one of the two vanilla map hosts is showing,
-     *         so a map built by another mod does not paint them; off by default
+     *         so a map built by another mod does not paint them
      */
     public static boolean areMapLayersOnlyOnTheirHosts() {
         return KmuLunaSettings.readBoolean(
@@ -115,7 +115,7 @@ public final class KmuMapHoverSettings {
 
     /**
      * @return whether the layers may answer the cursor on every pass there is, foreign map surfaces
-     *         on any screen included; off by default, which permits the vanilla hosts alone
+     *         on any screen included. Off permits the vanilla hosts alone
      */
     public static boolean isMapLayerMouseoverGlobal() {
         return KmuLunaSettings.readBoolean(
@@ -126,8 +126,8 @@ public final class KmuMapHoverSettings {
     /**
      * @return whether the layers may additionally answer the cursor on the frames where the player
      *         is looking at the campaign world itself - no core screen open and no dialog up, which
-     *         is where a mod's docked map surface is the only map on screen; on by default, being
-     *         inert on an install that has no such surface to draw a pass there
+     *         is where a mod's docked map surface is the only map on screen. Inert on an install
+     *         that has no such surface to draw a pass there
      */
     public static boolean isMapLayerMouseoverEnabledInGameSpace() {
         return KmuLunaSettings.readBoolean(
@@ -137,8 +137,8 @@ public final class KmuMapHoverSettings {
 
     /**
      * @return whether the layers may adapt to the minimap Random Assortment of Things draws in the
-     *         campaign radar's place - answering the cursor on it rather than standing clear of it;
-     *         on by default. The player's half of the mode only: whether there is a minimap to
+     *         campaign radar's place - answering the cursor on it rather than standing clear of it.
+     *         The player's half of the mode only: whether there is a minimap to
      *         adapt to is the other half, and both are ANDed before anything behaves differently
      */
     public static boolean isRandomAssortmentOfThingsCompatibilityModeEnabled() {

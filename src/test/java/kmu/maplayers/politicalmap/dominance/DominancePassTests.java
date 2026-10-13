@@ -111,7 +111,7 @@ class DominancePassTests {
 
         @Test
         void leavesOutAColonyWhoseOwnerCarriesNoId() {
-            // A colony a mod hung on a faction with no id. The fold cannot name a bloc for it, so it
+            // A colony a mod hung on a faction with no ID. The fold cannot name a bloc for it, so it
             // is left out - where before it was folded under a nameless key and the grouping faulted
             // on that key, taking the whole resolve down with it.
             var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);

@@ -31,7 +31,7 @@ public final class SectorScenarioFixtures {
 
     /**
      * The faction holding the concealed base in {@link #buildUnvisitedSectorHoldingGatedPair}, so
-     * a case can read back whether that holder surfaced without restating the id.
+     * a case can read back whether that holder surfaced without restating the ID.
      */
     public static final String CONCEALED_HOLDER_ID = "pirates";
 

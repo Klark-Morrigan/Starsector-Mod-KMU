@@ -140,8 +140,8 @@ final class PoliticalMapRebuildStalenessIntegrationTests {
 
         @Test
         void rebuildsNothingWhenTheRefreshCountersBumpWithEveryPickUnmoved() {
-            // The counters a pick's flip raises still stand, and the sidebar and the bloc cache still
-            // repaint on them - they simply no longer decide whether the map is stale. Folded in, a
+            // The counters a pick's flip raises are what the sidebar and the bloc cache repaint on;
+            // they do not decide whether the map is stale. Folded in, a
             // click that put a pick back where it was would cost a full rebuild, and so would every
             // click made on the other screen's panel.
             var standingMap = cache.getClusters();
@@ -158,7 +158,7 @@ final class PoliticalMapRebuildStalenessIntegrationTests {
 
         @Test
         void namesTheSidebarFlipsMadeSinceTheLastRebuildOnTheRowThatMeasuresIt() {
-            // The other half of the case above. Those counters decide nothing now, so the row the
+            // The other half of the case above. Those counters decide nothing, so the row the
             // rebuild is measured on is the only place a reader meets them at all - which is what
             // separates a rebuild a player asked for from one a settings change or a view switch
             // caused, and the counters are the only record of the first.

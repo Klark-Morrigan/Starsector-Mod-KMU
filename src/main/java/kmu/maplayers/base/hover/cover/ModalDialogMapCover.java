@@ -30,8 +30,8 @@ import kmu.maplayers.base.compatibility.MapLayerGameReach;
 public final class ModalDialogMapCover extends FlagMapCover {
 
     /**
-     * Reads the live core UI - a walk of its own children, which is what puts this above the settled
-     * flags and below the covers that resolve a layout or walk down into a tab.
+     * Reads the live core UI - a walk of its own children. Where that ranks it is
+     * {@link MapCoverReader}'s to state.
      */
     public ModalDialogMapCover() {
         super(() -> CoreUiDialogView.isModalDialogShowing(MapLayerGameReach.SCREEN_COVERS.getReporter()));

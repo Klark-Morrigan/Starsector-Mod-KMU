@@ -91,7 +91,7 @@ public final class SectorMapMachinery {
     /**
      * @param sector the sector this machinery is being installed on; null makes a detached
      *               machinery, which is what a caller with no sector - the switch flipped with no
-     *               game loaded, or a suite driving a seam directly - is answered with
+     *               game loaded - is answered with
      */
     public SectorMapMachinery(SectorAPI sector) {
         this.sector = sector;

@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins {@link CoreTerritoryHeading}: a system under no decree yields nothing, a decreed one shows its
  * faction's crest, name, and the core status marked out in the highlight colour as one centred line, a
  * box whose body states the decree yields nothing either, and a faction the sector cannot resolve still
- * shows as its bare id.
+ * shows as its bare ID.
  *
  * <p>That the line is centred rather than laid in the box's columns is the contract worth fixing, not a
  * detail of how it happens to look: a decree settles the whole system, so it is read off the title

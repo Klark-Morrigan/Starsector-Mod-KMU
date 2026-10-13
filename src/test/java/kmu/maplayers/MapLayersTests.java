@@ -190,8 +190,8 @@ final class MapLayersTests {
 
         @Test
         void leavesTheEmptyViewLeadingTheStripAndThePoliticalMapAsThePick() {
-            // The row and the pick used to be one call's two arguments and are now spread over three
-            // files - two registrations here, and each layer's own answer to whether it offers itself.
+            // The row and the pick are spread over three files - two registrations here, and each
+            // layer's own answer to whether it offers itself.
             // So nothing but this fails if the calls are reordered or either answer is flipped, and
             // both are facts a player meets on the first sector map they open.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {

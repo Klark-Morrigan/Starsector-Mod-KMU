@@ -251,7 +251,7 @@ class SectorMapMachineryIndexTests {
         void leavesNoneOfADiscardedSectorsHoverToTheMachineryAfterIt() {
             // The whole of what a per-load hover park used to be for. The hover names its system by
             // bare ID, so a save reloaded in the same session would otherwise open with a cell lit -
-            // and a box naming it - for whatever the loaded sector happens to hold that id.
+            // and a box naming it - for whatever the loaded sector happens to hold that ID.
             var sectorMock = mock(SectorAPI.class);
 
             SectorMapMachineryIndex

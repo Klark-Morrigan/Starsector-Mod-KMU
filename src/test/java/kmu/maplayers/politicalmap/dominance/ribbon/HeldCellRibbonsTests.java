@@ -35,7 +35,7 @@ import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the order a held cell's band comes out in, which is the whole of what the held side still
+ * Pins the order a held cell's band comes out in, which is the whole of what the held side
  * decides: how many colonies each bloc draws is one shared rule's answer, stated in its own suite.
  *
  * <p>The band has to open on the bloc the cell is painted for whatever gave that bloc the system,
@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>The cases are posed on the ways that can go wrong: a painter that does not lead on weight,
  * which the dominance rule's tie-breaks below the weights genuinely produce; two rivals level on
  * weight, where only the ID separates them; and a bloc the weights never reached at all, which the
- * widened count now puts in a band that has no rank for it. Each poses its footprints in an order
+ * colony count puts in a band that has no rank for it. Each poses its footprints in an order
  * the assertion does not expect back, since an ordering rule is invisible against inputs already in
  * the order it would produce.
  *
@@ -69,7 +69,7 @@ final class HeldCellRibbonsTests {
     private static final int MIDDLE_WEIGHT = 5000;
     private static final int TRAILING_WEIGHT = 2000;
 
-    // How many colonies each bloc's footprint banked. The band no longer reads this - it counts the
+    // How many colonies each bloc's footprint banked. The band does not read this - it counts the
     // system - so it is held at one throughout, the footprints being consulted for their order
     // alone.
     private static final int ONE_COLONY = 1;

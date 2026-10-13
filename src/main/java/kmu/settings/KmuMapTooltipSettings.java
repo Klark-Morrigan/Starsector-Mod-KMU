@@ -62,7 +62,7 @@ public final class KmuMapTooltipSettings {
 
     /**
      * @return how much smaller each step of indent inside a hover tooltip draws than the step above
-     *         it, as a multiple of its own size; 0.75 by default
+     *         it, as a multiple of its own size
      */
     public static float getMapTooltipNestingLevelShrink() {
         return KmuLunaSettings.readFloat(
@@ -72,7 +72,7 @@ public final class KmuMapTooltipSettings {
 
     /**
      * @return the room left under a line of a hover tooltip before the next one, in UI units,
-     *         wherever neither depth below applies; 4 by default
+     *         wherever neither depth below applies
      */
     public static float getMapTooltipLineGap() {
         return KmuLunaSettings.readFloat(
@@ -82,7 +82,7 @@ public final class KmuMapTooltipSettings {
 
     /**
      * @return the room left under a line two steps in from a hover box's own heading, in UI units -
-     *         a run long enough to be worth tightening on its own; 0.5 by default
+     *         a run long enough to be worth tightening on its own
      */
     public static float getMapTooltipTier2LineGap() {
         return KmuLunaSettings.readFloat(
@@ -92,7 +92,7 @@ public final class KmuMapTooltipSettings {
 
     /**
      * @return the room left under a line three steps in, in UI units - the deepest run a hover box
-     *         lists and so the one tightened hardest; 0 by default
+     *         lists and so the one tightened hardest
      */
     public static float getMapTooltipTier3LineGap() {
         return KmuLunaSettings.readFloat(
@@ -102,7 +102,7 @@ public final class KmuMapTooltipSettings {
 
     /**
      * @return how thick the line a hover box runs from a label across to its value draws, in UI
-     *         units; 1 by default, and 0 to draw no such lines at all
+     *         units; 0 draws no such lines at all
      */
     public static float getMapTooltipLeaderThickness() {
         return KmuLunaSettings.readFloat(
@@ -111,8 +111,8 @@ public final class KmuMapTooltipSettings {
     }
 
     /**
-     * @return how strongly that line draws, as a fraction of the box's own opacity; 0.65 by
-     *         default, and 0 to draw no such lines at all
+     * @return how strongly that line draws, as a fraction of the box's own opacity; 0 draws
+     *         no such lines at all
      */
     public static float getMapTooltipLeaderOpacity() {
         return KmuLunaSettings.readFloat(
@@ -122,7 +122,7 @@ public final class KmuMapTooltipSettings {
 
     /**
      * @return how much of a line's colour is taken off the blocks a withheld name draws as, 0..1;
-     *         0.4 by default, and 0 to fill them in the line's own colour
+     *         0 fills them in the line's own colour
      */
     public static float getMapTooltipRedactionDarkeningStrength() {
         return KmuLunaSettings.readFloat(

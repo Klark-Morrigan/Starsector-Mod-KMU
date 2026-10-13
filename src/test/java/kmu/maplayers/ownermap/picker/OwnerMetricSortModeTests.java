@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * modes over the same chain, differing only in that metric, is what shows the three follow the mode
  * rather than the vocabulary.
  *
- * <p>How a ranking is then laid out - the chain behind the primary key, the flip, the name and by-id
+ * <p>How a ranking is then laid out - the chain behind the primary key, the flip, the name and by-ID
  * tail - is {@link OwnerSortModeComposer}'s and is pinned in its own suite. The two real vocabularies
  * keep their own cases, which is what shows they are declared through this.
  *

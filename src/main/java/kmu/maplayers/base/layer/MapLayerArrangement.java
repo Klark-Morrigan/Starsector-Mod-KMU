@@ -18,8 +18,9 @@ import java.util.List;
  * @param orderedLayerIds the IDs the player has placed, left to right; the layers they have never
  *                        arranged are simply absent rather than listed at the end
  * @param hiddenLayerIds  the IDs whose tabs the player has taken off the bar. Hiding is not
- *                        switching off: the layer stays registered and stays resolvable, so a save
- *                        holding a hidden layer as its pick still paints it
+ *                        unregistering: the layer stays registered and its ID goes on resolving. It
+ *                        does stand down on every sector, so a screen whose pick is a hidden layer
+ *                        moves onto the leading tab its bar still offers
  */
 public record MapLayerArrangement(
     List<String> orderedLayerIds,

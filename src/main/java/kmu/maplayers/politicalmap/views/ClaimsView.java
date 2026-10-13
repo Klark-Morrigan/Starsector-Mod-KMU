@@ -43,9 +43,11 @@ import java.util.Optional;
  * while claiming nothing is listed receded at a count of zero rather than dropped, so the list
  * accounts for every faction the player can see instead of appearing to have forgotten one.
  *
- * <p>The market-inferred claims that make up most of what is painted change with the economy, which
- * the shared economy revision already repaints on. Explicit claim-flag flips have no live
- * fingerprint, so a flag-only claim change waits for the next economy rebuild.
+ * <p>The market-inferred claims that make up most of what is painted move with the colonies behind
+ * them, and a colony change already marks its system stale - through the refresh listeners, or the
+ * staleness poll's holder diff where no event fires. Explicit claim-flag flips have no live
+ * fingerprint, so a flag-only claim change waits until something else marks that system stale or
+ * the map is rebuilt.
  */
 public final class ClaimsView
         implements PoliticalHolderView {

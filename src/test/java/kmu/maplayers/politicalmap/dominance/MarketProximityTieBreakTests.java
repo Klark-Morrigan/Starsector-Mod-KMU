@@ -129,7 +129,7 @@ class MarketProximityTieBreakTests {
 
                 // The same two physical markets - hegemony's nearer the centre than
                 // blackrock's - decide the tie, so the hegemony side wins whether hegemony
-                // stands alone or folds into an alliance. No id-ordering flip between views.
+                // stands alone or folds into an alliance. No ID-ordering flip between views.
                 var colonies = listColonies(
                     buildListedColonyOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
                     buildListedColonyOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));

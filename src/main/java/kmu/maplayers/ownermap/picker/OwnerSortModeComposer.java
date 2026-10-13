@@ -18,9 +18,9 @@ import java.util.function.ToIntFunction;
  * does not differ, and is stated here instead of once per vocabulary.
  *
  * <p>The shape assembled is fixed: the mode's own key in the requested direction, then the canonical
- * tie-break chain, then the name, then the owner id. Sharing the tail is the point - two owners a
+ * tie-break chain, then the name, then the owner ID. Sharing the tail is the point - two owners a
  * player cannot tell apart break the same way under every mode of every vocabulary, and no mode can
- * be written that forgets the by-id key which keeps a fully-level pair from reshuffling between
+ * be written that forgets the by-ID key which keeps a fully-level pair from reshuffling between
  * frames. The tail is reachable on its own ({@link #appendSharedTail}) for a mode whose primary key
  * is not one of the metrics, so that promise holds for those too.
  *
@@ -61,13 +61,13 @@ public final class OwnerSortModeComposer {
         }
         // The tail follows for a by-name mode too, on the same reasoning the chain does: a pair that
         // reached it is level on the primary key, so a name mode's leading key answers identically
-        // when the tail reads it again and the by-id key decides.
+        // when the tail reads it again and the by-ID key decides.
         return appendSharedTail(order);
     }
 
     /**
      * The tail every owner-map ranking ends in, appended to an order the caller assembled itself:
-     * the owner's name, then its id.
+     * the owner's name, then its ID.
      *
      * <p>The entry point exists for a mode whose primary key is not a number off the metrics, which
      * {@link #assembleComparator} has no way to accept. Such a mode still has to break a level pair
@@ -75,7 +75,7 @@ public final class OwnerSortModeComposer {
      * every mode of every vocabulary is the whole point of the tail being shared - and rolling it by
      * hand at each such mode is exactly the duplication this class exists to close.
      *
-     * <p>The by-id key behind the name is what gives a total order, so two owners level on every
+     * <p>The by-ID key behind the name is what gives a total order, so two owners level on every
      * visible key keep a fixed position rather than reshuffling as the per-frame sort re-runs.
      *
      * @param <S>   the vocabulary's metrics record

@@ -9,20 +9,18 @@ import org.lwjgl.input.Keyboard;
  *
  * <p>Apart from the panel plugin that acts on it because the rule is the whole of the dialog's
  * modality and the plugin is unreachable. A plugin exists only inside a panel the game built, over a
- * core UI that exists only while the game is running - so a rule left inside it could be checked
- * only by opening the dialog and clicking, which is how the claim came to be the one part of the
- * dialog nothing had verified.
+ * core UI that exists only while the game is running. Held here, the rule is a function of one event
+ * that needs neither.
  *
  * <p><b>A raised dialog claims every event it is handed that nothing has already taken.</b> The
  * engine hands a custom panel's events to its children first and to its plugin afterwards, so
  * anything the dialog's own controls acted on arrives here already consumed - which makes the
  * consumed skip below the whole of what protects them, and leaves nothing to except by position.
  *
- * <p>The earlier rule excepted the dialog's own box by measuring it, on the reading that the
- * dispatch order was the game's business. It is not the game's business, and the exception was
- * being read by the widget underneath: the map answers a pointer it hears, and inside the box it
- * heard one, so a star under the dim raised its own tooltip while the same star out on the open map
- * answered nothing.
+ * <p>The dialog's own box is not excepted by measuring it, because the widget underneath would read
+ * that exception too: the map answers a pointer it hears, and inside the box it would hear one. A star
+ * under the dim would then raise its own tooltip while the same star out on the open map answers
+ * nothing.
  *
  * <p><b>A dismissed dialog claims nothing at all</b>, though its box is on screen for the length of
  * its fade. The press that dismisses it is the moment the screen is the player's again, and a claim

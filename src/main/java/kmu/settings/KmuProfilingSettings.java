@@ -40,7 +40,7 @@ public final class KmuProfilingSettings {
     /**
      * @return how long one beat of a map frame - a preparation, a paint band, a cursor read, a
      *         tooltip - may take before a running capture reports it as over budget, in
-     *         milliseconds; 4ms by default, and 0 for no bound at all. Asked as each beat ends
+     *         milliseconds; 0 for no bound at all. Asked as each beat ends
      *         while a capture is running, so moving it holds the next frame to what it now says
      */
     public static double getMapFrameBeatBudgetMillis() {
@@ -50,7 +50,7 @@ public final class KmuProfilingSettings {
     }
 
     /**
-     * @return how much detail a capture keeps: nothing at all (the default), the beats and passes a
+     * @return how much detail a capture keeps: nothing at all, the beats and passes a
      *         frame is made of, or those plus what one turn of a per-item loop costs. Read as the
      *         setting changes rather than per measurement, the level being a property of the
      *         profiler that is bound

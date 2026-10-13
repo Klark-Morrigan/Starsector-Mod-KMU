@@ -103,20 +103,20 @@ final class PoliticalMapLayerTests {
     // The stored value meaning no view paints - the tab showing with the map dark.
     private static final String VIEW_OFF_SENTINEL = "";
 
-    // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
-    // order without depending on the real shared controls or selector contents. Their tone is
-    // arbitrary - composition order is what is under test, not what colour a control draws in.
     // The ID the one bloc-offering view registers under, and the scope the picker must therefore be
     // built for - shared between the registration helper and the assertion so the two cannot drift.
     private static final String PICKER_VIEW_ID = "picker-view";
 
+    // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
+    // order without depending on the real shared controls or selector contents. Their tone is
+    // arbitrary - composition order is what is under test, not what colour a control draws in.
     private static final Color MARKER_COLOUR = Color.WHITE;
     private static final ControlSpec SHARED_MARKER = buildMarker("shared");
     private static final ControlSpec SELECTOR_MARKER = buildMarker("selector");
     private static final ControlSpec VIEW_MARKER = buildMarker("view");
     private static final ControlSpec PICKER_MARKER = buildMarker("picker");
 
-    // Two sectors' installed machinery, since what this tab now answers turns on which of them it
+    // Two sectors' installed machinery, since what this tab answers turns on which of them it
     // is asked about. The body cases below use neither: a tab's controls are the same wherever it
     // is drawn.
     private final SectorMapMachinery machinery = new SectorMapMachinery(null);
@@ -126,7 +126,7 @@ final class PoliticalMapLayerTests {
     private final OwnerPaintedView viewWithoutControlsMock = mock(OwnerPaintedView.class);
 
     // The layer under test, over whichever roster a case registers. Built per case rather than
-    // shared, since the roster is the layer's own - which is what this step made it.
+    // shared, since the roster is the layer's own.
     private PoliticalMapLayer layer =
         new PoliticalMapLayer(List.of(viewWithoutControlsMock), viewWithoutControlsMock);
 
@@ -599,7 +599,7 @@ final class PoliticalMapLayerTests {
 
         @Test
         void readsThePoliticalMapsOwnRebindingField() {
-            // Which row the rebind lands in is this tab's own fact now, so a wrong ID here silently
+            // Which row the rebind lands in is this tab's own fact, so a wrong ID here silently
             // ignores the player's rebind while every framework test stays green.
             try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
 
@@ -815,7 +815,7 @@ final class PoliticalMapLayerTests {
 
     // Registers the one view as both the sole registered view and the default, with a host tab the
     // layer registry treats as active, so a sector-less read resolves this view as selected. Also
-    // stubs the view's identity and empty picker, since the body build now reads its picker options
+    // stubs the view's identity and empty picker, since the body build reads its picker options
     // through the memo (keyed on the view ID and its content revision) rather than off the view
     // directly - an empty picker contributes no controls, keeping these composition assertions about
     // where the picker sits, not what it holds.

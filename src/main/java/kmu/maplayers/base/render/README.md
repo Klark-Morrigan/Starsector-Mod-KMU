@@ -393,7 +393,7 @@ and a refresh hung off its own root would leave the preparation's inclusive tota
 
 Each beat also states what one call of it is allowed,
 which is what turns the capture from a table into findings.
-Two bounds today.
+Two bounds.
 A beat may take the milliseconds the `Frame beat budget` knob on `Map - Dev` states,
 asked for as the beat ends so a knob moved mid-session holds the next frame,
 and 0 there states no bound at all.
@@ -431,10 +431,9 @@ Each registers its section on `RebuildStepTerms.LOGGED_EVERY_CALL` (in `kmu.mapl
 so every call of it is a debug line carrying the duration the row was accumulated from,
 what the call counted,
 and what it named itself.
-That replaces the hand-written `took=` lines those steps used to print:
-one measurement,
+So a step carries one measurement,
 read in the log as a rebuild happens or in the report afterwards,
-rather than two that could disagree.
+rather than a hand-written log line beside the row that could disagree with it.
 The counts themselves are the three in `MapBuildCounters`,
 beside the library's own sector counters -
 few on purpose,
@@ -455,7 +454,7 @@ Those lines follow the profiler,
 which is the trade the single measurement is worth:
 with the level knob off,
 a rebuild says nothing at all,
-where the hand-written lines were written whenever the log was at debug.
+even with the log at debug.
 Turning the knob on is what a reader after them does,
 and it is the same switch that gives them the report.
 
@@ -710,17 +709,14 @@ and `SectorMapLayerStarscapeTerrain`'s -
 the Starscape surfaces use a mod-owned entity where the base one uses a vanilla one.
 
 XStream stores the concrete class name.
-A save naming a class that no longer exists does not fail gracefully and does not lose the overlay -
+A save naming a class that does not exist does not fail gracefully and does not lose the overlay -
 it fails the whole read with `CannotResolveClassException`,
 and the player cannot load that game at all.
 Renaming,
 moving or deleting any of the four is therefore a save-destroying change to every campaign already running with this mod.
 
-Nothing currently bridges an old name to a new one.
-Four aliases used to,
-covering this package's own rename history,
-and they were dropped once the mod was young enough that no save worth keeping predated them.
-So the rule for the next rename is:
+Nothing bridges an old name to a new one,
+so the rule for a rename is:
 
 - **Before shipping a rename**,
   add a `configureXStream` override on the mod plugin that calls `x.alias("<the old fully-qualified name>", TheClass.class)`.

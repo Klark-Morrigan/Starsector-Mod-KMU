@@ -28,7 +28,7 @@ import static org.mockito.Mockito.verify;
  * standing at all, and what one sweep of it costs.
  *
  * <p>Only the substrate is installed here - no layer, no layer's poll, nothing that draws - which
- * is the arrangement the write was moved for: the register is shared by every map family, so its
+ * is the arrangement the write sits in the substrate for: the register is shared by every map family, so its
  * gaps must not be decided by which map the player last chose to look at. A unit cannot make that
  * claim, having no machinery to leave a layer out of; and neither can it make the cost one,
  * since how many times a system was walked is a fact about the composition rather than about any
@@ -59,7 +59,7 @@ final class SubstrateObservationSweepIntegrationTests {
 
         @Test
         void recordsWhatASystemsInhabitantsSeeWithNoLayerStanding() {
-            // The step's own claim, read through the register because that is what says the write
+            // The suite's own claim, read through the register because that is what says the write
             // ran rather than merely being reachable. The derelict is on the map on its
             // neighbours' account alone, and the record is what keeps it there once they are gone.
             var sector = buildSettledSectorWithADerelict();
@@ -75,9 +75,9 @@ final class SubstrateObservationSweepIntegrationTests {
 
         @Test
         void selectsEachSystemsColoniesOnceForTheWholeSweep() {
-            // What the second reading costs, now that this sweep opens one of its own rather than
-            // riding the political map's pass. One index per place instead would read every colony
-            // in the sector once per system in it, on the campaign thread, every few seconds.
+            // What the sweep's own reading costs, opened here rather than shared with a layer's pass.
+            // One index per place instead would read every colony in the sector once per system in
+            // it, on the campaign thread, every few seconds.
             var sweep = captureUnscopedCountsWhile(
                 () -> runSweepsOver(buildSettledSectorWithADerelict(), ONE_SWEEP));
 

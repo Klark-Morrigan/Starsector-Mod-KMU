@@ -16,13 +16,13 @@ import java.util.List;
  *
  * <p>One answer for every layer rather than one per layer, because nothing about a cover is a
  * layer's own: a console, a panel and the map's chrome sit over whatever is painted underneath
- * them. A layer holding its own set would be a layer that could be given a cover its neighbour was
- * not, which is how the console came to hide the sidebar while the map went on lighting cells
- * behind it.
+ * them. A layer holding its own set could be given a cover its neighbour was not - a console hiding
+ * the sidebar while the map went on lighting cells behind it.
  *
  * <p>The covers are held as a list in ascending cost and asked in that order, stopping at the first
- * that answers: the composition is what states the order, so a cover states only its own reading
- * and a further one is a class plus a line in {@link #createForLiveScreen()}.
+ * that answers: the composition is what states the order, listed once on the field holding it, so a
+ * cover states only its own reading and a further one is a class plus a line in
+ * {@link #createForLiveScreen()}.
  *
  * <p>That factory is also where the optional mods' covers join or do not: a mod's cover is
  * composed only where the mod is installed at all, the same gate its installer stands behind.
@@ -32,13 +32,22 @@ import java.util.List;
  */
 public final class MapCoverReader {
 
-    // In ascending cost, since the first cover to answer ends the read: a polled mouse flag, then a
-    // published one-call read, then this mod's own dialog state, then the console's settled flag, then
-    // one hop off the app state,
-    // then a walk of the core UI's own children, then arithmetic over a box this mod laid out, then
-    // the two that walk further into the live widget tree - the map tab's own layout, and finally
-    // the surfaces another mod put on screen, which is the dearest because its walk is rooted above
-    // every tab.
+    // The order the covers are asked in, stated here and nowhere else. Ascending cost, since the
+    // first cover to answer ends the read:
+    //
+    // 1. HeldPointerMapCover - a polled mouse flag;
+    // 2. PauseMenuMapCover - a published one-call read;
+    // 3. ArrangementDialogMapCover - this mod's own dialog state;
+    // 4. ConsoleMapCover - the console's settled flag;
+    // 5. CodexMapCover - one hop off the app state;
+    // 6. ModalDialogMapCover - a walk of the core UI's own children;
+    // 7. SidebarMapCover - arithmetic over a box this mod laid out;
+    // 8. VanillaChromeMapCover - a walk into the map tab's own layout;
+    // 9. RandomAssortmentOfThingsMinimapCover - a walk of the surfaces another mod put on screen,
+    //    the dearest because it is rooted above every tab.
+    //
+    // The codex and the modal sit ahead of the sidebar for a reason beyond their cost, stated where
+    // they are composed.
     //
     // How many there are is the composition's, not this field's: the two that belong to optional
     // mods are absent on an install without them, and the order of whatever remains is unchanged.

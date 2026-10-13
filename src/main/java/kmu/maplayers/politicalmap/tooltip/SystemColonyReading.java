@@ -24,7 +24,7 @@ import java.util.function.BiFunction;
  * of the market it was weighed from and nothing of the place behind it, so the things a line says
  * that no arithmetic can supply - that a colony is a collapse rather than a derelict, that nobody
  * has found it, that nobody has looked at it in four cycles - have to be read from the system
- * itself and matched back by id.
+ * itself and matched back by ID.
  *
  * <p>The four travel as one value because they are one reading. All are folded from the single
  * walk of the system the box already makes, and a line asks them together - so passed apart, one

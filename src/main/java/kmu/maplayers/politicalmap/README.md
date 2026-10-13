@@ -483,7 +483,7 @@ so shelving them under either mechanic would make that mechanic name the other.
 | `claims` | the claim mechanic: `SectorClaims`, `FilteredClaims`, `PassClaimReaders`, the stats and sort modes |
 | [`claims/ribbon`](claims/ribbon/README.md) | the band ranking on a claims-layer cell |
 | `claims/tooltip` | the [claims box](#the-claims-box) |
-| `tooltip` | what both box families share: `PoliticalMapCellTooltip`, `CoreTerritoryHeading`, the contest wording, the live-visibility claim read, the [status line](#the-status-line-and-the-colony-vocabulary) (`SystemStatusRow`), and the colony lines - a system's colony reading (`SystemColonyReading`) with the qualifier and the observation notes it lays on them |
+| `tooltip` | what both box families share: `PoliticalMapCellTooltip` with the decree read it heads every box with, `CoreTerritoryHeading`, the contest wording, the [status line](#the-status-line-and-the-colony-vocabulary) (`SystemStatusRow`), and the colony lines - a system's colony reading (`SystemColonyReading`) with the qualifier and the observation notes it lays on them |
 | `refresh` | what repaints the overlay while the campaign runs ([refresh](#refresh)) |
 | `render` | the player's draw-order choices, read as the tier's band layout |
 
@@ -544,7 +544,7 @@ The watcher is this layer's own subclass of the substrate's abstract `MapLayerSe
 because the engine removes transient scripts by exact class:
 a script class shared between layers would let one layer's install or removal evict another's poll.
 
-The staleness source's four baselines are the staleness of this layer's own picture and nothing else:
+The staleness source's baselines are the staleness of this layer's own picture and nothing else:
 the sector-wide sweep that records what each system's own inhabitants can see is [the substrate's](../README.md),
 the register it writes being shared by every map family rather than this one's.
 The event listeners record that observation for the one system they name (`MarketPoliticsRefresh`),
@@ -644,13 +644,12 @@ Both are written from `FactionTooltipLine` (a faction as something a block lists
 `TermTooltipLine`
 (one term of a number, named and uncrested, whichever account is being broken down) and `FactionTooltipBanner`
 (a faction as a verdict over the whole system),
-`StandingRowResolver` (the ranked groups as entries),
 and the core-territory heading (`CoreTerritoryHeading`) and status lines.
+The domination box also turns its ranked groups into entries through `StandingRowResolver`.
 
-All of them sit on `PoliticalMapCellTooltip`,
-which binds the two live reads every political box places blocs by
-(the claim read for the whole layer, and the `BlocRelations` pair sampled per hover)
-and heads its boxes with the decree holding the system:
+All of them sit on `PoliticalMapCellTooltip`.
+It samples per hover the `BlocRelations` pair every political box places blocs by,
+and binds the one decree read every box heads itself with:
 any box may have to say a system is held by decree,
 and a decree resolved -
 or drawn -

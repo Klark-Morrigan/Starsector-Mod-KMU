@@ -51,8 +51,8 @@ public final class CellRibbonBuilder {
      * answer rather than a failure. A cell narrowed to a neck in one place is not that cell: the
      * neck costs its own stretch of ring and the band goes on the longest of what is left.
      *
-     * <p>The other way a cell comes back bare - it planned no band at all, nothing but the owner it
-     * is painted for being present in it - is answered before this, by whatever traced the path:
+     * <p>The other way a cell comes back bare - it planned no band at all, nothing the layer counts
+     * being present in it - is answered before this, by whatever traced the path:
      * such a cell must not pay for a ring walk nothing would be laid on. So the plan handed over
      * here is one with runs in it.
      *

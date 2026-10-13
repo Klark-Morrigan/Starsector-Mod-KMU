@@ -156,10 +156,9 @@ so no two parts of one map are styled by two readings of the same knobs.
 
 Rules that both the fills and the cluster-name labels read,
 so a name can never drift from the space it labels.
-All but the palette port below are pure,
-and the port is why:
-the one thing they cannot work out for themselves is what colour an owner is,
-so it is inverted rather than reached for,
+All of them are pure.
+The one thing they cannot work out for themselves is what colour an owner is,
+so the owner reading hands it in rather than a rule reaching for it,
 and every rule here stays pure over the shades it is handed.
 
 - `MapPalettes` -

@@ -48,9 +48,11 @@ import java.util.Map;
  * which member leads (the bloc's colour), so a market-size reshuffle below the lead never churns
  * the map while a colour lead swap does.
  *
- * <p>All four baselines live here rather than in the framework's poll, so the whole of "what
- * changed" is decided against this layer's own last read. Each is the staleness of this layer's own
- * picture and belongs to the layer that draws it. The first poll only establishes them.
+ * <p>The visibility, holder and alliance baselines live here rather than in the framework's poll, so
+ * the whole of "what changed" is decided against this layer's own last read. Each is the staleness of
+ * this layer's own picture and belongs to the layer that draws it. The moving set's baseline is
+ * {@link MovingSystems}' instead, because the geometry reads that set too. The first poll only
+ * establishes them.
  *
  * <p>A poll is a pass, and is read as one: every passenger is handed the same reading of the
  * sector rather than a sector it could walk again for itself. What that buys is stated where

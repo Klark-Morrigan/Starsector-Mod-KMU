@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * One rebuild's reading of a sector, as any owner-painted map layer needs it: which sector, how
+ * One walk's reading of a sector, as any owner-painted map layer needs it: which sector, how
  * factions fold into blocs, the {@link ColonyReadRules} its colony reads are taken under, and the
  * one walk of each system all of them are answered from.
  *
@@ -28,9 +28,11 @@ import java.util.Set;
  * implemented by layers painting by that mechanic. Anything answered by weighing markets therefore
  * belongs on that mechanic's pass, however generic its inputs look.
  *
- * <p>Opened where a rebuild begins and discarded with it, so the sector is read at one moment and
- * each system is walked once for the whole rebuild. The sector is the index's rather than a field
- * of its own, so a pass cannot name one sector while answering out of another.
+ * <p>A build's pass is opened by {@link HolderOwnerSource} on the first ask about a walk and kept
+ * by that walk, so the sector is read at one moment and each system is walked once for every
+ * question asked of the walk. A reader outside a build opens its own through {@link #createOver}.
+ * The sector is the index's rather than a field of its own, so a pass cannot name one sector while
+ * answering out of another.
  *
  * <p>A class rather than a record because it remembers as well as carries - the colony walk, each
  * colony's kind, each system's habitation and each bloc's shades are memoised snapshots - so two
@@ -40,8 +42,8 @@ import java.util.Set;
 public final class HolderPass {
 
     // Each system's habitation, resolved on first ask. Memoised because the filter's holder resolve,
-    // the inhabitation scan, each picker's stats fold and each cell's band all ask per system in
-    // separate walks.
+    // the inhabitation scan, each picker's stats fold and each cell's band all ask per system, each
+    // in a loop of its own.
     //
     // Keyed as the colony memo beneath it is: keyed differently, the two would disagree over a pair
     // of systems sharing an ID, and the second would draw the first's inhabitants over its cell.

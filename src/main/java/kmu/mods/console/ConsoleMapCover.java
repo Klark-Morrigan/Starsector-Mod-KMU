@@ -29,7 +29,7 @@ public final class ConsoleMapCover implements MapCover {
     @Override
     public boolean isCoveringCursor() {
         // No cursor test: a console covers the screen, so where the pointer is does not come into
-        // it. That is also what makes this the cheapest of the covers - a settled flag, no geometry.
+        // it - a settled flag, no geometry. Where that ranks it is MapCoverReader's to state.
         return consoleOverlay.isOpen();
     }
 }
