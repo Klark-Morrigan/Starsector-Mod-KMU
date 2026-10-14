@@ -46,6 +46,20 @@ class StarsectorMarketUiContextTrackerTests {
         }
 
         @Test
+        void clearsTrackedMarketWhenTheTabsEntityCannotAnswerForItsMarket() {
+            // A failed read means nothing is known about the market the tab opens on, so nothing is
+            // tracked rather than the market the player was on before.
+            var market = buildMarket();
+            var tracker = new StarsectorMarketUiContextTracker();
+
+            tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, market);
+            tracker.reportAboutToOpenCoreTab(CoreUITabId.OUTPOSTS, buildEntityFailingToReadItsMarket());
+
+            assertThat(tracker.getTrackedMarket())
+                .isEmpty();
+        }
+
+        @Test
         void ignoresNonOutpostsTabParams() {
 
             var market = buildMarket();
@@ -203,6 +217,11 @@ class StarsectorMarketUiContextTrackerTests {
             }
             return handleObjectMethodOrThrow(proxy, method, args);
         });
+    }
+
+    // An entity answering nothing, so asking it for its market throws.
+    private static SectorEntityToken buildEntityFailingToReadItsMarket() {
+        return proxy(SectorEntityToken.class, StarsectorMarketUiContextTrackerTests::handleObjectMethodOrThrow);
     }
 
     private static MarketAPI buildMarket() {

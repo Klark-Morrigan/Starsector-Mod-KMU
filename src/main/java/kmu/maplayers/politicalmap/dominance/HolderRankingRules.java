@@ -36,24 +36,12 @@ public record HolderRankingRules(
     Comparator<String> tieBreak,
     Predicate<String> candidacy) {
 
-    // Nobody barred. Private, because a caller wanting an open contest says so through the factory
-    // below rather than by handing in a bar that bars nothing.
+    // Nobody barred: the second look a ranking takes where its bar admitted nobody.
     private static final Predicate<String> EVERY_BLOC = blocId -> true;
 
     public HolderRankingRules {
         Objects.requireNonNull(tieBreak, "tieBreak");
         Objects.requireNonNull(candidacy, "candidacy");
-    }
-
-    /**
-     * Rules breaking a dead heat by lowest ID, under the given bar - what a reader with no geometry
-     * to settle a tie by takes, map iteration order never deciding a winner.
-     *
-     * @param candidacy which IDs may win the system
-     * @return those rules
-     */
-    public static HolderRankingRules createByLowestId(Predicate<String> candidacy) {
-        return new HolderRankingRules(Comparator.naturalOrder(), candidacy);
     }
 
     /**
@@ -81,16 +69,6 @@ public record HolderRankingRules(
         return new HolderRankingRules(
             MarketProximityTieBreak.createForSystem(system, colonies, colonyKnowledge, grouping),
             BlocCandidacy.createForGrouping(grouping));
-    }
-
-    /**
-     * Rules breaking a dead heat by lowest ID with nobody barred - the ranking of a contest that is
-     * about weights rather than about who is allowed to win one.
-     *
-     * @return those rules
-     */
-    public static HolderRankingRules createOpenContestByLowestId() {
-        return createByLowestId(EVERY_BLOC);
     }
 
     /**

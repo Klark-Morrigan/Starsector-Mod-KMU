@@ -9,6 +9,12 @@ import com.fs.starfarer.api.Global;
 @FunctionalInterface
 public interface KmuErrorReporter {
 
+    /**
+     * Records one failure the caller caught and carried on past.
+     *
+     * @param message what the caller was doing when it failed
+     * @param cause   the failure, kept for its trace
+     */
     void report(String message, RuntimeException cause);
 
     /**

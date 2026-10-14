@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static kmu.maplayers.politicalmap.dominance.HolderRankingRulesFixtures.OPEN_CONTEST_BY_LOWEST_ID;
+import static kmu.maplayers.politicalmap.dominance.HolderRankingRulesFixtures.createByLowestId;
 import static kmu.maplayers.politicalmap.dominance.weighting.MarketFootprintFixtures.buildWeightedFootprint;
 import static kmu.maplayers.politicalmap.dominance.weighting.MarketFootprintFixtures.listOrderedFootprints;
 
@@ -31,8 +33,8 @@ class SystemDominanceTests {
     private static final String PLACEHOLDER = "placeholder";
     private static final String SECOND_PLACEHOLDER = "placeholder-second";
 
-    // Stated here rather than taken from HolderRankingRules' own open contest, so a case about
-    // the weight levels poses its candidacy as plainly as a case about the bar does.
+    // The open bar for the cases that state their own tie-break, posed as plainly as a case about
+    // the bar poses its own.
     private static final Predicate<String> EVERY_BLOC = factionId -> true;
 
     // Both placeholder IDs sort below the scoring factions below, so a case a bar decides cannot
@@ -47,7 +49,7 @@ class SystemDominanceTests {
         void returnsNullForNoOwnedMarkets() {
             assertThat(SystemDominance.resolveDominantFactionId(
                     Map.of(),
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isNull();
         }
 
@@ -60,7 +62,7 @@ class SystemDominanceTests {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isEqualTo("hegemony");
         }
 
@@ -77,7 +79,7 @@ class SystemDominanceTests {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isEqualTo("hegemony");
         }
 
@@ -92,7 +94,7 @@ class SystemDominanceTests {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isEqualTo("hegemony");
         }
 
@@ -108,7 +110,7 @@ class SystemDominanceTests {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isEqualTo("hegemony");
         }
 
@@ -124,7 +126,7 @@ class SystemDominanceTests {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isEqualTo("hegemony");
         }
 
@@ -178,7 +180,7 @@ class SystemDominanceTests {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
+                    createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo("tritachyon");
         }
 
@@ -194,7 +196,7 @@ class SystemDominanceTests {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
+                    createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo("tritachyon");
         }
 
@@ -208,7 +210,7 @@ class SystemDominanceTests {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
+                    createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo(PLACEHOLDER);
         }
 
@@ -224,7 +226,7 @@ class SystemDominanceTests {
 
             assertThat(SystemDominance.resolveDominantFactionId(
                     footprints,
-                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
+                    createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo(PLACEHOLDER);
         }
     }

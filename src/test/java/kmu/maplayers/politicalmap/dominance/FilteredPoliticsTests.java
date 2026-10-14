@@ -26,7 +26,7 @@ class FilteredPoliticsTests {
     // Nobody barred: every case here poses ordinary factions, so the bar has nothing to say
     // about them and stating it would only obscure what each case is actually about.
     private static final HolderRankingRules OPEN_CONTEST =
-        HolderRankingRules.createOpenContestByLowestId();
+        HolderRankingRulesFixtures.OPEN_CONTEST_BY_LOWEST_ID;
 
     @Nested
     class ClassifySelectedBlocPresence {

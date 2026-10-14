@@ -49,7 +49,7 @@ import static org.mockito.Mockito.when;
  * moves when the on-map set changes and a per-system holder map that moves when a
  * drawn system changes hands, each without the other.
  */
-class PoliticalMapSectorSnapshotTests {
+class PoliticalMapSectorSnapshotIntegrationTests {
 
     // The size vanilla builds a derelict at: one nobody lives on is created at nought, whatever
     // the station it hangs on.

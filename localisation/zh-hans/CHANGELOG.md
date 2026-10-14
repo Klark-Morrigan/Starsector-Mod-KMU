@@ -123,6 +123,7 @@
 | `MapStyling(RenderStyle, OwnerCategories, ColourPair, ColourPair, ColourPair)` | `MapStyling(RenderStyle, ClusterBorderTrace, OwnerCategories, ColourPair, ColourPair, ColourPair)`：构建的边界描绘参数随主题一同携带，区域组不会再按各自的实时读取来描绘 |
 | 自行读取绘制方案的 `OwnerMapBuilder.buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners)` | `buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners, MapStyling)`：重建只读取一次绘制方案，供它构建的一切使用 |
 | `RibbonPlanInputs(HolderPass, BlocPaletteReader, OwnerAffiliation, RibbonPlanRules)` 和 `RibbonPlanInputs.createForPass(HolderPass, OwnerAffiliation, RibbonPlanRules)` | `RibbonPlanInputs(HolderPass, OwnerAffiliation, RibbonPlanRules)`。`palettes()` 返回本次计算自身的配色读取，因此色带只能经由填充所用的同一读取着色 |
+| `HolderRankingRules.createByLowestId(Predicate)` 和 `createOpenContestByLowestId()` | 已移除：每个实际排名都经由 `createByMarketProximity` 按远近裁定平局。没有几何信息的读取方改为构建 `new HolderRankingRules(Comparator.naturalOrder(), candidacy)` |
 | `KmuErrorReporter.noop()` | `KmuErrorReporter.createLoggingReporter(Class)`：被捕获的失败总会留下记录 |
 | 继承 `BaseCampaignEventListener` 的 `StarsectorMarketUiContextTracker` | 实现 `ColonyInteractionListener`，即监听器管理器向其传递市场事件的接口 |
 
