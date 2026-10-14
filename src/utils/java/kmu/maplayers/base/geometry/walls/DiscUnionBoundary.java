@@ -2,6 +2,7 @@ package kmu.maplayers.base.geometry.walls;
 
 import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Limits;
+import kmlib.math.geometry.Lines;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
@@ -279,12 +280,10 @@ public final class DiscUnionBoundary {
             && turnsLeft(otherFrom, otherTo, oneFrom) != turnsLeft(otherFrom, otherTo, oneTo);
     }
 
-    // Which side of a directed line a point falls on, by the sign of the cross product. Left is
-    // the side the walk keeps the union on, so this is how a step is told from its reverse.
+    // Left is the side the walk keeps the union on, so this is how a step is told from its
+    // reverse.
     private static boolean turnsLeft(double[] from, double[] to, double[] point) {
-
-        return (to[0] - from[0]) * (point[1] - from[1])
-            - (to[1] - from[1]) * (point[0] - from[0]) > 0;
+        return Lines.computeOrientation(from, to, point) > 0;
     }
 
     /**

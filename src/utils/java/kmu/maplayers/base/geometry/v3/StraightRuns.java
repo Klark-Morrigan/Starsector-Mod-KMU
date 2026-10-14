@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.v3;
 
 import kmlib.math.geometry.Angles;
+import kmlib.math.geometry.Lines;
 import kmlib.math.geometry.Points;
 import kmlib.math.ranges.Ranges;
 
@@ -362,9 +363,7 @@ public final class StraightRuns {
     // On the line counts as left: a run that departs straight along a diameter has its own
     // cell's centre exactly on it, and that is the ordinary case rather than a failure.
     private static boolean isLeftOfRun(double[] from, double[] to, double[] point) {
-
-        return (to[0] - from[0]) * (point[1] - from[1])
-            - (to[1] - from[1]) * (point[0] - from[0]) >= 0;
+        return Lines.computeOrientation(from, to, point) >= 0;
     }
 
     // Each end slid to the nearest place to its own middle that the other end can see, over

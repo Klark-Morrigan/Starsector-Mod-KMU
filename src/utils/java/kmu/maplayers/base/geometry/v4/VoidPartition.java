@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.v4;
 
 import kmlib.math.geometry.Bounds;
+import kmlib.math.geometry.Lines;
 import kmlib.math.geometry.Segment;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -153,8 +154,7 @@ public final class VoidPartition {
             var to = boundary.get((edge + 1) % boundary.size());
             var site = sites.get(labels[edge]);
 
-            return (to[0] - from[0]) * (site[1] - from[1])
-                - (to[1] - from[1]) * (site[0] - from[0]) > 0;
+            return Lines.computeOrientation(from, to, site) > 0;
         }
 
         // No cell on its outline at all: the piece bounded only by the frame and whatever was
