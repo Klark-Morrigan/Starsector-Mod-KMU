@@ -1,11 +1,10 @@
 package kmu.maplayers.base.geometry.v3;
 
 import kmlib.math.geometry.Segments;
+import kmlib.math.geometry.UniformGrid;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The coastline the links added, drawn by the walk that draws every other coastline.
@@ -55,18 +54,10 @@ public final class IntercontinentalCoasts {
     // absorb two traces arriving at one stretch by different arithmetic.
     private static final double SAME_LINE = 25;
 
-    // How wide a square of the lookup grid is, in map units. At least the tolerance above, so a
-    // point's own square and the eight round it cover every line that could be within it, and
-    // near the length of one sampled step, so a square holds few lines.
-    private static final double PLACE_GRID = 500;
-
-    // What separates the two halves of a place's key. Coordinates run to a few hundred thousand
-    // units, so a grid square's number fits an int and the pair fits a long with nothing lost.
-    private static final int PLACE_KEY_SHIFT = 32;
-
-    // Keeps the lower half of a place's key to the second coordinate alone, a negative one otherwise
-    // sign-extending over the first when it is widened to a long.
-    private static final long PLACE_KEY_MASK = 0xffffffffL;
+    // How wide a cell of the lookup grid is, in map units. Near the length of one sampled step,
+    // so a cell holds few lines. Any width finds every line within the tolerance, since a lookup
+    // reads every cell that far round its point.
+    private static final double LOOKUP_CELL_SIDE = 500;
 
     // Where a segment's two ends sit within the pair each is carried as.
     private static final int SEGMENT_FROM = 0;
@@ -131,7 +122,7 @@ public final class IntercontinentalCoasts {
     // as the one run it is rather than as two ending nowhere.
     private static List<List<double[]>> cutUndrawnRuns(
             List<double[]> ring,
-            Map<Long, List<double[][]>> drawn) {
+            UniformGrid<double[][]> drawn) {
 
         var begin = findDrawnStart(ring, drawn);
 
@@ -173,7 +164,7 @@ public final class IntercontinentalCoasts {
     // know nothing about.
     private static int findDrawnStart(
             List<double[]> ring,
-            Map<Long, List<double[][]>> drawn) {
+            UniformGrid<double[][]> drawn) {
 
         for (var index = 0; index < ring.size(); index++) {
 
@@ -195,19 +186,20 @@ public final class IntercontinentalCoasts {
         return List.copyOf(closed);
     }
 
-    // The drawn coastlines' own segments, filed under every grid square they pass near. A sector
+    // The drawn coastlines' own segments, filed under every grid cell they pass through. A sector
     // carries tens of thousands of them and the second trace asks about as many points, so asked
     // by walking the whole line each time this pass would cost more than either trace.
-    private static Map<Long, List<double[][]>> indexDrawnLines(List<List<double[]>> rings) {
+    private static UniformGrid<double[][]> indexDrawnLines(List<List<double[]>> rings) {
 
-        var filed = new HashMap<Long, List<double[][]>>();
+        var filed = new UniformGrid<double[][]>(LOOKUP_CELL_SIDE);
 
         for (var ring : rings) {
             for (var index = 1; index < ring.size(); index++) {
 
-                var segment = new double[][] {ring.get(index - 1), ring.get(index)};
+                var from = ring.get(index - 1);
+                var to = ring.get(index);
 
-                fileSegment(filed, segment);
+                filed.fileSegment(from, to, new double[][] {from, to});
             }
         }
         return filed;
