@@ -15,7 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins the board's own contract, rather than reaching it through a layer that raises signals on
  * it: a request advances the counter of the signal it names and no other, a signal never raised
- * still reads as a number, and the stale-system set is a set of keys that drains once.
+ * still reads as a number, the stale-system set is a set of keys that drains once, and every mark
+ * moves a grouping count no drain moves back.
  *
  * <p>The signals it raises are declared here rather than taken from the framework's or the
  * political map's sets, since the board's promise is that it holds a counter for whatever a layer
@@ -44,6 +45,50 @@ class MapLayerRefreshBoardTests {
     private static final SystemKey OTHER_TWIN = new SystemKey("deep space", null, "38d53");
 
     private final MapLayerRefreshBoard board = new MapLayerRefreshBoard();
+
+    @Nested
+    class GetGroupingRevision {
+
+        @Test
+        void advancesOnEveryMarkARepeatIncluded() {
+            // A second mark of one system is a second change, which a list built after the first
+            // has not seen - so the count moves even where the set holds the key once.
+            board.markSystemGroupingStale(SYSTEM);
+            board.markSystemGroupingStale(SYSTEM);
+
+            assertThat(board.getGroupingRevision())
+                .isEqualTo(2);
+        }
+
+        @Test
+        void holdsThroughADrain() {
+            // A reader keyed on the count must still see the change once the overlay has taken
+            // the set, so a drain leaves the count where it was.
+            board.markSystemGroupingStale(SYSTEM);
+            board.drainStaleGroupingSystemKeys();
+
+            assertThat(board.getGroupingRevision())
+                .isEqualTo(1);
+        }
+
+        @Test
+        void holdsForANullSystemKey() {
+            // A mark naming nothing changes nothing, so no list is re-walked for it.
+            board.markSystemGroupingStale(null);
+
+            assertThat(board.getGroupingRevision())
+                .isZero();
+        }
+
+        @Test
+        void holdsWhenASignalIsRaised() {
+            // The count is the marks' alone, so a coarse signal cannot re-walk a list keyed on it.
+            board.requestRefresh(TestRefreshSignal.RAISED);
+
+            assertThat(board.getGroupingRevision())
+                .isZero();
+        }
+    }
 
     @Nested
     class GetRevision {

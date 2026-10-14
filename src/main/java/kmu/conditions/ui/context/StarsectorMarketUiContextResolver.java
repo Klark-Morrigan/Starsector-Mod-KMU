@@ -18,7 +18,7 @@ public final class StarsectorMarketUiContextResolver implements KmuMarketUiConte
     }
 
     public StarsectorMarketUiContextResolver(SectorAPI sector) {
-        this(sector, KmuErrorReporter.noop());
+        this(sector, KmuErrorReporter.createLoggingReporter(StarsectorMarketUiContextResolver.class));
     }
 
     public StarsectorMarketUiContextResolver(SectorAPI sector, KmuErrorReporter errorReporter) {

@@ -14,6 +14,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **With a faction spotlit, the political map follows a colony changing hands**, rather than showing the old owner until you move the spotlight.
+- **The spotlight list follows a colony changing hands too**, so its numbers match the map.
+- **A system two factions hold with equal weight repaints when one of them takes it**, rather than at the next full redraw.
+- **The Market Condition Manager no longer opens on a colony you have already left.**
+
 ### Changed
 
 - **Minor optimisations**. The political map does less repeated work when it redraws: faction colours, each owner's paint and the border settings are read once per redraw rather than once per system or cell.
@@ -28,11 +35,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`ColonyKind.isUngoverned()`**: whether a place is people living under nobody's authority, for every reader telling governed colonies from ungoverned ones.
 - **`FactionStanding.isWeighed()`**: whether the pass weighed the faction's colonies, so a reader branching on the kind asks rather than testing the sealed type.
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**: the mark a faction's line opens on, for a line marked as that faction's.
+- **`HolderRankingRules.createByMarketProximity(StarSystemAPI, Colonies, ColonyKnowledge, HolderGrouping)`**: the one build of the live ranking rules, the neutral bar and the proximity tie-break, which the fills and the refresh poll both rank under.
 - **`HolderPass.palettes()`** and **`DominancePass.palettes()`**: the pass's one palette read, which remembers each bloc's owner and shades for the pass, so every resolve and band over one rebuild colours a bloc through the same object.
+- **`KmuErrorReporter.createLoggingReporter(Class)`**: a reporter writing each caught failure as a warning, with its cause, under the reporting class's logger.
+- **`MapLayerRefreshBoard.getGroupingRevision()`**: how many times a system has been marked stale on the board, which no drain moves back. A reader that cannot drain the set, such as the sidebar picker's memo, keys on it.
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**: one build's paint scheme, read once and handed to every part of the build that styles by it.
 - **`MapStyling.resolveUnownedStyle(boolean)`**: the style an unowned cell draws in, so the map's fills and the border-tracing overlay look it up the same way.
 - **`PoliticalHolderView`**, which every political map view implements: the alliance set's revision as its content revision, who stands together in a contest, the holder categories, and the faction reading.
 - **`SmoothingStageSink`** and **`BorderSmoothing.smoothBorderLoops(List, BorderSmoothingStyle, SmoothingStageSink)`**: the smoothing reports each pass that ran, so a caller showing the stages shows them in the order and under the gates the map drew by. `ClusterBorderStageCollector` is one.
+
+#### Fixed
+
+- **The *Claims* view's hover box reads the sector it was handed**, through one walk shared by its status line and the claim mechanic, rather than letting the claim read the running game's sector.
+- **The Market Condition Manager logs the failures it carries on past**, where they were dropped.
 
 #### Public contracts changed (**breaking**)
 
@@ -109,6 +124,8 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `MapStyling(RenderStyle, OwnerCategories, ColourPair, ColourPair, ColourPair)` | `MapStyling(RenderStyle, ClusterBorderTrace, OwnerCategories, ColourPair, ColourPair, ColourPair)`: the build's border trace rides with its theme, so a cluster group is never traced under a live read of its own |
 | `OwnerMapBuilder.buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners)`, reading the styling itself | `buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners, MapStyling)`: the rebuild reads the styling once for everything it builds |
 | `RibbonPlanInputs(HolderPass, BlocPaletteReader, OwnerAffiliation, RibbonPlanRules)` and `RibbonPlanInputs.createForPass(HolderPass, OwnerAffiliation, RibbonPlanRules)` | `RibbonPlanInputs(HolderPass, OwnerAffiliation, RibbonPlanRules)`. `palettes()` answers the pass's own, so a band cannot be coloured through anything the fills were not |
+| `KmuErrorReporter.noop()` | `KmuErrorReporter.createLoggingReporter(Class)`: a caught failure is always written somewhere |
+| `StarsectorMarketUiContextTracker` extending `BaseCampaignEventListener` | Implementing `ColonyInteractionListener`, the interface the listener manager delivers market events to |
 
 </details>
 

@@ -63,6 +63,11 @@ final class OwnerMapRebuildDecider {
     // what the last one read rather than walking the sector for the same answer.
     private int lastHoldingRevision = UNBUILT_REVISION;
 
+    // Whether a frame drained marked systems it could not fold into the standing map. Nothing else
+    // remembers them once drained, and no revision moves for them, so this is what makes the next
+    // frame rebuild rather than paint the old owner until something unrelated moves.
+    private boolean isRebuildOwed;
+
     // What the cells currently held were cut from. One value rather than a revision, the seed
     // inputs and the dev toggles side by side, because each of the three recuts every cell and
     // the question asked of them is the single one they answer together: would the cells be cut
@@ -190,7 +195,17 @@ final class OwnerMapRebuildDecider {
      * @param staleHalves the decision the rebuild was taken under
      */
     public void recordContentRebuilt(StaleHalves staleHalves) {
+
         lastContentRevision = staleHalves.contentRevision();
+        isRebuildOwed = false;
+    }
+
+    /**
+     * Records that the systems marked since the last drain were dropped rather than folded, so the
+     * next frame owes a full rebuild that reads them for itself.
+     */
+    public void recordRebuildOwed() {
+        isRebuildOwed = true;
     }
 
     /**
@@ -242,7 +257,8 @@ final class OwnerMapRebuildDecider {
     }
 
     // The clusters rebuild over any recut, since every cell they group was reseeded; before the
-    // first build, whatever the revision says; and on any move of the content revision.
+    // first build, whatever the revision says; on any move of the content revision; and after a
+    // frame dropped marked systems it could not fold.
     private boolean isContentStale(
             boolean isCellCutStale,
             boolean hasNothingBuilt,
@@ -250,6 +266,7 @@ final class OwnerMapRebuildDecider {
 
         return isCellCutStale
             || hasNothingBuilt
+            || isRebuildOwed
             || contentRevision != lastContentRevision;
     }
 

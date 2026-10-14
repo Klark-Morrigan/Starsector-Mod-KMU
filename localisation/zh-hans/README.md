@@ -359,6 +359,13 @@ So a word of one axis never stands in for another:
 | strings category (the namespace in strings.json, in the changelog) | 字符串类别 | 字符串 before 类别, kept apart from a map's 类别 |
 | cover (anything drawn over the map where the cursor rests, in the changelog) | 遮挡 | to block from view, which a cover does to the cells under it |
 | import, compose (in the changelog) | 导入, 组合 | the usual computing words for a package naming another and for putting parts together |
+| weight (what a colony counts for in a contest) | 权重 | the usual word for a weighting, which earlier entries already use |
+| tie-break (how a dead heat between blocs is settled, in the changelog) | 平局裁定 | 平局, a draw, with 裁定, a ruling |
+| refresh poll (the periodic check that marks changed systems, in the changelog) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
+| stale, drain (a system marked for redrawing, and taking every such mark off the set, in the changelog) | 过期, 取出 | the plain words for out of date and for taking something out |
+| cache, memo (a value kept to save working it out again, in the changelog) | 缓存 | the usual computing word |
+| listener manager (the game's registry of event listeners, in the changelog) | 监听器管理器 | 监听器, the usual computing word for a listener, with 管理器, a manager |
+| warning (a log line's level) | 警告 | the usual word, and log4j's `WARN` |
 | spotlight | 聚焦 | to focus on, which spotlighting a bloc does |
 | recede | 退后 | to step back, which a receded bloc does on the map |
 | Muted / Desaturated | 淡化 / 去色 | 淡化, to fade, and 去色, to strip colour, the usual image-editing word |

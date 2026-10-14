@@ -248,7 +248,8 @@ a producer reaching one it was not handed is a producer that can raise on a map 
 | Signal | Home | Raised by | Read by |
 | --- | --- | --- | --- |
 | `MapLayerCommonRefreshSignal.GEOMETRY` | `MapLayerCommonRefreshSignal` | the drawn-system set or moving-system set changing | the geometry cache |
-| `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental owner refresh |
+| `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental owner refresh, or a full rebuild where the standing map cannot take one |
+| grouping revision | `MapLayerRefreshBoard` | every system marked into the set above | the sidebar picker memo |
 | `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance-set fingerprint moving | every political view's content revision |
 | `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | **nothing** - see below |
@@ -585,8 +586,11 @@ the blocs on offer and the vocabulary that ranks them -
 since a view answers both together and neither means anything without the other.
 Each of its resolves is a full grouped dominance pass over the sector,
 so it is the picker that most needs the memo to hold.
-That revision is the economy-weighting settings plus the view's own grouping inputs,
-and it deliberately **excludes** the filter selection.
+That revision is the economy-weighting settings,
+the view's own grouping inputs,
+and the board's grouping revision,
+which every system marked stale moves.
+It deliberately **excludes** the filter selection.
 The picker is which blocs are selectable,
 not which one is spotlighted,
 so picking or clearing a filter moves the lit row without invalidating the list.
@@ -604,9 +608,12 @@ which is also what replaces the discard it would otherwise need on load.
 Because the economy can drift between rebuild triggers,
 a displayed metric can lag until the next settings,
 view,
-or alliance change -
+alliance or owner change -
 the same cadence the overlay's own rebuild reconciles on,
 so the picker's numbers and the painted map stay in step with each other even when both lag the economy slightly.
+An owner change reaches both through the marked system:
+the overlay drains it and the picker reads the grouping revision it moved,
+so the two never compete for one set.
 
 ### Settled faces
 

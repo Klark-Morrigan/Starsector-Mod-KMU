@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.refresh;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
+import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
@@ -15,6 +16,8 @@ import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.base.visibility.systems.MapSectorFixture;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
+import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
@@ -28,6 +31,8 @@ import java.util.List;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.FULL_STABILITY;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOrbitingEntity;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildStarAt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -49,6 +54,10 @@ class PoliticalMapSectorSnapshotTests {
     // The size vanilla builds a derelict at: one nobody lives on is created at nought, whatever
     // the station it hangs on.
     private static final int NO_POPULATION = 0;
+
+    // Orbit radii for the tie case, one clearly nearer the star than the other.
+    private static final float ORBIT_CLOSE = 100.0f;
+    private static final float ORBIT_FAR = 200.0f;
 
     // The scan is exercised through the explicit-rule signature: the shorter entry
     // point reads the live LunaLib settings, which only the running game provides.
@@ -175,6 +184,29 @@ class PoliticalMapSectorSnapshotTests {
 
             assertThat(snapshot.ownerBySystemKey())
                 .containsExactly(entry(buildCellKey("a"), "hegemony"));
+        }
+
+        @Test
+        void ownerMapNamesTheFactionTheFillsNameForATieSettledByProximity() {
+            // Two colonies of one size tie on every weight, and the fills give the system to the
+            // faction whose colony orbits nearer the star. The poll has to name that faction too:
+            // ranked by lowest ID it would say hegemony, so a flip between the two would move the
+            // fill and not the fingerprint, and the map would keep what it last built.
+            var starMock = buildStarAt(0.0f, 0.0f);
+            var system = buildSystemCentredOn("a", starMock);
+            var sector = buildSectorWith(
+                system,
+                buildOwnedMarketOn("hegemony", 5, buildOrbitingEntity(ORBIT_FAR, starMock)),
+                buildOwnedMarketOn("tritachyon", 5, buildOrbitingEntity(ORBIT_CLOSE, starMock)));
+
+            var fills = DominancePass.createOver(
+                SectorOwnershipFixtures.buildHolderPassOver(sector),
+                STABILITY_WEIGHTED);
+
+            assertThat(scanUnderStabilityWeighting(sector).ownerBySystemKey())
+                .containsExactly(entry(buildCellKey("a"), "tritachyon"));
+            assertThat(fills.resolveDominantBlocId(system, fills.readBlocFootprints(system)))
+                .isEqualTo("tritachyon");
         }
 
         @Test
@@ -305,6 +337,19 @@ class PoliticalMapSectorSnapshotTests {
         return systemMock;
     }
 
+    // An unreachable system centred on one star, which a proximity tie measures its colonies from.
+    private static StarSystemAPI buildSystemCentredOn(String id, PlanetAPI star) {
+
+        var systemMock = buildSystem(id);
+
+        when(systemMock.getCenter())
+            .thenReturn(star);
+        when(systemMock.getPlanets())
+            .thenReturn(List.of(star));
+
+        return systemMock;
+    }
+
     // An unreachable system holding a revealed decivilised planet: on the map as a
     // decivilised colony, yet unowned, so it drives visibility without a holder.
     private static StarSystemAPI buildDecivilisedSystem(String id) {
@@ -332,8 +377,14 @@ class PoliticalMapSectorSnapshotTests {
     // A discovered, openly owned colony of the given faction and size: what the
     // footprint read counts as presence, and what the dominance rule ranks.
     private static MarketAPI buildOwnedMarket(String factionId, int size) {
+        return buildOwnedMarketOn(factionId, size, mock(SectorEntityToken.class));
+    }
 
-        var entityMock = mock(SectorEntityToken.class);
+    // The same colony on a given entity, for a case that turns on where the colony sits.
+    private static MarketAPI buildOwnedMarketOn(
+            String factionId,
+            int size,
+            SectorEntityToken entityMock) {
 
         when(entityMock.isDiscoverable())
             .thenReturn(false);

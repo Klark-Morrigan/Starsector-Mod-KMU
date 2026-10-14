@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.starsector.StarsectorSettingsFake;
@@ -17,6 +18,7 @@ import org.mockito.MockedStatic;
 
 import java.awt.Color;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -28,7 +30,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the message a picker action leaves in the campaign's message list: its colour by outcome, and that a
- * campaign unable to take it never breaks the action that reported it.
+ * campaign unable to take it never breaks the action that reported it, while the failure is logged.
  */
 class StarsectorConditionPickerFeedbackSinkTests {
 
@@ -164,6 +166,37 @@ class StarsectorConditionPickerFeedbackSinkTests {
 
                 assertThatCode(() -> new StarsectorConditionPickerFeedbackSink().report(feedbackMock))
                     .doesNotThrowAnyException();
+            }
+        }
+
+        @Test
+        void logsTheFailureRaisedByTheMessageListWithItsCause() {
+            // Contained is not the same as silent: a message the player never saw leaves its trace in
+            // the log, which is the one place left to put it.
+            var campaignUiMock = mock(CampaignUIAPI.class);
+            var failure = new IllegalStateException("message list closed");
+
+            doThrow(failure)
+                .when(campaignUiMock)
+                .addMessage(anyString(), any(Color.class));
+
+            var sectorMock = stubSectorShowing(campaignUiMock);
+            var feedbackMock = stubFeedback(false);
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                var log = LogAppenderFake.captureLogOf(
+                    StarsectorConditionPickerFeedbackSink.class,
+                    () -> new StarsectorConditionPickerFeedbackSink().report(feedbackMock));
+
+                assertThat(log.getMessages())
+                    .containsExactly("Failed to show Market Condition Manager feedback: hot added");
+                assertThat(log.getThrowables())
+                    .containsExactly(failure);
             }
         }
     }

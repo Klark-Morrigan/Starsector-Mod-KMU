@@ -17,7 +17,7 @@ public final class KmuConditionService {
     private final KmuConditionOfferPolicy offerPolicy;
 
     public KmuConditionService(KmuConditionRepository repository) {
-        this(repository, KmuErrorReporter.noop());
+        this(repository, KmuErrorReporter.createLoggingReporter(KmuConditionService.class));
     }
 
     public KmuConditionService(KmuConditionRepository repository, KmuErrorReporter errorReporter) {

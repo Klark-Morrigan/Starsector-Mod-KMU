@@ -13,6 +13,13 @@
 
 ## [Unreleased]
 
+### 修复
+
+- **聚焦某个势力时，政治地图会跟随殖民地易手**，而不再显示旧的所有者，直到你移动聚焦。
+- **聚焦选择器也会跟随殖民地易手**，因此其中的数字与地图一致。
+- **两个势力权重相同的星系在其中一方取得它时会重绘**，而不必等到下一次完整重绘。
+- **市场条件管理器 (MCM) 不再在你已离开的殖民地上打开。**
+
 ### 变更
 
 - **小幅优化**。政治地图重绘时减少了重复工作：势力配色、每个所有者的绘制方式和边界设置在每次重绘时只读取一次，而不再按星系或单元逐一读取。
@@ -27,11 +34,19 @@
 - **`ColonyKind.isUngoverned()`**：某处是否住着不受任何权力管辖的人，供每个区分有人管辖与无人管辖殖民地的读取方使用。
 - **`FactionStanding.isWeighed()`**：本次计算是否为该势力的殖民地计算过权重，按种类分支的读取方据此询问，而不必检查密封类型。
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
+- **`HolderRankingRules.createByMarketProximity(StarSystemAPI, Colonies, ColonyKnowledge, HolderGrouping)`**：实际排名规则唯一的构建处，包括对中立势力的排除和按市场远近的平局裁定。地图填充和刷新轮询都按它排名。
 - **`HolderPass.palettes()`** 和 **`DominancePass.palettes()`**：本次计算唯一的配色读取，会为本次计算记住每个集团的所有者和配色，因此一次重建中的每个解析和每条色带都通过同一个对象为集团着色。
+- **`KmuErrorReporter.createLoggingReporter(Class)`**：把每个被捕获的失败连同其原因以警告级别写入报告方所属类的日志。
+- **`MapLayerRefreshBoard.getGroupingRevision()`**：星系被标记为过期的次数，任何取出操作都不会让它回退。无法取出该集合的读取方（例如侧边栏选择器的缓存）以它为键。
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**：一次构建的绘制方案，只读取一次，再交给构建中按它着色的每个部分。
 - **`MapStyling.resolveUnownedStyle(boolean)`**：无所有者单元所用的样式，使地图填充与边界描绘以同一方式查找它。
 - **`PoliticalHolderView`**，政治地图的每个视图都实现它：联盟集合的修订号（作为视图的内容修订号）、争夺中谁与谁站在一起、持有者类别，以及势力读取。
 - **`SmoothingStageSink`** 和 **`BorderSmoothing.smoothBorderLoops(List, BorderSmoothingStyle, SmoothingStageSink)`**：平滑会报告实际运行的每一道平滑处理，因此展示各阶段的调用方按地图绘制时的顺序和开关展示它们。`ClusterBorderStageCollector` 即为其一。
+
+#### 修复
+
+- **政治地图*宣称*视图的悬停框读取交给它的星域**：状态行与宣称机制共用一次扫描，而不再让宣称读取正在运行的游戏中的星域。
+- **市场条件管理器 (MCM) 会把它捕获后继续执行的失败写入日志**，此前这些失败会被丢弃。
 
 #### 公共契约变更（**破坏性**）
 
@@ -108,6 +123,8 @@
 | `MapStyling(RenderStyle, OwnerCategories, ColourPair, ColourPair, ColourPair)` | `MapStyling(RenderStyle, ClusterBorderTrace, OwnerCategories, ColourPair, ColourPair, ColourPair)`：构建的边界描绘参数随主题一同携带，区域组不会再按各自的实时读取来描绘 |
 | 自行读取绘制方案的 `OwnerMapBuilder.buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners)` | `buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners, MapStyling)`：重建只读取一次绘制方案，供它构建的一切使用 |
 | `RibbonPlanInputs(HolderPass, BlocPaletteReader, OwnerAffiliation, RibbonPlanRules)` 和 `RibbonPlanInputs.createForPass(HolderPass, OwnerAffiliation, RibbonPlanRules)` | `RibbonPlanInputs(HolderPass, OwnerAffiliation, RibbonPlanRules)`。`palettes()` 返回本次计算自身的配色读取，因此色带只能经由填充所用的同一读取着色 |
+| `KmuErrorReporter.noop()` | `KmuErrorReporter.createLoggingReporter(Class)`：被捕获的失败总会留下记录 |
+| 继承 `BaseCampaignEventListener` 的 `StarsectorMarketUiContextTracker` | 实现 `ColonyInteractionListener`，即监听器管理器向其传递市场事件的接口 |
 
 </details>
 

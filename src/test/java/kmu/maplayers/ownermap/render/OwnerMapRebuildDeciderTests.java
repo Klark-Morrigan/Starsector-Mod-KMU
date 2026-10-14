@@ -75,8 +75,8 @@ final class OwnerMapRebuildDeciderTests {
     void openSeamsAndBuildTheDecider() {
 
         seams = new StaticSeams();
-
         filterSelectionSeam = seams.openSeam(FilterSelection.class);
+
         lunaSettingsSeam = seams.holdSeam(
             mockStatic(KmuLunaSettings.class, Mockito.CALLS_REAL_METHODS));
         geometrySettingsSeam = seams.holdSeam(
@@ -385,6 +385,19 @@ final class OwnerMapRebuildDeciderTests {
             assertThat(decider.canReuseStandingHolding(nextHalves, true, Set.of()))
                 .isFalse();
         }
+
+        @Test
+        void paysAnOwedRebuild() {
+            // The owed rebuild is the one that read the dropped systems, so once it is recorded the
+            // map is current again.
+            decideAndRecordARebuild();
+
+            decider.recordRebuildOwed();
+            decider.recordContentRebuilt(decideAfterABuild());
+
+            assertThat(decideAfterABuild().isContentStale())
+                .isFalse();
+        }
     }
 
     @Nested
@@ -404,6 +417,38 @@ final class OwnerMapRebuildDeciderTests {
             assertThat(nextHalves.isContentStale())
                 .isTrue();
             assertThat(decider.canReuseStandingHolding(nextHalves, true, Set.of()))
+                .isTrue();
+        }
+    }
+
+    @Nested
+    class RecordRebuildOwed {
+
+        @Test
+        void owesARebuildButNoRecutWithNothingElseMoved() {
+            // A dropped batch is the only record that an owner changed, and no revision moved for
+            // it, so the owed rebuild is what the next decision turns on. The cells stand: an owner
+            // change seeds no cell.
+            decideAndRecordARebuild();
+            decider.recordRebuildOwed();
+
+            var staleHalves = decideAfterABuild();
+
+            assertThat(staleHalves.isContentStale())
+                .isTrue();
+            assertThat(staleHalves.isCellCutStale())
+                .isFalse();
+        }
+
+        @Test
+        void goesOnOwingTheRebuildUntilOneIsRecorded() {
+            // A rebuild that threw before reporting itself leaves the change unread, so it is asked
+            // for again.
+            decideAndRecordARebuild();
+            decider.recordRebuildOwed();
+            decideAfterABuild();
+
+            assertThat(decideAfterABuild().isContentStale())
                 .isTrue();
         }
     }

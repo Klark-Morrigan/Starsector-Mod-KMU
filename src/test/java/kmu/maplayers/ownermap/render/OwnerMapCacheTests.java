@@ -63,7 +63,7 @@ import static org.mockito.Mockito.when;
  * Pins the cache's guarantees that hold outside a running game: a rebuild that throws leaves
  * something safe to draw, releasing the cache drops everything it built for its sector, the debug
  * toggle picks which of the two views a rebuild builds, a frame owing no rebuild either folds
- * the systems marked since into the standing map or drops them for the next rebuild to read, and a
+ * the systems marked since into the standing map or drops them and owes the next frame a rebuild, and a
  * rebuild owed only to a style pick keeps the owners the last one resolved while a marked system or
  * the debug overlay makes the next one resolve them again.
  *
@@ -244,15 +244,11 @@ final class OwnerMapCacheTests {
         }
 
         @Test
-        void defersAMarkedSystemToTheNextRebuildWhileTheMapIsFiltered() {
+        void dropsAMarkedSystemRatherThanFoldingItWhileTheMapIsFiltered() {
             // The fold re-derives holders through the unfiltered holding, which would overwrite the
             // spotlight's synthetic keys - so a filtered map drops the mark rather than folding it,
             // and leaves nothing on the board for the next frame to find either.
-            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersSpotlighting(
-                HEGEMONY_ID,
-                Map.of(),
-                Set.of(),
-                Set.of()));
+            openEverySeamARebuildReaches(createSpotlitClusters());
 
             var cache = buildCacheOver(emptySectorMachinery);
 
@@ -269,9 +265,49 @@ final class OwnerMapCacheTests {
         }
 
         @Test
-        void dropsAMarkedSystemWhileTheBorderTracingOverlayIsBuilt() {
+        void rebuildsAFilteredMapOnTheFrameAfterItDroppedAMarkedSystem() {
+            // The dropped mark is the only record that a system changed hands, so the frame after
+            // it rebuilds and reads the owners afresh - or the spotlit map shows the old owner until
+            // the spotlight moves.
+            openEverySeamARebuildReaches(createSpotlitClusters());
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
+            cache.refreshDrawLists(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            productionBuilderMock.verify(
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()),
+                times(2));
+            productionBuilderMock.verify(
+                () -> OwnerMapBuilder.resolveOwners(any(), any(), any()),
+                times(2));
+        }
+
+        @Test
+        void owesNothingMoreOnceTheOwedRebuildHasRun() {
+            // The rebuild pays the debt, so the frames after it go back to owing nothing.
+            openEverySeamARebuildReaches(createSpotlitClusters());
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
+            cache.refreshDrawLists(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            productionBuilderMock.verify(
+                () -> OwnerMapBuilder.buildClusters(any(), any(), any(), any(), any()),
+                times(2));
+        }
+
+        @Test
+        void rebuildsTheBorderTracingOverlayOnTheFrameAfterItDroppedAMarkedSystem() {
             // The overlay builds no draw lists for a fold to patch, so the mark is dropped and the
-            // overlay picks the change up on its next full rebuild.
+            // next frame rebuilds the overlay to show the change.
             openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
             traceBordersForDebug();
 
@@ -280,13 +316,14 @@ final class OwnerMapCacheTests {
             cache.refreshDrawLists(VIEW, SCREEN);
             emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
             cache.refreshDrawLists(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
 
             incrementalRefreshMock.verify(
                 () -> IncrementalOwnerRefresh.applyStaleOwnerUpdates(any(), any(), any()),
                 never());
-
-            assertThat(emptySectorMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
-                .isEmpty();
+            debugBuilderMock.verify(
+                () -> DebugBorderTracingBuilder.buildDebugDrawables(any(), any(), any()),
+                times(2));
         }
 
         @Test
@@ -459,6 +496,17 @@ final class OwnerMapCacheTests {
             cacheMachinery,
             OwnerMapBodyPreferencesFixtures.createUnderTestKeys(),
             CellSeedRule.SEED_DRAWN_SYSTEMS);
+    }
+
+    // Draw lists built under a spotlight, which is what makes a later frame drop a mark rather than
+    // fold it.
+    private static OwnerMapClusters createSpotlitClusters() {
+
+        return OwnerMapClusterFixtures.createClustersSpotlighting(
+            HEGEMONY_ID,
+            Map.of(),
+            Set.of(),
+            Set.of());
     }
 
     // A cache over the empty sector whose name format a case picks through pickNameFormat. The name

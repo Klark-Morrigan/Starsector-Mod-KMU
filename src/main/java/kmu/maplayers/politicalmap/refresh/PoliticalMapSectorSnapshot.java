@@ -6,7 +6,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.visibility.systems.MapVisibilityFingerprint;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
-import kmu.maplayers.politicalmap.dominance.BlocCandidacy;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.dominance.HolderRankingRules;
 import kmu.maplayers.politicalmap.dominance.SystemDominance;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
@@ -167,22 +167,28 @@ public record PoliticalMapSectorSnapshot(
     // too: membership asks it whether anybody lives here, the dominance rule ranks the footprints it
     // weighs out of it. A null economy (early load) reads as no colonies rather than faulting.
     //
-    // Barred under the same candidacy the fills are resolved under, though this walk only
-    // fingerprints them: a colony founded under a heavier neutral station moves the fill to that
-    // faction, and a holder read here without the bar would still say neutral both before and
-    // after, leaving the map showing whatever it last built there.
+    // Ranked under the same rules the faction view's fills are resolved under, though this walk only
+    // fingerprints them. Under a different bar, a colony founded under a heavier neutral station
+    // moves the fill while the holder read here says neutral both before and after. Under a different
+    // tie-break, a dead heat the fill settles by proximity is settled here by ID, so a flip between
+    // the two tied factions moves one and not the other. Either way the map keeps what it last built.
     private static String resolveDominantFactionId(
             MapVisibilityPass pass,
             StarSystemAPI system,
             DominanceRules rules) {
 
+        var colonies = pass.sectorIndex().readColoniesIn(system);
         var footprintByFactionId = KnownMarketFootprints.readByFaction(
-            pass.sectorIndex().readColoniesIn(system),
+            colonies,
             rules,
             pass.colonyKnowledge());
 
         return SystemDominance.resolveDominantFactionId(
             footprintByFactionId,
-            HolderRankingRules.createByLowestId(BlocCandidacy::isCandidateFaction));
+            HolderRankingRules.createByMarketProximity(
+                system,
+                colonies,
+                pass.colonyKnowledge(),
+                HolderGrouping.identity()));
     }
 }

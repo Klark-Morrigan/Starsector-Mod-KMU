@@ -125,17 +125,22 @@ public final class SelectableOwnerCache
     }
 
     // The revision the memoised list is valid for: the settings (the owner
-    // rules and the visibility settings both move settingsRevision) and the view's own live inputs
-    // (its live sources where it samples any; a constant for a view sampling nothing). The
-    // filter selection is absent by design - it changes which owner is lit, never which owners are listed.
+    // rules and the visibility settings both move settingsRevision), the view's own live inputs
+    // (its live sources where it samples any; a constant for a view sampling nothing), and the
+    // board's grouping revision, so a system changing hands re-walks the list as the map re-shapes.
+    // The filter selection is absent by design - it changes which owner is lit, never which owners
+    // are listed.
     //
-    // The view folds its inputs off this machinery's board, the same one the walk above takes its
-    // sector from: keyed on another sector's counters, a list walked here would never be re-walked
-    // when this sector's groups moved, and would be thrown away when another sector's did.
+    // Every count is this machinery's board, the same one the walk above takes its sector from:
+    // keyed on another sector's counters, a list walked here would never be re-walked when this
+    // sector's groups moved, and would be thrown away when another sector's did.
     private int computeRevision(OwnerPaintedView view) {
+
+        var board = machinery.resolveRefreshBoard();
 
         return Objects.hash(
             KmuLunaSettings.getSettingsRevision(),
-            view.getContentRevision(machinery.resolveRefreshBoard()));
+            board.getGroupingRevision(),
+            view.getContentRevision(board));
     }
 }

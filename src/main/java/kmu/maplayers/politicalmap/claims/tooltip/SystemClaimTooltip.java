@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.claims.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.markets.colonies.SystemColonies;
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
@@ -85,12 +85,12 @@ public final class SystemClaimTooltip
         NexerelinAlliances::resolveGrouping,
         NexerelinContestWording::resolveWording);
 
-    // Opens the reader a hover's scored contest is read through, over that hover's sector and the
-    // colony rule it sampled. Opened per hover rather than held, because this box lives for the whole
-    // session while the rule is a setting the player may move between two hovers - and a claim
-    // breakdown reports knowledge as a flag on a market rather than by leaving the market out, so a
-    // stale rule would surface silently as a name the box should have withheld.
-    private final BiFunction<SectorAPI, ColonyVisibility, ClaimBreakdownReader> breakdownReaderOpener;
+    // Opens the reader a hover's scored contest is read through, over that hover's walk of the sector
+    // and the colony rule it sampled. Opened per hover rather than held, because this box lives for
+    // the whole session while the rule is a setting the player may move between two hovers - and a
+    // claim breakdown reports knowledge as a flag on a market rather than by leaving the market out,
+    // so a stale rule would surface silently as a name the box should have withheld.
+    private final BiFunction<SectorPassIndex, ColonyVisibility, ClaimBreakdownReader> breakdownReaderOpener;
 
     // What hangs beneath each listed faction as the account of its standing, asked only where the
     // level admits an account at all.
@@ -113,7 +113,7 @@ public final class SystemClaimTooltip
 
         this(
             claimBreakdownReader,
-            (sector, colonyVisibility) -> claimBreakdownReader,
+            (sectorIndex, colonyVisibility) -> claimBreakdownReader,
             ClaimScoreRowResolver::resolveMarketRows,
             holderGroupingSource,
             contestWordingSource);
@@ -121,7 +121,7 @@ public final class SystemClaimTooltip
 
     SystemClaimTooltip(
             ClaimBreakdownReader claimBreakdownReader,
-            BiFunction<SectorAPI, ColonyVisibility, ClaimBreakdownReader> breakdownReaderOpener,
+            BiFunction<SectorPassIndex, ColonyVisibility, ClaimBreakdownReader> breakdownReaderOpener,
             BiFunction<FactionClaimStanding, ClaimAccountReading, List<CellTooltipEntry>> accountEntriesSource,
             HolderGroupingSource holderGroupingSource,
             ContestWordingSource contestWordingSource) {
@@ -138,10 +138,15 @@ public final class SystemClaimTooltip
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
 
+        // The one walk of the handed sector this hover reads everything through: the claim
+        // breakdown and the status row below both take the system's colonies off it. Opened per
+        // hover, because a walk is a snapshot of the sector and this box outlives every hover.
+        var sectorIndex = new SectorPassIndex(sector);
+
         // One read for the whole box: the claimant, the override behind it, the colony rule and
         // every standing the projection leaves it free to name are all taken from a single pass, so
         // no two lines can describe different states of the system.
-        var contest = readListedContest(sector, system);
+        var contest = readListedContest(sectorIndex, system);
 
         // That one rule settles both questions the box asks of it - whether people live in the
         // system, and which standings the player may be shown - since a banner and a list resolved
@@ -155,11 +160,9 @@ public final class SystemClaimTooltip
         // Why the system holds nobody comes before who claims it, so a dead system names its state
         // first and the claim below reads as a hold over an empty system rather than over a colony.
         //
-        // The walk is selected here rather than inside the line, and it is this box's own: the
-        // claim reader beneath deliberately holds no colony index - it is opened per hover, and one
-        // that did would answer a later hover off the sector an earlier one saw - so there is no
-        // shared walk here to take, and the cost is stated where it is paid.
-        var colonies = SystemColonies.readColoniesIn(sector, system);
+        // Off the hover's walk rather than a read of its own, so the banner judges the very colonies
+        // the claim beneath it was scored from.
+        var colonies = sectorIndex.readColoniesIn(system);
         var colonyKnowledge = ColonyKnowledge.over(sector, colonyVisibility);
         var statusRow = SystemStatusRow.resolveStatusRow(colonies, colonyKnowledge);
 
@@ -237,18 +240,20 @@ public final class SystemClaimTooltip
         // The deeper tiers account for the colonies behind the factions this box lists, so a box
         // listing none has nothing for them to account for: every level would state the same claim
         // line and the key would do nothing the player could see.
-        return resolveDeepestHeldLevel(readListedContest(sector, system)
+        return resolveDeepestHeldLevel(readListedContest(new SectorPassIndex(sector), system)
             .hasListedStanding());
     }
 
-    // The vanilla breakdown over one hover's sector, under the colony rule that hover sampled. The
-    // reader holds no colony index, so there is no snapshot of the sector to go stale between hovers:
-    // a reader that walks afresh is what a surface with no pass behind it must have.
+    // The vanilla breakdown over one hover's walk of its sector, under the colony rule that hover
+    // sampled. Handed the walk rather than left to open none, because a reader with no index reads
+    // the running game's sector - which is not the one the box was handed whenever the two differ.
     static ClaimBreakdownReader openBreakdownReaderUnder(
-            SectorAPI sector,
+            SectorPassIndex sectorIndex,
             ColonyVisibility colonyVisibility) {
 
-        return new VanillaClaimBreakdownReader(ColonyKnowledge.over(sector, colonyVisibility));
+        return new VanillaClaimBreakdownReader(
+            ColonyKnowledge.over(sectorIndex.getSector(), colonyVisibility),
+            sectorIndex);
     }
 
     // What hangs beneath one listed faction as the account of where its standing came from.
@@ -329,13 +334,13 @@ public final class SystemClaimTooltip
     // over it, so the reader and the list cannot answer under two readings of the player's settings.
     // Both relations travel with it because they are sampled together (PoliticalMapCellTooltip): every
     // block is routed against one reading of each.
-    private ListedClaimContest readListedContest(SectorAPI sector, StarSystemAPI system) {
+    private ListedClaimContest readListedContest(SectorPassIndex sectorIndex, StarSystemAPI system) {
 
         var colonyVisibility = readColonyVisibility();
-        var blocRelations = sampleBlocRelations(sector);
+        var blocRelations = sampleBlocRelations(sectorIndex.getSector());
 
         return ListedClaimContest.selectFrom(
-            breakdownReaderOpener.apply(sector, colonyVisibility).readBreakdown(system),
+            breakdownReaderOpener.apply(sectorIndex, colonyVisibility).readBreakdown(system),
             colonyVisibility,
             blocRelations.affiliation(),
             blocRelations.friendliness());

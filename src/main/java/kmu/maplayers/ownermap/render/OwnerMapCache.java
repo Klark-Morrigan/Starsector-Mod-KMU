@@ -58,7 +58,8 @@ import java.util.Set;
  * {@link KmuLunaSettings#getSettingsRevision()}), when the view switches or samples a different
  * live input, when one of the sidebar preferences the bake reads holds a different value
  * ({@link ContentInputs}), or when the geometry itself was rebuilt; between those, a change in one system
- * marks just its own system stale and drives an incremental re-shape. So switching a colour,
+ * marks just its own system stale and drives an incremental re-shape - or, where the standing map
+ * cannot take one (under a filter, or behind the debug overlay), a full rebuild. So switching a colour,
  * dragging an opacity slider or picking a spotlight takes effect live, and the per-frame path is
  * otherwise a couple of int compares, never a per-frame economy scan.
  *
@@ -280,6 +281,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             applyStandingMapUpdates(staleHalves);
             return;
         }
+
         rebuildWhatIsStale(staleHalves, view);
     }
 
@@ -313,6 +315,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         if (staleHalves.isCellCutStale()) {
             rebuildGeometry(staleHalves, sector, walk.sectorIndex());
         }
+
         // Everything derived from the cells under one scope, the cut having timed itself: what
         // the draw lists cost this rebuild is this span, and every stage it drives sits inside it.
         try (var drawablesScope = ActiveProfiler
@@ -378,6 +381,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             // The overlay read owners for itself and drops what was marked, so nothing standing
             // can be trusted to say who owns what once it has run.
             standingOwners = null;
+
         } else {
             wasHoldingReused = rebuildProductionView(staleHalves, viewReading, walk, staleSystemKeys);
         }
@@ -405,12 +409,14 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             staleSystemKeys);
 
         if (!wasHoldingReused) {
+
             standingOwners = OwnerMapBuilder.resolveOwners(
                 viewReading.source(),
                 walk,
                 staleHalves.contentInputs());
             decider.recordHoldingResolved(staleHalves);
         }
+
         drawables.rebuildClustersAndBands(
             cellGeometry,
             walk,
@@ -424,18 +430,17 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
     // Nothing stale enough to rebuild. In the normal view, fold in any per-system owner changes the
     // board marked, re-shaping only those systems and their neighbours over the standing
     // clusters; that batch opens a reading of its own, since none was opened for this frame.
-    // The static debug overlay has no draw lists to patch, so its staleness is dropped instead -
-    // it refreshes on the next full rebuild (any settings or geometry change). Under a filter the
-    // incremental re-shape is bypassed too: it re-derives owners through the normal (non-filter)
-    // holding, which would overwrite the spotlit keys and corrupt the spotlight, so a filtered
-    // map defers owner changes to the next full rebuild instead.
+    // The static debug overlay has no draw lists to patch, so its batch is dropped instead. Under a
+    // filter the incremental re-shape is bypassed too: it re-derives owners through the normal
+    // (non-filter) holding, which would overwrite the spotlit keys and corrupt the spotlight. A
+    // dropped batch owes the next frame a full rebuild, since nothing else would show the change.
     //
     // The drain happens here rather than inside the fold, and before either branch is chosen,
     // because this cache is what holds the board: the fold is reached through static entry points
     // naming no sector, so a drain made there would have to ask the running game whose staleness it
     // was emptying. Draining unconditionally is what keeps the two outcomes equivalent - one folds
-    // what it took, the other drops it, and neither leaves a mark standing for the next frame to
-    // find.
+    // what it took, the other drops it and owes the rebuild, and neither leaves a mark standing for
+    // the next frame to find.
     //
     // Having drained, this is also what answers the frame that owes nothing, which is nearly every
     // frame: it returns before assembling the standing map for a fold that would find nothing in it.
@@ -445,10 +450,10 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
     private void applyStandingMapUpdates(StaleHalves staleHalves) {
 
         var staleSystemKeys = machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys();
-
         if (staleSystemKeys.isEmpty()) {
             return;
         }
+
         // A marked system is one the sector moved under, so the owners the last rebuild resolved
         // no longer say who owns it - whether or not the fold below is allowed to run. Dropped on
         // both outcomes: the fold edits the standing map rather than the kept owners, and the
@@ -456,8 +461,14 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         standingOwners = null;
 
         if (!drawables.canFoldHolderChanges()) {
+
+            LOG.debug("Owner map dropped " + staleSystemKeys.size()
+                + " marked system(s) it cannot fold; next frame rebuilds");
+
+            decider.recordRebuildOwed();
             return;
         }
+
         // The four halves go over as one value, and the standing pair goes in whole: a re-fit
         // leaves its own placements and rules in it, and a frame that re-fits nothing leaves both
         // alone, since the placements it did not touch are still described by the rules already
@@ -517,6 +528,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         // this one. Counted rather than taken from the reachable-set revision, which stands
         // still through a seed-input or dev-toggle recut.
         cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
+
         decider.recordCellsCut(staleHalves);
     }
 }

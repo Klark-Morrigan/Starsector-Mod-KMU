@@ -127,6 +127,11 @@ the very colonies the tied weights came from.
 The comparator reads no geometry until it is asked to compare,
 which happens only on a genuine tie.
 
+`HolderRankingRules.createByMarketProximity` is the one place the bar and this tie-break are put together.
+The fills take it through `DominancePass`,
+and the refresh poll's snapshot takes it under the identity grouping,
+so a tie the fills settle by proximity is one the poll watches settled the same way.
+
 ## One pass, one rule
 
 `DominancePass` is a `HolderPass` plus the `DominanceRules` it weighs under.

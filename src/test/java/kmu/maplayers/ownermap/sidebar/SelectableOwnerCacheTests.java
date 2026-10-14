@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.sidebar;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.ownermap.picker.OwnerPresenceIndexFixtures.buildIndexOf;
 
@@ -30,13 +32,14 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins what an owner map counts as a reason to rebuild its picker: the view's own content
- * revision moves it and nothing else does, so a live picker is served from the memo and a stale one
+ * revision and a system marked on its own board move it and nothing else does, so a live picker is
+ * served from the memo and a stale one
  * is re-walked. The memo mechanism itself is the framework's and is pinned there; what is pinned
  * here is the revision this layer feeds it, and that the presence behind the rows is served off that
  * same read. Pins its lifetime beside that - one memo per machinery, so two sectors' sidebars
  * neither read one another's rows nor evict one another's entry, and a disposal leaving nothing of
  * the gone sector's behind. The live settings revision reads zero in a test JVM (no LunaLib listener
- * runs), so the view's content revision is the only moving part of the key here.
+ * runs), so the view's content revision and the board's marks are the moving parts of the key here.
  */
 final class SelectableOwnerCacheTests {
 
@@ -50,6 +53,9 @@ final class SelectableOwnerCacheTests {
                     OwnerMetricsFake.EMPTY_FAKE)),
                 OwnerSortModesFake.MODES),
             buildIndexOf("hegemony", "corvus", "askonia"));
+
+    // The system an owner change marks between two asks.
+    private static final SystemKey MARKED_SYSTEM = buildCellKey("marked");
 
     // The layers a memo is resolved for, two of them for the case about their keeping apart.
     private static final String LAYER_ID = "test_layer";
@@ -144,6 +150,39 @@ final class SelectableOwnerCacheTests {
             cache.resolveOwnerPickerRead(viewMock);
 
             verify(viewMock, times(2))
+                .resolveOwnerPickerRead(sectorMock);
+        }
+
+        @Test
+        void recomputesWhenASystemIsMarkedOnItsOwnBoard() {
+            // A system changing hands is marked and re-shapes the map, so the list is
+            // re-walked beside it rather than lagging until something coarser moves.
+            var sectorMock = mock(SectorAPI.class);
+            var viewMock = stubViewAnswering(sectorMock, "owners");
+            var machinery = new SectorMapMachinery(sectorMock);
+            var cache = new SelectableOwnerCache(machinery);
+
+            cache.resolveOwnerPickerRead(viewMock);
+            machinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_SYSTEM);
+            cache.resolveOwnerPickerRead(viewMock);
+
+            verify(viewMock, times(2))
+                .resolveOwnerPickerRead(sectorMock);
+        }
+
+        @Test
+        void walksTheViewOnceWhenASystemIsMarkedOnAnotherBoard() {
+            // Another sector's change says nothing about this sector's owners.
+            var sectorMock = mock(SectorAPI.class);
+            var viewMock = stubViewAnswering(sectorMock, "owners");
+            var otherMachinery = new SectorMapMachinery(mock(SectorAPI.class));
+            var cache = buildCacheOver(sectorMock);
+
+            cache.resolveOwnerPickerRead(viewMock);
+            otherMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_SYSTEM);
+            cache.resolveOwnerPickerRead(viewMock);
+
+            verify(viewMock, times(1))
                 .resolveOwnerPickerRead(sectorMock);
         }
 

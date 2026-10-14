@@ -316,20 +316,15 @@ public record DominancePass(
      * both are settled among the colonies <em>this</em> mechanic weighs, which no other layer's
      * pass has any use for.
      *
-     * <p>The tie-break inside is lazy: it reads no geometry unless a tie forces it, so a system
-     * with a clear winner - nearly every system - pays nothing for carrying one.
-     *
      * @param system the system whose ranking these rules settle
      * @return the rules a ranking of this system's footprints is taken under
      */
     public HolderRankingRules resolveRankingRulesFor(StarSystemAPI system) {
-        return new HolderRankingRules(
-            MarketProximityTieBreak.createForSystem(
-                system,
-                readColoniesIn(system),
-                colonyKnowledge(),
-                grouping()),
-            BlocCandidacy.createForGrouping(grouping()));
+        return HolderRankingRules.createByMarketProximity(
+            system,
+            readColoniesIn(system),
+            colonyKnowledge(),
+            grouping());
     }
 
     /**

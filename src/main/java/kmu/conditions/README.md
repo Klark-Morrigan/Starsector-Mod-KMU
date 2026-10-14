@@ -40,6 +40,11 @@ Clicking an absent condition adds it to the market (`KmuConditionPickerActionHan
 
 Which market a UI is open on is remembered by `StarsectorMarketUiContextTracker`,
 which the composition root installs per save only while the feature is switched on.
+It is a `ColonyInteractionListener`,
+because the listener manager it is registered with hands market opens and closes only to that interface.
+
+A failure the feature catches and carries on past goes to a `KmuErrorReporter`,
+which writes it as a warning under the reporting class's logger.
 
 ## Which conditions are offered
 

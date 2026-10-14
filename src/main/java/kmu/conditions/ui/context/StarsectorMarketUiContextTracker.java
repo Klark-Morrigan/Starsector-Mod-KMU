@@ -1,22 +1,26 @@
 package kmu.conditions.ui.context;
 
-import com.fs.starfarer.api.campaign.BaseCampaignEventListener;
 import com.fs.starfarer.api.campaign.CoreUITabId;
+import com.fs.starfarer.api.campaign.PlayerMarketTransaction;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.listeners.ColonyInteractionListener;
 import com.fs.starfarer.api.campaign.listeners.CoreUITabListener;
 
 import java.util.Optional;
 
+/**
+ * Remembers which market the player has a UI open on, off the market and core-tab events.
+ *
+ * <p>Registered with the listener manager, which hands each event only to the listeners of the
+ * interface it belongs to - the market events to {@link ColonyInteractionListener}. A campaign event
+ * listener's methods of the same names are never called from there, so the tracker implements the
+ * interface rather than extending that base.
+ */
 public final class StarsectorMarketUiContextTracker
-    extends BaseCampaignEventListener
-    implements CoreUITabListener {
+    implements ColonyInteractionListener, CoreUITabListener {
 
     private transient MarketAPI trackedMarket;
-
-    public StarsectorMarketUiContextTracker() {
-        super(false);
-    }
 
     public Optional<MarketAPI> getTrackedMarket() {
         return Optional.ofNullable(trackedMarket);
@@ -48,6 +52,11 @@ public final class StarsectorMarketUiContextTracker
         if (market == null || isTrackedMarket(market)) {
             clearTrackedMarket();
         }
+    }
+
+    @Override
+    public void reportPlayerMarketTransaction(PlayerMarketTransaction transaction) {
+        // A trade happens inside a market already tracked, so it moves nothing here.
     }
 
     private void trackMarket(MarketAPI market) {

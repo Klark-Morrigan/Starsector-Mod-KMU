@@ -133,7 +133,7 @@ public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand
 
         var conditionService = new KmuConditionService(
             new StarsectorConditionRepository(),
-            KmuErrorReporter.noop(),
+            KmuErrorReporter.createLoggingReporter(KmuConditionService.class),
             new StarsectorConditionOfferPolicy(KmuMarketConditionSettings::shouldOfferAllConditions));
 
         return new KmuConditionEditorEntryPoint(

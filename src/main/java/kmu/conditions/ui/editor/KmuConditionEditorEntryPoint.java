@@ -26,13 +26,19 @@ public final class KmuConditionEditorEntryPoint {
     public KmuConditionEditorEntryPoint(
             KmuMarketUiContextResolver contextResolver,
             KmuConditionEditor editor) {
-        this(contextResolver, editor, new StarsectorConditionEditorTargetValidator(), KmuErrorReporter.noop());
+
+        this(
+            contextResolver,
+            editor,
+            new StarsectorConditionEditorTargetValidator(),
+            KmuErrorReporter.createLoggingReporter(KmuConditionEditorEntryPoint.class));
     }
 
     public KmuConditionEditorEntryPoint(
             KmuMarketUiContextResolver contextResolver,
             KmuConditionEditor editor,
             KmuErrorReporter errorReporter) {
+
         this(contextResolver, editor, new StarsectorConditionEditorTargetValidator(), errorReporter);
     }
 
@@ -41,6 +47,7 @@ public final class KmuConditionEditorEntryPoint {
             KmuConditionEditor editor,
             KmuConditionEditorTargetValidator targetValidator,
             KmuErrorReporter errorReporter) {
+
         this.contextResolver = Objects.requireNonNull(contextResolver, "contextResolver");
         this.editor = Objects.requireNonNull(editor, "editor");
         this.targetValidator = Objects.requireNonNull(targetValidator, "targetValidator");
@@ -52,14 +59,19 @@ public final class KmuConditionEditorEntryPoint {
     }
 
     public KmuConditionEditorOpenResult openForCurrentMarketDetailed() {
+
         Optional<KmuMarketUiContext> context;
+
         try {
             context = contextResolver.findCurrentMarketContext();
-        } catch (RuntimeException exception) {
-            errorReporter.report(FAILED_TO_RESOLVE_MARKET_CONTEXT, exception);
+
+        } catch (RuntimeException runtimeException) {
+
+            errorReporter.report(FAILED_TO_RESOLVE_MARKET_CONTEXT, runtimeException);
+
             return KmuConditionEditorOpenResult.failed(
                 FAILED_TO_RESOLVE_MARKET_CONTEXT,
-                exception);
+                runtimeException);
         }
 
         if (!context.isPresent()) {
@@ -67,14 +79,19 @@ public final class KmuConditionEditorEntryPoint {
         }
 
         var marketContext = context.get();
+
         Optional<String> unsupportedReason;
+
         try {
             unsupportedReason = targetValidator.getUnsupportedReason(marketContext);
-        } catch (RuntimeException exception) {
-            errorReporter.report(FAILED_TO_VALIDATE_TARGET, exception);
+
+        } catch (RuntimeException runtimeException) {
+
+            errorReporter.report(FAILED_TO_VALIDATE_TARGET, runtimeException);
+
             return KmuConditionEditorOpenResult.failed(
                 FAILED_TO_VALIDATE_TARGET,
-                exception);
+                runtimeException);
         }
 
         if (unsupportedReason.isPresent()) {
@@ -83,12 +100,16 @@ public final class KmuConditionEditorEntryPoint {
 
         try {
             editor.open(marketContext);
+
             return KmuConditionEditorOpenResult.opened();
-        } catch (RuntimeException exception) {
-            errorReporter.report(FAILED_TO_OPEN_MANAGER, exception);
+
+        } catch (RuntimeException runtimeException) {
+
+            errorReporter.report(FAILED_TO_OPEN_MANAGER, runtimeException);
+
             return KmuConditionEditorOpenResult.failed(
                 FAILED_TO_OPEN_MANAGER,
-                exception);
+                runtimeException);
         }
     }
 }
