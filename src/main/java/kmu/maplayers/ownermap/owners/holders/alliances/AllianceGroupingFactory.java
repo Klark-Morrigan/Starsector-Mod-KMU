@@ -32,23 +32,30 @@ public final class AllianceGroupingFactory {
      * @return a grouping folding each alliance's members into its bloc
      */
     public static HolderGrouping buildFrom(List<AllianceRecord> alliances) {
+
         Map<String, String> blocIdByFactionId = new HashMap<>();
         Map<String, String> colourFactionIdByBlocId = new HashMap<>();
         Map<String, String> allianceNameByBlocId = new HashMap<>();
-        for (AllianceRecord alliance : alliances) {
-            List<String> members = alliance.membersSortedDescending();
-            if (members.isEmpty()) {
+
+        for (var alliance : alliances) {
+
+            var leadFactionId = alliance.findLeadFactionId();
+            if (leadFactionId.isEmpty()) {
                 // No member means no bloc to fold into and no lead member to colour
                 // off, so a memberless alliance leaves no trace in the grouping.
                 continue;
             }
-            String blocId = alliance.allianceId();
-            for (String member : members) {
+
+            var blocId = alliance.allianceId();
+
+            for (var member : alliance.membersSortedDescending()) {
                 blocIdByFactionId.put(member, blocId);
             }
-            colourFactionIdByBlocId.put(blocId, members.get(0));
+
+            colourFactionIdByBlocId.put(blocId, leadFactionId.get());
             allianceNameByBlocId.put(blocId, alliance.name());
         }
+
         return new HolderGrouping(
             blocIdByFactionId,
             colourFactionIdByBlocId,
