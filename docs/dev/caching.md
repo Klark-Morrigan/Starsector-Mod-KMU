@@ -107,7 +107,7 @@ then reacts to each half on its own axis:
 the fingerprint moving means the geometry is stale
 (whole-map, since the partition depends on every site),
 while the owner map is diffed to mark exactly the systems whose owner changed.
-It also tracks the moving-system set and fingerprints the live alliance set.
+It also tracks the moving-system set and compares the live alliance records with the last poll's.
 All four baselines are its own,
 so nothing about the diff lives in the loop.
 
@@ -250,7 +250,7 @@ a producer reaching one it was not handed is a producer that can raise on a map 
 | `MapLayerCommonRefreshSignal.GEOMETRY` | `MapLayerCommonRefreshSignal` | the drawn-system set or moving-system set changing | the geometry cache |
 | `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental owner refresh, or a full rebuild where the standing map cannot take one |
 | grouping revision | `MapLayerRefreshBoard` | every system marked into the set above | the sidebar picker memo |
-| `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance-set fingerprint moving | every political view's content revision |
+| `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance records differing from the last poll's | every political view's content revision |
 | `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.MAP_STYLE` | `MapLayerCommonRefreshSignal` | the uninhabited-outline and name-format toggles | **nothing** - see below |
