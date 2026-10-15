@@ -166,7 +166,7 @@ Its entries sit in KMLib's shared `ObservationStore` under a key of its own,
 each spelt by `ColonyObservationCodec` -
 the moment,
 then the place -
-and `PresentColonies` is what a load asks which colonies the sector still holds,
+and KMLib's `SectorMarkets.readMarketIds` is what a load asks which colonies the sector still holds,
 read off the raw market listings
 so a superseded market that may yet win its place is not shed as gone.
 
