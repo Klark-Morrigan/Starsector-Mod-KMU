@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.markets.SectorMarkets;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.markets.colonies.SystemColonies;
@@ -182,7 +183,7 @@ public final class SectorColonySightings {
 
         SIGHTINGS_REGISTER.dropObservationsOfAbsentSubjects(
             sector,
-            PresentColonies::readColonyIds);
+            SectorMarkets::readMarketIds);
     }
 
     /**
@@ -204,7 +205,7 @@ public final class SectorColonySightings {
 
         SIGHTINGS_REGISTER.reconcileWithLoadedSave(
             sector,
-            PresentColonies::readColonyIds,
+            SectorMarkets::readMarketIds,
             loadedSector -> recordSightingsIn(loadedSector, loadedSector.getCurrentLocation()));
     }
 
