@@ -105,7 +105,7 @@ the rest link against Nex classes.
 | KM class | Repo | Nex symbol | A rename costs |
 | --- | --- | --- | --- |
 | `NexerelinPresence` | KMLib | mod ID `nexerelin` | every Nex feature reads as absent |
-| `NexerelinMarketTransferRelay` | KMU | implements `exerelin.utilities.InvasionListener` (4 abstract methods) | the transfer fast path; the poll still repaints |
+| `NexerelinMarketTransferRelay` | KMLib | implements `exerelin.utilities.InvasionListener` (4 abstract methods) | the transfer fast path; the poll still repaints |
 | `NexerelinAllianceReader` | KMLib | `AllianceManager.getManager()`, `getAllianceList()`; `Alliance.uuId`, `getName()`, `getMembersSorted()` | every alliance read: view, contest, visibility |
 | `NexerelinMarketTransfer` | KMLib | `SectorManager.transferMarket(market, newOwner, oldOwner, playerInvolved, isCapture, factionsToNotify, repChange)` | Nex's hand-over; the composed one runs instead |
 | `NexerelinSubmarkets` | KMLib | `SectorManager.updateSubmarkets(market, oldOwnerId, newOwnerId)` | Nex's submarket rules on a hand-over |
@@ -120,8 +120,8 @@ so the null check in `NexerelinAllianceReader` is still needed.
 The relay is the fragile one.
 `InvasionListener` has no default methods,
 so a fifth method added by Nex would throw `AbstractMethodError` inside Nex's own transfer.
-Nothing KMU guards reaches that frame;
-the fix is a KMU release.
+Nothing KM code guards reaches that frame;
+the fix is a KMLib release.
 
 The last three are not map-layer code.
 They are KMLib's colony operations,
@@ -132,14 +132,17 @@ listed because a Nex upgrade is checked against all of them at once.
 ```mermaid
 flowchart LR
     nex["Nexerelin<br/>AllianceManager, SectorManager"]
-    lib["KMLib kmlib.mods.nexerelin<br/>NexerelinAllianceSource"]
-    kmuNex["KMU kmu.mods.nexerelin<br/>NexerelinAlliances, relay, wording"]
+    lib["KMLib kmlib.mods.nexerelin<br/>NexerelinAllianceSource, relay"]
+    kmuNex["KMU kmu.mods.nexerelin<br/>NexerelinAlliances, wording"]
     layers["KMU kmu.maplayers<br/>views, boxes, refresh, visibility"]
     nex --> lib --> kmuNex --> layers
-    nex -- "InvasionListener" --> kmuNex
+    nex -- "InvasionListener" --> lib
+    lib -- "MarketTransferListener" --> layers
+    lib -- "AllianceSource, bound in MapLayers" --> layers
 ```
 
-`kmu.maplayers` imports `kmu.mods.nexerelin` and nothing of Nex itself;
+`kmu.maplayers` imports `kmu.mods.nexerelin` and KMLib's `kmlib.mods.nexerelin`,
+and nothing of Nex itself;
 the layering gate closes it to `exerelin`.
 
 | Map-layer feature | Reads | Through |
@@ -150,12 +153,12 @@ the layering gate closes it to `exerelin`.
 | Hover boxes split allies from rivals | live alliance grouping | `SystemDominationTooltip`, `SystemClaimTooltip` |
 | "Contested by" rather than "Present" | mod presence | `NexerelinContestWording` |
 | An ally keeps a concealed colony's secret | live alliance membership | `MapLayers.registerFactionAlliances` -> `FactionAllianceRegistry` |
-| Alliance changes repaint | alliance fingerprint, every poll | `PoliticalMapStalenessSource.markAllianceSetChange` |
+| Alliance changes repaint | live alliance records, every poll | `MapLayers.selectAllianceSource` -> `PoliticalMapStalenessSource.markAllianceSetChange` |
 | A conquest repaints at once | `InvasionListener.reportMarketTransfered` | relay -> `PoliticalMapMarketTransferListener` |
 | Filter-row toggle tooltip mentions alliances | mod presence | `MapLayers.registerAllianceViewAvailability` -> `VanillaMapLayerToggleAttacher` |
 
 An alliance change reaches the picture through the poll.
-The fingerprint moving raises `PoliticalMapRefreshSignal.ALLIANCES`;
+The records differing from the last poll's raises `PoliticalMapRefreshSignal.ALLIANCES`;
 all three political views fold that revision into their content revision,
 so the next map frame rebuilds the clusters and the sidebar picker re-resolves.
 The hover box reads alliances live and needs no signal.
