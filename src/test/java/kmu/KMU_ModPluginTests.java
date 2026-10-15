@@ -22,7 +22,6 @@ import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.base.visibility.colonies.ColonySightingInstaller;
-import kmu.mods.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.mods.rat.RandomAssortmentOfThingsCompatibilityInstaller;
 import kmu.mods.rat.RandomAssortmentOfThingsSettings;
 import kmu.settings.KmuFeatureSettings;
@@ -350,9 +349,8 @@ class KMU_ModPluginTests {
 
         @Test
         void standsTheInstallersUpInTheOrderEachNeedsThem() {
-            // Everything derives from the machinery, the transfer relay has to be in place before a
-            // layer's first transfer, and the political map's save heal runs inside the standings
-            // and repairs what the render surfaces then read.
+            // Everything derives from the machinery, and the political map's save heal runs inside
+            // the standings and repairs what the render surfaces then read.
             var sectorMock = mock(SectorAPI.class);
 
             try (var installers = new MapLayerInstallerMocks()) {
@@ -511,8 +509,6 @@ class KMU_ModPluginTests {
             mockStatic(SectorMapMachineryIndex.class);
         private final MockedStatic<MapSubstrateRefreshInstaller> substrateRefreshMock =
             mockStatic(MapSubstrateRefreshInstaller.class);
-        private final MockedStatic<NexerelinInvasionListenerInstaller> transferRelayMock =
-            mockStatic(NexerelinInvasionListenerInstaller.class);
         private final MockedStatic<MapLayerStandings> standingsMock =
             mockStatic(MapLayerStandings.class);
         private final MockedStatic<MapSurfaceInstaller> surfaceMock =
@@ -529,7 +525,6 @@ class KMU_ModPluginTests {
 
             machineryIndexMock.clearInvocations();
             substrateRefreshMock.clearInvocations();
-            transferRelayMock.clearInvocations();
             standingsMock.clearInvocations();
             surfaceMock.clearInvocations();
             sidebarMock.clearInvocations();
@@ -544,7 +539,6 @@ class KMU_ModPluginTests {
             return inOrder(
                 SectorMapMachineryIndex.class,
                 MapSubstrateRefreshInstaller.class,
-                NexerelinInvasionListenerInstaller.class,
                 MapLayerStandings.class,
                 MapSurfaceInstaller.class,
                 SidebarInstaller.class,
@@ -564,9 +558,6 @@ class KMU_ModPluginTests {
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.installAll(sector), howOften);
 
-            transferRelayMock.verify(
-                () -> NexerelinInvasionListenerInstaller.installIfPresent(sector), howOften);
-
             standingsMock.verify(() -> MapLayerStandings.applyArrangementTo(sector), howOften);
             surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector), howOften);
             sidebarMock.verify(() -> SidebarInstaller.installAll(sector), howOften);
@@ -581,9 +572,6 @@ class KMU_ModPluginTests {
 
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.uninstallAll(sector), howOften);
-
-            transferRelayMock.verify(
-                () -> NexerelinInvasionListenerInstaller.uninstallIfPresent(sector), howOften);
 
             standingsMock.verify(
                 () -> MapLayerStandings.standEveryLayerDownFrom(sector), howOften);
@@ -600,10 +588,6 @@ class KMU_ModPluginTests {
 
             standUpOrder.verify(machineryIndexMock, () -> SectorMapMachineryIndex.installMachineryOn(sector));
             standUpOrder.verify(substrateRefreshMock, () -> MapSubstrateRefreshInstaller.installAll(sector));
-            standUpOrder.verify(
-                transferRelayMock,
-                () -> NexerelinInvasionListenerInstaller.installIfPresent(sector));
-
             standUpOrder.verify(standingsMock, () -> MapLayerStandings.applyArrangementTo(sector));
             standUpOrder.verify(surfaceMock, () -> MapSurfaceInstaller.installAll(sector));
             standUpOrder.verify(sidebarMock, () -> SidebarInstaller.installAll(sector));
@@ -620,10 +604,6 @@ class KMU_ModPluginTests {
             takeBackOrder.verify(sidebarMock, () -> SidebarInstaller.uninstallAll(sector));
             takeBackOrder.verify(surfaceMock, () -> MapSurfaceInstaller.uninstallAll(sector));
             takeBackOrder.verify(standingsMock, () -> MapLayerStandings.standEveryLayerDownFrom(sector));
-            takeBackOrder.verify(
-                transferRelayMock,
-                () -> NexerelinInvasionListenerInstaller.uninstallIfPresent(sector));
-
             takeBackOrder.verify(substrateRefreshMock, () -> MapSubstrateRefreshInstaller.uninstallAll(sector));
             takeBackOrder.verify(machineryIndexMock, () -> SectorMapMachineryIndex.uninstallMachineryFrom(sector));
         }
@@ -636,7 +616,6 @@ class KMU_ModPluginTests {
             sidebarMock.close();
             surfaceMock.close();
             standingsMock.close();
-            transferRelayMock.close();
             substrateRefreshMock.close();
             machineryIndexMock.close();
         }

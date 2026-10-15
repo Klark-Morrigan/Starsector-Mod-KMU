@@ -2,22 +2,11 @@ package kmu.util;
 
 /**
  * The IDs of the strings the political map reads: its tab and view selector, its sort modes, the
- * domination and claims boxes with the status line and colony listing they share, and what a
- * session loses where the relay for Nexerelin's colony transfers did not install.
+ * domination and claims boxes with the status line and colony listing they share.
  *
  * <p>Read through {@link KmuStringKeys}' accessors, which bind the category.
  */
 public final class KmuPoliticalMapStringKeys {
-
-    /**
-     * What a session loses where the relay for Nexerelin's colony transfers did not install. A delay
-     * rather than a missing repaint, because the political map's own poll still finds the new holder
-     * within seconds; the relay only makes it immediate.
-     */
-    public static final String COMPATIBILITY_LOST_NEXERELIN_COLONY_TRANSFERS =
-        "compatibility_lost_nexerelin_colony_transfers";
-    public static final String COMPATIBILITY_UNAFFECTED_NEXERELIN_COLONY_TRANSFERS =
-        "compatibility_unaffected_nexerelin_colony_transfers";
 
     public static final String POLITICAL_MAP_TAB_POLITICAL_MAP = "political_map_tab_political_map";
     public static final String POLITICAL_MAP_CTL_FACTIONS = "political_map_ctl_factions";

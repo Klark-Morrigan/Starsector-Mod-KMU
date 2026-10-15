@@ -96,10 +96,8 @@ and the colony keeps the sighting it already had.
 `PoliticalMapMarketTransferListener` answers a colony changing hands,
 which vanilla fires nothing for.
 It implements KMLib's `kmlib.starsector.listeners.MarketTransferListener` and names no Nexerelin type.
-KMLib's `kmlib.mods.nexerelin.NexerelinMarketTransferRelay` -
-one per sector,
-installed by `KMU_ModPlugin.installMapLayers` through `NexerelinInvasionListenerInstaller` -
-forwards Nexerelin's transfers to every `MarketTransferListener` on the sector's listener manager.
+KMLib puts a relay on each loaded sector where Nexerelin is enabled,
+and it forwards Nexerelin's transfers to every `MarketTransferListener` on the sector's listener manager.
 That keeps `kmu.maplayers` closed to optional-mod imports;
 on an install without Nexerelin the listener is registered and never called.
 
