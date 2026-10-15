@@ -123,12 +123,13 @@ Every view of this layer folds its revision into its content revision
 The alliances view paints its blocs out of the alliance set;
 the faction and claims views judge their bands' contests against it.
 
-The poll's alliance fingerprint keys on who is allied and which member leads,
-the lead being the bloc's colour.
-So a market-size reshuffle below the lead never churns the map,
-while a change of lead does.
-On an install without Nexerelin the fingerprint is a fixed value,
-so it never fires and no Nexerelin class loads.
+The poll compares the alliance records whole,
+as a set so the order a source reports them in does not count.
+Comparing what one view reads instead would miss what another view reads:
+the alliances view shows each alliance's name as well as its members and lead.
+The source is handed in by `MapLayers`, the composition root.
+On an install without Nexerelin it is `AllianceSource.NO_ALLIANCES`,
+so the poll never fires and no Nexerelin class loads.
 
 ## What is not here
 
