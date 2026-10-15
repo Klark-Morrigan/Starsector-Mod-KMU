@@ -134,6 +134,7 @@ Code that knows nothing of KMU now lives in KMLib, where any mod built on it can
 
 | Before | After |
 | --- | --- |
+| `base.theme.GlLineHatchStroke` and `base.theme.HatchStroke` | `kmlib.opengl.hatch.GlLineHatchStroke`. `HatchStroke` is gone: `HatchStyle(HatchPattern, GlLineHatchStroke)` holds the record |
 | `CellFrontierGeometry.clipCellsToFrontier(List, float[])` | `kmlib.opengl.PolygonTessellator.tessellateToBoundaryLoopsWithinLoop(List, float[])` |
 
 </details>

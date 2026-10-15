@@ -7,16 +7,12 @@ held in the shape the rest of the map reads it in -
 plus `ElementStyleAdjustment`,
 the one value here a rebuild decides rather than the player,
 laid over a style to push an element into the background.
-Everything here is a record apart from three interfaces.
-Two are places a layer's own vocabulary plugs in rather than types this package populates:
+Everything here is a record apart from two interfaces.
+Both are places a layer's own vocabulary plugs in rather than types this package populates:
 `MapStyleCategory`,
 the key the per-category bundles are held under,
 and `ElementPaintSelection`,
 the colour pick an element carries.
-The third,
-`HatchStroke`,
-is sealed over this package's own records -
-see [the two tiers](#the-two-tiers).
 What little behaviour the records carry answers only from their own components -
 `ElementStyle.isDrawn`,
 `RenderStyle.categoryStyle`,
@@ -108,11 +104,8 @@ The pattern is KMLib's own `HatchPattern` -
 the whole of what a cut depends on,
 and therefore exactly what `Hatching.computeHatchRun` takes -
 so the cut is handed the pattern alone and never holds a per-frame number it could come to bake.
-The stroke is the one sealed interface here -
-with `GlLineHatchStroke` its one permitted form -
-because how a hatch reaches the screen decides which numbers it needs at all,
-and a flat record carrying every substrate's fields would leave combinations nothing can draw representable.
-The renderer dispatches on which arrived and reads only what that one carries.
+The stroke is KMLib's `GlLineHatchStroke`,
+the line quality and width the GL line rasteriser strokes the segments at.
 
 The split is *when*, not *whose*:
 the line stroke's width is a fraction of the pattern's baked spacing,

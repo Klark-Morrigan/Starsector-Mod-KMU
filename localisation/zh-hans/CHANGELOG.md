@@ -133,6 +133,7 @@
 
 | 之前 | 之后 |
 | --- | --- |
+| `base.theme.GlLineHatchStroke` 和 `base.theme.HatchStroke` | `kmlib.opengl.hatch.GlLineHatchStroke`。`HatchStroke` 已移除：`HatchStyle(HatchPattern, GlLineHatchStroke)` 直接持有该记录 |
 | `CellFrontierGeometry.clipCellsToFrontier(List, float[])` | `kmlib.opengl.PolygonTessellator.tessellateToBoundaryLoopsWithinLoop(List, float[])` |
 
 </details>
