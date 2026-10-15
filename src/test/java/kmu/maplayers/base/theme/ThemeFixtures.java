@@ -1,6 +1,7 @@
 package kmu.maplayers.base.theme;
 
 import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.hatch.GlLineHatchStroke;
 import kmlib.opengl.hatch.HatchPattern;
 
 /**

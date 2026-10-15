@@ -1,12 +1,12 @@
 package kmu.maplayers.ownermap.render.style;
 
 import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.hatch.GlLineHatchStroke;
 import kmlib.opengl.hatch.HatchPattern;
 
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
-import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HatchStyle;
 import kmu.maplayers.base.theme.HoverGlowStyle;
@@ -63,7 +63,7 @@ public final class RenderStyleReader {
     // a spared cell's neutral lifts. The hatch angle is authored in degrees and the settings getter
     // converts it, so the hatch math downstream stays in radians. The player's hatch width and
     // smoothing are properties of the stroke rather than of the pattern, so both are read into the
-    // stroke the renderer dispatches on rather than sitting loose beside the layout.
+    // stroke the renderer draws by rather than sitting loose beside the layout.
     public static GlobalStyle readGlobalStyle() {
 
         return new GlobalStyle(

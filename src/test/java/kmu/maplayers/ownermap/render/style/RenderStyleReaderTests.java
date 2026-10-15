@@ -1,11 +1,11 @@
 package kmu.maplayers.ownermap.render.style;
 
 import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.hatch.GlLineHatchStroke;
 import kmlib.opengl.hatch.HatchPattern;
 
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HoverGlowStyle;
 import kmu.maplayers.ownermap.ContentInputs;
