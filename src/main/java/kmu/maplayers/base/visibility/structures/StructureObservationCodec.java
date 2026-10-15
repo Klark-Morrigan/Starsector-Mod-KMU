@@ -1,6 +1,7 @@
 package kmu.maplayers.base.visibility.structures;
 
-import kmu.maplayers.base.visibility.observations.ObservationCodec;
+import kmlib.starsector.memory.observations.ObservationCodec;
+
 import kmu.util.KmuValues;
 
 import java.util.EnumSet;

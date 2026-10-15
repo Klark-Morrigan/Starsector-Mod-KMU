@@ -162,7 +162,7 @@ The player's arrival writes the gated shapes alone;
 the inhabitants' sweep also writes the collapsed worlds their word is the only thing showing,
 so one outlives the last neighbour that could report it -
 up to the survey bar, that written record being read under it as the player's own sightings are.
-Its entries sit in the shared `ObservationStore` under a key of its own,
+Its entries sit in KMLib's shared `ObservationStore` under a key of its own,
 each spelt by `ColonyObservationCodec` -
 the moment,
 then the place -
@@ -192,7 +192,7 @@ A running hack is deliberately not among its fields,
 for the reason stated there.
 `StructureObservations` is the port a rule reads the register through,
 over `SectorStructureObservations`,
-whose entries sit in the shared `ObservationStore` under a key of its own and are spelt by `StructureObservationCodec` -
+whose entries sit in KMLib's shared `ObservationStore` under a key of its own and are spelt by `StructureObservationCodec` -
 the two moments,
 the state letters,
 then the holder ID to the end of the entry.
@@ -253,14 +253,14 @@ and a row nothing contributes to carries no date.
 A current axis and an unknown one both contribute nothing,
 so a row is dated by what it recalls and by nothing else.
 
-What an axis recalls is kept by `ObservationStore`,
+What an axis recalls is kept by KMLib's `ObservationStore` (`kmlib.starsector.memory.observations`),
 the register every family writes its observations into:
 sector memory under a key of its own,
-held as text so no class name of ours is baked into a save,
+held as text so no class name is baked into a save,
 and never opened at all where there was nothing to record.
-`RecordedObservations` is what a pass reads it back through.
+KMLib's `RecordedObservations` is what a pass reads it back through.
 What one entry means stays with the family,
-as an `ObservationCodec` the store is handed -
+as a KMLib `ObservationCodec` the store is handed -
 which is also where the fixed-fields-first convention lives,
 the free-form field running to the end of an entry
 so an ID spelt with the separator reads back whole,

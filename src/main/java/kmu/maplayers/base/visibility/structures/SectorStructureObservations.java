@@ -2,7 +2,7 @@ package kmu.maplayers.base.visibility.structures;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.visibility.observations.ObservationStore;
+import kmlib.starsector.memory.observations.ObservationStore;
 
 /**
  * The structure register kept in the sector's own memory: which key it is held under, how one

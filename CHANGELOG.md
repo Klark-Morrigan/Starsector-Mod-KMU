@@ -137,6 +137,7 @@ Code that knows nothing of KMU now lives in KMLib, where any mod built on it can
 
 | Before | After |
 | --- | --- |
+| `ObservationStore`, `ObservationCodec` and `RecordedObservations` in `base.visibility.observations` | `kmlib.starsector.memory.observations` |
 | `base.theme.GlLineHatchStroke` and `base.theme.HatchStroke` | `kmlib.opengl.hatch.GlLineHatchStroke`. `HatchStroke` is gone: `HatchStyle(HatchPattern, GlLineHatchStroke)` holds the record |
 | `CellFrontierGeometry.clipCellsToFrontier(List, float[])` | `kmlib.opengl.PolygonTessellator.tessellateToBoundaryLoopsWithinLoop(List, float[])` |
 

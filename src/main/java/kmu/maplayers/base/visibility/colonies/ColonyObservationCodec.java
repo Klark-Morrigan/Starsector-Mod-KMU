@@ -1,6 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
-import kmu.maplayers.base.visibility.observations.ObservationCodec;
+import kmlib.starsector.memory.observations.ObservationCodec;
+
 import kmu.util.KmuValues;
 
 /**
