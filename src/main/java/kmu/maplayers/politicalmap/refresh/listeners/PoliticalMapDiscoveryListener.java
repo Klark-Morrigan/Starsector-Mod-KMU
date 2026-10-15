@@ -17,7 +17,8 @@ import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
  * systems are reachable - a jump point, a gate - is not handled here: gate activation is a separate,
  * later step from discovery, so reachability is left to {@link PoliticalMapStalenessSource}.
  */
-public class PoliticalMapDiscoveryListener implements DiscoverEntityListener {
+public final class PoliticalMapDiscoveryListener
+        implements DiscoverEntityListener {
 
     private final SectorAPI sector;
 
@@ -42,7 +43,7 @@ public class PoliticalMapDiscoveryListener implements DiscoverEntityListener {
         MarketPoliticsRefresh.reportMarketChange(
             sector,
             entity.getMarket(),
-            "discovered market", // Event.
-            "entity=" + entity.getId()); // Context.
+            "discovered market",
+            "entity=" + entity.getId());
     }
 }

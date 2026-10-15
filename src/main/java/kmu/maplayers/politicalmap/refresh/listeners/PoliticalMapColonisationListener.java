@@ -22,7 +22,8 @@ import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
  * <p>Only player colonisation fires this, since the engine fires no listener for an NPC faction
  * founding a colony; {@link PoliticalMapStalenessSource}'s holder diff catches those.
  */
-public class PoliticalMapColonisationListener implements PlayerColonizationListener {
+public final class PoliticalMapColonisationListener
+        implements PlayerColonizationListener {
 
     private final SectorAPI sector;
 
@@ -42,17 +43,24 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
         // it off the planet. A null market is filtered downstream. The planet ID
         // rides along in the log so a colony that does (or does not) paint on
         // founding can be traced to it.
-        MarketAPI market = planet == null ? null : planet.getMarket();
-        String planetId = planet == null ? "null" : planet.getId();
+        var market = planet == null
+            ? null
+            : planet.getMarket();
+
+        var planetId = planet == null
+            ? "null"
+            : planet.getId();
+
         MarketPoliticsRefresh.reportMarketChange(
             sector,
             market,
-            "colony founded", // Event.
-            "planet=" + planetId); // Context.
+            "colony founded",
+            "planet=" + planetId);
     }
 
     @Override
     public void reportPlayerAbandonedColony(MarketAPI market) {
+
         // Abandonment pulls the market from the economy but leaves its planet, so
         // the system still resolves post-removal and the re-derivation reads the
         // colonyless economy, dropping the faction fill.
@@ -67,7 +75,7 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
         MarketPoliticsRefresh.reportMarketChange(
             sector,
             market,
-            "colony abandoned", // Event.
-            ""); // Context.
+            "colony abandoned",
+            "");
     }
 }

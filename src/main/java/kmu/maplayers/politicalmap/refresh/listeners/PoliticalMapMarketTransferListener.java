@@ -19,7 +19,8 @@ import kmu.maplayers.politicalmap.refresh.MarketPoliticsRefresh;
  * <p>Reached through {@link MarketTransferListener}, so it names no mod's types: whatever reports
  * transfers on this sector tells it, and on an install where nothing does it is never called.
  */
-public class PoliticalMapMarketTransferListener implements MarketTransferListener {
+public final class PoliticalMapMarketTransferListener
+        implements MarketTransferListener {
 
     private final SectorAPI sector;
 
@@ -38,28 +39,30 @@ public class PoliticalMapMarketTransferListener implements MarketTransferListene
             FactionAPI newHolder,
             boolean isCapture) {
 
-        // The from/to factions and capture flag ride along in the log so a cell
-        // that does (or does not) repaint on conquest can be traced to this
-        // transfer; the shared refresh filters an unseated market.
+        // The from/to factions and capture flag ride along in the log so a cell that does (or does
+        // not) repaint on conquest can be traced to this transfer; the shared refresh filters an
+        // unseated market.
         //
-        // A transfer is reported once it has happened, so the observation the
-        // refresh records is taken under the new owner. Where the conquest is what
-        // stopped a colony vouching for a rival's concealed base beside it - the
-        // two then sharing an owner - there is no earlier moment to read from here.
-        // That base keeps the sighting it already had, and is dated afresh by
-        // whatever observes it next. That is the resolution, not a gap.
+        // A transfer is reported once it has happened, so the observation the refresh records is
+        // taken under the new owner. Where the conquest is what stopped a colony vouching for a
+        // rival's concealed base beside it - the two then sharing an owner - there is no earlier
+        // moment to read from here. That base keeps the sighting it already had, and is dated afresh
+        // by whatever observes it next. That is the resolution, not a gap.
         MarketPoliticsRefresh.reportMarketChange(
             sector,
             market,
-            "market transferred", // Event.
+            "market transferred",
             "from=" + resolveFactionId(oldHolder)
                 + " to=" + resolveFactionId(newHolder)
-                + " capture=" + isCapture); // Context.
+                + " capture=" + isCapture);
     }
 
-    // Null-safe faction ID for the trace line; a transfer to or from an unowned
-    // state is logged as "null" rather than crashing the callback.
+    // Null-safe faction ID for the trace line; a transfer to or from an unowned state is logged as
+    // "null" rather than crashing the callback.
     private static String resolveFactionId(FactionAPI faction) {
-        return faction == null ? "null" : faction.getId();
+
+        return faction == null
+            ? "null"
+            : faction.getId();
     }
 }

@@ -15,7 +15,8 @@ import kmu.maplayers.politicalmap.refresh.MarketPoliticsRefresh;
  * engine fires {@link ColonySizeChangeListener} on every resize, and what that event costs is
  * {@link MarketPoliticsRefresh}'s.
  */
-public class PoliticalMapColonySizeListener implements ColonySizeChangeListener {
+public final class PoliticalMapColonySizeListener
+        implements ColonySizeChangeListener {
 
     private final SectorAPI sector;
 
@@ -34,7 +35,7 @@ public class PoliticalMapColonySizeListener implements ColonySizeChangeListener 
         MarketPoliticsRefresh.reportMarketChange(
             sector,
             market,
-            "colony resize", // Event.
-            "prevSize=" + prevSize); // Context.
+            "colony resize",
+            "prevSize=" + prevSize);
     }
 }

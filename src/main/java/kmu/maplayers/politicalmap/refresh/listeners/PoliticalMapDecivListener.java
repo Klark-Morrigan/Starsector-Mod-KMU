@@ -27,7 +27,8 @@ import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
  * Map membership is {@link PoliticalMapStalenessSource}'s alone, so this listener stays on the
  * holding axis.
  */
-public class PoliticalMapDecivListener implements ColonyDecivListener {
+public final class PoliticalMapDecivListener
+        implements ColonyDecivListener {
 
     private final SectorAPI sector;
 
@@ -67,7 +68,7 @@ public class PoliticalMapDecivListener implements ColonyDecivListener {
         MarketPoliticsRefresh.reportMarketChange(
             sector,
             market,
-            "decivilised colony", // Event.
-            "fullyDestroyed=" + fullyDestroyed); // Context.
+            "decivilised colony",
+            "fullyDestroyed=" + fullyDestroyed);
     }
 }
