@@ -24,12 +24,13 @@ import java.util.function.Supplier;
 
 import static kmu.util.KmuValues.normaliseText;
 
-public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand {
+public final class KmuOpenMarketConditionManagerCommand
+        extends BaseKmlibCommand {
 
     // No parameters; declaring the spec still makes the parser reject a stray
     // argument as bad syntax rather than silently ignoring it.
     private static final ParameterSpec SPEC =
-        ParameterSpec.takingNoArguments("Usage: kmu_mcm_open.");
+        ParameterSpec.takingNoArguments("kmu_mcm_open");
 
     // What a player typing the command while the feature is off is told. It names where the switch
     // is, because the command is registered by data file whatever the switch says: Console Commands
@@ -43,6 +44,7 @@ public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand
     private final Supplier<KmuConditionEditorOpenResult> openEditor;
 
     public KmuOpenMarketConditionManagerCommand() {
+
         this(
             KmuFeatureSettings::isMarketConditionManagerEnabled,
             () -> createDefaultEntryPoint().openForCurrentMarketDetailed(),
@@ -55,6 +57,7 @@ public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand
             CommandOutput output) {
 
         super(output);
+
         this.isFeatureSwitchedOn = Objects.requireNonNull(isFeatureSwitchedOn, "isFeatureSwitchedOn");
         this.openEditor = Objects.requireNonNull(openEditor, "openEditor");
     }
@@ -89,18 +92,18 @@ public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand
         try {
             result = openEditor.get();
 
-        } catch (RuntimeException exception) {
+        } catch (RuntimeException runtimeException) {
 
-            output.showMessage("Failed to open Market Condition Manager: " + exception.getMessage());
+            output.showMessage("Failed to open Market Condition Manager: " + runtimeException.getMessage());
             return CommandResult.ERROR;
         }
 
         output.showMessage(messageFor(result));
 
         if (result.getStatus() == KmuConditionEditorOpenStatus.OPENED) {
-
             return CommandResult.SUCCESS;
         }
+
         if (result.getStatus() == KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT
                 || result.getStatus() == KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET) {
 
@@ -120,12 +123,13 @@ public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand
                 && causeMessage != null) {
 
             var message = result.getMessage();
-
             if (message.endsWith(".")) {
                 message = message.substring(0, message.length() - 1);
             }
+
             return message + ": " + causeMessage;
         }
+
         return result.getMessage();
     }
 
