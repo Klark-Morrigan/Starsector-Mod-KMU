@@ -127,6 +127,14 @@
 | `KmuErrorReporter.noop()` | `KmuErrorReporter.createLoggingReporter(Class)`：被捕获的失败总会留下记录 |
 | 继承 `BaseCampaignEventListener` 的 `StarsectorMarketUiContextTracker` | 实现 `ColonyInteractionListener`，即监听器管理器向其传递市场事件的接口 |
 
+##### 移至 KMLib
+
+与 KMU 无关的代码改由 KMLib 提供，任何基于它构建的 Mod 都能使用。
+
+| 之前 | 之后 |
+| --- | --- |
+| `CellFrontierGeometry.clipCellsToFrontier(List, float[])` | `kmlib.opengl.PolygonTessellator.tessellateToBoundaryLoopsWithinLoop(List, float[])` |
+
 </details>
 
 ## [0.2.1] - 2026-10-06

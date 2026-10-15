@@ -124,8 +124,8 @@ so one cluster's lit cells wash as one shape
 while two in rival clusters keep the seam the map draws -
 and its halo traces those joined outlines rather than any cluster frontier,
 since what a lit set says is the reach of the set.
-Both geometries settle "which cluster is this cell in"
-and "this cell clamped to that cluster's frontier" through the one `CellFrontierGeometry`,
+Both geometries settle "which cluster is this cell in" through the one `CellFrontierGeometry`,
+and "this cell clamped to that cluster's frontier" through the one KMLib `PolygonTessellator.tessellateToBoundaryLoopsWithinLoop`,
 so a cell reads the same under the cursor as it does inside a lit set.
 Both seams extend `PaintedCellShapes`,
 the frame's cell shapes themselves,

@@ -128,6 +128,14 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `KmuErrorReporter.noop()` | `KmuErrorReporter.createLoggingReporter(Class)`: a caught failure is always written somewhere |
 | `StarsectorMarketUiContextTracker` extending `BaseCampaignEventListener` | Implementing `ColonyInteractionListener`, the interface the listener manager delivers market events to |
 
+##### Moved to KMLib
+
+Code that knows nothing of KMU now lives in KMLib, where any mod built on it can reach it.
+
+| Before | After |
+| --- | --- |
+| `CellFrontierGeometry.clipCellsToFrontier(List, float[])` | `kmlib.opengl.PolygonTessellator.tessellateToBoundaryLoopsWithinLoop(List, float[])` |
+
 </details>
 
 ## [0.2.1] - 2026-10-06

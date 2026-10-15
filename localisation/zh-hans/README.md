@@ -345,6 +345,7 @@ So a word of one axis never stands in for another:
 | paint (everything one owner's elements draw from, in the changelog) | 绘制方式 | 绘制, to draw, with 方式, a manner; kept apart from 上色, colouring a territory |
 | shades (an owner's two colours, in the changelog) | 配色 | as in vanilla's 界面配色, a set of colours worn together |
 | seam (an interface a layer answers through, in the changelog) | 接缝 | where two parts are joined, which a seam between layers is |
+| moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
 | reading (an owner's looks and names, in the changelog) | 读取 | the plain word for reading something off; a reader is 读取方 |
 | contest (who holds a system, weighed between blocs) | 争夺 | to contend for, as in 争夺方 |
 | alliance set (every alliance at one moment, in the changelog) | 联盟集合 | 联盟 with 集合, a set |

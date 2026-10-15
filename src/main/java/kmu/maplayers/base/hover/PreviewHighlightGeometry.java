@@ -62,6 +62,7 @@ public final class PreviewHighlightGeometry {
         if (previewKey == null) {
             return HoverHighlight.NONE;
         }
+
         // Gathered before the memo is tested rather than after, because the gathering is what the
         // memo compares: map lookups per cell are cheap, and re-tessellating the set is not.
         var drawnCells = gatherDrawnCells(source, cellKeys);
@@ -71,6 +72,7 @@ public final class PreviewHighlightGeometry {
 
             return resolvedHighlight;
         }
+
         resolvedPreviewKey = previewKey;
         resolvedDrawnCells = drawnCells;
         resolvedHighlight = buildHighlight(drawnCells);
@@ -88,11 +90,15 @@ public final class PreviewHighlightGeometry {
         for (var group : groupCellsByCluster(drawnCells)) {
 
             washLoops.addAll(
-                CellFrontierGeometry.clipCellsToFrontier(group.paintedExtents(), group.frontier()));
+                PolygonTessellator.tessellateToBoundaryLoopsWithinLoop(
+                    group.paintedExtents(),
+                    group.frontier()));
         }
+
         if (washLoops.isEmpty()) {
             return HoverHighlight.NONE;
         }
+
         var outline = GlVertexRuns.flattenLoops(washLoops);
 
         // One tessellation over every group's loops rather than one per group: no two groups
@@ -112,10 +118,12 @@ public final class PreviewHighlightGeometry {
             float[] frontier) {
 
         for (var group : groups) {
+
             if (group.frontier() == frontier) {
                 return group;
             }
         }
+
         return null;
     }
 
@@ -134,9 +142,11 @@ public final class PreviewHighlightGeometry {
             if (paintedExtent.isEmpty()) {
                 continue;
             }
+
             drawnCells.add(
                 new DrawnCell(paintedExtent, source.resolveCandidateFrontierLoopsOf(cellKey)));
         }
+
         return drawnCells;
     }
 
@@ -159,12 +169,15 @@ public final class PreviewHighlightGeometry {
                 : findGroupSharingFrontier(groups, frontier);
 
             if (group == null) {
-                groups.add(
-                    new PreviewCellGroup(
-                        frontier,
-                        new ArrayList<>(List.of(drawnCell.paintedExtent()))));
+
+                groups.add(new PreviewCellGroup(
+                    frontier,
+                    new ArrayList<>(List.of(drawnCell.paintedExtent()))));
             } else {
-                group.paintedExtents().add(drawnCell.paintedExtent());
+
+                group
+                    .paintedExtents()
+                    .add(drawnCell.paintedExtent());
             }
         }
         return groups;
@@ -180,11 +193,14 @@ public final class PreviewHighlightGeometry {
         if (candidates.size() != resolved.size()) {
             return false;
         }
+
         for (var index = 0; index < candidates.size(); index++) {
+
             if (!candidates.get(index).isSameGeometryAs(resolved.get(index))) {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -204,6 +220,7 @@ public final class PreviewHighlightGeometry {
          * cost more per frame than the tessellation the memo is here to save.
          */
         boolean isSameGeometryAs(DrawnCell other) {
+
             return paintedExtent == other.paintedExtent()
                 && frontierLoops == other.frontierLoops();
         }
