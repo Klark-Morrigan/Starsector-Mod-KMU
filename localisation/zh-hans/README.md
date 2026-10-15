@@ -349,6 +349,8 @@ So a word of one axis never stands in for another:
 | reading (an owner's looks and names, in the changelog) | 读取 | the plain word for reading something off; a reader is 读取方 |
 | contest (who holds a system, weighed between blocs) | 争夺 | to contend for, as in 争夺方 |
 | alliance set (every alliance at one moment, in the changelog) | 联盟集合 | 联盟 with 集合, a set |
+| alliance record (one alliance as plain data, in the changelog) | 联盟记录 | 联盟 with 记录, a record |
+| rename (an alliance) | 改名 | the plain word for changing a name |
 | revision (a number that moves when content changes, in the changelog) | 修订号 | 修订, a revision, with 号, its number |
 | recede control (in the changelog) | 退后控件 | 退后 with 控件, the usual UI word for a control |
 | overload (one of several same-named methods, in the changelog) | 重载 | the usual computing word |
