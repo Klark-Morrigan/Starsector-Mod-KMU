@@ -4,6 +4,8 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.factions.alliances.AllianceRecord;
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
@@ -14,7 +16,6 @@ import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.mods.nexerelin.NexerelinAlliances;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -37,9 +38,9 @@ import static org.mockito.Mockito.when;
  * Pins the political map's staleness routing: it reads the snapshot in one walk and sends
  * each axis to its own refresh - a visibility or moving-set move rebuilds geometry, a
  * holder-map diff marks exactly the changed systems politics-stale under their keys (the same
- * set the event listeners feed), and an alliance-fingerprint move bumps the alliance revision - while the
- * first poll only establishes the baselines. Asserts on a real {@link MapLayerRefreshBoard},
- * stubbing the snapshot scan and the alliance fingerprint across polls. The board is the one its own
+ * set the event listeners feed), and a change to the alliance records bumps the alliance revision -
+ * while the first poll only establishes the baselines. Asserts on a real {@link MapLayerRefreshBoard},
+ * stubbing the snapshot scan and the alliance reads across polls. The board is the one its own
  * machinery holds, so a run reads only what it raised.
  *
  * <p>Also pins what this poll leaves alone: the observation each system's own inhabitants make of
@@ -47,9 +48,19 @@ import static org.mockito.Mockito.when;
  */
 final class PoliticalMapStalenessSourceTests {
 
-    // A fixed alliance fingerprint the non-alliance tests hold steady across polls, so the
-    // alliance axis stays quiet while they assert on geometry and holding.
-    private static final int STEADY_ALLIANCE_FINGERPRINT = 7;
+    private static final AllianceRecord ALLIED_POWERS = new AllianceRecord(
+        "alliance-1",
+        "Allied Powers",
+        List.of("hegemony", "astral_armada"));
+
+    private static final AllianceRecord RIVAL_BLOC = new AllianceRecord(
+        "alliance-2",
+        "Rival Bloc",
+        List.of("tritachyon", "luddic_church"));
+
+    // The alliances the non-alliance tests hold steady across polls, so the alliance axis stays
+    // quiet while they assert on geometry and holding.
+    private static final List<AllianceRecord> STEADY_ALLIANCES = List.of(ALLIED_POWERS);
 
     // The one system the snapshots name, keyed as the scan keys a system it holds.
     private static final SystemKey SYSTEM_A = buildCellKey("a");
@@ -203,11 +214,13 @@ final class PoliticalMapStalenessSourceTests {
         }
 
         @Test
-        void allianceFingerprintChangeRequestsAllianceRefreshOnly() {
-            // An alliance formed, dissolved, or changed members: the fingerprint moved, so
-            // the alliance revision bumps while the geometry and holding axes stay put.
+        void allianceFormingRequestsAllianceRefreshOnly() {
+            // A second alliance formed, so the alliance revision bumps while the geometry and
+            // holding axes stay put.
             var outcome = pollThenReadRefreshOutcome(
-                PollInputs.buildForAllianceChange(11, 22),
+                PollInputs.buildForAllianceChange(
+                    List.of(ALLIED_POWERS),
+                    List.of(ALLIED_POWERS, RIVAL_BLOC)),
                 2);
 
             assertThat(outcome.allianceRevision())
@@ -219,11 +232,41 @@ final class PoliticalMapStalenessSourceTests {
         }
 
         @Test
-        void steadyAllianceFingerprintRequestsNoAllianceRefresh() {
-            // The alliance set is unchanged (or Nex is absent, where the fingerprint is a
-            // fixed value), so the alliance revision never advances.
+        void allianceRenameRequestsAllianceRefresh() {
+            // The alliances view labels a bloc with its alliance's name, so a rename alone has to
+            // repaint it.
+            var renamed = new AllianceRecord(
+                "alliance-1",
+                "Grand Coalition",
+                List.of("hegemony", "astral_armada"));
+
             var outcome = pollThenReadRefreshOutcome(
-                PollInputs.buildForAllianceChange(11, 11),
+                PollInputs.buildForAllianceChange(List.of(ALLIED_POWERS), List.of(renamed)),
+                2);
+
+            assertThat(outcome.allianceRevision())
+                .isEqualTo(1);
+        }
+
+        @Test
+        void steadyAlliancesRequestNoAllianceRefresh() {
+
+            var outcome = pollThenReadRefreshOutcome(
+                PollInputs.buildForAllianceChange(STEADY_ALLIANCES, STEADY_ALLIANCES),
+                2);
+
+            assertThat(outcome.allianceRevision())
+                .isZero();
+        }
+
+        @Test
+        void alliancesReportedInAnotherOrderRequestNoAllianceRefresh() {
+            // A source's reporting order is not stable between polls, so a reorder alone is no
+            // change.
+            var outcome = pollThenReadRefreshOutcome(
+                PollInputs.buildForAllianceChange(
+                    List.of(ALLIED_POWERS, RIVAL_BLOC),
+                    List.of(RIVAL_BLOC, ALLIED_POWERS)),
                 2);
 
             assertThat(outcome.allianceRevision())
@@ -232,10 +275,12 @@ final class PoliticalMapStalenessSourceTests {
 
         @Test
         void firstPollSeedsTheAllianceBaselineWithoutBumping() {
-            // The first poll only records the fingerprint; there is no prior to diff against,
-            // so it never bumps the alliance revision.
+            // The first poll only records the alliances; there is no prior to diff against, so it
+            // never bumps the alliance revision.
             var outcome = pollThenReadRefreshOutcome(
-                PollInputs.buildForAllianceChange(11, 22),
+                PollInputs.buildForAllianceChange(
+                    List.of(ALLIED_POWERS),
+                    List.of(ALLIED_POWERS, RIVAL_BLOC)),
                 1);
 
             assertThat(outcome.allianceRevision())
@@ -326,7 +371,7 @@ final class PoliticalMapStalenessSourceTests {
                         return STEADY_SNAPSHOT;
                     });
 
-                new PoliticalMapStalenessSource(new SectorMapMachinery(installedSector))
+                new PoliticalMapStalenessSource(new SectorMapMachinery(installedSector), AllianceSource.NO_ALLIANCES)
                     .markChangesSinceLastPoll();
             }
             assertThat(polledSector)
@@ -416,8 +461,7 @@ final class PoliticalMapStalenessSourceTests {
         // answered with one would fail here rather than read as a case about routing.
         try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                 var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
-                var snapshotMock = mockStatic(PoliticalMapSectorSnapshot.class);
-                var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+                var snapshotMock = mockStatic(PoliticalMapSectorSnapshot.class)) {
 
             // The source reads the reveal toggles itself; stub them to the no-reveal view
             // so the scan and motion walks resolve the normal drawn set.
@@ -429,14 +473,20 @@ final class PoliticalMapStalenessSourceTests {
                 .when(() -> PoliticalMapSectorSnapshot.scan(any(MapVisibilityPass.class)))
                 .thenReturn(inputs.firstSnapshot(), inputs.secondSnapshot());
 
-            alliancesMock
-                .when(NexerelinAlliances::computeAllianceFingerprint)
-                .thenReturn(
-                    inputs.firstAllianceFingerprint(),
-                    inputs.secondAllianceFingerprint());
-
-            return runPollsAndReadOutcome(machinery, pollCount);
+            return runPollsAndReadOutcome(machinery, buildAllianceSource(inputs), pollCount);
         }
+    }
+
+    // Answers the run's first alliances on the first poll and its second on every poll after.
+    private static AllianceSource buildAllianceSource(PollInputs inputs) {
+
+        var allianceSourceMock = mock(AllianceSource.class);
+
+        when(allianceSourceMock.readAlliances())
+            .thenReturn(inputs.firstAlliances())
+            .thenReturn(inputs.secondAlliances());
+
+        return allianceSourceMock;
     }
 
     // Polls the source pollCount times and reports what its own machinery's board was left
@@ -446,10 +496,11 @@ final class PoliticalMapStalenessSourceTests {
     // another's marks and has nothing to isolate itself from.
     private static RefreshOutcome runPollsAndReadOutcome(
             SectorMapMachinery machinery,
+            AllianceSource allianceSource,
             int pollCount) {
 
         var board = machinery.resolveRefreshBoard();
-        var stalenessSource = new PoliticalMapStalenessSource(machinery);
+        var stalenessSource = new PoliticalMapStalenessSource(machinery, allianceSource);
 
         for (var poll = 0; poll < pollCount; poll++) {
             stalenessSource.markChangesSinceLastPoll();
@@ -460,16 +511,16 @@ final class PoliticalMapStalenessSourceTests {
             board.drainStaleGroupingSystemKeys());
     }
 
-    // One run's stubbed reads: what the two snapshot scans return, what the two alliance
-    // fingerprints read, and whether the moving set moved on the second poll. A record rather
-    // than a widening parameter list on the helper, so every value keeps a name instead of
-    // riding in as a positional int or boolean, and each factory says which single axis its
-    // run varies while holding the rest steady.
+    // One run's stubbed reads: what the two snapshot scans return, what the two alliance reads
+    // return, and whether the moving set moved on the second poll. A record rather than a
+    // widening parameter list on the helper, so every value keeps a name instead of riding in
+    // positionally, and each factory says which single axis its run varies while holding the rest
+    // steady.
     private record PollInputs(
             PoliticalMapSectorSnapshot firstSnapshot,
             PoliticalMapSectorSnapshot secondSnapshot,
-            int firstAllianceFingerprint,
-            int secondAllianceFingerprint,
+            List<AllianceRecord> firstAlliances,
+            List<AllianceRecord> secondAlliances,
             boolean hasMovingSetChangedOnSecondPoll) {
 
         // Two snapshots that may differ, every other axis quiet - what the geometry and
@@ -481,8 +532,8 @@ final class PoliticalMapStalenessSourceTests {
             return new PollInputs(
                 first,
                 second,
-                STEADY_ALLIANCE_FINGERPRINT,
-                STEADY_ALLIANCE_FINGERPRINT,
+                STEADY_ALLIANCES,
+                STEADY_ALLIANCES,
                 false);
         }
 
@@ -494,22 +545,22 @@ final class PoliticalMapStalenessSourceTests {
             return new PollInputs(
                 STEADY_SNAPSHOT,
                 STEADY_SNAPSHOT,
-                STEADY_ALLIANCE_FINGERPRINT,
-                STEADY_ALLIANCE_FINGERPRINT,
+                STEADY_ALLIANCES,
+                STEADY_ALLIANCES,
                 hasMovingSetChangedOnSecondPoll);
         }
 
-        // A steady sector where only the alliance fingerprint moves, so the geometry counter
-        // and the stale set must stay put while the alliance revision is what changes.
+        // A steady sector where only the alliances may change, so the geometry counter and the
+        // stale set must stay put while the alliance revision is what moves.
         private static PollInputs buildForAllianceChange(
-                int firstFingerprint,
-                int secondFingerprint) {
+                List<AllianceRecord> firstAlliances,
+                List<AllianceRecord> secondAlliances) {
 
             return new PollInputs(
                 STEADY_SNAPSHOT,
                 STEADY_SNAPSHOT,
-                firstFingerprint,
-                secondFingerprint,
+                firstAlliances,
+                secondAlliances,
                 false);
         }
     }

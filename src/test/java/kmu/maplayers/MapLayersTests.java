@@ -4,7 +4,10 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 
+import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
+import kmlib.starsector.factions.alliances.AllianceRecord;
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
@@ -161,6 +164,44 @@ final class MapLayersTests {
 
                 assertThat(availability.getValue().getAsBoolean())
                     .isFalse();
+            }
+        }
+    }
+
+    @Nested
+    class SelectAllianceSource {
+
+        @Test
+        void answersNoAlliancesWhenNexIsAbsent() {
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                stubNexEnabled(globalMock, false);
+
+                assertThat(MapLayers.selectAllianceSource())
+                    .isSameAs(AllianceSource.NO_ALLIANCES);
+            }
+        }
+
+        @Test
+        void readsNexerelinsAlliancesWhenNexIsPresent() {
+
+            var alliedPowers = new AllianceRecord(
+                "alliance-1",
+                "Allied Powers",
+                List.of("hegemony", "astral_armada"));
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
+                    var allianceSourceMock = mockStatic(NexerelinAllianceSource.class)) {
+
+                stubNexEnabled(globalMock, true);
+
+                allianceSourceMock
+                    .when(NexerelinAllianceSource::readAllianceRecords)
+                    .thenReturn(List.of(alliedPowers));
+
+                assertThat(MapLayers.selectAllianceSource().readAlliances())
+                    .containsExactly(alliedPowers);
             }
         }
     }

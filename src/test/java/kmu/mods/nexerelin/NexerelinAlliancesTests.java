@@ -23,15 +23,15 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the three folds KMU takes over the live alliance set, on both sides of the soft-dependency
+ * Pins the two folds KMU takes over the live alliance set, on both sides of the soft-dependency
  * gate.
  *
  * <p>On the side a Nex-free install takes, the gate answers before anything naming
  * {@code exerelin.*} is resolved, so a classloader that has no such class to find is never asked to
- * find one - and each fold answers as the install without alliances it is: nobody allied, the shared
- * identity grouping, a steady fingerprint. Worth holding because those answers feed a visibility rule,
- * the map's blocs and the watcher's revision alike: a gate that threw, or that invented a partnership,
- * would decide what such an install is told.
+ * find one - and each fold answers as the install without alliances it is: nobody allied, and the
+ * shared identity grouping. Worth holding because those answers feed a visibility rule and the map's
+ * blocs alike: a gate that threw, or that invented a partnership, would decide what such an install
+ * is told.
  *
  * <p>The side with alliances is driven through the library's source rather than through Nexerelin
  * itself: its alliance manager reads its own configuration off {@code Global.getSettings()} in a
@@ -42,10 +42,6 @@ import static org.mockito.Mockito.when;
 class NexerelinAlliancesTests {
 
     private static final String NEXERELIN_MOD_ID = "nexerelin";
-
-    // The token no alliances fold to: the positional hash of an empty list of canonical lines. Stated
-    // as the number it is, since what the watcher relies on is that it never moves.
-    private static final int NO_ALLIANCES_FINGERPRINT = 1;
 
     private static final String ALLIANCE_ID = "alliance-1";
 
@@ -106,36 +102,6 @@ class NexerelinAlliancesTests {
                     .isEqualTo(ALLIANCE_ID);
                 assertThat(grouping.isGroupedBloc(ALLIANCE_ID))
                     .isTrue();
-            }
-        }
-    }
-
-    @Nested
-    class ComputeAllianceFingerprint {
-
-        @Test
-        void pollsTheSteadyTokenWhereNexerelinIsAbsent() {
-            // What keeps the alliance revision still on such an install: the watcher polls this every
-            // pass, and a token that moved would rebuild a map nothing about has changed.
-            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
-
-                stubNexEnabled(globalMock, false);
-
-                assertThat(NexerelinAlliances.computeAllianceFingerprint())
-                    .isEqualTo(NO_ALLIANCES_FINGERPRINT);
-            }
-        }
-
-        @Test
-        void movesOffTheSteadyTokenOnceAnAllianceStands() {
-            // The one change the watcher exists to notice, read through the live source rather than
-            // off records handed in.
-            try (var allianceSourceMock = mockStatic(NexerelinAllianceSource.class)) {
-
-                stubAllianceRecords(allianceSourceMock, List.of(buildAlliedPowers()));
-
-                assertThat(NexerelinAlliances.computeAllianceFingerprint())
-                    .isNotEqualTo(NO_ALLIANCES_FINGERPRINT);
             }
         }
     }

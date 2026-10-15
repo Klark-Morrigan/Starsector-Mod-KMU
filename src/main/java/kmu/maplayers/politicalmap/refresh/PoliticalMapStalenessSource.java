@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.refresh;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.factions.alliances.AllianceRecord;
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -9,11 +11,11 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
-import kmu.mods.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * What the political map counts as a change the engine never announced - a gate activating,
@@ -39,14 +41,12 @@ import java.util.Map;
  * keeps moving changes nothing, since it is already excluded, so a steady drifter never churns
  * the map.
  *
- * <p>A fourth axis fingerprints the live alliance set (Nex-gated: on a Nex-free install the
- * fingerprint is a fixed value, so it never fires and no {@code exerelin} class loads). When
- * alliances form, dissolve, or change members the fingerprint moves, so this bumps the shared
- * alliance revision, which every view of this layer folds into its content token: the alliances
- * view paints its blocs out of the alliance set, and the faction and claims views lay their bands'
- * contested lengths against it. The fingerprint keys on who is allied and
- * which member leads (the bloc's colour), so a market-size reshuffle below the lead never churns
- * the map while a colour lead swap does.
+ * <p>A fourth axis compares the alliance records against the last poll's. When any of them differs
+ * this bumps the shared alliance revision, which every view of this layer folds into its content
+ * token: the alliances view paints its blocs, their colours and their names out of the alliance set,
+ * and the faction and claims views lay their bands' contested lengths against it. The records are
+ * compared whole rather than through what one view reads, so a view reading more of them later is
+ * repainted without a change here.
  *
  * <p>The visibility, holder and alliance baselines live here rather than in the framework's poll, so
  * the whole of "what changed" is decided against this layer's own last read. Each is the staleness of
@@ -58,7 +58,9 @@ import java.util.Map;
  * sector rather than a sector it could walk again for itself. What that buys is stated where
  * the reading is opened.
  */
-public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
+public class PoliticalMapStalenessSource
+        implements MapLayerStalenessSource {
+
     private static final Logger LOG = Global.getLogger(PoliticalMapStalenessSource.class);
 
     // The installed machinery of the sector being polled. The sector this walks, the tracker it
@@ -68,23 +70,28 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     // installed on - the sector its baselines are diffs of.
     private final SectorMapMachinery machinery;
 
+    private final AllianceSource allianceSource;
+
     // Last poll's state; 0 and an empty map are also the empty-sector values, so a
     // boolean guards the very first poll establishing every baseline.
     private boolean hasPolled;
     private int lastVisibilityFingerprint;
-    private int lastAllianceFingerprint;
+    private Set<AllianceRecord> lastAlliances = Set.of();
     private Map<SystemKey, String> lastHolderBySystemKey = Map.of();
 
     /**
-     * @param machinery the machinery installed on the sector this polls
+     * @param machinery      the machinery installed on the sector this polls
+     * @param allianceSource the alliances standing, read afresh every poll
      */
-    public PoliticalMapStalenessSource(SectorMapMachinery machinery) {
+    public PoliticalMapStalenessSource(SectorMapMachinery machinery, AllianceSource allianceSource) {
+
         this.machinery = machinery;
+        this.allianceSource = allianceSource;
     }
 
     // Re-reads the snapshot and stages on-map positions, then hands each axis its own
     // routing: a visibility move or an accepted system move rebuilds geometry, a holder-map
-    // diff marks just the changed systems stale, an alliance-fingerprint move bumps the
+    // diff marks just the changed systems stale, an alliance-record change bumps the
     // alliance revision. The first poll only establishes the baselines.
     @Override
     public void markChangesSinceLastPoll() {
@@ -146,6 +153,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
                 + " new="
                 + snapshot.visibilityFingerprint());
         }
+
         lastVisibilityFingerprint = snapshot.visibilityFingerprint();
 
         // The first poll establishes both baselines and requests nothing, whatever the motion walk
@@ -154,12 +162,15 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         if (isFirstPoll) {
             return;
         }
+
         if (!hasVisibilityChanged && !hasMovingSetChanged) {
             return;
         }
+
         if (!hasVisibilityChanged) {
             LOG.debug("Political map moving set changed");
         }
+
         machinery
             .resolveRefreshBoard()
             .requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
@@ -182,38 +193,43 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
             var board = machinery.resolveRefreshBoard();
 
             for (var entry : currentHolderBySystemKey.entrySet()) {
+
                 if (!entry.getValue().equals(lastHolderBySystemKey.get(entry.getKey()))) {
                     board.markSystemGroupingStale(entry.getKey());
                 }
             }
+
             for (var systemKey : lastHolderBySystemKey.keySet()) {
+
                 if (!currentHolderBySystemKey.containsKey(systemKey)) {
                     board.markSystemGroupingStale(systemKey);
                 }
             }
         }
+
         lastHolderBySystemKey = currentHolderBySystemKey;
     }
 
-    // Fingerprints the live alliance set and bumps the shared alliance revision when it
-    // moves against the last poll, so every view repaints on a form/dissolve/transfer.
-    // Nex-gated inside computeAllianceFingerprint (a fixed value without Nex), so a Nex-free
-    // install polls a steady token and never bumps. The first poll only seeds the baseline,
-    // matching the other axes.
+    // Bumps the shared alliance revision when the alliance records differ from the last poll's,
+    // so every view repaints on a form, dissolve, rename or change of members. Held as a set
+    // because the order a source reports alliances in is not stable between polls. An install
+    // with no alliances reads an empty set every poll and never bumps. The first poll only seeds
+    // the baseline, matching the other axes.
     private void markAllianceSetChange(boolean isFirstPoll) {
 
-        var allianceFingerprint = NexerelinAlliances.computeAllianceFingerprint();
-        if (!isFirstPoll && allianceFingerprint != lastAllianceFingerprint) {
+        var alliances = Set.copyOf(allianceSource.readAlliances());
+        if (!isFirstPoll && !alliances.equals(lastAlliances)) {
 
-            LOG.debug("Political map alliance fingerprint changed; old="
-                + lastAllianceFingerprint
+            LOG.debug("Political map alliances changed; old="
+                + lastAlliances
                 + " new="
-                + allianceFingerprint);
+                + alliances);
 
             machinery
                 .resolveRefreshBoard()
                 .requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
         }
-        lastAllianceFingerprint = allianceFingerprint;
+
+        lastAlliances = alliances;
     }
 }

@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -91,7 +92,7 @@ class PoliticalMapInstallerTests {
                         return null;
                     });
 
-                PoliticalMapInstaller.installAll(sectorMock, viewRegistryMock);
+                PoliticalMapInstaller.installAll(sectorMock, viewRegistryMock, AllianceSource.NO_ALLIANCES);
             }
 
             assertThat(sectorCallCountsSeenByTheHeal)
@@ -110,7 +111,7 @@ class PoliticalMapInstallerTests {
                     .when(() -> FilterSelectionHeal.healStaleSelectionAgainstActiveView(any(), any()))
                     .thenThrow(new IllegalStateException("A save the heal cannot read"));
 
-                PoliticalMapInstaller.installAll(sectorMock, viewRegistryMock);
+                PoliticalMapInstaller.installAll(sectorMock, viewRegistryMock, AllianceSource.NO_ALLIANCES);
             }
 
             assertThat(listenerManager.getAddedListeners())
@@ -137,7 +138,7 @@ class PoliticalMapInstallerTests {
 
             try (var healMock = mockStatic(FilterSelectionHeal.class)) {
 
-                PoliticalMapInstaller.installAll(sectorMock, viewRegistryMock);
+                PoliticalMapInstaller.installAll(sectorMock, viewRegistryMock, AllianceSource.NO_ALLIANCES);
             }
 
             assertThat(listenerManager.getAddedListeners())
@@ -161,7 +162,7 @@ class PoliticalMapInstallerTests {
             // another poller - and would bake this class's name into the file.
             var sectorMock = mock(SectorAPI.class);
 
-            PoliticalMapInstaller.installMapLayerSectorWatcher(sectorMock);
+            PoliticalMapInstaller.installMapLayerSectorWatcher(sectorMock, AllianceSource.NO_ALLIANCES);
 
             verify(sectorMock)
                 .addTransientScript(any(PoliticalMapSectorWatcher.class));
@@ -175,7 +176,7 @@ class PoliticalMapInstallerTests {
             // shared watcher class would take every other layer's poll down with this one's.
             var sectorMock = mock(SectorAPI.class);
 
-            PoliticalMapInstaller.installMapLayerSectorWatcher(sectorMock);
+            PoliticalMapInstaller.installMapLayerSectorWatcher(sectorMock, AllianceSource.NO_ALLIANCES);
 
             verify(sectorMock)
                 .removeTransientScriptsOfClass(PoliticalMapSectorWatcher.class);
@@ -191,8 +192,8 @@ class PoliticalMapInstallerTests {
             var firstLoadSectorMock = mock(SectorAPI.class);
             var secondLoadSectorMock = mock(SectorAPI.class);
 
-            PoliticalMapInstaller.installMapLayerSectorWatcher(firstLoadSectorMock);
-            PoliticalMapInstaller.installMapLayerSectorWatcher(secondLoadSectorMock);
+            PoliticalMapInstaller.installMapLayerSectorWatcher(firstLoadSectorMock, AllianceSource.NO_ALLIANCES);
+            PoliticalMapInstaller.installMapLayerSectorWatcher(secondLoadSectorMock, AllianceSource.NO_ALLIANCES);
 
             var firstWatcher = ArgumentCaptor.forClass(PoliticalMapSectorWatcher.class);
             var secondWatcher = ArgumentCaptor.forClass(PoliticalMapSectorWatcher.class);
@@ -210,7 +211,7 @@ class PoliticalMapInstallerTests {
         void toleratesANullSector() {
 
             var watcherInstallOnNullSector = (Runnable) () ->
-                PoliticalMapInstaller.installMapLayerSectorWatcher(null);
+                PoliticalMapInstaller.installMapLayerSectorWatcher(null, AllianceSource.NO_ALLIANCES);
 
             assertThatCode(watcherInstallOnNullSector::run)
                 .doesNotThrowAnyException();

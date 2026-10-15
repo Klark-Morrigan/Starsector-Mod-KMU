@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.starsector.SectorWalkCounters;
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
@@ -222,7 +223,7 @@ final class PoliticalMapPollWalkIntegrationTests {
             // The board is this run's machinery's, made with it, so the count is read straight
             // rather than as a delta: nothing else can have raised on it.
             var machinery = new SectorMapMachinery(sector);
-            var stalenessSource = new PoliticalMapStalenessSource(machinery);
+            var stalenessSource = new PoliticalMapStalenessSource(machinery, AllianceSource.NO_ALLIANCES);
 
             for (var poll = 0; poll < pollCount; poll++) {
 

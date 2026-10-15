@@ -1,6 +1,8 @@
 package kmu.maplayers;
 
+import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.settings.VanillaCommonDataStore;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 
@@ -75,7 +77,10 @@ public final class MapLayers {
 
         // KMU's own two, in the order they stand on the strip. The empty view leads it without
         // offering itself as the pick, which is what leaves a fresh save opening on the political map.
-        var politicalMap = new PoliticalMapLayer(selectPoliticalMapViews(), FactionsView.INSTANCE);
+        var politicalMap = new PoliticalMapLayer(
+            selectPoliticalMapViews(),
+            FactionsView.INSTANCE,
+            selectAllianceSource());
 
         MapLayerRegistry.registerLayer(NoLayer.INSTANCE);
         MapLayerRegistry.registerLayer(politicalMap);
@@ -135,6 +140,22 @@ public final class MapLayers {
             FactionAllianceRegistry.registerAllianceSource(
                 NexerelinAlliances::resolveFactionAlliances);
         }
+    }
+
+    /**
+     * Where the political map's poll reads the alliances standing, so it repaints the views when one
+     * forms, dissolves, is renamed or changes members.
+     *
+     * <p>Behind the same mod-enabled gate as {@link #registerFactionAlliances}, so an install without
+     * the mod polls a source that has never named it.
+     *
+     * @return the live alliance source, or {@link AllianceSource#NO_ALLIANCES} without the mod
+     */
+    static AllianceSource selectAllianceSource() {
+
+        return NexerelinAlliances.isAvailable()
+            ? NexerelinAllianceSource::readAllianceRecords
+            : AllianceSource.NO_ALLIANCES;
     }
 
     /**

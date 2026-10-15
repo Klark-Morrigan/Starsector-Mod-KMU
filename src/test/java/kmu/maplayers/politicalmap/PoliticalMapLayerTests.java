@@ -5,6 +5,7 @@ import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.ui.controls.specs.CheckboxSpec;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.controls.specs.LabelSpec;
@@ -128,7 +129,7 @@ final class PoliticalMapLayerTests {
     // The layer under test, over whichever roster a case registers. Built per case rather than
     // shared, since the roster is the layer's own.
     private PoliticalMapLayer layer =
-        new PoliticalMapLayer(List.of(viewWithoutControlsMock), viewWithoutControlsMock);
+        new PoliticalMapLayer(List.of(viewWithoutControlsMock), viewWithoutControlsMock, AllianceSource.NO_ALLIANCES);
 
     @Nested
     class ResolveStanding {
@@ -277,6 +278,7 @@ final class PoliticalMapLayerTests {
                 // that answers a colour. Stubbed before the static stubbing opens, since its own
                 // stubbing would otherwise land inside that one.
                 var settingsMock = buildSettingsAnsweringColours();
+
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -311,11 +313,13 @@ final class PoliticalMapLayerTests {
                 // that answers a colour. Stubbed before the static stubbing opens, since its own
                 // stubbing would otherwise land inside that one.
                 var settingsMock = buildSettingsAnsweringColours();
+
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
 
                 stubSharedControlsAndSelector(controlsMock);
+
                 pickerMock
                     .when(() -> ListPickerBinder.buildPicker(
                         any(),
@@ -353,6 +357,7 @@ final class PoliticalMapLayerTests {
                 // that answers a colour. Stubbed before the static stubbing opens, since its own
                 // stubbing would otherwise land inside that one.
                 var settingsMock = buildSettingsAnsweringColours();
+
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -419,6 +424,7 @@ final class PoliticalMapLayerTests {
                 // Stubbed before the static stubbing opens, since its own stubbing would otherwise
                 // land inside that one.
                 var settingsMock = buildSettingsAnsweringColours();
+
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -452,6 +458,7 @@ final class PoliticalMapLayerTests {
             // green while all three views shared one slot. Pinned here because this is the only place
             // the ID is chosen.
             registerViewWithOneBloc(viewWithoutControlsMock);
+
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var controlsMock = mockStatic(OwnerMapBodyControls.class);
                     var pickerMock = mockStatic(ListPickerBinder.class)) {
@@ -463,6 +470,7 @@ final class PoliticalMapLayerTests {
                 // The recede paired with the sort selector reads the engine's text tone off the live
                 // settings, so even a stubbed picker needs a settings proxy that answers a colour.
                 var settingsMock = buildSettingsAnsweringColours();
+
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -512,17 +520,20 @@ final class PoliticalMapLayerTests {
                     () -> OwnerMapBodyControls.buildSharedControls(
                         any(),
                         argThat(target -> installedBoard.equals(target.board()))));
+
                 recedeMock.verify(
                     () -> RecedeControl.buildControls(
                         any(),
                         any(),
                         argThat(target -> installedBoard.equals(target.board()))));
+
                 pickerMock.verify(
                     () -> ListPickerBinder.buildPicker(
                         any(),
                         any(),
                         any(),
                         eq(machinery)));
+
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(argThat(target -> installedBoard.equals(target.board())));
             });
@@ -545,6 +556,7 @@ final class PoliticalMapLayerTests {
                     () -> OwnerMapBodyControls.buildSharedControls(
                         any(),
                         argThat(target -> BODY_SCREEN.equals(target.memoryScope()))));
+
                 // And the selector is handed this layer's own views, so its radio lists and writes
                 // this layer's picks rather than another layer's.
                 controlsMock.verify(
@@ -552,17 +564,20 @@ final class PoliticalMapLayerTests {
                         same(layer.resolveViewRegistry()),
                         any(),
                         eq(BODY_SCREEN)));
+
                 recedeMock.verify(
                     () -> RecedeControl.buildControls(
                         any(),
                         any(),
                         argThat(target -> BODY_SCREEN.equals(target.memoryScope()))));
+
                 pickerMock.verify(
                     () -> ListPickerBinder.buildPicker(
                         argThat(slot -> BODY_SCREEN.equals(slot.screenSlot().memoryScope())),
                         any(),
                         any(),
                         any()));
+
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(argThat(target -> BODY_SCREEN.equals(target.memoryScope())));
             });
@@ -683,12 +698,12 @@ final class PoliticalMapLayerTests {
             globalMock
                 .when(Global::getSector)
                 .thenReturn(sectorMock);
-
             globalMock
                 .when(Global::getSettings)
                 .thenReturn(settingsMock);
 
             stubSharedControlsAndSelector(controlsMock);
+
             pickerMock
                 .when(() -> ListPickerBinder.buildPicker(
                     any(),
@@ -790,6 +805,7 @@ final class PoliticalMapLayerTests {
             // The recede paired with the picker's sort selector reads the engine's text tone off
             // the live settings, so a body built here needs a settings proxy that answers a colour.
             var settingsMock = buildSettingsAnsweringColours();
+
             globalMock
                 .when(Global::getSettings)
                 .thenReturn(settingsMock);
@@ -845,7 +861,7 @@ final class PoliticalMapLayerTests {
     // layer registry treats its tab as the active pick and a sector-less read resolves that view.
     private void standLayerOver(OwnerPaintedView view) {
 
-        layer = new PoliticalMapLayer(List.of(view), view);
+        layer = new PoliticalMapLayer(List.of(view), view, AllianceSource.NO_ALLIANCES);
         MapLayerRosters.replaceRosterWith(layer);
     }
 

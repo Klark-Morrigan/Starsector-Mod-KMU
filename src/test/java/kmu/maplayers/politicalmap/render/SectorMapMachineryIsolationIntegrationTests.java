@@ -4,6 +4,7 @@ import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
@@ -412,7 +413,7 @@ final class SectorMapMachineryIsolationIntegrationTests {
 
         // The spotlight heal the install runs first is not what this suite is about, so it is handed a
         // registry with no view picked, under which it judges nothing.
-        PoliticalMapInstaller.installAll(sector, mock(MapLayerViewRegistry.class));
+        PoliticalMapInstaller.installAll(sector, mock(MapLayerViewRegistry.class), AllianceSource.NO_ALLIANCES);
 
         return sector;
     }

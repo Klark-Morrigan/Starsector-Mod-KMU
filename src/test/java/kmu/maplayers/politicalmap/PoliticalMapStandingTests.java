@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.alliances.AllianceSource;
+
 import kmu.maplayers.ownermap.MapLayerViewRegistry;
 
 import org.junit.jupiter.api.Nested;
@@ -26,7 +28,10 @@ final class PoliticalMapStandingTests {
     // The layer's views, handed through to the heal the install runs first.
     private final MapLayerViewRegistry viewRegistryMock = mock(MapLayerViewRegistry.class);
 
-    private final PoliticalMapStanding standing = new PoliticalMapStanding(viewRegistryMock);
+    // The alliances the poll reads, handed through to the watcher the install stands up.
+    private final AllianceSource allianceSourceMock = mock(AllianceSource.class);
+
+    private final PoliticalMapStanding standing = new PoliticalMapStanding(viewRegistryMock, allianceSourceMock);
 
     @Nested
     class StandLayerUpOn {
@@ -38,7 +43,10 @@ final class PoliticalMapStandingTests {
 
                 standing.standLayerUpOn(sectorMock);
 
-                installerMock.verify(() -> PoliticalMapInstaller.installAll(sectorMock, viewRegistryMock));
+                installerMock.verify(() -> PoliticalMapInstaller.installAll(
+                    sectorMock,
+                    viewRegistryMock,
+                    allianceSourceMock));
             }
         }
     }

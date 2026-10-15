@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap;
 
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.KmuMod;
@@ -85,13 +86,17 @@ public final class PoliticalMapLayer
      * cannot come to name different tabs. It only holds the tab, and asks it nothing until a frame
      * does.
      *
-     * @param views       the views the radio offers, in segment order
-     * @param defaultView the view a save that has never picked one paints
+     * @param views          the views the radio offers, in segment order
+     * @param defaultView    the view a save that has never picked one paints
+     * @param allianceSource the alliances standing, whose changes the poll repaints the views on
      */
-    public PoliticalMapLayer(List<OwnerPaintedView> views, OwnerPaintedView defaultView) {
+    public PoliticalMapLayer(
+            List<OwnerPaintedView> views,
+            OwnerPaintedView defaultView,
+            AllianceSource allianceSource) {
 
         this.viewRegistry = new MapLayerViewRegistry(ACTIVE_VIEW_KEY, views, defaultView, this);
-        this.standing = new PoliticalMapStanding(viewRegistry);
+        this.standing = new PoliticalMapStanding(viewRegistry, allianceSource);
     }
 
     /**

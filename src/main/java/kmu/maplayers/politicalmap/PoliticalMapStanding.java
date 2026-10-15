@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.alliances.AllianceSource;
+
 import kmu.maplayers.base.layer.MapLayerStanding;
 import kmu.maplayers.ownermap.MapLayerViewRegistry;
 
@@ -21,17 +23,22 @@ public final class PoliticalMapStanding implements MapLayerStanding {
     // The layer's views, whose spotlights the save heal judges.
     private final MapLayerViewRegistry viewRegistry;
 
+    // The alliances the poll compares between passes.
+    private final AllianceSource allianceSource;
+
     /**
-     * @param viewRegistry the standing layer's views, so the heal on standing up judges that layer's
-     *                     spotlights under that layer's picks
+     * @param viewRegistry   the standing layer's views, so the heal on standing up judges that layer's
+     *                       spotlights under that layer's picks
+     * @param allianceSource the alliances standing, which the poll reads afresh every pass
      */
-    public PoliticalMapStanding(MapLayerViewRegistry viewRegistry) {
+    public PoliticalMapStanding(MapLayerViewRegistry viewRegistry, AllianceSource allianceSource) {
         this.viewRegistry = viewRegistry;
+        this.allianceSource = allianceSource;
     }
 
     @Override
     public void standLayerUpOn(SectorAPI sector) {
-        PoliticalMapInstaller.installAll(sector, viewRegistry);
+        PoliticalMapInstaller.installAll(sector, viewRegistry, allianceSource);
     }
 
     @Override

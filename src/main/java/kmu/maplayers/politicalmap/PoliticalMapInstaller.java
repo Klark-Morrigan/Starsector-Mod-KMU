@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.listeners.SectorListeners;
 import kmlib.starsector.scripts.SectorScripts;
 
@@ -51,11 +52,15 @@ public final class PoliticalMapInstaller {
      * sector it was built from and goes when that sector's machinery does, so this sector's is new
      * by the time anything below runs.
      *
-     * @param sector       the loaded sector; null leaves the listeners unregistered rather than
-     *                     throwing
-     * @param viewRegistry the political map's views, whose spotlights the save heal judges
+     * @param sector         the loaded sector; null leaves the listeners unregistered rather than
+     *                       throwing
+     * @param viewRegistry   the political map's views, whose spotlights the save heal judges
+     * @param allianceSource the alliances standing, which the poll compares between passes
      */
-    public static void installAll(SectorAPI sector, MapLayerViewRegistry viewRegistry) {
+    public static void installAll(
+            SectorAPI sector,
+            MapLayerViewRegistry viewRegistry,
+            AllianceSource allianceSource) {
 
         // Clear a spotlight the loaded save's active view does not offer, before the terrain reads
         // it - a bloc can lapse while a save sits unopened (a faction removed by a mod change, an
@@ -70,7 +75,7 @@ public final class PoliticalMapInstaller {
             "Failed to install KMU political map discovery listener");
 
         runGuardedStep(
-            () -> installMapLayerSectorWatcher(sector),
+            () -> installMapLayerSectorWatcher(sector, allianceSource),
             "Failed to install KMU political map sector watcher");
 
         runGuardedStep(
@@ -181,7 +186,7 @@ public final class PoliticalMapInstaller {
     // cadence, so which of those count as a change is handed in as the political
     // map's own staleness source. Transient and cleared before it is added, so it
     // is fresh on every load and never doubles up within a session either.
-    static void installMapLayerSectorWatcher(SectorAPI sector) {
+    static void installMapLayerSectorWatcher(SectorAPI sector, AllianceSource allianceSource) {
 
         // A fresh source per load, so the baselines it diffs against start empty rather
         // than carrying the previous save's last read into this one. Built against this
@@ -191,6 +196,7 @@ public final class PoliticalMapInstaller {
             sector,
             () -> new PoliticalMapSectorWatcher(
                 new PoliticalMapStalenessSource(
-                    SectorMapMachineryIndex.resolveMachineryFor(sector))));
+                    SectorMapMachineryIndex.resolveMachineryFor(sector),
+                    allianceSource)));
     }
 }

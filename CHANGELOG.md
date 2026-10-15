@@ -19,6 +19,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **With a faction spotlit, the political map follows a colony changing hands**, rather than showing the old owner until you move the spotlight.
 - **The spotlight list follows a colony changing hands too**, so its numbers match the map.
 - **A system two factions hold with equal weight repaints when one of them takes it**, rather than at the next full redraw.
+- **The alliances view shows a Nexerelin alliance's new name once it is renamed**, rather than keeping the old name until something else redraws the map.
 - **The Market Condition Manager no longer opens on a colony you have already left.**
 
 ### Changed
@@ -127,6 +128,8 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `HolderRankingRules.createByLowestId(Predicate)` and `createOpenContestByLowestId()` | Gone: every live ranking breaks a tie by proximity through `createByMarketProximity`. A reader with no geometry builds `new HolderRankingRules(Comparator.naturalOrder(), candidacy)` |
 | `KmuErrorReporter.noop()` | `KmuErrorReporter.createLoggingReporter(Class)`: a caught failure is always written somewhere |
 | `StarsectorMarketUiContextTracker` extending `BaseCampaignEventListener` | Implementing `ColonyInteractionListener`, the interface the listener manager delivers market events to |
+| `kmu.mods.nexerelin.alliances.AllianceFingerprint.compute(List)` and `NexerelinAlliances.computeAllianceFingerprint()` | Gone: `PoliticalMapStalenessSource` compares the alliance records themselves between polls. `kmu.mods.nexerelin.alliances` is gone |
+| `PoliticalMapLayer(List, OwnerPaintedView)`, `PoliticalMapStanding(MapLayerViewRegistry)`, `PoliticalMapInstaller.installAll(SectorAPI, MapLayerViewRegistry)` and `PoliticalMapStalenessSource(SectorMapMachinery)` | Each also takes the `AllianceSource` the poll reads, which `MapLayers` binds |
 
 ##### Moved to KMLib
 
