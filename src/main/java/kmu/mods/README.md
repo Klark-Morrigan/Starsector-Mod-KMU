@@ -24,12 +24,15 @@ see the [mod README](../../../../../README.md) for project context.
 | Package | What is in it |
 | --- | --- |
 | `console` | KMU's console commands, under `console.commands` |
-| `nexerelin` | the live alliance set read three ways (`NexerelinAlliances`), the contest wording an install with colony transfers calls for (`NexerelinContestWording`), and the relay that passes Nexerelin's colony transfers on (`NexerelinMarketTransferRelay`, installed by `NexerelinInvasionListenerInstaller`) |
+| `nexerelin` | the live alliance set read three ways (`NexerelinAlliances`), the contest wording an install with colony transfers calls for (`NexerelinContestWording`), and the installer of KMLib's relay that passes Nexerelin's colony transfers on (`NexerelinInvasionListenerInstaller`, registering `kmlib.mods.nexerelin.NexerelinMarketTransferRelay`) |
 | `rat` | the compatibility mode for Random Assortment of Things' minimap: the switch (`RandomAssortmentOfThingsCompatibilityMode`), what it stands up (`RandomAssortmentOfThingsCompatibilityInstaller`), the cover confining the hover to the minimap, the widget it may switch off, and the mod's settings as KMU reads them |
 
 Most of these read the mod through KMLib's `kmlib.mods` classes rather than through the mod's own types,
 so the mod-specific knowledge is shared with every mod built on KMLib.
-`NexerelinMarketTransferRelay` is the one class that implements a Nexerelin type directly.
+No KMU class implements a Nexerelin type;
+the one KMU registers,
+KMLib's `NexerelinMarketTransferRelay`,
+still has to be deferred like one.
 
 ## The presence gate
 
@@ -95,7 +98,8 @@ so it names `kmu.mods`,
 but it may not name a mod's own types:
 that would load them on every install and defeat the deferral above.
 
-The build still needs Nexerelin's jar to compile the relay,
+The build still needs Nexerelin's jar to compile against KMLib's relay,
+whose supertype is Nexerelin's,
 so a player can run KMU without Nexerelin while a developer cannot build it without.
 
 ## What is not here

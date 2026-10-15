@@ -137,6 +137,8 @@
 | 之前 | 之后 |
 | --- | --- |
 | `base.visibility.observations` 中的 `ObservationStore`、`ObservationCodec` 和 `RecordedObservations` | `kmlib.starsector.memory.observations` |
+| `kmu.starsector.listeners.MarketTransferListener` | `kmlib.starsector.listeners.MarketTransferListener` |
+| `kmu.mods.nexerelin.NexerelinMarketTransferRelay` | `kmlib.mods.nexerelin.NexerelinMarketTransferRelay` |
 | `base.theme.GlLineHatchStroke` 和 `base.theme.HatchStroke` | `kmlib.opengl.hatch.GlLineHatchStroke`。`HatchStroke` 已移除：`HatchStyle(HatchPattern, GlLineHatchStroke)` 直接持有该记录 |
 | `CellFrontierGeometry.clipCellsToFrontier(List, float[])` | `kmlib.opengl.PolygonTessellator.tessellateToBoundaryLoopsWithinLoop(List, float[])` |
 

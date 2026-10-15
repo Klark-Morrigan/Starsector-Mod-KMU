@@ -4,13 +4,14 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
+import kmlib.mods.nexerelin.NexerelinMarketTransferRelay;
+import kmlib.starsector.listeners.MarketTransferListener;
 import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.starsector.compatibility.CompatibilityFailureFixture;
 import kmlib.testfixtures.starsector.settings.ModStateScopes;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 
 import kmu.KmuWiringSteps;
-import kmu.starsector.listeners.MarketTransferListener;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

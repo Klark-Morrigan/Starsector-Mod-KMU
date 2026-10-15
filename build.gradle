@@ -233,11 +233,12 @@ def lazyLibJarFile = resolveModJarFile('lw_lazylib', 'LazyLib.jar')
 // nothing outside the game does.
 def lunaLibJarFile = resolveModJarFile('lunalib', 'LunaLib.jar')
 
-// Nexerelin is an optional runtime dependency. KMU compiles against its
-// InvasionListener so the map layers learn of a colony that changes hands in a
-// Nex war; the mod classloader supplies the jar at runtime when Nex is installed,
-// and NexerelinInvasionListenerInstaller gates the relay behind a mod-enabled
-// check so a Nex-free install never resolves the type.
+// Nexerelin is an optional runtime dependency. KMU names KMLib's
+// NexerelinMarketTransferRelay, whose supertype is Nexerelin's InvasionListener,
+// so the map layers learn of a colony that changes hands in a Nex war; the mod
+// classloader supplies the jar at runtime when Nex is installed, and
+// NexerelinInvasionListenerInstaller gates the relay behind a mod-enabled check
+// so a Nex-free install never resolves the type.
 def nexJars = findModJars('ExerelinCore.jar')
 
 // XStream backs Starsector's save serialisation. KMU compiles against it to
@@ -400,9 +401,10 @@ tasks.withType(JavaCompile).configureEach {
                 "Install LazyLib under mods/lw_lazylib/jars/LazyLib.jar " +
                 "for compiling KMU's map labels.")
         }
-        // Nex is optional at runtime but its InvasionListener is needed to
-        // compile NexerelinMarketTransferRelay, so the jar must be present
-        // to build even though a player can run KMU without Nex installed.
+        // Nex is optional at runtime, but KMU builds and tests KMLib's
+        // NexerelinMarketTransferRelay, whose supertype is Nex's InvasionListener,
+        // so the jar must be present to build even though a player can run KMU
+        // without Nex installed.
         if (nexJars.files.isEmpty()) {
             throw new GradleException(
                 "Could not find Nexerelin jar under " +

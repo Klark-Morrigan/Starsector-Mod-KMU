@@ -2,6 +2,7 @@ package kmu.mods.nexerelin;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.mods.nexerelin.NexerelinMarketTransferRelay;
 import kmlib.mods.nexerelin.NexerelinPresence;
 import kmlib.starsector.compatibility.ModIntegration;
 
@@ -10,7 +11,7 @@ import kmu.util.KmuCompatibilityConsumers;
 import kmu.util.KmuPoliticalMapStringKeys;
 
 /**
- * Registers KMU's relay for Nexerelin's colony transfers only when Nexerelin is present. The relay
+ * Registers KMLib's relay for Nexerelin's colony transfers only when Nexerelin is present. The relay
  * implements a Nexerelin interface, so an install without Nexerelin must never load it: the sole
  * reference to it lives in the nested {@link Installer} holder, which the classloader does not
  * resolve until the mod-enabled gate has passed - the deferral
@@ -36,6 +37,7 @@ public final class NexerelinInvasionListenerInstaller {
      * @param sector the sector whose listener manager receives the relay
      */
     public static void installIfPresent(SectorAPI sector) {
+
         // Short-circuit before touching Installer so an install without Nexerelin never loads the
         // class that names its InvasionListener. The gate is the library's rather than a mod-manager
         // hop of this class's own: the ID belongs to the mod, and an install being asked about
@@ -43,6 +45,7 @@ public final class NexerelinInvasionListenerInstaller {
         if (sector == null || !NexerelinPresence.isModEnabled()) {
             return;
         }
+
         // Guarded here rather than by the caller, as every installer guards its own. The relay
         // implements a Nexerelin interface, so a release that moves or renames it fails this step
         // with a link error. Caught, that costs the relay alone - the political map's own poll still
@@ -60,11 +63,13 @@ public final class NexerelinInvasionListenerInstaller {
      * @param sector the sector whose listener manager is cleared
      */
     public static void uninstallIfPresent(SectorAPI sector) {
+
         // Gated exactly as the install is, and for the same reason: an install without Nexerelin
         // must not load the class that names its InvasionListener, not even to remove it.
         if (sector == null || !NexerelinPresence.isModEnabled()) {
             return;
         }
+
         // Guarded like the install: naming the relay's class to remove it links the same Nexerelin
         // interface, so a release that broke the install breaks this too. Under the same description,
         // the second failure joins the first report rather than raising another.
@@ -106,7 +111,8 @@ public final class NexerelinInvasionListenerInstaller {
             if (listenerManager == null) {
                 return;
             }
-            // Transient (true), not persisted (false): the relay is a KMU class implementing a
+
+            // Transient (true), not persisted (false): the relay is a KMLib class implementing a
             // Nexerelin interface, so serialising it into the save would fail to load if Nexerelin
             // were later removed. It is re-added on each load instead, exactly when the gate in
             // installIfPresent still passes.
@@ -130,6 +136,7 @@ public final class NexerelinInvasionListenerInstaller {
             if (listenerManager == null) {
                 return;
             }
+
             listenerManager.removeListenerOfClass(NexerelinMarketTransferRelay.class);
         }
     }

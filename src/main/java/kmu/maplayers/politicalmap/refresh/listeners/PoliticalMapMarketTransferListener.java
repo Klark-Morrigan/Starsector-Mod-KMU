@@ -4,8 +4,9 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.listeners.MarketTransferListener;
+
 import kmu.maplayers.politicalmap.refresh.MarketPoliticsRefresh;
-import kmu.starsector.listeners.MarketTransferListener;
 
 /**
  * Marks a conquered colony's system politics-stale when it changes hands, so a colony taken in an
