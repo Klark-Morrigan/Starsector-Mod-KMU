@@ -5,14 +5,14 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ColonyInteractionListener;
 
+import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -169,9 +169,13 @@ class StarsectorMarketUiContextTrackerTests {
             // close, and the editor goes on opening on a market the player has left.
             var market = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
+            var listenerManager = new RecordingListenerManager();
 
+            listenerManager.addListener(tracker, true);
             tracker.reportPlayerOpenedMarket(market);
-            deliverAsTheListenerManagerDoes(tracker, listener -> listener.reportPlayerClosedMarket(market));
+
+            listenerManager.getListeners(ColonyInteractionListener.class)
+                .forEach(listener -> listener.reportPlayerClosedMarket(market));
 
             assertThat(tracker.getTrackedMarket())
                 .isEmpty();
@@ -187,25 +191,16 @@ class StarsectorMarketUiContextTrackerTests {
             // hand the editor.
             var market = buildMarket();
             var tracker = new StarsectorMarketUiContextTracker();
+            var listenerManager = new RecordingListenerManager();
 
-            deliverAsTheListenerManagerDoes(tracker, listener -> listener.reportPlayerOpenedMarket(market));
+            listenerManager.addListener(tracker, true);
+
+            listenerManager.getListeners(ColonyInteractionListener.class)
+                .forEach(listener -> listener.reportPlayerOpenedMarket(market));
 
             assertThat(tracker.getTrackedMarket())
                 .containsSame(market);
         }
-    }
-
-    // Hands an event to the tracker the way the listener manager does: to each registered listener
-    // that is a market-event listener, and to nothing else.
-    private static void deliverAsTheListenerManagerDoes(
-            Object registeredListener,
-            Consumer<ColonyInteractionListener> event) {
-
-        Stream
-            .of(registeredListener)
-            .filter(ColonyInteractionListener.class::isInstance)
-            .map(ColonyInteractionListener.class::cast)
-            .forEach(event);
     }
 
     private static SectorEntityToken buildEntity(MarketAPI market) {
