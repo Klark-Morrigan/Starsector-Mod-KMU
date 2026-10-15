@@ -59,7 +59,7 @@ final class MapLayerScreensTests {
     // The hide ramp is paced by a shipped knob, and that read reaches LunaLib, which no test has. Stood
     // in for the class so no case can reach it: Mockito's own default answers a pace of nothing, which
     // makes each fade a cut and leaves these cases describing the settled answers they are about. The
-    // ramp between them is PersistedMapLayerVisibilityTests's subject.
+    // ramp between them is KMLib's ClockedTraverseFractionTests' subject.
     private MockedStatic<KmuMapSidebarSettings> mapLayerSettingsMock;
 
     private SectorMemoryFake sectorMemoryFake;
