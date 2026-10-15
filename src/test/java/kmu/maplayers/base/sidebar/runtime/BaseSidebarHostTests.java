@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
  * <p>The screen's show-or-hide pick is pinned in the same pair, since it is the second thing to reach both
  * answers: the gate takes it crisply, so a panel switched off stops routing at once, and the paint takes
  * its ramp and multiplies it into whatever a claim has left, so two dissolves compose rather than one
- * winning. The ramp itself is {@link kmu.maplayers.base.layer.PersistedMapLayerVisibility}'s to pin.
+ * winning. The ramp itself is KMLib's {@link kmlib.animation.ClockedTraverseFraction}'s to pin.
  */
 final class BaseSidebarHostTests {
 
