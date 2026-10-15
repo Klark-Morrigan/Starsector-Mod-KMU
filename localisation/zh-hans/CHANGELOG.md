@@ -18,6 +18,7 @@
 - **聚焦某个势力时，政治地图会跟随殖民地易手**，而不再显示旧的所有者，直到你移动聚焦。
 - **聚焦选择器也会跟随殖民地易手**，因此其中的数字与地图一致。
 - **两个势力权重相同的星系在其中一方取得它时会重绘**，而不必等到下一次完整重绘。
+- **Nexerelin 联盟改名后，联盟视图会显示新名称**，而不再保留旧名称，直到其他变化重绘地图。
 - **市场条件管理器 (MCM) 不再在你已离开的殖民地上打开。**
 
 ### 变更
@@ -126,6 +127,8 @@
 | `HolderRankingRules.createByLowestId(Predicate)` 和 `createOpenContestByLowestId()` | 已移除：每个实际排名都经由 `createByMarketProximity` 按远近裁定平局。没有几何信息的读取方改为构建 `new HolderRankingRules(Comparator.naturalOrder(), candidacy)` |
 | `KmuErrorReporter.noop()` | `KmuErrorReporter.createLoggingReporter(Class)`：被捕获的失败总会留下记录 |
 | 继承 `BaseCampaignEventListener` 的 `StarsectorMarketUiContextTracker` | 实现 `ColonyInteractionListener`，即监听器管理器向其传递市场事件的接口 |
+| `kmu.mods.nexerelin.alliances.AllianceFingerprint.compute(List)` 和 `NexerelinAlliances.computeAllianceFingerprint()` | 已移除：`PoliticalMapStalenessSource` 在两次刷新轮询之间直接比较联盟记录。`kmu.mods.nexerelin.alliances` 已移除 |
+| `PoliticalMapLayer(List, OwnerPaintedView)`、`PoliticalMapStanding(MapLayerViewRegistry)`、`PoliticalMapInstaller.installAll(SectorAPI, MapLayerViewRegistry)` 和 `PoliticalMapStalenessSource(SectorMapMachinery)` | 各自还接收刷新轮询读取的 `AllianceSource`，由 `MapLayers` 绑定 |
 
 ##### 移至 KMLib
 
