@@ -5,6 +5,7 @@ import kmlib.opengl.GlColour;
 import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
+import kmlib.opengl.hatch.GlLineHatchStroke;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
@@ -12,7 +13,6 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
 import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
-import kmu.maplayers.base.theme.GlLineHatchStroke;
 
 import org.lwjgl.opengl.GL11;
 
@@ -112,6 +112,7 @@ public final class ClusterRenderer {
         if (drawLists.isEmpty() || mapFrame.isFadedOut()) {
             return;
         }
+
         var frame = new ClusterMapFrame(drawLists, mapFrame);
 
         GlPasses.runBlendedPass(
@@ -135,6 +136,7 @@ public final class ClusterRenderer {
     // non-empty hatch run at all. What the split buys is that the line state the hatch strokes under is set once
     // for the whole map rather than pushed and popped around every solid fill.
     private static void drawFills(ClusterMapFrame frame) {
+
         drawSolidFills(frame);
         drawHatchedFills(frame);
     }
@@ -167,16 +169,19 @@ public final class ClusterRenderer {
                     frame.getFactor())));
     }
 
-    // Lays the hatch over the solid fill, in whichever way the theme's stroke says. The stroke
-    // is the sector-wide choice of substrate, so it is resolved once for the whole pass rather
-    // than per owner - the geometry underneath is the same runs either way, and only how they are
-    // turned into pixels differs.
+    // Lays the hatch over the solid fill, at the theme's stroke. The stroke is the sector-wide
+    // choice, so it is read once for the whole pass rather than per owner.
     private static void drawHatchedFills(ClusterMapFrame frame) {
 
-        var hatch = frame.drawLists().getGlobalStyle().hatch();
-        if (hatch.stroke() instanceof GlLineHatchStroke lineStroke) {
-            drawHatchAsGlLines(frame, hatch.pattern().spacing(), lineStroke);
-        }
+        var hatch = frame
+            .drawLists()
+            .getGlobalStyle()
+            .hatch();
+
+        drawHatchAsGlLines(
+            frame,
+            hatch.pattern().spacing(),
+            hatch.stroke());
     }
 
     // The hatch handed to the GL line rasteriser, in a blended pass of its own so the line quality
@@ -184,7 +189,7 @@ public final class ClusterRenderer {
     // happened to leave in force. A cluster that fills solid carries an empty hatch run and so
     // costs this pass nothing beyond the colour bind its group already needs.
     //
-    // The spacing comes down with the stroke because this substrate's width is a fraction of it:
+    // The spacing comes down with the stroke because the stroke's width is a fraction of it:
     // the segments are world-space geometry the frame scales, so a width that did not scale with
     // them would cover a different share of the gap at every zoom - see GlLineHatchStroke.
     private static void drawHatchAsGlLines(
@@ -220,11 +225,13 @@ public final class ClusterRenderer {
             Function<StyledCluster, float[]> selectRun) {
 
         for (var group : frame.drawLists().getStyledClusterGroupByOwnerId().values()) {
+
             emitIfVisible(
                 group.fill(),
                 frame.getAlphaMult(),
                 () -> {
                     for (var cluster : group.clusters()) {
+
                         GlRuns.drawScaled(
                             primitiveMode,
                             selectRun.apply(cluster),
@@ -245,6 +252,7 @@ public final class ClusterRenderer {
             Consumer<T> drawCell) {
 
         for (var cell : frame.drawLists().getStyledCellByCellKey().values()) {
+
             if (form.isInstance(cell)) {
                 drawCell.accept(form.cast(cell));
             }
@@ -257,9 +265,11 @@ public final class ClusterRenderer {
     // added with the colour bound but the hidden test forgotten, drawing an invisible element in
     // the previous one's colour.
     private static void emitIfVisible(UiElementPaint paint, float alphaMult, Runnable emitRuns) {
+
         if (paint.isHidden()) {
             return;
         }
+
         GlColour.set(paint.colour(), alphaMult * paint.alpha());
         emitRuns.run();
     }
@@ -300,12 +310,16 @@ public final class ClusterRenderer {
         // one continuous GL_LINE_LOOP rather than the disconnected GL_LINES the per-cell edges
         // use. Colour and width bind once per owner, as the fills do.
         for (var group : frame.drawLists().getStyledClusterGroupByOwnerId().values()) {
+
             emitIfVisible(
                 group.border(),
                 frame.getAlphaMult(),
                 () -> {
+
                     GL11.glLineWidth(group.borderWidth());
+
                     for (var cluster : group.clusters()) {
+
                         // The two are walked apart rather than through the cluster's own loop
                         // list, which would allocate one per cluster per frame; the stroke
                         // itself does not distinguish them.
@@ -313,6 +327,7 @@ public final class ClusterRenderer {
                             GL11.GL_LINE_LOOP,
                             cluster.outerLoop(),
                             frame.getFactor());
+
                         for (var enclaveLoop : cluster.enclaveLoops()) {
                             GlRuns.drawScaled(GL11.GL_LINE_LOOP, enclaveLoop, frame.getFactor());
                         }

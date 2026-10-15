@@ -256,12 +256,10 @@ so no owner's triangles can land on another's hatched fill -
 and it buys the hatch a pass of its own,
 so the line state it strokes under is set
 once for the whole map instead of being pushed and popped around each owner.
-That pass is where `HatchStroke` is dispatched on:
-the theme decides which substrate the hatch reaches the screen through,
-and the renderer reads only the numbers that substrate carries.
+That pass is where the theme's `GlLineHatchStroke` is read.
 The pattern's spacing goes down with the stroke,
-since the GL-line substrate scales its pixel width off it -
-the renderer hands over the frame's scale and the substrate says what width that comes to.
+since the stroke scales its pixel width off it -
+the renderer hands over the frame's scale and the stroke says what width that comes to.
 
 What it paints arrives through `ClusterDrawLists`,
 which is four reads and no more -
