@@ -6,6 +6,7 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmlib.starsector.ui.map.controls.MapFilterToggle;
+import kmlib.starsector.ui.tooltip.TooltipSpacing;
 
 import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
@@ -43,15 +44,11 @@ final class MapLayerToggleTooltip {
     // hanging happens here too, so nothing outside has to hold a number it cannot judge.
     private static final float TOOLTIP_WIDTH = 300f;
 
-    // The gap vanilla leaves above a tooltip's first paragraph, matched so the one box that is not
-    // the game's does not sit its text differently from the six that are.
-    private static final float PARAGRAPH_PAD = 3f;
-
     // What separates one paragraph from the next. Wider than the pad above the first, because that
     // one only lifts the text off the tooltip's edge while this one has to read as a break: at the
     // same three units the three paragraphs run together as one block of prose, and the reader loses
     // the only cue that the middle one is a different kind of statement from the first.
-    private static final float PARAGRAPH_GAP = 10f;
+    private static final float PARAGRAPH_GAP = TooltipSpacing.OUTER_PAD;
 
     // Whether the political map offers an alliances view at all. Asked rather than stated, the view
     // itself being registered only where the mod that keeps alliances is installed - so an install
@@ -85,8 +82,10 @@ final class MapLayerToggleTooltip {
 
         var parts = readSentenceParts();
 
+        // Vanilla's pad above a first paragraph, so the one box that is not the game's does not sit
+        // its text differently from the six that are.
         new HighlightedParagraph(parts.composeSentence(), parts.listRunHighlights())
-            .addTo(tooltip, PARAGRAPH_PAD);
+            .addTo(tooltip, TooltipSpacing.SMALL_PAD);
 
         // Its own paragraph rather than a third sentence: the first says what the box does, this
         // says who is answerable for it and how to be rid of it, and a player looking for the second

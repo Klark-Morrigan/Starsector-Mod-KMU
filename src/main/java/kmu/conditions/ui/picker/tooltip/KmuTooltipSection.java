@@ -3,6 +3,8 @@ package kmu.conditions.ui.picker.tooltip;
 import com.fs.starfarer.api.ui.Alignment;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 
+import kmlib.starsector.ui.tooltip.TooltipSpacing;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -10,7 +12,6 @@ import java.util.Objects;
 import static kmlib.text.KmlibStrings.hasText;
 
 public final class KmuTooltipSection {
-    private static final float HEADING_PAD = 10f;
     private static final float LINE_PAD = 4f;
 
     private KmuTooltipSection() {
@@ -39,7 +40,7 @@ public final class KmuTooltipSection {
             style.titleColour(),
             style.backgroundColour(),
             Alignment.MID,
-            HEADING_PAD);
+            TooltipSpacing.OUTER_PAD);
 
         for (var line : lines) {
             if (hasText(line)) {
