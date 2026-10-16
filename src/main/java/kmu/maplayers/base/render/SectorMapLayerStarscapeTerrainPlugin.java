@@ -51,7 +51,7 @@ public class SectorMapLayerStarscapeTerrainPlugin extends SectorMapLayerTerrainP
     // and the binding behind this field is not something XStream can carry. A save-restored plugin
     // therefore comes back with it null - XStream skips transient fields and runs no field
     // initialisers - so it is created lazily in renderOnMap rather than in a field initialiser.
-    private transient BooleanSupplier isStarscapeMapShowing;
+    private transient BooleanSupplier isStarscapeVanillaMapShowing;
 
     /**
      * The pairing the terrain spec instantiates, reading whichever host is showing a Starscape map.
@@ -62,21 +62,22 @@ public class SectorMapLayerStarscapeTerrainPlugin extends SectorMapLayerTerrainP
     }
 
     /** Binds the Starscape read explicitly instead of letting the first render resolve it. */
-    SectorMapLayerStarscapeTerrainPlugin(BooleanSupplier isStarscapeMapShowing) {
-        this.isStarscapeMapShowing = isStarscapeMapShowing;
+    SectorMapLayerStarscapeTerrainPlugin(BooleanSupplier isStarscapeVanillaMapShowing) {
+        this.isStarscapeVanillaMapShowing = isStarscapeVanillaMapShowing;
     }
 
     @Override
     public void renderOnMap(float factor, float alphaMult) {
         // Recreated lazily: a save-restored plugin comes back with the field null (transient), so
         // the first render this session rebuilds it before the guard below reads it.
-        if (isStarscapeMapShowing == null) {
-            isStarscapeMapShowing = new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter())::isStarscapeMapShowing;
+        if (isStarscapeVanillaMapShowing == null) {
+            isStarscapeVanillaMapShowing =
+                new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter())::isStarscapeVanillaMapShowing;
         }
         // Stand aside outside Starscape. The engine lets this half through in both modes, and
         // outside Starscape the base half is the one it is already calling, so drawing here as well
         // would lay the same overlay down twice and double the alpha of every fill.
-        if (!isStarscapeMapShowing.getAsBoolean()) {
+        if (!isStarscapeVanillaMapShowing.getAsBoolean()) {
             return;
         }
         super.renderOnMap(factor, alphaMult);

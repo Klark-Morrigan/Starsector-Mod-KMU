@@ -39,8 +39,8 @@ public class SectorMapLayerAboveStarscapeNebulaeTerrainPlugin
     }
 
     /** Binds the Starscape read explicitly instead of letting the first render resolve it. */
-    SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(BooleanSupplier isStarscapeMapShowing) {
-        super(isStarscapeMapShowing);
+    SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(BooleanSupplier isStarscapeVanillaMapShowing) {
+        super(isStarscapeVanillaMapShowing);
     }
 
     @Override
