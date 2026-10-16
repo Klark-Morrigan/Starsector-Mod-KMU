@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.compatibility.CompatibilityFailures;
+import kmlib.starsector.startup.ToggledFeature;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.compatibility.CompatibilityFailureFixture;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
@@ -62,7 +63,7 @@ import static org.mockito.Mockito.times;
  * stood in for here like the rest.
  *
  * <p>What each installer registers is pinned beside that installer, and when a switch is worth
- * acting on is pinned on {@link KmuToggledFeature}. Neither is re-asserted here: this suite is
+ * acting on is pinned on {@link ToggledFeature}. Neither is re-asserted here: this suite is
  * about the list and which of the two asks each entry point makes, not about what the entries do.
  */
 class KMU_ModPluginTests {
@@ -403,7 +404,7 @@ class KMU_ModPluginTests {
 
         return Arrays
             .stream(KMU_ModPlugin.class.getDeclaredFields())
-            .filter(field -> field.getType() == KmuToggledFeature.class)
+            .filter(field -> field.getType() == ToggledFeature.class)
             .map(KMU_ModPluginTests::readStaticFieldValue)
             .toList();
     }

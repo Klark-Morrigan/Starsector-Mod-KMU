@@ -137,6 +137,7 @@ Code that knows nothing of KMU now lives in KMLib, where any mod built on it can
 
 | Before | After |
 | --- | --- |
+| `kmu.KmuToggledFeature` | `kmlib.starsector.startup.ToggledFeature` |
 | `ObservationStore`, `ObservationCodec` and `RecordedObservations` in `base.visibility.observations` | `kmlib.starsector.memory.observations` |
 | `kmu.starsector.listeners.MarketTransferListener` | `kmlib.starsector.listeners.MarketTransferListener` |
 | `kmu.mods.nexerelin.NexerelinMarketTransferRelay` and `kmu.mods.nexerelin.NexerelinInvasionListenerInstaller` | Gone: KMLib puts its own relay on each loaded sector where Nexerelin is enabled |

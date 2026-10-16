@@ -232,7 +232,7 @@ an ID leaving it stands the layer up,
 and a reorder moves no ID between the two -
 which is what keeps a drag from tearing a layer's listeners down and building them again.
 Each layer is diffed against what it was last applied as,
-the same shape `KmuToggledFeature` compares a settings switch by.
+the same shape KMLib's `ToggledFeature` compares a settings switch by.
 
 It is asked on load,
 so a layer hidden in the store never stands up on a sector at all,

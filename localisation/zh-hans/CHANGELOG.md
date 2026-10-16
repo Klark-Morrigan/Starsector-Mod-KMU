@@ -136,6 +136,7 @@
 
 | 之前 | 之后 |
 | --- | --- |
+| `kmu.KmuToggledFeature` | `kmlib.starsector.startup.ToggledFeature` |
 | `base.visibility.observations` 中的 `ObservationStore`、`ObservationCodec` 和 `RecordedObservations` | `kmlib.starsector.memory.observations` |
 | `kmu.starsector.listeners.MarketTransferListener` | `kmlib.starsector.listeners.MarketTransferListener` |
 | `kmu.mods.nexerelin.NexerelinMarketTransferRelay` 和 `kmu.mods.nexerelin.NexerelinInvasionListenerInstaller` | 已移除：启用 Nexerelin 时，KMLib 会在每次读取存档时于该星域上放置自己的转发器 |

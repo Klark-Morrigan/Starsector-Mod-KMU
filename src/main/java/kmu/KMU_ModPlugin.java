@@ -4,6 +4,8 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.startup.ToggledFeature;
+
 import kmu.conditions.ui.context.MarketUiContextInstaller;
 import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.diagnostics.ReflectionTracingInstaller;
@@ -44,7 +46,8 @@ import java.util.List;
  * layout - and every enabled mod contributes one of these to the same running game, where a bare
  * {@code ModPlugin} would say nothing. No other class in KMU is named this way, and none should be.
  */
-public class KMU_ModPlugin extends BaseModPlugin {
+public class KMU_ModPlugin
+        extends BaseModPlugin {
 
     // The switches this mod answers, each holding what it was last applied as so a settings change
     // can tell which of them moved. Listed here because deciding what runs is the entry point's
@@ -52,7 +55,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     //
     // This one is every layer's - a layer another mod registers with KMU draws through the same
     // installers, and this switch takes it down with KMU's own.
-    private static final KmuToggledFeature mapLayers = new KmuToggledFeature(
+    private static final ToggledFeature mapLayers = new ToggledFeature(
         KmuFeatureSettings::areMapLayersEnabled,
         KMU_ModPlugin::installMapLayers,
         KMU_ModPlugin::uninstallMapLayers);
@@ -62,7 +65,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // remembers which market a UI is open on, which nothing else reads - so a player who has not
     // asked for the editor runs none of it. The console command that opens the editor is registered
     // by data file rather than from here and so cannot be withheld; it reads the same switch itself.
-    private static final KmuToggledFeature marketConditionManager = new KmuToggledFeature(
+    private static final ToggledFeature marketConditionManager = new ToggledFeature(
         KmuFeatureSettings::isMarketConditionManagerEnabled,
         MarketUiContextInstaller::installAll,
         MarketUiContextInstaller::uninstallAll);
@@ -76,8 +79,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // through our settings listener, the mod's own switch through the listener on its settings, and
     // presence through the load that first applies this, presence being the one that cannot move
     // within a run.
-    private static final KmuToggledFeature randomAssortmentOfThingsCompatibility =
-        new KmuToggledFeature(
+    private static final ToggledFeature randomAssortmentOfThingsCompatibility =
+        new ToggledFeature(
             RandomAssortmentOfThingsCompatibilityMode.createForLiveGame()::isEngaged,
             RandomAssortmentOfThingsCompatibilityInstaller::installAll,
             RandomAssortmentOfThingsCompatibilityInstaller::uninstallAll);
@@ -86,7 +89,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // asked twice - once against a freshly loaded sector and again wherever the player flips it -
     // and naming them per ask would mean two lists to keep the same. A feature in one and not the
     // other is a feature the player can switch and see nothing happen until they reload.
-    private static final List<KmuToggledFeature> switchedFeatures = List.of(
+    private static final List<ToggledFeature> switchedFeatures = List.of(
         mapLayers,
         marketConditionManager,
         randomAssortmentOfThingsCompatibility);
@@ -217,7 +220,6 @@ public class KMU_ModPlugin extends BaseModPlugin {
         MapLayerStandings.applyArrangementTo(sector);
 
         MapSurfaceInstaller.installAll(sector);
-
         SidebarInstaller.installAll(sector);
         MapHoverInstaller.installAll(sector);
 
