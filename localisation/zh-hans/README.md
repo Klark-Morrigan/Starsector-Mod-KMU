@@ -5,6 +5,9 @@ the words the Chinese core localisation already uses for vanilla concepts,
 and the translations settled for KMU's own.
 Check a term here before translating a new string,
 and add a row when a new term is settled.
+Every table keeps its rows in alphabetical order of the English column, ignoring case.
+A long section splits its table by topic;
+a term that fits no topic opens a new one, with its own heading and index entry.
 How bundles are built and checked is in the root README's
 [Localisation](../../README.md#localisation) section.
 
@@ -31,10 +34,27 @@ so read both for the full picture.
 - [Vanilla mechanics without a name](#vanilla-mechanics-without-a-name)
 - [KMU terms](#kmu-terms)
   - [Features and screens](#features-and-screens)
+    - [The mod](#the-mod)
+    - [Map layers](#map-layers)
+    - [Screens and controls](#screens-and-controls)
+    - [Market Condition Manager](#market-condition-manager)
+    - [Compatibility](#compatibility)
   - [The political map](#the-political-map)
+    - [Views](#views)
+    - [Ownership, claims and dominance](#ownership-claims-and-dominance)
+    - [Factions and blocs](#factions-and-blocs)
+    - [Systems](#systems)
+    - [Scoring](#scoring)
+    - [Drawing](#drawing)
+    - [The sidebar](#the-sidebar)
+    - [In the changelog: the map and its controls](#in-the-changelog-the-map-and-its-controls)
+    - [In the changelog: code](#in-the-changelog-code)
   - [Terms borrowed from HOI4](#terms-borrowed-from-hoi4)
   - [Hovering and tooltips](#hovering-and-tooltips)
   - [Settings](#settings)
+    - [Descriptions](#descriptions)
+    - [Setting names](#setting-names)
+    - [Option values](#option-values)
   - [Settings tabs](#settings-tabs)
   - [Console commands](#console-commands)
   - [The forum banner](#the-forum-banner)
@@ -45,10 +65,10 @@ so read both for the full picture.
 
 | File | What it is |
 | --- | --- |
-| [strings.json](strings.json) | Every string KMU draws in game: the sidebar, hover boxes, dialogs and notices. |
+| [CHANGELOG.md](CHANGELOG.md) | A full translation of the root [CHANGELOG.md](../../CHANGELOG.md): every version, every section. The Chinese zip ships it, and each release's notes show its section for the version. |
 | [LunaSettings.csv](LunaSettings.csv) | The LunaLib settings screen: tab names, captions, setting names and descriptions. |
 | [mod_info.json](mod_info.json) | The launcher's mod list entry: `name` and `description` only, merged over the base. |
-| [CHANGELOG.md](CHANGELOG.md) | A full translation of the root [CHANGELOG.md](../../CHANGELOG.md): every version, every section. The Chinese zip ships it, and each release's notes show its section for the version. |
+| [strings.json](strings.json) | Every string KMU draws in game: the sidebar, hover boxes, dialogs and notices. |
 
 Players of this bundle are expected to have the
 [Chinese core localisation](https://github.com/TruthOriginem/Starsector-Localization-CN)
@@ -87,79 +107,79 @@ The vanilla words KMLib's own text touches are in
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Map (the screen, its tab) | 星图 | `starfarer_obf.jar` tab bar; "open map" is 打开星图 |
-| Intel (the screen, its tab) | 情报信息 | `starfarer_obf.jar` tab bar; the screen is 情报信息界面 |
 | Codex | 数据百科 | `starfarer.api.jar`, "Codex Update" is 数据百科更新 |
-| Starscape (map filter) | 星景 | `starfarer_obf.jar` map filter row |
-| Fuel range (map filter) | 续航距离 | map filter row; its tooltip is 显示燃料可用范围 |
-| Names (map filter) | 名称 | map filter row |
 | Exploration (map filter) | 探索状态 | map filter row |
+| Fuel range (map filter) | 续航距离 | map filter row; its tooltip is 显示燃料可用范围 |
 | Inhabited (map filter) | 有人居住 | map filter row |
-| Legend | 图例 | map filter row |
-| System map | 星系地图 | `starfarer_obf.jar`, "Go to system map" is 进入星系地图 |
 | Intel (an item, not the screen) | 情报 | `BlueprintIntel`, among 65 places; the screen is 情报信息 |
+| Intel (the screen, its tab) | 情报信息 | `starfarer_obf.jar` tab bar; the screen is 情报信息界面 |
+| Legend | 图例 | map filter row |
+| Map (the screen, its tab) | 星图 | `starfarer_obf.jar` tab bar; "open map" is 打开星图 |
+| Names (map filter) | 名称 | map filter row |
 | Radar | 雷达 | story text in `rules.csv` and `market_conditions.csv`; vanilla draws no radar label |
+| Starscape (map filter) | 星景 | `starfarer_obf.jar` map filter row |
+| System map | 星系地图 | `starfarer_obf.jar`, "Go to system map" is 进入星系地图 |
 
 ### Space
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Unvisited star system | 未访问过的星系 | `starfarer_obf.jar` map legend |
-| Planet | 行星 | `starfarer.api.jar` |
-| Nebula | 星云 | `starfarer.api.jar` |
-| Gate | 星门 | `descriptions.csv`, Active Gate is 激活的星门 |
-| Station | 空间站 | `starfarer.api.jar`; Jangala Station is `Jangala 空间站` |
-| Orbital Station | 轨道空间站 | `industries.csv` |
-| Star (the body) | 恒星 | `starfarer.api.jar` planet dialog; `planets.json` names each kind, as 黄矮星 |
 | Black hole | 黑洞 | `planets.json` `black_hole` |
-| Slipstream | 滑流 | `SlipstreamTerrainPlugin`; also 超空间滑流 |
-| Terrain | 地形 | `SlipstreamTerrainPlugin`; "special terrain" is 特殊地形 |
 | Entity | 实体 | `custom_entities.json`, "Unidentified Entity" is 不明实体 |
+| Gate | 星门 | `descriptions.csv`, Active Gate is 激活的星门 |
+| Nebula | 星云 | `starfarer.api.jar` |
+| Orbital Station | 轨道空间站 | `industries.csv` |
+| Planet | 行星 | `starfarer.api.jar` |
 | Sensors, sensor range | 传感器, 探测范围 | `starfarer_obf.jar` fleet tooltip, "Sensor Range" is 探测范围 |
+| Slipstream | 滑流 | `SlipstreamTerrainPlugin`; also 超空间滑流 |
+| Star (the body) | 恒星 | `starfarer.api.jar` planet dialog; `planets.json` names each kind, as 黄矮星 |
+| Station | 空间站 | `starfarer.api.jar`; Jangala Station is `Jangala 空间站` |
+| Terrain | 地形 | `SlipstreamTerrainPlugin`; "special terrain" is 特殊地形 |
+| Unvisited star system | 未访问过的星系 | `starfarer_obf.jar` map legend |
 
 ### Colonies and markets
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Colony size | 殖民地规模 | `starfarer_obf.jar` |
-| Size | 规模 | `starfarer_obf.jar` |
-| Market size | 市场规模 | `starfarer_obf.jar` |
-| Population | 人口 | `starfarer_obf.jar` |
-| Stability | 稳定性 | `starfarer_obf.jar`, "Stability: %s" is 稳定性：%s |
+| a faction's presence in a system | 殖民地, by paraphrase | "has no presence in this system" is 该星系中并没有……的殖民地 |
+| Abandoned Station (condition) | 废弃空间站 | `market_conditions.csv` |
+| Can not be colonized | 无法殖民 | `PlanetSurveyPanel`; vanilla has no positive form |
 | Colony conditions | 殖民地条件 | `starfarer_obf.jar` |
-| Planetary conditions | 行星状况 | `starfarer_obf.jar` |
-| Hidden | 隐藏 | `starfarer_obf.jar`; "Comm Relay (hidden)" is 通讯中继站 (隐藏) |
-| Outpost | 前哨站 | `market_conditions.csv` |
+| Colony size | 殖民地规模 | `starfarer_obf.jar` |
 | Decivilized (condition) | 荒蛮之地 | `market_conditions.csv` |
 | Decivilized Subpopulation (condition) | 法外之地 | `market_conditions.csv` |
-| Abandoned Station (condition) | 废弃空间站 | `market_conditions.csv` |
-| Military Base | 军事基地 | `industries.csv` |
-| Patrol HQ | 巡逻队总部 | `industries.csv` |
-| Patrol (the fleet) | 巡逻队 | `rules.csv`; 巡逻队 in 95 places, 巡逻舰队 in 6 |
-| Industry (a colony building) | 工业设施 | `IndustryListPanel`, "Industries on %s:"; 产业 only where the English means an economic sector |
-| Military (facilities) | 军事设施 | `HAColonyDefensesFactor` in `starfarer.api.jar` |
-| Militarized (ships only) | 军事化 | `hull_mods.csv` `militarized_subsystems`, the Militarized Subsystems hullmod (军事化子系统) for civilian hulls; vanilla uses the word for ships alone, so it never names [KMU's militarised station](#the-political-map) |
-| Population center (a large hub) | 人口中心 | `market_conditions.csv` `population_10`, "a dominant population center"; vanilla uses it for large hubs, as 主要的人口中心, so it never names [KMU's population center](#the-political-map) |
 | Docked (at a market) | 停靠 | `starfarer_obf.jar` refit, "Must be docked at a market" |
-| Can not be colonized | 无法殖民 | `PlanetSurveyPanel`; vanilla has no positive form |
+| Hidden | 隐藏 | `starfarer_obf.jar`; "Comm Relay (hidden)" is 通讯中继站 (隐藏) |
+| Industry (a colony building) | 工业设施 | `IndustryListPanel`, "Industries on %s:"; 产业 only where the English means an economic sector |
+| Market size | 市场规模 | `starfarer_obf.jar` |
+| Militarized (ships only) | 军事化 | `hull_mods.csv` `militarized_subsystems`, the Militarized Subsystems hullmod (军事化子系统) for civilian hulls; vanilla uses the word for ships alone, so it never names [KMU's militarised station](#the-political-map) |
+| Military (facilities) | 军事设施 | `HAColonyDefensesFactor` in `starfarer.api.jar` |
+| Military Base | 军事基地 | `industries.csv` |
+| Outpost | 前哨站 | `market_conditions.csv` |
+| Patrol (the fleet) | 巡逻队 | `rules.csv`; 巡逻队 in 95 places, 巡逻舰队 in 6 |
+| Patrol HQ | 巡逻队总部 | `industries.csv` |
 | Pirate | 海盗 | Pirate Station is 海盗空间站 |
-| a faction's presence in a system | 殖民地, by paraphrase | "has no presence in this system" is 该星系中并没有……的殖民地 |
+| Planetary conditions | 行星状况 | `starfarer_obf.jar` |
+| Population | 人口 | `starfarer_obf.jar` |
+| Population center (a large hub) | 人口中心 | `market_conditions.csv` `population_10`, "a dominant population center"; vanilla uses it for large hubs, as 主要的人口中心, so it never names [KMU's population center](#the-political-map) |
+| Size | 规模 | `starfarer_obf.jar` |
+| Stability | 稳定性 | `starfarer_obf.jar`, "Stability: %s" is 稳定性：%s |
 
 ### Factions and relations
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Independent (the faction's name) | 非势力团体 | `independent.faction` `displayName` |
 | Attitude (the relation number) | 关系 | `starfarer_obf.jar` faction screen, "Attitude: " is 关系： |
-| Relationship | 关系 | `starfarer_obf.jar` |
+| Hegemony | 霸主 | `hegemony.faction` `displayName` |
+| Independent (the faction's name) | 非势力团体 | `independent.faction` `displayName` |
 | Known allies | 已知的盟友 | `starfarer_obf.jar` faction screen |
 | Known enemies | 已知的敌人 | `starfarer_obf.jar` faction screen |
-| Your faction (the player's) | 你的势力 | `starfarer_obf.jar` flag picker, "Select a flag to represent your faction"; vanilla never writes 玩家势力, which KMU keeps for the player faction as a category, as the settings write Mod 玩家势力 for modded player factions |
-| Neutral (the faction's name) | 中立 | `neutral.faction` `displayName` |
-| Hegemony | 霸主 | `hegemony.faction` `displayName` |
-| Tri-Tachyon | 速子科技 | `tritachyon.faction` `displayName`; its long name is 三一速子科技公司 |
 | Luddic Church | 卢德教会 | `luddic_church.faction` `displayName`; its long name is 银河救赎教会 |
+| Neutral (the faction's name) | 中立 | `neutral.faction` `displayName` |
+| Relationship | 关系 | `starfarer_obf.jar` |
+| Tri-Tachyon | 速子科技 | `tritachyon.faction` `displayName`; its long name is 三一速子科技公司 |
 | Unclaimed (territory) | 无宣称 | `PerseanLeagueHostileActivityFactor`, "unclaimed territory" is 无宣称领土 |
+| Your faction (the player's) | 你的势力 | `starfarer_obf.jar` flag picker, "Select a flag to represent your faction"; vanilla never writes 玩家势力, which KMU keeps for the player faction as a category, as the settings write Mod 玩家势力 for modded player factions |
 
 The nine reputation levels, from `RepLevel` in `starfarer.api.jar`:
 
@@ -171,28 +191,28 @@ The nine reputation levels, from `RepLevel` in `starfarer.api.jar`:
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Survey | 调查 | "Survey Data" is 调查数据 |
-| Unsurveyed | 未被调查 | `starfarer_obf.jar` planet list |
+| Full survey data | 完整调查数据 | `starfarer_obf.jar`; vanilla uses both 全面 and 完整 for "full" |
+| Fully surveyed | 已全面调查 | `starfarer_obf.jar` planet list |
 | Preliminary survey completed | 已初步调查 | `starfarer_obf.jar` planet list |
 | Preliminary survey data | 初步调查数据 | `Misc` in `starfarer.api.jar` |
-| Fully surveyed | 已全面调查 | `starfarer_obf.jar` planet list |
-| Full survey data | 完整调查数据 | `starfarer_obf.jar`; vanilla uses both 全面 and 完整 for "full" |
+| Survey | 调查 | "Survey Data" is 调查数据 |
+| Unsurveyed | 未被调查 | `starfarer_obf.jar` planet list |
 
 ### Time
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Today | 今天 | `Misc` in `starfarer.api.jar` |
 | 1 day ago | 1 天前 | `Misc` |
 | N days ago | N 天前 | `Misc` |
+| Today | 今天 | `Misc` in `starfarer.api.jar` |
 
 ### Game and mods
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Starsector | 远行星号 | `starfarer_obf.jar` title, "Welcome to Starsector!" is 欢迎来到远行星号！; most of the game keeps the Latin name |
 | Launcher | 启动器 | `StarfarerLauncher` in `starfarer_obf.jar` |
 | Sound volume | 音量 | `starfarer_obf.jar` title settings, "Sound volume:" is 音量： |
+| Starsector | 远行星号 | `starfarer_obf.jar` title, "Welcome to Starsector!" is 欢迎来到远行星号！; most of the game keeps the Latin name |
 
 ## Vanilla mechanics without a name
 
@@ -202,12 +222,12 @@ KMU names them, and the code column says where vanilla keeps each one.
 
 | English | 简体中文 | Vanilla code | Note |
 | --- | --- | --- | --- |
+| discoverable | 可发现 | `SectorEntityToken.isDiscoverable()` | kept off the system map until the player's sensors find it, as the bundle's visibility overrides write it |
+| dynamic claim | 动态宣称 | `Misc.getClaimingFaction`, where no unconditional claim is set | 动态, changing as things change, the opposite of 无条件 |
+| hyperspace anchor | 超空间锚点 | `StarSystemAPI.getHyperspaceAnchor()` | a system's point in hyperspace |
+| sector memory | 星域记忆 | the game's `$` memory keys | where unconditional claims are set; from 星域 |
 | territorial, non-territorial (a faction) | 领土, 非领土 | `territorial` in a faction's `punitiveExpeditionData`, read by `Misc.getClaimingFaction` | only a territorial faction claims a system dynamically; 非领土势力 in prose; 领土 is also the word for territory |
 | unconditional claim | 无条件宣称 | the `$claimingFaction` memory key, `MemFlags.CLAIMING_FACTION` | wins over any dynamic claim |
-| dynamic claim | 动态宣称 | `Misc.getClaimingFaction`, where no unconditional claim is set | 动态, changing as things change, the opposite of 无条件 |
-| sector memory | 星域记忆 | the game's `$` memory keys | where unconditional claims are set; from 星域 |
-| discoverable | 可发现 | `SectorEntityToken.isDiscoverable()` | kept off the system map until the player's sensors find it, as the bundle's visibility overrides write it |
-| hyperspace anchor | 超空间锚点 | `StarSystemAPI.getHyperspaceAnchor()` | a system's point in hyperspace |
 | unowned (a market the Neutral faction holds) | 无主 | a market owned by the faction `neutral`, named 中立 | a market's ownership only, never a system's, which is unpopulated, decivilised or settled instead; silent on whether anyone lives there; written beside 市场, and with 中立 where it first appears; not 未受控制, which reads as dominance, and not 无主之地, vanilla's label for Uninhabited |
 
 ## KMU terms
@@ -220,49 +240,71 @@ which every KM mod's shares.
 
 ### Features and screens
 
+#### The mod
+
 | English | 简体中文 | Note |
 | --- | --- | --- |
+| headline feature | 首发功能 | 首发, the first to ship, with 功能 as in the Features tab |
 | Klark Morrigan's Utilities (KMU) (the mod's name) | Klark Morrigan 的实用工具 (KMU) | `KMU` is the brand: kept in every locale, never translated |
 | KMU | KMU | the brand, kept in every locale |
-| Sector Map Layers (the feature) | 星图图层 | from 星图 |
-| map layers | 地图图层 | also drawn on the intel screen's map, hence 地图 rather than 星图 |
-| Map layers (filter row tick box) | 地图图层 | sits beside 星景 and 续航距离 |
-| switched off (a map layer that failed) | 已关闭 | the notice's word; 关闭 as for the map layers switched off and back on (关闭后重新开启) |
-| load a save | 读取存档 | from vanilla's 读取最近的存档 |
-| Political Map | 政治地图 | 政治 for political, with 地图 as in 地图图层, since it is a layer |
-| No Layer | 无图层 | 无, none, before 图层: the tab that shows no layer |
-| map screen | 星图界面 | the screen Tab opens; vanilla's tab reads 星图 |
-| overlay | 叠加层 | the usual Chinese UI word for a layer drawn over another |
-| sidebar | 侧边栏 | the usual Chinese UI word |
-| Map sidebar (the sidebar's name, wherever the player reads it) | 地图侧边栏 | 地图 as in 地图图层, whose controls it holds on the map screen and the intel screen; one name, never 叠加层侧边栏, 地图图层侧边栏, 叠加层控制框 or 可折叠侧边栏 |
-| tab | 标签页 | the usual Chinese UI word; 标签 alone would read as a label |
-| tab bar | 标签栏 | from 标签页, with 栏 for a bar, as in 筛选栏 |
-| filter row | 筛选栏 | the row holding 星景, 续航距离 and 名称 |
-| Arrange Map Layers | 排列地图图层 | 排列, to put in order, before 地图图层 |
-| Up / Down (arrange dialog) | 上移 / 下移 | highlighted inside the dialog's hint |
-| uncheck | 取消勾选 | highlighted inside the dialog's hint |
-| Market Condition Manager (MCM) | 市场条件管理器 (MCM) | from 殖民地条件 |
-| market condition | 市场条件 | from vanilla's 殖民地条件, with 市场 since the manager works on markets |
-| suppressed (condition) | 被压制 | the plain passive for a condition held down but not removed |
-| world units | 世界单位 | literal: a distance in game space, kept apart from 像素 |
-| owned by (a planet's faction) | 属于 | the game's own text has no such phrase; the faction's name follows after a space |
-| list separators (the condition manager's lines) | ` ； ` between groups, ` ， ` between items | an ASCII space either side, so the highlighted counts and names beside them still highlight |
-| screen | 界面 | as in 星图界面 and 情报信息界面 |
-| sector map widget (the map, on whichever screen draws it) | 星图控件 | from 星图, with 控件, the control word; the settings and the notices already use it; not 地图控件, the Map - Dev header |
-| control (a tick box, switch or button) | 控件 | as in 地图控件, the Map - Dev header for the map controls; not 星图控件, the map itself |
-| campaign radar (where Random Assortment of Things puts its minimap) | 战役雷达 | from vanilla's 雷达 |
-| minimap (Random Assortment of Things') | 小地图 | the usual Chinese word for a minimap, as the settings write it |
-| docked (Random Assortment of Things hiding its minimap) | 停靠 | vanilla's word for docking at a market |
-| compatibility mode | 兼容模式 | 兼容 as in the Map - Compatibility tab's 兼容性, with 模式 for mode |
-| compatibility patch | 兼容补丁 | 补丁, the usual word for a patch, after 兼容 |
-| mouseover detection | 鼠标悬停检测 | from 悬停 |
-| view (of the political map) | 视图 | as in 联盟视图 |
-| filter list, sortable filter list | 筛选列表, 可排序的筛选列表 | the sidebar's list of blocs |
-| faction filter | 势力筛选列表 | 势力 before 筛选列表, the filter list |
-| headline feature | 首发功能 | 首发, the first to ship, with 功能 as in the Features tab |
 | read-only (by design) | 只读 | the standard computing word |
 | underlying mechanics | 底层机制 | 底层, the layer beneath, with 机制 for mechanics |
+
+#### Map layers
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| Arrange Map Layers | 排列地图图层 | 排列, to put in order, before 地图图层 |
 | info-layer | 信息图层 | from 图层: a layer that shows information |
+| load a save | 读取存档 | from vanilla's 读取最近的存档 |
+| map layers | 地图图层 | also drawn on the intel screen's map, hence 地图 rather than 星图 |
+| Map layers (filter row tick box) | 地图图层 | sits beside 星景 and 续航距离 |
+| No Layer | 无图层 | 无, none, before 图层: the tab that shows no layer |
+| Political Map | 政治地图 | 政治 for political, with 地图 as in 地图图层, since it is a layer |
+| Sector Map Layers (the feature) | 星图图层 | from 星图 |
+| switched off (a map layer that failed) | 已关闭 | the notice's word; 关闭 as for the map layers switched off and back on (关闭后重新开启) |
+| uncheck | 取消勾选 | highlighted inside the dialog's hint |
+| Up / Down (arrange dialog) | 上移 / 下移 | highlighted inside the dialog's hint |
+| view (of the political map) | 视图 | as in 联盟视图 |
+| world units | 世界单位 | literal: a distance in game space, kept apart from 像素 |
+
+#### Screens and controls
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| control (a tick box, switch or button) | 控件 | as in 地图控件, the Map - Dev header for the map controls; not 星图控件, the map itself |
+| faction filter | 势力筛选列表 | 势力 before 筛选列表, the filter list |
+| filter list, sortable filter list | 筛选列表, 可排序的筛选列表 | the sidebar's list of blocs |
+| filter row | 筛选栏 | the row holding 星景, 续航距离 and 名称 |
+| map screen | 星图界面 | the screen Tab opens; vanilla's tab reads 星图 |
+| Map sidebar (the sidebar's name, wherever the player reads it) | 地图侧边栏 | 地图 as in 地图图层, whose controls it holds on the map screen and the intel screen; one name, never 叠加层侧边栏, 地图图层侧边栏, 叠加层控制框 or 可折叠侧边栏 |
+| mouseover detection | 鼠标悬停检测 | from 悬停 |
+| overlay | 叠加层 | the usual Chinese UI word for a layer drawn over another |
+| screen | 界面 | as in 星图界面 and 情报信息界面 |
+| sector map widget (the map, on whichever screen draws it) | 星图控件 | from 星图, with 控件, the control word; the settings and the notices already use it; not 地图控件, the Map - Dev header |
+| sidebar | 侧边栏 | the usual Chinese UI word |
+| tab | 标签页 | the usual Chinese UI word; 标签 alone would read as a label |
+| tab bar | 标签栏 | from 标签页, with 栏 for a bar, as in 筛选栏 |
+
+#### Market Condition Manager
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| list separators (the condition manager's lines) | ` ； ` between groups, ` ， ` between items | an ASCII space either side, so the highlighted counts and names beside them still highlight |
+| market condition | 市场条件 | from vanilla's 殖民地条件, with 市场 since the manager works on markets |
+| Market Condition Manager (MCM) | 市场条件管理器 (MCM) | from 殖民地条件 |
+| owned by (a planet's faction) | 属于 | the game's own text has no such phrase; the faction's name follows after a space |
+| suppressed (condition) | 被压制 | the plain passive for a condition held down but not removed |
+
+#### Compatibility
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| campaign radar (where Random Assortment of Things puts its minimap) | 战役雷达 | from vanilla's 雷达 |
+| compatibility mode | 兼容模式 | 兼容 as in the Map - Compatibility tab's 兼容性, with 模式 for mode |
+| compatibility patch | 兼容补丁 | 补丁, the usual word for a patch, after 兼容 |
+| docked (Random Assortment of Things hiding its minimap) | 停靠 | vanilla's word for docking at a market |
+| minimap (Random Assortment of Things') | 小地图 | the usual Chinese word for a minimap, as the settings write it |
 
 ### The political map
 
@@ -270,6 +312,7 @@ Three separate axes run through the political map, each with words of its own:
 
 - **Ownership** belongs to a market:
   the faction holding it, or 无主 for a market the Neutral faction (中立) holds.
+  A colony that changes hands (易手) moves on this axis alone, never on dominance's.
 - **Claim** belongs to a system, and is strictly vanilla's mechanic:
   宣称, with 宣称方 for its holder and vanilla's 无宣称 for a system nobody claims.
 - **Dominance** belongs to a system, and is KMU's own measure of which faction prevails there:
@@ -280,126 +323,153 @@ one system can be dominated and claimed at once, by the same faction or by two.
 So a word of one axis never stands in for another:
 主导 never says claimed, 宣称 never says dominated, and 无主 never says unclaimed.
 
+#### Views
+
 | English | 简体中文 | Note |
 | --- | --- | --- |
-| Factions (view) | 势力 | vanilla's 势力 |
 | Alliances (view) | 联盟 | Nexerelin's alliances; vanilla also uses 联盟 for the Persean League |
-| Nexerelin (as a search word) | 势力争霸 | the name its Chinese build carries on Fossic; text keeps Nexerelin in Latin, per the rules, so the name stands only where a player searches, as a thread tag |
 | Claims (view) | 宣称 | vanilla's word for a claim, as in 无宣称领土; the view shows vanilla's claims |
-| change hands (a colony) | 易手 | a conquest or transfer moving a colony to another faction; ownership's axis, never dominance's; the act itself is 移交 |
+| domination views (Factions and Alliances) | 主导视图 | from 主导 and 视图 |
+| Factions (view) | 势力 | vanilla's 势力 |
+| Nexerelin (as a search word) | 势力争霸 | the name its Chinese build carries on Fossic; text keeps Nexerelin in Latin, per the rules, so the name stands only where a player searches, as a thread tag |
+
+#### Ownership, claims and dominance
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| (core) | （核心） | HOI4's own word |
 | claim | 宣称 | vanilla's word, as in 无宣称领土 |
-| system claim (the mechanic, a claim on a whole system) | 星系宣称 | from vanilla's 星系 and 宣称; how the Claims view and the forum intro name the mechanic |
 | claim holder | 宣称方 | from 宣称, with 方 for the party holding it |
-| system holder | 星系持有方 | 持有, to hold, with 方 for the party; kept apart from 宣称方 |
-| domination, dominance | 主导 | to prevail; kept apart from 宣称, the claim, and from 控制, a control |
-| Dominated by | 主导方 | from 主导, with 方 for the party |
+| contest (who holds a system, weighed between blocs) | 争夺 | to contend for, as in 争夺方 |
 | Contested by | 争夺方 | 争夺, to contend for, with 方 for the party |
-| Present (tooltip section) | 在场 | the plain word for being there, kept apart from the noun 存在 |
-| presence | 存在 | vanilla paraphrases presence as 殖民地; KMU needs a noun |
-| presence ribbon, presence band | 存在色带 | from 存在, with 色带 for a coloured band |
-| territory | 领土 | the plain word, and vanilla's own in 无宣称领土 |
 | core territory | 核心领土 | HOI4's own word; see [terms borrowed from HOI4](#terms-borrowed-from-hoi4) |
-| cluster (a run of one owner's systems, and the name drawn over it) | 区域 | a region, since the run reads as one area on the map |
-| cell | 单元 | one system's area on the map, never a UI control |
-| border | 边界 | the plain word; the outer and inner borders add 国界 and 省界 |
-| outer border | 外边界（国界） | the national border |
-| inner border | 内边界（省界） | the province seam |
-| fill | 填充 | the usual graphics word |
-| hatch fill | 斜线填充 | 斜线, diagonal lines, before 填充 |
-| faction systems | 势力星系 | vanilla's 势力 and 星系 |
-| independent systems | 非势力团体星系 | from the independents' name, 非势力团体 |
+| Dominated by | 主导方 | from 主导, with 方 for the party |
+| domination, dominance | 主导 | to prevail; kept apart from 宣称, the claim, and from 控制, a control |
+| presence | 存在 | vanilla paraphrases presence as 殖民地; KMU needs a noun |
+| Present (tooltip section) | 在场 | the plain word for being there, kept apart from the noun 存在 |
+| solidified control | 稳固的控制 | 稳固, firm and settled: dominance nobody contests, not a claim |
+| system claim (the mechanic, a claim on a whole system) | 星系宣称 | from vanilla's 星系 and 宣称; how the Claims view and the forum intro name the mechanic |
+| system holder | 星系持有方 | 持有, to hold, with 方 for the party; kept apart from 宣称方 |
+| territory | 领土 | the plain word, and vanilla's own in 无宣称领土 |
+
+#### Factions and blocs
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| affiliation | 归属 | to belong to: the faction a market answers to |
+| Allied with / Friendly with | 与……结盟 / 与……友好 | 友好 is the reputation level |
+| balance of power | 力量平衡 | the usual Chinese phrase |
+| bloc | 集团 | a faction, or an alliance standing as one |
+| holder (an owner holding a system through its colonies) | 持有者 | 持有, to hold, with 者 for the one doing it; the kind of owner, kept apart from 星系持有方, one system's holder |
+| non-allied factions | 非同盟势力 | 非, not, before 同盟, allied, and vanilla's 势力 |
+| owner (the key an owner-painted map layer paints a system by) | 所有者 | the plain word for the one a thing belongs to; a faction, a bloc or any other key, which is why it is not 势力 |
+| political entity | 政治实体 | the usual Chinese phrase |
+| rename (an alliance) | 改名 | the plain word for changing a name |
+
+#### Systems
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
 | decivilised | 荒蛮 | from 荒蛮之地 |
 | decivilised system, world, colony | 荒蛮星系, 荒蛮世界, 荒蛮殖民地 | from 荒蛮, with 星系, 世界 and vanilla's 殖民地 |
 | derelict | 废弃空间站 | from the condition's name |
-| uninhabited systems | 无人星系 | 无人, nobody, before vanilla's 星系 |
-| unpopulated | 无人居住 | the negative of vanilla's 有人居住, Inhabited |
+| faction systems | 势力星系 | vanilla's 势力 and 星系 |
+| hidden system | 隐藏星系 | from 隐藏 |
+| independent systems | 非势力团体星系 | from the independents' name, 非势力团体 |
+| non-market entities | 非市场实体 | from vanilla's 实体 |
 | non-political | 非政治 | 非, not, before 政治 |
-| non-allied factions | 非同盟势力 | 非, not, before 同盟, allied, and vanilla's 势力 |
-| Allied with / Friendly with | 与……结盟 / 与……友好 | 友好 is the reputation level |
-| bloc | 集团 | a faction, or an alliance standing as one |
-| owner (the key an owner-painted map layer paints a system by) | 所有者 | the plain word for the one a thing belongs to; a faction, a bloc or any other key, which is why it is not 势力 |
-| holder (an owner holding a system through its colonies) | 持有者 | 持有, to hold, with 者 for the one doing it; the kind of owner, kept apart from 星系持有方, one system's holder |
-| tier (of the map layers framework, in the changelog) | 层 | the plain word for a layer of a structure, as in 三层; kept apart from 图层, a map layer |
-| caption (the words beside a sidebar control, in the changelog) | 标题 | the plain word for a control's heading text |
-| radio (a row of options with one lit, in the changelog) | 单选框 | the usual UI word for a one-of-many control |
-| picker (the sidebar list a bloc is spotlit from) | 选择器 | the usual UI word for a control a choice is made in |
-| category (the kind a map sorts a cell into, which picks its style, in the changelog) | 类别 | the plain word for a class something is sorted into |
-| kind (of a place or a record a reader branches on, in the changelog) | 种类 | the plain word for a sort of thing, kept apart from 类别 |
-| grouping (how factions fold into blocs, in the changelog) | 分组 | the plain word for sorting things into groups |
-| sampling (one read of a live value, in the changelog) | 采样 | the usual word for taking one reading of something that changes |
-| pass (one rebuild's reading of the sector, in the changelog) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
-| rebuild (the map's drawing worked out again, in the changelog) | 重建 | the usual word for building something again |
-| redraw (the map drawn again, in the changelog) | 重绘 | 重, again, with 绘, to draw; the word earlier entries already use |
-| Minor optimisations (in the changelog) | 小幅优化 | 小幅, slight, with 优化, the usual word for optimisation |
-| paint scheme (the theme and palettes one build styles by, in the changelog) | 绘制方案 | 绘制, to draw, with 方案, a scheme |
-| theme (every style the map is drawn in, in the changelog) | 主题 | the usual UI word for a set of styles worn together |
-| cluster group (one owner's clusters drawn together, in the changelog) | 区域组 | from 区域, a cluster, with 组, a group |
-| border tracing (the dev overlay showing each smoothing stage) | 边界描绘 | the Dev tab's own header for it |
-| smoothing (the sanding and rounding of a border, in the changelog) | 平滑 | the usual graphics word; one of its passes is 一道平滑处理 |
-| stage (a border's shape after one smoothing pass, in the changelog) | 阶段 | the plain word for one step of a process |
-| gate (the switch a smoothing pass runs under, in the changelog) | 开关 | the plain word for a switch, as the settings' own toggles are |
-| unowned cell (a cell no owner on the layer holds, in the changelog) | 无所有者单元 | 无, no, with 所有者 and 单元; kept apart from 无主, a market the Neutral faction holds |
-| run (one owner's stretch of a band, in the changelog) | 色段 | 色, colour, with 段, a segment |
-| record (a Java value type, in the changelog) | 记录类型 | the usual computing word, 记录 with 类型, a type |
-| final class (one nothing may extend, in the changelog) | 不可继承的类 | said plainly rather than left as the keyword |
-| paint (everything one owner's elements draw from, in the changelog) | 绘制方式 | 绘制, to draw, with 方式, a manner; kept apart from 上色, colouring a territory |
-| shades (an owner's two colours, in the changelog) | 配色 | as in vanilla's 界面配色, a set of colours worn together |
-| seam (an interface a layer answers through, in the changelog) | 接缝 | where two parts are joined, which a seam between layers is |
-| moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
-| reading (an owner's looks and names, in the changelog) | 读取 | the plain word for reading something off; a reader is 读取方 |
-| contest (who holds a system, weighed between blocs) | 争夺 | to contend for, as in 争夺方 |
-| alliance set (every alliance at one moment, in the changelog) | 联盟集合 | 联盟 with 集合, a set |
-| alliance record (one alliance as plain data, in the changelog) | 联盟记录 | 联盟 with 记录, a record |
-| rename (an alliance) | 改名 | the plain word for changing a name |
-| revision (a number that moves when content changes, in the changelog) | 修订号 | 修订, a revision, with 号, its number |
-| recede control (in the changelog) | 退后控件 | 退后 with 控件, the usual UI word for a control |
-| overload (one of several same-named methods, in the changelog) | 重载 | the usual computing word |
-| remark (the note a hover line carries about a colony, in the changelog) | 备注 | the plain word for a note added to something |
-| dev display (an overlay a Dev setting draws over the map, in the changelog) | 调试显示 | 调试, the usual word for debugging, with 显示, a display |
-| register (a record the map keeps in sector memory, in the changelog) | 登记 | the plain word for writing something into a record |
-| sweep (one walk of the whole sector, in the changelog) | 扫描 | the usual word for a pass over everything |
-| string ID, key class (in the changelog) | 字符串 ID, 键类 | 字符串, the computing word for a string; a key class is the class holding one reader's string IDs |
-| strings category (the namespace in strings.json, in the changelog) | 字符串类别 | 字符串 before 类别, kept apart from a map's 类别 |
-| cover (anything drawn over the map where the cursor rests, in the changelog) | 遮挡 | to block from view, which a cover does to the cells under it |
-| import, compose (in the changelog) | 导入, 组合 | the usual computing words for a package naming another and for putting parts together |
-| weight (what a colony counts for in a contest) | 权重 | the usual word for a weighting, which earlier entries already use |
-| tie-break (how a dead heat between blocs is settled, in the changelog) | 平局裁定 | 平局, a draw, with 裁定, a ruling |
-| refresh poll (the periodic check that marks changed systems, in the changelog) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
-| stale, drain (a system marked for redrawing, and taking every such mark off the set, in the changelog) | 过期, 取出 | the plain words for out of date and for taking something out |
-| cache, memo (a value kept to save working it out again, in the changelog) | 缓存 | the usual computing word |
-| listener manager (the game's registry of event listeners, in the changelog) | 监听器管理器 | 监听器, the usual computing word for a listener, with 管理器, a manager |
-| warning (a log line's level) | 警告 | the usual word, and log4j's `WARN` |
-| spotlight | 聚焦 | to focus on, which spotlighting a bloc does |
-| recede | 退后 | to step back, which a receded bloc does on the map |
-| Muted / Desaturated | 淡化 / 去色 | 淡化, to fade, and 去色, to strip colour, the usual image-editing word |
-| Rest of the sector | 星域其余部分 | vanilla's 星域 with 其余部分, the part remaining |
-| stability, size, patrols (score factors) | 稳定性, 规模, 巡逻队 | vanilla words |
-| Small / Medium / Large (patrols) | 小型 / 中型 / 大型 | vanilla's patrol sizes, as in 大型巡逻队 for heavy patrols |
-| Same-faction market bonus | 同势力市场加成 | 加成, the usual game word for a bonus |
-| Military (claim factor) | 军事 | vanilla's 军事, as in 军事基地 |
-| (core) | （核心） | HOI4's own word |
-| (fixed) | （固定） | the plain word for a value that does not vary |
-| Full / Short / No (faction names) | 全称 / 简称 / 无 | the usual words for a full and a short name |
-| faction names | 势力名称 | vanilla's 势力 with 名称, as in the Names filter |
-| Columns | 列 | the plain word |
-| Name, Domination, Presence, Score, Market size, Claims, Attitude (sort) | 名称, 主导, 存在, 得分, 市场规模, 宣称, 关系 | Attitude follows vanilla's 关系 |
-| paint (a system, the map) | 上色 | to colour in, as the map does a territory |
-| affiliation | 归属 | to belong to: the faction a market answers to |
 | populated systems | 有人星系 | from vanilla's 有人居住 |
 | population center (any populated market, whatever its size) | 有人居住的市场; 有人居住市场 before another noun | never 人口中心, which reads as a large hub |
-| outline (an uninhabited or decivilised system's border) | 轮廓 | the plain word, as the settings write it |
-| hidden system | 隐藏星系 | from 隐藏 |
-| non-market entities | 非市场实体 | from vanilla's 实体 |
+| uninhabited systems | 无人星系 | 无人, nobody, before vanilla's 星系 |
+| unpopulated | 无人居住 | the negative of vanilla's 有人居住, Inhabited |
+
+#### Scoring
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| (fixed) | （固定） | the plain word for a value that does not vary |
 | domination algorithm | 主导算法 | from 主导, with 算法, algorithm |
-| domination views (Factions and Alliances) | 主导视图 | from 主导 and 视图 |
-| solid fill | 实色填充 | 实色, solid colour, before 填充, as the settings write it |
-| no fill | 不填充 | the negative of 填充 |
-| solidified control | 稳固的控制 | 稳固, firm and settled: dominance nobody contests, not a claim |
-| balance of power | 力量平衡 | the usual Chinese phrase |
-| political entity | 政治实体 | the usual Chinese phrase |
-| military industry (a claim factor) | 军事设施 | vanilla's word |
 | militarised (a station colony with an orbital station built) | 空间站殖民地建有轨道空间站, by paraphrase | never 军事化, which reads as the ship hullmod; 轨道空间站 is vanilla's Orbital Station |
+| Military (claim factor) | 军事 | vanilla's 军事, as in 军事基地 |
+| military industry (a claim factor) | 军事设施 | vanilla's word |
+| Same-faction market bonus | 同势力市场加成 | 加成, the usual game word for a bonus |
+| Small / Medium / Large (patrols) | 小型 / 中型 / 大型 | vanilla's patrol sizes, as in 大型巡逻队 for heavy patrols |
+| stability, size, patrols (score factors) | 稳定性, 规模, 巡逻队 | vanilla words |
+| weight (what a colony counts for in a contest) | 权重 | the usual word for a weighting, which earlier entries already use |
+
+#### Drawing
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| border | 边界 | the plain word; the outer and inner borders add 国界 and 省界 |
 | border gore | 边界地狱 | the players' word for tangled borders |
+| border tracing (the dev overlay showing each smoothing stage) | 边界描绘 | the Dev tab's own header for it |
+| cell | 单元 | one system's area on the map, never a UI control |
+| cluster (a run of one owner's systems, and the name drawn over it) | 区域 | a region, since the run reads as one area on the map |
+| fill | 填充 | the usual graphics word |
+| hatch fill | 斜线填充 | 斜线, diagonal lines, before 填充 |
+| inner border | 内边界（省界） | the province seam |
+| no fill | 不填充 | the negative of 填充 |
+| outer border | 外边界（国界） | the national border |
+| outline (an uninhabited or decivilised system's border) | 轮廓 | the plain word, as the settings write it |
+| paint (a system, the map) | 上色 | to colour in, as the map does a territory |
+| presence ribbon, presence band | 存在色带 | from 存在, with 色带 for a coloured band |
+| solid fill | 实色填充 | 实色, solid colour, before 填充, as the settings write it |
+
+#### The sidebar
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| Columns | 列 | the plain word |
+| faction names | 势力名称 | vanilla's 势力 with 名称, as in the Names filter |
+| Full / Short / No (faction names) | 全称 / 简称 / 无 | the usual words for a full and a short name |
+| Muted / Desaturated | 淡化 / 去色 | 淡化, to fade, and 去色, to strip colour, the usual image-editing word |
+| Name, Domination, Presence, Score, Market size, Claims, Attitude (sort) | 名称, 主导, 存在, 得分, 市场规模, 宣称, 关系 | Attitude follows vanilla's 关系 |
+| picker (the sidebar list a bloc is spotlit from) | 选择器 | the usual UI word for a control a choice is made in |
+| recede | 退后 | to step back, which a receded bloc does on the map |
+| Rest of the sector | 星域其余部分 | vanilla's 星域 with 其余部分, the part remaining |
+| spotlight | 聚焦 | to focus on, which spotlighting a bloc does |
+
+#### In the changelog: the map and its controls
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| caption (the words beside a sidebar control) | 标题 | the plain word for a control's heading text |
+| category (the kind a map sorts a cell into, which picks its style) | 类别 | the plain word for a class something is sorted into |
+| cluster group (one owner's clusters drawn together) | 区域组 | from 区域, a cluster, with 组, a group |
+| cover (anything drawn over the map where the cursor rests) | 遮挡 | to block from view, which a cover does to the cells under it |
+| dev display (an overlay a Dev setting draws over the map) | 调试显示 | 调试, the usual word for debugging, with 显示, a display |
+| gate (the switch a smoothing pass runs under) | 开关 | the plain word for a switch, as the settings' own toggles are |
+| paint (everything one owner's elements draw from) | 绘制方式 | 绘制, to draw, with 方式, a manner; kept apart from 上色, colouring a territory |
+| paint scheme (the theme and palettes one build styles by) | 绘制方案 | 绘制, to draw, with 方案, a scheme |
+| radio (a row of options with one lit) | 单选框 | the usual UI word for a one-of-many control |
+| rebuild (the map's drawing worked out again) | 重建 | the usual word for building something again |
+| recede control | 退后控件 | 退后 with 控件, the usual UI word for a control |
+| redraw (the map drawn again) | 重绘 | 重, again, with 绘, to draw; the word earlier entries already use |
+| run (one owner's stretch of a band) | 色段 | 色, colour, with 段, a segment |
+| shades (an owner's two colours) | 配色 | as in vanilla's 界面配色, a set of colours worn together |
+| smoothing (the sanding and rounding of a border) | 平滑 | the usual graphics word; one of its passes is 一道平滑处理 |
+| stage (a border's shape after one smoothing pass) | 阶段 | the plain word for one step of a process |
+| theme (every style the map is drawn in) | 主题 | the usual UI word for a set of styles worn together |
+| tier (of the map layers framework) | 层 | the plain word for a layer of a structure, as in 三层; kept apart from 图层, a map layer |
+| unowned cell (a cell no owner on the layer holds) | 无所有者单元 | 无, no, with 所有者 and 单元; kept apart from 无主, a market the Neutral faction holds |
+
+#### In the changelog: code
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
+| alliance record (one alliance as plain data) | 联盟记录 | 联盟 with 记录, a record |
+| alliance set (every alliance at one moment) | 联盟集合 | 联盟 with 集合, a set |
+| grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
+| moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
+| pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
+| reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
+| refresh poll (the periodic check that marks changed systems) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
+| register (a record the map keeps in sector memory) | 登记 | the plain word for writing something into a record |
+| remark (the note a hover line carries about a colony) | 备注 | the plain word for a note added to something |
+| stale, drain (a system marked for redrawing, and taking every such mark off the set) | 过期, 取出 | the plain words for out of date and for taking something out |
+| sweep (one walk of the whole sector) | 扫描 | the usual word for a pass over everything |
+| tie-break (how a dead heat between blocs is settled) | 平局裁定 | 平局, a draw, with 裁定, a ruling |
 
 ### Terms borrowed from HOI4
 
@@ -410,8 +480,8 @@ Each row was read off HOI4's `localisation/simp_chinese` files by pairing them w
 
 | English | 简体中文 | HOI4 key, file | KMU meaning |
 | --- | --- | --- | --- |
-| core territory | 核心领土 | `MODIFIER_ATTACK_BONUS_AGAINST_A_COUNTRY_ON_ITS_CORES`, `modifiers`: "Attack on their core territory" is 我国对其核心领土进攻 | a system its faction claims unconditionally |
 | core | 核心 | `PEACE_CONFERENCE_PROVINCE_TOOLTIP_CORES`, `peace`: "Cores:" is 核心： | the tooltip marker `（核心）` |
+| core territory | 核心领土 | `MODIFIER_ATTACK_BONUS_AGAINST_A_COUNTRY_ON_ITS_CORES`, `modifiers`: "Attack on their core territory" is 我国对其核心领土进攻 | a system its faction claims unconditionally |
 
 HOI4 names a collection of cores without 的 ("Chinese core states" is 中国核心地区),
 which is how the tooltip heading reads: the faction's name, then 核心领土.
@@ -420,67 +490,79 @@ which is how the tooltip heading reads: the faction's name, then 核心领土.
 
 | English | 简体中文 | Note |
 | --- | --- | --- |
+| + N more | + 还有 N 项 | 还有, there are still, with 项 for items |
+| abandoned, hidden, undiscovered, unlisted (qualifiers) | 废弃, 隐藏, 未发现, 未列出 | 废弃 from 废弃空间站 and 隐藏 from vanilla's Hidden; 未发现 and 未列出 are not yet found and not listed |
+| cell wash | 单元覆色 | from 单元, with 覆色, colour laid over |
+| collapse to factions | 折叠为势力 | 折叠, the usual word for collapsing a list |
+| connecting lines (label to value) | 连接线 | the plain word |
+| expand system composition, market stats, patrol details | 展开星系构成, 展开市场数据, 展开巡逻详情 | 展开, the usual word for expanding, the pair of 折叠 |
+| halo | 光晕 | the plain word for a glow around something |
+| help tooltip | 帮助提示框 | 帮助, help, with 提示框 |
 | hover | 悬停 | the usual Chinese UI word |
-| hover tooltip | 悬停提示框 | vanilla avoids the word "tooltip" |
 | hover box | 悬停框 | from 悬停, with 框 for a box |
 | hover effects | 悬停效果 | from 悬停, with 效果 for effects |
 | hover highlight | 悬停高亮 | from 悬停, with 高亮, the usual word for highlighting |
-| halo | 光晕 | the plain word for a glow around something |
-| cell wash | 单元覆色 | from 单元, with 覆色, colour laid over |
-| connecting lines (label to value) | 连接线 | the plain word |
-| redacted text | 隐去文字 | 隐去, to hide away, as a redaction hides without removing |
-| collapse to factions | 折叠为势力 | 折叠, the usual word for collapsing a list |
-| expand system composition, market stats, patrol details | 展开星系构成, 展开市场数据, 展开巡逻详情 | 展开, the usual word for expanding, the pair of 折叠 |
-| + N more | + 还有 N 项 | 还有, there are still, with 项 for items |
+| hover tooltip | 悬停提示框 | vanilla avoids the word "tooltip" |
 | last seen | 上次观测 | 观测, to observe: what the player knows was seen |
-| abandoned, hidden, undiscovered, unlisted (qualifiers) | 废弃, 隐藏, 未发现, 未列出 | 废弃 from 废弃空间站 and 隐藏 from vanilla's Hidden; 未发现 and 未列出 are not yet found and not listed |
-| tooltip | 提示框 | short for 悬停提示框, as KMU's strings write it |
+| redacted text | 隐去文字 | 隐去, to hide away, as a redaction hides without removing |
 | system tooltip | 星系提示框 | vanilla's 星系 with 提示框 |
-| help tooltip | 帮助提示框 | 帮助, help, with 提示框 |
+| tooltip | 提示框 | short for 悬停提示框, as KMU's strings write it |
 
 ### Settings
 
+#### Descriptions
+
 | English | 简体中文 | Note |
 | --- | --- | --- |
+| (adjustable in settings), (can be disabled in settings) | （可在设置中调整）, （可在设置中关闭） | the forum posts' grey asides, in full-width parentheses; 调整, adjust, and 关闭, switch off, as a setting's 开启 / 关闭 |
+| Applies only while X is on | [仅在 X 开启时生效] | bracketed as the English is; 生效, takes effect |
 | Available settings | 可用设置 | the heading of each tab's contents note |
 | Default | 默认值 | written `[默认值：X]` |
-| true / false (Boolean defaults) | 开启 / 关闭 | a switch's on and off, more natural than 真 and 假 |
 | Enable X | 启用 X | the usual Chinese UI word |
-| opacity | 不透明度 | the usual graphics word |
-| thickness, width | 粗细, 宽度 | the usual words for a line's weight and a span's width |
+| Ignored while X is off | [X 关闭时忽略此项] | bracketed as the English is, so LunaLib highlights it; 忽略此项, ignore this item |
 | in pixels | 单位为像素 | 单位为, the unit is, the usual way a setting states its unit |
 | in seconds | 单位为秒 | as in pixels |
 | in world units | 单位为世界单位 | as in pixels, with 世界单位 |
-| Ignored while X is off | [X 关闭时忽略此项] | bracketed as the English is, so LunaLib highlights it; 忽略此项, ignore this item |
-| Applies only while X is on | [仅在 X 开启时生效] | bracketed as the English is; 生效, takes effect |
-| The settings below apply only while X is on | 以下设置仅在 [X] 开启时生效 | as above, with X bracketed for the highlight |
-| Visibility overrides (SPOILERS) | 可见性覆盖（剧透） | 覆盖, to override, after 可见性; 剧透, the usual word for a spoiler |
-| (adjustable in settings), (can be disabled in settings) | （可在设置中调整）, （可在设置中关闭） | the forum posts' grey asides, in full-width parentheses; 调整, adjust, and 关闭, switch off, as a setting's 开启 / 关闭 |
-| UI palette / Chrome grey / Player faction (colour scheme) | 界面配色 / 纯灰 / 你的势力 | 界面, vanilla's word for the UI; 纯灰, the plain grey the description names; 你的势力 as vanilla writes it |
-| Gold / Panel accent (chevron) | 金色 / 面板强调色 | 强调色, the usual design word for an accent colour |
-| profiling | 性能分析 | the usual computing word, as the Map - Dev tab writes it |
+| The settings below apply only while X is on | 以下设置仅在 [X] 开启时生效 | as Applies only while X is on, with X bracketed for the highlight |
+| true / false (Boolean defaults) | 开启 / 关闭 | a switch's on and off, more natural than 真 and 假 |
+
+#### Setting names
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
 | dev settings | 开发设置 | from the Dev tabs, 开发 |
-| Primary / Secondary faction color, No color | 势力主色 / 势力副色, 无颜色 | 主色 and 副色, a palette's main and second colour |
-| The name's fitted box / The words themselves | 名称所放入的框 / 文字本身 | as the description words them |
+| opacity | 不透明度 | the usual graphics word |
+| profiling | 性能分析 | the usual computing word, as the Map - Dev tab writes it |
+| thickness, width | 粗细, 宽度 | the usual words for a line's weight and a span's width |
+| Visibility overrides (SPOILERS) | 可见性覆盖（剧透） | 覆盖, to override, after 可见性; 剧透, the usual word for a spoiler |
+
+#### Option values
+
+| English | 简体中文 | Note |
+| --- | --- | --- |
 | Below / Above (nebulae) | 之下 / 之上 | as the descriptions write 星云之下 and 星云之上 |
+| Gold / Panel accent (chevron) | 金色 / 面板强调色 | 强调色, the usual design word for an accent colour |
 | Normal / Fixed (hidden market scaling) | 正常 / 固定 | 固定 as in （固定） |
 | Not surveyed / Seen / Preliminary / Full (survey level) | 未被调查 / 已观测 / 已初步调查 / 已全面调查 | vanilla's planet list for three; 已观测 from KMU's 观测 for seen |
 | Off / Coarse / Fine (profiling) | 关闭 / 粗略 / 精细 | a switch's 关闭; 粗略 and 精细, rough and detailed |
+| Primary / Secondary faction color, No color | 势力主色 / 势力副色, 无颜色 | 主色 and 副色, a palette's main and second colour |
+| The name's fitted box / The words themselves | 名称所放入的框 / 文字本身 | as the description words them |
+| UI palette / Chrome grey / Player faction (colour scheme) | 界面配色 / 纯灰 / 你的势力 | 界面, vanilla's word for the UI; 纯灰, the plain grey the description names; 你的势力 as vanilla writes it |
 
 ### Settings tabs
 
 | English | 简体中文 |
 | --- | --- |
+| Dev | 开发 |
 | Features | 功能 |
-| Map - Visuals | 地图 - 外观 |
-| Map - Politics - Visuals | 地图 - 政治 - 外观 |
-| Map - Politics - Domination | 地图 - 政治 - 主导 |
-| Map - Sound | 地图 - 音效 |
-| Map - Keybinds | 地图 - 按键 |
-| Map - Visibility | 地图 - 可见性 |
 | Map - Compatibility | 地图 - 兼容性 |
 | Map - Dev | 地图 - 开发 |
-| Dev | 开发 |
+| Map - Keybinds | 地图 - 按键 |
+| Map - Politics - Domination | 地图 - 政治 - 主导 |
+| Map - Politics - Visuals | 地图 - 政治 - 外观 |
+| Map - Sound | 地图 - 音效 |
+| Map - Visibility | 地图 - 可见性 |
+| Map - Visuals | 地图 - 外观 |
 | Market Condition Manager (MCM) | 市场条件管理器 (MCM) |
 
 The ` - ` in a tab name is an ASCII hyphen with a space either side, as in English.
@@ -489,11 +571,11 @@ The ` - ` in a tab name is an ASCII hyphen with a space either side, as in Engli
 
 | English | 简体中文 | Note |
 | --- | --- | --- |
-| console commands | 控制台指令 | Console Commands, the mod, keeps its name |
-| performance measurements | 性能测量 | from 性能, with 测量, to measure |
-| game logs | 游戏日志 | 日志, KMLib's word for a log |
 | colonisable market | 可殖民市场 | vanilla writes only the negative, 无法殖民 |
+| console commands | 控制台指令 | Console Commands, the mod, keeps its name |
 | cut-off systems | 被截断的星系 | 截断, to cut off, before vanilla's 星系 |
+| game logs | 游戏日志 | 日志, KMLib's word for a log |
+| performance measurements | 性能测量 | from 性能, with 测量, to measure |
 
 ### The forum banner
 
@@ -502,8 +584,8 @@ drawn in Microsoft YaHei Bold over `promo/zh-hans/always-has-been.png`.
 
 | English | 简体中文 | Note |
 | --- | --- | --- |
-| map game (the banner's joke) | P社游戏 | players' slang for Paradox grand strategy, the genre "map game" points at; a literal 地图游戏 reads as any game with a map. Written solid, as the slang is, the one exception to spacing Latin inside Chinese |
 | Always has been | 一直都是 | the caption the template carries in Chinese meme use; no full stop, as the English has none |
+| map game (the banner's joke) | P社游戏 | players' slang for Paradox grand strategy, the genre "map game" points at; a literal 地图游戏 reads as any game with a map. Written solid, as the slang is, the one exception to spacing Latin inside Chinese |
 
 ## Adding a string
 
