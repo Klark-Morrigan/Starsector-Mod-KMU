@@ -4,6 +4,7 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.opengl.GlVertexRuns;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,10 +36,9 @@ public final class CellFrontierGeometry {
      * The frontier of the cluster one cell belongs to: the smallest of the candidate loops that
      * encloses it, or null when the cell has no candidates or none of them encloses it.
      *
-     * <p>Smallest rather than first because nested loops all enclose the point and only the
-     * innermost is the cell's own cluster - a group's enclave walled inside a rival that is itself
-     * inside another cluster of that same group has three loops around it. Area is compared by
-     * magnitude, since a hole ring winds against its outer ring.
+     * <p>Smallest rather than first because only the innermost loop is the cell's own cluster - a
+     * group's enclave walled inside a rival that is itself inside another cluster of that same group
+     * has three loops around it.
      *
      * @param frontierLoops the loops the cell might sit inside, as {@code [x, y, x, y, ...]} runs
      * @param paintedExtent the cell's painted extent as {x, y} vertex pairs
@@ -53,24 +53,15 @@ public final class CellFrontierGeometry {
         // frontier whose corners rounding has cut inward - dropping the halo just as the player
         // pushes into a corner.
         var point = Points.computeMean(paintedExtent);
-        var smallestArea = Double.MAX_VALUE;
-
-        float[] smallestLoop = null;
+        var rings = new ArrayList<List<double[]>>(frontierLoops.size());
 
         for (var loop : frontierLoops) {
-
-            var ring = GlVertexRuns.unflattenVertices(loop);
-            if (!PolygonRegions.isPointInsideRing(ring, point[0], point[1])) {
-                continue;
-            }
-
-            var area = Math.abs(PolygonRegions.computeSignedArea(ring));
-            if (area < smallestArea) {
-                smallestArea = area;
-                smallestLoop = loop;
-            }
+            rings.add(GlVertexRuns.unflattenVertices(loop));
         }
 
-        return smallestLoop;
+        var loopIndex = PolygonRegions.findSmallestEnclosingRing(rings, point[0], point[1]);
+        return loopIndex == PolygonRegions.NO_RING
+            ? null
+            : frontierLoops.get(loopIndex);
     }
 }

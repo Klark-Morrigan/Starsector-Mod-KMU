@@ -49,7 +49,7 @@ public final class FactionAllianceFixture {
 
         var alliances = buildAllianceOf(factionIds);
 
-        FactionAllianceRegistry.registerAllianceSource(() -> alliances);
+        FactionAllianceRegistry.registerAllianceSource(sector -> alliances);
     }
 
     /**

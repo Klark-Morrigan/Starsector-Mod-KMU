@@ -1,6 +1,5 @@
 package kmu.conditions.ui.picker.action;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.util.Misc;
@@ -20,6 +19,7 @@ import java.awt.Color;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -66,6 +66,20 @@ class StarsectorConditionPickerFeedbackSinkTests {
     }
 
     @Nested
+    class Constructor {
+
+        @Test
+        void rejectsNoSector() {
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                assertThatThrownBy(() -> new StarsectorConditionPickerFeedbackSink(null))
+                    .isInstanceOf(NullPointerException.class);
+            }
+        }
+    }
+
+    @Nested
     class Report {
 
         @Test
@@ -79,11 +93,7 @@ class StarsectorConditionPickerFeedbackSinkTests {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
-
-                new StarsectorConditionPickerFeedbackSink().report(feedbackMock);
+                new StarsectorConditionPickerFeedbackSink(sectorMock).report(feedbackMock);
             }
 
             verify(campaignUiMock)
@@ -99,32 +109,11 @@ class StarsectorConditionPickerFeedbackSinkTests {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
-
-                new StarsectorConditionPickerFeedbackSink().report(feedbackMock);
+                new StarsectorConditionPickerFeedbackSink(sectorMock).report(feedbackMock);
             }
 
             verify(campaignUiMock)
                 .addMessage(MESSAGE, NEGATIVE_HIGHLIGHT);
-        }
-
-        @Test
-        void passesQuietlyWithNoSector() {
-
-            // The picker can outlive the campaign it was opened in, as on a return to the title screen.
-            var feedbackMock = stubFeedback(false);
-
-            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
-
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                assertThatCode(() -> new StarsectorConditionPickerFeedbackSink().report(feedbackMock))
-                    .doesNotThrowAnyException();
-            }
         }
 
         @Test
@@ -135,11 +124,7 @@ class StarsectorConditionPickerFeedbackSinkTests {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
-
-                assertThatCode(() -> new StarsectorConditionPickerFeedbackSink().report(feedbackMock))
+                assertThatCode(() -> new StarsectorConditionPickerFeedbackSink(sectorMock).report(feedbackMock))
                     .doesNotThrowAnyException();
             }
         }
@@ -160,11 +145,7 @@ class StarsectorConditionPickerFeedbackSinkTests {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
-
-                assertThatCode(() -> new StarsectorConditionPickerFeedbackSink().report(feedbackMock))
+                assertThatCode(() -> new StarsectorConditionPickerFeedbackSink(sectorMock).report(feedbackMock))
                     .doesNotThrowAnyException();
             }
         }
@@ -185,13 +166,9 @@ class StarsectorConditionPickerFeedbackSinkTests {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
-
                 var log = LogAppenderFake.captureLogOf(
                     StarsectorConditionPickerFeedbackSink.class,
-                    () -> new StarsectorConditionPickerFeedbackSink().report(feedbackMock));
+                    () -> new StarsectorConditionPickerFeedbackSink(sectorMock).report(feedbackMock));
 
                 assertThat(log.getMessages())
                     .containsExactly("Failed to show Market Condition Manager feedback: hot added");

@@ -12,9 +12,9 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.SystemCellTooltip;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocRelations;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
@@ -57,10 +57,10 @@ public abstract class PoliticalMapCellTooltip
      */
     protected final ClaimDecreeReader claimDecreeReader;
 
-    // Where the alliance set behind an allied block is taken from. A source rather than a grouping,
+    // Where the alliance set behind an allied block is taken from. A source rather than a set,
     // because a box lives for the whole session while alliances form and dissolve inside it - one
     // captured at construction would go on filing a group under the alliance it left an hour ago.
-    private final HolderGroupingSource holderGroupingSource;
+    private final FactionAllianceSource allianceSource;
 
     // Where the wording of the block beneath the friendly one is taken from. A source rather than a
     // wording for the reason that port sets out: these boxes stand in static fields, so construction
@@ -69,11 +69,11 @@ public abstract class PoliticalMapCellTooltip
 
     protected PoliticalMapCellTooltip(
             ClaimDecreeReader claimDecreeReader,
-            HolderGroupingSource holderGroupingSource,
+            FactionAllianceSource allianceSource,
             ContestWordingSource contestWordingSource) {
 
         this.claimDecreeReader = claimDecreeReader;
-        this.holderGroupingSource = holderGroupingSource;
+        this.allianceSource = allianceSource;
         this.contestWordingSource = contestWordingSource;
     }
 
@@ -103,17 +103,17 @@ public abstract class PoliticalMapCellTooltip
      * a rival on the next, a keystroke apart, with nothing on screen to say which was right.
      *
      * <p>The alliance set is read through the session-long source at the moment of sampling, which is
-     * where a grouping stops being a fold and becomes the one question the blocks ask. Disposition is
-     * read against the hovered sector rather than through the game's own current one, so a box drawn
-     * over a second sector reports that sector's relations.
+     * where the memberships become the one question the blocks ask. Both are read against the
+     * hovered sector rather than through the game's own current one, so a box drawn over a second
+     * sector reports that sector's alliances and relations.
      *
-     * @param sector the sector the hovered system stands in, whose relations are read
+     * @param sector the sector the hovered system stands in, whose alliances and relations are read
      * @return the two relations, sampled together
      */
     protected final BlocRelations sampleBlocRelations(SectorAPI sector) {
 
         return new BlocRelations(
-            new BlocAffiliation(holderGroupingSource.resolveGrouping()),
+            new BlocAffiliation(allianceSource.readAlliances(sector)),
             FactionSetFriendliness.createForSector(sector));
     }
 

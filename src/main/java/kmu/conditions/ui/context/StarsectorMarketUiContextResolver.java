@@ -1,6 +1,5 @@
 package kmu.conditions.ui.context;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 
@@ -12,10 +11,6 @@ import java.util.Optional;
 public final class StarsectorMarketUiContextResolver implements KmuMarketUiContextResolver {
     private final SectorAPI sector;
     private final KmuErrorReporter errorReporter;
-
-    public StarsectorMarketUiContextResolver() {
-        this(Global.getSector());
-    }
 
     public StarsectorMarketUiContextResolver(SectorAPI sector) {
         this(sector, KmuErrorReporter.createLoggingReporter(StarsectorMarketUiContextResolver.class));

@@ -1,5 +1,7 @@
 package kmu.mods.console.commands;
 
+import com.fs.starfarer.api.Global;
+
 import kmlib.mods.console.commands.BaseKmlibCommand;
 import kmlib.mods.console.commands.output.CommandOutput;
 import kmlib.mods.console.commands.output.ConsoleCommandOutput;
@@ -14,6 +16,7 @@ import kmu.conditions.ui.editor.KmuConditionEditorEntryPoint;
 import kmu.conditions.ui.editor.KmuConditionEditorOpenResult;
 import kmu.conditions.ui.editor.KmuConditionEditorOpenStatus;
 import kmu.conditions.ui.picker.KmuConditionPickerEditor;
+import kmu.conditions.ui.picker.action.StarsectorConditionPickerFeedbackSink;
 import kmu.conditions.ui.picker.dialog.StarsectorInteractionDialogPickerOpener;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuMarketConditionSettings;
@@ -133,17 +136,21 @@ public final class KmuOpenMarketConditionManagerCommand
         return result.getMessage();
     }
 
+    // The one read of the running game the editor makes. The parts below take it as handed, so the
+    // market they resolve, the dialog they open and the message they post all belong to one sector.
     private static KmuConditionEditorEntryPoint createDefaultEntryPoint() {
 
+        var sector = Global.getSector();
         var conditionService = new KmuConditionService(
             new StarsectorConditionRepository(),
             KmuErrorReporter.createLoggingReporter(KmuConditionService.class),
             new StarsectorConditionOfferPolicy(KmuMarketConditionSettings::shouldOfferAllConditions));
 
         return new KmuConditionEditorEntryPoint(
-            new StarsectorMarketUiContextResolver(),
+            new StarsectorMarketUiContextResolver(sector),
             new KmuConditionPickerEditor(
                 conditionService,
-                new StarsectorInteractionDialogPickerOpener()));
+                new StarsectorInteractionDialogPickerOpener(sector),
+                new StarsectorConditionPickerFeedbackSink(sector)));
     }
 }

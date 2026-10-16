@@ -8,8 +8,8 @@ import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
 
@@ -99,7 +99,7 @@ final class SystemClaimTooltipIntegrationTests {
                 StarSystems::readDecreedFactionId,
                 VanillaClaimBreakdownReader::new,
                 ClaimScoreRowResolver::resolveMarketRows,
-                HolderGrouping::identity,
+                FactionAllianceSource.NO_ALLIANCES,
                 ContestWordingFixtures.CONTESTED_WORDING);
 
             var sections = tooltip

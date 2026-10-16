@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.dominance.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -17,6 +18,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
@@ -43,8 +45,8 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readRowOpeningWords;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.base.visibility.colonies.FactionAllianceFixture.buildAllianceOf;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
-import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
 import static kmu.maplayers.politicalmap.dominance.tooltip.StandingsTooltipSeamsFake.ANY_PASS;
 import static kmu.maplayers.politicalmap.dominance.tooltip.StandingsTooltipSeamsFake.ANY_RULES;
 
@@ -106,7 +108,7 @@ final class SystemDominationTooltipShapeTests {
     // The alliance set the box routes its blocks against, restated by the cases about an ally and left
     // ungrouped for the rest - which is both the state an install with nothing grouping factions is
     // permanently in and the state every case predating the allied block was written under.
-    private HolderGrouping allianceSet = HolderGrouping.identity();
+    private FactionAlliances allianceSet = FactionAlliances.NONE;
 
     // Headed as a contest throughout, the wording being the install's to vary: these cases are about
     // which block a group lands in, which no wording reaches. Every faction is listed as its line alone,
@@ -114,7 +116,7 @@ final class SystemDominationTooltipShapeTests {
     private final SystemDominationTooltip tooltip = new SystemDominationTooltip(
         StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
         claimBreakdownReaderFake,
-        () -> allianceSet,
+        sector -> allianceSet,
         ContestWordingFixtures.CONTESTED_WORDING,
         (system, pass, detailLevel) -> FactionAccountResolver.NO_ACCOUNT);
 
@@ -290,7 +292,7 @@ final class SystemDominationTooltipShapeTests {
             // The block the whole axis exists for: an ally holding markets beside the leader is not
             // fighting it for the system, and filed under the contested heading the box would say
             // two allies were at war over a system they jointly hold.
-            allianceSet = buildGroupOf(LEADER_BLOC, ALLY_BLOC);
+            allianceSet = buildAllianceOf(LEADER_BLOC, ALLY_BLOC);
 
             stubThreeGroupsRanked();
 
@@ -308,7 +310,7 @@ final class SystemDominationTooltipShapeTests {
         void keepsAGroupAlliedWithARivalUnderTheContestedHeading() {
             // Only the leader's own allies are lifted out. Two rivals standing together and not with
             // the leader are both fighting it for the system, which is the relation the box states.
-            allianceSet = buildGroupOf(RIVAL_BLOC, ALLY_BLOC);
+            allianceSet = buildAllianceOf(RIVAL_BLOC, ALLY_BLOC);
 
             stubThreeGroupsRanked();
 
@@ -341,7 +343,7 @@ final class SystemDominationTooltipShapeTests {
         void listsTheLeaderOnceWhereItStandsInAnAlliance() {
             // A leader in an alliance is not its own ally: routed on the bloc alone it would be
             // lifted into the allied block as well and read as two holders of one system.
-            allianceSet = buildGroupOf(LEADER_BLOC, ALLY_BLOC);
+            allianceSet = buildAllianceOf(LEADER_BLOC, ALLY_BLOC);
 
             StandingsTooltipSeamsFake.stubRankedGroups(
                 List.of(createGroupStanding(LEADER_BLOC)),
@@ -358,14 +360,14 @@ final class SystemDominationTooltipShapeTests {
             // construction would go on filing a group under the alliance it left an hour ago. Posed
             // as the alliance dissolving between two hovers of the one system, which is the moment a
             // held grouping would answer for a sector that had moved on.
-            allianceSet = buildGroupOf(LEADER_BLOC, ALLY_BLOC);
+            allianceSet = buildAllianceOf(LEADER_BLOC, ALLY_BLOC);
 
             stubThreeGroupsRanked();
 
             assertThat(readBodyLabelTexts())
                 .contains("Allied with the system holder:");
 
-            allianceSet = HolderGrouping.identity();
+            allianceSet = FactionAlliances.NONE;
 
             assertThat(readBodyLabelTexts())
                 .containsExactly(
@@ -585,7 +587,7 @@ final class SystemDominationTooltipShapeTests {
         return new SystemDominationTooltip(
             StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
             claimBreakdownReaderFake,
-            HolderGrouping::identity,
+            FactionAllianceSource.NO_ALLIANCES,
             ContestWordingFixtures.CONTESTED_WORDING,
             accountSourceFake);
     }

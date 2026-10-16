@@ -146,6 +146,7 @@ Who would speak about what stands beside them is owner-aware and then some.
 `PlaceWitnesses` folds a place's settling owners and answers it,
 over the `FactionAlliances` that say which factions stand together -
 read through the `FactionAllianceSource` port a composition root registers with `FactionAllianceRegistry`,
+asked about the sector the pass reads,
 so a partner keeps a concealed base quiet exactly as its own faction does.
 It is a world fact rather than a rule,
 so it is folded per pass beside the observations rather than carried on `ColonyVisibility` -

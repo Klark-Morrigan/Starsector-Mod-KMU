@@ -3,6 +3,7 @@ package kmu.mods.nexerelin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.starsector.factions.alliances.AllianceRecord;
@@ -57,6 +58,23 @@ class NexerelinAlliancesTests {
 
                 assertThat(NexerelinAlliances.resolveFactionAlliances())
                     .isEqualTo(FactionAlliances.NONE);
+            }
+        }
+    }
+
+    @Nested
+    class ResolveFactionAlliancesIn {
+
+        @Test
+        void answersTheRunningGamesAlliancesForTheSectorHanded() {
+            // Nexerelin offers no read over another sector, so the handed one changes nothing.
+            try (var allianceSourceMock = mockStatic(NexerelinAllianceSource.class)) {
+
+                stubAllianceRecords(allianceSourceMock, List.of(buildAlliedPowers()));
+
+                assertThat(NexerelinAlliances.resolveFactionAlliancesIn(mock(SectorAPI.class))
+                        .areFactionsAllied("hegemony", "astral_armada"))
+                    .isTrue();
             }
         }
     }

@@ -47,10 +47,11 @@ import java.util.Set;
  */
 public final class ColonyObservationNotes {
 
-    // What a box with no world to read answers about every colony: nobody standing anywhere, and
-    // no clock, so nothing can be said about when anything was last seen.
+    // What a box with no world to read answers about every colony: no sector, nobody standing
+    // anywhere, and no clock, so nothing can be said about when anything was last seen.
     private static final boolean NOBODY_IS_LOOKING = false;
     private static final CampaignClockAPI NO_CLOCK = null;
+    private static final SectorAPI NO_SECTOR = null;
 
     private static final Optional<String> NO_NOTE = Optional.empty();
 
@@ -60,11 +61,14 @@ public final class ColonyObservationNotes {
      * inventing an empty one of its own.
      */
     public static final ColonyObservationNotes NONE = new ColonyObservationNotes(
+        NO_SECTOR,
         NO_CLOCK,
         NOBODY_IS_LOOKING,
         Colonies.NONE,
         ColonySightings.NONE);
 
+    // The sector the system stands in, whose alliances the inhabitants' fold is read under.
+    private final SectorAPI sector;
     private final CampaignClockAPI clock;
     private final boolean isPlayerPresent;
     private final Colonies colonies;
@@ -80,11 +84,13 @@ public final class ColonyObservationNotes {
     private Set<String> colonyIdsObservedByInhabitants;
 
     private ColonyObservationNotes(
+            SectorAPI sector,
             CampaignClockAPI clock,
             boolean isPlayerPresent,
             Colonies colonies,
             ColonySightings sightings) {
 
+        this.sector = sector;
         this.clock = clock;
         this.isPlayerPresent = isPlayerPresent;
         this.colonies = colonies;
@@ -121,6 +127,7 @@ public final class ColonyObservationNotes {
         }
 
         return new ColonyObservationNotes(
+            sector,
             sector.getClock(),
             Objects.equals(sector.getCurrentLocation(), system),
             colonies,
@@ -203,7 +210,7 @@ public final class ColonyObservationNotes {
     private Set<String> readColonyIdsObservedByInhabitants() {
 
         if (colonyIdsObservedByInhabitants == null) {
-            colonyIdsObservedByInhabitants = foldColonyIdsObservedByInhabitants(colonies);
+            colonyIdsObservedByInhabitants = foldColonyIdsObservedByInhabitants(sector, colonies);
         }
 
         return colonyIdsObservedByInhabitants;
@@ -218,12 +225,12 @@ public final class ColonyObservationNotes {
     // is why the knowledge is opened here rather than taken from the box's own pass, whose rule
     // carries whatever the player has revealed - and why the kinds it resolves cannot be shared
     // with the ones the box folded beside these notes.
-    private static Set<String> foldColonyIdsObservedByInhabitants(Colonies colonies) {
+    private static Set<String> foldColonyIdsObservedByInhabitants(SectorAPI sector, Colonies colonies) {
 
         var colonyIds = new HashSet<String>();
 
         for (var colony : ColonyKnowledge
-                .observingUnderTheFog()
+                .observingUnderTheFog(sector)
                 .readColoniesObservedByInhabitants(colonies)) {
 
             colonyIds.add(colony.market().getId());

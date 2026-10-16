@@ -41,7 +41,7 @@ public interface PoliticalHolderView
     }
 
     /**
-     * Who stands together in a contest: the live alliance set, identity wherever Nexerelin is
+     * Who stands together in a contest: the live alliance set, nobody wherever Nexerelin is
      * absent.
      *
      * <p>The same whatever a view paints as one bloc, which is what keeps it apart from
@@ -52,7 +52,7 @@ public interface PoliticalHolderView
      */
     @Override
     default OwnerAffiliation resolveContestAffiliation() {
-        return new BlocAffiliation(NexerelinAlliances.resolveGrouping());
+        return new BlocAffiliation(NexerelinAlliances.resolveFactionAlliances());
     }
 
     /**

@@ -51,13 +51,16 @@ final class StarsectorConditionPickerLocationFactory {
 
         var faction = factionFor(starsectorMarket);
 
+        // Resolved once for both its fields: the walk climbs the whole orbit chain.
+        var gravityWell = gravityWellResolver.resolve(starsectorMarket);
+
         return new KmuConditionPickerLocation(
             planetName(starsectorMarket),
             planetType(starsectorMarket),
             pickerFaction(faction),
             starSystemName(starsectorMarket),
-            gravityWellTypeName(starsectorMarket),
-            gravityWellName(starsectorMarket),
+            gravityWellDisplayName(gravityWell),
+            gravityWellName(gravityWell),
             constellationName(starsectorMarket));
     }
 
@@ -191,16 +194,7 @@ final class StarsectorConditionPickerLocationFactory {
         return locationName;
     }
 
-    private String gravityWellTypeName(MarketAPI market) {
-
-        var gravityWell = gravityWellResolver.resolve(market);
-
-        return gravityWellDisplayName(gravityWell);
-    }
-
-    private String gravityWellName(MarketAPI market) {
-
-        var gravityWell = gravityWellResolver.resolve(market);
+    private String gravityWellName(SectorEntityToken gravityWell) {
 
         return gravityWell == null
             ? null

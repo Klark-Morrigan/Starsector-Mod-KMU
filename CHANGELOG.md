@@ -41,6 +41,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`KmuErrorReporter.createLoggingReporter(Class)`**: a reporter writing each caught failure as a warning, with its cause, under the reporting class's logger.
 - **`MapLayerRefreshBoard.getGroupingRevision()`**: how many times a system has been marked stale on the board, which no drain moves back. A reader that cannot drain the set, such as the sidebar picker's memo, keys on it.
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**: one build's paint scheme, read once and handed to every part of the build that styles by it.
+- **`NexerelinAlliances.resolveFactionAlliancesIn(SectorAPI)`**: the live alliance memberships as a `FactionAllianceSource` answers them. Nexerelin keeps one set for the running game, so the sector is not consulted.
 - **`MapStyling.resolveUnownedStyle(boolean)`**: the style an unowned cell draws in, so the map's fills and the border-tracing overlay look it up the same way.
 - **`PoliticalHolderView`**, which every political map view implements: the alliance set's revision as its content revision, who stands together in a contest, the holder categories, and the faction reading.
 - **`SmoothingStageSink`** and **`BorderSmoothing.smoothBorderLoops(List, BorderSmoothingStyle, SmoothingStageSink)`**: the smoothing reports each pass that ran, so a caller showing the stages shows them in the order and under the gates the map drew by. `ClusterBorderStageCollector` is one.
@@ -107,7 +108,7 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `RibbonPlan.planCellRibbon(Optional, List, BlocAffiliation, RibbonPlanRules)` over a `BlocAffiliation` | Over `kmu.maplayers.ownermap.owners.OwnerAffiliation`, which `BlocAffiliation` implements |
 | `SpotlitBlocs.findPresentSystemKeys(HolderPass, String, Set)` and `isBlocPresentIn(HolderPass, String, StarSystemAPI)` | `HolderInhabitation.findSpotlitPresenceSystemKeys(HolderPass, String, Set)` and `HolderInhabitation.isBlocPresentIn(HolderPass, String, StarSystemAPI)` |
 | `HolderOwnerSource(HolderGrouping, HolderGrouping, HolderProvider, SystemHolderResolveSource, Function)` | `HolderOwnerSource(HolderGrouping, HolderPaintedView)`: the view answers the rest |
-| `HolderOwnerSource.grouping()`, `BlocAffiliation.NONE` and `BlocAffiliation.areBlocsAllied(String, String)` | `grouping()` is gone: the view's `resolveGrouping()` names it. For `NONE`, `OwnerAffiliation.NONE` or `new BlocAffiliation(HolderGrouping.identity())`. `areBlocsAllied` is `areOwnersAllied` |
+| `HolderOwnerSource.grouping()`, `BlocAffiliation.NONE` and `BlocAffiliation.areBlocsAllied(String, String)` | `grouping()` is gone: the view's `resolveGrouping()` names it. For `NONE`, `OwnerAffiliation.NONE` or `new BlocAffiliation(FactionAlliances.NONE)`. `areBlocsAllied` is `areOwnersAllied` |
 | `HolderGrouping.collectBlocIds(Collection)` | Gone |
 | `HolderPass.readKnownColoniesIn(StarSystemAPI)` and `readInhabitingColoniesIn(StarSystemAPI)`, public | Package-private. A reader outside it takes `readHabitationIn(StarSystemAPI)` or `readKnownColonyFactionIds(StarSystemAPI)` |
 | `AllianceBodyControls` | Gone: `AlliancesView.getViewBodyControls(BodyControlTarget)` binds the shared recede control itself |
@@ -134,6 +135,11 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `StarsectorMarketUiContextTracker` extending `BaseCampaignEventListener` | Implementing `ColonyInteractionListener`, the interface the listener manager delivers market events to |
 | `kmu.mods.nexerelin.alliances.AllianceFingerprint.compute(List)` and `NexerelinAlliances.computeAllianceFingerprint()` | Gone: `PoliticalMapStalenessSource` compares the alliance records themselves between polls. `kmu.mods.nexerelin.alliances` is gone |
 | `PoliticalMapLayer(List, OwnerPaintedView)`, `PoliticalMapStanding(MapLayerViewRegistry)`, `PoliticalMapInstaller.installAll(SectorAPI, MapLayerViewRegistry)` and `PoliticalMapStalenessSource(SectorMapMachinery)` | Each also takes the `AllianceSource` the poll reads, which `MapLayers` binds |
+| `BlocAffiliation(HolderGrouping)` | `BlocAffiliation(FactionAlliances)`: who stands together is read off the alliance memberships, never off a paint grouping |
+| `SystemDominationTooltip` and `SystemClaimTooltip` constructors taking the alliance set as a `HolderGroupingSource` | Taking a `FactionAllianceSource`, asked about the hovered sector |
+| `FactionAllianceSource.readAlliances()`, `FactionAllianceRegistry.readAlliances()` and `ColonyKnowledge.observingUnderTheFog()` | Each takes the `SectorAPI` whose alliances are asked for |
+| `StarsectorMarketUiContextResolver()`, `StarsectorInteractionDialogPickerOpener()` and `StarsectorConditionPickerFeedbackSink()`, reading the running game's sector | Gone: each takes the `SectorAPI` the console command resolves once |
+| `KmuConditionPickerEditor(KmuConditionService, KmuConditionPickerDialogOpener)`, its three-argument form, and `KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler)` and `(KmuConditionPickerActionHandler, float, float)` | Each also takes the `KmuConditionPickerFeedbackSink` a picker reports to |
 
 ##### Moved to KMLib
 

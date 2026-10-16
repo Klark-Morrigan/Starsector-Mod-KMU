@@ -108,7 +108,7 @@ public final class SectorColonySightings {
             sector,
             system.getId(),
             ColonyKnowledge
-                .observingUnderTheFog()
+                .observingUnderTheFog(sector)
                 .readGatedColonies(SystemColonies.readColoniesIn(sector, system)));
     }
 
@@ -161,7 +161,7 @@ public final class SectorColonySightings {
             return;
         }
         var knowledge = observing == null
-            ? ColonyKnowledge.observingUnderTheFog()
+            ? ColonyKnowledge.observingUnderTheFog(sector)
             : observing;
 
         recordObservedColonies(

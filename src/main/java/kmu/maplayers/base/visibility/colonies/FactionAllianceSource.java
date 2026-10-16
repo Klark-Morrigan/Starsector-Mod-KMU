@@ -1,5 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmlib.starsector.factions.alliances.FactionAlliances;
 
 /**
@@ -20,12 +22,13 @@ public interface FactionAllianceSource {
      * No alliances at all. What an installation with nothing wired reads through, leaving the
      * revelation rule to answer on faction identity alone.
      */
-    FactionAllianceSource NO_ALLIANCES = () -> FactionAlliances.NONE;
+    FactionAllianceSource NO_ALLIANCES = sector -> FactionAlliances.NONE;
 
     /**
-     * The alliances standing at this moment.
+     * The alliances standing at this moment in one sector.
      *
+     * @param sector the sector whose alliances are asked for; may be null where a caller has none
      * @return which factions stand together; never null
      */
-    FactionAlliances readAlliances();
+    FactionAlliances readAlliances(SectorAPI sector);
 }

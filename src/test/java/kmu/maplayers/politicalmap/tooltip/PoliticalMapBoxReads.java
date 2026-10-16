@@ -9,6 +9,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
@@ -76,7 +77,7 @@ public final class PoliticalMapBoxReads {
 
         return new SystemClaimTooltip(
                 buildClaimBreakdownReaderOver(sector),
-                HolderGrouping::identity,
+                FactionAllianceSource.NO_ALLIANCES,
                 CONTESTED_WORDING)
             .composeBody(sector, system, detailLevel).blocks().readSections();
     }
@@ -90,7 +91,7 @@ public final class PoliticalMapBoxReads {
         return new SystemDominationTooltip(
             HolderGrouping::identity,
             new ClaimBreakdownReaderFake(),
-            HolderGrouping::identity,
+            FactionAllianceSource.NO_ALLIANCES,
             CONTESTED_WORDING);
     }
 

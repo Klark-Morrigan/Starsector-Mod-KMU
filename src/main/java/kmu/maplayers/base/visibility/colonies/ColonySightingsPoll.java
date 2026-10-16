@@ -55,7 +55,7 @@ public final class ColonySightingsPoll {
             return;
         }
         var colonies = new SectorPassIndex(sector);
-        var observing = ColonyKnowledge.observingUnderTheFog();
+        var observing = ColonyKnowledge.observingUnderTheFog(sector);
 
         for (var system : systems) {
             SectorColonySightings.recordSightingsByInhabitants(

@@ -108,7 +108,7 @@ the one placement every surface reporting a contest routes its blocks through.
 It places them over the `BlocAffiliation` the bands judge their contest by:
 the live alliance set,
 which `PoliticalHolderView.resolveContestAffiliation()` answers for every view of this layer
-and the box takes through an injected `HolderGroupingSource` sampled per hover.
+and the box takes through an injected `FactionAllianceSource` sampled per hover.
 So a box cannot disagree with the band beneath it about who is a rival.
 
 The headline stays on the group the map painted the cell for rather than on its alliance,

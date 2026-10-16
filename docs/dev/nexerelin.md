@@ -149,10 +149,10 @@ the layering gate closes it to `exerelin`.
 | --- | --- | --- |
 | Alliances view offered at all | mod presence | `MapLayers.selectPoliticalMapViews` |
 | Alliances view paints alliances as one bloc | live alliance grouping | `AlliancesView` -> `NexerelinAlliances.resolveGrouping` |
-| Allies are not rivals in bands and boxes | live alliance grouping | `DominancePaintedView`, `ClaimsView` -> `BlocAffiliation` |
-| Hover boxes split allies from rivals | live alliance grouping | `SystemDominationTooltip`, `SystemClaimTooltip` |
+| Allies are not rivals in bands and boxes | live alliance membership | `PoliticalHolderView` -> `NexerelinAlliances.resolveFactionAlliances` -> `BlocAffiliation` |
+| Hover boxes split allies from rivals | live alliance membership | `SystemDominationTooltip`, `SystemClaimTooltip` -> `NexerelinAlliances.resolveFactionAlliancesIn` |
 | "Contested by" rather than "Present" | mod presence | `NexerelinContestWording` |
-| An ally keeps a concealed colony's secret | live alliance membership | `MapLayers.registerFactionAlliances` -> `FactionAllianceRegistry` |
+| An ally keeps a concealed colony's secret | live alliance membership | `MapLayers.registerFactionAlliances` -> `FactionAllianceRegistry`, asked per sector |
 | Alliance changes repaint | live alliance records, every poll | `MapLayers.selectAllianceSource` -> `PoliticalMapStalenessSource.markAllianceSetChange` |
 | A conquest repaints at once | `InvasionListener.reportMarketTransfered` | relay -> `PoliticalMapMarketTransferListener` |
 | Filter-row toggle tooltip mentions alliances | mod presence | `MapLayers.registerAllianceViewAvailability` -> `VanillaMapLayerToggleAttacher` |

@@ -31,8 +31,9 @@ see the [mod README](../../../../../../../README.md) for project context.
 
 Both boxes sit on `PoliticalMapCellTooltip`.
 It samples per hover the `BlocRelations` pair every box places blocs by:
-the alliance set off the injected `HolderGroupingSource`,
-and the disposition off the sector being hovered.
+the alliance set off the injected `FactionAllianceSource`,
+and the disposition,
+both read for the sector being hovered.
 A pair held for the session would file a faction under the alliance it left an hour ago,
 and sampled per box the two families could disagree.
 

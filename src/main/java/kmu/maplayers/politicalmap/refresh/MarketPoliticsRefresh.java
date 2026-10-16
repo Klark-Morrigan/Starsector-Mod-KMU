@@ -120,6 +120,6 @@ public final class MarketPoliticsRefresh {
             sector,
             system,
             SystemColonies.readColoniesIn(sector, system),
-            ColonyKnowledge.observingUnderTheFog());
+            ColonyKnowledge.observingUnderTheFog(sector));
     }
 }

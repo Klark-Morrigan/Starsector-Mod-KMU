@@ -138,7 +138,7 @@ public final class MapLayers {
         if (NexerelinAlliances.isAvailable()) {
 
             FactionAllianceRegistry.registerAllianceSource(
-                NexerelinAlliances::resolveFactionAlliances);
+                NexerelinAlliances::resolveFactionAlliancesIn);
         }
     }
 

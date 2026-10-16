@@ -40,6 +40,7 @@
 - **`KmuErrorReporter.createLoggingReporter(Class)`**：把每个被捕获的失败连同其原因以警告级别写入报告方所属类的日志。
 - **`MapLayerRefreshBoard.getGroupingRevision()`**：星系被标记为过期的次数，任何取出操作都不会让它回退。无法取出该集合的读取方（例如侧边栏选择器的缓存）以它为键。
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**：一次构建的绘制方案，只读取一次，再交给构建中按它着色的每个部分。
+- **`NexerelinAlliances.resolveFactionAlliancesIn(SectorAPI)`**：以 `FactionAllianceSource` 的方式给出实时联盟成员关系。Nexerelin 只为正在运行的游戏保存一套联盟，因此不会查询传入的星域。
 - **`MapStyling.resolveUnownedStyle(boolean)`**：无所有者单元所用的样式，使地图填充与边界描绘以同一方式查找它。
 - **`PoliticalHolderView`**，政治地图的每个视图都实现它：联盟集合的修订号（作为视图的内容修订号）、争夺中谁与谁站在一起、持有者类别，以及势力读取。
 - **`SmoothingStageSink`** 和 **`BorderSmoothing.smoothBorderLoops(List, BorderSmoothingStyle, SmoothingStageSink)`**：平滑会报告实际运行的每一道平滑处理，因此展示各阶段的调用方按地图绘制时的顺序和开关展示它们。`ClusterBorderStageCollector` 即为其一。
@@ -106,7 +107,7 @@
 | 基于 `BlocAffiliation` 的 `RibbonPlan.planCellRibbon(Optional, List, BlocAffiliation, RibbonPlanRules)` | 基于 `kmu.maplayers.ownermap.owners.OwnerAffiliation`，由 `BlocAffiliation` 实现 |
 | `SpotlitBlocs.findPresentSystemKeys(HolderPass, String, Set)` 和 `isBlocPresentIn(HolderPass, String, StarSystemAPI)` | `HolderInhabitation.findSpotlitPresenceSystemKeys(HolderPass, String, Set)` 和 `HolderInhabitation.isBlocPresentIn(HolderPass, String, StarSystemAPI)` |
 | `HolderOwnerSource(HolderGrouping, HolderGrouping, HolderProvider, SystemHolderResolveSource, Function)` | `HolderOwnerSource(HolderGrouping, HolderPaintedView)`：其余部分由视图给出 |
-| `HolderOwnerSource.grouping()`、`BlocAffiliation.NONE` 和 `BlocAffiliation.areBlocsAllied(String, String)` | `grouping()` 已移除，改由视图的 `resolveGrouping()` 给出。`NONE` 改用 `OwnerAffiliation.NONE` 或 `new BlocAffiliation(HolderGrouping.identity())`。`areBlocsAllied` 改为 `areOwnersAllied` |
+| `HolderOwnerSource.grouping()`、`BlocAffiliation.NONE` 和 `BlocAffiliation.areBlocsAllied(String, String)` | `grouping()` 已移除，改由视图的 `resolveGrouping()` 给出。`NONE` 改用 `OwnerAffiliation.NONE` 或 `new BlocAffiliation(FactionAlliances.NONE)`。`areBlocsAllied` 改为 `areOwnersAllied` |
 | `HolderGrouping.collectBlocIds(Collection)` | 已移除 |
 | 公开的 `HolderPass.readKnownColoniesIn(StarSystemAPI)` 和 `readInhabitingColoniesIn(StarSystemAPI)` | 改为包私有。外部读取方改用 `readHabitationIn(StarSystemAPI)` 或 `readKnownColonyFactionIds(StarSystemAPI)` |
 | `AllianceBodyControls` | 已移除：`AlliancesView.getViewBodyControls(BodyControlTarget)` 自行绑定共享的退后控件 |
@@ -133,6 +134,11 @@
 | 继承 `BaseCampaignEventListener` 的 `StarsectorMarketUiContextTracker` | 实现 `ColonyInteractionListener`，即监听器管理器向其传递市场事件的接口 |
 | `kmu.mods.nexerelin.alliances.AllianceFingerprint.compute(List)` 和 `NexerelinAlliances.computeAllianceFingerprint()` | 已移除：`PoliticalMapStalenessSource` 在两次刷新轮询之间直接比较联盟记录。`kmu.mods.nexerelin.alliances` 已移除 |
 | `PoliticalMapLayer(List, OwnerPaintedView)`、`PoliticalMapStanding(MapLayerViewRegistry)`、`PoliticalMapInstaller.installAll(SectorAPI, MapLayerViewRegistry)` 和 `PoliticalMapStalenessSource(SectorMapMachinery)` | 各自还接收刷新轮询读取的 `AllianceSource`，由 `MapLayers` 绑定 |
+| `BlocAffiliation(HolderGrouping)` | `BlocAffiliation(FactionAlliances)`：谁与谁站在一起取自联盟成员关系，而不是绘制所用的分组 |
+| 以 `HolderGroupingSource` 接收联盟集合的 `SystemDominationTooltip` 和 `SystemClaimTooltip` 构造函数 | 改为接收 `FactionAllianceSource`，按悬停的星域询问 |
+| `FactionAllianceSource.readAlliances()`、`FactionAllianceRegistry.readAlliances()` 和 `ColonyKnowledge.observingUnderTheFog()` | 各自接收要询问其联盟的 `SectorAPI` |
+| 读取正在运行的游戏中星域的 `StarsectorMarketUiContextResolver()`、`StarsectorInteractionDialogPickerOpener()` 和 `StarsectorConditionPickerFeedbackSink()` | 已移除：各自接收控制台命令只解析一次的 `SectorAPI` |
+| `KmuConditionPickerEditor(KmuConditionService, KmuConditionPickerDialogOpener)` 及其三参数形式，以及 `KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler)` 和 `(KmuConditionPickerActionHandler, float, float)` | 各自还接收选择器报告所用的 `KmuConditionPickerFeedbackSink` |
 
 ##### 移至 KMLib
 

@@ -319,7 +319,7 @@ final class SectorColonySightingsTests {
             // The write is handed a place and a set rather than sweeping for either, so a caller
             // mid-walk over a sector that answers nothing must cost the register nothing.
             SectorColonySightings.recordSightingsByInhabitants(
-                sectorMock, null, Colonies.NONE, ColonyKnowledge.observingUnderTheFog());
+                sectorMock, null, Colonies.NONE, ColonyKnowledge.observingUnderTheFog(sectorMock));
 
             verifyNoInteractions(memoryMock);
         }
@@ -336,7 +336,7 @@ final class SectorColonySightingsTests {
             var observedColonies = SystemColonies.readColoniesIn(sectorMock, systemMock);
 
             SectorColonySightings.recordSightingsByInhabitants(
-                null, systemMock, observedColonies, ColonyKnowledge.observingUnderTheFog());
+                null, systemMock, observedColonies, ColonyKnowledge.observingUnderTheFog(sectorMock));
 
             verifyNoInteractions(memoryMock);
         }
@@ -347,7 +347,7 @@ final class SectorColonySightingsTests {
             // it has no reading of yet, and handing one over must cost the register nothing
             // rather than fault on the way through.
             SectorColonySightings.recordSightingsByInhabitants(
-                sectorMock, systemMock, null, ColonyKnowledge.observingUnderTheFog());
+                sectorMock, systemMock, null, ColonyKnowledge.observingUnderTheFog(sectorMock));
 
             verifyNoInteractions(memoryMock);
         }
@@ -498,7 +498,7 @@ final class SectorColonySightingsTests {
             sectorMock,
             systemMock,
             SystemColonies.readColoniesIn(sectorMock, systemMock),
-            ColonyKnowledge.observingUnderTheFog());
+            ColonyKnowledge.observingUnderTheFog(sectorMock));
     }
 
     private void listColoniesInSystem(MarketAPI... colonies) {

@@ -1,5 +1,6 @@
 package kmu.maplayers.base.visibility.colonies;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.markets.colonies.Colonies;
@@ -30,6 +31,9 @@ import static org.mockito.Mockito.when;
  */
 final class ColonyKindLookupTests {
 
+    // No sector to hand the alliance read: the alliances these cases pose answer alike for any.
+    private static final SectorAPI NO_SECTOR = null;
+
     private static final String DERELICT_ID = "sentinel_gantries";
     private static final String NEIGHBOUR_ID = "jangala";
 
@@ -48,7 +52,7 @@ final class ColonyKindLookupTests {
                 new Colonies(List.of(
                     new Colony(derelict, false),
                     new Colony(neighbour, true))),
-                ColonyKnowledge.observingUnderTheFog());
+                ColonyKnowledge.observingUnderTheFog(NO_SECTOR));
 
             assertThat(lookup.readKindOf(DERELICT_ID))
                 .isEqualTo(ColonyKind.SPACE_DERELICT);
@@ -67,7 +71,7 @@ final class ColonyKindLookupTests {
 
             var lookup = ColonyKindLookup.readKindsIn(
                 new Colonies(List.of(new Colony(undiscoveredDerelict, false))),
-                ColonyKnowledge.observingUnderTheFog());
+                ColonyKnowledge.observingUnderTheFog(NO_SECTOR));
 
             assertThat(lookup.readKindOf(DERELICT_ID))
                 .isEqualTo(ColonyKind.SPACE_DERELICT);
@@ -79,7 +83,7 @@ final class ColonyKindLookupTests {
             // an entry under nothing and handing one colony's kind to every other unnamed one.
             var lookup = ColonyKindLookup.readKindsIn(
                 new Colonies(List.of(new Colony(mock(MarketAPI.class), true))),
-                ColonyKnowledge.observingUnderTheFog());
+                ColonyKnowledge.observingUnderTheFog(NO_SECTOR));
 
             assertThat(lookup.kindByColonyId())
                 .isEmpty();
@@ -88,7 +92,7 @@ final class ColonyKindLookupTests {
         @Test
         void readsAPlaceThatCouldNotBeWalkedAsNothingKnown() {
 
-            assertThat(ColonyKindLookup.readKindsIn(null, ColonyKnowledge.observingUnderTheFog()))
+            assertThat(ColonyKindLookup.readKindsIn(null, ColonyKnowledge.observingUnderTheFog(NO_SECTOR)))
                 .isEqualTo(ColonyKindLookup.NONE);
         }
 

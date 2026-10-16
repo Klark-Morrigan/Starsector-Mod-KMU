@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.entities.EntityNameplate;
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -21,7 +22,6 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonySightings;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
@@ -69,9 +69,9 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readOpeningWords;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readTableRow;
+import static kmu.maplayers.base.visibility.colonies.FactionAllianceFixture.buildAllianceOf;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
 import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.dominance.tooltip.StandingsTooltipSeamsFake.VIEW_GROUPING;
 import static kmu.starsector.SectorFactionFixtures.stubDispositionToward;
@@ -200,7 +200,7 @@ final class SystemDominationTooltipTests {
 
     // The alliance set the box routes its blocks against, restated by the case about an ally and left
     // ungrouped for the rest - the state an install with nothing grouping factions is in.
-    private HolderGrouping allianceSet = HolderGrouping.identity();
+    private FactionAlliances allianceSet = FactionAlliances.NONE;
 
     // How the rival block is headed, restated by the case about an install where no system ever
     // changes hands and left as the contest for the rest - which is what every case predating the
@@ -210,7 +210,7 @@ final class SystemDominationTooltipTests {
     private final SystemDominationTooltip tooltip = new SystemDominationTooltip(
         StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
         claimBreakdownReaderFake,
-        () -> allianceSet,
+        sector -> allianceSet,
         () -> contestWording);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
@@ -334,7 +334,7 @@ final class SystemDominationTooltipTests {
             // it, and who was never in the running. Posed here rather than with the shared shape
             // because two of the five turn on which faction a bloc actually is - the placeholder
             // owner, and a bloc the sector's own relations put on good terms with the holder.
-            allianceSet = buildGroupOf(CORE_FACTION, ALLY_FACTION);
+            allianceSet = buildAllianceOf(CORE_FACTION, ALLY_FACTION);
 
             stubFaction(sectorMock, FRIENDLY_FACTION, "The Luddic Church", MEMBER_CREST);
             stubDispositionToward(sectorMock, FRIENDLY_FACTION, CORE_FACTION, RepLevel.FAVORABLE);
@@ -374,7 +374,7 @@ final class SystemDominationTooltipTests {
             // to disagree about, so none folds into two headings and none is stood up anew: the box
             // names exactly the groups the ranking handed it, once each. What a fold looks like when
             // one does happen is the routing's to pin.
-            allianceSet = HolderGrouping.identity();
+            allianceSet = FactionAlliances.NONE;
 
             stubFaction(sectorMock, FRIENDLY_FACTION, "The Luddic Church", MEMBER_CREST);
             stubDispositionToward(sectorMock, FRIENDLY_FACTION, CORE_FACTION, RepLevel.FAVORABLE);
@@ -415,7 +415,7 @@ final class SystemDominationTooltipTests {
             // compared - an entry's crest, value and indent as well as the headings.
             var rivalHeadingRow = 6;
 
-            allianceSet = buildGroupOf(CORE_FACTION, ALLY_FACTION);
+            allianceSet = buildAllianceOf(CORE_FACTION, ALLY_FACTION);
 
             stubFaction(sectorMock, FRIENDLY_FACTION, "The Luddic Church", MEMBER_CREST);
             stubDispositionToward(sectorMock, FRIENDLY_FACTION, CORE_FACTION, RepLevel.FAVORABLE);

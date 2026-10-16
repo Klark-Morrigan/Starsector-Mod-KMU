@@ -10,6 +10,7 @@ import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBlocks;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.ComposedCellBody;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.maplayers.politicalmap.dominance.BlocCandidacy;
@@ -52,19 +53,19 @@ public final class SystemDominationTooltip
      * @param paintedGroupingSource the grouping the injecting view paints its fills under, which the
      *                              ranking runs under so the box's numbers match the fills
      * @param claimDecreeReader     the decree read every political box heads with
-     * @param holderGroupingSource  the alliance grouping the contest's sides are read under
+     * @param allianceSource        the alliances the contest's sides are read under
      * @param contestWordingSource  the wording of the rival block
      */
     public SystemDominationTooltip(
             HolderGroupingSource paintedGroupingSource,
             ClaimDecreeReader claimDecreeReader,
-            HolderGroupingSource holderGroupingSource,
+            FactionAllianceSource allianceSource,
             ContestWordingSource contestWordingSource) {
 
         this(
             paintedGroupingSource,
             claimDecreeReader,
-            holderGroupingSource,
+            allianceSource,
             contestWordingSource,
             SystemDominationTooltip::createFactionAccountResolver);
     }
@@ -72,11 +73,11 @@ public final class SystemDominationTooltip
     SystemDominationTooltip(
             HolderGroupingSource paintedGroupingSource,
             ClaimDecreeReader claimDecreeReader,
-            HolderGroupingSource holderGroupingSource,
+            FactionAllianceSource allianceSource,
             ContestWordingSource contestWordingSource,
             FactionAccountSource factionAccountSource) {
 
-        super(claimDecreeReader, holderGroupingSource, contestWordingSource);
+        super(claimDecreeReader, allianceSource, contestWordingSource);
 
         this.paintedGroupingSource = paintedGroupingSource;
         this.factionAccountSource = factionAccountSource;
@@ -102,7 +103,7 @@ public final class SystemDominationTooltip
         return new SystemDominationTooltip(
             paintedGroupingSource,
             VANILLA_CLAIM_DECREE_READER,
-            NexerelinAlliances::resolveGrouping,
+            NexerelinAlliances::resolveFactionAlliancesIn,
             NexerelinContestWording::resolveWording);
     }
 

@@ -1,13 +1,14 @@
 package kmu.maplayers.ownermap.owners.holders.alliances;
 
-import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
+import kmlib.starsector.factions.alliances.FactionAlliances;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.function.Function;
+
+import static kmu.maplayers.base.visibility.colonies.FactionAllianceFixture.buildAllianceOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -57,8 +58,7 @@ final class ContestSidesTests {
 
             assertThat(new ContestSides(
                     HOLDER,
-                    new BlocAffiliation(
-                        HolderGroupingFixture.buildGroupOf(HOLDER, secondAlly, ALLY)))
+                    new BlocAffiliation(buildAllianceOf(HOLDER, secondAlly, ALLY)))
                     .selectSide(ContestSide.ALLIED, List.of(secondAlly, ALLY), BLOC_ID_ITSELF))
                 .containsExactly(secondAlly, ALLY);
         }
@@ -69,25 +69,25 @@ final class ContestSidesTests {
             // both stand against the holder, which is the relation a contest block states.
             assertThat(new ContestSides(
                     HOLDER,
-                    new BlocAffiliation(HolderGroupingFixture.buildGroupOf(RIVAL, OUTSIDER)))
+                    new BlocAffiliation(buildAllianceOf(RIVAL, OUTSIDER)))
                     .selectSide(ContestSide.RIVAL, List.of(RIVAL, OUTSIDER), BLOC_ID_ITSELF))
                 .containsExactly(RIVAL, OUTSIDER);
         }
 
         @Test
-        void alliesNobodyWhereNothingGroupsFactions() {
-            // An install with nothing grouping factions: no two blocs stand together, so
+        void alliesNobodyWhereNoFactionsAreAllied() {
+            // An install with no alliances: no two blocs stand together, so
             // the allied block is empty and its heading is dropped by the surface drawing it.
-            assertThat(new ContestSides(HOLDER, new BlocAffiliation(HolderGrouping.identity()))
+            assertThat(new ContestSides(HOLDER, new BlocAffiliation(FactionAlliances.NONE))
                     .selectSide(ContestSide.ALLIED, List.of(ALLY, RIVAL), BLOC_ID_ITSELF))
                 .isEmpty();
         }
 
         @Test
-        void keepsEverybodyAsRivalsWhereNothingGroupsFactions() {
-            // Why an install without groups needs no branch anywhere: every contestant routes
+        void keepsEverybodyAsRivalsWhereNoFactionsAreAllied() {
+            // Why an install without alliances needs no branch anywhere: every contestant routes
             // exactly as it did before either side existed.
-            assertThat(new ContestSides(HOLDER, new BlocAffiliation(HolderGrouping.identity()))
+            assertThat(new ContestSides(HOLDER, new BlocAffiliation(FactionAlliances.NONE))
                     .selectSide(ContestSide.RIVAL, List.of(ALLY, RIVAL), BLOC_ID_ITSELF))
                 .containsExactly(ALLY, RIVAL);
         }
@@ -116,6 +116,6 @@ final class ContestSidesTests {
     }
 
     private static BlocAffiliation buildGroupAffiliation() {
-        return new BlocAffiliation(HolderGroupingFixture.buildGroupOf(HOLDER, ALLY));
+        return new BlocAffiliation(buildAllianceOf(HOLDER, ALLY));
     }
 }

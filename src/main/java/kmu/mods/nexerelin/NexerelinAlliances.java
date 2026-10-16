@@ -1,5 +1,7 @@
 package kmu.mods.nexerelin;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 
@@ -8,7 +10,8 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 
 /**
  * KMU's readings of the live alliance set: a {@link HolderGrouping} for the political map, and a
- * {@link FactionAlliances} for the rule that decides who would keep a partner's secret.
+ * {@link FactionAlliances} for who stands together - the rule that decides who would keep a
+ * partner's secret, and a contest's sides.
  *
  * <p>Two folds over one source and nothing else. Whether the mod that maintains alliances is
  * installed, and what its alliances are, is the library's to answer - so nothing here names that
@@ -33,13 +36,27 @@ public final class NexerelinAlliances {
     }
 
     /**
-     * The memberships the visibility rule reads.
+     * Which factions stand together.
      *
      * @return which factions stand together, or nobody standing with anybody where there are no
      *         alliances
      */
     public static FactionAlliances resolveFactionAlliances() {
         return FactionAlliances.buildFrom(NexerelinAllianceSource.readAllianceRecords());
+    }
+
+    /**
+     * {@link #resolveFactionAlliances()} for a reader asking about one sector.
+     *
+     * <p>The sector is not consulted. Nexerelin keeps its alliances for the running game alone and
+     * offers no read over another sector, so the running game's set is the only answer there is.
+     *
+     * @param sector the sector a reader asks about
+     * @return which factions stand together, or nobody standing with anybody where there are no
+     *         alliances
+     */
+    public static FactionAlliances resolveFactionAlliancesIn(SectorAPI sector) {
+        return resolveFactionAlliances();
     }
 
     /**

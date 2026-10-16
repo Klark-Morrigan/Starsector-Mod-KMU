@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
@@ -30,8 +31,8 @@ import kmu.maplayers.base.tooltip.layout.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltipTests;
@@ -77,8 +78,8 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelTex
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.base.visibility.colonies.FactionAllianceFixture.buildAllianceOf;
 import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.UNFORCED_UNDER_THE_REVEAL;
-import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
 import static kmu.maplayers.politicalmap.claims.tooltip.ListedClaimContestFixture.buildUnroutedContest;
 import static kmu.starsector.SectorFactionFixtures.stubDispositionToward;
 import static kmu.starsector.SectorFactionFixtures.stubFaction;
@@ -199,7 +200,7 @@ final class SystemClaimTooltipTests {
     // The alliance set the box routes its blocks against, restated by the cases about an ally and left
     // ungrouped for the rest - which is both the state an install with nothing grouping factions is
     // permanently in and the state every case predating the allied block was written under.
-    private HolderGrouping holderGrouping = HolderGrouping.identity();
+    private FactionAlliances alliances = FactionAlliances.NONE;
 
     // How the rival block is headed, restated by the case about an install where no system ever
     // changes hands and left as the contest for the rest - which is what every case predating the
@@ -208,7 +209,7 @@ final class SystemClaimTooltipTests {
 
     private final SystemClaimTooltip tooltip = new SystemClaimTooltip(
         claimBreakdownReaderFake,
-        () -> holderGrouping,
+        sector -> alliances,
         () -> contestWording);
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
@@ -326,7 +327,7 @@ final class SystemClaimTooltipTests {
             // compared - an entry's crest, score and indent as well as the headings.
             var rivalHeadingRow = 6;
 
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubFaction(sectorMock, LUDDIC_CHURCH, "The Luddic Church", null);
             stubDispositionToward(sectorMock, LUDDIC_CHURCH, HEGEMONY, RepLevel.FAVORABLE);
@@ -445,7 +446,7 @@ final class SystemClaimTooltipTests {
             // is contesting the claim.
             var alliedEntryRow = 3;
 
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -476,7 +477,7 @@ final class SystemClaimTooltipTests {
             // construction would go on filing a faction under the alliance it left an hour ago. Posed
             // as the alliance dissolving between two hovers of the one system, which is the moment a
             // held grouping would answer for a sector that had moved on.
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -493,7 +494,7 @@ final class SystemClaimTooltipTests {
                     "Allied with the claim holder:",
                     "Tri-Tachyon");
 
-            holderGrouping = HolderGrouping.identity();
+            alliances = FactionAlliances.NONE;
 
             assertThat(readSectionOpeningWords(
                     tooltip.composeBody(sectorMock, systemMock, FACTIONS).blocks().readSections()))
@@ -511,7 +512,7 @@ final class SystemClaimTooltipTests {
             // kind, so the line is where this one says which it is.
             var alliedEntryRow = 3;
 
-            holderGrouping = buildGroupOf(HEGEMONY, PIRATES);
+            alliances = buildAllianceOf(HEGEMONY, PIRATES);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -613,7 +614,7 @@ final class SystemClaimTooltipTests {
             // excellent terms with the holder gains nothing by it - the two blocks would otherwise
             // both be true of one faction, and which of them it drew in would be down to the order
             // they happen to be tested in.
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubDispositionToward(sectorMock, TRITACHYON, HEGEMONY, RepLevel.FAVORABLE);
 
@@ -669,7 +670,7 @@ final class SystemClaimTooltipTests {
             // and who could never have taken it. Every other case here poses one block at a time, so
             // a routing that drew the friendly block after the contested one - or filed a faction two
             // blocks from where it belongs - would pass all of them and fail this.
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubFaction(sectorMock, LUDDIC_CHURCH, "The Luddic Church", null);
             stubDispositionToward(sectorMock, LUDDIC_CHURCH, HEGEMONY, RepLevel.FAVORABLE);
@@ -734,7 +735,7 @@ final class SystemClaimTooltipTests {
             // holder draws over a system without one - even where the two factions present are allied
             // to each other and on excellent terms besides, which is the pair either comparison would
             // otherwise have matched on.
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubDispositionToward(sectorMock, HEGEMONY, TRITACHYON, RepLevel.FAVORABLE);
             stubDispositionToward(sectorMock, TRITACHYON, HEGEMONY, RepLevel.FAVORABLE);
@@ -761,7 +762,7 @@ final class SystemClaimTooltipTests {
             // A decree settles who the holder is and nothing about how the blocks are routed, so the
             // decreed faction's ally sorts exactly as a winner's would - and the faction that would
             // have claimed by score is neither, so it goes on contesting.
-            holderGrouping = buildGroupOf(PIRATES, TRITACHYON);
+            alliances = buildAllianceOf(PIRATES, TRITACHYON);
 
             stubBreakdown(new SystemClaimBreakdown(
                 PIRATES,
@@ -1301,7 +1302,7 @@ final class SystemClaimTooltipTests {
             // The routing is the shared shape's and pinned there; what this case is about is that the
             // detail follows a faction into the block the relation put it in. An ally accounted for
             // only under `Contested by:` would be an account of a line the box no longer draws.
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -1471,7 +1472,7 @@ final class SystemClaimTooltipTests {
                     return claimBreakdownReaderFake;
                 },
                 ClaimScoreRowResolver::resolveMarketRows,
-                HolderGrouping::identity,
+                FactionAllianceSource.NO_ALLIANCES,
                 ContestWordingFixtures.CONTESTED_WORDING);
 
             // Counted in the answer rather than verified on the static, so only the box's own reads
@@ -1512,7 +1513,7 @@ final class SystemClaimTooltipTests {
                     return claimBreakdownReaderFake;
                 },
                 ClaimScoreRowResolver::resolveMarketRows,
-                HolderGrouping::identity,
+                FactionAllianceSource.NO_ALLIANCES,
                 ContestWordingFixtures.CONTESTED_WORDING);
 
             stubBreakdown(new SystemClaimBreakdown(
@@ -1869,7 +1870,7 @@ final class SystemClaimTooltipTests {
             claimBreakdownReaderFake,
             (knownColonyReader, sectorIndex) -> claimBreakdownReaderFake,
             accountSourceFake,
-            HolderGrouping::identity,
+            FactionAllianceSource.NO_ALLIANCES,
             ContestWordingFixtures.CONTESTED_WORDING);
     }
 

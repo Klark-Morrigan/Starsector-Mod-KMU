@@ -1,12 +1,14 @@
 package kmu.maplayers.ownermap.owners.holders.alliances;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
+
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 
 import java.util.Objects;
 
 /**
- * A grouping read as one question - do two blocs stand together - consulted only where a
+ * The alliances read as one question - do two blocs stand together - consulted only where a
  * contest is judged: how long a band's runs are laid, and which block of a hover box a group is
  * listed under.
  *
@@ -17,11 +19,10 @@ import java.util.Objects;
  * together through this type instead: judged on the paint grouping, two allies sharing a system
  * read as rivals fighting over it.
  *
- * <p>A wrapper rather than a second bare {@code HolderGrouping} so a paint grouping cannot be
- * handed where an affiliation is wanted: turning a grouping into an affiliation is an explicit act
- * at a binding point, and a holder of this type has the one predicate - never the fold, which
- * would merge allied runs, fills and rows and is the job of a layer whose paint grouping folds
- * the groups.
+ * <p>Built over the {@link FactionAlliances} memberships rather than a grouping, so a paint grouping
+ * cannot be handed where an affiliation is wanted, and a holder of this type has the one predicate -
+ * never the fold, which would merge allied runs, fills and rows and is the job of a layer whose paint
+ * grouping folds the groups.
  *
  * <p>It is the tier's {@link OwnerAffiliation} for a layer painting holders, which is how a band
  * judges its contest without the tier knowing what a bloc is.
@@ -29,34 +30,27 @@ import java.util.Objects;
 public final class BlocAffiliation
         implements OwnerAffiliation {
 
-    private final HolderGrouping affiliationGrouping;
+    private final FactionAlliances alliances;
 
     /**
-     * Reads a grouping as who stands with whom. Meant for the binding point that samples the live
-     * groups - a pass's paint grouping wrapped here would judge the contest by what fuses into
-     * a cluster group, which is the confusion this type exists to make explicit.
+     * Reads the alliances as who stands with whom.
      *
-     * @param affiliationGrouping the grouping to read; {@link HolderGrouping#identity()} where
-     *                            nothing groups factions, under which no two blocs stand together
+     * @param alliances the memberships to read; {@link FactionAlliances#NONE} where nothing allies
+     *                  factions, under which no two blocs stand together
      */
-    public BlocAffiliation(HolderGrouping affiliationGrouping) {
+    public BlocAffiliation(FactionAlliances alliances) {
 
-        this.affiliationGrouping = Objects.requireNonNull(affiliationGrouping, "affiliationGrouping");
+        this.alliances = Objects.requireNonNull(alliances, "alliances");
     }
 
     /**
-     * Whether two distinct blocs stand together - both fold into one bloc under the affiliation
-     * grouping. A layer painting holders paints blocs, so an owner ID is a bloc ID.
-     *
-     * <p>A bloc ID the affiliation grouping names no faction for falls through to itself, which is
-     * what keeps the rule uniform across layers with no per-layer branch: on a layer whose paint
-     * grouping folds the same groups, the pass's bloc IDs are group IDs, members are already folded
-     * into them, and so no two distinct blocs there ever stand together.
+     * Whether two distinct blocs stand together - both are factions of one alliance. A layer painting
+     * holders paints blocs, so an owner ID is a bloc ID.
      *
      * @param firstBlocId  one bloc of the pair; a bloc with no ID stands with nothing, there being
      *                     nothing to have allied it
      * @param secondBlocId the other bloc of the pair
-     * @return true when the two are distinct blocs folded into one under the affiliation grouping
+     * @return true when the two are distinct factions of one alliance
      */
     @Override
     public boolean areOwnersAllied(String firstBlocId, String secondBlocId) {
@@ -67,11 +61,11 @@ public final class BlocAffiliation
         if (Objects.equals(firstBlocId, secondBlocId)) {
             return false;
         }
-        var firstAffiliatedBlocId = affiliationGrouping.resolveBlocId(firstBlocId);
 
-        // resolveBlocId answers null for an ID with no text, and two IDs that both resolved to
-        // nothing must not read as standing together for it.
-        return firstAffiliatedBlocId != null
-            && firstAffiliatedBlocId.equals(affiliationGrouping.resolveBlocId(secondBlocId));
+        // A group ID names no faction, so it stands with nothing. That is what keeps the rule uniform
+        // across layers with no per-layer branch: on a layer whose paint grouping folds the alliances,
+        // the pass's bloc IDs are group IDs, members are already folded into them, and so no two
+        // distinct blocs there ever stand together.
+        return alliances.areFactionsAllied(firstBlocId, secondBlocId);
     }
 }

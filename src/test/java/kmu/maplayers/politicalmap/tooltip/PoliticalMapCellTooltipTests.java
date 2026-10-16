@@ -11,6 +11,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
@@ -218,7 +219,7 @@ public final class PoliticalMapCellTooltipTests {
                     reader -> new SystemDominationTooltip(
                         HolderGrouping::identity,
                         reader,
-                        HolderGrouping::identity,
+                        FactionAllianceSource.NO_ALLIANCES,
                         ContestWordingFixtures.CONTESTED_WORDING)));
         }
     }
@@ -242,7 +243,7 @@ public final class PoliticalMapCellTooltipTests {
                     "the claims view's box",
                     reader -> new SystemClaimTooltip(
                         reader,
-                        HolderGrouping::identity,
+                        FactionAllianceSource.NO_ALLIANCES,
                         ContestWordingFixtures.CONTESTED_WORDING)));
         }
     }

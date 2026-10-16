@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures;
@@ -128,7 +129,7 @@ final class ClaimPresenceReadoutIntegrationTests {
 
             var sections = new SystemClaimTooltip(
                     claimBreakdownReader,
-                    HolderGrouping::identity,
+                    FactionAllianceSource.NO_ALLIANCES,
                     ContestWordingFixtures.CONTESTED_WORDING)
                 .composeBody(sector, system, FACTIONS).blocks().readSections();
 

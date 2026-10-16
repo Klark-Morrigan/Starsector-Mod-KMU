@@ -70,6 +70,7 @@ class StarsectorInteractionDialogPickerOpenerTests {
                         new KmuConditionService(buildEmptyRepository()),
                         new KmuConditionPickerModelFactory(new KmuConditionService(buildEmptyRepository())),
                         new KmuEditableMarketStub()),
+                feedback -> { },
                 width,
                 height);
     }

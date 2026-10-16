@@ -18,8 +18,8 @@ import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.ComposedCellBody;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
+import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.maplayers.ownermap.owners.holders.factions.FactionTooltipLine;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.tooltip.ColonyObservationNotes;
@@ -83,19 +83,19 @@ public final class SystemClaimTooltip
      * say, whose box then states the very claim the band was drawn from.
      *
      * @param claimBreakdownReader the claim read the box heads with and lists from
-     * @param holderGroupingSource the alliance grouping the contest's sides are read under
+     * @param allianceSource       the alliances the contest's sides are read under
      * @param contestWordingSource the wording of the rival block
      */
     public SystemClaimTooltip(
             ClaimBreakdownReader claimBreakdownReader,
-            HolderGroupingSource holderGroupingSource,
+            FactionAllianceSource allianceSource,
             ContestWordingSource contestWordingSource) {
 
         this(
             claimBreakdownReader,
             (knownColonyReader, sectorIndex) -> claimBreakdownReader,
             ClaimScoreRowResolver::resolveMarketRows,
-            holderGroupingSource,
+            allianceSource,
             contestWordingSource);
     }
 
@@ -103,10 +103,10 @@ public final class SystemClaimTooltip
             ClaimDecreeReader claimDecreeReader,
             ClaimBreakdownReaderSource claimReaderSource,
             BiFunction<FactionClaimStanding, ClaimAccountReading, List<CellTooltipEntry>> accountEntriesSource,
-            HolderGroupingSource holderGroupingSource,
+            FactionAllianceSource allianceSource,
             ContestWordingSource contestWordingSource) {
 
-        super(claimDecreeReader, holderGroupingSource, contestWordingSource);
+        super(claimDecreeReader, allianceSource, contestWordingSource);
 
         this.claimReaderSource = claimReaderSource;
         this.accountEntriesSource = accountEntriesSource;
@@ -219,7 +219,7 @@ public final class SystemClaimTooltip
             VANILLA_CLAIM_DECREE_READER,
             claimReaderSource,
             ClaimScoreRowResolver::resolveMarketRows,
-            NexerelinAlliances::resolveGrouping,
+            NexerelinAlliances::resolveFactionAlliancesIn,
             NexerelinContestWording::resolveWording);
     }
 

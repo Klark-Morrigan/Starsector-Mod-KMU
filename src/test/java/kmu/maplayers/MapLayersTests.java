@@ -3,6 +3,7 @@ package kmu.maplayers;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
@@ -358,7 +359,7 @@ final class MapLayersTests {
 
                 MapLayers.registerAll();
 
-                assertThat(FactionAllianceRegistry.readAlliances())
+                assertThat(FactionAllianceRegistry.readAlliances(mock(SectorAPI.class)))
                     .isEqualTo(FactionAlliances.NONE);
             }
         }

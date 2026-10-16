@@ -15,7 +15,6 @@ import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.action.KmuConditionPickerActionHandler;
 import kmu.conditions.ui.picker.action.KmuConditionPickerFeedback;
 import kmu.conditions.ui.picker.action.KmuConditionPickerFeedbackSink;
-import kmu.conditions.ui.picker.action.StarsectorConditionPickerFeedbackSink;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.render.KmuConditionIconGrid;
 import kmu.conditions.ui.picker.render.KmuConditionPickerContainer;
@@ -51,16 +50,11 @@ public final class KmuConditionPickerDialogDelegate
     private TooltipMakerAPI gridBody;
     private KmuConditionPickerRenderResult renderResult;
 
-    public KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler actionHandler) {
-        this(actionHandler, new StarsectorConditionPickerFeedbackSink(), DEFAULT_WIDTH, DEFAULT_HEIGHT);
-    }
-
     public KmuConditionPickerDialogDelegate(
             KmuConditionPickerActionHandler actionHandler,
-            float width,
-            float height) {
+            KmuConditionPickerFeedbackSink feedbackSink) {
 
-        this(actionHandler, new StarsectorConditionPickerFeedbackSink(), width, height);
+        this(actionHandler, feedbackSink, DEFAULT_WIDTH, DEFAULT_HEIGHT);
     }
 
     public KmuConditionPickerDialogDelegate(

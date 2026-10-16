@@ -1,6 +1,7 @@
 package kmu.conditions.ui.picker.action;
 
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 
@@ -13,17 +14,21 @@ public final class StarsectorConditionPickerFeedbackSink
 
     private static final Logger LOG = Global.getLogger(StarsectorConditionPickerFeedbackSink.class);
 
+    private final SectorAPI sector;
+
+    /**
+     * @param sector the sector whose campaign message list a report is posted to
+     */
+    public StarsectorConditionPickerFeedbackSink(SectorAPI sector) {
+        this.sector = Objects.requireNonNull(sector, "sector");
+    }
+
     @Override
     public void report(KmuConditionPickerFeedback feedback) {
 
         Objects.requireNonNull(feedback, "feedback");
 
         try {
-
-            var sector = Global.getSector();
-            if (sector == null) {
-                return;
-            }
 
             var campaignUI = sector.getCampaignUI();
             if (campaignUI == null) {

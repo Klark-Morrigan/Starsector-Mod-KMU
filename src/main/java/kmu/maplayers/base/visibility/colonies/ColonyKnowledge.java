@@ -122,7 +122,7 @@ public final class ColonyKnowledge
         return new ColonyKnowledge(
             rule,
             SectorColonySightings.readSightings(sector),
-            FactionAllianceRegistry.readAlliances());
+            FactionAllianceRegistry.readAlliances(sector));
     }
 
     /**
@@ -139,15 +139,16 @@ public final class ColonyKnowledge
      * behalf, so recording one here would write down the very announcement the rule declines to
      * credit.
      *
+     * @param sector the sector the observer stands in, whose alliances are read
      * @return knowledge classifying colonies and answering the gates, under the fog and nothing
      *         else
      */
-    public static ColonyKnowledge observingUnderTheFog() {
+    public static ColonyKnowledge observingUnderTheFog(SectorAPI sector) {
 
         return new ColonyKnowledge(
             ColonyVisibility.BASE_FOG,
             ColonySightings.NONE,
-            FactionAllianceRegistry.readAlliances());
+            FactionAllianceRegistry.readAlliances(sector));
     }
 
     /**

@@ -246,7 +246,7 @@ final class PoliticalMapPollWalkIntegrationTests {
 
         var foldCount = new AtomicInteger();
 
-        FactionAllianceRegistry.registerAllianceSource(() -> {
+        FactionAllianceRegistry.registerAllianceSource(askedSector -> {
             foldCount.incrementAndGet();
             return FactionAlliances.NONE;
         });
