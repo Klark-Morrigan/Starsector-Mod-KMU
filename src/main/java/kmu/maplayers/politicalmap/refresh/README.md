@@ -39,7 +39,7 @@ It reads one `PoliticalMapSectorSnapshot` per poll and routes each axis on its o
 | which systems are drawn | one scalar fingerprint | a whole-map geometry rebuild, the partition depending on every site |
 | who holds each system | a holder map, diffed against the last poll | the changed systems marked politics-stale, as a listener marks them |
 | which systems move | `MovingSystems`' moving set | a geometry rebuild when a system starts or stops moving |
-| who is allied | the alliance fingerprint | the alliance signal ([below](#the-alliance-signal)) |
+| who is allied | the alliance records, compared with the last poll's | the alliance signal ([below](#the-alliance-signal)) |
 
 The visibility,
 holder and alliance baselines live on the source,
