@@ -245,7 +245,8 @@ how its declaration becomes a ranking -
 the chosen metric first,
 the rest of the chain behind it,
 then the name and the bloc ID -
-is `OwnerSortModeComposer`.
+is KMLib's `ListSortComparators`,
+which `OwnerSortModeComposer` hands each metric read off the bloc's stats.
 So the numbers stay one layer's while the shape of the ordering,
 and the tail that keeps a fully-level pair from reshuffling,
 are the same under every view.

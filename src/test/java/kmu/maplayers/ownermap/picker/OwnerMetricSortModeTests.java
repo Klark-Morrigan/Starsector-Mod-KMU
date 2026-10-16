@@ -24,7 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * rather than the vocabulary.
  *
  * <p>How a ranking is then laid out - the chain behind the primary key, the flip, the name and by-ID
- * tail - is {@link OwnerSortModeComposer}'s and is pinned in its own suite. The two real vocabularies
+ * tail - is KMLib's {@code ListSortComparators}, reached through {@link OwnerSortModeComposer}, and is
+ * pinned in KMLib's own suite. The two real vocabularies
  * keep their own cases, which is what shows they are declared through this.
  *
  * <p>No case reads the drawn label: the lookup goes through the live settings, which the test JVM has
