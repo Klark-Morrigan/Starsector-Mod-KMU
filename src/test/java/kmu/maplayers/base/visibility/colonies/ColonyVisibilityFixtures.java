@@ -1,5 +1,6 @@
 package kmu.maplayers.base.visibility.colonies;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import java.util.Set;
@@ -48,7 +49,7 @@ public final class ColonyVisibilityFixtures {
      * @return the fog, against an empty register
      */
     public static ColonyKnowledge buildKnowledgeUnderTheFog() {
-        return new ColonyKnowledge(ColonyVisibility.BASE_FOG, ColonySightings.NONE);
+        return new ColonyKnowledge(ColonyVisibility.BASE_FOG, ColonySightings.NONE, FactionAlliances.NONE);
     }
 
     /**
@@ -57,6 +58,6 @@ public final class ColonyVisibilityFixtures {
      * @return the reveal, against an empty register
      */
     public static ColonyKnowledge buildKnowledgeUnderTheReveal() {
-        return new ColonyKnowledge(UNDER_THE_REVEAL, ColonySightings.NONE);
+        return new ColonyKnowledge(UNDER_THE_REVEAL, ColonySightings.NONE, FactionAlliances.NONE);
     }
 }
