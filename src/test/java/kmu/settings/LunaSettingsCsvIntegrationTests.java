@@ -241,11 +241,13 @@ final class LunaSettingsCsvIntegrationTests {
     private static final Set<String> NUMERIC_FIELD_TYPES = Set.of(DOUBLE_FIELD_TYPE, INT_FIELD_TYPE);
 
     // Strings that carry the mod prefix without being settings fields, and so are held against no row.
-    // Every one is registered with the game rather than with LunaLib - a render surface's terrain ID,
-    // or a tag another mod hangs on its own content - and they share the prefix because they are
-    // KMU's, not because they are settings. Listed one by one so a genuine field ID cannot join them
-    // by accident.
+    // Every one is registered with the game or another mod rather than with LunaLib - a render
+    // surface's terrain ID, a tag another mod hangs on its own content, or a console command's name -
+    // and they share the prefix because they are KMU's, not because they are settings. Listed one by
+    // one so a genuine field ID cannot join them by accident.
     private static final Set<String> NON_SETTINGS_PREFIXED_IDS = Set.of(
+            "kmu_mcm_open",
+            "kmu_profiling",
             "kmu_sector_map_layer_terrain",
             "kmu_sector_map_layer_starscape_terrain",
             "kmu_sector_map_layer_above_starscape_nebulae_terrain",
