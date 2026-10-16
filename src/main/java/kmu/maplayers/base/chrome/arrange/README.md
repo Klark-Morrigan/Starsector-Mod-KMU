@@ -23,24 +23,33 @@ and the [mod README](../../../../../../../../README.md) for project context.
 
 ## How the package divides
 
-The seven that do the work,
+The five that do the work,
 split along one line:
 what needs a running game,
 and what does not.
-The package holds three more -
-the row,
-the action and the claim rule -
+The package holds two more -
+the row
+and the action -
 each named below where what it carries is the subject.
 
 | Type | Owns |
 | --- | --- |
 | `MapLayerArrangementDialog` | what is being arranged, when it may start, what ends it, and asking the layers to follow the bar it left |
-| `ArrangementDialogPanel` | the surface - the panel in the core UI, its claim, its paint, its lifetime |
-| `ArrangementDialogFade` | whether the dialog holds the screen, and how far onto it the box is painted |
 | `MapLayerArrangementEditor` | the rows, the three things a press can do to one, and when it refuses |
 | `MapLayerArrangementDialogBody` | the furniture around the column, and the two areas no widget paints |
 | `ArrangementRowWidgets` | one row's name and its three controls |
 | `ArrangementBoxLayout` | every measurement, and the positions derived from them |
+
+The surface the dialog stands on is KMLib's `ModalPanel` -
+the panel in the core UI,
+its claim,
+its paint
+and its lifetime.
+The dialog hands it four things it decides for itself:
+the reporter a core UI that will not take the panel is filed through,
+the map-tab read that says the screen is still there,
+the pace of the game's own prompts,
+and Escape as the one key that closes it.
 
 The reasoning behind each sits in its own class Javadoc;
 what follows is only what none of them can say alone.
@@ -53,7 +62,7 @@ Neither reaches into the other:
 the panel is handed a builder when the widgets need replacing,
 and reports back the two things it cannot rule on -
 a press on the way out,
-and a screen gone out from under it -
+and the panel coming off the screen -
 because whether either ends the arrangement is a question about an arrangement rather than about a surface.
 
 The same line settles where an arrangement reaches the layers themselves.
@@ -122,11 +131,13 @@ Anything left inside one can be checked only by opening the dialog and clicking,
 so the package is arranged to leave as little there as possible.
 Four things are pulled out of it:
 
-- **`ArrangementDialogEventResponse`** is the claim rule -
+- **`ModalPanel`'s claim rule**,
+  inside KMLib -
   including that a dismissed dialog still on screen claims nothing -
   so the dialog's whole modality is a function of one event rather than a branch inside a render hook.
   See [what the claim covers](#the-claim-is-the-whole-screen).
-- **`ArrangementDialogFade`** is the clock,
+- **`ModalPanel`'s clock**,
+  likewise,
   so that raised moves on the press and the paint does not is a fact about two fields
   rather than something watched for on screen.
 - **`MapLayerArrangementEditor.applyRowAction`** is the mapping from a press to what it does.

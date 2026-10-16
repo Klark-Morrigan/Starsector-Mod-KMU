@@ -9,6 +9,7 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmlib.starsector.ui.layout.VanillaPositions;
+import kmlib.starsector.ui.modal.ModalPanelBody;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmlib.starsector.ui.render.gl.UiFill;
 import kmlib.starsector.ui.screen.VanillaScreen;
@@ -24,7 +25,7 @@ import java.util.function.BiConsumer;
  * around them - with the dim over the screen and the box's own surface painted beneath, since the
  * game publishes a rectangle component that strokes and none that fills.
  *
- * <p>Apart from the dialog because the two change for different reasons. What the dialog is - when
+ * <p>Kept apart from the dialog, because the two change for different reasons. What the dialog is - when
  * it stands up, what it claims, when it comes down - is a question about a screen; what stands in
  * the box is a question about a layout. One class carrying a lifecycle and a dozen measurements could
  * not be read a half at a time.
@@ -41,7 +42,8 @@ import java.util.function.BiConsumer;
  * <p>The surface every element stands on is one painted rectangle rather than a fill per element,
  * which would leave the gaps between them showing the map through.
  */
-final class MapLayerArrangementDialogBody {
+final class MapLayerArrangementDialogBody
+        implements ModalPanelBody {
 
     // How dark the backdrop stands the screen down to.
     private static final float BACKDROP_ALPHA = 0.7f;
@@ -94,7 +96,8 @@ final class MapLayerArrangementDialogBody {
      *
      * @param dialogPanel the panel it was built into
      */
-    void removeFromPanel(CustomPanelAPI dialogPanel) {
+    @Override
+    public void removeFromPanel(CustomPanelAPI dialogPanel) {
 
         dialogPanel.removeComponent(boxPanel);
     }
@@ -111,7 +114,8 @@ final class MapLayerArrangementDialogBody {
      * @param alphaMult how far through its own fade the panel stands, which both fills honour so the
      *                  dialog arrives and leaves as one piece
      */
-    void renderFills(float alphaMult) {
+    @Override
+    public void renderFills(float alphaMult) {
 
         UiFill.renderQuad(
             VanillaScreen.resolveScreenBox(),

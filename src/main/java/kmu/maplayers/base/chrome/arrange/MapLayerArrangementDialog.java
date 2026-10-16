@@ -1,14 +1,17 @@
 package kmu.maplayers.base.chrome.arrange;
 
 import kmlib.starsector.ui.coreui.OverlayPresence;
+import kmlib.starsector.ui.map.probes.ShownMapTab;
+import kmlib.starsector.ui.modal.ModalPanel;
 
+import kmu.maplayers.base.compatibility.MapLayerGameReach;
 import kmu.maplayers.base.layer.LiveMapLayerArrangement;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerStandings;
 
 /**
  * The dialog the player arranges the layer bar in: what is being arranged, when it may be started,
- * and what ends it. The surface it stands on is {@link ArrangementDialogPanel}'s, what the controls in
+ * and what ends it. The surface it stands on is KMLib's {@link ModalPanel}, what the controls in
  * it do is {@link MapLayerArrangementEditor}'s, and what it looks like is
  * {@link MapLayerArrangementDialogBody}'s.
  *
@@ -41,9 +44,17 @@ public final class MapLayerArrangementDialog {
     public static final MapLayerArrangementDialog INSTANCE = new MapLayerArrangementDialog();
 
     // The surface this stands on, told what to do and reporting back the two things it cannot answer
-    // for: a press on the way out, and a screen gone out from under it.
-    private final ArrangementDialogPanel panel =
-        new ArrangementDialogPanel(this::closeDialog, this::abandonDialog);
+    // for: a press on the way out, and the panel coming off the screen. The map-tab read fails closed,
+    // so a tree that can no longer be walked takes the dialog down too.
+    //
+    // At the pace of the game's own prompts, so two dialogs over one screen move together.
+    private final ModalPanel panel = new ModalPanel(
+        MapLayerGameReach.ARRANGE_DIALOG.getReporter(),
+        ShownMapTab::isMapTabShowing,
+        ModalPanel.GAME_PROMPT_DURATIONS,
+        ModalPanel.CLOSED_BY_ESCAPE,
+        this::closeDialog,
+        this::abandonDialog);
 
     // What the player is arranging, or null while the dialog is down.
     private MapLayerArrangementEditor editor;
@@ -111,8 +122,8 @@ public final class MapLayerArrangementDialog {
         return panel.resolvePanelPresence();
     }
 
-    // The screen the dialog stood over has gone, taking the panel with it. Nothing to dismiss and
-    // nothing to fade - only the arrangement to let go of.
+    // The panel is off the screen. After a close the arrangement is already dropped; after the screen
+    // under it went, there is nothing to dismiss and nothing to fade - only the arrangement to let go of.
     private void abandonDialog() {
         editor = null;
     }
