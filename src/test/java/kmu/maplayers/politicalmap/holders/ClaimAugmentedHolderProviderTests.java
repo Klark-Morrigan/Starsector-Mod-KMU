@@ -18,6 +18,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.claims.SectorClaims;
+import kmu.maplayers.politicalmap.dominance.SectorPolitics;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,35 @@ final class ClaimAugmentedHolderProviderTests {
 
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
+
+    @Nested
+    class CreateReadingThrough {
+
+        @Test
+        void readsItsClaimsThroughTheSourceItIsHanded() {
+            // The view hands its one source down, so the fills read claims through the binding its
+            // bands read through.
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var openedOver = new ArrayList<SectorPassIndex>();
+
+            var provider = ClaimAugmentedHolderProvider.createReadingThrough((knownColonyReader, sectorIndex) -> {
+                openedOver.add(sectorIndex);
+                return mock(ClaimReader.class);
+            });
+
+            try (var sectorPoliticsMock = mockStatic(SectorPolitics.class)) {
+
+                sectorPoliticsMock
+                    .when(() -> SectorPolitics.resolveDominantHolderBySystemKey(pass))
+                    .thenReturn(Map.of());
+
+                provider.resolveHolder(pass, null);
+            }
+
+            assertThat(openedOver)
+                .containsExactly(pass.sectorIndex());
+        }
+    }
 
     @Nested
     class ResolveHolder {

@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.claims.tooltip;
 import kmlib.starsector.factions.relation.FactionSetFriendliness;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
@@ -70,7 +69,7 @@ record ListedClaimContest(
             breakdown,
             colonyVisibility,
             breakdown
-                .scores()
+                .standings()
                 .stream()
                 .filter(standing -> hasListedColony(standing, isListingUndiscoveredMarkets))
                 .toList(),
@@ -89,6 +88,7 @@ record ListedClaimContest(
      * one whose every colony there is concealed or unlisted and unseen.
      */
     Optional<FactionClaimStanding> findStanding(String factionId) {
+
         return listedStandings
             .stream()
             .filter(standing -> standing.factionId().equals(factionId))
@@ -116,6 +116,7 @@ record ListedClaimContest(
      * states.
      */
     List<FactionClaimStanding> selectFriendlyStandings() {
+
         return selectStandingsOn(ContestSide.RIVAL)
             .stream()
             .filter(this::isFriendlyWithClaimHolder)
@@ -156,12 +157,10 @@ record ListedClaimContest(
     // the empty side - so the block never draws over a system without a holder its heading names.
     private boolean isFriendlyWithClaimHolder(FactionClaimStanding standing) {
 
-        var claimantFactionId = breakdown.claimantFactionId();
-
         return friendliness.areSetsFriendly(
             Set.of(standing.factionId()),
-            KmlibStrings.hasText(claimantFactionId)
-                ? Set.of(claimantFactionId)
+            breakdown.hasClaimant()
+                ? Set.of(breakdown.claimantFactionId())
                 : Set.of());
     }
 
@@ -169,6 +168,7 @@ record ListedClaimContest(
     // the claim is drawn from. Dropped once here rather than per block, so no routing rule added
     // later can readmit the claimant to a block that is by definition about somebody else.
     private List<FactionClaimStanding> selectListedRivals() {
+
         return listedStandings
             .stream()
             .filter(standing -> !standing.factionId().equals(breakdown.claimantFactionId()))
@@ -183,6 +183,7 @@ record ListedClaimContest(
     // A faction is its own bloc on this layer, the fills being pinned to the claiming faction,
     // so the faction ID is the bloc ID the alliance set is read against.
     private List<FactionClaimStanding> selectStandingsOn(ContestSide side) {
+
         return new ContestSides(breakdown.claimantFactionId(), affiliation)
             .selectSide(side, selectListedRivals(), FactionClaimStanding::factionId);
     }

@@ -2,6 +2,9 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
+import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
+
 import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
@@ -40,6 +43,18 @@ public interface DominancePaintedView
         extends PoliticalHolderView {
 
     /**
+     * Where these views read the claims that extend their held territory, for both the fills and
+     * the bands - so a claimed cell's band ranks the contest the cell was painted by.
+     *
+     * <p>Stated once between the two views the contest paints, which read claims alike.
+     *
+     * @return the source every claim of the view is read through
+     */
+    default ClaimBreakdownReaderSource resolveClaimReaderSource() {
+        return VanillaClaimBreakdownReader::new;
+    }
+
+    /**
      * The source the contest-painted views resolve their per-system holder from: each inhabited
      * system's dominant holder, extended with each system a bloc claims but does not hold, drawn
      * as an unfilled part of that bloc's territory.
@@ -53,7 +68,7 @@ public interface DominancePaintedView
      */
     @Override
     default HolderProvider resolveHolderProvider() {
-        return ClaimAugmentedHolderProvider.INSTANCE;
+        return ClaimAugmentedHolderProvider.createReadingThrough(resolveClaimReaderSource());
     }
 
     /**
@@ -85,7 +100,7 @@ public interface DominancePaintedView
      */
     @Override
     default SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs) {
-        return HeldOrClaimedSystemRibbonPlanner.createForPass(inputs);
+        return HeldOrClaimedSystemRibbonPlanner.createForPass(inputs, resolveClaimReaderSource());
     }
 
     /**

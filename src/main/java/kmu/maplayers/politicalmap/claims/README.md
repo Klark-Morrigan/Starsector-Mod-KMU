@@ -42,18 +42,28 @@ so one is opened over the pass being resolved and discarded with it.
 A reader kept for the life of the game would go on answering off a sector that has since moved on,
 and would walk every system again for colonies the pass has already read.
 
-`PassClaimReaders.openClaimReaderOver` opens one,
+`PassClaimReaders` opens one,
 so the walk and the pass's own `ColonyKnowledge` travel together,
 and the claim half is always shown the sector the held half was.
+No call site assembles the pair itself.
+A hover box has no holder pass,
+so `PassClaimReaders` also opens a reader over a walk and the colony rule sampled beside it.
 The reader is handed that knowledge through KMLib's `KnownColonyReader` port
 rather than naming the rule itself:
 what may be told of a colony is the map's judgement.
+
+Each view holds one KMLib `ClaimBreakdownReaderSource`,
+a `ClaimReaderSource` whose readers also explain the claims they read.
+The view hands it to its holder provider, its band planner and its hover box,
+so the fills, the bands and the box read claims through one binding.
+`ClaimsView` holds its own;
+`DominancePaintedView` states one for the Factions and Alliances views.
 
 Its vanilla binding mirrors `Misc.getClaimingFaction` step for step rather than calling it,
 because one computation has to answer *who* claims a system for the fills
 and *why* for [the claims box](tooltip/README.md).
 Sharing it is what stops the fill and the box over it naming different claimants -
-on the memory-flag override,
+on the memory-flag decree,
 and on the iteration-order tie the mechanic settles equal scores by.
 
 ## Wider than vanilla scores
@@ -80,6 +90,8 @@ so it can neither become a claimant nor move the score of one.
 Vanilla resolves a claimant two ways:
 an explicit `$claimingFaction` memory flag,
 or the top territorial market in the system.
+Any flag set settles the system before a market is weighed,
+so a flag naming no faction the sector knows leaves the system unclaimed.
 The map shows exactly what the mechanic resolves and invents nothing.
 A marketless system (unpopulated or decivilised) only resolves through the flag,
 which is rare in practice,

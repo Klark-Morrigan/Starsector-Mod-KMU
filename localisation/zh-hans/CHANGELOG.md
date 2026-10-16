@@ -328,6 +328,10 @@
 | `PoliticalMapHoverGates` | 每个图层的 `kmu.maplayers.base.hover.MapLayerHoverGates`，以及用于所有者地图开关的 `SharedOwnerMapHoverGates`。`MapLayerHoverGates.isCursorReadNeeded()` 为默认方法。 |
 | 实现 Nexerelin 的 `InvasionListener` 的 `PoliticalMapMarketTransferListener` | 实现 KMU 自身的 `kmu.starsector.listeners.MarketTransferListener`，会收到 Nexerelin 在其星域移交的每个殖民地的通知 |
 | `HolderPass.openClaimReaderThrough(ClaimReaderSource)` | 政治地图的 `PassClaimReaders.openClaimReaderOver(HolderPass, ClaimReaderSource)` |
+| 无 | `PassClaimReaders.openBreakdownReaderOver(HolderPass, ClaimBreakdownReaderSource)` 和 `openBreakdownReaderOver(SectorPassIndex, ColonyVisibility, ClaimBreakdownReaderSource)` |
+| `ClaimsHolderProvider.INSTANCE`、`ClaimAugmentedHolderProvider.INSTANCE` 和 `SystemClaimTooltip.INSTANCE` | 由每个视图根据其读取宣称所用的唯一一个 KMLib `ClaimBreakdownReaderSource` 构建：`new ClaimsHolderProvider(ClaimReaderSource)`、`ClaimAugmentedHolderProvider.createReadingThrough(ClaimReaderSource)` 和 `SystemClaimTooltip.createReadingThrough(ClaimBreakdownReaderSource)`。`DominancePaintedView.resolveClaimReaderSource()` 给出主导视图的来源。 |
+| `ClaimedSystemRibbonPlanner.createForPass(RibbonPlanInputs)` 和 `HeldOrClaimedSystemRibbonPlanner.createForPass(RibbonPlanInputs)` | 接受视图的 `ClaimBreakdownReaderSource` |
+| `PoliticalMapCellTooltip.VANILLA_CLAIM_BREAKDOWN_READER` 及其 `claimBreakdownReader` | `VANILLA_CLAIM_DECREE_READER` 和 `claimDecreeReader`，即 KMLib 的 `ClaimDecreeReader`；`SystemDominationTooltip` 的构造函数接受它 |
 | `ColonyQualifierFacts.isHoldingTheClaim` | `leadingFinding`：置于其他结论之前、已措辞完毕的结论，或为 null。`SystemColonyReading.readQualifierFacts(String, boolean, boolean, String)` 和 `readQualifierFacts(String, ColonyKind, boolean, boolean, String)` 负责组装它。 |
 | `FactionTooltipLine.buildCountedFactionLine(SectorAPI, String, int)` | 接受该势力是否参与权重计算 |
 | `SystemStandingsTooltip` 和 `SystemClaimContestTooltip` | 并入 `SystemDominationTooltip` 和 `SystemClaimTooltip` |

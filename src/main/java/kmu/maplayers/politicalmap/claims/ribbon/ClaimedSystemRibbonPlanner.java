@@ -3,12 +3,13 @@ package kmu.maplayers.politicalmap.claims.ribbon;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 
 import java.util.Optional;
 
@@ -31,7 +32,8 @@ import java.util.Optional;
  * the reader is built over that walk rather than one of its own: the contest and the count then
  * read one reading of the system instead of two.
  */
-public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
+public final class ClaimedSystemRibbonPlanner
+        implements SystemRibbonPlanner {
 
     private final ClaimBreakdownReader breakdownReader;
     private final RibbonPlanInputs inputs;
@@ -49,18 +51,20 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
     }
 
     /**
-     * The planner a view resolves its claimed bands through, reading vanilla's own claim contest
-     * over the bake's single walk of each system.
+     * The planner a view resolves its claimed bands through, reading the claim contest over the
+     * bake's single walk of each system.
      *
-     * @param inputs everything one bake's bands are settled from, sampled once by the bake
-     * @return the planner ranking claimed cells by the vanilla contest
+     * @param inputs            everything one bake's bands are settled from, sampled once by the bake
+     * @param claimReaderSource the source the view reads every claim through, so a band ranks the
+     *                          contest its cell was painted by
+     * @return the planner ranking claimed cells by that contest
      */
-    public static ClaimedSystemRibbonPlanner createForPass(RibbonPlanInputs inputs) {
+    public static ClaimedSystemRibbonPlanner createForPass(
+            RibbonPlanInputs inputs,
+            ClaimBreakdownReaderSource claimReaderSource) {
 
         return new ClaimedSystemRibbonPlanner(
-            new VanillaClaimBreakdownReader(
-                inputs.pass().colonyKnowledge(),
-                inputs.pass().sectorIndex()),
+            PassClaimReaders.openBreakdownReaderOver(inputs.pass(), claimReaderSource),
             inputs);
     }
 

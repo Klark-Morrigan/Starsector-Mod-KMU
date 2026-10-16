@@ -110,7 +110,6 @@ final class ClaimScoreRowResolver {
         if (standing instanceof WeighedClaimStanding weighedStanding) {
             return resolveWeighedRows(weighedStanding, listedMarkets, reading);
         }
-
         return resolvePresenceOnlyRows(listedMarkets, reading);
     }
 
@@ -127,9 +126,7 @@ final class ClaimScoreRowResolver {
         // Whether this faction is the one the contest handed the system to, and so whose strongest
         // market is the one that took it. A decree settles the system before a single market is
         // weighed, so under one no market is the holder however the scores fell.
-        var isHoldingTheClaim = !breakdown.isSettledByDecree()
-            && standing.factionId().equals(breakdown.claimantFactionId());
-
+        var isHoldingTheClaim = breakdown.isClaimedByScore(standing.factionId());
         var entries = new ArrayList<CellTooltipEntry>();
 
         for (var market : listedMarkets) {
@@ -154,7 +151,9 @@ final class ClaimScoreRowResolver {
         // ahead of a shortened list says only that the faction holds more than is shown - which every
         // listed market's own arithmetic says already, its score carrying a presence its terms do not.
         if (isEveryListedMarketCounted(listedMarkets)) {
-            resolveSiblingEntry(standing).ifPresent(entries::add);
+
+            resolveSiblingEntry(standing)
+                .ifPresent(entries::add);
         }
 
         return List.copyOf(entries);
@@ -206,7 +205,6 @@ final class ClaimScoreRowResolver {
     private static Optional<CellTooltipEntry> resolveSiblingEntry(WeighedClaimStanding standing) {
 
         var siblingMarketCount = standing.standingMarket().siblingMarketCount();
-
         if (siblingMarketCount <= NO_SIBLING_MARKETS) {
             return Optional.empty();
         }

@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.systems.claims.ClaimReaderSource;
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -57,14 +57,24 @@ public final class ClaimsView
     // a reader for the same reason the claim-reading holder providers hold it that way: a reader
     // answers off the colonies behind it, so one is opened over the read being made and discarded
     // with it. This view outlives every one of them.
-    private final ClaimReaderSource claimReaderSource;
+    //
+    // The one source behind the fills, the bands, the box and the picker, so no two of them can
+    // read claims through different bindings.
+    private final ClaimBreakdownReaderSource claimReaderSource;
+
+    // Both stateless past the source, so this view builds each once.
+    private final ClaimsHolderProvider holderProvider;
+    private final SystemClaimTooltip hoverTooltip;
 
     private ClaimsView() {
         this(VanillaClaimBreakdownReader::new);
     }
 
-    ClaimsView(ClaimReaderSource claimReaderSource) {
+    ClaimsView(ClaimBreakdownReaderSource claimReaderSource) {
+
         this.claimReaderSource = claimReaderSource;
+        this.holderProvider = new ClaimsHolderProvider(claimReaderSource);
+        this.hoverTooltip = SystemClaimTooltip.createReadingThrough(claimReaderSource);
     }
 
     @Override
@@ -99,7 +109,7 @@ public final class ClaimsView
     public HolderProvider resolveHolderProvider() {
         // Holder is the claim mechanic itself: every claimed system painted solid in its
         // claimant's colours, rather than the held-plus-claims default the faction view resolves.
-        return ClaimsHolderProvider.INSTANCE;
+        return holderProvider;
     }
 
     @Override
@@ -116,7 +126,7 @@ public final class ClaimsView
         // ranked by the contest - where the dominance views' composition would rank a claimed
         // system its claimant does not hold by the weights of whoever does, and lead the band on a
         // bloc the cell is not painted for.
-        return ClaimedSystemRibbonPlanner.createForPass(inputs);
+        return ClaimedSystemRibbonPlanner.createForPass(inputs, claimReaderSource);
     }
 
     @Override
@@ -124,7 +134,7 @@ public final class ClaimsView
         // The claim breakdown, not the domination one the other two views inject: this layer paints by
         // the claim mechanic, so what a hover has to explain is the claim contest rather than the
         // market standings - the same read the fills are resolved through.
-        return Optional.of(SystemClaimTooltip.INSTANCE);
+        return Optional.of(hoverTooltip);
     }
 
     /**
@@ -156,19 +166,23 @@ public final class ClaimsView
             SectorAPI sector,
             ColonyReadRules colonyReadRules) {
 
-        return readPickerUnderOneGrouping(sector, grouping -> {
+        return readPickerUnderOneGrouping(
+            sector,
+            grouping -> {
 
-            // The layer-generic pass: this layer is painted by claims, and a claim count and a
-            // colony size are read without weighing anything.
-            var pass = HolderPass.createOver(sector, colonyReadRules, grouping);
+                // The layer-generic pass: this layer is painted by claims, and a claim count and a
+                // colony size are read without weighing anything.
+                var pass = HolderPass.createOver(sector, colonyReadRules, grouping);
 
-            // The claim half reads through the pass's own colony walk, so the two metrics cost one
-            // traversal of each system between them rather than one apiece - and are answered off
-            // the same reading of the sector, which is what keeps a claim count and a colony size
-            // from describing a system at two different moments.
-            return ClaimStatsAggregator.aggregateClaimStats(
-                pass,
-                PassClaimReaders.openClaimReaderOver(pass, claimReaderSource));
-        }, ClaimSortModes.MODES);
+                // The claim half reads through the pass's own colony walk, so the two metrics cost one
+                // traversal of each system between them rather than one apiece - and are answered off
+                // the same reading of the sector, which is what keeps a claim count and a colony size
+                // from describing a system at two different moments.
+                return ClaimStatsAggregator.aggregateClaimStats(
+                    pass,
+                    PassClaimReaders.openClaimReaderOver(pass, claimReaderSource));
+
+            },
+            ClaimSortModes.MODES);
     }
 }

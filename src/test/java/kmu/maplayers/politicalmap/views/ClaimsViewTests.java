@@ -5,7 +5,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.SectorPassIndex;
-import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
@@ -48,6 +49,7 @@ import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -106,7 +108,25 @@ final class ClaimsViewTests {
             // Holder is the claim mechanic itself, so the view supplies the claims-only provider
             // rather than inheriting the held-plus-claims default.
             assertThat(ClaimsView.INSTANCE.resolveHolderProvider())
-                .isSameAs(ClaimsHolderProvider.INSTANCE);
+                .isInstanceOf(ClaimsHolderProvider.class);
+        }
+
+        @Test
+        void paintsItsFillsThroughTheViewsSource() {
+            // The fills read claims through the one source the bands and the box read through, so
+            // the three cannot name different claimants.
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var openedOver = new ArrayList<SectorPassIndex>();
+
+            var view = new ClaimsView((knownColonyReader, sectorIndex) -> {
+                openedOver.add(sectorIndex);
+                return mock(ClaimBreakdownReader.class);
+            });
+
+            view.resolveHolderProvider().resolveHolder(pass, null);
+
+            assertThat(openedOver)
+                .containsExactly(pass.sectorIndex());
         }
     }
 
@@ -119,9 +139,10 @@ final class ClaimsViewTests {
             // claim of this view is read through, rather than by the market contest.
             var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
             var openedOver = new ArrayList<SectorPassIndex>();
+
             var view = new ClaimsView((knownColonyReader, sectorIndex) -> {
                 openedOver.add(sectorIndex);
-                return mock(ClaimReader.class);
+                return mock(ClaimBreakdownReader.class);
             });
 
             var resolve = view.resolveSystemHolderResolveSource().openResolveOver(pass);
@@ -149,13 +170,20 @@ final class ClaimsViewTests {
 
             var plannerMock = mock(ClaimedSystemRibbonPlanner.class);
 
+            ClaimBreakdownReaderSource claimReaderSource = (knownColonyReader, sectorIndex) ->
+                mock(ClaimBreakdownReader.class);
+
+            var view = new ClaimsView(claimReaderSource);
+
             try (var plannerFactoryMock = mockStatic(ClaimedSystemRibbonPlanner.class)) {
 
+                // Matched on the view's own source, so a planner opened through any other binding
+                // answers null and fails the case.
                 plannerFactoryMock
-                    .when(() -> ClaimedSystemRibbonPlanner.createForPass(inputs))
+                    .when(() -> ClaimedSystemRibbonPlanner.createForPass(same(inputs), same(claimReaderSource)))
                     .thenReturn(plannerMock);
 
-                assertThat(ClaimsView.INSTANCE.resolveRibbonPlanner(inputs))
+                assertThat(view.resolveRibbonPlanner(inputs))
                     .isSameAs(plannerMock);
             }
         }
@@ -197,7 +225,28 @@ final class ClaimsViewTests {
             // domination breakdown the other two views inject describes standings this view never
             // painted by, and would read as an account of a border it did not draw.
             assertThat(ClaimsView.INSTANCE.resolveHoverTooltip())
-                .contains(SystemClaimTooltip.INSTANCE);
+                .get()
+                .isInstanceOf(SystemClaimTooltip.class);
+        }
+
+        @Test
+        void explainsTheClaimsItReadsThroughTheViewsSource() {
+            // The box states the claim the cell under it was painted by, so it reads through the
+            // source the fills do.
+            ClaimBreakdownReaderSource claimReaderSource = (knownColonyReader, sectorIndex) ->
+                mock(ClaimBreakdownReader.class);
+
+            var tooltipMock = mock(SystemClaimTooltip.class);
+
+            try (var tooltipFactoryMock = mockStatic(SystemClaimTooltip.class)) {
+
+                tooltipFactoryMock
+                    .when(() -> SystemClaimTooltip.createReadingThrough(same(claimReaderSource)))
+                    .thenReturn(tooltipMock);
+
+                assertThat(new ClaimsView(claimReaderSource).resolveHoverTooltip())
+                    .containsSame(tooltipMock);
+            }
         }
     }
 
@@ -249,7 +298,7 @@ final class ClaimsViewTests {
             // moment. Opening the reader under a rule of its own would also let a bloc's claim count
             // be answered about colonies its market size was never shown.
             var sectorMock = mock(SectorAPI.class);
-            var claimReaderMock = mock(ClaimReader.class);
+            var claimReaderMock = mock(ClaimBreakdownReader.class);
             var openedOver = new ArrayList<SectorPassIndex>();
             var openedUnder = new ArrayList<KnownColonyReader>();
             var aggregatedPasses = new ArrayList<HolderPass>();

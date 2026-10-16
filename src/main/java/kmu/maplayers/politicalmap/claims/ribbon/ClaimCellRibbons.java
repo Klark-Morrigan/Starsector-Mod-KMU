@@ -79,9 +79,10 @@ public final class ClaimCellRibbons {
 
         var rankedBlocIds = new LinkedHashSet<String>();
 
-        for (var standing : contest.scores()) {
+        for (var standing : contest.standings()) {
             rankedBlocIds.add(grouping.resolveBlocId(standing.factionId()));
         }
+
         return new ArrayList<>(rankedBlocIds);
     }
 }

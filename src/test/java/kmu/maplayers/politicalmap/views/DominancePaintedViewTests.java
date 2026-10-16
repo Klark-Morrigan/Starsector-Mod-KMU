@@ -2,7 +2,11 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.SectorPassIndex;
+import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
+import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
@@ -50,19 +54,48 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class DominancePaintedViewTests {
 
+    // A source standing in for the view's, so a case can tell it apart from the vanilla binding.
+    private final ClaimBreakdownReaderSource claimReaderSource =
+        (knownColonyReader, sectorIndex) -> mock(ClaimBreakdownReader.class);
+
     // The interface with every default answering for real and nothing else stated, so a case reads
     // the default alone.
     private final DominancePaintedView viewMock = mock(DominancePaintedView.class, CALLS_REAL_METHODS);
 
     @Nested
+    class ResolveClaimReaderSource {
+
+        @Test
+        void opensTheVanillaClaimReader() {
+
+            assertThat(viewMock
+                    .resolveClaimReaderSource()
+                    .openReaderOver(KnownColonyReader.NOTHING_KNOWN, new SectorPassIndex(null)))
+                .isInstanceOf(VanillaClaimBreakdownReader.class);
+        }
+    }
+
+    @Nested
     class ResolveHolderProvider {
 
         @Test
-        void extendsHeldDominanceWithClaims() {
+        void extendsHeldDominanceWithTheClaimsTheViewReads() {
             // Each system's dominant holder, extended with the systems a bloc merely claims - the
-            // holding both contest-painted views resolve alike.
-            assertThat(viewMock.resolveHolderProvider())
-                .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
+            // holding both contest-painted views resolve alike, read through the view's own source.
+            var providerMock = mock(ClaimAugmentedHolderProvider.class);
+
+            doReturn(claimReaderSource)
+                .when(viewMock).resolveClaimReaderSource();
+
+            try (var providerFactoryMock = mockStatic(ClaimAugmentedHolderProvider.class)) {
+
+                providerFactoryMock
+                    .when(() -> ClaimAugmentedHolderProvider.createReadingThrough(same(claimReaderSource)))
+                    .thenReturn(providerMock);
+
+                assertThat(viewMock.resolveHolderProvider())
+                    .isSameAs(providerMock);
+            }
         }
     }
 
@@ -77,6 +110,7 @@ final class DominancePaintedViewTests {
                 new SectorPassIndex(null),
                 UNDER_THE_FOG,
                 HolderGrouping.identity());
+
             var resolveMock = mock(SystemHolderResolve.class);
 
             try (var resolveFactoryMock = mockStatic(DominanceSystemHolderResolve.class)) {
@@ -103,12 +137,18 @@ final class DominancePaintedViewTests {
                 new HolderPass(new SectorPassIndex(null), UNDER_THE_FOG, HolderGrouping.identity()),
                 OwnerAffiliation.NONE,
                 STANDARD_RULES);
+
             var plannerMock = mock(HeldOrClaimedSystemRibbonPlanner.class);
+
+            doReturn(claimReaderSource)
+                .when(viewMock).resolveClaimReaderSource();
 
             try (var plannerFactoryMock = mockStatic(HeldOrClaimedSystemRibbonPlanner.class)) {
 
+                // Matched on the view's own source, so a claimed cell's band ranks the contest the
+                // fills read.
                 plannerFactoryMock
-                    .when(() -> HeldOrClaimedSystemRibbonPlanner.createForPass(inputs))
+                    .when(() -> HeldOrClaimedSystemRibbonPlanner.createForPass(same(inputs), same(claimReaderSource)))
                     .thenReturn(plannerMock);
 
                 assertThat(viewMock.resolveRibbonPlanner(inputs))
@@ -129,7 +169,9 @@ final class DominancePaintedViewTests {
         @BeforeEach
         void stubTheViewsOwnAnswers() {
 
-            doReturn(HolderGrouping.identity()).when(viewMock).resolveGrouping();
+            doReturn(HolderGrouping.identity())
+                .when(viewMock).resolveGrouping();
+
             doReturn((Predicate<String>) blocId -> true)
                 .when(viewMock)
                 .resolveSelectableBlocGate(any());
@@ -206,6 +248,7 @@ final class DominancePaintedViewTests {
 
                 rulesMock.when(DominanceRules::readFromLunaSettings)
                     .thenReturn(ANY_RULES_MOCK);
+
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(DominanceStatsRead.EMPTY);
 

@@ -11,6 +11,7 @@ import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
+import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
 
@@ -118,9 +119,9 @@ final class ClaimPresenceReadoutIntegrationTests {
 
             // One reader for both surfaces, over the one walk of the system, exactly as a live bake
             // and the hover above it read a claim.
-            var claimBreakdownReader = new VanillaClaimBreakdownReader(
-                inputs.pass().colonyKnowledge(),
-                inputs.pass().sectorIndex());
+            var claimBreakdownReader = PassClaimReaders.openBreakdownReaderOver(
+                inputs.pass(),
+                VanillaClaimBreakdownReader::new);
 
             var band = new ClaimedSystemRibbonPlanner(claimBreakdownReader, inputs)
                 .planSystemRibbon(system);
@@ -161,9 +162,9 @@ final class ClaimPresenceReadoutIntegrationTests {
                 HolderGrouping.identity(),
                 BASE_FOG);
 
-            var claimBreakdownReader = new VanillaClaimBreakdownReader(
-                inputs.pass().colonyKnowledge(),
-                inputs.pass().sectorIndex());
+            var claimBreakdownReader = PassClaimReaders.openBreakdownReaderOver(
+                inputs.pass(),
+                VanillaClaimBreakdownReader::new);
 
             var band = new ClaimedSystemRibbonPlanner(claimBreakdownReader, inputs)
                 .planSystemRibbon(buildOnlySystem(sector));

@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.claims.tooltip;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.markets.colonies.KnownColonyReader;
+import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
@@ -36,9 +36,9 @@ import static org.mockito.Mockito.when;
  * Pins that the claims box reads the sector it was handed, all the way down to the claim mechanic
  * it opens per hover, rather than the sector the running game holds.
  *
- * <p>An integration test because the fault lived between the box and KMLib's claim reader: a reader
- * opened with no walk of its own falls back to the running game, so only the real reader under the
- * real opener can show the box handing it one.
+ * <p>An integration test because the fault lived between the box and KMLib's claim reader: the
+ * reader answers about whichever sector its walk was opened over, so only the real reader under the
+ * real source can show the box opening that walk over the sector it was handed.
  */
 final class SystemClaimTooltipIntegrationTests {
 
@@ -92,12 +92,12 @@ final class SystemClaimTooltipIntegrationTests {
         void listsTheFactionsOfTheHandedSectorWhileTheRunningGameHoldsAnother() {
             // Read off the running game, the contest would find no colony and list nobody, under a
             // banner the box's own walk calls populated.
-            // Wired as the shared instance is, bar the optional mod's gates: the decree reader that
-            // knows no colony, and the real opener the scored contest comes through.
+            // Wired as the claims view wires it, bar the optional mod's gates: the vanilla decree
+            // read, and the real source the scored contest comes through.
             var sector = buildSectorHoldingOneColony();
             var tooltip = new SystemClaimTooltip(
-                new VanillaClaimBreakdownReader(KnownColonyReader.NOTHING_KNOWN),
-                SystemClaimTooltip::openBreakdownReaderUnder,
+                StarSystems::readDecreedFactionId,
+                VanillaClaimBreakdownReader::new,
                 ClaimScoreRowResolver::resolveMarketRows,
                 HolderGrouping::identity,
                 ContestWordingFixtures.CONTESTED_WORDING);

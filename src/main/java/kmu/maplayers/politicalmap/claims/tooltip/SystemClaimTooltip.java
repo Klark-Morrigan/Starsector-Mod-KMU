@@ -5,9 +5,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
+import kmlib.starsector.systems.claims.ClaimDecreeReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
-import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
@@ -21,6 +21,7 @@ import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.maplayers.ownermap.owners.holders.factions.FactionTooltipLine;
+import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.tooltip.ColonyObservationNotes;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingSource;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
@@ -59,38 +60,17 @@ import java.util.function.BiFunction;
  * mechanic skipped before scoring and a colony the economy does not list, both at nought, where when
  * it was last seen is the only thing the account has left to add.
  *
- * <p>Stateless past the seams it is built around, so one shared instance serves the layer.
+ * <p>Stateless past the seams it is built around, so the view that injects it holds one for the layer.
  */
 public final class SystemClaimTooltip
         extends PoliticalMapCellTooltip {
-
-    /**
-     * The one shared instance, explaining vanilla claims - the same mechanic the layer's fills are
-     * resolved through, so the box and the cell under it can never name different claimants.
-     *
-     * <p>This is where the alliance set behind the allied block is bound, and the wording of the rival
-     * block beside it, both off the one mod that supplies them. Both are gates rather than branches:
-     * each answers with the plain reading wherever that mod is absent, so the box states one shape and
-     * the install decides what it comes to.
-     *
-     * <p>Deliberately not the claims view's own grouping, which pins itself to identity so the fills
-     * stay per claiming faction: that decision is about what the map paints, while the block needs the
-     * live alliance set, and reusing the view's would leave it permanently empty on the one layer that
-     * draws it.
-     */
-    public static final SystemClaimTooltip INSTANCE = new SystemClaimTooltip(
-        VANILLA_CLAIM_BREAKDOWN_READER,
-        SystemClaimTooltip::openBreakdownReaderUnder,
-        ClaimScoreRowResolver::resolveMarketRows,
-        NexerelinAlliances::resolveGrouping,
-        NexerelinContestWording::resolveWording);
 
     // Opens the reader a hover's scored contest is read through, over that hover's walk of the sector
     // and the colony rule it sampled. Opened per hover rather than held, because this box lives for
     // the whole session while the rule is a setting the player may move between two hovers - and a
     // claim breakdown reports knowledge as a flag on a market rather than by leaving the market out,
     // so a stale rule would surface silently as a name the box should have withheld.
-    private final BiFunction<SectorPassIndex, ColonyVisibility, ClaimBreakdownReader> breakdownReaderOpener;
+    private final ClaimBreakdownReaderSource claimReaderSource;
 
     // What hangs beneath each listed faction as the account of its standing, asked only where the
     // level admits an account at all.
@@ -113,22 +93,22 @@ public final class SystemClaimTooltip
 
         this(
             claimBreakdownReader,
-            (sectorIndex, colonyVisibility) -> claimBreakdownReader,
+            (knownColonyReader, sectorIndex) -> claimBreakdownReader,
             ClaimScoreRowResolver::resolveMarketRows,
             holderGroupingSource,
             contestWordingSource);
     }
 
     SystemClaimTooltip(
-            ClaimBreakdownReader claimBreakdownReader,
-            BiFunction<SectorPassIndex, ColonyVisibility, ClaimBreakdownReader> breakdownReaderOpener,
+            ClaimDecreeReader claimDecreeReader,
+            ClaimBreakdownReaderSource claimReaderSource,
             BiFunction<FactionClaimStanding, ClaimAccountReading, List<CellTooltipEntry>> accountEntriesSource,
             HolderGroupingSource holderGroupingSource,
             ContestWordingSource contestWordingSource) {
 
-        super(claimBreakdownReader, holderGroupingSource, contestWordingSource);
+        super(claimDecreeReader, holderGroupingSource, contestWordingSource);
 
-        this.breakdownReaderOpener = breakdownReaderOpener;
+        this.claimReaderSource = claimReaderSource;
         this.accountEntriesSource = accountEntriesSource;
     }
 
@@ -143,7 +123,7 @@ public final class SystemClaimTooltip
         // hover, because a walk is a snapshot of the sector and this box outlives every hover.
         var sectorIndex = new SectorPassIndex(sector);
 
-        // One read for the whole box: the claimant, the override behind it, the colony rule and
+        // One read for the whole box: the claimant, the decree behind it, the colony rule and
         // every standing the projection leaves it free to name are all taken from a single pass, so
         // no two lines can describe different states of the system.
         var contest = readListedContest(sectorIndex, system);
@@ -215,6 +195,34 @@ public final class SystemClaimTooltip
             resolveDeepestHeldLevel(contest.hasListedStanding()));
     }
 
+    /**
+     * The box a view injects, explaining the claims it reads through {@code claimReaderSource} - the
+     * source its fills are resolved through, so the box and the cell under it can never name different
+     * claimants.
+     *
+     * <p>This is where the alliance set behind the allied block is bound, and the wording of the rival
+     * block beside it, both off the one mod that supplies them. Both are gates rather than branches:
+     * each answers with the plain reading wherever that mod is absent, so the box states one shape and
+     * the install decides what it comes to.
+     *
+     * <p>Deliberately not the claims view's own grouping, which pins itself to identity so the fills
+     * stay per claiming faction: that decision is about what the map paints, while the block needs the
+     * live alliance set, and reusing the view's would leave it permanently empty on the one layer that
+     * draws it.
+     *
+     * @param claimReaderSource the source the view reads every claim through
+     * @return a box opening its reader through that source on every hover
+     */
+    public static SystemClaimTooltip createReadingThrough(ClaimBreakdownReaderSource claimReaderSource) {
+
+        return new SystemClaimTooltip(
+            VANILLA_CLAIM_DECREE_READER,
+            claimReaderSource,
+            ClaimScoreRowResolver::resolveMarketRows,
+            NexerelinAlliances::resolveGrouping,
+            NexerelinContestWording::resolveWording);
+    }
+
     @Override
     public boolean isStatingCoreClaimInBody() {
         // The claim block names the claimant and marks a decreed hold on that very line, and the
@@ -242,18 +250,6 @@ public final class SystemClaimTooltip
         // line and the key would do nothing the player could see.
         return resolveDeepestHeldLevel(readListedContest(new SectorPassIndex(sector), system)
             .hasListedStanding());
-    }
-
-    // The vanilla breakdown over one hover's walk of its sector, under the colony rule that hover
-    // sampled. Handed the walk rather than left to open none, because a reader with no index reads
-    // the running game's sector - which is not the one the box was handed whenever the two differ.
-    static ClaimBreakdownReader openBreakdownReaderUnder(
-            SectorPassIndex sectorIndex,
-            ColonyVisibility colonyVisibility) {
-
-        return new VanillaClaimBreakdownReader(
-            ColonyKnowledge.over(sectorIndex.getSector(), colonyVisibility),
-            sectorIndex);
     }
 
     // What hangs beneath one listed faction as the account of where its standing came from.
@@ -334,13 +330,21 @@ public final class SystemClaimTooltip
     // over it, so the reader and the list cannot answer under two readings of the player's settings.
     // Both relations travel with it because they are sampled together (PoliticalMapCellTooltip): every
     // block is routed against one reading of each.
+    //
+    // The reader is opened over the hover's walk rather than with none, because a reader with no
+    // index reads the running game's sector - which is not the one the box was handed whenever the
+    // two differ.
     private ListedClaimContest readListedContest(SectorPassIndex sectorIndex, StarSystemAPI system) {
 
         var colonyVisibility = readColonyVisibility();
         var blocRelations = sampleBlocRelations(sectorIndex.getSector());
+        var breakdownReader = PassClaimReaders.openBreakdownReaderOver(
+            sectorIndex,
+            colonyVisibility,
+            claimReaderSource);
 
         return ListedClaimContest.selectFrom(
-            breakdownReaderOpener.apply(sectorIndex, colonyVisibility).readBreakdown(system),
+            breakdownReader.readBreakdown(system),
             colonyVisibility,
             blocRelations.affiliation(),
             blocRelations.friendliness());
@@ -354,8 +358,7 @@ public final class SystemClaimTooltip
             HoveredClaimReading reading,
             boolean isSystemHoldingNobody) {
 
-        if (isSystemHoldingNobody
-                && !KmlibStrings.hasText(reading.contest().breakdown().claimantFactionId())) {
+        if (isSystemHoldingNobody && !reading.contest().breakdown().hasClaimant()) {
 
             return List.of();
         }
@@ -371,7 +374,7 @@ public final class SystemClaimTooltip
         var breakdown = contest.breakdown();
         var claimantFactionId = breakdown.claimantFactionId();
 
-        if (!KmlibStrings.hasText(claimantFactionId)) {
+        if (!breakdown.hasClaimant()) {
 
             return CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                 CellTooltipMark.NO_MARK,

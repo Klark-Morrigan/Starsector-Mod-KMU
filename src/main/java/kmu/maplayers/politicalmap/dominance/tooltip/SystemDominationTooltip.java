@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.dominance.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.ClaimDecreeReader;
 
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
@@ -37,7 +37,8 @@ import java.util.List;
  * and the settings are read afresh each paint. How the box is composed and cut, and what each block
  * holds, is <a href="README.md">the domination box</a>'s register.
  */
-public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
+public final class SystemDominationTooltip
+        extends PoliticalMapCellTooltip {
 
     // The grouping of the view whose fills this box explains, read afresh each paint because a
     // view's grouping can follow a live alliance set.
@@ -50,19 +51,19 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
     /**
      * @param paintedGroupingSource the grouping the injecting view paints its fills under, which the
      *                              ranking runs under so the box's numbers match the fills
-     * @param claimBreakdownReader  the claim read every political box heads with
+     * @param claimDecreeReader     the decree read every political box heads with
      * @param holderGroupingSource  the alliance grouping the contest's sides are read under
      * @param contestWordingSource  the wording of the rival block
      */
     public SystemDominationTooltip(
             HolderGroupingSource paintedGroupingSource,
-            ClaimBreakdownReader claimBreakdownReader,
+            ClaimDecreeReader claimDecreeReader,
             HolderGroupingSource holderGroupingSource,
             ContestWordingSource contestWordingSource) {
 
         this(
             paintedGroupingSource,
-            claimBreakdownReader,
+            claimDecreeReader,
             holderGroupingSource,
             contestWordingSource,
             SystemDominationTooltip::createFactionAccountResolver);
@@ -70,12 +71,13 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
 
     SystemDominationTooltip(
             HolderGroupingSource paintedGroupingSource,
-            ClaimBreakdownReader claimBreakdownReader,
+            ClaimDecreeReader claimDecreeReader,
             HolderGroupingSource holderGroupingSource,
             ContestWordingSource contestWordingSource,
             FactionAccountSource factionAccountSource) {
 
-        super(claimBreakdownReader, holderGroupingSource, contestWordingSource);
+        super(claimDecreeReader, holderGroupingSource, contestWordingSource);
+
         this.paintedGroupingSource = paintedGroupingSource;
         this.factionAccountSource = factionAccountSource;
     }
@@ -96,9 +98,10 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
      * @return the box that view shows for a hovered system
      */
     public static SystemDominationTooltip createPaintedBy(HolderGroupingSource paintedGroupingSource) {
+
         return new SystemDominationTooltip(
             paintedGroupingSource,
-            VANILLA_CLAIM_BREAKDOWN_READER,
+            VANILLA_CLAIM_DECREE_READER,
             NexerelinAlliances::resolveGrouping,
             NexerelinContestWording::resolveWording);
     }
@@ -186,7 +189,10 @@ public final class SystemDominationTooltip extends PoliticalMapCellTooltip {
     // are all collapsed or derelict still ranks whoever holds them - and those colonies are exactly
     // what a deeper level opens up.
     private static boolean hasAnyStanding(RankedStandings ranking) {
-        return ranking.routing().hasAnyStanding();
+
+        return ranking
+            .routing()
+            .hasAnyStanding();
     }
 
     // The account this paint is to hang beneath its factions, and nothing at all where the level

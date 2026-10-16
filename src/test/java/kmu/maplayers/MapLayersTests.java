@@ -194,8 +194,11 @@ final class MapLayersTests {
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var allianceSourceMock = mockStatic(NexerelinAllianceSource.class)) {
 
-                stubNexEnabled(globalMock, true);
-
+                // Stood in on the source itself: the whole class is a static mock here, so its
+                // presence gate answers off this stubbing rather than off the mod manager.
+                allianceSourceMock
+                    .when(NexerelinAllianceSource::isModEnabled)
+                    .thenReturn(true);
                 allianceSourceMock
                     .when(NexerelinAllianceSource::readAllianceRecords)
                     .thenReturn(List.of(alliedPowers));

@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.holders;
 
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
@@ -41,18 +40,8 @@ import java.util.Map;
  * once apiece. It also means both halves describe the sector as it stood at one moment, so the
  * fill and the claim extending it into the same territory cannot disagree about what is there.
  */
-public final class ClaimAugmentedHolderProvider implements HolderProvider {
-
-    /**
-     * The shared instance: the held-dominance default extended with vanilla claims. Stateless
-     * once built - the base provider is stateless, and what stands in for the claim reader is
-     * the means of opening one rather than a reader - so every pass reuses it, and it is what
-     * {@link kmu.maplayers.politicalmap.views.DominancePaintedView} resolves holding through.
-     */
-    public static final ClaimAugmentedHolderProvider INSTANCE =
-        new ClaimAugmentedHolderProvider(
-            DominanceHolderProvider.INSTANCE,
-            VanillaClaimBreakdownReader::new);
+public final class ClaimAugmentedHolderProvider
+        implements HolderProvider {
 
     private final HolderProvider heldHolderProvider;
     private final ClaimReaderSource claimReaderSource;
@@ -60,8 +49,21 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
     ClaimAugmentedHolderProvider(
             HolderProvider heldHolderProvider,
             ClaimReaderSource claimReaderSource) {
+
         this.heldHolderProvider = heldHolderProvider;
         this.claimReaderSource = claimReaderSource;
+    }
+
+    /**
+     * The held-dominance default extended with the claims a view reads. Stateless once built - the
+     * base provider is stateless, and what stands in for the claim reader is the means of opening
+     * one rather than a reader - so every pass reuses one.
+     *
+     * @param claimReaderSource the source the view reads every claim through
+     * @return the provider folding those claims onto held dominance
+     */
+    public static ClaimAugmentedHolderProvider createReadingThrough(ClaimReaderSource claimReaderSource) {
+        return new ClaimAugmentedHolderProvider(DominanceHolderProvider.INSTANCE, claimReaderSource);
     }
 
     @Override
@@ -94,12 +96,15 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
         var unfilledSystemKeys = new LinkedHashSet<>(held.unfilledSystemKeys());
 
         for (var claim : claimingHolderBySystemKey.entrySet()) {
+
             if (ownerBySystemKey.containsKey(claim.getKey())) {
                 continue;
             }
+
             ownerBySystemKey.put(claim.getKey(), claim.getValue());
             unfilledSystemKeys.add(claim.getKey());
         }
+
         return new HolderResolution(
             ownerBySystemKey,
             held.contestedSystemKeys(),

@@ -336,6 +336,9 @@ all of them this layer's own and all in `holders`:
 
 Both claim-reading sources get their claims from [`FilteredClaims`](claims/README.md#under-a-spotlight),
 so which claims a spotlight moves is answered once rather than once per source.
+Each reads them through the claim reader source its view hands it,
+the one the view's bands and hover box read through too;
+see [one reader per pass](claims/README.md#one-reader-per-pass).
 
 An incremental refresh re-derives one system at a time,
 through a per-system resolve each view states,
@@ -485,6 +488,9 @@ Each view injects into the framework's hover box the explanation of the mechanic
 - **[The claims box](claims/tooltip/README.md)** -
   `SystemClaimTooltip`,
   the scored claim contest behind a claims fill.
+  The Claims view holds one,
+  reading through the view's own claim reader source,
+  so the box names the claimant the fill was painted for.
 - **[The shared box shape](tooltip/README.md)** -
   what both are written from:
   the decree heading,

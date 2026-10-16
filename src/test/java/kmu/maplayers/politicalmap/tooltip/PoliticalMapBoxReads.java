@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
@@ -10,6 +11,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 
@@ -102,10 +104,10 @@ public final class PoliticalMapBoxReads {
      * @param sector the stubbed sector to read
      * @return the reader, over that sector's own colony walk
      */
-    public static VanillaClaimBreakdownReader buildClaimBreakdownReaderOver(SectorAPI sector) {
+    public static ClaimBreakdownReader buildClaimBreakdownReaderOver(SectorAPI sector) {
 
-        var pass = HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity());
-
-        return new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.sectorIndex());
+        return PassClaimReaders.openBreakdownReaderOver(
+            HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()),
+            VanillaClaimBreakdownReader::new);
     }
 }

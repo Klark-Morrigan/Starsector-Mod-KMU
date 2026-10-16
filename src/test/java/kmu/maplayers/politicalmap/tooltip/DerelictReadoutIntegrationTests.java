@@ -210,7 +210,7 @@ final class DerelictReadoutIntegrationTests {
     private static int readScore(SystemClaimBreakdown breakdown, String factionId) {
 
         return breakdown
-            .scores()
+            .standings()
             .stream()
             .filter(standing -> factionId.equals(standing.factionId()))
             .mapToInt(FactionClaimStanding::score)

@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
+import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
@@ -84,17 +85,17 @@ public final class PoliticalMapCellTooltipTests {
     }
 
     @Nested
-    class VanillaClaimBreakdownReaderBinding {
+    class VanillaClaimDecreeReaderBinding {
 
         @Test
         void isTheOneEveryViewsBoxRunsOn() {
-            // The regression this guards: a view minting a reader of its own reads the same mechanic
-            // through a second computation, which nothing on screen would show the player disagreeing.
-            assertThat(SystemDominationTooltip.createPaintedBy(HolderGrouping::identity).claimBreakdownReader)
-                .isSameAs(PoliticalMapCellTooltip.VANILLA_CLAIM_BREAKDOWN_READER);
+            // The regression this guards: a view minting a decree read of its own reads the same flag
+            // through a second binding, which nothing on screen would show the player disagreeing.
+            assertThat(SystemDominationTooltip.createPaintedBy(HolderGrouping::identity).claimDecreeReader)
+                .isSameAs(PoliticalMapCellTooltip.VANILLA_CLAIM_DECREE_READER);
 
-            assertThat(SystemClaimTooltip.INSTANCE.claimBreakdownReader)
-                .isSameAs(PoliticalMapCellTooltip.VANILLA_CLAIM_BREAKDOWN_READER);
+            assertThat(SystemClaimTooltip.createReadingThrough(VanillaClaimBreakdownReader::new).claimDecreeReader)
+                .isSameAs(PoliticalMapCellTooltip.VANILLA_CLAIM_DECREE_READER);
         }
     }
 
@@ -159,7 +160,7 @@ public final class PoliticalMapCellTooltipTests {
                 String viewName,
                 Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
 
-            // Why the port carries two reads at all: a heading only has to know whether a decree holds
+            // Why the decree is a read of its own: a heading only has to know whether a decree holds
             // the system, and answering that through the full breakdown would charge the scoring of
             // every market in it to every hover. The fake derives one read from the other, so only a
             // case watching the calls can hold this.
@@ -169,7 +170,7 @@ public final class PoliticalMapCellTooltipTests {
                 .buildTitleRows(sectorMock, systemMock);
 
             verify(claimBreakdownReaderMock, description(viewName + " reads the decree on its own"))
-                .readCoreFactionId(systemMock);
+                .readDecreedFactionId(systemMock);
             verify(claimBreakdownReaderMock, never())
                 .readBreakdown(any());
         }

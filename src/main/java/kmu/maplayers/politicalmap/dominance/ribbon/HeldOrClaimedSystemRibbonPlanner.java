@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
+
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
@@ -51,14 +53,18 @@ public final class HeldOrClaimedSystemRibbonPlanner implements SystemRibbonPlann
      * walk of each system and read a bloc's colours through a single palette source rather than
      * each opening its own.
      *
-     * @param inputs everything one bake's bands are settled from, sampled once by the bake
+     * @param inputs            everything one bake's bands are settled from, sampled once by the bake
+     * @param claimReaderSource the source the view reads every claim through, so a claimed cell's
+     *                          band ranks the contest the cell was painted by
      * @return the planner counting each system by the mechanic that painted it
      */
-    public static HeldOrClaimedSystemRibbonPlanner createForPass(RibbonPlanInputs inputs) {
+    public static HeldOrClaimedSystemRibbonPlanner createForPass(
+            RibbonPlanInputs inputs,
+            ClaimBreakdownReaderSource claimReaderSource) {
 
         return new HeldOrClaimedSystemRibbonPlanner(
             HeldSystemRibbonPlanner.createForPass(inputs),
-            ClaimedSystemRibbonPlanner.createForPass(inputs));
+            ClaimedSystemRibbonPlanner.createForPass(inputs, claimReaderSource));
     }
 
     @Override

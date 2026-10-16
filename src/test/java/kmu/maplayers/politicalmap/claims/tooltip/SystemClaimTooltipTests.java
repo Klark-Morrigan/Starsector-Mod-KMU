@@ -7,13 +7,11 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.markets.colonies.Colonies;
-import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.PresenceOnlyClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -90,7 +88,6 @@ import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1464,11 +1461,13 @@ final class SystemClaimTooltipTests {
             // through and the listing projected over it. Sampled twice, a toggle moved between the two
             // reads would list under one rule a breakdown whose markets were flagged under another.
             var openedRules = new ArrayList<ColonyVisibility>();
+            var openedSectors = new ArrayList<SectorAPI>();
             var settingsReads = new AtomicInteger();
             var recordingTooltip = new SystemClaimTooltip(
                 claimBreakdownReaderFake,
-                (sectorIndex, colonyVisibility) -> {
-                    openedRules.add(colonyVisibility);
+                (knownColonyReader, sectorIndex) -> {
+                    openedRules.add(((ColonyKnowledge) knownColonyReader).rule());
+                    openedSectors.add(sectorIndex.getSector());
                     return claimBreakdownReaderFake;
                 },
                 ClaimScoreRowResolver::resolveMarketRows,
@@ -1495,6 +1494,10 @@ final class SystemClaimTooltipTests {
                 .containsExactly(UNDER_THE_REVEAL);
             assertThat(settingsReads)
                 .hasValue(1);
+
+            // Over a walk of the handed sector: a reader opened with none reads the running game's.
+            assertThat(openedSectors)
+                .containsExactly(sectorMock);
         }
 
         @Test
@@ -1504,8 +1507,8 @@ final class SystemClaimTooltipTests {
             var openedRules = new ArrayList<ColonyVisibility>();
             var recordingTooltip = new SystemClaimTooltip(
                 claimBreakdownReaderFake,
-                (sectorIndex, colonyVisibility) -> {
-                    openedRules.add(colonyVisibility);
+                (knownColonyReader, sectorIndex) -> {
+                    openedRules.add(((ColonyKnowledge) knownColonyReader).rule());
                     return claimBreakdownReaderFake;
                 },
                 ClaimScoreRowResolver::resolveMarketRows,
@@ -1527,48 +1530,6 @@ final class SystemClaimTooltipTests {
 
             assertThat(openedRules)
                 .containsExactly(BASE_FOG, UNDER_THE_REVEAL);
-        }
-    }
-
-    @Nested
-    class OpenBreakdownReaderUnder {
-
-        @Test
-        void opensTheVanillaReaderUnderTheRuleItIsHanded() {
-            // A claim breakdown reports the player's knowledge as a flag on each market rather than by
-            // leaving the market out, so a reader opened under any rule but the hover's would surface
-            // only as a name the box should have withheld.
-            var openedRules = new ArrayList<ColonyVisibility>();
-
-            try (var readerConstructionMock = mockConstruction(
-                    VanillaClaimBreakdownReader.class,
-                    (readerMock, context) -> {
-                        if (context.arguments().get(0) instanceof ColonyKnowledge knowledge) {
-                            openedRules.add(knowledge.rule());
-                        }
-                    })) {
-
-                SystemClaimTooltip.openBreakdownReaderUnder(new SectorPassIndex(sectorMock), UNDER_THE_REVEAL);
-            }
-            assertThat(openedRules)
-                .containsExactly(UNDER_THE_REVEAL);
-        }
-
-        @Test
-        void opensTheVanillaReaderOverTheWalkItIsHanded() {
-            // A reader opened with no walk reads the running game's sector, which is not the one the
-            // box was handed whenever the two differ.
-            var sectorIndex = new SectorPassIndex(sectorMock);
-            var openedIndexes = new ArrayList<Object>();
-
-            try (var readerConstructionMock = mockConstruction(
-                    VanillaClaimBreakdownReader.class,
-                    (readerMock, context) -> openedIndexes.add(context.arguments().get(1)))) {
-
-                SystemClaimTooltip.openBreakdownReaderUnder(sectorIndex, UNDER_THE_REVEAL);
-            }
-            assertThat(openedIndexes)
-                .containsExactly(sectorIndex);
         }
     }
 
@@ -1906,7 +1867,7 @@ final class SystemClaimTooltipTests {
 
         return new SystemClaimTooltip(
             claimBreakdownReaderFake,
-            (sectorIndex, colonyVisibility) -> claimBreakdownReaderFake,
+            (knownColonyReader, sectorIndex) -> claimBreakdownReaderFake,
             accountSourceFake,
             HolderGrouping::identity,
             ContestWordingFixtures.CONTESTED_WORDING);

@@ -4,9 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.factions.relation.FactionSetFriendliness;
-import kmlib.starsector.markets.colonies.KnownColonyReader;
-import kmlib.starsector.systems.claims.ClaimBreakdownReader;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
+import kmlib.starsector.systems.StarSystems;
+import kmlib.starsector.systems.claims.ClaimDecreeReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
@@ -39,26 +38,24 @@ import java.util.function.Function;
  * body makes the same statement says so and goes without the banner, so the one decree is met once
  * either way.
  */
-public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
+public abstract class PoliticalMapCellTooltip
+        extends SystemCellTooltip {
 
     /**
-     * The decree read every political-map tooltip runs on in game. Stateless, so the boxes share one
-     * rather than each minting its own, and named in a single place so a change of binding cannot
-     * reach one view and miss the other.
+     * The decree read every political-map tooltip runs on in game, named in a single place so a
+     * change of binding cannot reach one view and miss the other.
      *
-     * <p>Opened knowing no colony at all: the decree answers off the system's own memory flag and
-     * reaches no colony for a rule to apply to, and the port undertakes that it stays a single memory
-     * read - so nothing, not even a settings lookup, is put in front of it. A box that reads the whole
-     * scored contest opens a reader of its own per hover, under the colony rule that hover sampled.
+     * <p>The decree answers off the system's own memory flag and reaches no colony, so it is the
+     * narrow port alone rather than a claim reader. A box that reads the whole scored contest opens a
+     * reader of its own per hover, under the colony rule that hover sampled.
      */
-    protected static final ClaimBreakdownReader VANILLA_CLAIM_BREAKDOWN_READER =
-        new VanillaClaimBreakdownReader(KnownColonyReader.NOTHING_KNOWN);
+    protected static final ClaimDecreeReader VANILLA_CLAIM_DECREE_READER = StarSystems::readDecreedFactionId;
 
     /**
-     * The claim read the box heads itself with. Held rather than reached for statically, so a box
+     * The decree read the box heads itself with. Held rather than reached for statically, so a box
      * draws on the read it is handed rather than on whichever one a running game happens to have.
      */
-    protected final ClaimBreakdownReader claimBreakdownReader;
+    protected final ClaimDecreeReader claimDecreeReader;
 
     // Where the alliance set behind an allied block is taken from. A source rather than a grouping,
     // because a box lives for the whole session while alliances form and dissolve inside it - one
@@ -71,17 +68,18 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
     private final ContestWordingSource contestWordingSource;
 
     protected PoliticalMapCellTooltip(
-            ClaimBreakdownReader claimBreakdownReader,
+            ClaimDecreeReader claimDecreeReader,
             HolderGroupingSource holderGroupingSource,
             ContestWordingSource contestWordingSource) {
 
-        this.claimBreakdownReader = claimBreakdownReader;
+        this.claimDecreeReader = claimDecreeReader;
         this.holderGroupingSource = holderGroupingSource;
         this.contestWordingSource = contestWordingSource;
     }
 
     @Override
     protected final List<TooltipRow> buildTitleRows(SectorAPI sector, StarSystemAPI system) {
+
         // Whose space this is heads the box rather than sitting in it: a decree settles the system
         // outright, so it is read straight off the system name above it instead of being found among
         // the findings below. Being a title line is also what parts it from the body - the box's break
@@ -92,7 +90,7 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
         // would charge the whole claim computation to every faction and alliance hover.
         return CoreTerritoryHeading.resolveHeadingRows(
             sector,
-            claimBreakdownReader.readCoreFactionId(system),
+            claimDecreeReader.readDecreedFactionId(system),
             isStatingCoreClaimInBody());
     }
 
@@ -142,6 +140,7 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
         var contestWording = contestWordingSource.resolveWording();
 
         for (var block : blocks) {
+
             body.appendSection(
                 KmuStringKeys.get(block.resolveHeadingKey(contestWording)),
                 entriesSource.apply(block));
@@ -200,6 +199,7 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
      * @return the level the cycle wraps at for this box over this system
      */
     protected final HoverTooltipDetailLevel resolveDeepestHeldLevel(boolean isNamingAnybody) {
+
         return isNamingAnybody
             ? resolveDeepestAccountLevel()
             : HoverTooltipDetailLevel.FACTIONS;
