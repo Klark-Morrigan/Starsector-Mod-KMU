@@ -137,12 +137,15 @@ Four things are pulled out of it:
   because where an element sits and how tall the box stands are questions with answers,
   and a class that also needs a running game to build a panel can only answer them by being looked at.
 
-The panel's one reading of the screen is KMLib's `ShownMapTab.isMapTabShowing`,
+The panel's one reading of the screen is the one the dialog hands it,
+KMLib's `ShownMapTab.isMapTabShowing`,
 and it fails *closed*:
 a reach that raises means the widget tree cannot be walked,
 and a dialog that cannot find the screen it was opened over comes down rather than standing on it.
 
-What is left in the panel's own plugin is glue:
+What is left in the panel's own plugin,
+inside KMLib,
+is glue:
 it reads those answers and acts.
 One rule of its own stays unverified,
 and is the last thing here that could only be checked by opening the dialog -

@@ -94,17 +94,19 @@ so painting through it draws no sector at all.
 and everything downstream rests on that -
 the cursor read inverts whichever transform the running pass bound
 and divides by the `factor` it supplied,
-both meaningless if the pass is not a map's.
+both meaningless unless the pass comes from a vanilla map screen.
 Nothing enforces it:
-the hook is a plain method on a terrain plugin,
+the hook is a plain method on a terrain plugin.
+A map widget a mod embeds in its own screen drives it,
 and any mod walking the sector's terrain can call it with a transform and a zoom of its own.
 The failure is quiet rather than loud,
 because a cursor pixel inverted against a foreign transform still yields a world point,
 and in hyperspace -
 where campaign coordinates *are* sector map coordinates -
 that point lands inside real cells,
-lighting and announcing systems the pointer is nowhere near with no map open.
-`ForeignMapPassWarning` says that once per session at WARN,
+lighting and announcing systems the pointer is nowhere near with no vanilla map open.
+KMLib's `ForeignMapPassWarning` says that once per session at WARN,
+in the words the terrain plugin hands it,
 carrying the caller's stack on a throwable that was never thrown,
 since the caller is precisely what cannot be worked out from inside the pass.
 It never throws:

@@ -27,18 +27,18 @@ import java.util.function.BooleanSupplier;
  */
 public final class MapHoverPermission {
 
-    private final BooleanSupplier isAnyMapShowing;
+    private final BooleanSupplier isAnyVanillaMapShowing;
 
     private final BooleanSupplier isInGameSpace;
 
     /**
-     * @param isAnyMapShowing whether either vanilla map host is showing, from
-     *                        {@code MapPresence#isAnyMapShowing}
-     * @param isInGameSpace   whether the player is looking at the campaign world with no screen over
-     *                        it, from {@code CampaignScreenView#isShowingGameSpace}
+     * @param isAnyVanillaMapShowing whether either vanilla map host is showing, from
+     *                               {@code MapPresence#isAnyVanillaMapShowing}
+     * @param isInGameSpace          whether the player is looking at the campaign world with no screen over
+     *                               it, from {@code CampaignScreenView#isShowingGameSpace}
      */
-    public MapHoverPermission(BooleanSupplier isAnyMapShowing, BooleanSupplier isInGameSpace) {
-        this.isAnyMapShowing = isAnyMapShowing;
+    public MapHoverPermission(BooleanSupplier isAnyVanillaMapShowing, BooleanSupplier isInGameSpace) {
+        this.isAnyVanillaMapShowing = isAnyVanillaMapShowing;
         this.isInGameSpace = isInGameSpace;
     }
 
@@ -50,7 +50,7 @@ public final class MapHoverPermission {
         var mapPresence = new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter());
 
         return new MapHoverPermission(
-            mapPresence::isAnyMapShowing,
+            mapPresence::isAnyVanillaMapShowing,
             CampaignScreenView::isShowingGameSpace);
     }
 
@@ -59,6 +59,6 @@ public final class MapHoverPermission {
      *         permissions read against what is on screen
      */
     public boolean isCursorLocatable() {
-        return MapHoverGates.isCursorLocatableOn(isAnyMapShowing, isInGameSpace);
+        return MapHoverGates.isCursorLocatableOn(isAnyVanillaMapShowing, isInGameSpace);
     }
 }

@@ -33,7 +33,8 @@ import java.util.function.Supplier;
  * {@link RandomAssortmentOfThingsCompatibilityMode}. Nothing here names a mod: an embedded map is
  * found structurally, and its box is the game's own answer about a widget.
  */
-public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
+public final class RandomAssortmentOfThingsMinimapCover
+        implements MapCover {
 
     private final CursorPosition cursor;
 
@@ -41,28 +42,28 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
     // states its question and not where the answer is walked out of.
     private final Supplier<EmbeddedMap> findSingleEmbeddedMap;
 
-    private final BooleanSupplier isAnyMapShowing;
+    private final BooleanSupplier isAnyVanillaMapShowing;
 
     private final RandomAssortmentOfThingsCompatibilityMode mode;
 
     /**
-     * @param mode                  whether the player's compatibility mode is on and there is a
-     *                              minimap to confine to
-     * @param isAnyMapShowing       whether either vanilla map host is showing, from
-     *                              {@code MapPresence#isAnyMapShowing}
-     * @param findSingleEmbeddedMap the one map surface on screen that is not the one the player
-     *                              opened, or null when there is not exactly one
-     * @param cursor                where the pointer is, in the UI units the boxes are laid out in
+     * @param mode                   whether the player's compatibility mode is on and there is a
+     *                               minimap to confine to
+     * @param isAnyVanillaMapShowing whether either vanilla map host is showing, from
+     *                               {@code MapPresence#isAnyVanillaMapShowing}
+     * @param findSingleEmbeddedMap  the one map surface on screen that is not the one the player
+     *                               opened, or null when there is not exactly one
+     * @param cursor                 where the pointer is, in the UI units the boxes are laid out in
      */
     public RandomAssortmentOfThingsMinimapCover(
             RandomAssortmentOfThingsCompatibilityMode mode,
-            BooleanSupplier isAnyMapShowing,
+            BooleanSupplier isAnyVanillaMapShowing,
             Supplier<EmbeddedMap> findSingleEmbeddedMap,
             CursorPosition cursor) {
 
         this.cursor = cursor;
         this.findSingleEmbeddedMap = findSingleEmbeddedMap;
-        this.isAnyMapShowing = isAnyMapShowing;
+        this.isAnyVanillaMapShowing = isAnyVanillaMapShowing;
         this.mode = mode;
     }
 
@@ -71,9 +72,10 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
      *         has
      */
     public static RandomAssortmentOfThingsMinimapCover createForLiveScreen() {
+
         return new RandomAssortmentOfThingsMinimapCover(
             RandomAssortmentOfThingsCompatibilityMode.createForLiveGame(),
-            new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter())::isAnyMapShowing,
+            new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter())::isAnyVanillaMapShowing,
             SingleEmbeddedMapReader.INSTANCE::resolveSingleEmbeddedMap,
             new VanillaCursorPosition());
     }
@@ -102,13 +104,14 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
         if (!mode.isEngaged()) {
             return false;
         }
+
         // A vanilla host owns this frame, so the confinement does not apply to it at all. Answered
         // before any box is read - the guarantee stated above.
-        if (isAnyMapShowing.getAsBoolean()) {
+        if (isAnyVanillaMapShowing.getAsBoolean()) {
             return false;
         }
-        var minimapBox = resolveConfinableMinimapBox();
 
+        var minimapBox = resolveConfinableMinimapBox();
         return minimapBox == null
             || !minimapBox.containsPoint(cursor.getUiX(), cursor.getUiY());
     }
@@ -124,8 +127,10 @@ public final class RandomAssortmentOfThingsMinimapCover implements MapCover {
     // SingleEmbeddedMapReader's reading, shared with the rule that switches such a surface off, so
     // the two cannot answer differently about the same frame.
     private Rectangle resolveConfinableMinimapBox() {
-        var minimap = findSingleEmbeddedMap.get();
 
-        return minimap == null ? null : minimap.resolveDrawnBox();
+        var minimap = findSingleEmbeddedMap.get();
+        return minimap == null
+            ? null
+            : minimap.resolveDrawnBox();
     }
 }

@@ -7,6 +7,7 @@ import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
+import kmlib.starsector.ui.map.probes.ForeignMapPassWarning;
 
 import kmu.maplayers.base.compatibility.MapLayerGameReach;
 import kmu.maplayers.base.layer.MapLayerScreens;
@@ -46,7 +47,8 @@ import java.util.List;
  * holds for every other class a terrain entity carries into a save. See
  * {@code base/render/README.md}.
  */
-public class SectorMapLayerTerrainPlugin extends BaseTerrain {
+public class SectorMapLayerTerrainPlugin
+        extends BaseTerrain {
 
     // Map rendering ignores this (the map calls the map hooks regardless), but BaseTerrain
     // requires the override; large so the terrain is never treated as a tiny point elsewhere.
@@ -64,6 +66,18 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     // warning below, so the two cannot disagree about what counts as a map being up.
     private static final MapPresence MAP_PRESENCE = new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter());
 
+    // What the foreign-pass line says about these layers. KMLib appends what the live tree holds around
+    // any embedded map, and carries the stack of the pass.
+    private static final String FOREIGN_PASS_LEAD =
+        "KMU map layers rendered on a pass with no vanilla map on screen. The map layers cannot"
+            + " trust that pass's transform, so hover may resolve cells the pointer is not"
+            + " over. Any mod-owned class named below owns the widget that drove it";
+
+    // What the line says when whether a map is on screen could not be read at all.
+    private static final String UNREADABLE_PRESENCE_WARNING =
+        "KMU map layers could not read whether a vanilla map is on screen; the foreign-pass warning"
+            + " is off for the rest of this session.";
+
     // Reports a pass that drew these layers without a map being on screen. Shared by all three
     // surfaces rather than one each: they would report a single foreign pass three times over, and
     // the stack in the line is what tells one caller from another anyway.
@@ -72,9 +86,11 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     // the save and there is no seam to hand one in through. Static also keeps it out of the save,
     // which an instance field on a serialised plugin would not.
     private static final ForeignMapPassWarning FOREIGN_PASS_WARNING = new ForeignMapPassWarning(
-        MAP_PRESENCE::isAnyMapShowing,
+        MAP_PRESENCE::isAnyVanillaMapShowing,
         EmbeddedMapHostTrace::describeEmbeddedMapHosts,
-        Global.getLogger(SectorMapLayerTerrainPlugin.class));
+        Global.getLogger(SectorMapLayerTerrainPlugin.class),
+        FOREIGN_PASS_LEAD,
+        UNREADABLE_PRESENCE_WARNING);
 
     // Both bands in one pass, bottom first. This surface owns one terrain icon, so it has no way to
     // put anything above the nebulae the map appends after it - they are drawn on the schematic map
@@ -110,23 +126,25 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
 
         // First thing in the pass, so the stack it reports is the one that actually reached here,
         // and so a foreign pass is named even when the active pick draws nothing.
-        FOREIGN_PASS_WARNING.warnOnceIfNoMapIsShowing();
+        FOREIGN_PASS_WARNING.warnOnceIfNoVanillaMapIsShowing();
 
         // Stands the whole pass down when the player has asked the layers to keep to the vanilla
         // maps and none is showing. Before the preparation rather than only the draw, so a foreign
         // pass cannot take the frame's single preparation from the map that is entitled to it.
         if (KmuMapHoverSettings.areMapLayersOnlyOnTheirHosts()
-                && !MAP_PRESENCE.isAnyMapShowing()) {
+                && !MAP_PRESENCE.isAnyVanillaMapShowing()) {
+
             return;
         }
+
         // Null while this surface's terrain sits somewhere nothing is installed in, which is a
         // surface belonging to a sector nothing draws - so it stands down rather than painting
         // through a holder shared with every other sector-less caller.
         var machinery = resolveMachineryBeingDrawn();
-
         if (machinery == null) {
             return;
         }
+
         // Draws through the pick of whichever screen is showing this frame, over the machinery
         // installed on the sector being drawn, so switching a tab switches what paints with no
         // per-layer branch here. Behind the sector's guard, since nothing between this hook and the
@@ -165,6 +183,7 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         // each prepare it.
         if (paintedBands.contains(MapOverlayBand.BENEATH_STARSCAPE_NEBULAE)
                 && MapFramePreparationClaim.resolveClaimIn(machinery).claimPreparation()) {
+
             layerRenderer.prepareFrame(factor);
         }
 
@@ -202,7 +221,6 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
     private SectorMapMachinery resolveMachineryBeingDrawn() {
 
         var terrainEntity = getEntity();
-
         return terrainEntity == null
             ? null
             : SectorMapMachineryIndex.resolveMachineryIn(terrainEntity.getContainingLocation());

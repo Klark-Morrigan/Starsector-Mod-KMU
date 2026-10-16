@@ -68,9 +68,9 @@ final class MapHoverPermissionTests {
     }
 
     private static MapHoverPermission buildPermission(
-            BooleanSupplier isAnyMapShowing,
+            BooleanSupplier isAnyVanillaMapShowing,
             BooleanSupplier isInGameSpace) {
 
-        return new MapHoverPermission(isAnyMapShowing, isInGameSpace);
+        return new MapHoverPermission(isAnyVanillaMapShowing, isInGameSpace);
     }
 }

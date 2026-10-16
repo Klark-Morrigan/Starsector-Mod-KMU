@@ -67,7 +67,7 @@ read one gate seam,
 (the settings tiers above any layer, and a map on screen) rather than a copy each,
 so the key is claimed when and only when a box could be drawn
 and a condition added later reaches both passes.
-That map gate is host-blind and look-blind (KMLib's `MapPresence.isAnyMapShowing`),
+That map gate is host-blind and look-blind (KMLib's `MapPresence.isAnyVanillaMapShowing`),
 so the box draws wherever the layer paints:
 the sector map and the intel screen's map visor,
 in the schematic look and in Starscape alike.
