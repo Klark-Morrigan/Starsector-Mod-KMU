@@ -205,57 +205,18 @@ public final class IntercontinentalCoasts {
         return filed;
     }
 
-    // One segment under every square its extent touches, so a point within the tolerance of it
-    // finds it among the squares round that point.
-    private static void fileSegment(
-            Map<Long, List<double[][]>> filed,
-            double[][] segment) {
+    // Whether a drawn line runs through a point. Only the lines filed within the tolerance of it
+    // are measured, which is every line that could be.
+    private static boolean isAlreadyDrawn(double[] point, UniformGrid<double[][]> drawn) {
 
-        var from = segment[SEGMENT_FROM];
-        var to = segment[SEGMENT_TO];
+        for (var segment : drawn.listItemsNear(point[0], point[1], SAME_LINE)) {
 
-        var fromX = (int) Math.floor(Math.min(from[0], to[0]) / PLACE_GRID);
-        var toX = (int) Math.floor(Math.max(from[0], to[0]) / PLACE_GRID);
-        var fromY = (int) Math.floor(Math.min(from[1], to[1]) / PLACE_GRID);
-        var toY = (int) Math.floor(Math.max(from[1], to[1]) / PLACE_GRID);
+            if (Segments.computeDistanceToPoint(
+                    segment[SEGMENT_FROM], segment[SEGMENT_TO], point) <= SAME_LINE) {
 
-        for (var atX = fromX; atX <= toX; atX++) {
-            for (var atY = fromY; atY <= toY; atY++) {
-
-                filed
-                    .computeIfAbsent(buildPlaceKey(atX, atY), whichever -> new ArrayList<>())
-                    .add(segment);
-            }
-        }
-    }
-
-    // Whether a drawn line runs through a point. Its own square and the eight round it, which
-    // covers every segment that could be within the tolerance since a square is wider than one.
-    private static boolean isAlreadyDrawn(double[] point, Map<Long, List<double[][]>> drawn) {
-
-        var atX = (int) Math.floor(point[0] / PLACE_GRID);
-        var atY = (int) Math.floor(point[1] / PLACE_GRID);
-
-        for (var alongX = -1; alongX <= 1; alongX++) {
-            for (var alongY = -1; alongY <= 1; alongY++) {
-
-                for (var segment : drawn.getOrDefault(
-                        buildPlaceKey(atX + alongX, atY + alongY), List.of())) {
-
-                    if (Segments.computeDistanceToPoint(
-                            segment[SEGMENT_FROM], segment[SEGMENT_TO], point) <= SAME_LINE) {
-
-                        return true;
-                    }
-                }
+                return true;
             }
         }
         return false;
-    }
-
-    // One grid square's two coordinates as a single map key. Packed rather than boxed into a
-    // pair, because this is asked once per point of every ring on the map.
-    private static long buildPlaceKey(int atX, int atY) {
-        return ((long) atX << PLACE_KEY_SHIFT) ^ (atY & PLACE_KEY_MASK);
     }
 }

@@ -42,10 +42,6 @@ import java.util.Locale;
  */
 public final class PickedPointCheck {
 
-    // No ring in the set holds the point, which is a verdict rather than a failure: void with
-    // nothing round it is exactly what several of the questions here are looking for.
-    private static final int NOTHING_HOLDS_IT = -1;
-
     // What a layer answers when none of its rings holds the point, so the layers that do can
     // be picked out by comparing against one word rather than against each in turn.
     private static final String NO_HIT = "no";
@@ -441,9 +437,9 @@ public final class PickedPointCheck {
     // enclosed at all means the void really does run out to sea.
     private static String describeWalledHoleAt(List<VoidHole> holes, double[] pick) {
 
-        var index = findRingHolding(collectHoleBoundaries(holes), pick);
+        var index = PolygonRegions.findRingHolding(collectHoleBoundaries(holes), pick[0], pick[1]);
 
-        if (index == NOTHING_HOLDS_IT) {
+        if (index == PolygonRegions.NO_RING) {
             return "none";
         }
         var walling = new StringBuilder();
@@ -553,9 +549,9 @@ public final class PickedPointCheck {
     // to fill it and the question is why nothing enclosed it.
     private static String describeHoleAt(List<VoidHole> holes, double[] pick) {
 
-        var index = findRingHolding(collectHoleBoundaries(holes), pick);
+        var index = PolygonRegions.findRingHolding(collectHoleBoundaries(holes), pick[0], pick[1]);
 
-        return index == NOTHING_HOLDS_IT
+        return index == PolygonRegions.NO_RING
             ? "none"
             : "#" + index + " (" + holes.get(index).ringing().size() + " cells)";
     }
@@ -564,26 +560,12 @@ public final class PickedPointCheck {
     // pocket can exist at one reach and not the other.
     private static String describeHit(List<List<double[]>> outlines, double[] pick) {
 
-        var index = findRingHolding(outlines, pick);
+        var index = PolygonRegions.findRingHolding(outlines, pick[0], pick[1]);
 
-        return index == NOTHING_HOLDS_IT ? NO_HIT : "#" + index;
+        return index == PolygonRegions.NO_RING ? NO_HIT : "#" + index;
     }
 
-    // Which of a set of rings holds a point, by position, or none. Every verdict here is a
-    // wording put round this one scan, and each of them written out separately is a chance for
-    // one to answer about the first ring that holds the point and another about the last.
-    private static int findRingHolding(List<List<double[]>> rings, double[] pick) {
-
-        for (var index = 0; index < rings.size(); index++) {
-
-            if (PolygonRegions.isPointInsideRing(rings.get(index), pick[0], pick[1])) {
-                return index;
-            }
-        }
-        return NOTHING_HOLDS_IT;
-    }
-
-    // The holes as plain rings, which is what the scan above takes.
+    // The holes as plain rings, which is what the ring-holding scan takes.
     private static List<List<double[]>> collectHoleBoundaries(List<VoidHole> holes) {
 
         var rings = new ArrayList<List<double[]>>(holes.size());
