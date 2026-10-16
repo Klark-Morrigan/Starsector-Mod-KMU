@@ -10,7 +10,8 @@
 # (Infrastructure-Vm-Provisioner's javaDevKit step), so setup-java is left
 # off, and the runner exports STARSECTOR_HOME, from which the build resolves
 # the game and dependency-mod jars - starfarer.api.jar, lw_Console.jar,
-# LazyLib.jar, ExerelinCore.jar. KMLib is not among them: it is built from
+# LazyLib.jar, and ExerelinCore.jar, which only the included KMLib build
+# compiles against. KMLib is not among them: it is built from
 # the sibling checkout below as an included build, so this gate compiles KMU
 # against the KMLib on master rather than against whatever release happens to
 # be installed on the runner.

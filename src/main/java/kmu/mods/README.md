@@ -98,8 +98,10 @@ so it names `kmu.mods`,
 but it may not name a mod's own types:
 that would load them on every install and defeat the deferral above.
 
-The build still requires Nexerelin's jar,
-so a player can run KMU without Nexerelin while a developer cannot build it without.
+Nexerelin's jar is on none of the build's classpaths,
+since KMU names no Nexerelin type and KMLib's adapters do all of the reading.
+That makes the rule above a compile check:
+a KMU class naming an `exerelin.*` type fails to build.
 
 ## What is not here
 

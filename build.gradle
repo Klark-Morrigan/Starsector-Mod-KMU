@@ -233,10 +233,6 @@ def lazyLibJarFile = resolveModJarFile('lw_lazylib', 'LazyLib.jar')
 // nothing outside the game does.
 def lunaLibJarFile = resolveModJarFile('lunalib', 'LunaLib.jar')
 
-// Nexerelin is an optional runtime dependency; the mod classloader supplies the
-// jar at runtime when Nex is installed.
-def nexJars = findModJars('ExerelinCore.jar')
-
 // XStream backs Starsector's save serialisation. KMU compiles against it to
 // override configureXStream and alias the map-layer terrain plugin's former
 // class names, so saves written before each rename still resolve. It ships inside
@@ -315,7 +311,6 @@ dependOnGameJars(jsonJars)
 dependOnGameJars(xstreamJars)
 
 dependOnModJars(consoleCommandsJars)
-dependOnModJars(nexJars)
 dependOnModJars(files(lazyLibJarFile))
 dependOnModJars(files(lazyLibKotlinRuntimeJarFile))
 // KMLib is a hard dependency in mod_info.json; Starsector's mod classloader provides the jar at
@@ -326,7 +321,6 @@ dependOnModJars(files(lazyLibKotlinRuntimeJarFile))
 dependOnModJars(kmlibDependency)
 
 dependOnUtilsJars(consoleCommandsJars)
-dependOnUtilsJars(nexJars)
 dependOnUtilsJars(kmlibDependency)
 dependOnUtilsJars(files(lazyLibJarFile))
 dependOnUtilsJars(files(lazyLibKotlinRuntimeJarFile))
@@ -396,16 +390,6 @@ tasks.withType(JavaCompile).configureEach {
                 "Could not find LazyLib jar at ${lazyLibJarFile}. " +
                 "Install LazyLib under mods/lw_lazylib/jars/LazyLib.jar " +
                 "for compiling KMU's map labels.")
-        }
-        // Nex is optional at runtime, but KMU builds and tests KMLib's
-        // NexerelinMarketTransferRelay, whose supertype is Nex's InvasionListener,
-        // so the jar must be present to build even though a player can run KMU
-        // without Nex installed.
-        if (nexJars.files.isEmpty()) {
-            throw new GradleException(
-                "Could not find Nexerelin jar under " +
-                "${starsectorRoot}/mods/**/jars/ExerelinCore.jar. " +
-                "Install Nexerelin for compiling KMU's market-transfer map integration.")
         }
     }
 }

@@ -50,6 +50,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **The *Claims* view's hover box reads the sector it was handed**, through one walk shared by its status line and the claim mechanic, rather than letting the claim read the running game's sector.
 - **The Market Condition Manager logs the failures it carries on past**, where they were dropped.
 
+#### Changed
+
+- **Building KMU needs no Nexerelin jar.** KMU names no Nexerelin type, KMLib's adapters doing all of the reading, so a KMU class that named one fails to compile. The CI runner still provides the jar for the KMLib build alongside.
+
 #### Public contracts changed (**breaking**)
 
 None of these reach a player: every LunaLib field ID and every value saved in sector memory keeps its spelling, so settings and saves carry over. They reach a mod building a map layer on KMU's framework.

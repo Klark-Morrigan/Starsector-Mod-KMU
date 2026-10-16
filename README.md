@@ -443,7 +443,8 @@ records the Nexerelin version KMU was checked against,
 what KMU and KMLib bind to,
 the Nexerelin concepts a layer could read,
 and the integration work still outstanding.
-Re-check it before upgrading the Nexerelin build KMU compiles against.
+Re-check it before upgrading the Nexerelin build KMLib compiles against;
+KMU's own build needs no Nexerelin jar.
 
 ### Documentation
 
