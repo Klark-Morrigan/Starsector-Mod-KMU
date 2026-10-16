@@ -5,11 +5,12 @@ import kmu.conditions.ui.picker.tooltip.KmuConditionTooltipRenderer;
 import java.util.Objects;
 import java.util.Optional;
 
-import static kmu.util.KmuValues.getTextOrEmpty;
-import static kmu.util.KmuValues.normaliseText;
-import static kmu.util.KmuValues.requireNonBlankText;
+import static kmlib.text.KmlibStrings.getTextOrEmpty;
+import static kmlib.text.KmlibStrings.normaliseText;
+import static kmlib.text.KmlibStrings.requireFieldText;
 
 public final class KmuConditionPickerEntry {
+
     private final String conditionId;
     private final String name;
     private final String icon;
@@ -26,6 +27,7 @@ public final class KmuConditionPickerEntry {
             String icon,
             KmuConditionPickerEntryState state,
             String tooltipText) {
+
         this(conditionId, name, icon, state, tooltipText, null);
     }
 
@@ -36,6 +38,7 @@ public final class KmuConditionPickerEntry {
             KmuConditionPickerEntryState state,
             String tooltipText,
             String sourceModName) {
+
         this(conditionId, name, icon, state, tooltipText, sourceModName, false, false);
     }
 
@@ -48,6 +51,7 @@ public final class KmuConditionPickerEntry {
             String sourceModName,
             boolean suppressed,
             boolean hidden) {
+
         this(conditionId, name, icon, state, tooltipText, sourceModName, null, suppressed, hidden);
     }
 
@@ -59,6 +63,7 @@ public final class KmuConditionPickerEntry {
             String tooltipText,
             String sourceModName,
             KmuConditionTooltipRenderer tooltipRenderer) {
+
         this(conditionId, name, icon, state, tooltipText, sourceModName, tooltipRenderer, false, false);
     }
 
@@ -72,8 +77,9 @@ public final class KmuConditionPickerEntry {
             KmuConditionTooltipRenderer tooltipRenderer,
             boolean suppressed,
             boolean hidden) {
-        this.conditionId = requireNonBlankText(conditionId, "conditionId");
-        this.name = requireNonBlankText(name, "name");
+
+        this.conditionId = requireFieldText(conditionId, "conditionId");
+        this.name = requireFieldText(name, "name");
         this.icon = normaliseText(icon);
         this.state = Objects.requireNonNull(state, "state");
         this.tooltipText = getTextOrEmpty(tooltipText);

@@ -141,6 +141,8 @@
 | `kmu.mods.nexerelin.NexerelinMarketTransferRelay` 和 `kmu.mods.nexerelin.NexerelinInvasionListenerInstaller` | 已移除：启用 Nexerelin 时，KMLib 会在每次读取存档时于该星域上放置自己的转发器 |
 | `base.theme.GlLineHatchStroke` 和 `base.theme.HatchStroke` | `kmlib.opengl.hatch.GlLineHatchStroke`。`HatchStroke` 已移除：`HatchStyle(HatchPattern, GlLineHatchStroke)` 直接持有该记录 |
 | `CellFrontierGeometry.clipCellsToFrontier(List, float[])` | `kmlib.opengl.PolygonTessellator.tessellateToBoundaryLoopsWithinLoop(List, float[])` |
+| `KmuValues` | `KmlibStrings`，其空白规则为 `Character.isWhitespace`，而非 `String.trim()` 的规则。`requireNonBlankText(String, String)` 即 `requireFieldText(String, String)` |
+| `KmuTextFormats.joinWithParenthetical(Optional, Optional)` | 转交给 `KmlibStrings`，采用同一空白规则 |
 
 </details>
 

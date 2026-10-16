@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static kmu.util.KmuValues.hasText;
+import static kmlib.text.KmlibStrings.hasText;
 
 public final class KmuConditionEntryTooltipCreator
         implements TooltipMakerAPI.TooltipCreator {

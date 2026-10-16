@@ -2,9 +2,10 @@ package kmu.conditions.ui.picker.model;
 
 import java.util.Optional;
 
-import static kmu.util.KmuValues.convertToOptionalText;
+import static kmlib.text.KmlibStrings.convertToOptionalText;
 
 public final class KmuConditionPickerLocation {
+
     private final Optional<String> planetName;
     private final Optional<String> planetType;
     private final Optional<KmuPickerFaction> faction;
@@ -21,6 +22,7 @@ public final class KmuConditionPickerLocation {
             String gravityWellTypeName,
             String gravityWellName,
             String constellationName) {
+
         this.planetName = convertToOptionalText(planetName);
         this.planetType = convertToOptionalText(planetType);
         this.faction = Optional.ofNullable(faction);

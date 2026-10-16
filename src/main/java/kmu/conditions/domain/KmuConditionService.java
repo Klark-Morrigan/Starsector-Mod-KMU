@@ -9,9 +9,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static kmu.util.KmuValues.normaliseText;
+import static kmlib.text.KmlibStrings.normaliseText;
 
 public final class KmuConditionService {
+
     private final KmuConditionRepository repository;
     private final KmuErrorReporter errorReporter;
     private final KmuConditionOfferPolicy offerPolicy;
@@ -28,44 +29,64 @@ public final class KmuConditionService {
             KmuConditionRepository repository,
             KmuErrorReporter errorReporter,
             KmuConditionOfferPolicy offerPolicy) {
+
         this.repository = Objects.requireNonNull(repository, "repository");
         this.errorReporter = Objects.requireNonNull(errorReporter, "errorReporter");
         this.offerPolicy = Objects.requireNonNull(offerPolicy, "offerPolicy");
     }
 
     public List<KmuConditionSpec> listPlanetaryConditionSpecs() {
+
         try {
-            return repository.getAllConditionSpecs().stream()
+            return repository
+                .getAllConditionSpecs()
+                .stream()
                 .filter(Objects::nonNull)
                 .filter(KmuConditionSpec::isPlanetary)
                 .collect(Collectors.toUnmodifiableList());
-        } catch (RuntimeException exception) {
-            errorReporter.report("Failed to list market condition specs.", exception);
+
+        } catch (RuntimeException runtimeException) {
+
+            errorReporter.report("Failed to list market condition specs.", runtimeException);
+
             return Collections.emptyList();
         }
     }
 
     public List<KmuConditionSpec> listConditionSpecsVisibleForMarket(KmuEditableMarket market) {
+
         Objects.requireNonNull(market, "market");
+
         var currentConditionIds = getCurrentConditionIds(market);
+
         try {
-            return repository.getAllConditionSpecs().stream()
+            return repository
+                .getAllConditionSpecs()
+                .stream()
                 .filter(Objects::nonNull)
                 .filter(spec -> offerPolicy.isConditionOfferable(spec)
                     || currentConditionIds.contains(spec.getId()))
                 .collect(Collectors.toUnmodifiableList());
-        } catch (RuntimeException exception) {
-            errorReporter.report("Failed to list visible market condition specs.", exception);
+
+        } catch (RuntimeException runtimeException) {
+
+            errorReporter.report("Failed to list visible market condition specs.", runtimeException);
+
             return Collections.emptyList();
         }
     }
 
     public Set<String> getCurrentConditionIds(KmuEditableMarket market) {
+
         Objects.requireNonNull(market, "market");
+
         try {
             return Collections.unmodifiableSet(new LinkedHashSet<>(market.getConditionIds()));
-        } catch (RuntimeException exception) {
-            errorReporter.report("Failed to read market condition ids.", exception);
+
+        } catch (RuntimeException runtimeException) {
+
+            errorReporter.report("Failed to read market condition ids.", runtimeException);
+
             return Collections.emptySet();
         }
     }
@@ -73,6 +94,7 @@ public final class KmuConditionService {
     public KmuConditionAddResult addOfferableConditionIfAbsent(
             KmuEditableMarket market,
             String conditionId) {
+
         Objects.requireNonNull(market, "market");
 
         var normalisedId = normaliseText(conditionId);
@@ -81,15 +103,20 @@ public final class KmuConditionService {
         }
 
         KmuConditionSpec spec;
+
         try {
-            spec = repository.findConditionSpec(normalisedId).orElse(null);
-        } catch (RuntimeException exception) {
-            return failed(normalisedId, "Failed to look up condition spec.", exception);
+            spec = repository
+                .findConditionSpec(normalisedId)
+                .orElse(null);
+
+        } catch (RuntimeException runtimeException) {
+            return failed(normalisedId, "Failed to look up condition spec.", runtimeException);
         }
 
         if (spec == null) {
             return KmuConditionAddResult.conditionNotFound(normalisedId);
         }
+
         // Guard the add against conditions the picker would not offer, so a direct
         // (e.g. console) call cannot place a condition the policy hides.
         if (!offerPolicy.isConditionOfferable(spec)) {
@@ -104,9 +131,15 @@ public final class KmuConditionService {
             market.addCondition(normalisedId);
             market.markConditionSurveyed(normalisedId);
             market.reapplyConditions();
+
             return KmuConditionAddResult.added(normalisedId);
+
         } catch (RuntimeException exception) {
-            return failed(normalisedId, "Failed to add market condition.", exception);
+
+            return failed(
+                normalisedId,
+                "Failed to add market condition.",
+                exception);
         }
     }
 
@@ -114,7 +147,9 @@ public final class KmuConditionService {
             String conditionId,
             String message,
             RuntimeException exception) {
+
         errorReporter.report(message + " conditionId=" + conditionId, exception);
+
         return KmuConditionAddResult.failed(conditionId, message, exception);
     }
 }

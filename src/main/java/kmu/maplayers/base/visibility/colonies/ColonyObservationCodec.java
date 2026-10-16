@@ -1,8 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
 import kmlib.starsector.memory.observations.ObservationCodec;
-
-import kmu.util.KmuValues;
+import kmlib.text.KmlibStrings;
 
 /**
  * What one colony sighting says, written as the register holds it and read back out of it: the
@@ -32,7 +31,7 @@ final class ColonyObservationCodec implements ObservationCodec<ColonyObservation
     @Override
     public ColonyObservation decodeObservation(String storedObservation) {
 
-        if (!KmuValues.hasText(storedObservation)) {
+        if (!KmlibStrings.hasText(storedObservation)) {
             // An entry naming nowhere is not a weaker observation but no observation: the place is
             // the half every visibility rule spends, and there is nothing here to spend.
             return null;

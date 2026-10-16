@@ -16,6 +16,7 @@ import kmlib.starsector.ui.widgets.tabs.HeaderBandSpec;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
+import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
@@ -26,7 +27,6 @@ import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 import kmu.settings.KmuMapControlSettings;
 import kmu.settings.KmuMapSidebarSettings;
-import kmu.util.KmuValues;
 
 import org.lwjgl.input.Keyboard;
 
@@ -103,6 +103,7 @@ public final class LiveSidebarPlacement {
     public static TabPanelPlacement resolveIntelPlacement(
             Rectangle mapVisorRect,
             SidebarHostPanel panel) {
+
         return resolvePlacement(buildIntelPadding(mapVisorRect), panel);
     }
 
@@ -113,6 +114,7 @@ public final class LiveSidebarPlacement {
     // longer list scrolls within). In UI coordinates (origin bottom-left) the visor's top edge is its y plus
     // its height. The right margin is unused - the sidebar grows rightward across the visor.
     static Padding computeIntelPadding(Rectangle mapVisorRect, float screenHeight, int topPadding) {
+
         return new Padding(
             Math.round(screenHeight - (mapVisorRect.y() + mapVisorRect.height())) + topPadding,
             0,
@@ -128,8 +130,9 @@ public final class LiveSidebarPlacement {
     // would take the whole strip down instead of costing itself its letters - the same price the keycode
     // is bounded for, one field over.
     static List<String> resolveTabLabels(List<MapLayer> layers) {
+
         return layers.stream()
-            .map(layer -> KmuValues.getTextOrEmpty(layer.resolveTabLabelText()))
+            .map(layer -> KmlibStrings.getTextOrEmpty(layer.resolveTabLabelText()))
             .toList();
     }
 
@@ -137,6 +140,7 @@ public final class LiveSidebarPlacement {
     // above, a hint may be absent outright - the control reads a null entry as a tab with no hint - so
     // the collector has to be one that admits nulls.
     static List<String> resolveTabShortcuts(List<MapLayer> layers) {
+
         return layers.stream()
             .map(LiveSidebarPlacement::resolveShortcutName)
             .toList();
@@ -203,6 +207,7 @@ public final class LiveSidebarPlacement {
 
         var tabStyle = panel.tabStyle();
         var measurers = loadFaceMeasurers(tabStyle);
+
         if (measurers == null) {
             return null;
         }
@@ -254,6 +259,7 @@ public final class LiveSidebarPlacement {
     // reserved inset so the box sits flush against the neighbour the host meant to blend into - and the bar
     // thickness the body reserves its gutter for.
     private static PanelChrome buildChrome(Set<BoxEdge> borderedEdges) {
+
         return new PanelChrome(
             new BoxBorder(KmuMapSidebarSettings.getMapSidebarBorderWidth(), borderedEdges),
             new ScrollbarThickness(KmuMapSidebarSettings.getMapSidebarScrollbarThickness()));
@@ -262,6 +268,7 @@ public final class LiveSidebarPlacement {
     // The on-map anchor: hang from the screen top-left by the player's padding. The right margin is
     // unused - the sidebar grows rightward to fit the widest content.
     private static Padding buildMapPadding() {
+
         return new Padding(
             KmuMapSidebarSettings.getMapSidebarPaddingTop(),
             0,
@@ -272,6 +279,7 @@ public final class LiveSidebarPlacement {
     // The intel-screen anchor from the live screen height and the player's top padding; the anchor math
     // (flush-left, hung from the visor top minus the padding, capped to the visor bottom) is computeIntelPadding's.
     private static Padding buildIntelPadding(Rectangle mapVisorRect) {
+
         return computeIntelPadding(
             mapVisorRect,
             VanillaScreen.resolveUiHeight(),
@@ -290,7 +298,10 @@ public final class LiveSidebarPlacement {
     private static int resolveLitTabIndex(List<MapLayer> layers, MapLayer activeLayer) {
 
         var index = layers.indexOf(activeLayer);
-        return index < 0 ? ControlSpec.NO_SELECTION : index;
+
+        return index < 0
+            ? ControlSpec.NO_SELECTION
+            : index;
     }
 
     // The display name of the key a layer answers to, or null when it has none: an unbound keycode,
@@ -302,7 +313,6 @@ public final class LiveSidebarPlacement {
     private static String resolveShortcutName(MapLayer layer) {
 
         var keycode = layer.resolveShortcutKeycode();
-
         if (keycode <= 0 || keycode >= Keyboard.KEYBOARD_SIZE) {
             return null;
         }
@@ -316,6 +326,7 @@ public final class LiveSidebarPlacement {
     // face - a strip snapped wholly to the tab face would size its body rows differently on each screen,
     // and the panel, framed to its widest row, would stand a different width on each.
     private static StripTextMeasurers loadFaceMeasurers(TabStyle tabStyle) {
+
         return StripTextMeasurers.loadFaceMeasurers(
             tabStyle.face(),
             SidebarStyles.settleBodyFace());

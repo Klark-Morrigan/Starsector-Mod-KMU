@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static kmu.util.KmuValues.normaliseText;
+import static kmlib.text.KmlibStrings.normaliseText;
 
 /**
  * The market conditions the running game knows about, as the mod's own value rather than as the

@@ -14,10 +14,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static kmu.util.KmuValues.getTextOrEmpty;
-import static kmu.util.KmuValues.hasText;
+import static kmlib.text.KmlibStrings.getTextOrEmpty;
+import static kmlib.text.KmlibStrings.hasText;
 
 public final class KmuConditionPickerModelFactory {
+
     private final KmuConditionService conditionService;
     private final StarsectorConditionPickerLocationFactory locationFactory;
 
@@ -28,12 +29,15 @@ public final class KmuConditionPickerModelFactory {
     KmuConditionPickerModelFactory(
             KmuConditionService conditionService,
             StarsectorConditionPickerLocationFactory locationFactory) {
+
         this.conditionService = Objects.requireNonNull(conditionService, "conditionService");
         this.locationFactory = Objects.requireNonNull(locationFactory, "locationFactory");
     }
 
     public KmuConditionPickerModel create(KmuEditableMarket market) {
+
         Objects.requireNonNull(market, "market");
+
         var currentConditionIds = conditionService.getCurrentConditionIds(market);
         var specs = conditionService.listConditionSpecsVisibleForMarket(market);
 
@@ -93,9 +97,11 @@ public final class KmuConditionPickerModelFactory {
         if (state != KmuConditionPickerEntryState.PRESENT) {
             return false;
         }
+
         try {
             return market.isConditionSuppressed(spec.getId());
-        } catch (RuntimeException exception) {
+
+        } catch (RuntimeException runtimeException) {
             return false;
         }
     }
@@ -107,32 +113,42 @@ public final class KmuConditionPickerModelFactory {
 
         if (state != KmuConditionPickerEntryState.PRESENT
                 || !(market instanceof StarsectorEditableMarket)) {
+
             return Optional.empty();
         }
+
         try {
             return ((StarsectorEditableMarket) market).findCondition(spec.getId());
-        } catch (RuntimeException exception) {
+
+        } catch (RuntimeException runtimeException) {
             return Optional.empty();
         }
     }
 
     private String liveIconName(MarketConditionAPI condition) {
+
         try {
             var plugin = condition.getPlugin();
             if (plugin == null) {
                 return null;
             }
+
             return plugin.getIconName();
-        } catch (RuntimeException exception) {
+
+        } catch (RuntimeException runtimeException) {
             return null;
         }
     }
 
     private boolean isHidden(MarketConditionAPI condition) {
+
         try {
             var plugin = condition.getPlugin();
-            return plugin != null && !plugin.showIcon();
-        } catch (RuntimeException exception) {
+
+            return plugin != null
+                && !plugin.showIcon();
+
+        } catch (RuntimeException runtimeException) {
             return false;
         }
     }

@@ -1,6 +1,6 @@
 package kmu.maplayers.base.visibility.structures;
 
-import kmu.util.KmuValues;
+import kmlib.text.KmlibStrings;
 
 import java.util.Optional;
 import java.util.Set;
@@ -82,7 +82,7 @@ public record StructureObservation(
         if (holderFactionId == null) {
             return Optional.empty();
         }
-        return holderFactionId.filter(KmuValues::hasText);
+        return holderFactionId.filter(KmlibStrings::hasText);
     }
 
     // The same for a moment: an unstated one is one nothing was ever timed by, which is what a

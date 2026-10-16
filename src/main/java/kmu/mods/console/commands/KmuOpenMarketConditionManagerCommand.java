@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import static kmu.util.KmuValues.normaliseText;
+import static kmlib.text.KmlibStrings.normaliseText;
 
 public final class KmuOpenMarketConditionManagerCommand
         extends BaseKmlibCommand {

@@ -1,6 +1,6 @@
 package kmu.maplayers.base.visibility.observations;
 
-import kmu.util.KmuValues;
+import kmlib.text.KmlibStrings;
 
 import java.util.Objects;
 
@@ -35,7 +35,7 @@ public record ObservationAxis(
      */
     public ObservationAxis {
 
-        KmuValues.requireNonBlankText(leadInKey, "leadInKey");
+        KmlibStrings.requireFieldText(leadInKey, "leadInKey");
         Objects.requireNonNull(recency, "An axis is in one of the three states.");
     }
 }

@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import static kmu.util.KmuValues.hasText;
+import static kmlib.text.KmlibStrings.hasText;
 
 public final class KmuTooltipSection {
     private static final float HEADING_PAD = 10f;

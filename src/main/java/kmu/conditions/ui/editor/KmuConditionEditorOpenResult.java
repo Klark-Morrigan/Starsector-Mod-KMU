@@ -3,9 +3,10 @@ package kmu.conditions.ui.editor;
 import java.util.Objects;
 import java.util.Optional;
 
-import static kmu.util.KmuValues.normaliseText;
+import static kmlib.text.KmlibStrings.normaliseText;
 
 public final class KmuConditionEditorOpenResult {
+
     private final KmuConditionEditorOpenStatus status;
     private final String message;
     private final RuntimeException cause;
@@ -14,12 +15,14 @@ public final class KmuConditionEditorOpenResult {
             KmuConditionEditorOpenStatus status,
             String message,
             RuntimeException cause) {
+
         this.status = Objects.requireNonNull(status, "status");
         this.message = Objects.requireNonNull(message, "message");
         this.cause = cause;
     }
 
     public static KmuConditionEditorOpenResult opened() {
+
         return new KmuConditionEditorOpenResult(
             KmuConditionEditorOpenStatus.OPENED,
             "Opened Market Condition Manager.",
@@ -27,6 +30,7 @@ public final class KmuConditionEditorOpenResult {
     }
 
     public static KmuConditionEditorOpenResult noMarketContext() {
+
         return new KmuConditionEditorOpenResult(
             KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT,
             "No active context supports market condition editing.",
@@ -34,10 +38,12 @@ public final class KmuConditionEditorOpenResult {
     }
 
     public static KmuConditionEditorOpenResult unsupportedTarget(String reason) {
+
         var normalisedReason = normaliseText(reason);
         var message = normalisedReason == null
             ? "Current market does not support market condition editing."
             : normalisedReason;
+
         return new KmuConditionEditorOpenResult(
             KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET,
             message,
@@ -45,6 +51,7 @@ public final class KmuConditionEditorOpenResult {
     }
 
     public static KmuConditionEditorOpenResult failed(String message, RuntimeException cause) {
+
         return new KmuConditionEditorOpenResult(
             KmuConditionEditorOpenStatus.FAILED,
             Objects.requireNonNull(message, "message"),

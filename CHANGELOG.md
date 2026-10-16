@@ -142,6 +142,8 @@ Code that knows nothing of KMU now lives in KMLib, where any mod built on it can
 | `kmu.mods.nexerelin.NexerelinMarketTransferRelay` and `kmu.mods.nexerelin.NexerelinInvasionListenerInstaller` | Gone: KMLib puts its own relay on each loaded sector where Nexerelin is enabled |
 | `base.theme.GlLineHatchStroke` and `base.theme.HatchStroke` | `kmlib.opengl.hatch.GlLineHatchStroke`. `HatchStroke` is gone: `HatchStyle(HatchPattern, GlLineHatchStroke)` holds the record |
 | `CellFrontierGeometry.clipCellsToFrontier(List, float[])` | `kmlib.opengl.PolygonTessellator.tessellateToBoundaryLoopsWithinLoop(List, float[])` |
+| `KmuValues` | `KmlibStrings`, whose blank rule is `Character.isWhitespace` rather than `String.trim()`'s. `requireNonBlankText(String, String)` is `requireFieldText(String, String)` |
+| `KmuTextFormats.joinWithParenthetical(Optional, Optional)` | Forwarding to `KmlibStrings`, under the same blank rule |
 
 </details>
 

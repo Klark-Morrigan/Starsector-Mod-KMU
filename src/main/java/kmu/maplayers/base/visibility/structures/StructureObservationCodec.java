@@ -1,8 +1,7 @@
 package kmu.maplayers.base.visibility.structures;
 
 import kmlib.starsector.memory.observations.ObservationCodec;
-
-import kmu.util.KmuValues;
+import kmlib.text.KmlibStrings;
 
 import java.util.EnumSet;
 import java.util.Optional;
@@ -55,7 +54,7 @@ final class StructureObservationCodec implements ObservationCodec<StructureObser
     @Override
     public StructureObservation decodeObservation(String storedObservation) {
 
-        if (!KmuValues.hasText(storedObservation)) {
+        if (!KmlibStrings.hasText(storedObservation)) {
             // An entry stating nothing still says the structure was found, that being what a
             // register entry is. There is no weaker reading to fall to and no reason to lose it.
             return StructureObservation.createExistenceOnlyObservation();
@@ -75,7 +74,7 @@ final class StructureObservationCodec implements ObservationCodec<StructureObser
             return StructureObservation.createExistenceOnlyObservation();
         }
         return new StructureObservation(
-            Optional.ofNullable(fields[HOLDER_FIELD]).filter(KmuValues::hasText),
+            Optional.ofNullable(fields[HOLDER_FIELD]).filter(KmlibStrings::hasText),
             faults,
             ownershipSeenTimestamp,
             operationDetectedTimestamp);
@@ -118,7 +117,7 @@ final class StructureObservationCodec implements ObservationCodec<StructureObser
     // half of it missing, since a field that is not a number cannot be placed in the entry either.
     private static Optional<Long> readStoredMoment(String storedMoment) {
 
-        if (!KmuValues.hasText(storedMoment)) {
+        if (!KmlibStrings.hasText(storedMoment)) {
             return Optional.empty();
         }
         try {
