@@ -9,7 +9,8 @@ import kmlib.testfixtures.statics.StaticSeams;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.picker.OwnerMetricsFake;
-import kmu.maplayers.ownermap.picker.OwnerStatsReadFake;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
 import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
@@ -153,7 +154,7 @@ final class HolderPaintedViewTests {
 
             viewFake.readPickerUnderOneGrouping(
                 mock(SectorAPI.class),
-                grouping -> OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
+                grouping -> new OwnerStatsRead<>(Map.<String, OwnerMetricsFake>of(), OwnerPresenceIndex.EMPTY),
                 ANY_MODES);
 
             assertThat(viewFake.countGroupingSamples())
@@ -171,7 +172,7 @@ final class HolderPaintedViewTests {
                 mock(SectorAPI.class),
                 grouping -> {
                     walkedGroupings.add(grouping);
-                    return OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of());
+                    return new OwnerStatsRead<>(Map.<String, OwnerMetricsFake>of(), OwnerPresenceIndex.EMPTY);
                 },
                 ANY_MODES);
 

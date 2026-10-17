@@ -34,6 +34,9 @@ It samples per hover the `BlocRelations` pair every box places blocs by:
 the alliance set off the injected `FactionAllianceSource`,
 and the disposition,
 both read for the sector being hovered.
+The pair travels whole and answers the two questions every box asks of it:
+which side of the contest a bloc is on (`selectSide`),
+and whether a lone faction is on good terms with the holder (`isFactionFriendlyWith`).
 A pair held for the session would file a faction under the alliance it left an hour ago,
 and sampled per box the two families could disagree.
 
@@ -143,7 +146,7 @@ Nothing on either market parts them,
 so the exemption is an identity.
 `OpenlyKnownColonyRegistry` holds the entity IDs `MapLayers` seeds it with,
 beside a tag another mod can hang on content of its own,
-and `OpenlyKnownColonyLookup` folds the answer by colony ID off the box's own walk.
+and `ColonyFactsLookup` folds the answer by colony ID off the box's own walk.
 The Academy then falls through to `unlisted`,
 which is the separation the word was wanted for.
 

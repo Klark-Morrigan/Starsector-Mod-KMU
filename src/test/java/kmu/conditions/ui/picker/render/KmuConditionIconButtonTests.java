@@ -8,7 +8,7 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
 import kmu.conditions.ui.picker.tooltip.KmuConditionEntryTooltipCreator;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +40,7 @@ class KmuConditionIconButtonTests {
 
     @BeforeEach
     void mockStarsectorThemeColours() {
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock.when(Misc::getDarkPlayerColor).thenReturn(DEFAULT_BACKDROP);
         miscMock.when(Misc::getBasePlayerColor).thenReturn(DEFAULT_BORDER);
@@ -51,7 +51,7 @@ class KmuConditionIconButtonTests {
     @AfterEach
     void closeStarsectorThemeColours() {
         miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested
@@ -130,19 +130,19 @@ class KmuConditionIconButtonTests {
         @Test
         void iconSizeReturnsFallbackSizeForZeroDimensions() {
             var bounds =
-                    KmuConditionIconButtonFactory.computeIconSize(0f, 0f);
+                    KmuConditionIconButtonLayout.computeIconSize(0f, 0f);
 
-            assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
-            assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
+            assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
+            assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
         }
 
         @Test
         void iconSizeReturnsFallbackSizeForNegativeDimensions() {
             var bounds =
-                    KmuConditionIconButtonFactory.computeIconSize(-1f, -1f);
+                    KmuConditionIconButtonLayout.computeIconSize(-1f, -1f);
 
-            assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
-            assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE);
+            assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
+            assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
         }
     }
 
@@ -152,48 +152,48 @@ class KmuConditionIconButtonTests {
         @Test
         void rendersIconsAtVanillaHeightWhenSourceAlreadyMatches() {
             var wide =
-                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(120f, 40f);
+                    KmuConditionIconButtonLayout.computeButtonLayout(120f, 40f);
 
             assertThat(wide.getIconWidth()).isEqualTo(120f);
             assertThat(wide.getIconHeight()).isEqualTo(40f);
             assertThat(wide.getButtonWidth())
-                    .isEqualTo(120f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
+                    .isEqualTo(120f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
             assertThat(wide.getButtonHeight())
-                    .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
+                    .isEqualTo(40f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
         }
 
         @Test
         void upscalesSmallerIconsToVanillaHeightWithoutChangingAspectRatio() {
             var small =
-                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(20f, 20f);
+                    KmuConditionIconButtonLayout.computeButtonLayout(20f, 20f);
 
             assertThat(small.getIconWidth()).isEqualTo(40f);
             assertThat(small.getIconHeight())
-                    .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+                    .isEqualTo(KmuConditionIconButtonLayout.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
             assertThat(small.getButtonWidth())
-                    .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
+                    .isEqualTo(40f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
             assertThat(small.getButtonHeight())
-                    .isEqualTo(40f + KmuConditionIconButtonSizing.ICON_MARGIN * 2f);
+                    .isEqualTo(40f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
         }
 
         @Test
         void preservesWideIconWidthWhenHeightMatchesVanillaTarget() {
             var wide =
-                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(180f, 40f);
+                    KmuConditionIconButtonLayout.computeButtonLayout(180f, 40f);
 
             assertThat(wide.getIconWidth()).isEqualTo(180f);
             assertThat(wide.getIconHeight())
-                    .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+                    .isEqualTo(KmuConditionIconButtonLayout.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
         }
 
         @Test
         void downscalesOversizedIconsToVanillaHeightWithoutChangingAspectRatio() {
             var tall =
-                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 192f);
+                    KmuConditionIconButtonLayout.computeButtonLayout(64f, 192f);
 
             assertThat(tall.getIconWidth()).isBetween(13.33f, 13.34f);
             assertThat(tall.getIconHeight())
-                    .isEqualTo(KmuConditionIconButtonSizing.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+                    .isEqualTo(KmuConditionIconButtonLayout.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
         }
     }
 

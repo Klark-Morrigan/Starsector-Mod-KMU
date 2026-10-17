@@ -38,12 +38,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**: the mark a faction's line opens on, for a line marked as that faction's.
 - **`HolderRankingRules.createByMarketProximity(StarSystemAPI, Colonies, ColonyKnowledge, HolderGrouping)`**: the one build of the live ranking rules, the neutral bar and the proximity tie-break, which the fills and the refresh poll both rank under.
 - **`HolderPass.palettes()`** and **`DominancePass.palettes()`**: the pass's one palette read, which remembers each bloc's owner and shades for the pass, so every resolve and band over one rebuild colours a bloc through the same object.
+- **`CellTooltipEntryLine.createCountedEntityLine(EntityNameplate, int)`**: a counted line naming something the sector map draws, led by its map glyph.
+- **`ContestBlockHeading.createFixedKeySource(String)`**: the heading source of a block whose heading no install changes.
+- **`FilteredClaims.resolveFilteredClaimsThrough(HolderPass, ClaimReaderSource, String)`**: the spotlit claims with the reader opened over the pass.
 - **`KmuErrorReporter.createLoggingReporter(Class)`**: a reporter writing each caught failure as a warning, with its cause, under the reporting class's logger.
 - **`MapLayerRefreshBoard.getGroupingRevision()`**: how many times a system has been marked stale on the board, which no drain moves back. A reader that cannot drain the set, such as the sidebar picker's memo, keys on it.
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**: one build's paint scheme, read once and handed to every part of the build that styles by it.
 - **`NexerelinAlliances.resolveFactionAlliancesIn(SectorAPI)`**: the live alliance memberships as a `FactionAllianceSource` answers them. Nexerelin keeps one set for the running game, so the sector is not consulted.
 - **`MapStyling.resolveUnownedStyle(boolean)`**: the style an unowned cell draws in, so the map's fills and the border-tracing overlay look it up the same way.
 - **`PoliticalHolderView`**, which every political map view implements: the alliance set's revision as its content revision, who stands together in a contest, the holder categories, and the faction reading.
+- **`SectorClaims.readClaimantBlocId(String, HolderGrouping)`**: the bloc a claim lands on, which the fill, the picker's stats and the band all read.
+- **`StandingRankOrder.createRankOrder(ToIntFunction, Function)`**: the one order a box's standings and the band beneath a cell rank by.
 - **`SmoothingStageSink`** and **`BorderSmoothing.smoothBorderLoops(List, BorderSmoothingStyle, SmoothingStageSink)`**: the smoothing reports each pass that ran, so a caller showing the stages shows them in the order and under the gates the map drew by. `ClusterBorderStageCollector` is one.
 
 #### Fixed
@@ -112,7 +117,7 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `HolderGrouping.collectBlocIds(Collection)` | Gone |
 | `HolderPass.readKnownColoniesIn(StarSystemAPI)` and `readInhabitingColoniesIn(StarSystemAPI)`, public | Package-private. A reader outside it takes `readHabitationIn(StarSystemAPI)` or `readKnownColonyFactionIds(StarSystemAPI)` |
 | `AllianceBodyControls` | Gone: `AlliancesView.getViewBodyControls(BodyControlTarget)` binds the shared recede control itself |
-| `SystemColonyReading`'s `readKindOf(String)`, `isDiscoveredColony(String)`, `isOpenlyKnownColony(String)`, `readConcealmentOf(String, boolean)`, both `readQualifierFacts` overloads and `describeColony(CellTooltipEntryLine, String, ColonyQualifierFacts)` | `describeColony(CellTooltipEntryLine, AccountedColony, String)`, the colony built by `AccountedColony.createEconomyListedColony(String, boolean)` or `createOffEconomyColony(String, boolean)`. A caller already holding the kind passes it to `describeColony(CellTooltipEntryLine, AccountedColony, ColonyKind, String)` |
+| `SystemColonyReading`'s `readKindOf(String)`, `isDiscoveredColony(String)`, `isOpenlyKnownColony(String)`, `readConcealmentOf(String, boolean)`, both `readQualifierFacts` overloads and `describeColony(CellTooltipEntryLine, String, ColonyQualifierFacts)` | `describeColony(CellTooltipEntryLine, AccountedColony, String)`, the colony built by `AccountedColony.createEconomyListedColony(String, boolean)` or `createOffEconomyColony(String, boolean)`. A line led by no finding takes `describeColony(CellTooltipEntryLine, AccountedColony)`, and a caller already holding the kind passes it to `describeColony(CellTooltipEntryLine, AccountedColony, ColonyKind)` |
 | `ColonyQualifier`, `ColonyQualifierFacts`, `ColonyConcealment` and the `SystemColonyReading` constructor, public | Package-private: a line is described through `SystemColonyReading.describeColony`. The constructor takes the colony remark as a `BiFunction` and refuses a null part |
 | `RenderStyleReader.readFactionStyle()`, `readIndependentStyle()`, `readDecivilisedStyle()` and `readUninhabitedStyle(boolean)` | `HolderCategoryStyleReader` |
 | `BlocPresence.collectColouredPresences(Map, BlocPaletteReader)` | Gone: `ColonyCellRibbons` colours its own counts |
@@ -136,7 +141,15 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `kmu.mods.nexerelin.alliances.AllianceFingerprint.compute(List)` and `NexerelinAlliances.computeAllianceFingerprint()` | Gone: `PoliticalMapStalenessSource` compares the alliance records themselves between polls. `kmu.mods.nexerelin.alliances` is gone |
 | `PoliticalMapLayer(List, OwnerPaintedView)`, `PoliticalMapStanding(MapLayerViewRegistry)`, `PoliticalMapInstaller.installAll(SectorAPI, MapLayerViewRegistry)` and `PoliticalMapStalenessSource(SectorMapMachinery)` | Each also takes the `AllianceSource` the poll reads, which `MapLayers` binds |
 | `BlocAffiliation(HolderGrouping)` | `BlocAffiliation(FactionAlliances)`: who stands together is read off the alliance memberships, never off a paint grouping |
-| `SystemDominationTooltip` and `SystemClaimTooltip` constructors taking the alliance set as a `HolderGroupingSource` | Taking a `FactionAllianceSource`, asked about the hovered sector |
+| `SystemDominationTooltip` and `SystemClaimTooltip` constructors taking the alliance set as a `HolderGroupingSource` | Taking a `PoliticalBoxSeams`, whose `FactionAllianceSource` is asked about the hovered sector |
+| `PoliticalMapCellTooltip(ClaimDecreeReader, FactionAllianceSource, ContestWordingSource)`, `VANILLA_CLAIM_DECREE_READER` and the protected `claimDecreeReader` | `PoliticalMapCellTooltip(PoliticalBoxSeams)`. A running game's boxes take `PoliticalBoxSeams.LIVE`; the seams are private to the box |
+| `BlocRelations.affiliation()` and `friendliness()` | `blocAffiliation()` and `factionSetFriendliness()`. A box asks the pair through `selectSide(ContestSide, String, List, Function)` and `isFactionFriendlyWith(String, Set)` |
+| `StandingBlockRules(Predicate, BlocAffiliation, FactionSetFriendliness, Function)` | `StandingBlockRules(Predicate, BlocRelations, Function)` |
+| `ColonyKindLookup`, `ColonyDiscoveryLookup` and `OpenlyKnownColonyLookup` | One `ColonyFactsLookup`, folded in one walk by `readFactsIn(Colonies, ColonyKnowledge)` |
+| `ColonySightings` and `StructureObservations` | KMLib's `RecordedObservations<ColonyObservation>` and `RecordedObservations<StructureObservation>`, answering an `Optional`. `ColonyKnowledge`'s constructors take the former |
+| `DominanceStatsRead` and `ClaimStatsRead` | One `ownermap.picker.OwnerStatsRead<S>` record. An empty read is `OwnerStatsRead.createEmptyRead()` |
+| `BorderTraceStyle(EdgeInsetRule, double, double, double)` | `BorderTraceStyle(EdgeInset, double, double)`: the trace carries the same `EdgeInset` the cells are shaped by |
+| `KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_NAME` and its `strings.json` key | `KmuOwnerMapStringKeys.OWNER_MAP_CTL_SORT_NAME`. A vocabulary's name mode is `OwnerMetricSortMode.createNameMode(List)` |
 | `FactionAllianceSource.readAlliances()`, `FactionAllianceRegistry.readAlliances()` and `ColonyKnowledge.observingUnderTheFog()` | Each takes the `SectorAPI` whose alliances are asked for |
 | `StarsectorMarketUiContextResolver()`, `StarsectorInteractionDialogPickerOpener()` and `StarsectorConditionPickerFeedbackSink()`, reading the running game's sector | Gone: each takes the `SectorAPI` the console command resolves once |
 | `KmuConditionPickerEditor(KmuConditionService, KmuConditionPickerDialogOpener)`, its three-argument form, and `KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler)` and `(KmuConditionPickerActionHandler, float, float)` | Each also takes the `KmuConditionPickerFeedbackSink` a picker reports to |

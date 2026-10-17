@@ -5,13 +5,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
@@ -19,7 +17,6 @@ import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -44,10 +41,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what naming the claim in a single place buys the layer: every one of its boxes runs on that one
- * read, and each heads with the decree holding the hovered system unless its own body states that
- * decree. Both are asserted over the boxes as a set rather than on either of them, since the point is
- * not that two boxes agree today but that agreeing is not each box's decision to make.
+ * Pins what naming the claim in a single place buys the layer: each box heads with the decree holding
+ * the hovered system unless its own body states that decree. Asserted over the boxes as a set rather
+ * than on either of them, since the point is not that two boxes agree today but that agreeing is not
+ * each box's decision to make.
  *
  * <p>The line itself has its own suite ({@link CoreTerritoryHeadingTests}) and the contest below it
  * belongs to each box, so what is left here is where the heading comes from, which boxes take it, and
@@ -83,21 +80,6 @@ public final class PoliticalMapCellTooltipTests {
     @AfterEach
     void clearColours() {
         CellTooltipPaletteFake.clearPalette();
-    }
-
-    @Nested
-    class VanillaClaimDecreeReaderBinding {
-
-        @Test
-        void isTheOneEveryViewsBoxRunsOn() {
-            // The regression this guards: a view minting a decree read of its own reads the same flag
-            // through a second binding, which nothing on screen would show the player disagreeing.
-            assertThat(SystemDominationTooltip.createPaintedBy(HolderGrouping::identity).claimDecreeReader)
-                .isSameAs(PoliticalMapCellTooltip.VANILLA_CLAIM_DECREE_READER);
-
-            assertThat(SystemClaimTooltip.createReadingThrough(VanillaClaimBreakdownReader::new).claimDecreeReader)
-                .isSameAs(PoliticalMapCellTooltip.VANILLA_CLAIM_DECREE_READER);
-        }
     }
 
     @Nested
@@ -211,16 +193,14 @@ public final class PoliticalMapCellTooltipTests {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
-            // The alliance seam is stood in as the identity grouping and the wording as the contested
-            // one: these cases are about the heading over the box, which neither reaches.
+            // The alliance seam is stood in as no alliance and the wording as the contested one: these
+            // cases are about the heading over the box, which neither reaches.
             return Stream.of(
                 describeBox(
                     "the faction and alliance views' box",
                     reader -> new SystemDominationTooltip(
                         HolderGrouping::identity,
-                        reader,
-                        FactionAllianceSource.NO_ALLIANCES,
-                        ContestWordingFixtures.CONTESTED_WORDING)));
+                        PoliticalBoxSeamsFixture.buildPlainSeamsOver(reader))));
         }
     }
 
@@ -236,15 +216,14 @@ public final class PoliticalMapCellTooltipTests {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
-            // The alliance seam is stood in as the identity grouping and the wording as the contested
-            // one: these cases are about the heading over the box, which neither reaches.
+            // The alliance seam is stood in as no alliance and the wording as the contested one: these
+            // cases are about the heading over the box, which neither reaches.
             return Stream.of(
                 describeBox(
                     "the claims view's box",
                     reader -> new SystemClaimTooltip(
                         reader,
-                        FactionAllianceSource.NO_ALLIANCES,
-                        ContestWordingFixtures.CONTESTED_WORDING)));
+                        PoliticalBoxSeamsFixture.buildPlainSeamsOver(reader))));
         }
     }
 

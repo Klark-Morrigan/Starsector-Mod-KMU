@@ -83,7 +83,7 @@ public final class KmuConditionIconGrid {
 
     /** Width of one column slot: button width plus the gap that follows it. */
     static float computeColumnUnit() {
-        return KmuConditionIconButtonSizing.computeSquareButtonWidth() + CELL_GAP;
+        return KmuConditionIconButtonLayout.computeSquareButtonWidth() + CELL_GAP;
     }
 
     /** Largest grid width that fits within the scrollable area of a panel of
@@ -92,7 +92,7 @@ public final class KmuConditionIconGrid {
     static float computeGridWidth(float containerWidth) {
 
         var availableWidth = Math.max(1f, containerWidth - SCROLLBAR_RIGHT_PAD);
-        var squareButtonWidth = KmuConditionIconButtonSizing.computeSquareButtonWidth();
+        var squareButtonWidth = KmuConditionIconButtonLayout.computeSquareButtonWidth();
 
         if (availableWidth < squareButtonWidth) {
             return availableWidth;
@@ -109,7 +109,7 @@ public final class KmuConditionIconGrid {
 
         var safeColumns = Math.max(1, columns);
 
-        return safeColumns * KmuConditionIconButtonSizing.computeSquareButtonWidth()
+        return safeColumns * KmuConditionIconButtonLayout.computeSquareButtonWidth()
             + (safeColumns - 1) * CELL_GAP;
     }
 

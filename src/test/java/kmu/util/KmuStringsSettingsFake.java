@@ -1,32 +1,27 @@
-package kmu.starsector;
+package kmu.util;
 
+import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.SettingsColourSource;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.SettingsStringSource;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.UiElementSource;
-
-import kmu.util.KmuMapStringKeys;
-import kmu.util.KmuMarketConditionStringKeys;
-import kmu.util.KmuPoliticalMapStringKeys;
-import kmu.util.KmuStringKeys;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * KMU-side facade over KMLib's
- * {@link kmlib.testfixtures.starsector.settings.StarsectorSettingsFake} that bakes in
- * KMU's localised string map. KMLib owns the actual {@code SettingsAPI}
- * proxy (single source of truth) and the fetch-or-redact behaviour via
- * {@link kmlib.starsector.strings.StarsectorStrings}; this class
- * supplies the {@link SettingsStringSource} so existing call sites
- * keep working without learning about KMLib.
+ * KMU-side facade over KMLib's {@link StarsectorSettingsFake} that bakes in KMU's localised string
+ * map, beside the key classes it answers. KMLib owns the actual {@code SettingsAPI} proxy (single
+ * source of truth) and the fetch-or-redact behaviour via
+ * {@link kmlib.starsector.strings.StarsectorStrings}; this class supplies the
+ * {@link SettingsStringSource} so call sites need not learn about KMLib.
  */
-public final class StarsectorSettingsFake {
-    private StarsectorSettingsFake() {
+public final class KmuStringsSettingsFake {
+
+    private KmuStringsSettingsFake() {
     }
 
     public static void installSettings() {
-        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.installSettings(KMU_STRINGS);
+        StarsectorSettingsFake.installSettings(KMU_STRINGS);
     }
 
     /**
@@ -38,7 +33,7 @@ public final class StarsectorSettingsFake {
      * @param colourSource the shades the named engine colour keys answer with
      */
     public static void installSettings(SettingsColourSource colourSource) {
-        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.buildSettings()
+        StarsectorSettingsFake.buildSettings()
             .answerStrings(KMU_STRINGS)
             .answerColours(colourSource)
             .installSettings();
@@ -52,14 +47,14 @@ public final class StarsectorSettingsFake {
      * @param uiElementSource the element every panel this settings makes hands back
      */
     public static void installSettingsWithUiElements(UiElementSource uiElementSource) {
-        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.buildSettings()
+        StarsectorSettingsFake.buildSettings()
             .answerStrings(KMU_STRINGS)
             .answerUiElements(uiElementSource)
             .installSettings();
     }
 
     public static void clearSettings() {
-        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.clearSettings();
+        StarsectorSettingsFake.clearSettings();
     }
 
     /**

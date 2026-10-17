@@ -4,7 +4,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipLabelFinding;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,12 +61,12 @@ final class ColonyQualifierTests {
 
     @BeforeEach
     void installStrings() {
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested

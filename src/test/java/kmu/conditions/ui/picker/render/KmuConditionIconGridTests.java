@@ -20,7 +20,7 @@ class KmuConditionIconGridTests {
 
         @Test
         void placesAllButtonsOnOneRowWhenTheyFitWithinWidth() {
-            var m = KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(40f, 40f);
+            var m = KmuConditionIconButtonLayout.computeButtonLayout(40f, 40f);
             var rowWidth = 3 * m.getButtonWidth() + 2 * KmuConditionIconGrid.CELL_GAP;
 
             var placements =
@@ -36,9 +36,9 @@ class KmuConditionIconGridTests {
         @Test
         void packsVariableWidthButtonsIntoRows() {
             var metrics = Arrays.asList(
-                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f),
-                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(128f, 64f),
-                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f));
+                    KmuConditionIconButtonLayout.computeButtonLayout(64f, 64f),
+                    KmuConditionIconButtonLayout.computeButtonLayout(128f, 64f),
+                    KmuConditionIconButtonLayout.computeButtonLayout(64f, 64f));
 
             var placements = KmuConditionIconGrid.computeLayout(metrics, 160f);
 
@@ -61,9 +61,9 @@ class KmuConditionIconGridTests {
         @Test
         void computesHeightFromLastPackedRow() {
             var metrics = Arrays.asList(
-                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f),
-                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(128f, 64f),
-                    KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(64f, 64f));
+                    KmuConditionIconButtonLayout.computeButtonLayout(64f, 64f),
+                    KmuConditionIconButtonLayout.computeButtonLayout(128f, 64f),
+                    KmuConditionIconButtonLayout.computeButtonLayout(64f, 64f));
             var placements = KmuConditionIconGrid.computeLayout(metrics, 160f);
 
             assertThat(KmuConditionIconGrid.computeHeightForPlacements(placements))

@@ -2,8 +2,6 @@ package kmu.util;
 
 import kmlib.testfixtures.starsector.strings.ShippedStrings;
 
-import kmu.starsector.StarsectorSettingsFake;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -103,7 +101,7 @@ final class KmuStringKeysIntegrationTests {
             // no assertion either.
             var shippedStrings = ShippedStrings.readStringsByKey();
 
-            assertThat(StarsectorSettingsFake.readStringsByKey())
+            assertThat(KmuStringsSettingsFake.readStringsByKey())
                 .allSatisfy((key, wording) -> assertThat(wording)
                     .as("wording of %s", key)
                     .isEqualTo(shippedStrings.get(key)));

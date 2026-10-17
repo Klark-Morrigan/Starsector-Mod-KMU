@@ -16,7 +16,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +71,7 @@ final class SystemStatusRowIntegrationTests {
     void installStringsAndColours() {
         // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
         // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
 
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock
@@ -82,7 +82,7 @@ final class SystemStatusRowIntegrationTests {
     @AfterEach
     void clearStringsAndColours() {
         miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested

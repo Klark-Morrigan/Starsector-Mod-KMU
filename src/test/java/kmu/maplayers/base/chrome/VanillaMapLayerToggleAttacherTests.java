@@ -6,7 +6,7 @@ import kmlib.testfixtures.starsector.ui.map.controls.MapFilterButtonFake;
 import kmlib.testfixtures.starsector.ui.map.controls.MapFilterRowFake;
 
 import kmu.maplayers.base.layer.MapLayerVisibility;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -130,12 +130,12 @@ final class VanillaMapLayerToggleAttacherTests {
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
             var elementMock = mock(TooltipMakerAPI.class);
 
-            StarsectorSettingsFake.installSettingsWithUiElements(() -> elementMock);
+            KmuStringsSettingsFake.installSettingsWithUiElements(() -> elementMock);
             try {
                 createAttacher().attachToggleTo(
                     ShownFilterRows.createRowOver(rowFake), mock(MapLayerVisibility.class));
             } finally {
-                StarsectorSettingsFake.clearSettings();
+                KmuStringsSettingsFake.clearSettings();
             }
 
             // Six of the row's own eight buttons carry one, so a seventh without is the one thing

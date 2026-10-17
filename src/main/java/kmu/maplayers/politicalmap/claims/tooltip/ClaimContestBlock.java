@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.claims.tooltip;
 
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 
-import kmu.maplayers.politicalmap.dominance.tooltip.StandingBlock;
 import kmu.maplayers.politicalmap.tooltip.ContestBlockHeading;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
 import kmu.util.KmuPoliticalMapStringKeys;
@@ -15,11 +14,10 @@ import java.util.function.Function;
  * in the order a box lays them down: who stands with the claimant by alliance, who stands with it in
  * disposition, who could have taken the system, and who was never in the running at all.
  *
- * <p>A closed set for the reason {@link StandingBlock} is one - a block declared here is a block the
- * box lays down, and the order they read in is this declaration order rather than a sequence of calls
- * that could drift from it. The two sets stay apart because the blocks are not the same blocks: these
- * name factions by how they stand to a claim and end on eligibility, while those name blocs by how
- * they stand to a system's holder and end on candidacy.
+ * <p>A closed set for the reason {@link ContestBlockHeading} states. It stays apart from the domination
+ * box's set because the blocks are not the same blocks: these name factions by how they stand to a
+ * claim and end on eligibility, while those name blocs by how they stand to a system's holder and end
+ * on candidacy.
  *
  * <p>Each block carries the three things that make it itself: the heading it draws under, which of
  * the contest's standings it takes, and whether its lines have to say which of them could have taken
@@ -35,7 +33,8 @@ enum ClaimContestBlock implements ContestBlockHeading {
 
     /** Everyone present standing with the claim holder by alliance, of either eligibility. */
     ALLIED(
-        wording -> KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER,
+        ContestBlockHeading.createFixedKeySource(
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER),
         ListedClaimContest::selectAlliedStandings,
         ClaimContestBlock.IS_STATING_ELIGIBILITY_ON_LINE),
 
@@ -45,7 +44,8 @@ enum ClaimContestBlock implements ContestBlockHeading {
      * {@link kmu.maplayers.ownermap.owners.holders.alliances.ContestSides}.
      */
     FRIENDLY(
-        wording -> KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER,
+        ContestBlockHeading.createFixedKeySource(
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER),
         ListedClaimContest::selectFriendlyStandings,
         ClaimContestBlock.IS_STATING_ELIGIBILITY_ON_LINE),
 
@@ -65,7 +65,8 @@ enum ClaimContestBlock implements ContestBlockHeading {
      * there. Listed with whatever the contest weighed them at, and never named as claiming it.
      */
     NON_TERRITORIAL(
-        wording -> KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL,
+        ContestBlockHeading.createFixedKeySource(
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
         contest -> contest.selectRivalStandings(standing -> !standing.isTerritorial()),
         ClaimContestBlock.IS_ELIGIBILITY_LEFT_TO_THE_HEADING);
 

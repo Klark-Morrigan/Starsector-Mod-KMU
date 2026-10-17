@@ -37,12 +37,17 @@
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
 - **`HolderRankingRules.createByMarketProximity(StarSystemAPI, Colonies, ColonyKnowledge, HolderGrouping)`**：实际排名规则唯一的构建处，包括对中立势力的排除和按市场远近的平局裁定。地图填充和刷新轮询都按它排名。
 - **`HolderPass.palettes()`** 和 **`DominancePass.palettes()`**：本次计算唯一的配色读取，会为本次计算记住每个集团的所有者和配色，因此一次重建中的每个解析和每条色带都通过同一个对象为集团着色。
+- **`CellTooltipEntryLine.createCountedEntityLine(EntityNameplate, int)`**：为星域地图绘制的对象建立计数行，以其地图图标开头。
+- **`ContestBlockHeading.createFixedKeySource(String)`**：标题不随安装环境变化的区块所用的标题来源。
+- **`FilteredClaims.resolveFilteredClaimsThrough(HolderPass, ClaimReaderSource, String)`**：在本次计算上打开读取器后得到的聚焦宣称。
 - **`KmuErrorReporter.createLoggingReporter(Class)`**：把每个被捕获的失败连同其原因以警告级别写入报告方所属类的日志。
 - **`MapLayerRefreshBoard.getGroupingRevision()`**：星系被标记为过期的次数，任何取出操作都不会让它回退。无法取出该集合的读取方（例如侧边栏选择器的缓存）以它为键。
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**：一次构建的绘制方案，只读取一次，再交给构建中按它着色的每个部分。
 - **`NexerelinAlliances.resolveFactionAlliancesIn(SectorAPI)`**：以 `FactionAllianceSource` 的方式给出实时联盟成员关系。Nexerelin 只为正在运行的游戏保存一套联盟，因此不会查询传入的星域。
 - **`MapStyling.resolveUnownedStyle(boolean)`**：无所有者单元所用的样式，使地图填充与边界描绘以同一方式查找它。
 - **`PoliticalHolderView`**，政治地图的每个视图都实现它：联盟集合的修订号（作为视图的内容修订号）、争夺中谁与谁站在一起、持有者类别，以及势力读取。
+- **`SectorClaims.readClaimantBlocId(String, HolderGrouping)`**：宣称所落入的集团，地图填充、选择器统计和色带都读取它。
+- **`StandingRankOrder.createRankOrder(ToIntFunction, Function)`**：悬停框中的势力排名与单元下方的色带共用的唯一排序。
 - **`SmoothingStageSink`** 和 **`BorderSmoothing.smoothBorderLoops(List, BorderSmoothingStyle, SmoothingStageSink)`**：平滑会报告实际运行的每一道平滑处理，因此展示各阶段的调用方按地图绘制时的顺序和开关展示它们。`ClusterBorderStageCollector` 即为其一。
 
 #### 修复
@@ -111,7 +116,7 @@
 | `HolderGrouping.collectBlocIds(Collection)` | 已移除 |
 | 公开的 `HolderPass.readKnownColoniesIn(StarSystemAPI)` 和 `readInhabitingColoniesIn(StarSystemAPI)` | 改为包私有。外部读取方改用 `readHabitationIn(StarSystemAPI)` 或 `readKnownColonyFactionIds(StarSystemAPI)` |
 | `AllianceBodyControls` | 已移除：`AlliancesView.getViewBodyControls(BodyControlTarget)` 自行绑定共享的退后控件 |
-| `SystemColonyReading` 的 `readKindOf(String)`、`isDiscoveredColony(String)`、`isOpenlyKnownColony(String)`、`readConcealmentOf(String, boolean)`、两个 `readQualifierFacts` 重载和 `describeColony(CellTooltipEntryLine, String, ColonyQualifierFacts)` | `describeColony(CellTooltipEntryLine, AccountedColony, String)`，殖民地由 `AccountedColony.createEconomyListedColony(String, boolean)` 或 `createOffEconomyColony(String, boolean)` 构建。已持有种类的调用方将其传给 `describeColony(CellTooltipEntryLine, AccountedColony, ColonyKind, String)` |
+| `SystemColonyReading` 的 `readKindOf(String)`、`isDiscoveredColony(String)`、`isOpenlyKnownColony(String)`、`readConcealmentOf(String, boolean)`、两个 `readQualifierFacts` 重载和 `describeColony(CellTooltipEntryLine, String, ColonyQualifierFacts)` | `describeColony(CellTooltipEntryLine, AccountedColony, String)`，殖民地由 `AccountedColony.createEconomyListedColony(String, boolean)` 或 `createOffEconomyColony(String, boolean)` 构建。不以结论开头的行改用 `describeColony(CellTooltipEntryLine, AccountedColony)`，已持有种类的调用方将其传给 `describeColony(CellTooltipEntryLine, AccountedColony, ColonyKind)` |
 | 公开的 `ColonyQualifier`、`ColonyQualifierFacts`、`ColonyConcealment` 和 `SystemColonyReading` 构造函数 | 改为包私有：通过 `SystemColonyReading.describeColony` 描述一行。构造函数以 `BiFunction` 接收殖民地备注，并拒绝空的部分 |
 | `RenderStyleReader.readFactionStyle()`、`readIndependentStyle()`、`readDecivilisedStyle()` 和 `readUninhabitedStyle(boolean)` | `HolderCategoryStyleReader` |
 | `BlocPresence.collectColouredPresences(Map, BlocPaletteReader)` | 已移除：`ColonyCellRibbons` 自行为计数着色 |
@@ -135,7 +140,15 @@
 | `kmu.mods.nexerelin.alliances.AllianceFingerprint.compute(List)` 和 `NexerelinAlliances.computeAllianceFingerprint()` | 已移除：`PoliticalMapStalenessSource` 在两次刷新轮询之间直接比较联盟记录。`kmu.mods.nexerelin.alliances` 已移除 |
 | `PoliticalMapLayer(List, OwnerPaintedView)`、`PoliticalMapStanding(MapLayerViewRegistry)`、`PoliticalMapInstaller.installAll(SectorAPI, MapLayerViewRegistry)` 和 `PoliticalMapStalenessSource(SectorMapMachinery)` | 各自还接收刷新轮询读取的 `AllianceSource`，由 `MapLayers` 绑定 |
 | `BlocAffiliation(HolderGrouping)` | `BlocAffiliation(FactionAlliances)`：谁与谁站在一起取自联盟成员关系，而不是绘制所用的分组 |
-| 以 `HolderGroupingSource` 接收联盟集合的 `SystemDominationTooltip` 和 `SystemClaimTooltip` 构造函数 | 改为接收 `FactionAllianceSource`，按悬停的星域询问 |
+| 以 `HolderGroupingSource` 接收联盟集合的 `SystemDominationTooltip` 和 `SystemClaimTooltip` 构造函数 | 改为接收 `PoliticalBoxSeams`，其 `FactionAllianceSource` 按悬停的星域询问 |
+| `PoliticalMapCellTooltip(ClaimDecreeReader, FactionAllianceSource, ContestWordingSource)`、`VANILLA_CLAIM_DECREE_READER` 和受保护的 `claimDecreeReader` | `PoliticalMapCellTooltip(PoliticalBoxSeams)`。正在运行的游戏中的悬停框使用 `PoliticalBoxSeams.LIVE`；接缝为悬停框私有 |
+| `BlocRelations.affiliation()` 和 `friendliness()` | `blocAffiliation()` 和 `factionSetFriendliness()`。悬停框通过 `selectSide(ContestSide, String, List, Function)` 和 `isFactionFriendlyWith(String, Set)` 询问这一对关系 |
+| `StandingBlockRules(Predicate, BlocAffiliation, FactionSetFriendliness, Function)` | `StandingBlockRules(Predicate, BlocRelations, Function)` |
+| `ColonyKindLookup`、`ColonyDiscoveryLookup` 和 `OpenlyKnownColonyLookup` | 一个 `ColonyFactsLookup`，由 `readFactsIn(Colonies, ColonyKnowledge)` 在一次扫描中汇总 |
+| `ColonySightings` 和 `StructureObservations` | KMLib 的 `RecordedObservations<ColonyObservation>` 和 `RecordedObservations<StructureObservation>`，返回 `Optional`。`ColonyKnowledge` 的构造函数接收前者 |
+| `DominanceStatsRead` 和 `ClaimStatsRead` | 一个 `ownermap.picker.OwnerStatsRead<S>` 记录类型。空读取为 `OwnerStatsRead.createEmptyRead()` |
+| `BorderTraceStyle(EdgeInsetRule, double, double, double)` | `BorderTraceStyle(EdgeInset, double, double)`：描绘携带的正是塑造单元所用的同一个 `EdgeInset` |
+| `KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_NAME` 及其 `strings.json` 键 | `KmuOwnerMapStringKeys.OWNER_MAP_CTL_SORT_NAME`。各排序词汇的名称模式为 `OwnerMetricSortMode.createNameMode(List)` |
 | `FactionAllianceSource.readAlliances()`、`FactionAllianceRegistry.readAlliances()` 和 `ColonyKnowledge.observingUnderTheFog()` | 各自接收要询问其联盟的 `SectorAPI` |
 | 读取正在运行的游戏中星域的 `StarsectorMarketUiContextResolver()`、`StarsectorInteractionDialogPickerOpener()` 和 `StarsectorConditionPickerFeedbackSink()` | 已移除：各自接收控制台命令只解析一次的 `SectorAPI` |
 | `KmuConditionPickerEditor(KmuConditionService, KmuConditionPickerDialogOpener)` 及其三参数形式，以及 `KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler)` 和 `(KmuConditionPickerActionHandler, float, float)` | 各自还接收选择器报告所用的 `KmuConditionPickerFeedbackSink` |

@@ -3,25 +3,20 @@ package kmu.maplayers.politicalmap.dominance.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.claims.ClaimDecreeReader;
-
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBlocks;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.ComposedCellBody;
-import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.maplayers.politicalmap.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
-import kmu.maplayers.politicalmap.tooltip.ContestWordingSource;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
 import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
-import kmu.mods.nexerelin.NexerelinAlliances;
-import kmu.mods.nexerelin.NexerelinContestWording;
 
 import java.util.List;
 
@@ -52,32 +47,21 @@ public final class SystemDominationTooltip
     /**
      * @param paintedGroupingSource the grouping the injecting view paints its fills under, which the
      *                              ranking runs under so the box's numbers match the fills
-     * @param claimDecreeReader     the decree read every political box heads with
-     * @param allianceSource        the alliances the contest's sides are read under
-     * @param contestWordingSource  the wording of the rival block
+     * @param seams                 the live reads every political box is built around
      */
     public SystemDominationTooltip(
             HolderGroupingSource paintedGroupingSource,
-            ClaimDecreeReader claimDecreeReader,
-            FactionAllianceSource allianceSource,
-            ContestWordingSource contestWordingSource) {
+            PoliticalBoxSeams seams) {
 
-        this(
-            paintedGroupingSource,
-            claimDecreeReader,
-            allianceSource,
-            contestWordingSource,
-            SystemDominationTooltip::createFactionAccountResolver);
+        this(paintedGroupingSource, seams, SystemDominationTooltip::createFactionAccountResolver);
     }
 
     SystemDominationTooltip(
             HolderGroupingSource paintedGroupingSource,
-            ClaimDecreeReader claimDecreeReader,
-            FactionAllianceSource allianceSource,
-            ContestWordingSource contestWordingSource,
+            PoliticalBoxSeams seams,
             FactionAccountSource factionAccountSource) {
 
-        super(claimDecreeReader, allianceSource, contestWordingSource);
+        super(seams);
 
         this.paintedGroupingSource = paintedGroupingSource;
         this.factionAccountSource = factionAccountSource;
@@ -86,25 +70,16 @@ public final class SystemDominationTooltip
     /**
      * The box one view injects, ranking under that view's own grouping.
      *
-     * <p>This is where the alliance set behind the allied block is bound, and the wording of the rival
-     * block beside it, both off the one mod that supplies them. Both are gates rather than branches:
-     * each answers with the plain reading wherever that mod is absent, so the box states one shape and
-     * the install decides what it comes to.
-     *
-     * <p>Deliberately not the active view's own grouping, which is what the map paints under: the
-     * faction view pins that to identity so fills, runs and rows stay per faction, and reusing it
-     * would leave the allied block permanently empty on the one layer that draws it.
+     * <p>The alliance set behind the allied block is the live one, not the active view's own
+     * grouping, which is what the map paints under: the faction view pins that to identity so fills,
+     * runs and rows stay per faction, and reusing it would leave the allied block permanently empty on
+     * the one layer that draws it.
      *
      * @param paintedGroupingSource the grouping the injecting view paints its fills under
      * @return the box that view shows for a hovered system
      */
     public static SystemDominationTooltip createPaintedBy(HolderGroupingSource paintedGroupingSource) {
-
-        return new SystemDominationTooltip(
-            paintedGroupingSource,
-            VANILLA_CLAIM_DECREE_READER,
-            NexerelinAlliances::resolveFactionAlliancesIn,
-            NexerelinContestWording::resolveWording);
+        return new SystemDominationTooltip(paintedGroupingSource, PoliticalBoxSeams.LIVE);
     }
 
     @Override
@@ -245,12 +220,9 @@ public final class SystemDominationTooltip
     // it.
     private StandingBlockRules buildBlockRules(SectorAPI sector, HolderGrouping paintingGrouping) {
 
-        var blocRelations = sampleBlocRelations(sector);
-
         return new StandingBlockRules(
             BlocCandidacy.createForGrouping(paintingGrouping),
-            blocRelations.affiliation(),
-            blocRelations.friendliness(),
+            sampleBlocRelations(sector),
             paintingGrouping::resolveMemberFactionIds);
     }
 

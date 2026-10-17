@@ -6,7 +6,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolTierFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.StationFactor;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,12 +36,12 @@ final class MarketFactorTextTests {
 
     @BeforeEach
     void installStrings() {
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested

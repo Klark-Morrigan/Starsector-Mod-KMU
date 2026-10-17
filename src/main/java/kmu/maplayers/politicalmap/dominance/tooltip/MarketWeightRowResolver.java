@@ -63,10 +63,6 @@ public final class MarketWeightRowResolver {
     // and the reader is looking for what the weight is made of, not what it is not.
     private static final int NO_PATROLS = 0;
 
-    // What this box leads a colony's line with, which is nothing: taking a system is the claim
-    // contest's finding, and this box is an account of a different one.
-    private static final String NO_LEADING_FINDING = null;
-
     private MarketWeightRowResolver() {
     }
 
@@ -128,9 +124,8 @@ public final class MarketWeightRowResolver {
             WeightAccountReading reading) {
 
         var colonyReading = reading.colonyReading();
-        var line = createCountedMapEntityLine(
+        var line = CellTooltipEntryLine.createCountedEntityLine(
             breakdown.marketNameplate(),
-            breakdown.marketNameplate().displayName(),
             breakdown.computeTotalWeight());
 
         return CellTooltipEntry
@@ -138,8 +133,7 @@ public final class MarketWeightRowResolver {
                 line,
                 AccountedColony.createEconomyListedColony(
                     breakdown.marketId(),
-                    breakdown.isHiddenMarket()),
-                NO_LEADING_FINDING))
+                    breakdown.isHiddenMarket())))
             .nesting(resolveFactorEntries(breakdown, reading));
     }
 
@@ -158,10 +152,8 @@ public final class MarketWeightRowResolver {
             UnweighedColony colony,
             SystemColonyReading colonyReading) {
 
-        var line = createCountedMapEntityLine(
-                colony.nameplate(),
-                colony.nameplate().displayName(),
-                NO_WEIGHT)
+        var line = CellTooltipEntryLine
+            .createCountedEntityLine(colony.nameplate(), NO_WEIGHT)
             .statesUncountedValue();
 
         // The kind and the concealment are read off the colony itself rather than off the walk
@@ -170,54 +162,24 @@ public final class MarketWeightRowResolver {
         return CellTooltipEntry.createEntry(colonyReading.describeColony(
             line,
             AccountedColony.createOffEconomyColony(colony.marketId(), colony.isHiddenMarket()),
-            colony.kind(),
-            NO_LEADING_FINDING));
+            colony.kind()));
     }
 
-    // A line naming something the sector map draws - a colony or the station defending it - led by
-    // the glyph the map marks it with, and carrying whatever the account counted it for.
+    // The station's line, led by the glyph the map marks it with like the colony line above it. Only
+    // those two levels take one: a stability or a size has nothing on the map to point at, so a glyph
+    // there would stand in for a number.
     //
-    // Shared by the two levels that take a mark rather than spelled out at each, so the box arrives
-    // at one rule for a line about a thing on the map instead of one rule per level.
-    //
-    // Takes the subject's nameplate whole rather than its two halves, so the glyph can only have come
-    // from the entity the line is about - and read off the breakdown that entity arrived in rather
-    // than looked up here, so that entity is the one the number belongs to.
-    //
-    // The stated name is passed beside it because one of the three lines says more than the entity's
-    // bare name, and it is derived from this very nameplate at each call site, so the pair still
-    // cannot come from two different entities.
-    private static CellTooltipEntryLine createMapEntityLine(
-            EntityNameplate entity,
+    // The stated name is passed beside the nameplate because it may say more than the station's bare
+    // name, and it is derived from this very nameplate, so the pair cannot come from two entities.
+    private static CellTooltipEntryLine createStationLine(
+            EntityNameplate station,
             String statedName,
             String valueText) {
 
         return CellTooltipEntryLine.createLine(
-            resolveMapEntityMark(entity),
+            CellTooltipMark.resolveMarkForMapIcon(station.mapIcon()),
             statedName,
             valueText);
-    }
-
-    // The same line where what it carries is a weight the account adds up - a colony's, or the nought
-    // of one nothing was worked out for. The number travels rather than words for it, so a listing of
-    // colonies too long to draw whole can be closed by a row summing the ones it left out.
-    private static CellTooltipEntryLine createCountedMapEntityLine(
-            EntityNameplate entity,
-            String statedName,
-            int countedValue) {
-
-        return CellTooltipEntryLine.createCountedLine(
-            resolveMapEntityMark(entity),
-            statedName,
-            countedValue);
-    }
-
-    // The glyph the map marks an entity with, read off the entity the line is about. Shared by both
-    // shapes of line so a colony and a station are marked alike whether or not the number beside them
-    // is one the account sums. Only those two levels take one: a stability or a size has nothing on
-    // the map to point at, so a glyph there would stand in for a number.
-    private static CellTooltipMark resolveMapEntityMark(EntityNameplate entity) {
-        return CellTooltipMark.resolveMarkForMapIcon(entity.mapIcon());
     }
 
     // The factors of one colony, in the order the weight read applied them - the stability that
@@ -260,7 +222,7 @@ public final class MarketWeightRowResolver {
         // same reason the colony line above it does, this being the only line in the breakdown whose
         // subject the map draws.
         breakdown.station().ifPresent(station -> entries.add(CellTooltipEntry.createEntry(
-            createMapEntityLine(
+            createStationLine(
                 station.stationNameplate(),
                 resolveStationName(breakdown, station),
                 MarketFactorText.formatStation(station)))));

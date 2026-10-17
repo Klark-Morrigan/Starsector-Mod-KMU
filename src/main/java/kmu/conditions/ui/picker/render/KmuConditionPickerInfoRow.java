@@ -48,10 +48,7 @@ final class KmuConditionPickerInfoRow {
      * the crest being clipped when line count is small.
      */
     static float computeHeight(float topPad, int locationLineCount, int summaryLineCount) {
-        var totalLines = locationLineCount + summaryLineCount;
-        var sectionGap = (locationLineCount > 0 && summaryLineCount > 0) ? SECTION_PAD : 0f;
-        var height = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT + sectionGap);
-        return topPad + height;
+        return topPad + computePanelHeight(locationLineCount, summaryLineCount);
     }
 
     static KmuConditionPickerInfoRow render(
@@ -66,9 +63,7 @@ final class KmuConditionPickerInfoRow {
         Objects.requireNonNull(summaryParagraphs, "summaryParagraphs");
         Objects.requireNonNull(faction, "faction");
 
-        var totalLines = locationParagraphs.size() + summaryParagraphs.size();
-        var sectionGap = (!locationParagraphs.isEmpty() && !summaryParagraphs.isEmpty()) ? SECTION_PAD : 0f;
-        var panelHeight = Math.max(ICON_SIZE, totalLines * LINE_HEIGHT + sectionGap);
+        var panelHeight = computePanelHeight(locationParagraphs.size(), summaryParagraphs.size());
         var row = panel.createCustomPanel(width, panelHeight, new BaseCustomUIPanelPlugin());
 
         var crestSprite = faction.flatMap(KmuPickerFaction::getCrestSprite);
@@ -81,9 +76,7 @@ final class KmuConditionPickerInfoRow {
             y += LINE_HEIGHT;
         }
 
-        if (!locationParagraphs.isEmpty() && !summaryParagraphs.isEmpty()) {
-            y += SECTION_PAD;
-        }
+        y += computeSectionGap(locationParagraphs.size(), summaryParagraphs.size());
 
         // Render all summary lines; the last one is the live counts label.
         LabelAPI conditionsLabel = null;
@@ -101,6 +94,22 @@ final class KmuConditionPickerInfoRow {
 
     LabelAPI getConditionsLabel() {
         return conditionsLabel;
+    }
+
+    // The panel's own height, stated once for the header that reserves it and the row that fills it,
+    // so the two cannot disagree about where the grid below begins.
+    private static float computePanelHeight(int locationLineCount, int summaryLineCount) {
+
+        var totalLines = locationLineCount + summaryLineCount;
+
+        return Math.max(
+            ICON_SIZE,
+            totalLines * LINE_HEIGHT + computeSectionGap(locationLineCount, summaryLineCount));
+    }
+
+    // The gap between the two sections, which only stands where there are two sections to part.
+    private static float computeSectionGap(int locationLineCount, int summaryLineCount) {
+        return locationLineCount > 0 && summaryLineCount > 0 ? SECTION_PAD : 0f;
     }
 
     private static float renderIcon(CustomPanelAPI row, String sprite) {

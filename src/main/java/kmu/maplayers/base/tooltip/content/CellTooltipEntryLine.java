@@ -1,5 +1,6 @@
 package kmu.maplayers.base.tooltip.content;
 
+import kmlib.starsector.entities.EntityNameplate;
 import kmlib.text.KmlibNumbers;
 
 import java.util.List;
@@ -200,6 +201,26 @@ public record CellTooltipEntryLine(
             NO_WORKING,
             IS_LISTED_IN_ITS_OWN_RIGHT,
             IS_VALUE_EARNED);
+    }
+
+    /**
+     * Builds a counted line naming something the sector map draws, led by the glyph the map marks it
+     * with.
+     *
+     * <p>Takes the entity's nameplate whole rather than its name and glyph apart, so the glyph can only
+     * have come from the entity the line names - and every box marks a thing on the map by the one
+     * rule.
+     *
+     * @param entity       the entity the line names
+     * @param countedValue what the block counts this line in
+     * @return the bare line, stating that number
+     */
+    public static CellTooltipEntryLine createCountedEntityLine(EntityNameplate entity, int countedValue) {
+
+        return createCountedLine(
+            CellTooltipMark.resolveMarkForMapIcon(entity.mapIcon()),
+            entity.displayName(),
+            countedValue);
     }
 
     /**

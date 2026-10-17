@@ -16,13 +16,13 @@ import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
-import kmu.maplayers.politicalmap.dominance.DominanceStatsRead;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
@@ -312,7 +312,7 @@ final class AlliancesViewTests {
 
                 aggregatorMock
                     .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(new DominanceStatsRead(
+                    .thenReturn(new OwnerStatsRead<>(
                         Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
                         OwnerPresenceIndex.EMPTY));
 

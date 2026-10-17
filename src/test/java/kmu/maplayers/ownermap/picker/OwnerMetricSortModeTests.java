@@ -40,10 +40,6 @@ final class OwnerMetricSortModeTests {
     private static final List<ToIntFunction<HazardRatingFake>> CANONICAL_CHAIN =
         List.of(HazardRatingFake::severity, HazardRatingFake::volatility);
 
-    // What a mode that ranks by name names instead of a number. Spelled as the accessor type rather
-    // than left a bare null at the call, so the case reads as the by-name ranking it sets up.
-    private static final ToIntFunction<HazardRatingFake> NO_METRIC = null;
-
     // Two modes differing only in which number they promote, so a case can read an answer off each and
     // say the difference came from the metric rather than from anything the vocabulary supplied.
     private static final ListSortMode<RankedOwner<HazardRatingFake>> BY_SEVERITY =
@@ -61,11 +57,18 @@ final class OwnerMetricSortModeTests {
             CANONICAL_CHAIN);
 
     private static final ListSortMode<RankedOwner<HazardRatingFake>> BY_NAME =
-        new OwnerMetricSortMode<>(
-            "name",
-            "hazard_ctl_sort_name",
-            NO_METRIC,
-            CANONICAL_CHAIN);
+        OwnerMetricSortMode.createNameMode(CANONICAL_CHAIN);
+
+    @Nested
+    class CreateNameMode {
+
+        @Test
+        void isSavedUnderOneKeyForEveryVocabulary() {
+            // One spelling for every vocabulary, so a choice of the name ranking survives a view switch.
+            assertThat(OwnerMetricSortMode.createNameMode(CANONICAL_CHAIN).persistenceKey())
+                .isEqualTo("name");
+        }
+    }
 
     @Nested
     class PersistenceKey {

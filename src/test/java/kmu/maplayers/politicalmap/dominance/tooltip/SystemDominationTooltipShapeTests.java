@@ -18,13 +18,14 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeamsFixture;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltipTests;
 
 import org.junit.jupiter.api.AfterEach;
@@ -115,9 +116,10 @@ final class SystemDominationTooltipShapeTests {
     // so a case here is about the shape and never about the account.
     private final SystemDominationTooltip tooltip = new SystemDominationTooltip(
         StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
-        claimBreakdownReaderFake,
-        sector -> allianceSet,
-        ContestWordingFixtures.CONTESTED_WORDING,
+        new PoliticalBoxSeams(
+            claimBreakdownReaderFake,
+            sector -> allianceSet,
+            ContestWordingFixtures.CONTESTED_WORDING),
         (system, pass, detailLevel) -> FactionAccountResolver.NO_ACCOUNT);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
@@ -586,9 +588,7 @@ final class SystemDominationTooltipShapeTests {
     private SystemDominationTooltip buildTooltipAccountingThrough(FactionAccountSourceFake accountSourceFake) {
         return new SystemDominationTooltip(
             StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
-            claimBreakdownReaderFake,
-            FactionAllianceSource.NO_ALLIANCES,
-            ContestWordingFixtures.CONTESTED_WORDING,
+            PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake),
             accountSourceFake);
     }
 

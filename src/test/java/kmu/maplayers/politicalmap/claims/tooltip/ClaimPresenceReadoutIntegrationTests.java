@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures;
@@ -14,7 +13,7 @@ import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
-import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeamsFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -129,8 +128,7 @@ final class ClaimPresenceReadoutIntegrationTests {
 
             var sections = new SystemClaimTooltip(
                     claimBreakdownReader,
-                    FactionAllianceSource.NO_ALLIANCES,
-                    ContestWordingFixtures.CONTESTED_WORDING)
+                    PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReader))
                 .composeBody(sector, system, FACTIONS).blocks().readSections();
 
             assertThat(band.segments())

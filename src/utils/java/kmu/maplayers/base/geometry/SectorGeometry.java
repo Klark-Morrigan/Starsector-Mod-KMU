@@ -78,16 +78,13 @@ public record SectorGeometry(
         // under asks under the key it holds that cell by - the grouping's own map is keyed by the
         // system a cell draws as, which is the same key only while every cell is its own star's.
         var owners = mapOwnerByCellKey(cellEdges.keySet(), grouping);
-        var shaped = CellShaper.shapeCells(
-            cellEdges,
-            grouping,
-            new EdgeInset(insetRule, parameters.borderInset()));
+        var edgeInset = new EdgeInset(insetRule, parameters.borderInset());
+        var shaped = CellShaper.shapeCells(cellEdges, grouping, edgeInset);
 
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
 
         var borderStyle = new BorderTraceStyle(
-            insetRule,
-            parameters.borderInset(),
+            edgeInset,
             parameters.weldTolerance(),
             parameters.miterSpikeLimit());
 
@@ -112,7 +109,7 @@ public record SectorGeometry(
             CellGrouping grouping,
             BorderTraceStyle borderStyle) {
 
-        if (borderStyle.insetRule().isFusingSharedEdges()) {
+        if (borderStyle.edgeInset().rule().isFusingSharedEdges()) {
 
             return SystemClusterBorders.traceBorderRings(
                 memberCellKeys, cellEdges, grouping, Set.of(), borderStyle);

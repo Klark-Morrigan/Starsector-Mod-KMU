@@ -16,7 +16,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -137,7 +137,7 @@ final class ClaimScoreRowResolverTests {
     // Every market an ordinary colony somebody is looking at, so no line is qualified and none
     // carries a date. Both halves of what the box's walk of the system adds to a row, stated once
     // for every case about the arithmetic rather than varied: which kinds resolve is
-    // ColonyKindLookupTests's question and what makes a remark due is ColonyObservationNotesTests's.
+    // ColonyFactsLookupTests's question and what makes a remark due is ColonyObservationNotesTests's.
     private static final SystemColonyReading NOTHING_BEYOND_THE_SCORE = SystemColonyReading.NONE;
 
     // The world people left, as the box's own walk of the system classified it.
@@ -157,12 +157,12 @@ final class ClaimScoreRowResolverTests {
 
     @BeforeEach
     void installStrings() {
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested

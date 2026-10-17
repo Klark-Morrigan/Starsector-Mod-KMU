@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.ClaimReaderSource;
 
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -51,6 +53,40 @@ final class FilteredClaimsTests {
         claims.put(RIVAL_CLAIMED, new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY)));
 
         return claims;
+    }
+
+    @Nested
+    class ResolveFilteredClaimsThrough {
+
+        @Test
+        void resolvesThroughAReaderOpenedOverThePass() {
+            // Opened over the pass's own walk and colony rule, so the claims read the colonies the
+            // pass already walked.
+            var sectorMock = mock(SectorAPI.class);
+            var claimReaderMock = mock(ClaimReader.class);
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
+            var claims = buildTwoClaimantSector();
+            var openedOver = new ArrayList<Object>();
+
+            ClaimReaderSource claimReaderSource = (knownColonyReader, sectorIndex) -> {
+                openedOver.add(knownColonyReader);
+                openedOver.add(sectorIndex);
+                return claimReaderMock;
+            };
+
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
+
+                sectorClaimsMock
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(pass, claimReaderMock))
+                    .thenReturn(claims);
+
+                assertThat(FilteredClaims.resolveFilteredClaimsThrough(pass, claimReaderSource, null))
+                    .isSameAs(claims);
+            }
+
+            assertThat(openedOver)
+                .containsExactly(pass.colonyKnowledge(), pass.sectorIndex());
+        }
     }
 
     @Nested

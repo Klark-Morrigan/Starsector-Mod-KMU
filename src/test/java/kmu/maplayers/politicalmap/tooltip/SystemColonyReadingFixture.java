@@ -1,10 +1,8 @@
 package kmu.maplayers.politicalmap.tooltip;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
-import kmu.maplayers.base.visibility.colonies.ColonyDiscoveryLookup;
+import kmu.maplayers.base.visibility.colonies.ColonyFactsLookup;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.maplayers.base.visibility.colonies.ColonyKindLookup;
-import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyLookup;
 
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +28,10 @@ public final class SystemColonyReadingFixture {
     private static final BiFunction<CellTooltipEntryLine, String, CellTooltipEntryLine> NO_REMARK =
         (line, colonyId) -> line;
 
+    // A fold that met no colony of the kind the case leaves unposed.
+    private static final Map<String, ColonyKind> NO_KINDS = Map.of();
+    private static final Set<String> NO_COLONY_IDS = Set.of();
+
     private SystemColonyReadingFixture() {
     }
 
@@ -42,10 +44,10 @@ public final class SystemColonyReadingFixture {
      */
     public static SystemColonyReading buildReadingWithKind(String colonyId, ColonyKind kind) {
 
+        var kindByColonyId = Map.of(colonyId, kind);
+
         return new SystemColonyReading(
-            new ColonyKindLookup(Map.of(colonyId, kind)),
-            ColonyDiscoveryLookup.NONE,
-            OpenlyKnownColonyLookup.NONE,
+            new ColonyFactsLookup(kindByColonyId, NO_COLONY_IDS, NO_COLONY_IDS),
             NO_REMARK);
     }
 
@@ -58,10 +60,10 @@ public final class SystemColonyReadingFixture {
      */
     public static SystemColonyReading buildReadingWithUndiscovered(String colonyId) {
 
+        var undiscoveredColonyIds = Set.of(colonyId);
+
         return new SystemColonyReading(
-            ColonyKindLookup.NONE,
-            new ColonyDiscoveryLookup(Set.of(colonyId)),
-            OpenlyKnownColonyLookup.NONE,
+            new ColonyFactsLookup(NO_KINDS, undiscoveredColonyIds, NO_COLONY_IDS),
             NO_REMARK);
     }
 
@@ -74,10 +76,10 @@ public final class SystemColonyReadingFixture {
      */
     public static SystemColonyReading buildReadingWithOpenlyKnown(String colonyId) {
 
+        var openlyKnownColonyIds = Set.of(colonyId);
+
         return new SystemColonyReading(
-            ColonyKindLookup.NONE,
-            ColonyDiscoveryLookup.NONE,
-            new OpenlyKnownColonyLookup(Set.of(colonyId)),
+            new ColonyFactsLookup(NO_KINDS, NO_COLONY_IDS, openlyKnownColonyIds),
             NO_REMARK);
     }
 
@@ -92,9 +94,7 @@ public final class SystemColonyReadingFixture {
     public static SystemColonyReading buildReadingRemarkingOn(String colonyId) {
 
         return new SystemColonyReading(
-            ColonyKindLookup.NONE,
-            ColonyDiscoveryLookup.NONE,
-            OpenlyKnownColonyLookup.NONE,
+            ColonyFactsLookup.NONE,
             (line, remarkedColonyId) -> colonyId.equals(remarkedColonyId)
                 ? line.notedWith(LAST_SEEN)
                 : line);

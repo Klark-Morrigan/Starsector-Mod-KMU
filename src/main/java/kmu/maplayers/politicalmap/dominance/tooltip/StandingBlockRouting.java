@@ -78,7 +78,7 @@ public final class StandingBlockRouting {
             .toList();
 
         var holderBlocId = resolveHolderBlocId(holder);
-        var sides = new ContestSides(holderBlocId, rules.affiliation());
+        var blocRelations = rules.blocRelations();
 
         // Resolved once, after the holder is picked and before anybody is measured against it: every
         // disposition read in one system is against this one membership, and resolving it per
@@ -86,13 +86,13 @@ public final class StandingBlockRouting {
         var holderMemberFactionIds = rules.readMemberFactionIds(holderBlocId);
 
         var rivals = RivalDispositionSplit.splitByDisposition(
-            sides.selectSide(ContestSide.RIVAL, contestants, GroupStanding::blocId),
+            blocRelations.selectSide(ContestSide.RIVAL, holderBlocId, contestants, GroupStanding::blocId),
             holderMemberFactionIds,
             rules);
 
         return new StandingBlockRouting(fillBlocks(
             holder,
-            sides.selectSide(ContestSide.ALLIED, contestants, GroupStanding::blocId),
+            blocRelations.selectSide(ContestSide.ALLIED, holderBlocId, contestants, GroupStanding::blocId),
             rivals,
             candidacy.barred()));
     }

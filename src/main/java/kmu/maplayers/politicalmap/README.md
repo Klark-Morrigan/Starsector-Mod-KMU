@@ -435,7 +435,7 @@ and the sidebar.
 
 [`refresh`](refresh/README.md) repaints the overlay while the campaign runs:
 the layer's own staleness poll,
-the five listeners that turn economy events into targeted marks,
+the listeners that turn economy events into targeted marks,
 and the alliance signal only this layer raises.
 
 ### Render orchestration

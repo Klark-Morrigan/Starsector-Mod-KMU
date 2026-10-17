@@ -24,14 +24,17 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class KmuConditionIconButton {
+
     private static final float ABSENT_ICON_ALPHA = 0.55f;
 
-    private KmuConditionPickerEntry entry;
     private final Consumer<KmuConditionPickerAction> actionConsumer;
+
+    private KmuConditionPickerEntry entry;
 
     public KmuConditionIconButton(
             KmuConditionPickerEntry entry,
             Consumer<KmuConditionPickerAction> actionConsumer) {
+
         this.entry = Objects.requireNonNull(entry, "entry");
         this.actionConsumer = Objects.requireNonNull(actionConsumer, "actionConsumer");
     }
@@ -41,6 +44,7 @@ public final class KmuConditionIconButton {
             TooltipMakerAPI tooltipOwner,
             Rectangle placement,
             KmuConditionIconButtonLayout metrics) {
+
         Objects.requireNonNull(gridPanel, "gridPanel");
         Objects.requireNonNull(tooltipOwner, "tooltipOwner");
         Objects.requireNonNull(placement, "placement");
@@ -74,28 +78,35 @@ public final class KmuConditionIconButton {
             KmuConditionPickerEntry entry) {
 
         Objects.requireNonNull(entry, "entry");
-        var fallback = KmuConditionIconButtonSizing.FALLBACK_ICON_SIZE;
 
+        var fallback = KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE;
         var icon = entry.getIcon();
+
         if (!icon.isPresent()) {
-            return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(
+
+            return KmuConditionIconButtonLayout.computeButtonLayout(
                 fallback,
                 fallback);
         }
 
         var sprite = StarsectorSprites.loadSprite(icon.get());
         if (sprite == null) {
-            return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(
+
+            return KmuConditionIconButtonLayout.computeButtonLayout(
                 fallback,
                 fallback);
         }
-        return KmuConditionIconButtonFactory.computeKmuConditionIconButtonLayout(
+
+        return KmuConditionIconButtonLayout.computeButtonLayout(
             sprite.getWidth(),
             sprite.getHeight());
     }
 
-    private final class IconButtonPanelPlugin extends BaseCustomUIPanelPlugin {
+    private final class IconButtonPanelPlugin
+            extends BaseCustomUIPanelPlugin {
+
         private final KmuConditionIconButtonLayout layout;
+
         private PositionAPI position;
 
         private IconButtonPanelPlugin(KmuConditionIconButtonLayout layout) {
@@ -109,6 +120,7 @@ public final class KmuConditionIconButton {
 
         @Override
         public void renderBelow(float alphaMult) {
+
             if (position == null) {
                 return;
             }
@@ -123,6 +135,7 @@ public final class KmuConditionIconButton {
             UiFill.renderQuad(
                 footprint,
                 new UiElementPaint(backdropColour, backdropAlpha * alphaMult));
+
             UiBoxes.renderBorder(
                 footprint,
                 new BoxBorder(1f),
@@ -131,15 +144,19 @@ public final class KmuConditionIconButton {
 
         @Override
         public void processInput(List<InputEventAPI> events) {
+
             if (position == null || events == null) {
                 return;
             }
 
             for (InputEventAPI event : events) {
+
                 if (event == null || event.isConsumed()) {
                     continue;
                 }
+
                 if (event.isLMBUpEvent() && position.containsEvent(event)) {
+
                     actionConsumer.accept(KmuConditionPickerAction.fromEntry(entry));
                     event.consume();
                     return;
@@ -149,6 +166,7 @@ public final class KmuConditionIconButton {
 
         @Override
         public void render(float alphaMult) {
+
             if (position == null) {
                 return;
             }
@@ -168,7 +186,9 @@ public final class KmuConditionIconButton {
             var previousWidth = sprite.getWidth();
             var previousHeight = sprite.getHeight();
             var greyOut = !entry.isPresent();
-            float alpha = greyOut ? ABSENT_ICON_ALPHA : 1f;
+            var alpha = greyOut
+                ? ABSENT_ICON_ALPHA
+                : 1f;
 
             sprite.setSize(
                 layout.getIconWidth(),

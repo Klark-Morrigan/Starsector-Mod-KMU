@@ -10,12 +10,12 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
+import kmlib.starsector.memory.observations.RecordedObservations;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.visibility.colonies.ColonyObservation;
-import kmu.maplayers.base.visibility.colonies.ColonySightings;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static kmu.maplayers.base.visibility.observations.ObservationClockFixture.stubMomentOnClock;
 import static kmu.maplayers.politicalmap.tooltip.ColonyObservationFixture.OBSERVED_AT;
@@ -64,7 +65,11 @@ final class ColonyObservationNotesTests {
     private static final boolean IS_OFF_ECONOMY = false;
 
     // What a box hands over where it read no register at all.
-    private static final ColonySightings NO_SIGHTINGS_READ = null;
+    private static final RecordedObservations<ColonyObservation> NO_SIGHTINGS_READ = null;
+
+    // A register in which nothing was ever written down.
+    private static final RecordedObservations<ColonyObservation> NOTHING_OBSERVED =
+        RecordedObservations.createEmptyRegister();
 
     private CampaignClockAPI clockMock;
     private SectorAPI sectorMock;
@@ -81,12 +86,12 @@ final class ColonyObservationNotesTests {
         when(systemMock.getId())
             .thenReturn(SYSTEM_ID);
 
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested
@@ -95,7 +100,7 @@ final class ColonyObservationNotesTests {
         @Test
         void answersNoneWhereThereIsNoSystemToReadAtAll() {
             // A box built before the sector stands up. Nothing can be dated, and nothing faults.
-            assertThat(ColonyObservationNotes.readNotesFor(null, null, null, ColonySightings.NONE))
+            assertThat(ColonyObservationNotes.readNotesFor(null, null, null, NOTHING_OBSERVED))
                 .isSameAs(ColonyObservationNotes.NONE);
         }
 
@@ -169,7 +174,7 @@ final class ColonyObservationNotesTests {
             // colony is still shown; only the remark is withheld, there being no date to state.
             var notes = readNotesOver(
                 buildDerelictSet(),
-                colonyId -> ColonyObservation.createUndatedObservation(SYSTEM_ID));
+                colonyId -> Optional.of(ColonyObservation.createUndatedObservation(SYSTEM_ID)));
 
             var line = buildColonyLine();
 
@@ -195,7 +200,7 @@ final class ColonyObservationNotesTests {
         @Test
         void handsBackTheSameLineForAColonyNobodyHasEverObserved() {
 
-            var notes = readNotesOver(buildDerelictSet(), ColonySightings.NONE);
+            var notes = readNotesOver(buildDerelictSet(), NOTHING_OBSERVED);
             var line = buildColonyLine();
 
             assertThat(notes.remarkOnColony(line, DERELICT_ID))
@@ -213,7 +218,7 @@ final class ColonyObservationNotesTests {
     // pair over.
     private ColonyObservationNotes readNotesOver(
             Colonies colonies,
-            ColonySightings sightings) {
+            RecordedObservations<ColonyObservation> sightings) {
 
         return ColonyObservationNotes.readNotesFor(sectorMock, systemMock, colonies, sightings);
     }
@@ -250,13 +255,13 @@ final class ColonyObservationNotesTests {
     // A register holding one dated observation of the derelict where it stands, the clock
     // reporting the given span since. What the clock says of the moment is stubbed in the shared
     // fixture's terms, so a case states the age it is about rather than arithmetic over stamps.
-    private ColonySightings observedDaysAgo(float elapsedDays) {
+    private RecordedObservations<ColonyObservation> observedDaysAgo(float elapsedDays) {
 
         stubMomentOnClock(clockMock, OBSERVED_AT, elapsedDays, OBSERVED_DATE);
 
         return colonyId -> DERELICT_ID.equals(colonyId)
-            ? ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_AT)
-            : null;
+            ? Optional.of(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_AT))
+            : Optional.empty();
     }
 
     // A market under an owner, which is what the settling read compares and the fog admits on.

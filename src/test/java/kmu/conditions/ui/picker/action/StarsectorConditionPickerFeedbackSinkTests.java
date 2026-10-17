@@ -7,7 +7,7 @@ import com.fs.starfarer.api.util.Misc;
 import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +47,7 @@ class StarsectorConditionPickerFeedbackSinkTests {
 
         // Misc reads the settings as it loads, and a class that fails to load stays broken for every
         // later suite in the JVM, so the settings go in first.
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
 
         miscMock = mockStatic(Misc.class);
         miscMock
@@ -62,7 +62,7 @@ class StarsectorConditionPickerFeedbackSinkTests {
     void closeHighlightColours() {
 
         miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested

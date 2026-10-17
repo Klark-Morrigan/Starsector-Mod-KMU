@@ -156,8 +156,8 @@ not who happens to stand in the hovered system,
 so the same two blocs cannot come out friendly over one system and contesting over the next.
 The threshold is the base game's own step from indifference to goodwill (`FactionRelations`, KMLib);
 a cut taken anywhere else in the scale is one the player is never shown.
-`StandingBlockRules` bundles the four rules,
-because a friendliness read over one grouping beside an affiliation off another would place blocs under an alliance set no fill was resolved with.
+`StandingBlockRules` bundles the candidacy bar, the `BlocRelations` pair and the membership,
+because relations sampled over one grouping beside a membership from another would answer about blocs the ranking never named.
 
 ## A bloc of two minds
 

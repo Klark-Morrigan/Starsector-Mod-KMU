@@ -17,6 +17,9 @@ import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.maplayers.politicalmap.refresh.listeners.PoliticalMapMarketTransferListener;
 
+import java.util.List;
+import java.util.function.Function;
+
 import static kmu.KmuWiringSteps.runGuardedStep;
 
 /**
@@ -39,6 +42,40 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * <p>Final class with a private constructor: pure-function utility, no instance state.
  */
 public final class PoliticalMapInstaller {
+
+    private static final String INSTALL_FAILURE_PREFIX = "Failed to install KMU political map ";
+    private static final String REMOVAL_FAILURE_PREFIX = "Failed to remove KMU political map ";
+
+    // Every listener that repaints the overlay, held as one table that both directions walk, so a
+    // listener added here is removed by the same entry that installs it.
+    private static final List<RefreshListener<?>> REFRESH_LISTENERS = List.of(
+        // The player discovering a map-relevant entity: a market, a jump point, or a gate.
+        new RefreshListener<>(
+            PoliticalMapDiscoveryListener.class,
+            PoliticalMapDiscoveryListener::new,
+            "discovery listener"),
+        // A colony resizing, which can flip the dominant faction.
+        new RefreshListener<>(
+            PoliticalMapColonySizeListener.class,
+            PoliticalMapColonySizeListener::new,
+            "colony size listener"),
+        // A colony decivilising, which sheds its faction colour.
+        new RefreshListener<>(
+            PoliticalMapDecivListener.class,
+            PoliticalMapDecivListener::new,
+            "deciv listener"),
+        // The player founding or abandoning a colony.
+        new RefreshListener<>(
+            PoliticalMapColonisationListener.class,
+            PoliticalMapColonisationListener::new,
+            "colonisation listener"),
+        // A conquered colony changing hands, which vanilla reports nothing for. Whatever reports
+        // transfers on this sector reaches it through the listener manager; on an install where
+        // nothing does, it is registered and never called.
+        new RefreshListener<>(
+            PoliticalMapMarketTransferListener.class,
+            PoliticalMapMarketTransferListener::new,
+            "market-transfer listener"));
 
     private PoliticalMapInstaller() {
         // utility class, no instances.
@@ -70,29 +107,16 @@ public final class PoliticalMapInstaller {
             () -> FilterSelectionHeal.healStaleSelectionAgainstActiveView(sector, viewRegistry),
             "Failed to heal KMU political map spotlight selection");
 
-        runGuardedStep(
-            () -> installPoliticalMapDiscoveryListener(sector),
-            "Failed to install KMU political map discovery listener");
+        for (var listener : REFRESH_LISTENERS) {
+
+            runGuardedStep(
+                () -> listener.installOn(sector),
+                INSTALL_FAILURE_PREFIX + listener.listenerName());
+        }
 
         runGuardedStep(
             () -> installMapLayerSectorWatcher(sector, allianceSource),
-            "Failed to install KMU political map sector watcher");
-
-        runGuardedStep(
-            () -> installPoliticalMapColonySizeListener(sector),
-            "Failed to install KMU political map colony size listener");
-
-        runGuardedStep(
-            () -> installPoliticalMapDecivListener(sector),
-            "Failed to install KMU political map deciv listener");
-
-        runGuardedStep(
-            () -> installPoliticalMapColonisationListener(sector),
-            "Failed to install KMU political map colonisation listener");
-
-        runGuardedStep(
-            () -> installPoliticalMapMarketTransferListener(sector),
-            "Failed to install KMU political map market-transfer listener");
+            INSTALL_FAILURE_PREFIX + "sector watcher");
     }
 
     /**
@@ -106,76 +130,22 @@ public final class PoliticalMapInstaller {
      */
     public static void uninstallAll(SectorAPI sector) {
 
-        runGuardedStep(
-            () -> {
-                SectorListeners.removeListener(sector, PoliticalMapDiscoveryListener.class);
-                SectorListeners.removeListener(sector, PoliticalMapColonySizeListener.class);
-                SectorListeners.removeListener(sector, PoliticalMapDecivListener.class);
-                SectorListeners.removeListener(sector, PoliticalMapColonisationListener.class);
-                SectorListeners.removeListener(sector, PoliticalMapMarketTransferListener.class);
-            },
-            "Failed to remove KMU political map refresh listeners");
+        for (var listener : REFRESH_LISTENERS) {
+
+            runGuardedStep(
+                () -> listener.removeFrom(sector),
+                REMOVAL_FAILURE_PREFIX + listener.listenerName());
+        }
 
         runGuardedStep(
             () -> removeMapLayerSectorWatcher(sector),
-            "Failed to remove KMU political map sector watcher");
+            REMOVAL_FAILURE_PREFIX + "sector watcher");
     }
 
     // Stops the per-frame watcher polling. By class, which is safe because the class is this
     // layer's own: no other layer's poll, and no sibling mod's, is installed under it.
     static void removeMapLayerSectorWatcher(SectorAPI sector) {
         SectorScripts.removeTransientScripts(sector, PoliticalMapSectorWatcher.class);
-    }
-
-    // Registers the listener that refreshes the political map when the player
-    // discovers a map-relevant entity (a market, a jump point, or a gate), so
-    // the overlay updates live rather than only on reload.
-    static void installPoliticalMapDiscoveryListener(SectorAPI sector) {
-        SectorListeners.installListener(
-            sector,
-            PoliticalMapDiscoveryListener.class,
-            () -> new PoliticalMapDiscoveryListener(sector));
-    }
-
-    // Registers the listener that marks a system's political-map ownership stale
-    // when one of its colonies resizes, so a size change that flips the dominant
-    // faction repaints live rather than only on reload.
-    static void installPoliticalMapColonySizeListener(SectorAPI sector) {
-        SectorListeners.installListener(
-            sector,
-            PoliticalMapColonySizeListener.class,
-            () -> new PoliticalMapColonySizeListener(sector));
-    }
-
-    // Registers the listener that marks a system's political-map ownership stale
-    // when one of its colonies decivilises, so a dying colony sheds its faction
-    // colour and repaints neutral live rather than only on reload.
-    static void installPoliticalMapDecivListener(SectorAPI sector) {
-        SectorListeners.installListener(
-            sector,
-            PoliticalMapDecivListener.class,
-            () -> new PoliticalMapDecivListener(sector));
-    }
-
-    // Registers the listener that marks a system's political-map ownership stale
-    // when the player founds or abandons a colony in it, so planting or dropping
-    // a colony repaints its system live rather than only on reload.
-    static void installPoliticalMapColonisationListener(SectorAPI sector) {
-        SectorListeners.installListener(
-            sector,
-            PoliticalMapColonisationListener.class,
-            () -> new PoliticalMapColonisationListener(sector));
-    }
-
-    // Registers the listener that marks a conquered colony's system stale when it
-    // changes hands, which vanilla reports nothing for. Whatever reports transfers
-    // on this sector reaches it through the listener manager; on an install where
-    // nothing does, it is registered and never called.
-    static void installPoliticalMapMarketTransferListener(SectorAPI sector) {
-        SectorListeners.installListener(
-            sector,
-            PoliticalMapMarketTransferListener.class,
-            () -> new PoliticalMapMarketTransferListener(sector));
     }
 
     // Registers the per-frame watcher that refreshes the political map when a
@@ -198,5 +168,22 @@ public final class PoliticalMapInstaller {
                 new PoliticalMapStalenessSource(
                     SectorMapMachineryIndex.resolveMachineryFor(sector),
                     allianceSource)));
+    }
+
+    // One listener that marks a system stale so the overlay repaints live rather than only on
+    // reload: the class it is installed and removed by, how it is built for a sector, and what a
+    // failure names it as.
+    private record RefreshListener<T>(
+        Class<T> listenerClass,
+        Function<SectorAPI, T> createListener,
+        String listenerName) {
+
+        void installOn(SectorAPI sector) {
+            SectorListeners.installListener(sector, listenerClass, () -> createListener.apply(sector));
+        }
+
+        void removeFrom(SectorAPI sector) {
+            SectorListeners.removeListener(sector, listenerClass);
+        }
     }
 }

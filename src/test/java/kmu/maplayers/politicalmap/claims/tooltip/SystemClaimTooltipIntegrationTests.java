@@ -8,10 +8,9 @@ import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
-import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeamsFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,11 +95,9 @@ final class SystemClaimTooltipIntegrationTests {
             // read, and the real source the scored contest comes through.
             var sector = buildSectorHoldingOneColony();
             var tooltip = new SystemClaimTooltip(
-                StarSystems::readDecreedFactionId,
                 VanillaClaimBreakdownReader::new,
                 ClaimScoreRowResolver::resolveMarketRows,
-                FactionAllianceSource.NO_ALLIANCES,
-                ContestWordingFixtures.CONTESTED_WORDING);
+                PoliticalBoxSeamsFixture.buildPlainSeamsOver(StarSystems::readDecreedFactionId));
 
             var sections = tooltip
                 .composeBody(sector, buildOnlySystem(sector), FACTIONS)

@@ -133,12 +133,13 @@ The survey level asked for is put to the player's own sighting of such a world a
 a neighbour's word is no reading anybody's instruments took,
 so it travels at every bar.
 
-`ColonyKindLookup` folds those kinds by colony ID for a reader that meets a colony as a row rather than as a colony,
-and `ColonyDiscoveryLookup` folds the entity's own found-or-not flag the same way for the same reader.
-`OpenlyKnownColonyLookup` folds a third such answer -
-whether a concealed colony is one the sector openly points at,
+`ColonyFactsLookup` answers by colony ID for a reader that meets a colony as a row rather than as a colony,
+folded in one walk:
+those kinds,
+the entity's own found-or-not flag,
+and whether a concealed colony is one the sector openly points at,
 off the entity IDs and tag `OpenlyKnownColonyRegistry` is seeded with at start-up.
-That one excuses a word a hover box would otherwise say and reaches no gate:
+That last one excuses a word a hover box would otherwise say and reaches no gate:
 a landmark is concealed to every rule here,
 exactly as the base beside it is.
 
@@ -153,7 +154,8 @@ so it is folded per pass beside the observations rather than carried on `ColonyV
 and read through a port so the rule never names the mod that maintains an alliance,
 nor changes with which map layer the player is looking at.
 
-The register behind the observations is `ColonySightings` over `SectorColonySightings`,
+The register behind the observations is KMLib's `RecordedObservations`,
+opened by `SectorColonySightings`,
 written by `ColonySightingRecorder` as the player travels
 and by `ColonySightingsPoll`,
 which [the substrate's own poll](../refresh/README.md#the-substrates-poll) drives,
@@ -191,8 +193,8 @@ and the two go stale independently -
 a relay visited once and watched since has a current state beside a four-cycle-old holder.
 A running hack is deliberately not among its fields,
 for the reason stated there.
-`StructureObservations` is the port a rule reads the register through,
-over `SectorStructureObservations`,
+A rule reads the register through KMLib's `RecordedObservations`,
+opened by `SectorStructureObservations`,
 whose entries sit in KMLib's shared `ObservationStore` under a key of its own and are spelt by `StructureObservationCodec` -
 the two moments,
 the state letters,

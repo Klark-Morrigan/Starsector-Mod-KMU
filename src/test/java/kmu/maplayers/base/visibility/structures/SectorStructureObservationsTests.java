@@ -53,7 +53,7 @@ final class SectorStructureObservationsTests {
             storeObservations(stored);
 
             assertThat(readObservationOf(STRUCTURE_ID))
-                .isNull();
+                .isEmpty();
         }
 
         @Test
@@ -65,7 +65,7 @@ final class SectorStructureObservationsTests {
             storeObservations(stored);
 
             assertThat(readObservationOf(STRUCTURE_ID))
-                .isEqualTo(new StructureObservation(
+                .contains(new StructureObservation(
                     Optional.of("hegemony"),
                     Set.of(StructureFault.NON_FUNCTIONAL),
                     Optional.of(4_200L),
@@ -74,7 +74,7 @@ final class SectorStructureObservationsTests {
     }
 
     // What the register answers about one structure, through the port a rule reads it by.
-    private StructureObservation readObservationOf(String structureId) {
+    private Optional<StructureObservation> readObservationOf(String structureId) {
 
         return SectorStructureObservations
             .readObservations(sectorMock)

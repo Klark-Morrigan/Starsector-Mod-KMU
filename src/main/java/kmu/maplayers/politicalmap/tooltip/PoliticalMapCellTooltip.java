@@ -4,20 +4,18 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.factions.relation.FactionSetFriendliness;
-import kmlib.starsector.systems.StarSystems;
-import kmlib.starsector.systems.claims.ClaimDecreeReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.SystemCellTooltip;
-import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocRelations;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -41,40 +39,12 @@ import java.util.function.Function;
 public abstract class PoliticalMapCellTooltip
         extends SystemCellTooltip {
 
-    /**
-     * The decree read every political-map tooltip runs on in game, named in a single place so a
-     * change of binding cannot reach one view and miss the other.
-     *
-     * <p>The decree answers off the system's own memory flag and reaches no colony, so it is the
-     * narrow port alone rather than a claim reader. A box that reads the whole scored contest opens a
-     * reader of its own per hover, under the colony rule that hover sampled.
-     */
-    protected static final ClaimDecreeReader VANILLA_CLAIM_DECREE_READER = StarSystems::readDecreedFactionId;
+    // The live reads the box is built around. Held rather than reached for statically, so a box draws
+    // on the reads it is handed rather than on whichever ones a running game happens to have.
+    private final PoliticalBoxSeams seams;
 
-    /**
-     * The decree read the box heads itself with. Held rather than reached for statically, so a box
-     * draws on the read it is handed rather than on whichever one a running game happens to have.
-     */
-    protected final ClaimDecreeReader claimDecreeReader;
-
-    // Where the alliance set behind an allied block is taken from. A source rather than a set,
-    // because a box lives for the whole session while alliances form and dissolve inside it - one
-    // captured at construction would go on filing a group under the alliance it left an hour ago.
-    private final FactionAllianceSource allianceSource;
-
-    // Where the wording of the block beneath the friendly one is taken from. A source rather than a
-    // wording for the reason that port sets out: these boxes stand in static fields, so construction
-    // can fall before the game has a mod set to read.
-    private final ContestWordingSource contestWordingSource;
-
-    protected PoliticalMapCellTooltip(
-            ClaimDecreeReader claimDecreeReader,
-            FactionAllianceSource allianceSource,
-            ContestWordingSource contestWordingSource) {
-
-        this.claimDecreeReader = claimDecreeReader;
-        this.allianceSource = allianceSource;
-        this.contestWordingSource = contestWordingSource;
+    protected PoliticalMapCellTooltip(PoliticalBoxSeams seams) {
+        this.seams = Objects.requireNonNull(seams, "seams");
     }
 
     @Override
@@ -90,7 +60,7 @@ public abstract class PoliticalMapCellTooltip
         // would charge the whole claim computation to every faction and alliance hover.
         return CoreTerritoryHeading.resolveHeadingRows(
             sector,
-            claimDecreeReader.readDecreedFactionId(system),
+            seams.claimDecreeReader().readDecreedFactionId(system),
             isStatingCoreClaimInBody());
     }
 
@@ -113,7 +83,7 @@ public abstract class PoliticalMapCellTooltip
     protected final BlocRelations sampleBlocRelations(SectorAPI sector) {
 
         return new BlocRelations(
-            new BlocAffiliation(allianceSource.readAlliances(sector)),
+            new BlocAffiliation(seams.factionAllianceSource().readAlliances(sector)),
             FactionSetFriendliness.createForSector(sector));
     }
 
@@ -137,7 +107,7 @@ public abstract class PoliticalMapCellTooltip
             B[] blocks,
             Function<B, List<CellTooltipEntry>> entriesSource) {
 
-        var contestWording = contestWordingSource.resolveWording();
+        var contestWording = seams.contestWordingSource().resolveWording();
 
         for (var block : blocks) {
 

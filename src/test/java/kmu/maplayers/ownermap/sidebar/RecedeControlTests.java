@@ -12,9 +12,9 @@ import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
-import kmu.starsector.StarsectorSettingsFake;
 import kmu.util.KmuOwnerMapStringKeys;
 import kmu.util.KmuStringKeys;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,7 +76,7 @@ final class RecedeControlTests {
     void installColours() {
         // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
         // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
 
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock
@@ -87,7 +87,7 @@ final class RecedeControlTests {
     @AfterEach
     void clearColours() {
         miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested

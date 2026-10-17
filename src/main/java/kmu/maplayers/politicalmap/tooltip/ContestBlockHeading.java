@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.tooltip;
 
+import java.util.function.Function;
+
 /**
  * A block a political-map box lists the factions around a system's holder under, as far as its heading
  * goes: the strings key it draws under, given how the install has the contest worded.
@@ -8,8 +10,22 @@ package kmu.maplayers.politicalmap.tooltip;
  * ({@link PoliticalMapCellTooltip#appendContestBlockSections}). The sets themselves stay apart, their
  * blocks placing different things by different rules; what they have in common is that every block is
  * headed, and that one heading in each turns on the install ({@link ContestWording}).
+ *
+ * <p>A block set is a closed set rather than a heading string handed around, so which block a standing
+ * falls in is an answer the compiler checks, and the order the blocks read in is the declaration order
+ * rather than a sequence of calls somewhere else that could drift from it.
  */
 public interface ContestBlockHeading {
+
+    /**
+     * The heading source of a block whose heading no install changes.
+     *
+     * @param headingKey the strings key the block always draws under
+     * @return a source answering that key whatever the wording
+     */
+    static Function<ContestWording, String> createFixedKeySource(String headingKey) {
+        return contestWording -> headingKey;
+    }
 
     /**
      * The strings key of the heading this block draws under.

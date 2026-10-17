@@ -4,6 +4,7 @@ import com.fs.starfarer.api.ui.TooltipMakerAPI;
 
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 
+import kmu.conditions.domain.StarsectorConditionRepository;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.util.KmuMarketConditionStringKeys;
 import kmu.util.KmuStringKeys;
@@ -18,7 +19,6 @@ public final class KmuConditionEntryTooltipCreator
         implements TooltipMakerAPI.TooltipCreator {
 
     private static final float METADATA_PAD = 4f;
-    private static final float TOOLTIP_WIDTH = 420f;
 
     private final Supplier<KmuConditionPickerEntry> entrySupplier;
 
@@ -46,7 +46,7 @@ public final class KmuConditionEntryTooltipCreator
             return renderer.get().getTooltipWidth();
         }
 
-        return TOOLTIP_WIDTH;
+        return KmuConditionTooltipRenderer.DEFAULT_TOOLTIP_WIDTH;
     }
 
     @Override
@@ -115,7 +115,10 @@ public final class KmuConditionEntryTooltipCreator
 
         var metadataLines = new ArrayList<String>();
 
-        metadataLines.add(metadataText("source", entry.getSourceModName().orElse("Starsector")));
+        metadataLines.add(metadataText(
+            "source",
+            entry.getSourceModName().orElse(StarsectorConditionRepository.VANILLA_SOURCE_NAME)));
+
         metadataLines.add(metadataText("id", entry.getConditionId()));
 
         entry

@@ -9,6 +9,7 @@ import kmlib.starsector.markets.MarketVisibility;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
+import kmlib.starsector.memory.observations.RecordedObservations;
 
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -68,18 +69,17 @@ public final class ColonyKnowledge
     private final Map<Colony, ColonyKind> kindByColony = new IdentityHashMap<>();
 
     private final ColonyVisibility rule;
-    private final ColonySightings sightings;
+    private final RecordedObservations<ColonyObservation> sightings;
     private final FactionAlliances alliances;
 
     /**
      * Pairs a rule with the register it is read against, among factions standing alone.
      *
      * @param rule      what the player may be shown; null reads as {@link ColonyVisibility#BASE_FOG}
-     * @param sightings what has been observed and where; null reads as
-     *                  {@link ColonySightings#NONE}, which withholds a gated colony rather than
-     *                  leaking one
+     * @param sightings what has been observed of each colony and where, by colony ID; null reads as
+     *                  the empty register, which withholds a gated colony rather than leaking one
      */
-    public ColonyKnowledge(ColonyVisibility rule, ColonySightings sightings) {
+    public ColonyKnowledge(ColonyVisibility rule, RecordedObservations<ColonyObservation> sightings) {
         this(rule, sightings, FactionAlliances.NONE);
     }
 
@@ -88,19 +88,18 @@ public final class ColonyKnowledge
      * read.
      *
      * @param rule      what the player may be shown; null reads as {@link ColonyVisibility#BASE_FOG}
-     * @param sightings what has been observed and where; null reads as
-     *                  {@link ColonySightings#NONE}, which withholds a gated colony rather than
-     *                  leaking one
+     * @param sightings what has been observed of each colony and where, by colony ID; null reads as
+     *                  the empty register, which withholds a gated colony rather than leaking one
      * @param alliances who stands with whom; null reads as {@link FactionAlliances#NONE}, which
      *                  credits every other faction present with speaking
      */
     public ColonyKnowledge(
             ColonyVisibility rule,
-            ColonySightings sightings,
+            RecordedObservations<ColonyObservation> sightings,
             FactionAlliances alliances) {
 
         this.rule = rule == null ? ColonyVisibility.BASE_FOG : rule;
-        this.sightings = sightings == null ? ColonySightings.NONE : sightings;
+        this.sightings = sightings == null ? RecordedObservations.createEmptyRegister() : sightings;
         this.alliances = alliances == null ? FactionAlliances.NONE : alliances;
     }
 
@@ -147,7 +146,7 @@ public final class ColonyKnowledge
 
         return new ColonyKnowledge(
             ColonyVisibility.BASE_FOG,
-            ColonySightings.NONE,
+            RecordedObservations.createEmptyRegister(),
             FactionAllianceRegistry.readAlliances(sector));
     }
 
@@ -170,7 +169,7 @@ public final class ColonyKnowledge
      *
      * @return the register this knowledge reads against; never null
      */
-    public ColonySightings sightings() {
+    public RecordedObservations<ColonyObservation> sightings() {
         return sightings;
     }
 
@@ -600,9 +599,9 @@ public final class ColonyKnowledge
             return true;
         }
 
-        var observation = sightings.readObservation(colony.market().getId());
-
-        return observation != null
-            && observation.locationId().equals(system.getId());
+        return sightings
+            .readObservation(colony.market().getId())
+            .filter(observation -> observation.locationId().equals(system.getId()))
+            .isPresent();
     }
 }

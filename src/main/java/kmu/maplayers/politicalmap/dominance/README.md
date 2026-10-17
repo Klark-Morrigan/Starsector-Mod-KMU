@@ -189,7 +189,7 @@ and `isPaintingNothing` greys it in the picker.
 
 `DominanceStatsAggregator` folds them in one walk of the sector,
 over the same `DominancePass` the fills are resolved under,
-and `DominanceStatsRead` carries them with the systems each bloc lives in.
+and the owner map's `OwnerStatsRead` carries them with the systems each bloc lives in.
 `DominanceSortModes` is the vocabulary the picker ranks them by.
 
 ## What is not here

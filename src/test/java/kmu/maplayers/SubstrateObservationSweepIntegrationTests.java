@@ -8,6 +8,7 @@ import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
+import kmu.maplayers.base.visibility.colonies.ColonyObservation;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 
@@ -68,9 +69,9 @@ final class SubstrateObservationSweepIntegrationTests {
             runSweepsOver(sector, ONE_SWEEP);
 
             assertThat(SectorColonySightings.readSightings(sector)
-                    .readObservation(findOnlyDerelictIn(sector).getId())
-                    .locationId())
-                .isEqualTo(ALPHA_ID);
+                    .readObservation(findOnlyDerelictIn(sector).getId()))
+                .map(ColonyObservation::locationId)
+                .contains(ALPHA_ID);
         }
 
         @Test

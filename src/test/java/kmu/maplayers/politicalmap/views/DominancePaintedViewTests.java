@@ -15,11 +15,11 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolve;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
-import kmu.maplayers.politicalmap.dominance.DominanceStatsRead;
 import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
@@ -184,7 +184,7 @@ final class DominancePaintedViewTests {
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(new DominanceStatsRead(Map.of("hegemony", ANY_STATS), OwnerPresenceIndex.EMPTY));
+                    .thenReturn(new OwnerStatsRead<>(Map.of("hegemony", ANY_STATS), OwnerPresenceIndex.EMPTY));
 
                 assertThat(viewMock.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES_MOCK, UNDER_THE_FOG)
                         .picker()
@@ -202,7 +202,7 @@ final class DominancePaintedViewTests {
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(DominanceStatsRead.EMPTY);
+                    .thenReturn(OwnerStatsRead.createEmptyRead());
 
                 assertThat(viewMock.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES_MOCK, UNDER_THE_FOG)
                         .picker()
@@ -224,7 +224,7 @@ final class DominancePaintedViewTests {
                     var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(DominanceStatsRead.EMPTY);
+                    .thenReturn(OwnerStatsRead.createEmptyRead());
 
                 viewMock.resolveBlocPickerRead(sectorMock, ANY_RULES_MOCK, UNDER_THE_FOG);
 
@@ -250,7 +250,7 @@ final class DominancePaintedViewTests {
                     .thenReturn(ANY_RULES_MOCK);
 
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(DominanceStatsRead.EMPTY);
+                    .thenReturn(OwnerStatsRead.createEmptyRead());
 
                 viewMock.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG);
 

@@ -1,6 +1,6 @@
 package kmu.maplayers.base.tooltip.detail;
 
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -216,12 +216,12 @@ final class HoverTooltipDetailLevelTests {
 
         @BeforeEach
         void installStrings() {
-            StarsectorSettingsFake.installSettings();
+            KmuStringsSettingsFake.installSettings();
         }
 
         @AfterEach
         void clearStrings() {
-            StarsectorSettingsFake.clearSettings();
+            KmuStringsSettingsFake.clearSettings();
         }
 
         @Test

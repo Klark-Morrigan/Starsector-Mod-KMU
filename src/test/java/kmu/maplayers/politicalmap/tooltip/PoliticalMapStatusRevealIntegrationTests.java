@@ -14,7 +14,6 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
@@ -77,14 +76,11 @@ final class PoliticalMapStatusRevealIntegrationTests {
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemClaimTooltip claimTooltip = new SystemClaimTooltip(
         claimBreakdownReaderFake,
-        FactionAllianceSource.NO_ALLIANCES,
-        ContestWordingFixtures.CONTESTED_WORDING);
+        PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake));
 
     private final SystemDominationTooltip dominationTooltip = new SystemDominationTooltip(
         HolderGrouping::identity,
-        claimBreakdownReaderFake,
-        FactionAllianceSource.NO_ALLIANCES,
-        ContestWordingFixtures.CONTESTED_WORDING);
+        PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake));
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
 

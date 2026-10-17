@@ -7,7 +7,7 @@ import kmlib.testfixtures.starsector.markets.colonies.ColonyMarketFixture;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyFixture;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,8 +40,6 @@ final class SystemColonyReadingIntegrationTests {
     private static final CellTooltipEntryLine ACADEMY_LINE =
         CellTooltipEntryLine.createLine(null, "Galatia Academy", "0");
 
-    private static final String NO_LEADING_FINDING = null;
-
     // Whether the account's own carrier says the colony conceals itself.
     private static final boolean IS_CONCEALED = true;
     private static final boolean IS_OPEN = false;
@@ -51,12 +49,12 @@ final class SystemColonyReadingIntegrationTests {
 
     @BeforeEach
     void installStrings() {
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @AfterEach
@@ -76,13 +74,11 @@ final class SystemColonyReadingIntegrationTests {
 
             var openLine = reading.describeColony(
                 PLAIN_LINE,
-                AccountedColony.createEconomyListedColony(DERELICT_ID, IS_OPEN),
-                NO_LEADING_FINDING);
+                AccountedColony.createEconomyListedColony(DERELICT_ID, IS_OPEN));
 
             var concealedLine = reading.describeColony(
                 PLAIN_LINE,
-                AccountedColony.createEconomyListedColony(DERELICT_ID, IS_CONCEALED),
-                NO_LEADING_FINDING);
+                AccountedColony.createEconomyListedColony(DERELICT_ID, IS_CONCEALED));
 
             assertThat(openLine)
                 .isSameAs(PLAIN_LINE);
@@ -114,8 +110,7 @@ final class SystemColonyReadingIntegrationTests {
 
             var line = reading.describeColony(
                 ACADEMY_LINE,
-                AccountedColony.createOffEconomyColony(ACADEMY_ID, IS_CONCEALED),
-                NO_LEADING_FINDING);
+                AccountedColony.createOffEconomyColony(ACADEMY_ID, IS_CONCEALED));
 
             assertThat(line.qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("unlisted"));

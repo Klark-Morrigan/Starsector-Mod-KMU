@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
-import java.util.function.Consumer;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.refresh.MarketRefreshFixtures
@@ -128,10 +127,9 @@ class PoliticalMapInstallerTests {
         }
 
         @Test
-        void installsTheListenersOnEitherSideOfAWatcherThatFailed() {
-            // The watcher sits between the first listener and the other four, so a failure there that
-            // escaped its own step would leave the map deaf to every colony that resizes, decivilises,
-            // is founded or changes hands.
+        void installsEveryListenerWhateverTheWatcherDoes() {
+            // Each step stands behind its own failure boundary, so a sector refusing the watcher costs
+            // the map only the changes nothing announces, never the ones a listener hears.
             doThrow(new IllegalStateException("A sector refusing the script"))
                 .when(sectorMock)
                 .addTransientScript(any());
@@ -149,6 +147,64 @@ class PoliticalMapInstallerTests {
                     PoliticalMapDecivListener.class,
                     PoliticalMapColonisationListener.class,
                     PoliticalMapMarketTransferListener.class);
+        }
+
+        @Test
+        void buildsTheDiscoveryListenerAgainstTheSectorItIsInstalledOn() {
+
+            var installed = installListenerOn(PoliticalMapDiscoveryListener.class);
+
+            installed.listener().reportEntityDiscovered(mockEntityWithMarketInSystem("sys"));
+
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
+        }
+
+        @Test
+        void buildsTheColonySizeListenerAgainstTheSectorItIsInstalledOn() {
+
+            var installed = installListenerOn(PoliticalMapColonySizeListener.class);
+
+            installed.listener().reportColonySizeChanged(mockMarketInSystem("sys"), 3);
+
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
+        }
+
+        @Test
+        void buildsTheDecivListenerAgainstTheSectorItIsInstalledOn() {
+
+            var installed = installListenerOn(PoliticalMapDecivListener.class);
+
+            installed.listener().reportColonyDecivilized(mockMarketInSystem("sys"), false);
+
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
+        }
+
+        @Test
+        void buildsTheColonisationListenerAgainstTheSectorItIsInstalledOn() {
+
+            var installed = installListenerOn(PoliticalMapColonisationListener.class);
+
+            // Abandonment rather than founding, since it names the market directly: the founding
+            // callback carries a planet the market has to be hung on first, and which of the two
+            // provoked the mark is not what this case is about.
+            installed.listener().reportPlayerAbandonedColony(mockMarketInSystem("sys"));
+
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
+        }
+
+        @Test
+        void buildsTheMarketTransferListenerAgainstTheSectorItIsInstalledOn() {
+
+            var installed = installListenerOn(PoliticalMapMarketTransferListener.class);
+
+            installed.listener().reportMarketTransferred(mockMarketInSystem("sys"), null, null, true);
+
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
     }
 
@@ -219,99 +275,11 @@ class PoliticalMapInstallerTests {
     }
 
     @Nested
-    class InstallPoliticalMapDiscoveryListener {
-
-        @Test
-        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
-
-            var installed = installListenerOn(
-                PoliticalMapDiscoveryListener.class,
-                PoliticalMapInstaller::installPoliticalMapDiscoveryListener);
-
-            installed.listener().reportEntityDiscovered(mockEntityWithMarketInSystem("sys"));
-
-            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
-                .containsExactly(buildCellKey("sys"));
-        }
-    }
-
-    @Nested
-    class InstallPoliticalMapColonySizeListener {
-
-        @Test
-        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
-
-            var installed = installListenerOn(
-                PoliticalMapColonySizeListener.class,
-                PoliticalMapInstaller::installPoliticalMapColonySizeListener);
-
-            installed.listener().reportColonySizeChanged(mockMarketInSystem("sys"), 3);
-
-            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
-                .containsExactly(buildCellKey("sys"));
-        }
-    }
-
-    @Nested
-    class InstallPoliticalMapDecivListener {
-
-        @Test
-        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
-
-            var installed = installListenerOn(
-                PoliticalMapDecivListener.class,
-                PoliticalMapInstaller::installPoliticalMapDecivListener);
-
-            installed.listener().reportColonyDecivilized(mockMarketInSystem("sys"), false);
-
-            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
-                .containsExactly(buildCellKey("sys"));
-        }
-    }
-
-    @Nested
-    class InstallPoliticalMapColonisationListener {
-
-        @Test
-        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
-
-            var installed = installListenerOn(
-                PoliticalMapColonisationListener.class,
-                PoliticalMapInstaller::installPoliticalMapColonisationListener);
-
-            // Abandonment rather than founding, since it names the market directly: the founding
-            // callback carries a planet the market has to be hung on first, and which of the two
-            // provoked the mark is not what this case is about.
-            installed.listener().reportPlayerAbandonedColony(mockMarketInSystem("sys"));
-
-            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
-                .containsExactly(buildCellKey("sys"));
-        }
-    }
-
-    @Nested
-    class InstallPoliticalMapMarketTransferListener {
-
-        @Test
-        void buildsTheListenerAgainstTheSectorItIsInstalledOn() {
-
-            var installed = installListenerOn(
-                PoliticalMapMarketTransferListener.class,
-                PoliticalMapInstaller::installPoliticalMapMarketTransferListener);
-
-            installed.listener().reportMarketTransferred(mockMarketInSystem("sys"), null, null, true);
-
-            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
-                .containsExactly(buildCellKey("sys"));
-        }
-    }
-
-    @Nested
     class UninstallAll {
 
         @Test
         void clearsEveryLiveRepaintItRegisters() {
-            // All five listeners and the watcher, since each would otherwise go on marking an
+            // Every listener and the watcher, since each would otherwise go on marking an
             // overlay stale that nothing is drawing - work paid for a feature switched off.
             var listenerManager = new RecordingListenerManager();
             var sectorMock = mock(SectorAPI.class);
@@ -390,16 +358,14 @@ class PoliticalMapInstallerTests {
         }
     }
 
-    // Stands one listener up the way a load does - on a sector that has the map machinery
-    // installed - and hands back the registered listener beside the board it is supposed to report
-    // on.
+    // Stands the layer up the way a load does - on a sector that has the map machinery installed -
+    // and hands back the registered listener of one class beside the board it is supposed to report
+    // on. The heal is stood in, its read of the save being nothing these cases are about.
     //
     // The sector itself is deliberately not handed back. What a case reads is whether the mark
     // found its way to that sector's board, and a case holding the sector could reach the board a
     // second way and assert against whichever one the production happened to pick.
-    private static <T> InstalledListener<T> installListenerOn(
-            Class<T> listenerClass,
-            Consumer<SectorAPI> installListener) {
+    private static <T> InstalledListener<T> installListenerOn(Class<T> listenerClass) {
 
         var listenerManager = new RecordingListenerManager();
         var sectorMock = mock(SectorAPI.class);
@@ -411,11 +377,23 @@ class PoliticalMapInstallerTests {
             .installMachineryOn(sectorMock)
             .resolveRefreshBoard();
 
-        installListener.accept(sectorMock);
+        try (var healMock = mockStatic(FilterSelectionHeal.class)) {
 
-        return new InstalledListener<>(
-            listenerClass.cast(listenerManager.getAddedListeners().get(0)),
-            refreshBoard);
+            PoliticalMapInstaller.installAll(
+                sectorMock,
+                mock(MapLayerViewRegistry.class),
+                AllianceSource.NO_ALLIANCES);
+        }
+
+        var listener = listenerManager
+            .getAddedListeners()
+            .stream()
+            .filter(listenerClass::isInstance)
+            .map(listenerClass::cast)
+            .findFirst()
+            .orElseThrow();
+
+        return new InstalledListener<>(listener, refreshBoard);
     }
 
     // One installed listener and the board of the sector it went onto, which is the pair every

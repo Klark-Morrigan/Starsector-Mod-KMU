@@ -6,7 +6,7 @@ package kmu.maplayers.base.geometry;
  * <p>The two never mean anything apart. A depth says nothing without the rule that decides
  * where it applies, and a rule handed a depth from somewhere else shapes a body whose fill
  * stops in a different place from the border traced beside it. {@link BorderTraceStyle} carries
- * the same pair for the same reason, flat, alongside the two tolerances a trace also needs.
+ * one for the same reason, alongside the two tolerances a trace also needs.
  *
  * <p>{@link #asTheMapDraws()} is the one the game ships, so a pass that shapes the map itself
  * names it rather than restating the rule and the distance, two values that have to move

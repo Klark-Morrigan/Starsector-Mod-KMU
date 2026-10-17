@@ -28,9 +28,10 @@ import java.util.function.ToIntFunction;
  * {@link OwnerMetricSortMode}'s, and the ranking it lays out is {@link OwnerSortModeComposer}'s, so every
  * mode of every vocabulary answers the picker identically and breaks a tie the same way.
  *
- * <p>{@link #MARKET_SIZE} is asked for rather than declared: its number is measured the same way under
- * every mechanic, so {@link SizedBlocMetrics} owns its key and label and this vocabulary supplies
- * only the chain. The claim count is this mechanic's own and is named nowhere else.
+ * <p>{@link #NAME} and {@link #MARKET_SIZE} are asked for rather than declared: each ranks the same way
+ * under every mechanic, so {@link OwnerMetricSortMode} and {@link SizedBlocMetrics} own their keys and
+ * labels and this vocabulary supplies only the chain. The claim count is this mechanic's own and is
+ * named nowhere else.
  *
  * <p>{@link #DEFAULT} is claims - the metric the layer is actually painted by, so a fresh save and any
  * unrecognised stored key open on the ranking that matches what the map shows. The list holds blocs
@@ -52,16 +53,9 @@ public final class ClaimSortModes {
 
     // Declared in the order the sort selector stacks its rows top to bottom: name first, then the
     // numeric metrics. Each key is frozen once shipped, since renaming one silently resets every save
-    // that stored that mode back to DEFAULT. The name key deliberately spells the same as the dominance
-    // vocabulary's: per-scope sort storage keys each view's stored mode separately, so the two never
-    // resolve against the same slot and a shared spelling stays a readability win rather than a
-    // collision.
+    // that stored that mode back to DEFAULT.
     public static final ListSortMode<RankedOwner<ClaimStats>> NAME =
-        new OwnerMetricSortMode<>(
-            "name",
-            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_NAME,
-            null,
-            CANONICAL_METRIC_CHAIN);
+        OwnerMetricSortMode.createNameMode(CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedOwner<ClaimStats>> CLAIMS =
         new OwnerMetricSortMode<>(

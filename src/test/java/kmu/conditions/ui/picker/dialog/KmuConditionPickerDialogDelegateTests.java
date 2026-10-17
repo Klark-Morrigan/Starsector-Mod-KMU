@@ -13,7 +13,7 @@ import kmu.conditions.ui.picker.action.KmuConditionPickerFeedbackSink;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModelFactory;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -179,12 +179,12 @@ class KmuConditionPickerDialogDelegateTests {
 
         @BeforeEach
         void installStarsectorSettings() {
-            StarsectorSettingsFake.installSettings();
+            KmuStringsSettingsFake.installSettings();
         }
 
         @AfterEach
         void clearStarsectorSettings() {
-            StarsectorSettingsFake.clearSettings();
+            KmuStringsSettingsFake.clearSettings();
         }
 
         @Test

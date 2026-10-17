@@ -6,6 +6,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.settings.KmuMapVisibilitySettings;
@@ -369,13 +370,13 @@ class DominanceStatsAggregatorIntegrationTests {
             var sector = buildEconomylessSectorWithSystem("system-a");
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
-                .isEqualTo(DominanceStatsRead.EMPTY);
+                .isEqualTo(OwnerStatsRead.createEmptyRead());
         }
 
         @Test
         void isEmptyForNullSector() {
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(null)))
-                .isEqualTo(DominanceStatsRead.EMPTY);
+                .isEqualTo(OwnerStatsRead.createEmptyRead());
         }
 
         @Test

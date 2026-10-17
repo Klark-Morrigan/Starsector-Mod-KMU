@@ -15,7 +15,6 @@ public final class KmuPoliticalMapStringKeys {
     public static final String POLITICAL_MAP_CTL_CLAIMS = "political_map_ctl_claims";
     public static final String POLITICAL_MAP_CTL_NON_ALLIED_CAPTION = "political_map_ctl_non_allied_caption";
     public static final String POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION = "political_map_ctl_filter_recede_caption";
-    public static final String POLITICAL_MAP_CTL_SORT_NAME = "political_map_ctl_sort_name";
     public static final String POLITICAL_MAP_CTL_SORT_DOMINATION = "political_map_ctl_sort_domination";
     public static final String POLITICAL_MAP_CTL_SORT_PRESENCE = "political_map_ctl_sort_presence";
     public static final String POLITICAL_MAP_CTL_SORT_SCORE = "political_map_ctl_sort_score";

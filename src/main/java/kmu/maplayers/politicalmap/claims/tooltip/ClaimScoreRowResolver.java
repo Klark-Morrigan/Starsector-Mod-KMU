@@ -8,7 +8,6 @@ import kmlib.text.KmlibNumbers;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
-import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.content.TermTooltipLine;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.tooltip.AccountedColony;
@@ -71,10 +70,6 @@ final class ClaimScoreRowResolver {
     // rather than passed as a bare false, since the flag says something about the system - no market
     // of such a faction took it - rather than about this line.
     private static final boolean NOTHING_TOOK_THE_SYSTEM = false;
-
-    // What a market that did not take the system leads its line with: nothing, the claim being the
-    // one finding this box states ahead of the shared vocabulary.
-    private static final String NO_LEADING_FINDING = null;
 
     // The same for the market a standing rests on: a faction the contest never weighed rests on none,
     // so no line of such an account is the one its faction's score was taken from.
@@ -241,19 +236,23 @@ final class ClaimScoreRowResolver {
         // findings about different things, and which of them leads is the shared resolver's to say
         // for every box at once. Stated here, the precedence would be a second copy of a rule the
         // sharing exists to have one of.
-        var leadingFinding = isHoldingTheClaim
-            ? KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER)
-            : NO_LEADING_FINDING;
+        var accountedColony = readAccountedColony(market);
 
         // Described whatever the contest made of the market, because neither what sort of place a
         // colony is nor how current the box's news of it is has anything to do with whether the
         // mechanic weighed it.
-        //
+        var describedLine = isHoldingTheClaim
+            ? colonyReading.describeColony(
+                line,
+                accountedColony,
+                KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER))
+            : colonyReading.describeColony(line, accountedColony);
+
         // A blocked-out line breaks into nothing for a different reason from an empty breakdown
         // below - its terms were computed and are being withheld, rather than never having arisen - so
         // the two are stated apart rather than folded into one predicate that would read as one reason.
         return CellTooltipEntry
-            .createEntry(colonyReading.describeColony(line, readAccountedColony(market), leadingFinding))
+            .createEntry(describedLine)
             .nesting(RedactedMarketLines.isRedactedMarket(market)
                 ? List.of()
                 : resolveTermEntries(market, reading.detailLevel()));
@@ -314,9 +313,8 @@ final class ClaimScoreRowResolver {
     // lost on, which is the one thing it is not - the market was never weighed at all.
     private static CellTooltipEntryLine createNamedMarketLine(MarketClaimBreakdown market) {
 
-        var line = CellTooltipEntryLine.createCountedLine(
-            CellTooltipMark.resolveMarkForMapIcon(market.marketNameplate().mapIcon()),
-            market.marketNameplate().displayName(),
+        var line = CellTooltipEntryLine.createCountedEntityLine(
+            market.marketNameplate(),
             resolveContestScore(market));
 
         return market.isScoredOnItsOwnAccount()

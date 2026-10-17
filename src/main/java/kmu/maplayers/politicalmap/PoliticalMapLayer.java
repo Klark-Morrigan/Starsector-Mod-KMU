@@ -174,7 +174,7 @@ public final class PoliticalMapLayer
 
     @Override
     public MapLayerStanding resolveStanding() {
-        // The save heal, the five refresh listeners and the staleness poll, as the pair the
+        // The save heal, the refresh listeners and the staleness poll, as the pair the
         // framework stands up and takes back. One instance for the tab: which sector each half acts
         // on arrives with the call.
         return standing;

@@ -1,13 +1,11 @@
 package kmu.maplayers.politicalmap.claims.tooltip;
 
-import kmlib.starsector.factions.relation.FactionSetFriendliness;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocRelations;
 import kmu.maplayers.ownermap.owners.holders.alliances.ContestSide;
-import kmu.maplayers.ownermap.owners.holders.alliances.ContestSides;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +20,7 @@ import java.util.function.Predicate;
  * <p>They travel as one value because the standings are a projection of the breakdown under the
  * rule, and most lines a box draws are read against more than one of them - the claimant off the
  * breakdown, the number beside its name off the standing the projection kept, the banner over them
- * both off the rule, the block each falls in off the affiliation and the friendliness. Passed
+ * both off the rule, the block each falls in off the relations. Passed
  * apart, one call's standings could arrive beside another read's breakdown, and a box would state a
  * claimant it had no standing for - or judge a system's habitation under a rule its listing was
  * never projected through, or route two of its blocks against two different readings of who stands
@@ -36,8 +34,7 @@ record ListedClaimContest(
     SystemClaimBreakdown breakdown,
     ColonyVisibility colonyVisibility,
     List<FactionClaimStanding> listedStandings,
-    BlocAffiliation affiliation,
-    FactionSetFriendliness friendliness) {
+    BlocRelations blocRelations) {
 
     /**
      * Selects from a contest the standings the player may be shown, keeping the rule that
@@ -60,8 +57,7 @@ record ListedClaimContest(
     static ListedClaimContest selectFrom(
             SystemClaimBreakdown breakdown,
             ColonyVisibility colonyVisibility,
-            BlocAffiliation affiliation,
-            FactionSetFriendliness friendliness) {
+            BlocRelations blocRelations) {
 
         var isListingUndiscoveredMarkets = colonyVisibility.shouldIncludeUndiscoveredMarkets();
 
@@ -73,8 +69,7 @@ record ListedClaimContest(
                 .stream()
                 .filter(standing -> hasListedColony(standing, isListingUndiscoveredMarkets))
                 .toList(),
-            affiliation,
-            friendliness);
+            blocRelations);
     }
 
     /** Whether anything survived the projection, which is what a box has to state at all. */
@@ -146,19 +141,15 @@ record ListedClaimContest(
             .toList();
     }
 
-    // Whether one faction stands on good terms with whoever holds the claim, asked as the two
-    // blocs of one they are on this layer: the fills are pinned per claiming faction, so a
-    // standing is never an alliance and the bloc-level rule degenerates to the single pair it is
-    // composed of. Going through that rule all the same, rather than reaching past it to the
-    // faction-level answer, so a faction is sorted here by exactly the test the standings box
-    // sorts a lone faction by.
+    // Whether one faction stands on good terms with whoever holds the claim. The fills are pinned
+    // per claiming faction, so the holder is the bloc of one its claimant is.
     //
-    // A system nobody holds names nobody to be friendly with, which the rule answers no for over
-    // the empty side - so the block never draws over a system without a holder its heading names.
+    // A system nobody holds names nobody to be friendly with, so the block never draws over a
+    // system without a holder its heading names.
     private boolean isFriendlyWithClaimHolder(FactionClaimStanding standing) {
 
-        return friendliness.areSetsFriendly(
-            Set.of(standing.factionId()),
+        return blocRelations.isFactionFriendlyWith(
+            standing.factionId(),
             breakdown.hasClaimant()
                 ? Set.of(breakdown.claimantFactionId())
                 : Set.of());
@@ -184,8 +175,11 @@ record ListedClaimContest(
     // so the faction ID is the bloc ID the alliance set is read against.
     private List<FactionClaimStanding> selectStandingsOn(ContestSide side) {
 
-        return new ContestSides(breakdown.claimantFactionId(), affiliation)
-            .selectSide(side, selectListedRivals(), FactionClaimStanding::factionId);
+        return blocRelations.selectSide(
+            side,
+            breakdown.claimantFactionId(),
+            selectListedRivals(),
+            FactionClaimStanding::factionId);
     }
 
     // Whether any colony a faction's standing rests on is one a box may name the faction over.

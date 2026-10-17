@@ -5,8 +5,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.BorderTraceStyle;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
-import kmu.maplayers.base.geometry.CellShaper;
-import kmu.maplayers.base.geometry.EdgeInsetRule;
+import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.SystemClusterBorders;
 import kmu.settings.KmuMapLabelSettings;
 
@@ -64,10 +63,6 @@ public record ClusterBorderTrace(
             edgesByCellKey,
             grouping,
             coincidentNeighbourSystemKeys,
-            new BorderTraceStyle(
-                EdgeInsetRule.AT_EVERY_BORDER,
-                CellShaper.BORDER_INSET_DISTANCE,
-                weldTolerance,
-                miterSpikeLimit));
+            new BorderTraceStyle(EdgeInset.asTheMapDraws(), weldTolerance, miterSpikeLimit));
     }
 }

@@ -8,7 +8,7 @@ import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +39,7 @@ class KmuConditionPickerInfoRowTests {
 
     @BeforeEach
     void mockStarsectorThemeColours() {
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock.when(Misc::getGrayColor).thenReturn(GRAY);
         miscMock.when(Misc::getHighlightColor).thenReturn(GOLD);
@@ -51,7 +51,7 @@ class KmuConditionPickerInfoRowTests {
     @AfterEach
     void closeStarsectorThemeColours() {
         miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested

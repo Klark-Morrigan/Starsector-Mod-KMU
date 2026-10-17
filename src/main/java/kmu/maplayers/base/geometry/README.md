@@ -108,7 +108,7 @@ under `EVERYWHERE` there are no clusters to outline.
 since a depth means nothing without the rule that places it.
 `EdgeInset.asTheMapDraws()` is the pair the game ships,
 and every pass that shapes the map itself names it.
-[`BorderTraceStyle`](BorderTraceStyle.java) carries the same pair for the trace that outlines a cluster,
+[`BorderTraceStyle`](BorderTraceStyle.java) carries an `EdgeInset` for the trace that outlines a cluster,
 so the outline lands where the fills stop.
 
 ## Clusters

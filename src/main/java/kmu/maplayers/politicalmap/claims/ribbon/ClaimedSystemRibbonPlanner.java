@@ -10,6 +10,7 @@ import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
+import kmu.maplayers.politicalmap.claims.SectorClaims;
 
 import java.util.Optional;
 
@@ -92,9 +93,6 @@ public final class ClaimedSystemRibbonPlanner
     // of contest differ on it: with a painter, one rival is a contest; with none, there is nobody
     // to be a rival of, so it takes two blocs.
     private Optional<String> resolvePaintingBlocId(SystemClaimBreakdown contest) {
-
-        return Optional
-            .ofNullable(contest.claimantFactionId())
-            .map(inputs.grouping()::resolveBlocId);
+        return SectorClaims.readClaimantBlocId(contest.claimantFactionId(), inputs.grouping());
     }
 }

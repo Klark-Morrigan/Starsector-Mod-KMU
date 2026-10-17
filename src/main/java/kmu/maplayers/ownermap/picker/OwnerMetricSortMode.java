@@ -4,6 +4,7 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
+import kmu.util.KmuOwnerMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.awt.Color;
@@ -39,6 +40,12 @@ import java.util.function.ToIntFunction;
 public final class OwnerMetricSortMode<S extends OwnerMetrics>
         implements ListSortMode<RankedOwner<S>> {
 
+    /**
+     * The key the name ranking is saved under. Frozen: renaming it resets every save that stored the
+     * name ranking. One spelling for every vocabulary, so the choice survives a view switch.
+     */
+    public static final String NAME_PERSISTENCE_KEY = "name";
+
     private final List<ToIntFunction<S>> canonicalMetricChain;
     private final String labelKey;
     private final ToIntFunction<S> metric;
@@ -64,6 +71,30 @@ public final class OwnerMetricSortMode<S extends OwnerMetrics>
         this.labelKey = labelKey;
         this.metric = metric;
         this.persistenceKey = persistenceKey;
+    }
+
+    /**
+     * The ranking by owner name, bound to one vocabulary's tie-break chain.
+     *
+     * <p>Every owner carries a name whatever its layer measured, so the mode is declared once here
+     * rather than once per vocabulary. What stays per-vocabulary is the chain ties break down behind
+     * it.
+     *
+     * @param <S>                  the asking vocabulary's metrics record
+     * @param canonicalMetricChain that vocabulary's numbers in the order ties break down them
+     * @return the name ranking over that vocabulary's owners
+     */
+    public static <S extends OwnerMetrics> OwnerMetricSortMode<S> createNameMode(
+            List<ToIntFunction<S>> canonicalMetricChain) {
+
+        // A name ranking promotes no number, so the whole numeric chain follows the name.
+        ToIntFunction<S> noMetric = null;
+
+        return new OwnerMetricSortMode<>(
+            NAME_PERSISTENCE_KEY,
+            KmuOwnerMapStringKeys.OWNER_MAP_CTL_SORT_NAME,
+            noMetric,
+            canonicalMetricChain);
     }
 
     /**

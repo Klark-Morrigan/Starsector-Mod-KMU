@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.tooltip;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +39,6 @@ final class SystemColonyReadingTests {
     // A finding the painting layer leads a line with, already worded - handed in and carried as it
     // stands, no reading of a system being able to supply one.
     private static final String LEADING_FINDING = "strongest here";
-    private static final String NO_LEADING_FINDING = null;
 
     // The ordinary colony an account hands over: held in the open and listed by the economy, so a
     // line names it and nothing else unless the reading has something to add.
@@ -48,12 +47,12 @@ final class SystemColonyReadingTests {
 
     @BeforeEach
     void installStrings() {
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested
@@ -61,7 +60,7 @@ final class SystemColonyReadingTests {
 
         @Test
         void leavesALineAloneWhereNothingIsDue() {
-            assertThat(SystemColonyReading.NONE.describeColony(PLAIN_LINE, ORDINARY_COLONY, NO_LEADING_FINDING))
+            assertThat(SystemColonyReading.NONE.describeColony(PLAIN_LINE, ORDINARY_COLONY))
                 .isSameAs(PLAIN_LINE);
         }
 
@@ -72,7 +71,7 @@ final class SystemColonyReadingTests {
                 DERELICT_ID,
                 ColonyKind.SPACE_DERELICT);
 
-            assertThat(reading.describeColony(PLAIN_LINE, ORDINARY_COLONY, NO_LEADING_FINDING).qualifier())
+            assertThat(reading.describeColony(PLAIN_LINE, ORDINARY_COLONY).qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("abandoned"));
         }
 
@@ -88,8 +87,7 @@ final class SystemColonyReadingTests {
             var line = reading.describeColony(
                 PLAIN_LINE,
                 ORDINARY_COLONY,
-                ColonyKind.UNGOVERNED_COLONY,
-                NO_LEADING_FINDING);
+                ColonyKind.UNGOVERNED_COLONY);
 
             assertThat(line.qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("decivilised"));
@@ -100,7 +98,7 @@ final class SystemColonyReadingTests {
 
             var reading = SystemColonyReadingFixture.buildReadingWithUndiscovered(DERELICT_ID);
 
-            assertThat(reading.describeColony(PLAIN_LINE, ORDINARY_COLONY, NO_LEADING_FINDING).qualifier())
+            assertThat(reading.describeColony(PLAIN_LINE, ORDINARY_COLONY).qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
         }
 
@@ -110,7 +108,7 @@ final class SystemColonyReadingTests {
             // own carrier, so a colony this reading knows nothing else about still states it.
             var colony = AccountedColony.createEconomyListedColony(DERELICT_ID, IS_CONCEALED);
 
-            assertThat(SystemColonyReading.NONE.describeColony(PLAIN_LINE, colony, NO_LEADING_FINDING).qualifier())
+            assertThat(SystemColonyReading.NONE.describeColony(PLAIN_LINE, colony).qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("hidden"));
         }
 
@@ -121,7 +119,7 @@ final class SystemColonyReadingTests {
             var reading = SystemColonyReadingFixture.buildReadingWithOpenlyKnown(DERELICT_ID);
             var colony = AccountedColony.createEconomyListedColony(DERELICT_ID, IS_CONCEALED);
 
-            assertThat(reading.describeColony(PLAIN_LINE, colony, NO_LEADING_FINDING))
+            assertThat(reading.describeColony(PLAIN_LINE, colony))
                 .isSameAs(PLAIN_LINE);
         }
 
@@ -130,7 +128,7 @@ final class SystemColonyReadingTests {
 
             var colony = AccountedColony.createOffEconomyColony(DERELICT_ID, IS_OPEN);
 
-            assertThat(SystemColonyReading.NONE.describeColony(PLAIN_LINE, colony, NO_LEADING_FINDING).qualifier())
+            assertThat(SystemColonyReading.NONE.describeColony(PLAIN_LINE, colony).qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("unlisted"));
         }
 
@@ -152,8 +150,7 @@ final class SystemColonyReadingTests {
             var line = reading.describeColony(
                 PLAIN_LINE,
                 AccountedColony.createOffEconomyColony(DERELICT_ID, IS_OPEN),
-                ColonyKind.SPACE_DERELICT,
-                NO_LEADING_FINDING);
+                ColonyKind.SPACE_DERELICT);
 
             assertThat(line.qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("abandoned"));

@@ -1,22 +1,19 @@
 package kmu.conditions.ui.picker.render.paragraph;
 
-import com.fs.starfarer.api.util.Misc;
-
 import kmlib.testfixtures.localisation.ShippedLocales;
-import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 import kmlib.testfixtures.starsector.ui.label.LabelHighlightRule;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
+import kmu.starsector.StarsectorUiColoursMock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
 
 import java.util.List;
 
@@ -29,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class KmuConditionPickerSummaryParagraphFactoryIntegrationTests {
 
-    private MockedStatic<Misc> miscMock;
+    private StarsectorUiColoursMock coloursMock;
 
     // Every count above zero, so every separator the line can carry is drawn.
     private static KmuConditionPickerModel buildModelHoldingEveryCount() {
@@ -62,14 +59,13 @@ final class KmuConditionPickerSummaryParagraphFactoryIntegrationTests {
 
     @BeforeEach
     void mockThemeColours() {
-        miscMock = PickerThemeColours.mockThemeColours();
+        coloursMock = StarsectorUiColoursMock.install();
     }
 
     @AfterEach
     void closeThemeColours() {
 
-        miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        coloursMock.close();
     }
 
     @Nested

@@ -2,7 +2,7 @@ package kmu.maplayers.base.tooltip;
 
 import com.fs.starfarer.api.util.Misc;
 
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -68,7 +68,7 @@ public final class CellTooltipPaletteFake {
         // Named rather than left to the proxy's default shade: a key hint is drawn in a settings colour
         // rather than a Misc one, and every unnamed key answering alike would leave a test unable to tell
         // the shade it asserted from the one every other lookup returns.
-        StarsectorSettingsFake.installSettings(key -> BUTTON_SHORTCUT_KEY.equals(key)
+        KmuStringsSettingsFake.installSettings(key -> BUTTON_SHORTCUT_KEY.equals(key)
             ? BUTTON_SHORTCUT
             : null);
 
@@ -99,6 +99,6 @@ public final class CellTooltipPaletteFake {
     /** Takes the palette and the settings proxy back down, so a suite leaves no statics mocked. */
     public static void clearPalette() {
         miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 }

@@ -25,9 +25,10 @@ import java.util.function.ToIntFunction;
  * {@link OwnerSortModeComposer}'s, so every mode of every vocabulary answers the picker identically and
  * breaks a tie the same way.
  *
- * <p>{@link #MARKET_SIZE} is asked for rather than declared: its number is measured the same way under
- * every mechanic, so {@link SizedBlocMetrics} owns its key and label and this vocabulary supplies
- * only the chain. The rest are this contest's own and are named nowhere else.
+ * <p>{@link #NAME} and {@link #MARKET_SIZE} are asked for rather than declared: each ranks the same way
+ * under every mechanic, so {@link OwnerMetricSortMode} and {@link SizedBlocMetrics} own their keys and
+ * labels and this vocabulary supplies only the chain. The rest are this contest's own and are named
+ * nowhere else.
  *
  * <p>{@link #DEFAULT} is domination, the metric a fresh save and any unrecognised stored key fall back
  * to, so the picker always has a live ordering even before the player picks one.
@@ -54,11 +55,7 @@ public final class DominanceSortModes {
     // numeric metrics. Each key is frozen once shipped, since renaming one silently resets every save
     // that stored that mode back to DEFAULT.
     public static final ListSortMode<RankedOwner<DominanceStats>> NAME =
-        new OwnerMetricSortMode<>(
-            "name",
-            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_NAME,
-            null,
-            CANONICAL_METRIC_CHAIN);
+        OwnerMetricSortMode.createNameMode(CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedOwner<DominanceStats>> DOMINATION =
         new OwnerMetricSortMode<>(

@@ -6,7 +6,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
-import kmlib.starsector.systems.claims.ClaimDecreeReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -18,17 +17,14 @@ import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.ComposedCellBody;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.owners.holders.factions.FactionTooltipLine;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.tooltip.ColonyObservationNotes;
-import kmu.maplayers.politicalmap.tooltip.ContestWordingSource;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
 import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
-import kmu.mods.nexerelin.NexerelinAlliances;
-import kmu.mods.nexerelin.NexerelinContestWording;
 import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
@@ -82,31 +78,30 @@ public final class SystemClaimTooltip
      * holding a reader already opened over the walk it wants explained - a band baked off one pass,
      * say, whose box then states the very claim the band was drawn from.
      *
-     * @param claimBreakdownReader the claim read the box heads with and lists from
-     * @param allianceSource       the alliances the contest's sides are read under
-     * @param contestWordingSource the wording of the rival block
+     * @param claimBreakdownReader the claim read the box heads with and lists from; it stands in for
+     *                             the decree read the seams carry, so the heading and the list come
+     *                             off one reader
+     * @param seams                the live reads every political box is built around
      */
     public SystemClaimTooltip(
             ClaimBreakdownReader claimBreakdownReader,
-            FactionAllianceSource allianceSource,
-            ContestWordingSource contestWordingSource) {
+            PoliticalBoxSeams seams) {
 
         this(
-            claimBreakdownReader,
             (knownColonyReader, sectorIndex) -> claimBreakdownReader,
             ClaimScoreRowResolver::resolveMarketRows,
-            allianceSource,
-            contestWordingSource);
+            new PoliticalBoxSeams(
+                claimBreakdownReader,
+                seams.factionAllianceSource(),
+                seams.contestWordingSource()));
     }
 
     SystemClaimTooltip(
-            ClaimDecreeReader claimDecreeReader,
             ClaimBreakdownReaderSource claimReaderSource,
             BiFunction<FactionClaimStanding, ClaimAccountReading, List<CellTooltipEntry>> accountEntriesSource,
-            FactionAllianceSource allianceSource,
-            ContestWordingSource contestWordingSource) {
+            PoliticalBoxSeams seams) {
 
-        super(claimDecreeReader, allianceSource, contestWordingSource);
+        super(seams);
 
         this.claimReaderSource = claimReaderSource;
         this.accountEntriesSource = accountEntriesSource;
@@ -200,15 +195,10 @@ public final class SystemClaimTooltip
      * source its fills are resolved through, so the box and the cell under it can never name different
      * claimants.
      *
-     * <p>This is where the alliance set behind the allied block is bound, and the wording of the rival
-     * block beside it, both off the one mod that supplies them. Both are gates rather than branches:
-     * each answers with the plain reading wherever that mod is absent, so the box states one shape and
-     * the install decides what it comes to.
-     *
-     * <p>Deliberately not the claims view's own grouping, which pins itself to identity so the fills
-     * stay per claiming faction: that decision is about what the map paints, while the block needs the
-     * live alliance set, and reusing the view's would leave it permanently empty on the one layer that
-     * draws it.
+     * <p>The alliance set behind the allied block is the live one, not the claims view's own grouping,
+     * which pins itself to identity so the fills stay per claiming faction: that decision is about what
+     * the map paints, while the block needs the live alliance set, and reusing the view's would leave
+     * it permanently empty on the one layer that draws it.
      *
      * @param claimReaderSource the source the view reads every claim through
      * @return a box opening its reader through that source on every hover
@@ -216,11 +206,9 @@ public final class SystemClaimTooltip
     public static SystemClaimTooltip createReadingThrough(ClaimBreakdownReaderSource claimReaderSource) {
 
         return new SystemClaimTooltip(
-            VANILLA_CLAIM_DECREE_READER,
             claimReaderSource,
             ClaimScoreRowResolver::resolveMarketRows,
-            NexerelinAlliances::resolveFactionAlliancesIn,
-            NexerelinContestWording::resolveWording);
+            PoliticalBoxSeams.LIVE);
     }
 
     @Override
@@ -337,7 +325,6 @@ public final class SystemClaimTooltip
     private ListedClaimContest readListedContest(SectorPassIndex sectorIndex, StarSystemAPI system) {
 
         var colonyVisibility = readColonyVisibility();
-        var blocRelations = sampleBlocRelations(sectorIndex.getSector());
         var breakdownReader = PassClaimReaders.openBreakdownReaderOver(
             sectorIndex,
             colonyVisibility,
@@ -346,8 +333,7 @@ public final class SystemClaimTooltip
         return ListedClaimContest.selectFrom(
             breakdownReader.readBreakdown(system),
             colonyVisibility,
-            blocRelations.affiliation(),
-            blocRelations.friendliness());
+            sampleBlocRelations(sectorIndex.getSector()));
     }
 
     // What the claim block lists: the one line naming whoever holds the system, and nothing at all

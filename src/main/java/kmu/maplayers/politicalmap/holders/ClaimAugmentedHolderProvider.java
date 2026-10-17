@@ -8,7 +8,6 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.claims.FilteredClaims;
-import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -73,11 +72,9 @@ public final class ClaimAugmentedHolderProvider
 
         // The claims arrive already under whatever spotlight is active, so the fold only has to
         // answer which claimed systems join the holder map, never which key each one carries.
-        // The reader is opened over this pass rather than held across passes, so it reads the
-        // colonies the held half just read rather than walking every system a second time.
-        var claimingHolderBySystemKey = FilteredClaims.resolveFilteredClaims(
+        var claimingHolderBySystemKey = FilteredClaims.resolveFilteredClaimsThrough(
             pass,
-            PassClaimReaders.openClaimReaderOver(pass, claimReaderSource),
+            claimReaderSource,
             selectedBlocId);
 
         return foldClaimsIntoHeld(held, claimingHolderBySystemKey);

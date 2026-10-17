@@ -2,10 +2,12 @@ package kmu.maplayers.base.visibility.colonies;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.memory.observations.RecordedObservations;
 import kmlib.testfixtures.starsector.markets.colonies.ColonyFixture;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * The world a projection is posed against: KMLib's colony world, plus what has been observed of
@@ -41,8 +43,8 @@ public final class ColonyKnowledgeFixture extends ColonyFixture {
      * What has been observed and where, as a projection reads it. Live rather than a snapshot, so a
      * case may build its set first and record the observation after.
      */
-    public ColonySightings getSightings() {
-        return observationsByColonyId::get;
+    public RecordedObservations<ColonyObservation> getSightings() {
+        return colonyId -> Optional.ofNullable(observationsByColonyId.get(colonyId));
     }
 
     /**

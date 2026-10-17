@@ -4,6 +4,7 @@ import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.factions.relation.FactionSetFriendliness;
 
 import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocRelations;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 import kmu.maplayers.politicalmap.dominance.standings.FactionStanding;
@@ -658,14 +659,15 @@ class StandingBlockRoutingTests {
             HolderGrouping membershipFold,
             List<String> aboveNeutralPairs) {
 
+        // Read one way round, every rule here asking its pairs from the faction being sorted - so a
+        // table stating what a rival thinks of the holder settles which side that rival takes and
+        // both the counts stated on its row alike.
+        var friendliness = new FactionSetFriendliness((factionId, otherFactionId) ->
+            aboveNeutralPairs.contains(factionId + ":" + otherFactionId));
+
         return new StandingBlockRules(
             IS_POLITICAL_BLOC,
-            new BlocAffiliation(allianceSet),
-            // Read one way round, every rule here asking its pairs from the faction being sorted -
-            // so a table stating what a rival thinks of the holder settles which side that rival
-            // takes and both the counts stated on its row alike.
-            new FactionSetFriendliness((factionId, otherFactionId) ->
-                aboveNeutralPairs.contains(factionId + ":" + otherFactionId)),
+            new BlocRelations(new BlocAffiliation(allianceSet), friendliness),
             membershipFold::resolveMemberFactionIds);
     }
 

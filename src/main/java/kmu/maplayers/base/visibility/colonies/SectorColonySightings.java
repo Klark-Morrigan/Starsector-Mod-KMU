@@ -9,6 +9,7 @@ import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.markets.colonies.SystemColonies;
 import kmlib.starsector.memory.observations.ObservationStore;
+import kmlib.starsector.memory.observations.RecordedObservations;
 
 import java.util.HashMap;
 import java.util.List;
@@ -70,14 +71,21 @@ public final class SectorColonySightings {
     /**
      * Opens the sector's sighting register for reading.
      *
+     * <p>What is kept is the place a colony was seen standing in, and a reader compares that against
+     * where it stands now. Vanilla records only that a system has been entered, which answers a
+     * different question: a colony founded after the visit, or moved in since, was never seen there
+     * however many times the player has crossed the place.
+     *
+     * <p>Says nothing about who did the observing. The player standing in a place and the place's own
+     * inhabitants are both observations, and one register holds them alike - which is what keeps a
+     * colony known once the neighbours who could see it are gone.
+     *
      * @param sector the sector whose memory holds the register; null - or one holding no
      *               register yet - reads as nothing having been seen anywhere
      * @return what was last observed of each colony, by colony ID; never null
      */
-    public static ColonySightings readSightings(SectorAPI sector) {
-
-        return SIGHTINGS_REGISTER
-            .readObservations(sector)::readObservationOrNull;
+    public static RecordedObservations<ColonyObservation> readSightings(SectorAPI sector) {
+        return SIGHTINGS_REGISTER.readObservations(sector);
     }
 
     /**

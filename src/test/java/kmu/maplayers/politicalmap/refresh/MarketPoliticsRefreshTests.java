@@ -12,6 +12,8 @@ import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.refresh.MarketRefreshFixtures.mockMarketInSystem;
 import static kmu.maplayers.politicalmap.refresh.MarketRefreshFixtures.mockUnseatedMarket;
@@ -132,8 +134,9 @@ final class MarketPoliticsRefreshTests {
                 "colony resize",
                 "");
 
-            assertThat(readObservationOf(sector, derelict).locationId())
-                .isEqualTo(SYSTEM_ID);
+            assertThat(readObservationOf(sector, derelict))
+                .map(ColonyObservation::locationId)
+                .contains(SYSTEM_ID);
         }
     }
 
@@ -152,8 +155,9 @@ final class MarketPoliticsRefreshTests {
                 sector,
                 SectorOwnershipFixtures.findSystemIn(sector, SYSTEM_ID));
 
-            assertThat(readObservationOf(sector, derelict).locationId())
-                .isEqualTo(SYSTEM_ID);
+            assertThat(readObservationOf(sector, derelict))
+                .map(ColonyObservation::locationId)
+                .contains(SYSTEM_ID);
         }
 
         @Test
@@ -166,7 +170,7 @@ final class MarketPoliticsRefreshTests {
             MarketPoliticsRefresh.recordObservationsIn(sector, null);
 
             assertThat(readObservationOf(sector, findDerelictIn(sector)))
-                .isNull();
+                .isEmpty();
         }
 
         @Test
@@ -181,7 +185,7 @@ final class MarketPoliticsRefreshTests {
                 SectorOwnershipFixtures.findSystemIn(sector, SYSTEM_ID));
 
             assertThat(readObservationOf(sector, findDerelictIn(sector)))
-                .isNull();
+                .isEmpty();
         }
     }
 
@@ -214,7 +218,7 @@ final class MarketPoliticsRefreshTests {
             .get(0);
     }
 
-    private static ColonyObservation readObservationOf(SectorAPI sector, MarketAPI colony) {
+    private static Optional<ColonyObservation> readObservationOf(SectorAPI sector, MarketAPI colony) {
 
         return SectorColonySightings
             .readSightings(sector)

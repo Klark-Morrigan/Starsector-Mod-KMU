@@ -96,7 +96,7 @@
     "owner_map_ctl_muted": "淡化",
     "owner_map_ctl_desaturated": "去色",
     "political_map_ctl_filter_recede_caption": "星域其余部分：",
-    "political_map_ctl_sort_name": "名称",
+    "owner_map_ctl_sort_name": "名称",
     "political_map_ctl_sort_domination": "主导",
     "political_map_ctl_sort_presence": "存在",
     "political_map_ctl_sort_score": "得分",

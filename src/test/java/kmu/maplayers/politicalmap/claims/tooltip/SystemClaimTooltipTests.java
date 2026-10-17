@@ -31,10 +31,10 @@ import kmu.maplayers.base.tooltip.layout.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
-import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeamsFixture;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltipTests;
 import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
@@ -209,8 +209,7 @@ final class SystemClaimTooltipTests {
 
     private final SystemClaimTooltip tooltip = new SystemClaimTooltip(
         claimBreakdownReaderFake,
-        sector -> alliances,
-        () -> contestWording);
+        new PoliticalBoxSeams(claimBreakdownReaderFake, sector -> alliances, () -> contestWording));
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
@@ -1465,15 +1464,13 @@ final class SystemClaimTooltipTests {
             var openedSectors = new ArrayList<SectorAPI>();
             var settingsReads = new AtomicInteger();
             var recordingTooltip = new SystemClaimTooltip(
-                claimBreakdownReaderFake,
                 (knownColonyReader, sectorIndex) -> {
                     openedRules.add(((ColonyKnowledge) knownColonyReader).rule());
                     openedSectors.add(sectorIndex.getSector());
                     return claimBreakdownReaderFake;
                 },
                 ClaimScoreRowResolver::resolveMarketRows,
-                FactionAllianceSource.NO_ALLIANCES,
-                ContestWordingFixtures.CONTESTED_WORDING);
+                PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake));
 
             // Counted in the answer rather than verified on the static, so only the box's own reads
             // are counted and never the stubbing call itself.
@@ -1507,14 +1504,12 @@ final class SystemClaimTooltipTests {
             // between two hovers, so the second hover has to see the toggle moved after the first.
             var openedRules = new ArrayList<ColonyVisibility>();
             var recordingTooltip = new SystemClaimTooltip(
-                claimBreakdownReaderFake,
                 (knownColonyReader, sectorIndex) -> {
                     openedRules.add(((ColonyKnowledge) knownColonyReader).rule());
                     return claimBreakdownReaderFake;
                 },
                 ClaimScoreRowResolver::resolveMarketRows,
-                FactionAllianceSource.NO_ALLIANCES,
-                ContestWordingFixtures.CONTESTED_WORDING);
+                PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake));
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -1867,11 +1862,9 @@ final class SystemClaimTooltipTests {
     private SystemClaimTooltip buildTooltipAccountingThrough(ClaimAccountSourceFake accountSourceFake) {
 
         return new SystemClaimTooltip(
-            claimBreakdownReaderFake,
             (knownColonyReader, sectorIndex) -> claimBreakdownReaderFake,
             accountSourceFake,
-            FactionAllianceSource.NO_ALLIANCES,
-            ContestWordingFixtures.CONTESTED_WORDING);
+            PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake));
     }
 
     // The body at the shallowest level, read top to bottom as the lines a player sees.

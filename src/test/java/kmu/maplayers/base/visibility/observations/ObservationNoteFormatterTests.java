@@ -2,8 +2,8 @@ package kmu.maplayers.base.visibility.observations;
 
 import com.fs.starfarer.api.campaign.CampaignClockAPI;
 
-import kmu.starsector.StarsectorSettingsFake;
 import kmu.util.KmuPoliticalMapStringKeys;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,13 +42,13 @@ final class ObservationNoteFormatterTests {
 
         clockMock = mock(CampaignClockAPI.class);
 
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
 
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested

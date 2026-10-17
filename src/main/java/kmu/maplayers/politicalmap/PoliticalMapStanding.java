@@ -11,8 +11,8 @@ import kmu.maplayers.ownermap.MapLayerViewRegistry;
  * The political map's pair: what the framework stands up when its tab is on the bar, and takes back
  * when the player takes that tab off.
  *
- * <p>{@link PoliticalMapInstaller} is what both halves are - a save heal, five listeners and a poll,
- * each stated beside the wiring it stands up. This is only what makes them reachable as a pair, so
+ * <p>{@link PoliticalMapInstaller} is what both halves are - a save heal, the refresh listeners and a
+ * poll, each stated beside the wiring it stands up. This is only what makes them reachable as a pair, so
  * the installer stays the utility it is and the framework never names it.
  *
  * <p>Its own type rather than the layer answering for itself, so what a layer <em>is</em> - a tab,

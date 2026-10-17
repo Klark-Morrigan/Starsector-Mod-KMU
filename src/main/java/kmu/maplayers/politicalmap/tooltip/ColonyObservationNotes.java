@@ -5,10 +5,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.memory.observations.RecordedObservations;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.maplayers.base.visibility.colonies.ColonySightings;
+import kmu.maplayers.base.visibility.colonies.ColonyObservation;
 import kmu.maplayers.base.visibility.observations.ObservationAxis;
 import kmu.maplayers.base.visibility.observations.ObservationNotes;
 import kmu.maplayers.base.visibility.observations.ObservationRecency;
@@ -65,14 +66,14 @@ public final class ColonyObservationNotes {
         NO_CLOCK,
         NOBODY_IS_LOOKING,
         Colonies.NONE,
-        ColonySightings.NONE);
+        RecordedObservations.createEmptyRegister());
 
     // The sector the system stands in, whose alliances the inhabitants' fold is read under.
     private final SectorAPI sector;
     private final CampaignClockAPI clock;
     private final boolean isPlayerPresent;
     private final Colonies colonies;
-    private final ColonySightings sightings;
+    private final RecordedObservations<ColonyObservation> sightings;
 
     // Which colonies the system's own people can see, folded on the first line that asks and kept
     // for the rest of the box.
@@ -88,7 +89,7 @@ public final class ColonyObservationNotes {
             CampaignClockAPI clock,
             boolean isPlayerPresent,
             Colonies colonies,
-            ColonySightings sightings) {
+            RecordedObservations<ColonyObservation> sightings) {
 
         this.sector = sector;
         this.clock = clock;
@@ -120,7 +121,7 @@ public final class ColonyObservationNotes {
             SectorAPI sector,
             StarSystemAPI system,
             Colonies colonies,
-            ColonySightings sightings) {
+            RecordedObservations<ColonyObservation> sightings) {
 
         if (sector == null || system == null || colonies == null) {
             return NONE;
@@ -131,7 +132,7 @@ public final class ColonyObservationNotes {
             sector.getClock(),
             Objects.equals(sector.getCurrentLocation(), system),
             colonies,
-            sightings == null ? ColonySightings.NONE : sightings);
+            sightings == null ? RecordedObservations.createEmptyRegister() : sightings);
     }
 
     /**
@@ -201,8 +202,8 @@ public final class ColonyObservationNotes {
     // made, so only the moment travels.
     private Optional<RecalledObservation> readRecordedObservation(String colonyId) {
 
-        return Optional
-            .ofNullable(sightings.readObservation(colonyId))
+        return sightings
+            .readObservation(colonyId)
             .map(observation -> new RecalledObservation(observation.observedTimestamp()));
     }
 

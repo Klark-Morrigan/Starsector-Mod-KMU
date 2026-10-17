@@ -18,7 +18,7 @@ import kmu.maplayers.ownermap.picker.OwnerMetrics;
 import kmu.maplayers.ownermap.picker.OwnerMetricsFake;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
 import kmu.maplayers.ownermap.picker.OwnerSortModesFake;
-import kmu.maplayers.ownermap.picker.OwnerStatsReadFake;
+import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
 
@@ -80,7 +80,7 @@ final class BlocPickerAssemblyTests {
                         viewFake,
                         sectorMock,
                         HolderGrouping.identity(),
-                        OwnerStatsReadFake.createRowsOnlyFake(statsByBlocId),
+                        new OwnerStatsRead<>(statsByBlocId, OwnerPresenceIndex.EMPTY),
                         ANY_MODES)
                     .picker()
                     .items())
@@ -104,7 +104,7 @@ final class BlocPickerAssemblyTests {
                         viewFake,
                         sectorMock,
                         HolderGrouping.identity(),
-                        OwnerStatsReadFake.createRowsOnlyFake(statsByBlocId),
+                        new OwnerStatsRead<>(statsByBlocId, OwnerPresenceIndex.EMPTY),
                         ANY_MODES)
                     .picker()
                     .items())
@@ -127,7 +127,7 @@ final class BlocPickerAssemblyTests {
                         viewFake,
                         sectorMock,
                         HolderGrouping.identity(),
-                        OwnerStatsReadFake.createRowsOnlyFake(statsByBlocId),
+                        new OwnerStatsRead<>(statsByBlocId, OwnerPresenceIndex.EMPTY),
                         ANY_MODES)
                     .picker()
                     .items())
@@ -147,7 +147,7 @@ final class BlocPickerAssemblyTests {
                         viewFake,
                         mock(SectorAPI.class),
                         HolderGrouping.identity(),
-                        OwnerStatsReadFake.createRowsOnlyFake(Map.of("rebel_pact", ANY_STATS_FAKE)),
+                        new OwnerStatsRead<>(Map.of("rebel_pact", ANY_STATS_FAKE), OwnerPresenceIndex.EMPTY),
                         ANY_MODES)
                     .picker()
                     .items())
@@ -167,7 +167,7 @@ final class BlocPickerAssemblyTests {
                 viewFake,
                 sectorMock,
                 PACT_GROUPING,
-                OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
+                new OwnerStatsRead<>(Map.<String, OwnerMetricsFake>of(), OwnerPresenceIndex.EMPTY),
                 ANY_MODES);
 
             assertThat(viewFake.listReadingSectors())
@@ -191,7 +191,7 @@ final class BlocPickerAssemblyTests {
                         viewFake,
                         sectorMock,
                         HolderGrouping.identity(),
-                        OwnerStatsReadFake.createRowsOnlyFake(Map.of("ghost", ANY_STATS_FAKE)),
+                        new OwnerStatsRead<>(Map.of("ghost", ANY_STATS_FAKE), OwnerPresenceIndex.EMPTY),
                         ANY_MODES)
                     .picker()
                     .items())
@@ -212,7 +212,7 @@ final class BlocPickerAssemblyTests {
                         viewFake,
                         mock(SectorAPI.class),
                         HolderGrouping.identity(),
-                        OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
+                        new OwnerStatsRead<>(Map.<String, OwnerMetricsFake>of(), OwnerPresenceIndex.EMPTY),
                         OwnerSortModesFake.MODES)
                     .picker()
                     .sortModes()
@@ -231,7 +231,7 @@ final class BlocPickerAssemblyTests {
                         viewFake,
                         mock(SectorAPI.class),
                         HolderGrouping.identity(),
-                        OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
+                        new OwnerStatsRead<>(Map.<String, OwnerMetricsFake>of(), OwnerPresenceIndex.EMPTY),
                         OwnerSortModesFake.MODES)
                     .picker()
                     .sortModes()
@@ -249,7 +249,7 @@ final class BlocPickerAssemblyTests {
                     viewFake,
                     mock(SectorAPI.class),
                     HolderGrouping.identity(),
-                    OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
+                    new OwnerStatsRead<>(Map.<String, OwnerMetricsFake>of(), OwnerPresenceIndex.EMPTY),
                     OwnerSortModesFake.MODES)
                 .picker()
                 .sortModes();
@@ -283,7 +283,7 @@ final class BlocPickerAssemblyTests {
                 viewFake,
                 sectorMock,
                 PACT_GROUPING,
-                OwnerStatsReadFake.createRowsOnlyFake(Map.of("pact", ANY_STATS_FAKE)),
+                new OwnerStatsRead<>(Map.of("pact", ANY_STATS_FAKE), OwnerPresenceIndex.EMPTY),
                 OwnerSortModesFake.MODES);
 
             var standingRuns = resolveStandingMode(read.picker().sortModes())
@@ -311,7 +311,7 @@ final class BlocPickerAssemblyTests {
                         viewFake,
                         null,
                         HolderGrouping.identity(),
-                        OwnerStatsReadFake.createRowsOnlyFake(Map.<String, OwnerMetricsFake>of()),
+                        new OwnerStatsRead<>(Map.<String, OwnerMetricsFake>of(), OwnerPresenceIndex.EMPTY),
                         OwnerSortModesFake.MODES)
                     .picker()
                     .sortModes())
@@ -332,7 +332,7 @@ final class BlocPickerAssemblyTests {
                 viewFake,
                 sectorMock,
                 HolderGrouping.identity(),
-                new OwnerStatsReadFake<>(
+                new OwnerStatsRead<>(
                     Map.of("kept", ANY_STATS_FAKE, "dropped", OTHER_STATS_FAKE),
                     new OwnerPresenceIndex(Map.of(
                         "kept", Set.of(buildCellKey("corvus")),
@@ -363,7 +363,7 @@ final class BlocPickerAssemblyTests {
                         viewFake,
                         sectorMock,
                         HolderGrouping.identity(),
-                        OwnerStatsReadFake.createRowsOnlyFake(Map.of("pirates", ratingFake)),
+                        new OwnerStatsRead<>(Map.of("pirates", ratingFake), OwnerPresenceIndex.EMPTY),
                         new ListSortModes<RankedOwner<HazardRatingFake>>(List.of(), null))
                     .picker()
                     .items())

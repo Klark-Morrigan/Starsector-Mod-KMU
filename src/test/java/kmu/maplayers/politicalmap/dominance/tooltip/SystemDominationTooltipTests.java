@@ -8,6 +8,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.memory.observations.RecordedObservations;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;
@@ -21,7 +22,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.maplayers.base.visibility.colonies.ColonySightings;
+import kmu.maplayers.base.visibility.colonies.ColonyObservation;
 import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
@@ -37,6 +38,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.UnweighedColony;
 import kmu.maplayers.politicalmap.tooltip.ColonyObservationNotes;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltipTests;
 import kmu.settings.HiddenMarketScalingChoice;
 
@@ -209,9 +211,7 @@ final class SystemDominationTooltipTests {
 
     private final SystemDominationTooltip tooltip = new SystemDominationTooltip(
         StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
-        claimBreakdownReaderFake,
-        sector -> allianceSet,
-        () -> contestWording);
+        new PoliticalBoxSeams(claimBreakdownReaderFake, sector -> allianceSet, () -> contestWording));
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
@@ -710,9 +710,9 @@ final class SystemDominationTooltipTests {
             // one, that being what a read opening its own would also find - so the premise is
             // asserted rather than assumed.
             assertThat(OBSERVED_PASS.colonyKnowledge().sightings())
-                .isNotSameAs(ColonySightings.NONE);
+                .isNotSameAs(RecordedObservations.createEmptyRegister());
 
-            var sightings = ArgumentCaptor.forClass(ColonySightings.class);
+            ArgumentCaptor<RecordedObservations<ColonyObservation>> sightings = ArgumentCaptor.captor();
 
             // Real methods behind the spy, because the reading takes the remark off the notes it is
             // handed and a stubbed read would hand it none.

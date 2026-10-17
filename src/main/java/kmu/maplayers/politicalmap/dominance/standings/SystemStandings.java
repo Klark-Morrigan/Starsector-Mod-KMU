@@ -46,21 +46,12 @@ import java.util.Set;
  */
 public final class SystemStandings {
 
-    // Groups rank descending by their summed score, a tie falling to the lowest bloc ID so the order
-    // is total and never depends on the economy walk order the footprints arrive in.
+    // Groups rank by their summed score, and a group's members by their own.
     private static final Comparator<GroupStanding> GROUP_ORDER =
-        Comparator
-            .comparingInt(GroupStanding::aggregateScore)
-            .reversed()
-            .thenComparing(GroupStanding::blocId);
+        StandingRankOrder.createRankOrder(GroupStanding::aggregateScore, GroupStanding::blocId);
 
-    // A group's members rank descending by their own score, a tie falling to the lowest faction ID
-    // on the same total-order rule as the groups above them.
     private static final Comparator<FactionStanding> MEMBER_ORDER =
-        Comparator
-            .comparingInt(FactionStanding::score)
-            .reversed()
-            .thenComparing(FactionStanding::factionId);
+        StandingRankOrder.createRankOrder(FactionStanding::score, FactionStanding::factionId);
 
     private SystemStandings() {
     }

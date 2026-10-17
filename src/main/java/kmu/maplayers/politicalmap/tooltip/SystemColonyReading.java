@@ -6,11 +6,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.markets.colonies.Colonies;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
-import kmu.maplayers.base.visibility.colonies.ColonyDiscoveryLookup;
+import kmu.maplayers.base.visibility.colonies.ColonyFactsLookup;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.maplayers.base.visibility.colonies.ColonyKindLookup;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyLookup;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -26,10 +24,10 @@ import java.util.function.BiFunction;
  * has found it, that nobody has looked at it in four cycles - have to be read from the system
  * itself and matched back by ID.
  *
- * <p>The four travel as one value because they are one reading. All are folded from the single
- * walk of the system the box already makes, and a line asks them together - so passed apart, one
- * could be folded off a second walk, and the box would state a kind and a date read from two
- * different moments of the same system. Held together, that cannot be expressed.
+ * <p>The facts and the notes travel as one value because they are one reading. Both are folded from
+ * the single walk of the system the box already makes, and a line asks them together - so passed
+ * apart, one could be folded off a second walk, and the box would state a kind and a date read from
+ * two different moments of the same system. Held together, that cannot be expressed.
  *
  * <p>Folded once for a whole box rather than per row, since an account lists a system's colonies
  * once per faction standing: resolved where a row is drawn, each would be re-read for every faction
@@ -45,44 +43,39 @@ import java.util.function.BiFunction;
  */
 public final class SystemColonyReading {
 
+    // What a line not led by the painting layer's own finding carries in its place.
+    private static final String NO_LEADING_FINDING = null;
+
     /**
      * A box with no system to read: every colony reads as the ordinary kind, every one as found,
      * every concealment as a secret, and none carries a remark. What a caller with nothing walked
      * states, rather than inventing an empty reading of its own.
      */
     public static final SystemColonyReading NONE = new SystemColonyReading(
-        ColonyKindLookup.NONE,
-        ColonyDiscoveryLookup.NONE,
-        OpenlyKnownColonyLookup.NONE,
+        ColonyFactsLookup.NONE,
         ColonyObservationNotes.NONE::remarkOnColony);
 
-    private final ColonyKindLookup colonyKinds;
-    private final ColonyDiscoveryLookup colonyDiscoveries;
-    private final OpenlyKnownColonyLookup openlyKnownColonies;
+    private final ColonyFactsLookup colonyFacts;
     private final BiFunction<CellTooltipEntryLine, String, CellTooltipEntryLine> remarkOnColony;
 
     /**
-     * Gathers four folds of one system that were made together.
+     * Gathers two folds of one system that were made together.
      *
      * <p>The notes arrive as the one thing this reading does with them - running a colony's line on
      * into how old its news is - so the reading depends on laying the remark and not on how the
      * notes were gathered.
      *
-     * @param colonyKinds         what kind of place each of the system's colonies is
-     * @param colonyDiscoveries   which of them the player has yet to find
-     * @param openlyKnownColonies which of the concealed ones the sector openly points at
-     * @param remarkOnColony      runs a colony's line, named by its market ID, on into how old the
-     *                            news of it is
+     * @param colonyFacts    what kind of place each of the system's colonies is, which of them the
+     *                       player has yet to find, and which concealed ones the sector openly
+     *                       points at
+     * @param remarkOnColony runs a colony's line, named by its market ID, on into how old the news of
+     *                       it is
      */
     SystemColonyReading(
-            ColonyKindLookup colonyKinds,
-            ColonyDiscoveryLookup colonyDiscoveries,
-            OpenlyKnownColonyLookup openlyKnownColonies,
+            ColonyFactsLookup colonyFacts,
             BiFunction<CellTooltipEntryLine, String, CellTooltipEntryLine> remarkOnColony) {
 
-        this.colonyKinds = Objects.requireNonNull(colonyKinds, "colonyKinds");
-        this.colonyDiscoveries = Objects.requireNonNull(colonyDiscoveries, "colonyDiscoveries");
-        this.openlyKnownColonies = Objects.requireNonNull(openlyKnownColonies, "openlyKnownColonies");
+        this.colonyFacts = Objects.requireNonNull(colonyFacts, "colonyFacts");
         this.remarkOnColony = Objects.requireNonNull(remarkOnColony, "remarkOnColony");
     }
 
@@ -112,9 +105,7 @@ public final class SystemColonyReading {
             knowledge == null ? null : knowledge.sightings());
 
         return new SystemColonyReading(
-            ColonyKindLookup.readKindsIn(colonies, knowledge),
-            ColonyDiscoveryLookup.readDiscoveriesIn(colonies),
-            OpenlyKnownColonyLookup.readOpenlyKnownIn(colonies),
+            ColonyFactsLookup.readFactsIn(colonies, knowledge),
             notes::remarkOnColony);
     }
 
@@ -128,13 +119,24 @@ public final class SystemColonyReading {
      * forgets is invisible in the code that forgot it: a line missing its date reads exactly like a
      * colony somebody is standing over.
      *
+     * @param line   the colony's own line, as its account built it
+     * @param colony the colony the line names, with the facts only its account holds
+     * @return the line, called out and remarked on where either is due and untouched where neither
+     *         is
+     */
+    public CellTooltipEntryLine describeColony(CellTooltipEntryLine line, AccountedColony colony) {
+        return describeColonyWith(line, colony, colonyFacts.readKindOf(colony.marketId()), NO_LEADING_FINDING);
+    }
+
+    /**
+     * The same description, led by a finding the painting layer states ahead of every other.
+     *
      * <p>The leading finding is handed in rather than read here, because it is the painting
      * mechanic's own outcome and a reading folded off the system cannot state it.
      *
      * @param line           the colony's own line, as its account built it
      * @param colony         the colony the line names, with the facts only its account holds
-     * @param leadingFinding a finding the painting layer states ahead of every other, already
-     *                       worded; null states none
+     * @param leadingFinding the finding, already worded
      * @return the line, called out and remarked on where either is due and untouched where neither
      *         is
      */
@@ -143,26 +145,28 @@ public final class SystemColonyReading {
             AccountedColony colony,
             String leadingFinding) {
 
-        return describeColony(
-            line,
-            colony,
-            colonyKinds.readKindOf(colony.marketId()),
-            leadingFinding);
+        return describeColonyWith(line, colony, colonyFacts.readKindOf(colony.marketId()), leadingFinding);
     }
 
     /**
      * The same description for an account that already holds the colony's kind off the selection
      * that met the colony, so the kind stated can only be about the colony the line names.
      *
-     * @param line           the colony's own line, as its account built it
-     * @param colony         the colony the line names, with the facts only its account holds
-     * @param kind           what sort of place the colony is, as the account's own selection read it
-     * @param leadingFinding a finding the painting layer states ahead of every other, already
-     *                       worded; null states none
+     * @param line   the colony's own line, as its account built it
+     * @param colony the colony the line names, with the facts only its account holds
+     * @param kind   what sort of place the colony is, as the account's own selection read it
      * @return the line, called out and remarked on where either is due and untouched where neither
      *         is
      */
     public CellTooltipEntryLine describeColony(
+            CellTooltipEntryLine line,
+            AccountedColony colony,
+            ColonyKind kind) {
+
+        return describeColonyWith(line, colony, kind, NO_LEADING_FINDING);
+    }
+
+    private CellTooltipEntryLine describeColonyWith(
             CellTooltipEntryLine line,
             AccountedColony colony,
             ColonyKind kind,
@@ -194,8 +198,8 @@ public final class SystemColonyReading {
         var colonyId = colony.marketId();
 
         return new ColonyConcealment(
-            colonyDiscoveries.isDiscoveredColony(colonyId),
+            colonyFacts.isDiscoveredColony(colonyId),
             colony.isHiddenMarket(),
-            openlyKnownColonies.isOpenlyKnownColony(colonyId));
+            colonyFacts.isOpenlyKnownColony(colonyId));
     }
 }

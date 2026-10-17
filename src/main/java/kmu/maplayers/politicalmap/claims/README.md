@@ -138,7 +138,7 @@ and its summed colony size.
 `ClaimStatsAggregator` folds them in one walk of the sector,
 reading the claim half through the pass's own colony walk,
 so a claim count and a colony size never describe a system at two different moments.
-`ClaimStatsRead` carries them with the systems each bloc claims,
+The owner map's `OwnerStatsRead` carries them with the systems each bloc claims,
 and `ClaimSortModes` is the vocabulary the picker ranks them by.
 Who the picker lists is `ClaimsView`'s to state.
 

@@ -9,7 +9,6 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.claims.PassClaimReaders;
@@ -19,7 +18,6 @@ import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import java.util.List;
 
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures.CONTESTED_WORDING;
 
 /**
  * How an integration suite stands one of the two hover families up over a stubbed sector and reads
@@ -75,10 +73,11 @@ public final class PoliticalMapBoxReads {
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
 
+        var claimBreakdownReader = buildClaimBreakdownReaderOver(sector);
+
         return new SystemClaimTooltip(
-                buildClaimBreakdownReaderOver(sector),
-                FactionAllianceSource.NO_ALLIANCES,
-                CONTESTED_WORDING)
+                claimBreakdownReader,
+                PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReader))
             .composeBody(sector, system, detailLevel).blocks().readSections();
     }
 
@@ -90,9 +89,7 @@ public final class PoliticalMapBoxReads {
     public static SystemDominationTooltip buildDominanceBox() {
         return new SystemDominationTooltip(
             HolderGrouping::identity,
-            new ClaimBreakdownReaderFake(),
-            FactionAllianceSource.NO_ALLIANCES,
-            CONTESTED_WORDING);
+            PoliticalBoxSeamsFixture.buildPlainSeamsOver(new ClaimBreakdownReaderFake()));
     }
 
     /**

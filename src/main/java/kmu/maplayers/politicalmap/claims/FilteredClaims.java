@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.claims;
 
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.ClaimReaderSource;
 
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -36,6 +37,30 @@ import java.util.Map;
 public final class FilteredClaims {
 
     private FilteredClaims() {
+    }
+
+    /**
+     * The same resolve, with the claim reader opened over the pass here - the one way both
+     * claim-reading providers open and filter claims.
+     *
+     * <p>The reader is opened over the pass rather than held across passes, so it reads the colonies
+     * the pass already walked rather than walking every system a second time.
+     *
+     * @param pass              the rebuild's reading of the sector, as {@link #resolveFilteredClaims}
+     *                          takes it
+     * @param claimReaderSource the source the view reads every claim through
+     * @param selectedBlocId    the spotlighted bloc's ID, or null off filter
+     * @return the claiming holder keyed by {@link SystemKey}, in star-system walk order
+     */
+    public static Map<SystemKey, SystemOwner> resolveFilteredClaimsThrough(
+            HolderPass pass,
+            ClaimReaderSource claimReaderSource,
+            String selectedBlocId) {
+
+        return resolveFilteredClaims(
+            pass,
+            PassClaimReaders.openClaimReaderOver(pass, claimReaderSource),
+            selectedBlocId);
     }
 
     /**

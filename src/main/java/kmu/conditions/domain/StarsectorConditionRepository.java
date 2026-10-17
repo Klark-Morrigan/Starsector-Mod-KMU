@@ -28,9 +28,11 @@ import static kmlib.text.KmlibStrings.normaliseText;
  * dropped spec is logged, since a condition missing from the list with nothing said about it is
  * indistinguishable from one the game never had.
  */
-public final class StarsectorConditionRepository implements KmuConditionRepository {
+public final class StarsectorConditionRepository
+        implements KmuConditionRepository {
 
-    static final String VANILLA_SOURCE_NAME = "Starsector";
+    /** What a condition the base game itself ships is named as coming from. */
+    public static final String VANILLA_SOURCE_NAME = "Starsector";
 
     // What a dropped spec is called in the log when it will not even say its own ID.
     private static final String UNNAMED_SPEC_ID = "<unnamed>";
@@ -49,11 +51,13 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
 
     @Override
     public List<KmuConditionSpec> getAllConditionSpecs() {
+
         var specs = settings.getAllMarketConditionSpecs();
         if (specs == null) {
             return Collections.emptyList();
         }
-        return specs.stream()
+        return specs
+            .stream()
             .filter(Objects::nonNull)
             .map(this::buildSpecOrNull)
             .filter(Objects::nonNull)
@@ -62,6 +66,7 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
 
     @Override
     public Optional<KmuConditionSpec> findConditionSpec(String conditionId) {
+
         var normalisedId = normaliseText(conditionId);
         if (normalisedId == null) {
             return Optional.empty();
@@ -82,6 +87,7 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
     // own for the log line, because the throw is frequently in the fields after it and a dropped
     // condition nobody can name is a report the player cannot act on.
     private KmuConditionSpec buildSpecOrNull(MarketConditionSpecAPI spec) {
+
         try {
             return new KmuConditionSpec(
                 spec.getId(),
@@ -91,11 +97,14 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
                 readSourceModName(spec),
                 spec.isPlanetary());
 
-        } catch (RuntimeException specUnreadable) {
+        } catch (RuntimeException runtimeException) {
+
             LOG.warn(
-                "Could not read the market condition spec '" + readSpecIdOrUnknown(spec)
+                "Could not read the market condition spec '"
+                    + readSpecIdOrUnknown(spec)
                     + "'; it will not be listed.",
-                specUnreadable);
+                runtimeException);
+
             return null;
         }
     }
@@ -104,21 +113,28 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
     // so this read is allowed to fail in turn rather than replacing one lost condition with a
     // lost listing.
     private String readSpecIdOrUnknown(MarketConditionSpecAPI spec) {
+
         try {
             var specId = normaliseText(spec.getId());
-            return specId == null ? UNNAMED_SPEC_ID : specId;
+            return specId == null
+                ? UNNAMED_SPEC_ID
+                : specId;
 
-        } catch (RuntimeException idUnreadable) {
+        } catch (RuntimeException runtimeException) {
             return UNNAMED_SPEC_ID;
         }
     }
 
     private String readSourceModName(MarketConditionSpecAPI spec) {
+
         var sourceMod = spec.getSourceMod();
         if (sourceMod == null) {
             return VANILLA_SOURCE_NAME;
         }
+
         var sourceModName = normaliseText(sourceMod.getName());
-        return sourceModName == null ? VANILLA_SOURCE_NAME : sourceModName;
+        return sourceModName == null
+            ? VANILLA_SOURCE_NAME
+            : sourceModName;
     }
 }

@@ -19,12 +19,12 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.politicalmap.claims.ClaimStats;
 import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
-import kmu.maplayers.politicalmap.claims.ClaimStatsRead;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
@@ -391,7 +391,7 @@ final class ClaimsViewTests {
     // A stubbed aggregation posing blocs and nowhere in particular, for the cases about the rows
     // alone: the claimed-system index beside them is left empty rather than stubbed to systems those
     // cases never ask about.
-    private static ClaimStatsRead buildReadOf(Map<String, ClaimStats> statsByBlocId) {
-        return new ClaimStatsRead(statsByBlocId, OwnerPresenceIndex.EMPTY);
+    private static OwnerStatsRead<ClaimStats> buildReadOf(Map<String, ClaimStats> statsByBlocId) {
+        return new OwnerStatsRead<>(statsByBlocId, OwnerPresenceIndex.EMPTY);
     }
 }
