@@ -29,12 +29,12 @@ public final class DominanceSystemHolderResolve implements SystemHolderResolve {
      * Opens one batch's dominance pass over the batch's reading of the sector, and the resolve
      * above it.
      *
-     * @param holding the batch's reading of the sector, under the grouping the standing build was
-     *                folded by
+     * @param pass the batch's reading of the sector, under the grouping the standing build was
+     *             folded by
      * @return the batch's resolve
      */
-    public static SystemHolderResolve openResolveOver(HolderPass holding) {
-        return new DominanceSystemHolderResolve(DominancePass.readRulesFromLunaSettings(holding));
+    public static SystemHolderResolve openResolveOver(HolderPass pass) {
+        return new DominanceSystemHolderResolve(DominancePass.readRulesFromLunaSettings(pass));
     }
 
     @Override

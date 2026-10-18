@@ -25,7 +25,7 @@ public final class KmuOwnerMapHighlightSettings {
     private static final String LAYER_HOVER_TOOLTIP_ENABLED_FIELD =
         "kmu_map_politics_visuals_hoverTooltip_isEnabled";
 
-    private static final String HOVER_HIGHLIGHT_COLOR_FIELD =
+    private static final String HOVER_HIGHLIGHT_COLOUR_FIELD =
         "kmu_map_politics_visuals_hoverHighlight_colour";
     private static final String HOVER_GLOW_OPACITY_FIELD =
         "kmu_map_politics_visuals_hoverHighlight_glow_opacity";
@@ -99,7 +99,7 @@ public final class KmuOwnerMapHighlightSettings {
      */
     public static OwnerPaletteChoice getOwnerMapHoverHighlightColour() {
         return KmuLunaSettings.readChoice(
-            HOVER_HIGHLIGHT_COLOR_FIELD,
+            HOVER_HIGHLIGHT_COLOUR_FIELD,
             DEFAULT_HOVER_HIGHLIGHT_COLOUR);
     }
 

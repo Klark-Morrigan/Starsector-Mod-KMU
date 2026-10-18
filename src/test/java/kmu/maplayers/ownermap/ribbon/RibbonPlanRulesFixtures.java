@@ -32,7 +32,7 @@ public final class RibbonPlanRulesFixtures {
     public static final Color DIKTAT_DARK = new Color(90, 50, 40);
 
     /**
-     * The design's own proportions - a market three widths long, parted by one width - paired with
+     * The design's own proportions - a stake three widths long, parted by one width - paired with
      * the uncontested shortening switched off, so every cell's runs come out at those same lengths
      * whether a rival is in it or not. What the shortening does to them is the uncontested-runs
      * suite's.
@@ -48,7 +48,7 @@ public final class RibbonPlanRulesFixtures {
 
     /**
      * The same proportions with the shortening switched on, which is the shipped answer and the
-     * only witness to which reading a cell fell under: a cell nobody contests draws each market one
+     * only witness to which reading a cell fell under: a cell nobody contests draws each stake one
      * width long, where a contested one keeps the authored run. A suite reaching for these is posing
      * that question and nothing else.
      *

@@ -168,22 +168,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             return;
         }
 
-        // Settle the stored scroll request into the list's real range now the layout has resolved the
-        // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Here
-        // because this is the pass that owns the frame: the layout itself only reads that request, and a
-        // hit-test that wrote it would be correcting state it had no part in moving.
-        host.getController()
-            .getScrollState()
-            .clampTo(placement.body().scrollOverflow());
-        // Step the panel's input motions - the hover fades, the tabs' click pulses, and their hotkey
-        // blinks - against the placement just resolved, the one this frame draws, so the tab and the handle
-        // that light are the ones the pointer is over now rather than the ones it was over before the panel
-        // last moved. After the layout for exactly that reason, where the fold has to run before it. One
-        // pace for every one of them, so the panel answers input at a single rhythm.
-        host.getController().advanceInputMotions(
-            placement,
-            elapsedSeconds,
-            PanelMotionPaces.DEFAULT_DURATIONS);
+        advancePanelMotions(placement, elapsedSeconds);
 
         // The panel's look and its presence, kept apart: the first is the player's translucency setting,
         // worn for as long as the panel is up, the second how much of the panel is there at all this
@@ -191,64 +176,10 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         // body dissolving beneath it.
         var alpha = new PanelAlpha(KmuMapSidebarSettings.getMapSidebarBackgroundOpacity(), fade);
 
-        // Logged before the draw, with the resolved footprint / screen / opacity, so a panel gated in but
-        // never seen is diagnosed from the numbers rather than another run.
-        //
-        // The view state and the screen it was resolved against are what the line is keyed on. The
-        // footprint and the two alphas are not: the fade runs from 0 to 1 across every open and close, so
-        // a key holding it turns one transition into a line per frame of the animation, and the state
-        // change underneath is then unreadable. They stay in the printed text, which is where a panel
-        // gated in but never seen is actually diagnosed from.
-        var viewStateKey = "showing; "
-            + host.describeViewState()
-            + "; screen="
-            + VanillaScreen.resolveUiWidth()
-            + "x"
-            + VanillaScreen.resolveUiHeight();
-
-        logViewStateOnChange(new TracedLine(
-            viewStateKey,
-            viewStateKey
-                + " box="
-                + formatRect(placement.body().box())
-                + " opacity="
-                + alpha.bodyOpacity()
-                + " fade="
-                + alpha.panelFade()));
-
-        // The live notch state: the collapse fraction the layout above was resolved at, and how far the
-        // handle's hover has faded against that same placement, so the drawn fold and the lit handle match
-        // what the placement was built from.
-        var notchState = new NotchState(
-            host.getController().getCollapseFraction(),
-            host.getController().getNotchHoverFraction());
-
-        // The frame to stroke: the width the layout already reserved inset space for, taken off the
-        // placement so the stroke cannot outgrow its own inset, and the edges the host keeps - it drops any
-        // edge sitting flush against another panel (the intel overlay omits the borders it shares with the
-        // visor) so the sidebar does not draw a second frame over that panel's own. Only the edges are
-        // decided here, because only they need the resolved box to decide against.
-        var border = new BoxBorder(
-            placement.border().width(),
-            host.resolveBorderEdges(placement));
-
-        TabPanelRenderer.render(
-            placement,
-            // The host's own look, asked for here rather than composed: this pass paints whichever
-            // screen's panel it was built for and has nothing to say about how that screen should read.
-            // Resolved after the layout, though the two agree on the tab style by both taking the host's.
-            host.resolveWidgetStyle(),
-            border,
-            // The header's channels and the body's together, off one read of the frame the motions were
-            // just advanced against, so the row and the controls below it light off one reading of where
-            // the pointer is.
-            host.getController().getInteractionSources(),
-            notchState,
-            alpha);
-
-        // After the panel's own paint, and only after it: the repaint's whole purpose is to land above
-        // the pixels the call above just wrote.
-        repaintVanillaTooltipOverPanel(placement);
+        // Logged before the draw, so a panel gated in but never seen is diagnosed from the numbers rather
+        // than another run.
+        logDrawnViewState(placement, alpha);
+        paintPanel(placement, alpha);
     }
 
     // Offers the host's fold selection the end its panel has settled at, and nothing at all while the panel
@@ -308,6 +239,91 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             // standing down on the pair would cost every later frame's lift for one bad one.
             warnOnTooltipRepaintFailure(repaintFailed);
         }
+    }
+
+    // What moves against the frame's one layout, stepped once it has resolved. The fold is not among it:
+    // the layout is resolved at the fold, so the fold has to run before it.
+    private void advancePanelMotions(TabPanelPlacement placement, float elapsedSeconds) {
+
+        // Settle the stored scroll request into the list's real range now the layout has resolved the
+        // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Here
+        // because this is the pass that owns the frame: the layout itself only reads that request, and a
+        // hit-test that wrote it would be correcting state it had no part in moving.
+        host.getController()
+            .getScrollState()
+            .clampTo(placement.body().scrollOverflow());
+
+        // Step the panel's input motions - the hover fades, the tabs' click pulses, and their hotkey
+        // blinks - against the placement just resolved, the one this frame draws, so the tab and the handle
+        // that light are the ones the pointer is over now rather than the ones it was over before the panel
+        // last moved. One pace for every one of them, so the panel answers input at a single rhythm.
+        host.getController().advanceInputMotions(
+            placement,
+            elapsedSeconds,
+            PanelMotionPaces.DEFAULT_DURATIONS);
+    }
+
+    // The view state and the screen it was resolved against are what the line is keyed on. The footprint
+    // and the two alphas are not: the fade runs from 0 to 1 across every open and close, so a key holding
+    // it turns one transition into a line per frame of the animation, and the state change underneath is
+    // then unreadable. They stay in the printed text, which is where a panel gated in but never seen is
+    // actually diagnosed from.
+    private void logDrawnViewState(TabPanelPlacement placement, PanelAlpha alpha) {
+
+        var viewStateKey = "showing; "
+            + host.describeViewState()
+            + "; screen="
+            + VanillaScreen.resolveUiWidth()
+            + "x"
+            + VanillaScreen.resolveUiHeight();
+
+        logViewStateOnChange(new TracedLine(
+            viewStateKey,
+            viewStateKey
+                + " box="
+                + formatRect(placement.body().box())
+                + " opacity="
+                + alpha.bodyOpacity()
+                + " fade="
+                + alpha.panelFade()));
+    }
+
+    // Everything the frame writes to the screen, in the order it has to land.
+    private void paintPanel(TabPanelPlacement placement, PanelAlpha alpha) {
+
+        // The live notch state: the collapse fraction the layout above was resolved at, and how far the
+        // handle's hover has faded against that same placement, so the drawn fold and the lit handle match
+        // what the placement was built from.
+        var notchState = new NotchState(
+            host.getController().getCollapseFraction(),
+            host.getController().getNotchHoverFraction());
+
+        // The frame to stroke: the width the layout already reserved inset space for, taken off the
+        // placement so the stroke cannot outgrow its own inset, and the edges the host keeps - it drops any
+        // edge sitting flush against another panel (the intel overlay omits the borders it shares with the
+        // visor) so the sidebar does not draw a second frame over that panel's own. Only the edges are
+        // decided here, because only they need the resolved box to decide against.
+        var border = new BoxBorder(
+            placement.border().width(),
+            host.resolveBorderEdges(placement));
+
+        TabPanelRenderer.render(
+            placement,
+            // The host's own look, asked for here rather than composed: this pass paints whichever
+            // screen's panel it was built for and has nothing to say about how that screen should read.
+            // Resolved after the layout, though the two agree on the tab style by both taking the host's.
+            host.resolveWidgetStyle(),
+            border,
+            // The header's channels and the body's together, off one read of the frame the motions were
+            // just advanced against, so the row and the controls below it light off one reading of where
+            // the pointer is.
+            host.getController().getInteractionSources(),
+            notchState,
+            alpha);
+
+        // After the panel's own paint, and only after it: the repaint's whole purpose is to land above
+        // the pixels the call above just wrote.
+        repaintVanillaTooltipOverPanel(placement);
     }
 
     // What a frame that paints nothing still owes: the panel is off the screen, so everything the draw

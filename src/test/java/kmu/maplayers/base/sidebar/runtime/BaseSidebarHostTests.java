@@ -12,8 +12,10 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmu.maplayers.base.faces.SettledFaces;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
+import kmu.maplayers.base.layer.LiveMapLayerArrangement;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerArrangements;
+import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.NoLayer;
@@ -23,7 +25,6 @@ import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapKeybindSettings;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -93,6 +94,14 @@ final class BaseSidebarHostTests {
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
 
+    // The bar every host a case builds picks from, carried on its picks. Unarranged until a case says
+    // otherwise.
+    private final LiveMapLayerArrangement layerArrangement =
+        MapLayerArrangements.createRearrangeableBar(List.of(), List.of());
+
+    // The roster the same picks carry, which is what the panel builds its tabs from.
+    private MapLayerRegistry layerRegistry;
+
     @BeforeEach
     void registerTwoBoundLayers() {
 
@@ -110,14 +119,7 @@ final class BaseSidebarHostTests {
         when(secondLayerMock.getId())
             .thenReturn(SECOND_LAYER_ID);
 
-        // The registry is static, so a neighbour's layers would otherwise outlive their test.
-        MapLayerRosters.replaceRosterWith(firstLayerMock, secondLayerMock);
-    }
-
-    @AfterEach
-    void forgetTheArrangementThisCaseMade() {
-        // The holder is static as well, so a bar arranged here would otherwise reorder every later row.
-        MapLayerArrangements.forgetTheArrangement();
+        layerRegistry = MapLayerRosters.createRosterOf(firstLayerMock, secondLayerMock);
     }
 
     @Nested
@@ -241,8 +243,7 @@ final class BaseSidebarHostTests {
             when(firstLayerMock.isOfferedAsDefaultPick())
                 .thenReturn(true);
 
-            MapLayerRosters.replaceRosterWith(
-                NoLayer.INSTANCE, firstLayerMock, secondLayerMock);
+            layerRegistry = MapLayerRosters.createRosterOf(NoLayer.INSTANCE, firstLayerMock, secondLayerMock);
 
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
@@ -268,7 +269,7 @@ final class BaseSidebarHostTests {
             // The same one read, read from the other side: the strip draws the player's own order, so a
             // key walk over registration order would mark the tab their arrangement moved the layer off
             // - a blink on the layer they did not switch to, for a switch that did happen.
-            MapLayerArrangements.arrangeBarWith(List.of(SECOND_LAYER_ID, FIRST_LAYER_ID), List.of());
+            MapLayerArrangements.rearrangeBar(layerArrangement, List.of(SECOND_LAYER_ID, FIRST_LAYER_ID), List.of());
 
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
@@ -553,20 +554,17 @@ final class BaseSidebarHostTests {
 
     // A host carrying nothing but the plumbing under test: the shared key handling is the base's, so the
     // per-screen answers are stubbed out rather than bound to either live screen.
-    private static SidebarHostFake createHost(ActiveLayerSelection layerSelection) {
+    private SidebarHostFake createHost(ActiveLayerSelection layerSelection) {
 
         return createHost(
-            new ScreenLayerPicks(
-                layerSelection,
-                standAControlOver(mockVisibility(true, FULLY_SHOWN)),
-                ScreenMemoryScopes.createStandInScreen()),
+            createPicks(layerSelection, mockVisibility(true, FULLY_SHOWN)),
             ScreenClaims.createUnclaimedScreen(),
             false);
     }
 
     // A host whose own screen is up and whose layers are on it, so what the gate then answers is down to
     // the claim alone.
-    private static SidebarHostFake createHostOnAShowingScreen(ScreenClaim screenClaim) {
+    private SidebarHostFake createHostOnAShowingScreen(ScreenClaim screenClaim) {
 
         return createHost(
             createPicks(mockVisibility(true, FULLY_SHOWN)),
@@ -576,7 +574,7 @@ final class BaseSidebarHostTests {
 
     // A host on a showing, unclaimed screen carrying the given show-or-hide pick, so what the gate and the
     // fade then answer is down to that pick alone.
-    private static SidebarHostFake createHostWithVisibility(MapLayerVisibility layerVisibility) {
+    private SidebarHostFake createHostWithVisibility(MapLayerVisibility layerVisibility) {
 
         return createHost(
             createPicks(layerVisibility),
@@ -603,12 +601,19 @@ final class BaseSidebarHostTests {
 
     // One screen's picks around the given show-or-hide pick, for the cases whose subject is that pick and
     // which have no use for the tab beside it.
-    private static ScreenLayerPicks createPicks(MapLayerVisibility layerVisibility) {
+    private ScreenLayerPicks createPicks(MapLayerVisibility layerVisibility) {
+        return createPicks(mock(ActiveLayerSelection.class), layerVisibility);
+    }
+
+    // One screen's picks over the case's roster and bar.
+    private ScreenLayerPicks createPicks(ActiveLayerSelection layerSelection, MapLayerVisibility layerVisibility) {
 
         return new ScreenLayerPicks(
-            mock(ActiveLayerSelection.class),
+            layerSelection,
             standAControlOver(layerVisibility),
-            ScreenMemoryScopes.createStandInScreen());
+            ScreenMemoryScopes.createStandInScreen(),
+            layerRegistry,
+            layerArrangement);
     }
 
     // The given pick behind a control that stands on the screen, which is what the panel actually reads:
@@ -791,7 +796,7 @@ final class BaseSidebarHostTests {
                 ScreenClaim screenClaim,
                 boolean isHostScreenShowing) {
 
-            super(foldSelection, screenPicks, screenClaim);
+            super(foldSelection, () -> screenPicks, screenClaim);
             this.isHostScreenShowing = isHostScreenShowing;
         }
 

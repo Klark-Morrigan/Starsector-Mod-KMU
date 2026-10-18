@@ -78,9 +78,10 @@ final class ClusterGroupBuilderTests {
     private static final int GRID_CELL_SIDE = 2000;
     private static final int GRID_CENTRE = 1;
 
-    // The holder's two shades, kept distinct so an observed paint names which slot it came from.
+    // The owner's two shades, kept distinct so an observed paint names which slot it came from.
     private static final Color OWNER_PRIMARY = Color.RED;
     private static final Color OWNER_SECONDARY = Color.BLUE;
+
     private static final SystemOwner HEGEMONY_OWNER =
         new SystemOwner(HEGEMONY, new ColourPair(OWNER_PRIMARY, OWNER_SECONDARY));
 
@@ -124,22 +125,22 @@ final class ClusterGroupBuilderTests {
         @Test
         void readsItsFirstMembersPaletteUnderThatMembersOwnKey() {
             // The members and the holding share one address, so a body whose member shares a
-            // vanilla ID with another system paints from its own holder - where a lookup by ID
+            // vanilla ID with another system paints from its own owner - where a lookup by ID
             // alone could only have named whichever of the pair the map happened to hold.
             var anchoredCell = new SystemKey(ISLAND_SYSTEM, null, "8b3");
             var twin = new SystemKey(ISLAND_SYSTEM, null, "38d53");
-            var holders = new LinkedHashMap<SystemKey, SystemOwner>();
+            var owners = new LinkedHashMap<SystemKey, SystemOwner>();
 
-            holders.put(anchoredCell, HEGEMONY_OWNER);
-            holders.put(twin, TRITACHYON_OWNER);
+            owners.put(anchoredCell, HEGEMONY_OWNER);
+            owners.put(twin, TRITACHYON_OWNER);
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersHeldBy(buildDrawnStyle(), holders),
+                buildClustersHeldBy(buildDrawnStyle(), owners),
                 listAnchoredCellFor(ISLAND_SYSTEM, anchoredCell),
                 HEGEMONY,
                 List.of(anchoredCell));
 
-            // The holder resolved, so the body paints; an unresolved one would leave the owner
+            // The owner resolved, so the body paints; an unresolved one would leave the owner
             // with no palette to fill from and the whole record dropped.
             assertThat(clusterGroup)
                 .isNotNull();
@@ -183,10 +184,14 @@ final class ClusterGroupBuilderTests {
             // loops, which is what an enclave inside a single body would look like.
             assertThat(clusterGroup.clusters())
                 .hasSize(2);
+
             assertThat(clusterGroup.clusters())
                 .allSatisfy(cluster -> {
-                    assertThat(cluster.outerLoop()).isNotEmpty();
-                    assertThat(cluster.enclaveLoops()).isEmpty();
+
+                    assertThat(cluster.outerLoop())
+                        .isNotEmpty();
+                    assertThat(cluster.enclaveLoops())
+                        .isEmpty();
             });
         }
 
@@ -194,7 +199,7 @@ final class ClusterGroupBuilderTests {
         void tracesAnEnclosedRivalAsAnEnclaveOfTheOneBody() {
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersStyledBy(buildDrawnStyle(), listGridHolders()),
+                buildClustersStyledBy(buildDrawnStyle(), listGridOwners()),
                 listGridCells(),
                 HEGEMONY,
                 buildCellKeys(listGridRingCellIds().toArray(String[]::new)));
@@ -255,6 +260,27 @@ final class ClusterGroupBuilderTests {
             assertThat(clusterGroup.clusters().get(0).enclaveLoops())
                 .isEmpty();
             assertThat(clusterGroup.clusters().get(0).fillTriangles())
+                .isNotEmpty();
+        }
+
+        @Test
+        void bakesNoFillForANoColourFill() {
+
+            var clusterGroup = buildClusterGroupOf(
+                buildClustersStyledBy(buildBorderOnlyStyle()),
+                listCellsFor(ISLAND_SYSTEM),
+                HEGEMONY,
+                buildCellKeys(ISLAND_SYSTEM));
+
+            // A fill switched off tessellates nothing rather than triangles the draw pass skips,
+            // while the body still strokes its border.
+            assertThat(clusterGroup.clusters())
+                .hasSize(1);
+            assertThat(clusterGroup.clusters().get(0).fillTriangles())
+                .isEmpty();
+            assertThat(clusterGroup.clusters().get(0).hatchSegments())
+                .isEmpty();
+            assertThat(clusterGroup.clusters().get(0).outerLoop())
                 .isNotEmpty();
         }
 
@@ -383,7 +409,7 @@ final class ClusterGroupBuilderTests {
 
     // The ring to the Hegemony and the middle to its rival - the holding that makes the middle an
     // enclave rather than a gap in the trace.
-    private static Map<String, SystemOwner> listGridHolders() {
+    private static Map<String, SystemOwner> listGridOwners() {
 
         var ownerBySystemId = new LinkedHashMap<String, SystemOwner>();
 
@@ -395,6 +421,7 @@ final class ClusterGroupBuilderTests {
                     isGridCentre(column, row) ? TRITACHYON_OWNER : HEGEMONY_OWNER);
             }
         }
+
         return ownerBySystemId;
     }
 
@@ -402,6 +429,7 @@ final class ClusterGroupBuilderTests {
     private static List<String> listGridRingCellIds() {
 
         var cellIds = new ArrayList<String>();
+
         for (var column = 0; column < GRID_SPAN; column++) {
             for (var row = 0; row < GRID_SPAN; row++) {
 
@@ -410,6 +438,7 @@ final class ClusterGroupBuilderTests {
                 }
             }
         }
+
         return cellIds;
     }
 
@@ -431,7 +460,12 @@ final class ClusterGroupBuilderTests {
 
     // The cell across one edge, or null where the edge is on the block's rim and faces nothing.
     private static String findGridNeighbourId(int column, int row) {
-        var isOffTheGrid = column < 0 || column >= GRID_SPAN || row < 0 || row >= GRID_SPAN;
+
+        var isOffTheGrid = column < 0
+            || column >= GRID_SPAN
+            || row < 0
+            || row >= GRID_SPAN;
+
         return isOffTheGrid
             ? null
             : readGridCellId(column, row);
@@ -442,7 +476,9 @@ final class ClusterGroupBuilderTests {
     }
 
     private static boolean isGridCentre(int column, int row) {
-        return column == GRID_CENTRE && row == GRID_CENTRE;
+
+        return column == GRID_CENTRE
+            && row == GRID_CENTRE;
     }
 
     // The same cut with one cell keyed as the sector states its system rather than by the ID
@@ -467,6 +503,7 @@ final class ClusterGroupBuilderTests {
         var systemIdByCellId = new LinkedHashMap<String, String>();
 
         for (var systemId : systemIds) {
+
             edgesByCellId.put(systemId, EDGES.get(systemId));
             systemIdByCellId.put(systemId, systemId);
         }
@@ -482,6 +519,7 @@ final class ClusterGroupBuilderTests {
     // An unfiltered pass over the four fixture systems, every category drawing under the one
     // style a test names - so which category the resolver picks cannot account for an outcome.
     private static OwnerMapClusters buildClustersStyledBy(CategoryStyle style) {
+
         return buildClustersStyledBy(style, Map.of(
             HELD_SYSTEM,
             HEGEMONY_OWNER,
@@ -530,7 +568,7 @@ final class ClusterGroupBuilderTests {
         return buildClustersHeldBy(style, buildKeyedValues(ownerBySystemId));
     }
 
-    // The same clusters with its holders stated by key, for the one case a name cannot pose:
+    // The same clusters with its owners stated by key, for the one case a name cannot pose:
     // two systems sharing a vanilla ID, held by different owners.
     private static OwnerMapClusters buildClustersHeldBy(
             CategoryStyle style,
@@ -560,6 +598,7 @@ final class ClusterGroupBuilderTests {
     // Fill and cluster border both drawn, each from a different palette slot so the two paints
     // are told apart by colour; the interior seam is a per-cell record and never read here.
     private static CategoryStyle buildDrawnStyle() {
+
         return new CategoryStyle(
             new ElementStyle(
                 OwnerPaletteSlot.PRIMARY,
@@ -574,8 +613,26 @@ final class ClusterGroupBuilderTests {
                 1.0);
     }
 
-    // The fill on and the border switched off - the one slot combination that still draws.
+    // The border on and the fill switched off.
+    private static CategoryStyle buildBorderOnlyStyle() {
+
+        return new CategoryStyle(
+            new ElementStyle(
+                null,
+                FILL_OPACITY),
+            new ElementStyle(
+                OwnerPaletteSlot.SECONDARY,
+                BORDER_OPACITY),
+                BORDER_WIDTH,
+            new ElementStyle(
+                null,
+                1.0),
+                1.0);
+    }
+
+    // The fill on and the border switched off.
     private static CategoryStyle buildFillOnlyStyle() {
+
         return new CategoryStyle(
             new ElementStyle(
                 OwnerPaletteSlot.PRIMARY,
@@ -590,6 +647,7 @@ final class ClusterGroupBuilderTests {
 
     // Every slot "No color" - an owner the player has switched off entirely.
     private static CategoryStyle buildNoColourStyle() {
+
         return new CategoryStyle(
             new ElementStyle(
                 null,

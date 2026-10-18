@@ -485,7 +485,7 @@ final class IncrementalOwnerRefreshIntegrationTests {
             var contentInputs = ContentInputs.sampleForView(
                 FactionsView.INSTANCE,
                 OwnerMapRebuildSeams.createPreferencesNamingNothing(),
-                MapLayerScreens.resolveLivePicks().memoryScope());
+                MapLayerScreens.MAP_SCOPE);
 
             // The rebuild's one reading of the styling, taken as the plugin's cache takes it.
             var territories = OwnerMapBuilder.buildClusters(

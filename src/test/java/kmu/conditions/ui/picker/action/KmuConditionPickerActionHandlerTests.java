@@ -1,5 +1,8 @@
 package kmu.conditions.ui.picker.action;
 
+import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
+
 import kmu.conditions.domain.KmuConditionAddStatus;
 import kmu.conditions.domain.KmuConditionRepository;
 import kmu.conditions.domain.KmuConditionService;
@@ -152,6 +155,16 @@ class KmuConditionPickerActionHandlerTests {
         @Override
         public boolean hasCondition(String conditionId) {
             return conditionIds.contains(conditionId);
+        }
+
+        @Override
+        public Optional<MarketAPI> findStarsectorMarket() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<MarketConditionAPI> findCondition(String conditionId) {
+            return Optional.empty();
         }
 
         @Override

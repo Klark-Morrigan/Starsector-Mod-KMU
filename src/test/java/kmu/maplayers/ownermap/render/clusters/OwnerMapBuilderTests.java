@@ -55,7 +55,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class OwnerMapBuilderTests {
 
     // The row the owners resolve lands on, and a row a source of its own opens beneath it.
-    private static final String RESOLVE_HOLDING_SECTION = "ownerMap.resolveHolding";
+    private static final String RESOLVE_OWNERS_SECTION = "ownerMap.resolveOwners";
     private static final ProfileSection SOURCE_OWN_SECTION =
         ProfileSection.registerSection("ownerMapBuilderTests.sourceOwnScan");
 
@@ -138,7 +138,7 @@ final class OwnerMapBuilderTests {
                 walk,
                 UNFILTERED_INPUTS));
 
-            assertThat(capture.findNode(RESOLVE_HOLDING_SECTION).getChildren())
+            assertThat(capture.findNode(RESOLVE_OWNERS_SECTION).getChildren())
                 .extracting(node -> node.getSection().getName())
                 .containsExactly(SOURCE_OWN_SECTION.getName());
         }

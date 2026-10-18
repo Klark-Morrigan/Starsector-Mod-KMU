@@ -346,7 +346,7 @@ public record DominancePass(
             StarSystemAPI system,
             Map<String, MarketFootprint> footprintByBlocId) {
 
-        return SystemDominance.resolveDominantFactionId(
+        return SystemDominance.resolveDominantBlocId(
             footprintByBlocId,
             resolveRankingRulesFor(system));
     }

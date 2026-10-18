@@ -85,7 +85,7 @@ import static org.mockito.Mockito.when;
  * owe a fresh band. The promise under test is the one the incremental path exists to make - that it
  * touches the cells whose drawing actually moved and their neighbours, and nothing else - since
  * anything wider costs the frame it was written to save, and anything narrower leaves the map
- * drawing a stale holder.
+ * drawing a stale owner.
  *
  * <p>What the batch reads back out of the sector before any of that, and what it records as
  * having been disturbed, is {@link MarkedSystemRederiveTests}'s. The seams for those reads are
@@ -584,13 +584,13 @@ public final class IncrementalOwnerRefreshTests {
             var firstCell = new SystemKey(FLIPPED_SYSTEM, null, "8b3");
             var twinCell = new SystemKey(FLIPPED_SYSTEM, null, "38d53");
 
-            var holderBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
+            var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
 
-            holderBySystemKey.put(firstCell, buildOwnerOf(HEGEMONY));
-            holderBySystemKey.put(twinCell, buildOwnerOf(HEGEMONY));
+            ownerBySystemKey.put(firstCell, buildOwnerOf(HEGEMONY));
+            ownerBySystemKey.put(twinCell, buildOwnerOf(HEGEMONY));
 
             var clusters = OwnerMapClusterFixtures.createClustersOwnedByKeys(
-                holderBySystemKey,
+                ownerBySystemKey,
                 ownerSourceFake);
 
             var cellEdgesByCellKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
@@ -630,7 +630,7 @@ public final class IncrementalOwnerRefreshTests {
 
         @Test
         void reshapesTheFlippedSystemAndItsNeighbour() {
-            // The neighbour's own holder did not move, but the edge it shares with the
+            // The neighbour's own owner did not move, but the edge it shares with the
             // flipped system just turned from a same-owner seam into a cluster border,
             // so it has to be re-shaped too or the border draws down one side only.
             var clusters = buildOwnedBy(Map.of(
@@ -897,7 +897,7 @@ public final class IncrementalOwnerRefreshTests {
         }
 
         @Test
-        void leavesTheStandingPairAloneWhenTheHolderDidNotChange() {
+        void leavesTheStandingPairAloneWhenTheOwnerDidNotChange() {
             // A resize that leaves the winner alone leaves the placements alone: nothing was
             // re-fitted, so the standing placements and the rules recorded for them still describe
             // each other and neither half may move.
@@ -915,9 +915,9 @@ public final class IncrementalOwnerRefreshTests {
 
         // What the re-derive answers for one system this pass. Every case stubs the systems
         // it marks; an unstubbed one comes back null, which reads as a system that lost its
-        // holder rather than as a missing stub.
-        private void assertResolvesTo(String systemId, SystemOwner holder) {
-            ownerSourceFake.recordOwnerOf(systemId, holder);
+        // owner rather than as a missing stub.
+        private void assertResolvesTo(String systemId, SystemOwner owner) {
+            ownerSourceFake.recordOwnerOf(systemId, owner);
         }
 
         // What the inhabitation read answers for one system this pass, against the source's

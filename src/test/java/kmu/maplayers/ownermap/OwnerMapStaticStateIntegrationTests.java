@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * owner-painted layer standing beside the first shares none of it.
  *
  * <p>Read off the compiled tier rather than stated class by class, because the failure this guards
- * against is a new holder nobody thought to list: a static field added anywhere under the tier is a
+ * against is a new piece of state nobody thought to list: a static field added anywhere under the tier is a
  * value every layer on every sector sees at once. A static final field passes - a constant, a frozen
  * key, a profiling section - since what it holds is fixed for the process.
  *
@@ -35,9 +35,10 @@ final class OwnerMapStaticStateIntegrationTests {
     private static final String TIER_PATH = "kmu/maplayers/ownermap";
     private static final String CLASS_SUFFIX = ".class";
 
-    // The holder answers' subtree, and how many packages it holds: their shared base and two kinds.
-    private static final String HOLDERS_PACKAGE = "kmu.maplayers.ownermap.owners.holders.";
-    private static final int HOLDER_PACKAGE_COUNT = 3;
+    // The subtree KMU's own owner answers sit in, and how many packages it holds: their shared base
+    // and two kinds.
+    private static final String ANSWERS_PACKAGE = "kmu.maplayers.ownermap.owners.holders.";
+    private static final int ANSWERS_PACKAGE_COUNT = 3;
 
     @Nested
     class EveryTierClass {
@@ -57,18 +58,18 @@ final class OwnerMapStaticStateIntegrationTests {
         }
 
         @Test
-        void readsEveryPackageOfTheHolderAnswers() throws IOException, URISyntaxException {
-            // The holder answers sit in a subtree the core may not import, so a walk that stopped
+        void readsEveryPackageOfTheOwnerAnswers() throws IOException, URISyntaxException {
+            // The owner answers sit in a subtree the core may not import, so a walk that stopped
             // short of it would pass here unnoticed. Counted rather than named: the shared base and
-            // one package per kind of holder, which this suite is closed to the words for.
-            var holderPackages = listTierClassNames().stream()
-                .filter(className -> className.startsWith(HOLDERS_PACKAGE))
+            // one package per kind of owner, which this suite is closed to the words for.
+            var answerPackages = listTierClassNames().stream()
+                .filter(className -> className.startsWith(ANSWERS_PACKAGE))
                 .map(className -> className.substring(0, className.lastIndexOf('.')))
                 .distinct()
                 .toList();
 
-            assertThat(holderPackages)
-                .hasSizeGreaterThanOrEqualTo(HOLDER_PACKAGE_COUNT);
+            assertThat(answerPackages)
+                .hasSizeGreaterThanOrEqualTo(ANSWERS_PACKAGE_COUNT);
         }
     }
 

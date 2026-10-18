@@ -52,15 +52,15 @@ import static org.mockito.Mockito.when;
  *
  * <p>The gate is the point, and what it reads is inhabitation rather than this layer's holding. A
  * band reports how a system splits, so a cell nobody lives in has nothing for one to say - and the
- * counting of a mechanic that weighs markets walks a system's whole market list, so a pass that asked it about every
- * empty cell in the sector would pay for a contest nobody is contesting. Both halves are stated
- * here: the empty cell gets no band, and the planner is not even asked. The switch is stated the
- * same way and for the same reason - it has to take the counting off the rebuild, not merely the
- * bands off the map, since a rebuild already stalls elsewhere and a switched-off feature that still
- * walks the sector's markets is a cost with nothing to show for it.
+ * counting of a mechanic that weighs a system's economy walks every settlement in it, so a pass that asked
+ * it about every empty cell in the sector would pay for a contest nobody is contesting. Both halves
+ * are stated here: the empty cell gets no band, and the planner is not even asked. The switch is
+ * stated the same way and for the same reason - it has to take the counting off the rebuild, not
+ * merely the bands off the map, since a rebuild already stalls elsewhere and a switched-off feature
+ * that still walks every settlement in the sector is a cost with nothing to show for it.
  *
  * <p>A settled system is offered a band whether or not the active layer's holding accounts for it,
- * which is why no case here poses a holder at all: a holding rule that admits only some markets
+ * which is why no case here poses an owner at all: an owner rule that admits only some settlements
  * leaves settled systems unheld, and gating on what it resolved would leave them uncounted on the
  * one layer that has nothing else to say about them.
  *
@@ -139,7 +139,7 @@ final class CellRibbonSourceTests {
 
         @Test
         void bakesABandForACellSomethingLivesIn() {
-            // No holder is posed anywhere in this suite, so the band offered here is offered on
+            // No owner is posed anywhere in this suite, so the band offered here is offered on
             // inhabitation alone - which is what a settled system has even where this layer's
             // holding gives it to nobody.
             assertThat(buildFor(INHABITED_SYSTEM).bands())
@@ -161,7 +161,7 @@ final class CellRibbonSourceTests {
 
         @Test
         void drawsNoBandForACellNothingLivesIn() {
-            // Nobody is there, so there are no holdings for a band to report how a system splits
+            // Nobody is there, so there are no stakes for a band to report how a system splits
             // between.
             assertThat(buildFor(EMPTY_SYSTEM))
                 .isEqualTo(CellRibbon.NONE);
@@ -169,8 +169,8 @@ final class CellRibbonSourceTests {
 
         @Test
         void asksNoPlannerAboutACellNothingLivesIn() {
-            // The cost half of the gate: a mechanic that weighs markets walks every market in a
-            // system, and most of the sector is empty space.
+            // The cost half of the gate: a mechanic that weighs a system's economy walks every
+            // settlement in it, and most of the sector is empty space.
             var plannerMock = mock(SystemRibbonPlanner.class);
 
             buildWith(plannerMock)
@@ -183,8 +183,8 @@ final class CellRibbonSourceTests {
         @Test
         void marksTheCountOnThePassApartFromTheGeometry() {
             // The one phase of a bake that grows with what the systems hold rather than with the
-            // cells - a mechanic that weighs markets walks a system's whole market list - so it is worth its
-            // own number only if it is marked where the count ends rather than swept into the ring
+            // cells - a mechanic that weighs a system's economy walks every settlement in it - so it is worth
+            // its own number only if it is marked where the count ends rather than swept into the ring
             // work that follows it.
             var bakeScopeMock = mock(IterationScope.class);
 

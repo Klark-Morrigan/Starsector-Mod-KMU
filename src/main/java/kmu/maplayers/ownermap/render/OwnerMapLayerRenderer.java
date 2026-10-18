@@ -42,7 +42,7 @@ public final class OwnerMapLayerRenderer {
      *
      * @param machinery                 the machinery this renderer is being made for, whose sector its
      *                                  cache cuts its cells from, whose movers that cut leaves out,
-     *                                  whose hover holder the cursor read publishes into, whose picker
+     *                                  whose hover state the cursor read publishes into, whose picker
      *                                  the preview is read off, and whose origin its profiling rows are
      *                                  grouped under
      * @param layerId                   the ID of the layer this renderer draws, which its rows are

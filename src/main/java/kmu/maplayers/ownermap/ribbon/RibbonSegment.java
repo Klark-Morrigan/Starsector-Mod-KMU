@@ -12,8 +12,8 @@ import java.awt.Color;
  * leaves the proportions between them exactly as planned - the proportions being the whole
  * of what the band says.
  *
- * @param colour      the shade this run draws in: an owner's bright colour for a holding, its
- *                    dark colour for a parting - between two of its own holdings, or closing
+ * @param colour      the shade this run draws in: an owner's bright colour for a stake, its
+ *                    dark colour for a parting - between two of its own stakes, or closing
  *                    its whole run where another owner's follows
  * @param lengthUnits how far the run goes, in ribbon widths
  */

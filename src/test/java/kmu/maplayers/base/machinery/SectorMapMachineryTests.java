@@ -132,6 +132,17 @@ class SectorMapMachineryTests {
         }
 
         @Test
+        void yieldsWhatTheInstallerSeatedUnderItsClass() {
+            // A seated holder is what a pass the engine builds reads and nothing on the sector can
+            // make, so a resolution must hand back the installer's own rather than make a stand-in.
+            var seatedFake = new CountingMachineryFake();
+            var seatedMachinery = new SectorMapMachinery(null, seatedFake);
+
+            assertThat(resolveCountingMachineryIn(seatedMachinery))
+                .isSameAs(seatedFake);
+        }
+
+        @Test
         void makesOneOfAKindHoweverManyAsksArriveAtOnce()
                 throws InterruptedException {
             // The map surfaces resolve what they are about to draw on the render thread while the
@@ -331,6 +342,18 @@ class SectorMapMachineryTests {
             machinery.disposeMachinery();
 
             assertThat(machineryFake.getDisposeCount())
+                .isEqualTo(1);
+        }
+
+        @Test
+        void releasesWhatTheInstallerSeated() {
+            // Seated is still held: the machinery owns its lifetime the same way as one it made.
+            var seatedFake = new CountingMachineryFake();
+            var seatedMachinery = new SectorMapMachinery(null, seatedFake);
+
+            seatedMachinery.disposeMachinery();
+
+            assertThat(seatedFake.getDisposeCount())
                 .isEqualTo(1);
         }
 

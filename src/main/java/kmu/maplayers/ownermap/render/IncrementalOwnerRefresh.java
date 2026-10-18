@@ -159,7 +159,7 @@ public final class IncrementalOwnerRefresh {
     // The cell redraw runs off the cells the batch named rather than off there having been a flip,
     // because the two are not the same question: a system whose last settlement went, or one the
     // spotlit owner just settled, draws differently with its owner exactly where it was. What the
-    // flips still decide is everything below the cells, all of which is a consequence of holding
+    // flips still decide is everything below the cells, all of which is a consequence of an owner
     // having moved.
     private void redrawDisturbedCells(
             Set<SystemKey> markedSystemKeys,
@@ -170,7 +170,7 @@ public final class IncrementalOwnerRefresh {
         }
 
         var nameDisturbance = disturbance.hasFlips()
-            ? rebuildFlippedHolding(disturbance)
+            ? rebuildFlippedOwners(disturbance)
             : ClusterNameDisturbance.NONE;
 
         // A marked system's band counts what is in it, and the events that mark a system are
@@ -183,7 +183,7 @@ public final class IncrementalOwnerRefresh {
 
         bakeBandsOf(cellKeysToBake);
 
-        LOG.debug("Owner map holding updated incrementally; marked="
+        LOG.debug("Owner map owners updated incrementally; marked="
             + markedSystemKeys.size()
             + " redrawnCells=" + disturbance.getCellKeysToRedraw().size()
             + " rebuiltOwners=" + disturbance.getAffectedOwnerIds().size()
@@ -193,7 +193,7 @@ public final class IncrementalOwnerRefresh {
     // What a flip owes beyond the cells themselves: the cluster index and the two sides'
     // clusters rebuilt off the updated owners, and the names re-fitted over them. Reports what
     // that re-fit moved, since the bands below have to be re-laid wherever a name did.
-    private ClusterNameDisturbance rebuildFlippedHolding(StaleOwnerMapDisturbance disturbance) {
+    private ClusterNameDisturbance rebuildFlippedOwners(StaleOwnerMapDisturbance disturbance) {
 
         // A flip changes which systems are contiguous - it can sever one cluster group in two or
         // bridge two into one - so the cursor read's cluster index is re-derived off the

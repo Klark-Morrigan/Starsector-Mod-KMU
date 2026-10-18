@@ -58,9 +58,10 @@ since it can depend on the snapshot the reading was taken over.
 The theme keys on the open `MapStyleCategory`,
 so a hazard or relay layer declares its own set alongside its own painting code.
 
-The layers painting holders share one declaration,
+KMU's own layers share one declaration,
 with its styles,
-in [`owners/holders`](../../owners/holders/README.md).
+beside the rest of their answers,
+which [the owner seams](../../owners/README.md) link to.
 
 An unowned category has no owner and so no palette to choose a shade from:
 it paints in the shared neutral colour and exposes no colour field at all,

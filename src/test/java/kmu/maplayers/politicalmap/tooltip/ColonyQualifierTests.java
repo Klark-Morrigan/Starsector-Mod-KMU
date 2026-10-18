@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.tooltip;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipLabelFinding;
+import kmu.maplayers.base.tooltip.content.CellTooltipLineName;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.util.KmuStringsSettingsFake;
@@ -12,6 +13,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+
+import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelFinding;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -297,7 +300,7 @@ final class ColonyQualifierTests {
             // which would read as a fault in the box - and the end of the line says nothing.
             var line = qualifyLine("Abandoned Station", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
 
-            assertThat(line.labelFinding())
+            assertThat(readLabelFinding(line))
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
             assertThat(line.qualifier())
                 .isNull();
@@ -310,7 +313,7 @@ final class ColonyQualifierTests {
             // closes the line like any other word.
             var line = qualifyLine("Sentinel Gantries", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
 
-            assertThat(line.labelFinding())
+            assertThat(readLabelFinding(line))
                 .isNull();
             assertThat(line.qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("abandoned"));
@@ -336,7 +339,7 @@ final class ColonyQualifierTests {
                 new ColonyConcealment(IS_UNDISCOVERED, IS_OPEN, IS_A_SECRET),
                 IS_UNLISTED));
 
-            assertThat(line.labelFinding())
+            assertThat(readLabelFinding(line))
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
             assertThat(line.qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
@@ -346,8 +349,9 @@ final class ColonyQualifierTests {
         void gildsAWordAHyphenPartsFromTheRestOfTheName() {
             // A hyphen parts one word from another as plainly as a space does, and a reader would not
             // forgive the box for missing it.
-            assertThat(qualifyLine("Abandoned-Station", buildUnlistedFacts(ColonyKind.SPACE_DERELICT))
-                    .labelFinding())
+            var line = qualifyLine("Abandoned-Station", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
+
+            assertThat(readLabelFinding(line))
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
         }
 
@@ -358,7 +362,7 @@ final class ColonyQualifierTests {
             // say the word at all, so the word closes the line instead.
             var line = qualifyLine("Abandonedium", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
 
-            assertThat(line.labelFinding())
+            assertThat(readLabelFinding(line))
                 .isNull();
             assertThat(line.qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("abandoned"));
@@ -371,10 +375,8 @@ final class ColonyQualifierTests {
             // quietly disagree with the map about what a place is called.
             var line = qualifyLine("ABANDONED STATION", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
 
-            assertThat(line.labelFinding())
-                .isEqualTo(new CellTooltipLabelFinding(0, 9));
-            assertThat(line.labelText())
-                .isEqualTo("ABANDONED STATION");
+            assertThat(line.name())
+                .isEqualTo(new CellTooltipLineName.Spoken("ABANDONED STATION", new CellTooltipLabelFinding(0, 9)));
         }
 
         @Test
@@ -382,10 +384,9 @@ final class ColonyQualifierTests {
             // At most one gilded stretch per line, and it is the first the reader meets. Two of them
             // would cost the line model a list of parts where one part does, for the rare name that
             // repeats a word of the vocabulary.
-            assertThat(qualifyLine(
-                    "Abandoned Abandoned Yards",
-                    buildUnlistedFacts(ColonyKind.SPACE_DERELICT))
-                    .labelFinding())
+            var line = qualifyLine("Abandoned Abandoned Yards", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
+
+            assertThat(readLabelFinding(line))
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
         }
 
@@ -400,7 +401,7 @@ final class ColonyQualifierTests {
                 new ColonyConcealment(IS_UNDISCOVERED, IS_OPEN, IS_A_SECRET),
                 IS_UNLISTED));
 
-            assertThat(line.labelFinding())
+            assertThat(readLabelFinding(line))
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
             assertThat(line.qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
@@ -417,7 +418,7 @@ final class ColonyQualifierTests {
                 new ColonyConcealment(IS_UNDISCOVERED, IS_OPEN, IS_A_SECRET),
                 IS_UNLISTED));
 
-            assertThat(line.labelFinding())
+            assertThat(readLabelFinding(line))
                 .isEqualTo(new CellTooltipLabelFinding(0, 12));
             assertThat(line.qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("abandoned"));
@@ -425,8 +426,9 @@ final class ColonyQualifierTests {
 
         @Test
         void gildsAWholeNameThatIsNothingButTheWord() {
-            assertThat(qualifyLine("Abandoned", buildUnlistedFacts(ColonyKind.SPACE_DERELICT))
-                    .labelFinding())
+            var line = qualifyLine("Abandoned", buildUnlistedFacts(ColonyKind.SPACE_DERELICT));
+
+            assertThat(readLabelFinding(line))
                 .isEqualTo(new CellTooltipLabelFinding(0, 9));
         }
 
@@ -457,8 +459,8 @@ final class ColonyQualifierTests {
                     new ColonyConcealment(IS_UNDISCOVERED, IS_OPEN, IS_A_SECRET),
                     IS_UNLISTED));
 
-            assertThat(line.labelFinding())
-                .isNull();
+            assertThat(line.name())
+                .isEqualTo(new CellTooltipLineName.Withheld(List.of(9, 7)));
             assertThat(line.qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("abandoned, undiscovered"));
         }

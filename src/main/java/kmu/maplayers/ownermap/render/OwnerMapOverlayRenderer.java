@@ -66,7 +66,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     private final MapHoverState hoverState;
 
     // The sidebar picker's preview over this compositor's own sector, handed over for the reason
-    // the hover holder is: it lights systems the cache's draw lists named, off a row hovered on the
+    // the hover state is: it lights systems the cache's draw lists named, off a row hovered on the
     // sidebar this map is drawn under.
     private final OwnerMapPreviewHighlight previewHighlight;
 
@@ -89,7 +89,7 @@ final class OwnerMapOverlayRenderer implements MapFrameCompositor {
     /**
      * @param cache            the draw lists every band is emitted from, made for the same sector's
      *                         machinery as this compositor
-     * @param hoverState       the hover holder of that sector, from its installed machinery
+     * @param hoverState       the hover state of that sector, from its installed machinery
      * @param previewHighlight the picker preview over that same sector's machinery
      * @param hoverGates       the drawn layer's own switches for the two kinds of cursor feedback
      * @param bandLayoutSource where the drawn layer's choosable sub-layers ride, read per pass

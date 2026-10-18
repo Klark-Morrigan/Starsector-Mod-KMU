@@ -14,8 +14,8 @@ import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
  * outline at every zoom, and a frame measures nothing about it at all.
  *
  * <p>The two lengths ride here with the two sizes because they are the same authored decision:
- * how long a holding's run is relative to the parting between two of them is what makes an owner's
- * run read as several holdings, and reading it apart from the width those lengths are multiples
+ * how long a stake's run is relative to the parting between two of them is what makes an owner's
+ * run read as several stakes, and reading it apart from the width those lengths are multiples
  * of would let one be tuned against a stale reading of the other.
  *
  * @param widthWorld        how thick the band is, half of it either side of the path it is drawn
@@ -26,7 +26,7 @@ import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
  *                          width, before the corner is bevelled instead. Shared by the inset that
  *                          finds the path and the stroke that gives it girth, so a corner sharp
  *                          enough to spike is given up on at one angle rather than at two
- * @param lengths           how far a holding's segment and an interjection run, in widths
+ * @param lengths           how far a stake's segment and an interjection run, in widths
  * @param isBandAlwaysDrawn whether a cell that planned a band gets one even where its ring has no
  *                          room to hold it - the names covering the whole of it, or the cell being
  *                          too narrow for the band and its pad together. The player's, and here

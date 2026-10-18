@@ -238,7 +238,7 @@ final class ClusterLabelStylingTests {
         @Test
         void desaturatesToThePassPaletteForADesaturatedOwner() {
             // A desaturated owner's label follows the pass's shared desaturation palette
-            // instead of the holder's own shades, at full alpha since mute is off here.
+            // instead of the owner's own shades, at full alpha since mute is off here.
             var colour = ClusterLabelStyling.resolveLabelColour(
                 OWNER_F,
                 nameStyles(OwnerPaletteSlot.PRIMARY),

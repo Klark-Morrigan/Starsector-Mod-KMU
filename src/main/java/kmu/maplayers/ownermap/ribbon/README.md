@@ -2,7 +2,7 @@
 
 What a cell's presence band is made of,
 stated as pure data ahead of any geometry:
-a run of colour per holding,
+a run of colour per stake,
 whose runs,
 and in what order.
 Nothing here traces a ring or emits a triangle;
@@ -28,15 +28,15 @@ each a colour and a length in band widths.
 over a ranked list of `OwnerPresence` -
 an owner,
 its palette,
-and how many holdings it has in the cell.
+and how many stakes it has in the cell.
 
 The grammar it lays down:
 
-- A holding draws a run at the authored run length.
-- Two holdings of one owner are parted by an interjection in that owner's own dark shade.
+- A stake draws a run at the authored run length.
+- Two stakes of one owner are parted by an interjection in that owner's own dark shade.
 - An owner's whole run is closed off in that same dark shade wherever another owner's follows.
   The divider belongs to the **outgoing** owner,
-  so it reads as that owner's holdings ending rather than as a gap belonging to nobody.
+  so it reads as that owner's stakes ending rather than as a gap belonging to nobody.
 - The band's last run is left open,
   so a divider never ends a band.
 
@@ -66,10 +66,10 @@ Contest decides only the length its runs are laid at:
    this is the readout the bands exist for,
    and the fill cannot report it.
 2. An **uncontested** one draws at whatever `UncontestedRibbonRuns` answers,
-   which is a single width a holding unless the player turns the shortening off.
+   which is a single width a stake unless the player turns the shortening off.
    Its fill has already said whose the system is,
    so the band is a tally,
-   and a large lone holding drawn at full length would out-shout the contested cells beside it.
+   and a lone owner with many stakes drawn at full length would out-shout the contested cells beside it.
 
 A cell nothing is present in bands under neither reading:
 there is no footprint to report.
@@ -112,8 +112,9 @@ and every cell is judged owner by owner.
 which owner the cell was painted for,
 and the order the owners come out in
 are the painting layer's.
-The layers painting holders count every cell by one rule,
-described under [the band count](../owners/holders/README.md#the-band-count).
+KMU's own layers count every cell by one rule,
+described beside their answers,
+which [the owner seams](../owners/README.md) link to.
 
 **Every size in the world**,
 and every triangle -

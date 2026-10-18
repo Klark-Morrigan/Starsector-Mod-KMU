@@ -6,6 +6,7 @@ import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
@@ -129,6 +130,7 @@ final class AlliancesViewTests {
             var passedTarget = new BodyControlTarget(
                 new MapLayerRefreshBoard(),
                 ScreenMemoryScopes.createStandInScreen());
+
             var builtControls = List.<ControlSpec>of();
 
             try (var controlMock = mockStatic(RecedeControl.class);
@@ -137,6 +139,7 @@ final class AlliancesViewTests {
                 stringsMock
                     .when(() -> KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))
                     .thenReturn("Non-allied factions are");
+
                 controlMock
                     .when(() -> RecedeControl.buildControls(
                         AlliancesView.NON_ALLIED_RECEDE,
@@ -173,9 +176,16 @@ final class AlliancesViewTests {
             // The view paints by the live alliance set, so the reading names the alliances that set
             // holds. That the source folds under that same set is the shared assembly's, pinned once.
             try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+
                 alliancesMock
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(ALLIANCE_GROUPING);
+
+                // The contest affiliation reads the alliance set as well; who stands together there
+                // is no part of what the reading names.
+                alliancesMock
+                    .when(NexerelinAlliances::resolveFactionAlliances)
+                    .thenReturn(FactionAlliances.NONE);
 
                 assertThat(AlliancesView.INSTANCE
                         .resolveViewReading(mock(SectorAPI.class))
@@ -192,6 +202,7 @@ final class AlliancesViewTests {
         // The non-allied backdrop's slots under the stand-in screen, pinned as literals: each is a key
         // a save already holds, so a rename must break this test rather than reset every save's choice.
         private static final String NON_ALLIED_MUTE_KEY = "$kmu_political_alliance_recede_mute_test";
+
         private static final String NON_ALLIED_DESATURATE_KEY =
             "$kmu_political_alliance_recede_desaturate_test";
 
@@ -244,7 +255,9 @@ final class AlliancesViewTests {
         @Test
         void admitsAnAllianceBloc() {
 
-            assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(ALLIANCE_GROUPING)
+            assertThat(AlliancesView
+                    .INSTANCE
+                    .resolveSelectableBlocGate(ALLIANCE_GROUPING)
                     .test("rebel_pact"))
                 .isTrue();
         }
@@ -253,7 +266,9 @@ final class AlliancesViewTests {
         void turnsAwayALoneFaction() {
             // Only an alliance is a spotlight target here; a faction outside every alliance is
             // present on the map but not offered in this view's picker.
-            assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(ALLIANCE_GROUPING)
+            assertThat(AlliancesView
+                    .INSTANCE
+                    .resolveSelectableBlocGate(ALLIANCE_GROUPING)
                     .test("hegemony"))
                 .isFalse();
         }
@@ -261,7 +276,9 @@ final class AlliancesViewTests {
         @Test
         void turnsAwayEveryBlocWhenNoAllianceExists() {
             // With no alliance formed every bloc is a lone faction, so the picker offers nothing.
-            assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(HolderGrouping.identity())
+            assertThat(AlliancesView
+                    .INSTANCE
+                    .resolveSelectableBlocGate(HolderGrouping.identity())
                     .test("hegemony"))
                 .isFalse();
         }

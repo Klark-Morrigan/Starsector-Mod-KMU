@@ -25,6 +25,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.content.CellTooltipLineName;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.CellTooltipRowReads;
@@ -1698,8 +1699,8 @@ final class SystemClaimTooltipTests {
             // name instead of saying it, which is the resolver's own shape and pinned there.
             assertThat(readLabelTexts(entries))
                 .containsExactly("Chicomoztoc", NO_NAME_STATED);
-            assertThat(entries.get(1).line().hasRedactedName())
-                .isTrue();
+            assertThat(entries.get(1).line().name())
+                .isInstanceOf(CellTooltipLineName.Withheld.class);
         }
 
         @Test

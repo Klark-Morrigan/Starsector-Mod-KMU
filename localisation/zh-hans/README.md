@@ -466,6 +466,9 @@ So a word of one axis never stands in for another:
 | alliance set (every alliance at one moment) | 联盟集合 | 联盟 with 集合, a set |
 | body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
+| cast (reaching a concrete type through an interface) | 类型转换 | the usual computing word for a type conversion |
+| entry point (the class the game constructs a mod from) | 入口 | the plain word for a way in |
+| instance, static (one object made and handed out, against state held by the class itself) | 实例, 静态 | the usual computing words for both |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
@@ -473,11 +476,15 @@ So a word of one axis never stands in for another:
 | overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
 | part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
 | pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
+| port (the interface a feature's own code reaches the game through) | 端口 | the usual word for a port in a ports-and-adapters design |
 | press (a strike of the detail key) | 按键 | the plain word for pressing a key, as the Map - Keybinds tab uses it |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
 | refresh poll (the periodic check that marks changed systems) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
 | register (a record the map keeps in sector memory) | 登记 | the plain word for writing something into a record |
 | remark (the note a hover line carries about a colony) | 备注 | the plain word for a note added to something |
+| reset hook (a call that empties held state back to its start) | 重置钩子 | 重置, to reset, with 钩子, a hook, as KMLib's reference writes it |
+| sealed type (a type whose every case is named where it is declared) | 密封类型 | the usual Java word, 密封, sealed |
+| seat (hand a sector's machinery something it holds from its first moment) | 安放 | the plain word for setting something in its place |
 | settled face (the font a sector's text was checked against and kept) | 已确定的字体 | 已确定, settled, with 字体, a font |
 | stale, drain (a system marked for redrawing, and taking every such mark off the set) | 过期, 取出 | the plain words for out of date and for taking something out |
 | sweep (one walk of the whole sector) | 扫描 | the usual word for a pass over everything |

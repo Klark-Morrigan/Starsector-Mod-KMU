@@ -166,7 +166,8 @@ the settled systems the spotlit owner lives in that nobody owns.
 One source answering both is what lets presence be a partition of the set emptiness is asked of,
 so a cell cannot be called empty space while the spotlight keeps an owner's fill over it.
 How a source reads the two is its own business;
-the layers painting holders describe theirs in [`owners/holders`](../../owners/holders/README.md#one-pass-per-walk).
+KMU's own layers describe theirs beside their answers,
+which [the owner seams](../../owners/README.md) link to.
 
 Both sets sit with the owner map in **`SystemOccupancy`** -
 who is in each system -

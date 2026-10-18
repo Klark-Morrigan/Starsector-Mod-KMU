@@ -2,15 +2,15 @@ package kmu.maplayers.base.chrome;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
+import kmu.maplayers.base.layer.LiveMapLayerArrangement;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerArrangements;
-import kmu.maplayers.base.layer.MapLayerRosters;
+import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -67,17 +67,11 @@ final class MapLayerPickUpkeepTests {
 
     private final MapLayer paintingLayerMock = mock(MapLayer.class);
 
-    @AfterEach
-    void restoreTheRosterTheCasesReplaced() {
-        // The registry is static, so a roster of stand-ins would otherwise outlive its case.
-        MapLayerRosters.restoreNonEmptyRoster();
-    }
-
-    @AfterEach
-    void forgetTheArrangementThisCaseMade() {
-        // The holder is static too, so a bar arranged here would otherwise reorder every later row.
-        MapLayerArrangements.forgetTheArrangement();
-    }
+    // The roster and the bar every screen a case builds picks from, both carried on its picks. Empty
+    // and unarranged until a case says otherwise.
+    private final MapLayerRegistry layerRegistry = new MapLayerRegistry();
+    private final LiveMapLayerArrangement layerArrangement =
+        MapLayerArrangements.createRearrangeableBar(List.of(), List.of());
 
     @Nested
     class Advance {
@@ -170,7 +164,7 @@ final class MapLayerPickUpkeepTests {
 
             upkeep.advance(PAUSED_FRAME);
 
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
+            MapLayerArrangements.rearrangeBar(layerArrangement, List.of(), List.of(PAINTING_LAYER_ID));
 
             upkeep.advance(PAUSED_FRAME);
 
@@ -211,7 +205,7 @@ final class MapLayerPickUpkeepTests {
 
             upkeep.advance(PAUSED_FRAME);
 
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
+            MapLayerArrangements.rearrangeBar(layerArrangement, List.of(), List.of(PAINTING_LAYER_ID));
 
             upkeep.advance(PAUSED_FRAME);
 
@@ -291,16 +285,19 @@ final class MapLayerPickUpkeepTests {
         when(paintingLayerMock.getId())
             .thenReturn(PAINTING_LAYER_ID);
 
-        MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE, paintingLayerMock);
+        layerRegistry.registerLayer(NoLayer.INSTANCE);
+        layerRegistry.registerLayer(paintingLayerMock);
     }
 
     // One screen carrying a control of its own, which is what withholds the empty view's tab from it.
-    private static ScreenLayerPicks buildScreenPicks() {
+    private ScreenLayerPicks buildScreenPicks() {
 
         var screenPicks = new ScreenLayerPicks(
             mock(ActiveLayerSelection.class),
             new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
-            ScreenMemoryScopes.createStandInScreen());
+            ScreenMemoryScopes.createStandInScreen(),
+            layerRegistry,
+            layerArrangement);
 
         screenPicks.layerVisibility().recordControlAttached();
 
@@ -311,7 +308,7 @@ final class MapLayerPickUpkeepTests {
     // no place for and so the state the heal acts on. Its pick actually holds what is written to it,
     // since the heal reads back what it wrote to say whether the screen settled - a stand-in that
     // answered the same tab forever would report every heal as having failed.
-    private static ScreenLayerPicks buildScreenPicksOnTheEmptyView() {
+    private ScreenLayerPicks buildScreenPicksOnTheEmptyView() {
 
         var screenPicks = buildScreenPicks();
         var heldPick = new AtomicReference<MapLayer>(NoLayer.INSTANCE);
@@ -348,7 +345,7 @@ final class MapLayerPickUpkeepTests {
 
     // The same screen over a pick that reports what it was asked for and drops what is written to
     // it, which is what a selection with no save behind it does.
-    private static ScreenLayerPicks buildScreenPicksOnTheEmptyView(AtomicReference<MapLayer> heldPick) {
+    private ScreenLayerPicks buildScreenPicksOnTheEmptyView(AtomicReference<MapLayer> heldPick) {
 
         var screenPicks = buildScreenPicks();
 
@@ -375,7 +372,7 @@ final class MapLayerPickUpkeepTests {
         when(paintingLayerMock.getId())
             .thenReturn(PAINTING_LAYER_ID);
 
-        MapLayerRosters.replaceRosterWith(paintingLayerMock);
+        layerRegistry.registerLayer(paintingLayerMock);
 
         when(paintingLayerMock.getId())
             .thenAnswer(read -> {

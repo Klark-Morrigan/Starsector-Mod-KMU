@@ -37,7 +37,7 @@ final class KmuConditionPickerSummaryParagraphFactoryIntegrationTests {
                 buildEntry("cold", KmuConditionPickerEntryState.ABSENT, false, false),
                 buildEntry("hidden", KmuConditionPickerEntryState.PRESENT, false, true),
                 buildEntry("suppressed", KmuConditionPickerEntryState.PRESENT, true, false)),
-            new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+            KmuConditionPickerLocation.createUnknownLocation());
     }
 
     private static KmuConditionPickerEntry buildEntry(
@@ -46,19 +46,18 @@ final class KmuConditionPickerSummaryParagraphFactoryIntegrationTests {
             boolean isSuppressed,
             boolean isHidden) {
 
-        return new KmuConditionPickerEntry(
-            id,
-            id,
-            "graphics/icons/markets/" + id + ".png",
-            state,
-            "Tooltip",
-            null,
-            isSuppressed,
-            isHidden);
+        return new KmuConditionPickerEntry
+            .Builder(id, id, state)
+            .withIcon("graphics/icons/markets/" + id + ".png")
+            .withTooltipText("Tooltip")
+            .withSuppressed(isSuppressed)
+            .withHidden(isHidden)
+            .build();
     }
 
     @BeforeEach
     void mockThemeColours() {
+
         coloursMock = StarsectorUiColoursMock.install();
     }
 

@@ -94,14 +94,14 @@ public final class StandingRowResolver {
         return List.copyOf(entries);
     }
 
-    // One group's line, whichever kind of group it is: whatever names it, over the score its members
-    // add up to.
+    // An alliance's line: whatever names it, over the score its members add up to.
     //
     // A group the pass weighed nothing for carries its nought in the quiet shade, under the same
     // treatment its members' lines and the claims box's own presence lines take, so a bloc cannot read
-    // as weighed over members that were not. Read off the group rather than off the member line it
-    // may have been built from, because a bloc is weighed where any one member is: an alliance holding
-    // one weighed colony beside two unregistered ones has an aggregate somebody worked out.
+    // as weighed over members that were not. Read off the group rather than off any one member,
+    // because a bloc is weighed where any one member is: an alliance holding one weighed colony beside
+    // two unregistered ones has an aggregate somebody worked out. A lone faction's line reads the same
+    // group flag.
     private static CellTooltipEntryLine buildGroupLine(
             CellTooltipMark mark,
             String labelText,
@@ -192,12 +192,14 @@ public final class StandingRowResolver {
         return resolveAllianceEntry(routedStanding);
     }
 
-    // A lone-faction group has one member, so the group is exactly that member: it takes that member's
-    // own name, crest and account rather than reading any of them a second time, which is what keeps a
-    // singleton from ever drifting from the member it wraps and lets the flat faction view fall out for
-    // free. The member's line is never listed beneath the group's, since repeating it would say nothing
-    // the line above did not - so the account it would have carried hangs directly off the group, which
-    // is the same faction under another name.
+    // A lone-faction group has one member, so the group is exactly that member: it is named and marked
+    // through the same faction line every member is built by, and takes that member's own account,
+    // which is what keeps a singleton from ever drifting from the member it wraps and lets the flat
+    // faction view fall out for free. Only the number is the group's.
+    //
+    // The member's line is never listed beneath the group's, since repeating it would say nothing the
+    // line above did not - so the account it would have carried hangs directly off the group, which is
+    // the same faction under another name.
     //
     // And the fraction it states is that faction's, for the same reason: how much of the holder this
     // faction is at odds with. The bloc-of-one reading beside it could only ever count one member out of
@@ -206,14 +208,14 @@ public final class StandingRowResolver {
 
         var standing = routedStanding.standing();
         var groupMember = standing.members().get(0);
-        var groupMemberLine = buildMemberLine(groupMember);
 
         return CellTooltipEntry
             .createEntry(stateFraction(
-                buildGroupLine(
-                    groupMemberLine.mark(),
-                    groupMemberLine.labelText(),
-                    standing),
+                FactionTooltipLine.buildCountedFactionLine(
+                    sector,
+                    groupMember.factionId(),
+                    standing.aggregateScore(),
+                    standing.hasWeighedMember()),
                 routedStanding.readFractionFor(groupMember.factionId())))
             .nesting(accountResolver.resolveAccountEntries(groupMember));
     }

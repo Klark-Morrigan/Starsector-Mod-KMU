@@ -4,7 +4,6 @@ import kmlib.starsector.memory.AddressedMemoryString;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 
@@ -50,7 +49,7 @@ public final class MapLayerViewRegistry {
 
     // The active-view pick, held once per screen under the layer's base key; reads resolve an absent
     // key to null (the caller then falls to the default). The screen's segment is composed by the
-    // holder, so this class states what it stores and never how the key is spelled.
+    // addressed string itself, so this class states what it stores and never how the key is spelled.
     private final AddressedMemoryString activeViewSelection;
 
     // The registered views, in radio-segment order, the pick an untouched save resolves to, and the
@@ -143,7 +142,7 @@ public final class MapLayerViewRegistry {
      *         tab is not active there or no view is selected on it
      */
     public OwnerPaintedView resolveActiveViewOn(ScreenLayerPicks screenPicks) {
-        if (!MapLayerRegistry.isDrawnLayerOn(screenPicks, hostTab)) {
+        if (!screenPicks.isDrawingLayer(hostTab)) {
             return null;
         }
         return getSelectedView(screenPicks.memoryScope());

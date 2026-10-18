@@ -27,6 +27,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuConditionIconButtonTests {
+
     private static final Color DEFAULT_BACKDROP = new Color(31, 94, 112, 175);
     private static final Color DEFAULT_BORDER = new Color(170, 222, 255, 255);
     private static final Color VISIBLE_PRESENT_BACKDROP = new Color(35, 80, 45);
@@ -40,16 +41,27 @@ class KmuConditionIconButtonTests {
 
     @BeforeEach
     void mockStarsectorThemeColours() {
+
         KmuStringsSettingsFake.installSettings();
+
         miscMock = Mockito.mockStatic(Misc.class);
-        miscMock.when(Misc::getDarkPlayerColor).thenReturn(DEFAULT_BACKDROP);
-        miscMock.when(Misc::getBasePlayerColor).thenReturn(DEFAULT_BORDER);
-        miscMock.when(Misc::getGrayColor).thenReturn(GRAY);
-        miscMock.when(Misc::getTextColor).thenReturn(TEXT);
+        miscMock
+            .when(Misc::getDarkPlayerColor)
+            .thenReturn(DEFAULT_BACKDROP);
+        miscMock
+            .when(Misc::getBasePlayerColor)
+            .thenReturn(DEFAULT_BORDER);
+        miscMock
+            .when(Misc::getGrayColor)
+            .thenReturn(GRAY);
+        miscMock
+            .when(Misc::getTextColor)
+            .thenReturn(TEXT);
     }
 
     @AfterEach
     void closeStarsectorThemeColours() {
+
         miscMock.close();
         KmuStringsSettingsFake.clearSettings();
     }
@@ -59,10 +71,15 @@ class KmuConditionIconButtonTests {
 
         @Test
         void greysOutAbsentEntriesOnly() {
-            assertThat(buildEntry(KmuConditionPickerEntryState.ABSENT).isPresent()).isFalse();
-            assertThat(buildEntry(KmuConditionPickerEntryState.PRESENT).isPresent()).isTrue();
-            assertThat(buildSuppressedEntry().isPresent()).isTrue();
-            assertThat(buildHiddenEntry().isPresent()).isTrue();
+
+            assertThat(buildEntry(KmuConditionPickerEntryState.ABSENT).isPresent())
+                .isFalse();
+            assertThat(buildEntry(KmuConditionPickerEntryState.PRESENT).isPresent())
+                .isTrue();
+            assertThat(buildSuppressedEntry().isPresent())
+                .isTrue();
+            assertThat(buildHiddenEntry().isPresent())
+                .isTrue();
         }
     }
 
@@ -71,54 +88,66 @@ class KmuConditionIconButtonTests {
 
         @Test
         void stylesAbsentEntriesWithDefaultButtonColoursAndGreyedOutIcon() {
+
             var entry = buildEntry(KmuConditionPickerEntryState.ABSENT);
 
             assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
             assertButtonStyleRoles(entry, StarsectorUiColour.DARK_BLUE, StarsectorUiColour.LIGHT_BLUE);
-            assertThat(entry.isPresent()).isFalse();
-            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
+
+            assertThat(entry.isPresent())
+                .isFalse();
+            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden())
+                .isFalse();
         }
 
         @Test
         void stylesVisibleUnsuppressedPresentEntriesWithPositiveGreenButtonColours() {
+
             var entry = buildEntry(KmuConditionPickerEntryState.PRESENT);
 
             assertButtonStyle(entry, VISIBLE_PRESENT_BACKDROP, VISIBLE_PRESENT_BORDER, 0.28f, 0.42f);
             assertButtonStyleRoles(entry, StarsectorUiColour.DARK_GREEN, StarsectorUiColour.BRIGHT_GREEN);
-            assertThat(entry.isPresent()).isTrue();
-            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isTrue();
+
+            assertThat(entry.isPresent())
+                .isTrue();
+            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden())
+                .isTrue();
         }
 
         @Test
         void stylesHiddenPresentEntriesWithDefaultButtonColoursAndFullIcon() {
+
             var entry = buildHiddenEntry();
 
             assertButtonStyle(entry, DEFAULT_BACKDROP, DEFAULT_BORDER, 0.28f, 0.18f);
-            assertThat(entry.isPresent()).isTrue();
-            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
+
+            assertThat(entry.isPresent())
+                .isTrue();
+            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden())
+                .isFalse();
         }
 
         @Test
         void stylesSuppressedPresentEntriesWithWarningButtonColoursAndFullIcon() {
+
             var entry = buildSuppressedEntry();
 
             assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
             assertButtonStyleRoles(entry, StarsectorUiColour.MUTED_RED, StarsectorUiColour.BRIGHT_RED);
-            assertThat(entry.isPresent()).isTrue();
-            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden()).isFalse();
+
+            assertThat(entry.isPresent())
+                .isTrue();
+            assertThat(entry.isPresent() && !entry.isSuppressed() && !entry.isHidden())
+                .isFalse();
         }
 
         @Test
         void prioritizesSuppressedStyleWhenEntryIsBothSuppressedAndHidden() {
-            var entry = new KmuConditionPickerEntry(
-                    "hot",
-                    "Hot",
-                    "graphics/icons/markets/hot.png",
-                    KmuConditionPickerEntryState.PRESENT,
-                    "Test tooltip",
-                    "Starsector",
-                    true,
-                    true);
+
+            var entry = buildEntryBuilder(KmuConditionPickerEntryState.PRESENT)
+                .withSuppressed(true)
+                .withHidden(true)
+                .build();
 
             assertButtonStyle(entry, SUPPRESSED_BACKDROP, SUPPRESSED_BORDER, 0.34f, 0.50f);
         }
@@ -129,71 +158,94 @@ class KmuConditionIconButtonTests {
 
         @Test
         void iconSizeReturnsFallbackSizeForZeroDimensions() {
-            var bounds =
-                    KmuConditionIconButtonLayout.computeIconSize(0f, 0f);
 
-            assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
-            assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
+            var bounds = KmuConditionIconButtonLayout.computeIconSize(
+                0f,
+                0f);
+
+            assertThat(bounds.getWidth())
+                .isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
+            assertThat(bounds.getHeight())
+                .isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
         }
 
         @Test
         void iconSizeReturnsFallbackSizeForNegativeDimensions() {
-            var bounds =
-                    KmuConditionIconButtonLayout.computeIconSize(-1f, -1f);
 
-            assertThat(bounds.getWidth()).isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
-            assertThat(bounds.getHeight()).isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
+            var bounds =KmuConditionIconButtonLayout.computeIconSize(
+                -1f,
+                -1f);
+
+            assertThat(bounds.getWidth())
+                .isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
+            assertThat(bounds.getHeight())
+                .isEqualTo(KmuConditionIconButtonLayout.FALLBACK_ICON_SIZE);
         }
     }
 
     @Nested
-    class ComputeKmuConditionIconButtonLayout {
+    class ComputeButtonLayout {
 
         @Test
         void rendersIconsAtVanillaHeightWhenSourceAlreadyMatches() {
-            var wide =
-                    KmuConditionIconButtonLayout.computeButtonLayout(120f, 40f);
 
-            assertThat(wide.getIconWidth()).isEqualTo(120f);
-            assertThat(wide.getIconHeight()).isEqualTo(40f);
+            var wide = KmuConditionIconButtonLayout.computeButtonLayout(
+                120f,
+                40f);
+
+            assertThat(wide.getIconWidth())
+                .isEqualTo(120f);
+            assertThat(wide.getIconHeight())
+                .isEqualTo(40f);
+
             assertThat(wide.getButtonWidth())
-                    .isEqualTo(120f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
+                .isEqualTo(120f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
             assertThat(wide.getButtonHeight())
-                    .isEqualTo(40f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
+                .isEqualTo(40f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
         }
 
         @Test
         void upscalesSmallerIconsToVanillaHeightWithoutChangingAspectRatio() {
-            var small =
-                    KmuConditionIconButtonLayout.computeButtonLayout(20f, 20f);
 
-            assertThat(small.getIconWidth()).isEqualTo(40f);
+            var small = KmuConditionIconButtonLayout.computeButtonLayout(
+                20f,
+                20f);
+
+            assertThat(small.getIconWidth())
+                .isEqualTo(40f);
             assertThat(small.getIconHeight())
-                    .isEqualTo(KmuConditionIconButtonLayout.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+                .isEqualTo(KmuConditionIconButtonLayout.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+
             assertThat(small.getButtonWidth())
-                    .isEqualTo(40f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
+                .isEqualTo(40f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
             assertThat(small.getButtonHeight())
-                    .isEqualTo(40f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
+                .isEqualTo(40f + KmuConditionIconButtonLayout.ICON_MARGIN * 2f);
         }
 
         @Test
         void preservesWideIconWidthWhenHeightMatchesVanillaTarget() {
-            var wide =
-                    KmuConditionIconButtonLayout.computeButtonLayout(180f, 40f);
 
-            assertThat(wide.getIconWidth()).isEqualTo(180f);
+            var wide = KmuConditionIconButtonLayout.computeButtonLayout(
+                180f,
+                40f);
+
+            assertThat(wide.getIconWidth())
+                .isEqualTo(180f);
             assertThat(wide.getIconHeight())
-                    .isEqualTo(KmuConditionIconButtonLayout.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+                .isEqualTo(KmuConditionIconButtonLayout.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
         }
 
         @Test
         void downscalesOversizedIconsToVanillaHeightWithoutChangingAspectRatio() {
-            var tall =
-                    KmuConditionIconButtonLayout.computeButtonLayout(64f, 192f);
 
-            assertThat(tall.getIconWidth()).isBetween(13.33f, 13.34f);
+            var tall = KmuConditionIconButtonLayout.computeButtonLayout(
+                64f,
+                192f);
+
+            assertThat(tall.getIconWidth())
+                .isBetween(13.33f, 13.34f);
             assertThat(tall.getIconHeight())
-                    .isEqualTo(KmuConditionIconButtonLayout.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
+                .isEqualTo(KmuConditionIconButtonLayout.VANILLA_COLONY_CONDITION_ICON_HEIGHT);
         }
     }
 
@@ -202,15 +254,18 @@ class KmuConditionIconButtonTests {
 
         @Test
         void updatesEntryStateInPlace() {
+
             var button = new KmuConditionIconButton(
-                    buildEntry(KmuConditionPickerEntryState.ABSENT),
-                    action -> {
-                    });
+                buildEntry(KmuConditionPickerEntryState.ABSENT),
+                action -> {
+                });
 
             button.updateEntry(buildEntry(KmuConditionPickerEntryState.PRESENT));
 
-            assertThat(button.getEntry().getState()).isEqualTo(KmuConditionPickerEntryState.PRESENT);
-            assertThat(button.getEntry().isPresent()).isTrue();
+            assertThat(button.getEntry().getState())
+                .isEqualTo(KmuConditionPickerEntryState.PRESENT);
+            assertThat(button.getEntry().isPresent())
+                .isTrue();
         }
     }
 
@@ -219,22 +274,18 @@ class KmuConditionIconButtonTests {
 
         @Test
         void appendsMetadataFooterInExpectedOrder() {
+
             var tooltip = RecordingTooltip.create();
-            var entry = new KmuConditionPickerEntry(
-                    "hot",
-                    "Hot",
-                    "graphics/icons/markets/hot.png",
-                    KmuConditionPickerEntryState.PRESENT,
-                    "Test tooltip",
-                    "Starsector",
-                    true,
-                    false);
+            var entry = buildSuppressedEntry();
 
             new KmuConditionEntryTooltipCreator(() -> entry)
-                    .createTooltip(tooltip.getApi(), false, null);
+                .createTooltip(tooltip.getApi(), false, null);
 
-            assertThat(tooltip.getHeadings()).contains("Metadata");
-            assertThat(tooltip.getParagraphs()).containsSequence(
+            assertThat(tooltip.getHeadings())
+                .contains("Metadata");
+
+            assertThat(tooltip.getParagraphs())
+                .containsSequence(
                     "source: Starsector",
                     "id: hot",
                     "icon: graphics/icons/markets/hot.png",
@@ -244,59 +295,58 @@ class KmuConditionIconButtonTests {
 
         @Test
         void omitsHiddenAndSuppressedMetadataForAbsentEntries() {
+
             var tooltip = RecordingTooltip.create();
-            var entry = new KmuConditionPickerEntry(
-                    "hot",
-                    "Hot",
-                    "graphics/icons/markets/hot.png",
-                    KmuConditionPickerEntryState.ABSENT,
-                    "Test tooltip",
-                    "Starsector",
-                    true,
-                    true);
+            var entry = buildEntryBuilder(KmuConditionPickerEntryState.ABSENT)
+                .withSuppressed(true)
+                .withHidden(true)
+                .build();
 
             new KmuConditionEntryTooltipCreator(() -> entry)
-                    .createTooltip(tooltip.getApi(), false, null);
+                .createTooltip(tooltip.getApi(), false, null);
 
-            assertThat(tooltip.getParagraphs()).containsSequence(
+            assertThat(tooltip.getParagraphs())
+                .containsSequence(
                     "source: Starsector",
                     "id: hot",
                     "icon: graphics/icons/markets/hot.png");
-            assertThat(tooltip.getParagraphs()).doesNotContain("hidden: true", "suppressed: true");
+
+            assertThat(tooltip.getParagraphs())
+                .doesNotContain("hidden: true", "suppressed: true");
         }
     }
 
     private static KmuConditionPickerEntry buildEntry(KmuConditionPickerEntryState state) {
-        return new KmuConditionPickerEntry(
-                "hot",
-                "Hot",
-                "graphics/icons/markets/hot.png",
-                state,
-                "Test tooltip");
+
+        return new KmuConditionPickerEntry
+            .Builder("hot", "Hot", state)
+            .withIcon("graphics/icons/markets/hot.png")
+            .withTooltipText("Test tooltip")
+            .build();
     }
 
     private static KmuConditionPickerEntry buildSuppressedEntry() {
-        return new KmuConditionPickerEntry(
-                "hot",
-                "Hot",
-                "graphics/icons/markets/hot.png",
-                KmuConditionPickerEntryState.PRESENT,
-                "Test tooltip",
-                "Starsector",
-                true,
-                false);
+
+        return buildEntryBuilder(KmuConditionPickerEntryState.PRESENT)
+            .withSuppressed(true)
+            .build();
     }
 
     private static KmuConditionPickerEntry buildHiddenEntry() {
-        return new KmuConditionPickerEntry(
-                "hot",
-                "Hot",
-                "graphics/icons/markets/hot.png",
-                KmuConditionPickerEntryState.PRESENT,
-                "Test tooltip",
-                "Starsector",
-                false,
-                true);
+
+        return buildEntryBuilder(KmuConditionPickerEntryState.PRESENT)
+            .withHidden(true)
+            .build();
+    }
+
+    // The Starsector-sourced entry the flag cases start from, which names its source in the metadata footer.
+    private static KmuConditionPickerEntry.Builder buildEntryBuilder(KmuConditionPickerEntryState state) {
+
+        return new KmuConditionPickerEntry
+            .Builder("hot", "Hot", state)
+            .withIcon("graphics/icons/markets/hot.png")
+            .withTooltipText("Test tooltip")
+            .withSourceModName("Starsector");
     }
 
     private static void assertButtonStyle(
@@ -305,33 +355,44 @@ class KmuConditionIconButtonTests {
             Color borderColour,
             float backdropAlpha,
             float borderAlpha) {
+
         var style = KmuConditionIconButtonStyle.forEntry(entry);
-        assertThat(style.getBackdropColour()).isEqualTo(backdropColour);
-        assertThat(style.getBorderColour()).isEqualTo(borderColour);
-        assertThat(style.getBackdropAlpha()).isEqualTo(backdropAlpha);
-        assertThat(style.getBorderAlpha()).isEqualTo(borderAlpha);
+
+        assertThat(style.getBackdropColour())
+            .isEqualTo(backdropColour);
+        assertThat(style.getBorderColour())
+            .isEqualTo(borderColour);
+        assertThat(style.getBackdropAlpha())
+            .isEqualTo(backdropAlpha);
+        assertThat(style.getBorderAlpha())
+            .isEqualTo(borderAlpha);
     }
 
     private static void assertButtonStyleRoles(
             KmuConditionPickerEntry entry,
             StarsectorUiColour backdropColour,
             StarsectorUiColour borderColour) {
+
         var style = KmuConditionIconButtonStyle.forEntry(entry);
 
-        assertThat(style.getBackdropRawColour()).isEqualTo(backdropColour);
-        assertThat(style.getBorderRawColour()).isEqualTo(borderColour);
+        assertThat(style.getBackdropRawColour())
+            .isEqualTo(backdropColour);
+        assertThat(style.getBorderRawColour())
+            .isEqualTo(borderColour);
     }
 
     private static final class RecordingTooltip implements InvocationHandler {
+
         private final List<String> headings = new ArrayList<>();
         private final List<String> paragraphs = new ArrayList<>();
         private final TooltipMakerAPI api;
 
         private RecordingTooltip() {
+
             this.api = (TooltipMakerAPI) Proxy.newProxyInstance(
-                    TooltipMakerAPI.class.getClassLoader(),
-                    new Class<?>[]{TooltipMakerAPI.class},
-                    this);
+                TooltipMakerAPI.class.getClassLoader(),
+                new Class<?>[]{TooltipMakerAPI.class},
+                this);
         }
 
         static RecordingTooltip create() {
@@ -352,58 +413,78 @@ class KmuConditionIconButtonTests {
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
+
             if ("addTitle".equals(method.getName()) && args != null && args.length >= 1) {
+
                 headings.add((String) args[0]);
                 return null;
             }
+
             if ("addSectionHeading".equals(method.getName()) && args != null && args.length >= 1) {
+
                 headings.add((String) args[0]);
                 return null;
             }
+
             if ("addPara".equals(method.getName()) && args != null && args.length >= 1) {
+
                 paragraphs.add((String) args[0]);
                 return null;
             }
+
             if ("toString".equals(method.getName())) {
                 return "RecordingTooltip";
             }
+
             if ("hashCode".equals(method.getName())) {
                 return System.identityHashCode(proxy);
             }
+
             if ("equals".equals(method.getName())) {
                 return proxy == args[0];
             }
+
             return resolveDefaultValue(method.getReturnType());
         }
 
         private Object resolveDefaultValue(Class<?> returnType) {
+
             if (!returnType.isPrimitive()) {
                 return null;
             }
+
             if (boolean.class.equals(returnType)) {
                 return false;
             }
+
             if (char.class.equals(returnType)) {
                 return '\0';
             }
+
             if (byte.class.equals(returnType)) {
                 return (byte) 0;
             }
+
             if (short.class.equals(returnType)) {
                 return (short) 0;
             }
+
             if (int.class.equals(returnType)) {
                 return 0;
             }
+
             if (long.class.equals(returnType)) {
                 return 0L;
             }
+
             if (float.class.equals(returnType)) {
                 return 0f;
             }
+
             if (double.class.equals(returnType)) {
                 return 0d;
             }
+
             return null;
         }
     }

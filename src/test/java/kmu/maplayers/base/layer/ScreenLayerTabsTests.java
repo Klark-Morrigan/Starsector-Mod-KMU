@@ -1,6 +1,5 @@
 package kmu.maplayers.base.layer;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -56,17 +55,11 @@ final class ScreenLayerTabsTests {
     private final MapLayer paintingLayerMock = mock(MapLayer.class);
     private final MapLayer otherPaintingLayerMock = mock(MapLayer.class);
 
-    @AfterEach
-    void restoreTheRosterThisCaseReplaced() {
-        // The registry is static, so a roster of stand-ins would otherwise outlive its case.
-        MapLayerRosters.restoreNonEmptyRoster();
-    }
-
-    @AfterEach
-    void forgetTheArrangementThisCaseMade() {
-        // The holder is static too, so a bar arranged here would otherwise reorder every later row.
-        MapLayerArrangements.forgetTheArrangement();
-    }
+    // The roster and the bar the case's screen picks from, both carried on its picks. Empty and
+    // unarranged until a case says otherwise.
+    private final MapLayerRegistry layerRegistry = new MapLayerRegistry();
+    private final LiveMapLayerArrangement layerArrangement =
+        MapLayerArrangements.createRearrangeableBar(List.of(), List.of());
 
     @Nested
     class ResolveTabbedLayers {
@@ -102,7 +95,7 @@ final class ScreenLayerTabsTests {
 
             ScreenLayerTabs.resolveTabbedLayers(createPicksWithAControlStanding());
 
-            assertThat(MapLayerRegistry.getLayers())
+            assertThat(layerRegistry.getLayers())
                 .containsExactly(NoLayer.INSTANCE, paintingLayerMock);
         }
 
@@ -110,7 +103,7 @@ final class ScreenLayerTabsTests {
         void keepsTheLastTabStandingWhateverElseIsTrue() {
             // An empty strip has no way back to itself. Unreachable while a layer that paints is
             // registered beside it, which is a composition root's arrangement rather than a rule.
-            MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE);
+            layerRegistry.registerLayer(NoLayer.INSTANCE);
 
             assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithAControlStanding()))
                 .containsExactly(NoLayer.INSTANCE);
@@ -122,7 +115,7 @@ final class ScreenLayerTabsTests {
             // order registered, and it is the same row on every screen and in every campaign.
             registerTheEmptyViewBesideALayerThatPaints();
 
-            MapLayerArrangements.arrangeBarWith(
+            arrangeBarWith(
                 List.of(PAINTING_LAYER_ID, NO_LAYER_ID),
                 List.of());
 
@@ -137,14 +130,14 @@ final class ScreenLayerTabsTests {
             // being what decides whether a save left on a hidden layer goes on painting it.
             registerTheEmptyViewBesideALayerThatPaints();
 
-            MapLayerArrangements.arrangeBarWith(
+            arrangeBarWith(
                 List.of(),
                 List.of(PAINTING_LAYER_ID));
 
             assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithNoControl()))
                 .containsExactly(NoLayer.INSTANCE);
 
-            assertThat(MapLayerRegistry.resolveLayerById(PAINTING_LAYER_ID))
+            assertThat(layerRegistry.resolveLayerById(PAINTING_LAYER_ID))
                 .isSameAs(paintingLayerMock);
         }
 
@@ -155,7 +148,7 @@ final class ScreenLayerTabsTests {
             // of it at once.
             registerTwoLayersThatPaintBesideTheEmptyView();
 
-            MapLayerArrangements.arrangeBarWith(
+            arrangeBarWith(
                 List.of(),
                 List.of(OTHER_PAINTING_LAYER_ID));
 
@@ -170,7 +163,7 @@ final class ScreenLayerTabsTests {
             // however it was emptied, so the one left standing is offered.
             registerTheEmptyViewBesideALayerThatPaints();
 
-            MapLayerArrangements.arrangeBarWith(
+            arrangeBarWith(
                 List.of(),
                 List.of(PAINTING_LAYER_ID));
 
@@ -203,7 +196,7 @@ final class ScreenLayerTabsTests {
             var screenPicks = createPicksWithNoControl();
             var settledRevision = ScreenLayerTabs.readOfferedTabsRevision(screenPicks);
 
-            MapLayerArrangements.arrangeBarWith(
+            arrangeBarWith(
                 List.of(),
                 List.of(PAINTING_LAYER_ID));
 
@@ -235,7 +228,9 @@ final class ScreenLayerTabsTests {
             var screenPicks = createPicksWithNoControl();
             var settledRevision = ScreenLayerTabs.readOfferedTabsRevision(screenPicks);
 
-            screenPicks.layerVisibility().recordControlAttached();
+            screenPicks
+                .layerVisibility()
+                .recordControlAttached();
 
             assertThat(ScreenLayerTabs.readOfferedTabsRevision(screenPicks))
                 .isNotEqualTo(settledRevision);
@@ -253,7 +248,7 @@ final class ScreenLayerTabsTests {
             // nothing.
             registerTheEmptyViewBesideALayerThatPaints();
 
-            MapLayerArrangements.arrangeBarWith(
+            arrangeBarWith(
                 List.of(),
                 List.of(PAINTING_LAYER_ID));
 
@@ -282,19 +277,22 @@ final class ScreenLayerTabsTests {
 
             when(screenPicks.layerSelection().getActiveLayer())
                 .thenAnswer(read -> pick.get());
-            doAnswer(selection -> {
-                pick.set(selection.getArgument(0));
-                return null;
-            }).when(screenPicks.layerSelection()).selectLayer(any());
 
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
+            doAnswer(selection -> {
+                    pick.set(selection.getArgument(0));
+                    return null;
+                }).when(screenPicks.layerSelection())
+                .selectLayer(any());
+
+            arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
             ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
 
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of());
+            arrangeBarWith(List.of(), List.of());
             ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
 
             assertThat(pick.get())
                 .isSameAs(paintingLayerMock);
+
             verify(screenPicks.layerVisibility().getStoredVisibility())
                 .showLayers(true);
         }
@@ -363,7 +361,7 @@ final class ScreenLayerTabsTests {
             // there to land on.
             registerTwoLayersThatPaintBesideTheEmptyView();
 
-            MapLayerArrangements.arrangeBarWith(
+            arrangeBarWith(
                 List.of(),
                 List.of(PAINTING_LAYER_ID, OTHER_PAINTING_LAYER_ID));
 
@@ -406,7 +404,7 @@ final class ScreenLayerTabsTests {
             // and a row moved again meanwhile would strand the half still owed.
             registerTheEmptyViewBesideALayerThatPaints();
 
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
+            arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
 
             var screenPicks = createPicksWithAControlStanding();
 
@@ -432,10 +430,12 @@ final class ScreenLayerTabsTests {
 
             when(screenPicks.layerSelection().getActiveLayer())
                 .thenAnswer(read -> pick.get());
+
             doAnswer(selection -> {
-                pick.set(selection.getArgument(0));
-                return null;
-            }).when(screenPicks.layerSelection()).selectLayer(any());
+                    pick.set(selection.getArgument(0));
+                    return null;
+                }).when(screenPicks.layerSelection())
+                .selectLayer(any());
 
             assertThat(ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks))
                 .isTrue();
@@ -474,8 +474,6 @@ final class ScreenLayerTabsTests {
             // A bare bar has no tab to land a pick on. Reachable before a composition root has
             // registered anything, which is a frame the pass can run on rather than a state the
             // player can be in.
-            MapLayerRosters.forgetEveryLayer();
-
             var screenPicks = createPicksOnTheEmptyView();
 
             ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
@@ -492,7 +490,7 @@ final class ScreenLayerTabsTests {
     private void registerTheEmptyViewBesideALayerThatPaints() {
 
         stubTheLayerThatPaints();
-        MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE, paintingLayerMock);
+        registerLayers(NoLayer.INSTANCE, paintingLayerMock);
     }
 
     // The same roster with a second painting layer on the end, which is the install a foreign mod's
@@ -504,8 +502,25 @@ final class ScreenLayerTabsTests {
         when(otherPaintingLayerMock.getId())
             .thenReturn(OTHER_PAINTING_LAYER_ID);
 
-        MapLayerRosters.replaceRosterWith(
-            NoLayer.INSTANCE, paintingLayerMock, otherPaintingLayerMock);
+        registerLayers(NoLayer.INSTANCE, paintingLayerMock, otherPaintingLayerMock);
+    }
+
+    // Registers onto the case's roster. A layer already standing in it stays where it is, so a case
+    // can move from the smaller roster to the larger one.
+    private void registerLayers(MapLayer... layers) {
+
+        for (var layer : layers) {
+            layerRegistry.registerLayer(layer);
+        }
+    }
+
+    // What the arranging dialog writes in play, recorded through the bar the case's picks carry.
+    private void arrangeBarWith(List<String> orderedLayerIds, List<String> hiddenLayerIds) {
+
+        MapLayerArrangements.rearrangeBar(
+            layerArrangement,
+            orderedLayerIds,
+            hiddenLayerIds);
     }
 
     // What the layer that paints answers, whichever roster it stands in: it offers itself as the
@@ -521,26 +536,32 @@ final class ScreenLayerTabsTests {
     }
 
     // A screen whose box has stood at least once this session, which is what withholds its tab.
-    private static ScreenLayerPicks createPicksWithAControlStanding() {
+    private ScreenLayerPicks createPicksWithAControlStanding() {
 
         var screenPicks = createPicksWithNoControl();
-        screenPicks.layerVisibility().recordControlAttached();
+
+        screenPicks
+            .layerVisibility()
+            .recordControlAttached();
 
         return screenPicks;
     }
 
     // The same screen before any box has stood on it - and, since the word is taken back with the
     // control, after one has been taken away again.
-    private static ScreenLayerPicks createPicksWithNoControl() {
+    private ScreenLayerPicks createPicksWithNoControl() {
+
         return new ScreenLayerPicks(
             mock(ActiveLayerSelection.class),
             new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
-            ScreenMemoryScopes.createStandInScreen());
+            ScreenMemoryScopes.createStandInScreen(),
+            layerRegistry,
+            layerArrangement);
     }
 
     // A screen carrying a box and still set to the tab that box takes over from, which is the one
     // arrangement the move exists for.
-    private static ScreenLayerPicks createPicksOnTheEmptyView() {
+    private ScreenLayerPicks createPicksOnTheEmptyView() {
 
         var screenPicks = createPicksWithAControlStanding();
 

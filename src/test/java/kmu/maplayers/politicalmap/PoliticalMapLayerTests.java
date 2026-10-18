@@ -15,7 +15,6 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
-import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -837,8 +836,8 @@ final class PoliticalMapLayerTests {
             .thenReturn(SELECTOR_MARKER);
     }
 
-    // Registers the one view as both the sole registered view and the default, with a host tab the
-    // layer registry treats as active, so a sector-less read resolves this view as selected. Also
+    // Registers the one view as both the sole registered view and the default, so a sector-less read
+    // resolves this view as selected. Also
     // stubs the view's identity and empty picker, since the body build reads its picker options
     // through the memo (keyed on the view ID and its content revision) rather than off the view
     // directly - an empty picker contributes no controls, keeping these composition assertions about
@@ -857,12 +856,10 @@ final class PoliticalMapLayerTests {
         standLayerOver(view);
     }
 
-    // The layer over one view, as both its roster and its default, put on the roster alone so the
-    // layer registry treats its tab as the active pick and a sector-less read resolves that view.
+    // The layer over one view, as both its roster and its default, so a sector-less read resolves
+    // that view.
     private void standLayerOver(OwnerPaintedView view) {
-
         layer = new PoliticalMapLayer(List.of(view), view, AllianceSource.NO_ALLIANCES);
-        MapLayerRosters.replaceRosterWith(layer);
     }
 
     // What a case makes of a body built over a really installed sector. It takes the sector and its

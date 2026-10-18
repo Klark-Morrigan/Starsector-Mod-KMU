@@ -12,15 +12,15 @@ import java.util.Optional;
 /**
  * The banded stroke one cell draws inside its own ring, as the ordered runs it is made of:
  * every owner present in the cell in the order it was ranked, each contributing a segment per
- * holding it has and an interjection between two of its own.
+ * stake it has and an interjection between two of its own.
  *
- * <p>What the band says is how a system splits - how many holdings, whose, and in what
- * proportion - with no glyph and no label. One shade carries every parting in it. Holdings of
+ * <p>What the band says is how a system splits - how many stakes, whose, and in what
+ * proportion - with no glyph and no label. One shade carries every parting in it. Stakes of
  * one owner are parted by an interjection in that owner's dark shade, so a long run reads as
- * several holdings rather than as one large one; and where another owner's run follows, that
+ * several stakes rather than as one large one; and where another owner's run follows, that
  * same dark shade closes the outgoing run, so a handover is punctuated as well as recoloured.
  * The divider belongs to the owner going out rather than to the one coming in, which is what
- * makes it read as that owner's holdings ending rather than as an unowned gap between two
+ * makes it read as that owner's stakes ending rather than as an unowned gap between two
  * rivals. The band's last run is left open, a divider having nothing to part it from.
  *
  * <p>A cell draws a ribbon when anything is present in it at all. What contest adds is the length
@@ -191,11 +191,11 @@ public final class RibbonPlan {
             // An owner holding nothing counted lays no run, so it opens no handover either: a
             // divider laid for it would part two owners across a run that is not there, and
             // the owner actually going out would go unclosed.
-            if (!presence.hasMarkets()) {
+            if (!presence.hasStakes()) {
                 continue;
             }
             // The divider closing the run just laid is the outgoing owner's own, not the
-            // incoming one's: it is that owner's holdings ending, and drawn in the newcomer's
+            // incoming one's: it is that owner's stakes ending, and drawn in the newcomer's
             // shade it would read as a gap belonging to whoever arrives next.
             if (outgoingOwner != null) {
                 segments.add(createParting(outgoingOwner.palette(), lengths));
@@ -242,7 +242,7 @@ public final class RibbonPlan {
 
         for (var presence : rankedPresences) {
 
-            if (presence.hasMarkets()
+            if (presence.hasStakes()
                     && !presence.ownerId().equals(judgedAgainstOwnerId)
                     && !affiliation.areOwnersAllied(judgedAgainstOwnerId, presence.ownerId())) {
 
@@ -263,16 +263,16 @@ public final class RibbonPlan {
     private static Optional<String> findFirstPresentOwnerId(List<OwnerPresence> rankedPresences) {
 
         for (var presence : rankedPresences) {
-            if (presence.hasMarkets()) {
+            if (presence.hasStakes()) {
                 return Optional.of(presence.ownerId());
             }
         }
         return Optional.empty();
     }
 
-    // Lays down one owner's run: a bright segment per holding, parted by a dark interjection.
-    // The interjection goes before every holding after the first, which is what keeps it
-    // strictly between two of one owner's holdings - so a run neither opens nor closes on one,
+    // Lays down one owner's run: a bright segment per stake, parted by a dark interjection.
+    // The interjection goes before every stake after the first, which is what keeps it
+    // strictly between two of one owner's stakes - so a run neither opens nor closes on one,
     // and whether it is closed off at all is the caller's to decide from what follows it.
     private static void appendOwnerRun(
             List<RibbonSegment> segments,
@@ -281,19 +281,19 @@ public final class RibbonPlan {
 
         var palette = presence.palette();
 
-        for (var market = 0; market < presence.marketCount(); market++) {
+        for (var stake = 0; stake < presence.stakeCount(); stake++) {
 
-            if (market > 0) {
+            if (stake > 0) {
                 segments.add(createParting(palette, lengths));
             }
             segments.add(new RibbonSegment(
                 palette.primaryColour(),
-                lengths.marketLengthUnits()));
+                lengths.stakeLengthUnits()));
         }
     }
 
     // The band's one kind of boundary, made once for both the places that need it: between two
-    // of an owner's holdings, and closing that owner's whole run where another owner's follows. Both
+    // of an owner's stakes, and closing that owner's whole run where another owner's follows. Both
     // are the same owner's dark shade at the same length, and stating that twice would let one
     // boundary drift into saying more than the other - which would read as a statement about the
     // owners being parted rather than as the boundary it is.

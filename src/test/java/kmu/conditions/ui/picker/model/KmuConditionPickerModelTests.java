@@ -8,25 +8,30 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuConditionPickerModelTests {
+
     private static final KmuConditionPickerLocation EMPTY_LOCATION =
-            new KmuConditionPickerLocation(null, null, null, null, null, null, null);
+        KmuConditionPickerLocation.createUnknownLocation();
 
     @Nested
     class FindEntry {
 
         @Test
         void returnsPresentForMatchingId() {
+
             var hotEntry = buildEntry("hot", KmuConditionPickerEntryState.PRESENT);
             var model = buildModel(hotEntry);
 
-            assertThat(model.findEntry("hot")).contains(hotEntry);
+            assertThat(model.findEntry("hot"))
+                .contains(hotEntry);
         }
 
         @Test
         void returnsEmptyForNonMatchingId() {
+
             var model = buildModel(buildEntry("hot", KmuConditionPickerEntryState.PRESENT));
 
-            assertThat(model.findEntry("cold")).isEmpty();
+            assertThat(model.findEntry("cold"))
+                .isEmpty();
         }
     }
 
@@ -35,12 +40,14 @@ class KmuConditionPickerModelTests {
 
         @Test
         void countsPresentNonHiddenEntries() {
-            var model = buildModel(
-                    buildEntry("hot", KmuConditionPickerEntryState.PRESENT),
-                    buildHiddenEntry("no_atmosphere"),
-                    buildEntry("cold", KmuConditionPickerEntryState.ABSENT));
 
-            assertThat(model.getVisibleCount()).isEqualTo(1);
+            var model = buildModel(
+                buildEntry("hot", KmuConditionPickerEntryState.PRESENT),
+                buildHiddenEntry("no_atmosphere"),
+                buildEntry("cold", KmuConditionPickerEntryState.ABSENT));
+
+            assertThat(model.getVisibleCount())
+                .isEqualTo(1);
         }
     }
 
@@ -49,12 +56,14 @@ class KmuConditionPickerModelTests {
 
         @Test
         void countsAbsentEntries() {
-            var model = buildModel(
-                    buildEntry("hot", KmuConditionPickerEntryState.PRESENT),
-                    buildEntry("cold", KmuConditionPickerEntryState.ABSENT),
-                    buildEntry("arid", KmuConditionPickerEntryState.ABSENT));
 
-            assertThat(model.getAvailableCount()).isEqualTo(2);
+            var model = buildModel(
+                buildEntry("hot", KmuConditionPickerEntryState.PRESENT),
+                buildEntry("cold", KmuConditionPickerEntryState.ABSENT),
+                buildEntry("arid", KmuConditionPickerEntryState.ABSENT));
+
+            assertThat(model.getAvailableCount())
+                .isEqualTo(2);
         }
     }
 
@@ -65,11 +74,17 @@ class KmuConditionPickerModelTests {
     }
 
     private static KmuConditionPickerEntry buildEntry(String id, KmuConditionPickerEntryState state) {
-        return new KmuConditionPickerEntry(id, id, null, state, null);
+
+        return new KmuConditionPickerEntry
+            .Builder(id, id, state)
+            .build();
     }
 
     private static KmuConditionPickerEntry buildHiddenEntry(String id) {
-        return new KmuConditionPickerEntry(
-                id, id, null, KmuConditionPickerEntryState.PRESENT, null, null, false, true);
+
+        return new KmuConditionPickerEntry
+            .Builder(id, id, KmuConditionPickerEntryState.PRESENT)
+            .withHidden(true)
+            .build();
     }
 }

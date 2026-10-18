@@ -70,7 +70,7 @@ class KmuConditionPickerLocationParagraphFactoryTests {
         void returnsHeaderAndUnknownWhenLocationHasNoDisplayableFields() {
 
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
-                buildModel(new KmuConditionPickerLocation(null, null, null, null, null, null, null)));
+                buildModel(KmuConditionPickerLocation.createUnknownLocation()));
 
             assertThat(paragraphs)
                 .hasSize(2);
@@ -154,8 +154,11 @@ class KmuConditionPickerLocationParagraphFactoryTests {
         void omitsSystemLineWhenSystemIsAbsent() {
 
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
-                buildModel(new KmuConditionPickerLocation(
-                    "Valis", "terran world", null, null, null, null, null)));
+                buildModel(new KmuConditionPickerLocation
+                    .Builder()
+                    .withPlanetName("Valis")
+                    .withPlanetType("terran world")
+                    .build()));
 
             // header + planet only
             assertThat(paragraphs)
@@ -168,8 +171,11 @@ class KmuConditionPickerLocationParagraphFactoryTests {
         void omitsConstellationLineWhenConstellationIsAbsent() {
 
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
-                buildModel(new KmuConditionPickerLocation(
-                    "Valis", null, null, "Corvus System", null, null, null)));
+                buildModel(new KmuConditionPickerLocation
+                    .Builder()
+                    .withPlanetName("Valis")
+                    .withStarSystemName("Corvus System")
+                    .build()));
 
             // header + planet + system; no constellation
             assertThat(paragraphs)
@@ -180,8 +186,12 @@ class KmuConditionPickerLocationParagraphFactoryTests {
         void omitsMissingLocationFields() {
             // Planet type whitespace is normalised to absent, no faction, no constellation
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
-                buildModel(new KmuConditionPickerLocation(
-                    "Valis", " ", null, "Corvus Star System", null, null, null)));
+                buildModel(new KmuConditionPickerLocation
+                    .Builder()
+                    .withPlanetName("Valis")
+                    .withPlanetType(" ")
+                    .withStarSystemName("Corvus Star System")
+                    .build()));
 
             assertThat(paragraphs)
                 .hasSize(3); // header + planet + system
@@ -195,8 +205,7 @@ class KmuConditionPickerLocationParagraphFactoryTests {
         void showsGravityWellEntityNameInSystemLineWhenNotImpliedBySystemName() {
 
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
-                buildModel(new KmuConditionPickerLocation(
-                    null, null, null, "Kumari System", "Yellow Dwarf", "Kumari A", null)));
+                buildModel(buildSystemLocation("Kumari System", "Yellow Dwarf", "Kumari A")));
 
             // header + system only
             var systemParagraph = paragraphs.get(1);
@@ -212,8 +221,7 @@ class KmuConditionPickerLocationParagraphFactoryTests {
         void suppressesGravityWellEntityNameInSystemLineWhenImpliedBySystemName() {
 
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
-                buildModel(new KmuConditionPickerLocation(
-                    null, null, null, "Agreus System", "Black Hole", "Agreus", null)));
+                buildModel(buildSystemLocation("Agreus System", "Black Hole", "Agreus")));
 
             var systemParagraph = paragraphs.get(1);
 
@@ -228,9 +236,7 @@ class KmuConditionPickerLocationParagraphFactoryTests {
         void deduplicatesGravityWellNameAndEntityNameForNonPlanetGravityWells() {
 
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
-                buildModel(new KmuConditionPickerLocation(
-                    null, null, null, "Kumari Star System", "Kumari Barycenter",
-                    "Kumari Barycenter", null)));
+                buildModel(buildSystemLocation("Kumari Star System", "Kumari Barycenter", "Kumari Barycenter")));
 
             var systemParagraph = paragraphs.get(1);
 
@@ -311,10 +317,10 @@ class KmuConditionPickerLocationParagraphFactoryTests {
         void defaultsMissingFactionAndRelationshipColoursToTextWhite() {
 
             var paragraphs = KmuConditionPickerLocationParagraphFactory.createParagraphs(
-                buildModel(new KmuConditionPickerLocation(
-                    null, null,
-                    new KmuPickerFaction("Hegemony", null, null, "Vengeful (-100 / 100)", null),
-                    null, null, null, null)));
+                buildModel(new KmuConditionPickerLocation
+                    .Builder()
+                    .withFaction(new KmuPickerFaction("Hegemony", null, null, "Vengeful (-100 / 100)", null))
+                    .build()));
 
             assertThat(paragraphs.get(1).getHighlights())
                 .extracting(Highlight::getColour)
@@ -328,13 +334,29 @@ class KmuConditionPickerLocationParagraphFactoryTests {
 
     private static KmuConditionPickerLocation createLocation() {
 
-        return new KmuConditionPickerLocation(
-            "Valis",
-            "terran world",
-            new KmuPickerFaction("Hegemony", FACTION, null, "Vengeful (-100 / 100)", RELATIONSHIP),
-            "Corvus Star System",
-            "yellow star",
-            "Corvus",
-            "Corvus");
+        return new KmuConditionPickerLocation
+            .Builder()
+            .withPlanetName("Valis")
+            .withPlanetType("terran world")
+            .withFaction(new KmuPickerFaction("Hegemony", FACTION, null, "Vengeful (-100 / 100)", RELATIONSHIP))
+            .withStarSystemName("Corvus Star System")
+            .withGravityWellTypeName("yellow star")
+            .withGravityWellName("Corvus")
+            .withConstellationName("Corvus")
+            .build();
+    }
+
+    // A location holding only its system line, which is where the gravity well's two names are drawn.
+    private static KmuConditionPickerLocation buildSystemLocation(
+            String starSystemName,
+            String gravityWellTypeName,
+            String gravityWellName) {
+
+        return new KmuConditionPickerLocation
+            .Builder()
+            .withStarSystemName(starSystemName)
+            .withGravityWellTypeName(gravityWellTypeName)
+            .withGravityWellName(gravityWellName)
+            .build();
     }
 }

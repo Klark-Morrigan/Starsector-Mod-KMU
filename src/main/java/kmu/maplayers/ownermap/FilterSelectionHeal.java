@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.KmuMod;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.sidebar.ScreenSelectionSlot;
 import kmu.maplayers.base.sidebar.SelectionSlot;
@@ -48,8 +49,8 @@ public final class FilterSelectionHeal {
      * <p>Every screen rather than the one being looked at, because what lapsed is a fact about the
      * sector: an owner removed or a group dissolved is gone from both panels' pickers, and a screen
      * healed only when it is next up would go on receding the sector behind an owner the player
-     * cannot unpick from the panel they are on. The screens are walked off
-     * {@link MapLayerScreens}, which is where how many there are is known.
+     * cannot unpick from the panel they are on. The screens are walked off the
+     * {@link MapLayerScreens} seated on the sector, which is where how many there are is known.
      *
      * <p>Each screen is judged under its own selected view, since the view is that screen's pick
      * as much as the spotlight is: a slot holding an owner ID is stale or sound according to the
@@ -74,7 +75,10 @@ public final class FilterSelectionHeal {
         if (sector == null) {
             return;
         }
-        for (var screenPicks : MapLayerScreens.getAllScreenPicks()) {
+
+        var screens = MapLayerScreens.resolveScreensIn(SectorMapMachineryIndex.resolveMachineryFor(sector));
+
+        for (var screenPicks : screens.getAllScreenPicks()) {
 
             var view = viewRegistry.getSelectedView(screenPicks.memoryScope());
 
@@ -84,6 +88,7 @@ public final class FilterSelectionHeal {
             if (view == null) {
                 continue;
             }
+
             FilterSelection.healStaleSelection(
                 new SelectionSlot(
                     new ScreenSelectionSlot(KmuMod.MAP_STORE_NAMESPACE, screenPicks.memoryScope()),
@@ -99,7 +104,10 @@ public final class FilterSelectionHeal {
      * @param viewRegistry the layer whose spotlights are healed, judged under that layer's own views
      */
     public static void healStaleSelectionAgainstLiveSector(MapLayerViewRegistry viewRegistry) {
-        healStaleSelectionAgainstActiveView(Global.getSector(), viewRegistry);
+
+        healStaleSelectionAgainstActiveView(
+            Global.getSector(),
+            viewRegistry);
     }
 
     /**
@@ -114,6 +122,7 @@ public final class FilterSelectionHeal {
      * @param viewRegistry the layer whose spotlights are healed
      */
     public static void installHealOnSettingsChange(MapLayerViewRegistry viewRegistry) {
+
         KmuLunaSettings.runOnSettingsChange(
             () -> healStaleSelectionAgainstLiveSector(viewRegistry));
     }
@@ -125,10 +134,12 @@ public final class FilterSelectionHeal {
     private static boolean isOwnerOfferedBy(OwnerPaintedView view, SectorAPI sector, String ownerId) {
 
         for (var owner : view.resolveOwnerPickerRead(sector).picker().items()) {
+
             if (owner.itemId().equals(ownerId)) {
                 return true;
             }
         }
+
         return false;
     }
 }

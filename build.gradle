@@ -72,13 +72,24 @@ enforcePackageVocabulary {
                         'dominance', 'dominant', 'claim', 'claims',
                         'nexerelin']
 
+    // The tier's core says *owner*. What a holder is, and the markets one is
+    // counted by, are the holder subtree's words.
     forbidWords under: 'kmu.maplayers.ownermap',
                 except: 'kmu.maplayers.ownermap.owners.holders',
                 words: ['faction', 'factions', 'colony', 'colonies',
-                        'bloc', 'blocs', 'alliance', 'alliances']
+                        'bloc', 'blocs', 'alliance', 'alliances',
+                        'holder', 'holders', 'market', 'markets']
 
-    allowWords words: ['faction', 'factions', 'colony', 'bloc', 'alliance', 'alliances'],
+    allowWords words: ['faction', 'factions', 'colony', 'bloc', 'alliance', 'alliances',
+                       'holder', 'holders', 'market', 'markets'],
             inFile: 'src/main/java/kmu/maplayers/ownermap/README.md'
+
+    // Two files that name the holder subtree's package: the owner seams'
+    // README, its parent, links it, and the static-state suite walks it.
+    allowWord word: 'holders',
+            inFile: 'src/main/java/kmu/maplayers/ownermap/owners/README.md'
+    allowWord word: 'holders',
+            inFile: 'src/test/java/kmu/maplayers/ownermap/OwnerMapStaticStateIntegrationTests.java'
 
     allowWord word: 'faction',
             inFile: 'src/test/java/kmu/maplayers/ownermap/RelayOwnerLayerIntegrationTests.java'

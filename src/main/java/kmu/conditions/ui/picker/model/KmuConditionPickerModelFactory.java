@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import kmu.conditions.domain.KmuConditionService;
 import kmu.conditions.domain.KmuConditionSpec;
 import kmu.conditions.domain.KmuEditableMarket;
-import kmu.conditions.domain.StarsectorEditableMarket;
 import kmu.conditions.ui.picker.tooltip.KmuConditionTooltipRenderer;
 import kmu.conditions.ui.picker.tooltip.StarsectorConditionTooltipRenderer;
 
@@ -59,16 +58,14 @@ public final class KmuConditionPickerModelFactory {
 
         var liveCondition = liveConditionFor(spec, state, market);
 
-        return new KmuConditionPickerEntry(
-            spec.getId(),
-            spec.getName(),
-            iconFor(spec, liveCondition),
-            state,
-            tooltipText(spec),
-            spec.getSourceModName(),
-            tooltipRendererFor(liveCondition).orElse(null),
-            isSuppressed(spec, state, market),
-            liveCondition.map(this::isHidden).orElse(false));
+        return new KmuConditionPickerEntry.Builder(spec.getId(), spec.getName(), state)
+            .withIcon(iconFor(spec, liveCondition))
+            .withTooltipText(tooltipText(spec))
+            .withSourceModName(spec.getSourceModName())
+            .withTooltipRenderer(tooltipRendererFor(liveCondition).orElse(null))
+            .withSuppressed(isSuppressed(spec, state, market))
+            .withHidden(liveCondition.map(this::isHidden).orElse(false))
+            .build();
     }
 
     private String tooltipText(KmuConditionSpec spec) {
@@ -111,14 +108,12 @@ public final class KmuConditionPickerModelFactory {
             KmuConditionPickerEntryState state,
             KmuEditableMarket market) {
 
-        if (state != KmuConditionPickerEntryState.PRESENT
-                || !(market instanceof StarsectorEditableMarket)) {
-
+        if (state != KmuConditionPickerEntryState.PRESENT) {
             return Optional.empty();
         }
 
         try {
-            return ((StarsectorEditableMarket) market).findCondition(spec.getId());
+            return market.findCondition(spec.getId());
 
         } catch (RuntimeException runtimeException) {
             return Optional.empty();

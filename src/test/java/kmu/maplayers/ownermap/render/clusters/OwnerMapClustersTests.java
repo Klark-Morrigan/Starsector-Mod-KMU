@@ -193,7 +193,7 @@ final class OwnerMapClustersTests {
     class PutStyledClusterGroup {
 
         @Test
-        void recordsTheOwnersGroupUnderItsHolder() {
+        void recordsTheOwnersGroupUnderItsOwner() {
 
             var clusterGroup = buildAnyStyledClusterGroup();
             var clusters = buildDrawablesWith(Map.of(), Map.of());
@@ -406,7 +406,7 @@ final class OwnerMapClustersTests {
         }
     }
 
-    // A clusters holding the given holders, the one input the cluster index is derived from;
+    // A clusters holding the given owners, the one input the cluster index is derived from;
     // every other slot is an inert placeholder.
     private static OwnerMapClusters buildOwnedBy(Map<String, String> ownerIdBySystemId) {
 

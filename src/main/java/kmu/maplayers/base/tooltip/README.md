@@ -267,6 +267,13 @@ being the very content that level exists to show -
   Cut on the indent instead,
   a listing would lose exactly what it was asked for.
 
+Everything a line states in its value column is one part of it (`CellTooltipLineValue`):
+the words for the value,
+the number behind them where the block counts one,
+the working,
+and whether anything earned the number.
+The refinements below restate that part and leave the name alone.
+
 A line's number may itself be two things -
 a finding and the working it came out of,
 such as the rate one of a counted thing is worth over what the count came to.
@@ -355,11 +362,17 @@ A separate factory rather than a refinement,
 and word lengths rather than the name:
 what the line must not show never reaches it,
 so no later change is in a position to draw it.
-The two accounts of what a line is called are exclusive at construction -
-said or withheld,
-never both -
-and a line withholding its name cannot gild a stretch of it,
-there being no letters to match.
+The two accounts of what a line is called are the two cases of one sealed type (`CellTooltipLineName`):
+`Spoken` holds the words and any finding inside them,
+`Withheld` holds the word lengths.
+So a line carrying both,
+or neither,
+has no spelling,
+and a reader of the name states both cases through `selectByCase`.
+A line withholding its name cannot gild a stretch of it,
+there being no letters to match;
+`callsOutInLabel` refuses one at runtime,
+since the line is one type whichever name it carries.
 
 A line may also state where it falls in an ordering (`indexedAt`),
 as a `CellTooltipIndexPlace` -

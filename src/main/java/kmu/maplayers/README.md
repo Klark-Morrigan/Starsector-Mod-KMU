@@ -194,9 +194,11 @@ A tier named after one of its layers is that layer with extra callers,
 which is exactly what a second painting layer could not build on.
 
 The tier's core is closed one step further,
-to the words that say what a holder is:
+to the words that say what a holder is and what it is counted by:
+*holder*,
 *faction*,
 *colony*,
+*market*,
 *bloc*
 and *alliance*.
 Its holder answers under `owners/holders` keep them,
@@ -256,7 +258,7 @@ so "which layer is active" cannot be one shared value:
 it would paint the sector map's pick onto the intel screen
 and ignore the tab the player is looking at.
 Each screen holds its own `PersistedActiveLayerSelection` under its own key in `MapLayerScreens`,
-and `MapLayerRegistry.isDrawnLayer` resolves which is live per frame from which screen is up.
+and `MapLayerScreens.resolveDrawnLayer` resolves which is live per frame from which screen is up.
 
 A screen's key is composed rather than spelled:
 `ScreenMemoryScope` appends that screen's segment to a preference's own base key (`$kmu_political_active_layer` + `map`),

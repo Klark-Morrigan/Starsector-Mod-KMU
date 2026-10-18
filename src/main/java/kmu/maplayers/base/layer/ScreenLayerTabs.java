@@ -55,8 +55,8 @@ public final class ScreenLayerTabs {
     public static List<MapLayer> resolveTabbedLayers(ScreenLayerPicks screenPicks) {
 
         var arrangedLayers = ArrangedLayers.arrangeVisibleLayers(
-            LiveMapLayerArrangement.resolveArrangement(),
-            MapLayerRegistry.getLayers());
+            screenPicks.layerArrangement().resolveArrangement(),
+            screenPicks.layerRegistry().getLayers());
 
         if (!screenPicks.layerVisibility().hasControlBeenAttached()) {
             return arrangedLayers;
@@ -80,8 +80,8 @@ public final class ScreenLayerTabs {
     public static OfferedTabsRevision readOfferedTabsRevision(ScreenLayerPicks screenPicks) {
 
         return new OfferedTabsRevision(
-            LiveMapLayerArrangement.resolveArrangement(),
-            MapLayerRegistry.getLayers(),
+            screenPicks.layerArrangement().resolveArrangement(),
+            screenPicks.layerRegistry().getLayers(),
             screenPicks.layerVisibility().hasControlBeenAttached());
     }
 

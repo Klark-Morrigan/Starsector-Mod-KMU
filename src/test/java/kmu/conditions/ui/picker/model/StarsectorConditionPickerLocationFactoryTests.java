@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.characters.RelationshipAPI;
 import com.fs.starfarer.api.impl.campaign.procgen.Constellation;
 import com.fs.starfarer.api.impl.campaign.procgen.StarAge;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,18 +41,33 @@ class StarsectorConditionPickerLocationFactoryTests {
     class Create {
 
         @Test
-        void returnsUnknownLocationForNonStarsectorMarket() {
+        void returnsUnknownLocationForMarketWithNoStarsectorMarket() {
 
-            var fakeMarket = new KmuEditableMarket() {
-                @Override public Set<String> getConditionIds() { return Set.of(); }
-                @Override public boolean hasCondition(String id) { return false; }
-                @Override public boolean isConditionSuppressed(String id) { return false; }
+            var marketFake = new KmuEditableMarket() {
+
+                @Override public Set<String> getConditionIds() {
+                    return Set.of(); }
+
+                @Override public boolean hasCondition(String id) {
+                    return false; }
+
+                @Override public boolean isConditionSuppressed(String id) {
+                    return false; }
+
+                @Override public Optional<MarketAPI> findStarsectorMarket() {
+                    return Optional.empty(); }
+
+                @Override public Optional<MarketConditionAPI> findCondition(String id) {
+                    return Optional.empty(); }
+
                 @Override public void addCondition(String id) {}
+
                 @Override public void markConditionSurveyed(String id) {}
+
                 @Override public void reapplyConditions() {}
             };
 
-            var location = factory.create(fakeMarket);
+            var location = factory.create(marketFake);
 
             assertThat(location.getPlanetName())
                 .isEmpty();

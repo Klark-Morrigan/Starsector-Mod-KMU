@@ -7,11 +7,13 @@ import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipLineName;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -109,20 +111,8 @@ final class RedactedMarketLinesTests {
             // The shape says how many words there were and how long each ran, and nothing about which
             // letters. The name itself never reaches the line, so there is nothing on it a later change
             // could draw.
-            assertThat(buildRedactedLine().redactedWordLengths())
-                .containsExactly(7, 9);
-        }
-
-        @Test
-        void statesNoNameBesideTheBlocks() {
-            // The exclusive half of the line's own rule, asserted here because this is the caller that
-            // has the name in hand and is meant to drop it.
-            var line = buildRedactedLine();
-
-            assertThat(line.hasRedactedName())
-                .isTrue();
-            assertThat(line.labelText())
-                .isNull();
+            assertThat(buildRedactedLine().name())
+                .isEqualTo(new CellTooltipLineName.Withheld(List.of(7, 9)));
         }
 
         @Test
@@ -167,7 +157,7 @@ final class RedactedMarketLinesTests {
         void carriesTheNumberTheAccountHandsIt() {
             // What a row may state is the account's answer rather than this rule's, so the value
             // arrives already decided and is laid in the same column as every other line's.
-            assertThat(buildRedactedLine().valueText())
+            assertThat(buildRedactedLine().value().valueText())
                 .isEqualTo(A_STATED_SCORE);
         }
 
@@ -177,7 +167,7 @@ final class RedactedMarketLinesTests {
             // player has not found.
             assertThat(RedactedMarketLines
                     .createRedactedLine(buildWithheldMarket(), CellTooltipEntryLine.NO_SCORE)
-                    .valueText())
+                    .value().valueText())
                 .isEqualTo(CellTooltipEntryLine.NO_SCORE);
         }
 

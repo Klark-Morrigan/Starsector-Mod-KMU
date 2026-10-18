@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelText;
 import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.GROUP_BLOC_ID;
 import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.buildGroupOf;
@@ -115,7 +116,7 @@ final class StandingRowResolverTests {
                 .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
                 .resolveRows(standings);
 
-            assertThat(entries.get(0).line().valueText())
+            assertThat(entries.get(0).line().value().valueText())
                 .isEqualTo("1,200");
         }
 
@@ -325,7 +326,7 @@ final class StandingRowResolverTests {
                         new StandingFraction(1, 1),
                         Map.of("astral_armada", new StandingFraction(1, 3)))));
 
-            assertThat(entries.get(0).line().isValueUncounted())
+            assertThat(entries.get(0).line().value().isValueUncounted())
                 .isTrue();
         }
 
@@ -359,7 +360,7 @@ final class StandingRowResolverTests {
                 .resolveRows(standings);
 
             assertThat(entries)
-                .extracting(entry -> entry.line().labelText())
+                .extracting(entry -> readLabelText(entry.line()))
                 .containsExactly("The Hegemony", "Tri-Tachyon");
         }
 
@@ -531,11 +532,11 @@ final class StandingRowResolverTests {
                 .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
                 .resolveRows(standings);
 
-            assertThat(entries.get(0).line().isValueUncounted())
+            assertThat(entries.get(0).line().value().isValueUncounted())
                 .isTrue();
-            assertThat(entries.get(0).line().labelText())
+            assertThat(readLabelText(entries.get(0).line()))
                 .isEqualTo("Tri-Tachyon");
-            assertThat(entries.get(0).line().valueText())
+            assertThat(entries.get(0).line().value().valueText())
                 .isEqualTo("0");
         }
 
@@ -555,7 +556,7 @@ final class StandingRowResolverTests {
                 .createForBox(sectorMock, HolderGrouping.identity(), NO_ACCOUNT)
                 .resolveRows(standings);
 
-            assertThat(entries.get(0).line().isValueUncounted())
+            assertThat(entries.get(0).line().value().isValueUncounted())
                 .isFalse();
         }
 
@@ -577,10 +578,10 @@ final class StandingRowResolverTests {
                 .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
                 .resolveRows(standings);
 
-            assertThat(entries.get(0).line().isValueUncounted())
+            assertThat(entries.get(0).line().value().isValueUncounted())
                 .isTrue();
             assertThat(entries.get(0).children())
-                .allMatch(member -> member.line().isValueUncounted());
+                .allMatch(member -> member.line().value().isValueUncounted());
         }
 
         @Test
@@ -601,10 +602,10 @@ final class StandingRowResolverTests {
                 .createForBox(sectorMock, buildAllianceGrouping(), NO_ACCOUNT)
                 .resolveRows(standings);
 
-            assertThat(entries.get(0).line().isValueUncounted())
+            assertThat(entries.get(0).line().value().isValueUncounted())
                 .isFalse();
             assertThat(entries.get(0).children())
-                .extracting(member -> member.line().isValueUncounted())
+                .extracting(member -> member.line().value().isValueUncounted())
                 .containsExactly(false, true);
         }
     }

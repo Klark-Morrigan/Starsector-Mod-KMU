@@ -34,6 +34,9 @@ import static org.mockito.Mockito.when;
  * <p>And the two ends of the range: a layer that states no pair is left alone by both halves, and
  * the switch that takes the whole feature back reaches every layer that was standing whatever the
  * player arranged.
+ *
+ * <p>The roster and the arrangement are read off the screens seated on each sector's machinery, so
+ * every case seats its screens there as the composition root does.
  */
 final class MapLayerStandingsTests {
 
@@ -55,27 +58,21 @@ final class MapLayerStandingsTests {
     @BeforeEach
     void stateWhatEachLayerAnswers() {
 
-        when(wiredLayerMock.getId()).thenReturn(WIRED_LAYER_ID);
-        when(wiredLayerMock.resolveStanding()).thenReturn(standingMock);
+        when(wiredLayerMock.getId())
+            .thenReturn(WIRED_LAYER_ID);
+        when(wiredLayerMock.resolveStanding())
+            .thenReturn(standingMock);
 
-        when(otherWiredLayerMock.getId()).thenReturn(OTHER_WIRED_LAYER_ID);
-        when(otherWiredLayerMock.resolveStanding()).thenReturn(otherStandingMock);
+        when(otherWiredLayerMock.getId())
+            .thenReturn(OTHER_WIRED_LAYER_ID);
+        when(otherWiredLayerMock.resolveStanding())
+            .thenReturn(otherStandingMock);
 
         // The layer with no sector wiring at all, which is what an always-standing tab looks like.
-        when(pairlessLayerMock.getId()).thenReturn(PAIRLESS_LAYER_ID);
-        when(pairlessLayerMock.resolveStanding()).thenReturn(null);
-    }
-
-    @AfterEach
-    void restoreTheRosterThisCaseReplaced() {
-        // The registry is static, so a roster of stand-ins would otherwise outlive its case.
-        MapLayerRosters.restoreNonEmptyRoster();
-    }
-
-    @AfterEach
-    void forgetTheArrangementThisCaseMade() {
-        // The holder is static too, so a bar arranged here would otherwise reorder every later row.
-        MapLayerArrangements.forgetTheArrangement();
+        when(pairlessLayerMock.getId())
+            .thenReturn(PAIRLESS_LAYER_ID);
+        when(pairlessLayerMock.resolveStanding())
+            .thenReturn(null);
     }
 
     @AfterEach
@@ -91,13 +88,12 @@ final class MapLayerStandingsTests {
         @Test
         void standsALayerOnTheBarUpOnTheLoadedSector() {
 
-            MapLayerRosters.replaceRosterWith(wiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-            SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            seatScreensOn(sectorMock, createArrangedBarHiding(), wiredLayerMock);
 
             MapLayerStandings.applyArrangementTo(sectorMock);
 
-            verify(standingMock).standLayerUpOn(sectorMock);
+            verify(standingMock)
+                .standLayerUpOn(sectorMock);
         }
 
         @Test
@@ -105,13 +101,12 @@ final class MapLayerStandingsTests {
             // The whole point of the hidden set having teeth: a tab the player took off the bar in a
             // past session does not start listening again at the next load, having nowhere to be
             // looked at from.
-            MapLayerRosters.replaceRosterWith(wiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of(WIRED_LAYER_ID));
-            SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            seatScreensOn(sectorMock, createArrangedBarHiding(WIRED_LAYER_ID), wiredLayerMock);
 
             MapLayerStandings.applyArrangementTo(sectorMock);
 
-            verify(standingMock, never()).standLayerUpOn(sectorMock);
+            verify(standingMock, never())
+                .standLayerUpOn(sectorMock);
         }
 
         @Test
@@ -119,14 +114,13 @@ final class MapLayerStandingsTests {
             // Asked twice over an unmoved bar - a settings change, a second load path - and the
             // second ask is worth nothing. Standing up what already stands is what would drop a
             // layer's caches and re-register its listeners for no reason the player could see.
-            MapLayerRosters.replaceRosterWith(wiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-            SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            seatScreensOn(sectorMock, createArrangedBarHiding(), wiredLayerMock);
 
             MapLayerStandings.applyArrangementTo(sectorMock);
             MapLayerStandings.applyArrangementTo(sectorMock);
 
-            verify(standingMock, times(1)).standLayerUpOn(sectorMock);
+            verify(standingMock, times(1))
+                .standLayerUpOn(sectorMock);
         }
 
         @Test
@@ -134,13 +128,16 @@ final class MapLayerStandingsTests {
             // A layer with no sector wiring is simply always standing. There is no half to run in
             // either direction, and a walk that assumed one would take every layer after it in the
             // row down with the exception.
-            MapLayerRosters.replaceRosterWith(pairlessLayerMock, wiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAIRLESS_LAYER_ID));
-            SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            seatScreensOn(
+                sectorMock,
+                createArrangedBarHiding(PAIRLESS_LAYER_ID),
+                pairlessLayerMock,
+                wiredLayerMock);
 
             MapLayerStandings.applyArrangementTo(sectorMock);
 
-            verify(standingMock).standLayerUpOn(sectorMock);
+            verify(standingMock)
+                .standLayerUpOn(sectorMock);
         }
 
         @Test
@@ -148,12 +145,10 @@ final class MapLayerStandingsTests {
             // The switch can be flipped with no game loaded, and a load with the overlay off installs
             // nothing. There is no sector to stand up on, and a standing recorded against the holder
             // every sector-less caller shares would be inherited by the next real one.
-            MapLayerRosters.replaceRosterWith(wiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-
             MapLayerStandings.applyArrangementTo(sectorMock);
 
-            verify(standingMock, never()).standLayerUpOn(sectorMock);
+            verify(standingMock, never())
+                .standLayerUpOn(sectorMock);
         }
 
         @Test
@@ -163,14 +158,13 @@ final class MapLayerStandingsTests {
             doThrow(new IllegalStateException("stand-up refused"))
                 .when(standingMock).standLayerUpOn(sectorMock);
 
-            MapLayerRosters.replaceRosterWith(wiredLayerMock, otherWiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-            SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            seatScreensOn(sectorMock, createArrangedBarHiding(), wiredLayerMock, otherWiredLayerMock);
 
             assertThatCode(() -> MapLayerStandings.applyArrangementTo(sectorMock))
                 .doesNotThrowAnyException();
 
-            verify(otherStandingMock).standLayerUpOn(sectorMock);
+            verify(otherStandingMock)
+                .standLayerUpOn(sectorMock);
         }
     }
 
@@ -181,31 +175,35 @@ final class MapLayerStandingsTests {
         void standsAHiddenLayerDownOnEverySector() {
             // The bar is one preference for every campaign, so a tab taken off it stops costing
             // wherever the player goes rather than only on the sector they were looking at.
-            MapLayerRosters.replaceRosterWith(wiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-            SectorMapMachineryIndex.installMachineryOn(sectorMock);
-            SectorMapMachineryIndex.installMachineryOn(otherSectorMock);
+            var layerArrangement = MapLayerArrangements.createRearrangeableBar(List.of(), List.of());
+            var screens = seatScreensOn(sectorMock, layerArrangement, wiredLayerMock);
+
+            SectorMapMachineryIndex.installMachineryOn(otherSectorMock, screens);
 
             MapLayerStandings.applyArrangementWhereverInstalled();
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of(WIRED_LAYER_ID));
+            MapLayerArrangements.rearrangeBar(layerArrangement, List.of(), List.of(WIRED_LAYER_ID));
             MapLayerStandings.applyArrangementWhereverInstalled();
 
-            verify(standingMock).standLayerDownFrom(sectorMock);
-            verify(standingMock).standLayerDownFrom(otherSectorMock);
+            verify(standingMock)
+                .standLayerDownFrom(sectorMock);
+            verify(standingMock)
+                .standLayerDownFrom(otherSectorMock);
         }
 
         @Test
         void standsALayerPutBackOnTheBarUpAgain() {
             // The way back has to work, the dialog being the only place a hidden tab returns from.
-            MapLayerRosters.replaceRosterWith(wiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of(WIRED_LAYER_ID));
-            SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            var layerArrangement =
+                MapLayerArrangements.createRearrangeableBar(List.of(), List.of(WIRED_LAYER_ID));
+
+            seatScreensOn(sectorMock, layerArrangement, wiredLayerMock);
 
             MapLayerStandings.applyArrangementWhereverInstalled();
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of());
+            MapLayerArrangements.rearrangeBar(layerArrangement, List.of(), List.of());
             MapLayerStandings.applyArrangementWhereverInstalled();
 
-            verify(standingMock).standLayerUpOn(sectorMock);
+            verify(standingMock)
+                .standLayerUpOn(sectorMock);
         }
 
         @Test
@@ -213,20 +211,24 @@ final class MapLayerStandingsTests {
             // A move writes the whole arrangement back, so the second walk sees the same hidden set
             // in a different order. Nothing has moved between shown and hidden, and a layer torn
             // down and rebuilt by a drag is the cost this diff exists to refuse.
-            MapLayerRosters.replaceRosterWith(wiredLayerMock, otherWiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(
+            var layerArrangement = MapLayerArrangements.createRearrangeableBar(
                 List.of(WIRED_LAYER_ID, OTHER_WIRED_LAYER_ID),
                 List.of());
-            SectorMapMachineryIndex.installMachineryOn(sectorMock);
+
+            seatScreensOn(sectorMock, layerArrangement, wiredLayerMock, otherWiredLayerMock);
 
             MapLayerStandings.applyArrangementWhereverInstalled();
-            MapLayerArrangements.arrangeBarWith(
+            MapLayerArrangements.rearrangeBar(
+                layerArrangement,
                 List.of(OTHER_WIRED_LAYER_ID, WIRED_LAYER_ID),
                 List.of());
+
             MapLayerStandings.applyArrangementWhereverInstalled();
 
-            verify(standingMock, times(1)).standLayerUpOn(sectorMock);
-            verify(standingMock, never()).standLayerDownFrom(sectorMock);
+            verify(standingMock, times(1))
+                .standLayerUpOn(sectorMock);
+            verify(standingMock, never())
+                .standLayerDownFrom(sectorMock);
         }
     }
 
@@ -237,28 +239,51 @@ final class MapLayerStandingsTests {
         void takesAStandingLayerDownWhateverTheBarSays() {
             // The switch that turns the map layers off decides nothing about the bar: it ends every
             // layer at once, and it is the path a player uninstalls the mod from a save through.
-            MapLayerRosters.replaceRosterWith(wiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-            SectorMapMachineryIndex.installMachineryOn(sectorMock);
-            MapLayerStandings.applyArrangementTo(sectorMock);
+            seatScreensOn(sectorMock, createArrangedBarHiding(), wiredLayerMock);
 
+            MapLayerStandings.applyArrangementTo(sectorMock);
             MapLayerStandings.standEveryLayerDownFrom(sectorMock);
 
-            verify(standingMock).standLayerDownFrom(sectorMock);
+            verify(standingMock)
+                .standLayerDownFrom(sectorMock);
         }
 
         @Test
         void leavesALayerThatNeverStoodAlone() {
             // Nothing was registered for a hidden layer, so there is nothing to take back - and a
             // stand-down aimed at it would have a layer's own idempotence carrying the mistake.
-            MapLayerRosters.replaceRosterWith(wiredLayerMock);
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of(WIRED_LAYER_ID));
-            SectorMapMachineryIndex.installMachineryOn(sectorMock);
-            MapLayerStandings.applyArrangementTo(sectorMock);
+            seatScreensOn(sectorMock, createArrangedBarHiding(WIRED_LAYER_ID), wiredLayerMock);
 
+            MapLayerStandings.applyArrangementTo(sectorMock);
             MapLayerStandings.standEveryLayerDownFrom(sectorMock);
 
-            verify(standingMock, never()).standLayerDownFrom(sectorMock);
+            verify(standingMock, never())
+                .standLayerDownFrom(sectorMock);
         }
+    }
+
+    // A bar a past session left, with the given tabs taken off it and nothing reordered.
+    private static LiveMapLayerArrangement createArrangedBarHiding(String... hiddenLayerIds) {
+
+        return MapLayerArrangements.createArrangedBar(
+            List.of(),
+            List.of(hiddenLayerIds));
+    }
+
+    // Installs the sector's machinery with screens over exactly these layers seated on it, which is
+    // what the walk reads the roster and the arrangement off.
+    private static MapLayerScreens seatScreensOn(
+            SectorAPI sector,
+            LiveMapLayerArrangement layerArrangement,
+            MapLayer... layers) {
+
+        var screens = MapLayerRosters.createScreensOver(
+            MapLayerRosters.createRosterOf(layers),
+            layerArrangement,
+            null);
+
+        SectorMapMachineryIndex.installMachineryOn(sector, screens);
+
+        return screens;
     }
 }

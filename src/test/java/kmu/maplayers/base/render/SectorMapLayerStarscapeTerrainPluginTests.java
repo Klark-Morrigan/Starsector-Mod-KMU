@@ -1,7 +1,6 @@
 package kmu.maplayers.base.render;
 
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.settings.KmuMapHoverSettings;
@@ -24,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -57,27 +57,19 @@ final class SectorMapLayerStarscapeTerrainPluginTests {
     // the shipped default and the state these cases mean to describe.
     private MockedStatic<KmuMapHoverSettings> mapLayerSettingsMock;
 
-    // Stood in for the class, but left unstubbed until a case asks: the stand-aside case asserts that
-    // the registry was never reached at all, which a stubbing set up for every case would spend.
-    private MockedStatic<MapLayerRegistry> layerRegistryMock;
-
-    // The screens' own stand-in, opened beside it: the surface asks the registry what draws and the
-    // screens how far through a hide the showing one stands, and a case posing one poses both.
-    private MockedStatic<MapLayerScreens> layerScreensMock;
+    // The screens seated on the sector each case installs, which the surface asks what draws and how
+    // far through a hide the showing screen stands. Left unstubbed until a case asks: the stand-aside
+    // case states that they were never reached at all, which a stubbing set up for every case would
+    // spend.
+    private final MapLayerScreens screensMock = mock(MapLayerScreens.class);
 
     @BeforeEach
-    void standInForTheLayerRegistryAndSettings() {
-
+    void standInForTheSettings() {
         mapLayerSettingsMock = mockStatic(KmuMapHoverSettings.class);
-        layerRegistryMock = mockStatic(MapLayerRegistry.class);
-        layerScreensMock = mockStatic(MapLayerScreens.class);
     }
 
     @AfterEach
-    void releaseTheLayerRegistryAndSettings() {
-
-        layerScreensMock.close();
-        layerRegistryMock.close();
+    void releaseTheSettings() {
         mapLayerSettingsMock.close();
     }
 
@@ -98,12 +90,9 @@ final class SectorMapLayerStarscapeTerrainPluginTests {
         when(drawingLayerMock.resolveRenderer(any()))
             .thenReturn(layerRendererMock);
 
-        layerRegistryMock
-            .when(MapLayerRegistry::getDrawnLayer)
+        when(screensMock.resolveDrawnLayer())
             .thenReturn(drawingLayerMock);
-
-        layerScreensMock
-            .when(MapLayerScreens::resolveShownFadeOnLiveScreen)
+        when(screensMock.resolveShownFadeOnLiveScreen())
             .thenReturn(FULLY_SHOWN);
     }
 
@@ -115,7 +104,7 @@ final class SectorMapLayerStarscapeTerrainPluginTests {
 
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screensMock, plugin);
             stubTheActiveLayersRendererOnAShownScreen();
 
             plugin.renderOnMap(FACTOR, ALPHA_MULT);
@@ -130,7 +119,7 @@ final class SectorMapLayerStarscapeTerrainPluginTests {
             // sits beneath the nebulae, so anything it emits is drawn beneath them whatever it is.
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screensMock, plugin);
             stubTheActiveLayersRendererOnAShownScreen();
 
             plugin.renderOnMap(FACTOR, ALPHA_MULT);
@@ -145,7 +134,7 @@ final class SectorMapLayerStarscapeTerrainPluginTests {
             // Starscape is the look on screen.
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screensMock, plugin);
             stubTheActiveLayersRendererOnAShownScreen();
 
             plugin.renderOnMap(FACTOR, ALPHA_MULT);
@@ -161,7 +150,7 @@ final class SectorMapLayerStarscapeTerrainPluginTests {
             // other pass drew - the fault this arrangement exists to close.
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screensMock, plugin);
             stubTheActiveLayersRendererOnAShownScreen();
 
             plugin.renderOnMap(FACTOR, ALPHA_MULT);
@@ -184,7 +173,7 @@ final class SectorMapLayerStarscapeTerrainPluginTests {
 
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(countedRead);
             var abovePlugin = new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(countedRead);
-            var machinery = seatSurfacesInAnInstalledSector(plugin, abovePlugin);
+            var machinery = seatSurfacesInAnInstalledSector(screensMock, plugin, abovePlugin);
 
             stubTheActiveLayersRendererOnAShownScreen();
 
@@ -205,12 +194,11 @@ final class SectorMapLayerStarscapeTerrainPluginTests {
             // keeping it off the map while the base half is the one already drawing there.
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> false);
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screensMock, plugin);
 
             plugin.renderOnMap(FACTOR, ALPHA_MULT);
 
-            layerRegistryMock
-                .verifyNoInteractions();
+            verifyNoInteractions(screensMock);
         }
     }
 }

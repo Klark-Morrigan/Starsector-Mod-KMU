@@ -112,7 +112,7 @@ public final class CellRibbonBuilder {
 
         // The names are carved off the path rather than off the plan, and that is the whole of
         // how a band keeps out of a name's room. Cutting the plan instead would leave a run
-        // partly eaten, and a run's length is the readout - a holding drawn two thirds as long as
+        // partly eaten, and a run's length is the readout - a stake drawn two thirds as long as
         // its neighbours says something false about the system. Carved off the path, what a name
         // costs is room, which the clamp below already knows how to answer.
         var clearArcs = path.findClearArcs(nameBoxes);

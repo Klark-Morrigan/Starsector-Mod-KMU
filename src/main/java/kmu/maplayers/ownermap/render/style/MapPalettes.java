@@ -107,7 +107,7 @@ public final class MapPalettes {
      * now". The two diverge under a recede: a cell the map has sunk to grey still belongs to
      * its owner, and an element whose whole job is to name that owner should say so.
      */
-    public static Color pickHolderPaletteColour(
+    public static Color pickOwnerPaletteColour(
             ElementPaintSelection paintSelection,
             SystemOwner owner,
             Color neutralColour) {

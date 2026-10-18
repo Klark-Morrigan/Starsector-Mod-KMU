@@ -5,9 +5,8 @@ import kmlib.starsector.ui.map.probes.ShownMapTab;
 import kmlib.starsector.ui.modal.ModalPanel;
 
 import kmu.maplayers.base.compatibility.MapLayerGameReach;
-import kmu.maplayers.base.layer.LiveMapLayerArrangement;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerStandings;
+import kmu.maplayers.base.layer.ScreenLayerPicks;
 
 /**
  * The dialog the player arranges the layer bar in: what is being arranged, when it may be started,
@@ -93,14 +92,17 @@ public final class MapLayerArrangementDialog {
      * where the core UI cannot be reached to stand a panel in - all three leaving the screen as it was
      * rather than half-opening. A dialog reopened while it is still fading out keeps the box it has and
      * comes back up from where the fade stood.
+     *
+     * @param screenPicks the picks of the screen whose bar the player reached for it on, which carry the
+     *                    roster being arranged and the store the arrangement is recorded to
      */
-    public void openDialog() {
+    public void openDialog(ScreenLayerPicks screenPicks) {
 
         if (isDialogRaised()) {
             return;
         }
 
-        var arrangementSelection = LiveMapLayerArrangement.resolveArrangementSelection();
+        var arrangementSelection = screenPicks.layerArrangement().resolveArrangementSelection();
         if (arrangementSelection == null) {
             return;
         }
@@ -109,7 +111,7 @@ public final class MapLayerArrangementDialog {
             return;
         }
 
-        editor = new MapLayerArrangementEditor(arrangementSelection, MapLayerRegistry.getLayers());
+        editor = new MapLayerArrangementEditor(arrangementSelection, screenPicks.layerRegistry().getLayers());
 
         rebuildBody();
     }

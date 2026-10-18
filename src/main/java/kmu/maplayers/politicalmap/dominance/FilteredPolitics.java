@@ -100,7 +100,7 @@ public final class FilteredPolitics {
             return SelectedBlocPresence.ABSENT;
         }
 
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(
+        var dominantBlocId = SystemDominance.resolveDominantBlocId(
             footprintByBlocId,
             rankingRules);
 

@@ -3,6 +3,8 @@ package kmu.conditions.ui.picker.dialog;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.InteractionDialogAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 
 import kmu.conditions.domain.KmuConditionRepository;
 import kmu.conditions.domain.KmuConditionService;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,55 +31,65 @@ class StarsectorInteractionDialogPickerOpenerTests {
 
         @Test
         void opensDelegateWithConfiguredDimensions() {
+
             var openedDelegate = new AtomicReference<KmuConditionPickerDialogDelegate>();
             var openedWidth = new AtomicReference<Float>();
             var openedHeight = new AtomicReference<Float>();
             var dialog = buildDialog(openedDelegate, openedWidth, openedHeight);
             var opener = new StarsectorInteractionDialogPickerOpener(
-                    buildSector(buildCampaignUI(dialog)));
+                buildSector(buildCampaignUI(dialog)));
+
             var delegate = buildDelegate(640f, 480f);
 
             opener.open(delegate);
 
-            assertThat(openedDelegate).hasValue(delegate);
-            assertThat(openedWidth).hasValue(640f);
-            assertThat(openedHeight).hasValue(480f);
+            assertThat(openedDelegate)
+                .hasValue(delegate);
+            assertThat(openedWidth)
+                .hasValue(640f);
+            assertThat(openedHeight)
+                .hasValue(480f);
         }
 
         @Test
         void failsWhenCampaignUiIsMissing() {
+
             var opener = new StarsectorInteractionDialogPickerOpener(
-                    buildSector(null));
+                buildSector(null));
 
             assertThatThrownBy(() -> opener.open(buildDelegate(640f, 480f)))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessage("No campaign UI is active.");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("No campaign UI is active.");
         }
 
         @Test
         void failsWhenInteractionDialogIsMissing() {
+
             var opener = new StarsectorInteractionDialogPickerOpener(
-                    buildSector(buildCampaignUI(null)));
+                buildSector(buildCampaignUI(null)));
 
             assertThatThrownBy(() -> opener.open(buildDelegate(640f, 480f)))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessage("No interaction dialog is active.");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("No interaction dialog is active.");
         }
     }
 
     private static KmuConditionPickerDialogDelegate buildDelegate(float width, float height) {
+
         return new KmuConditionPickerDialogDelegate(
-                new KmuConditionPickerActionHandler(
-                        new KmuConditionService(buildEmptyRepository()),
-                        new KmuConditionPickerModelFactory(new KmuConditionService(buildEmptyRepository())),
-                        new KmuEditableMarketStub()),
-                feedback -> { },
-                width,
-                height);
+            new KmuConditionPickerActionHandler(
+                new KmuConditionService(buildEmptyRepository()),
+                new KmuConditionPickerModelFactory(new KmuConditionService(buildEmptyRepository())),
+                new EditableMarketFake()),
+            feedback -> { },
+            width,
+            height);
     }
 
     private static KmuConditionRepository buildEmptyRepository() {
+
         return new KmuConditionRepository() {
+
             @Override
             public java.util.List<kmu.conditions.domain.KmuConditionSpec> getAllConditionSpecs() {
                 return java.util.Collections.emptyList();
@@ -90,7 +103,9 @@ class StarsectorInteractionDialogPickerOpenerTests {
     }
 
     private static SectorAPI buildSector(CampaignUIAPI campaignUI) {
+
         return proxy(SectorAPI.class, (proxy, method, args) -> {
+
             if (method.getName().equals("getCampaignUI")) {
                 return campaignUI;
             }
@@ -99,7 +114,9 @@ class StarsectorInteractionDialogPickerOpenerTests {
     }
 
     private static CampaignUIAPI buildCampaignUI(InteractionDialogAPI dialog) {
+
         return proxy(CampaignUIAPI.class, (proxy, method, args) -> {
+
             if (method.getName().equals("getCurrentInteractionDialog")) {
                 return dialog;
             }
@@ -111,11 +128,15 @@ class StarsectorInteractionDialogPickerOpenerTests {
             AtomicReference<KmuConditionPickerDialogDelegate> openedDelegate,
             AtomicReference<Float> openedWidth,
             AtomicReference<Float> openedHeight) {
+
         return proxy(InteractionDialogAPI.class, (proxy, method, args) -> {
+
             if (method.getName().equals("showCustomDialog")) {
+
                 openedWidth.set((Float) args[0]);
                 openedHeight.set((Float) args[1]);
                 openedDelegate.set((KmuConditionPickerDialogDelegate) args[2]);
+
                 return null;
             }
             return handleObjectMethodOrThrow(proxy, method, args);
@@ -123,14 +144,20 @@ class StarsectorInteractionDialogPickerOpenerTests {
     }
 
     private static Object handleObjectMethodOrThrow(Object proxy, Method method, Object[] args) {
+
         if (method.getDeclaringClass().equals(Object.class)) {
+
             switch (method.getName()) {
+
                 case "toString":
                     return proxy.getClass().getInterfaces()[0].getSimpleName() + "Proxy";
+
                 case "hashCode":
                     return System.identityHashCode(proxy);
+
                 case "equals":
                     return proxy == args[0];
+
                 default:
                     break;
             }
@@ -140,13 +167,16 @@ class StarsectorInteractionDialogPickerOpenerTests {
 
     @SuppressWarnings("unchecked")
     private static <T> T proxy(Class<T> type, InvocationHandler handler) {
+
         return (T) Proxy.newProxyInstance(
-                type.getClassLoader(),
-                new Class<?>[]{type},
-                handler);
+            type.getClassLoader(),
+            new Class<?>[]{type},
+            handler);
     }
 
-    private static final class KmuEditableMarketStub implements KmuEditableMarket {
+    private static final class EditableMarketFake
+            implements KmuEditableMarket {
+
         @Override
         public java.util.Set<String> getConditionIds() {
             return java.util.Collections.emptySet();
@@ -155,6 +185,16 @@ class StarsectorInteractionDialogPickerOpenerTests {
         @Override
         public boolean hasCondition(String conditionId) {
             return false;
+        }
+
+        @Override
+        public Optional<MarketAPI> findStarsectorMarket() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<MarketConditionAPI> findCondition(String conditionId) {
+            return Optional.empty();
         }
 
         @Override

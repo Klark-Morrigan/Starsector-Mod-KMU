@@ -20,10 +20,6 @@ public final class StarsectorEditableMarket
         this.market = Objects.requireNonNull(market, "market");
     }
 
-    public MarketAPI getMarket() {
-        return market;
-    }
-
     @Override
     public Set<String> getConditionIds() {
 
@@ -50,6 +46,12 @@ public final class StarsectorEditableMarket
         return market.isConditionSuppressed(conditionId);
     }
 
+    @Override
+    public Optional<MarketAPI> findStarsectorMarket() {
+        return Optional.of(market);
+    }
+
+    @Override
     public Optional<MarketConditionAPI> findCondition(String conditionId) {
 
         var normalisedId = normaliseText(conditionId);

@@ -18,7 +18,7 @@ import java.util.Set;
 
 /**
  * Decides what a frame owes an owner map: whether the cells have to be recut, whether the
- * clusters have to be rebuilt, and whether the holding the last rebuild read can be painted
+ * clusters have to be rebuilt, and whether the owners the last rebuild read can be painted
  * over again rather than read afresh.
  *
  * <p>Kept apart from the cache that acts on the answer, because the two run at different cadences:
@@ -57,11 +57,11 @@ final class OwnerMapRebuildDecider {
     // first frame builds.
     private int lastContentRevision = UNBUILT_REVISION;
 
-    // The revision the standing holding was resolved under: the content revision's holding half,
+    // The revision the standing owners were resolved under: the content revision's owners half,
     // the inputs that reach the resolve and none of the picks that only reach the paint. A rebuild
     // that owes no new reading of the sector - a style pick moved and nothing else - paints over
     // what the last one read rather than walking the sector for the same answer.
-    private int lastHoldingRevision = UNBUILT_REVISION;
+    private int lastOwnersRevision = UNBUILT_REVISION;
 
     // Whether a frame drained marked systems it could not fold into the standing map. Nothing else
     // remembers them once drained, and no revision moves for them, so this is what makes the next
@@ -90,27 +90,27 @@ final class OwnerMapRebuildDecider {
     }
 
     /**
-     * Whether the holding the last rebuild read still says who holds what.
+     * Whether the owners the last rebuild read still say who owns what.
      *
-     * <p>It does unless the sector moved under it - a marked system, or a recut, which admits or
-     * drops systems - or the rule reading it did, which the holding revision folds. Never while
+     * <p>They do unless the sector moved under them - a marked system, or a recut, which admits or
+     * drops systems - or the rule reading them did, which the owners revision folds. Never while
      * nothing is standing to keep.
      *
-     * @param staleHalves        this frame's decision
-     * @param hasStandingHolding whether a holding from an earlier rebuild is held at all
-     * @param staleSystemKeys    the systems marked stale since the last drain, each a system the
-     *                           sector moved under
-     * @return whether the standing holding may be painted over rather than read afresh
+     * @param staleHalves       this frame's decision
+     * @param hasStandingOwners whether owners from an earlier rebuild are held at all
+     * @param staleSystemKeys   the systems marked stale since the last drain, each a system the
+     *                          sector moved under
+     * @return whether the standing owners may be painted over rather than read afresh
      */
-    public boolean canReuseStandingHolding(
+    public boolean canReuseStandingOwners(
             StaleHalves staleHalves,
-            boolean hasStandingHolding,
+            boolean hasStandingOwners,
             Set<SystemKey> staleSystemKeys) {
 
-        return hasStandingHolding
+        return hasStandingOwners
             && staleSystemKeys.isEmpty()
             && !staleHalves.isCellCutStale()
-            && staleHalves.holdingRevision() == lastHoldingRevision;
+            && staleHalves.ownersRevision() == lastOwnersRevision;
     }
 
     /**
@@ -157,14 +157,14 @@ final class OwnerMapRebuildDecider {
             isCellCutStale,
             contentInputs,
             contentRevision,
-            computeHoldingRevision(viewRevision, contentInputs),
+            computeOwnersRevision(viewRevision, contentInputs),
             isContentStale(isCellCutStale, hasNothingBuilt, contentRevision));
     }
 
     /**
      * The two readings a recut moved between, for the line a caller writes about it.
      *
-     * <p>Described here because this is the only holder of both: the standing reading is a baseline
+     * <p>Described here because this is the only class keeping both: the standing reading is a baseline
      * and never leaves, so a caller that wanted to name the transition itself would have to be
      * handed the very value the decision exists to keep to itself.
      *
@@ -209,13 +209,13 @@ final class OwnerMapRebuildDecider {
     }
 
     /**
-     * Records that the holding was read afresh under this frame's decision, so a later rebuild
-     * that owes no new reading can tell it was resolved under the rule now in force.
+     * Records that the owners were read afresh under this frame's decision, so a later rebuild
+     * that owes no new reading can tell they were resolved under the rule now in force.
      *
-     * @param staleHalves the decision the holding was resolved under
+     * @param staleHalves the decision the owners were resolved under
      */
-    public void recordHoldingResolved(StaleHalves staleHalves) {
-        lastHoldingRevision = staleHalves.holdingRevision();
+    public void recordOwnersResolved(StaleHalves staleHalves) {
+        lastOwnersRevision = staleHalves.ownersRevision();
     }
 
     // The clusters-staleness token, folding everything the cells are styled under: the view
@@ -230,13 +230,13 @@ final class OwnerMapRebuildDecider {
         return Objects.hash(viewRevision, contentInputs);
     }
 
-    // The content revision's holding half: the same fold over only what reaches the resolve. Of the
+    // The content revision's owners half: the same fold over only what reaches the resolve. Of the
     // sidebar picks that is the spotlight alone - the two recedes, the name format and the outline
     // reach the paint and nothing before it. The view revision stays in whole, since the rule a
-    // view resolves holding by can read LunaLib fields, and a view that groups owners together
-    // moves its holding whenever those groups move. A style pick moves the content revision and
-    // leaves this one where it was, which is what lets the rebuild it owes keep the holding.
-    private static int computeHoldingRevision(int viewRevision, ContentInputs contentInputs) {
+    // view resolves owners by can read LunaLib fields, and a view that groups owners together
+    // moves its owners whenever those groups move. A style pick moves the content revision and
+    // leaves this one where it was, which is what lets the rebuild it owes keep the owners.
+    private static int computeOwnersRevision(int viewRevision, ContentInputs contentInputs) {
         return Objects.hash(viewRevision, contentInputs.selectedOwnerId());
     }
 

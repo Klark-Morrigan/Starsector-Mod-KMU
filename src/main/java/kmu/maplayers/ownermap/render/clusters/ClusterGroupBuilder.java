@@ -107,6 +107,7 @@ public final class ClusterGroupBuilder {
         if (insetRings.isEmpty()) {
             return null;
         }
+
         var borderLoops = BorderSmoothing.resolveSmoothedBorderLoops(
             insetRings,
             globalStyle.borderSmoothing());
@@ -119,23 +120,11 @@ public final class ClusterGroupBuilder {
             return null;
         }
 
-        // The spotlighted owner's whole footprint - won and contested systems alike - shares
-        // one key, so it clusters under one owner and then splits its fill inside each of its
-        // bodies. Whether that split happens is the fill builder's own call.
-        var tracedFill = new SplitFillBuilder(
-                geometryCache.getCellEdgesByCellKey(),
-                cellGrouping,
-                borderTrace,
-                globalStyle.hatch().pattern())
-            .traceFill(
-                SpotlitOwners.isSpotlitOwner(ownerId),
-                FillSplit.splitMembersByFillState(
-                    cellGrouping,
-                    memberCellKeys,
-                    buildInputs.contestedSystemKeys(),
-                    buildInputs.unfilledSystemKeys()),
-                ownerId,
-                fillColour);
+        // A "No color" fill tessellates nothing for any body, rather than triangles the draw pass
+        // would then skip; the bodies still stroke and hold a label.
+        var tracedFill = fillColour == null
+            ? TracedFill.UNPAINTED
+            : traceOwnerFill(buildInputs, geometryCache, cellGrouping, ownerId, memberCellKeys);
 
         return new StyledClusterGroup(
             buildClusters(clusterRegions, tracedFill, borderColour),
@@ -160,6 +149,7 @@ public final class ClusterGroupBuilder {
             CellGrouping cellGrouping) {
 
         var grouped = cellGrouping.groupCellKeysByOwner();
+
         for (var owner : grouped.entrySet()) {
 
             var clusterGroup = buildClusterGroup(
@@ -184,8 +174,11 @@ public final class ClusterGroupBuilder {
 
         var isBorderDrawn = borderColour != null;
         var clusters = new ArrayList<StyledCluster>(clusterRegions.size());
+
         for (var clusterRegion : clusterRegions) {
+
             var fill = tracedFill.buildFillFor(clusterRegion);
+
             clusters.add(new StyledCluster(
                 fill.solidTriangles(),
                 fill.hatchSegments(),
@@ -196,6 +189,34 @@ public final class ClusterGroupBuilder {
                     ? GlVertexRuns.flattenLoops(clusterRegion.holeRings())
                     : List.of()));
         }
+
         return clusters;
+    }
+
+    // The spotlighted owner's whole footprint - won and contested systems alike - shares one key,
+    // so it clusters under one owner and then splits its fill inside each of its bodies. Whether
+    // that split happens is the fill builder's own call.
+    private static TracedFill traceOwnerFill(
+            OwnerMapBuildInputs buildInputs,
+            CellGeometryCache geometryCache,
+            CellGrouping cellGrouping,
+            String ownerId,
+            List<SystemKey> memberCellKeys) {
+
+        var styling = buildInputs.styling();
+
+        return new SplitFillBuilder(
+                geometryCache.getCellEdgesByCellKey(),
+                cellGrouping,
+                styling.borderTrace(),
+                styling.renderStyle().global().hatch().pattern())
+            .traceFill(
+                SpotlitOwners.isSpotlitOwner(ownerId),
+                FillSplit.splitMembersByFillState(
+                    cellGrouping,
+                    memberCellKeys,
+                    buildInputs.contestedSystemKeys(),
+                    buildInputs.unfilledSystemKeys()),
+                ownerId);
     }
 }

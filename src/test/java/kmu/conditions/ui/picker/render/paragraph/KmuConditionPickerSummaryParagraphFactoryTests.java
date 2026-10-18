@@ -206,7 +206,7 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
 
         return new KmuConditionPickerModel(
             entryList,
-            new KmuConditionPickerLocation(null, null, null, null, null, null, null));
+            KmuConditionPickerLocation.createUnknownLocation());
     }
 
     private static List<KmuConditionPickerEntry> listEntries() {
@@ -221,17 +221,15 @@ class KmuConditionPickerSummaryParagraphFactoryTests {
     private static KmuConditionPickerEntry buildEntry(
             String id,
             KmuConditionPickerEntryState state,
-            boolean suppressed,
-            boolean hidden) {
+            boolean isSuppressed,
+            boolean isHidden) {
 
-        return new KmuConditionPickerEntry(
-            id,
-            id,
-            "graphics/icons/markets/" + id + ".png",
-            state,
-            "Test tooltip",
-            null,
-            suppressed,
-            hidden);
+        return new KmuConditionPickerEntry
+            .Builder(id, id, state)
+            .withIcon("graphics/icons/markets/" + id + ".png")
+            .withTooltipText("Test tooltip")
+            .withSuppressed(isSuppressed)
+            .withHidden(isHidden)
+            .build();
     }
 }

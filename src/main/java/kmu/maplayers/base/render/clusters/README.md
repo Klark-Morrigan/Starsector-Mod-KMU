@@ -171,6 +171,8 @@ the [`HatchStyle`](../../theme/README.md)'s baked half alone,
 never the stroke a frame reads),
 and answered per owner rather than per body,
 since the split's rings are the owner's and are traced once.
+An owner whose fill is "No color" never asks it;
+the layer takes `TracedFill.UNPAINTED` instead.
 
 Each body's cut is measured under `HatchBuildDiagnostics.CUT_HATCH_SECTION`,
 and what the cut found is recorded on that scope:
@@ -196,6 +198,8 @@ whole bodies,
 or per fill state -
 so only the third carries rings,
 and `buildFillFor(RingRegion)` cuts one body's share of them on demand.
+That share is a `TracedFill.ClusterFill`:
+the solid triangles and the hatch segments the body paints.
 Splitting it this way is what keeps a body's fill tied to the body it was cut for;
 handing back a list of fills to be walked alongside a list of bodies would leave them paired by position,
 and a body painted with its neighbour's fill draws perfectly happily.

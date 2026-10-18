@@ -48,23 +48,23 @@ final class ClusterLabelStylingSnapshotTests {
     class ResolveFrom {
 
         @Test
-        void carriesTheClustersOwnHolders() {
+        void carriesTheOwnersOfTheClusters() {
 
-            var holderBySystemKey = Map.of(
+            var ownerBySystemKey = Map.of(
                 buildCellKey("corvus"),
                 new SystemOwner(
                     SPOTLIT_OWNER_ID,
                     new ColourPair(Color.BLUE, Color.DARK_GRAY)));
 
             var clusters = buildClusters(
-                holderBySystemKey,
+                ownerBySystemKey,
                 buildViewReading(),
                 buildSpotlightPicks());
 
             var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
 
             // Against what the built map itself hands out rather than against what was handed to
-            // it: the holders are the occupancy's own, so identity here is what says the snapshot
+            // it: the owners are the occupancy's own, so identity here is what says the snapshot
             // reads them live rather than taking a copy that a later refresh would leave behind.
             assertThat(styling.ownerBySystemKey())
                 .isSameAs(clusters.getOccupancy().getOwnerBySystemKey());
@@ -178,12 +178,12 @@ final class ClusterLabelStylingSnapshotTests {
     }
 
     private static OwnerMapClusters buildClusters(
-            Map<SystemKey, SystemOwner> holderBySystemKey,
+            Map<SystemKey, SystemOwner> ownerBySystemKey,
             ViewReading viewReading,
             ContentInputs contentInputs) {
 
         return new OwnerMapClusters(
-            SystemOccupancy.createCopyOf(holderBySystemKey, Set.of(), Set.of()),
+            SystemOccupancy.createCopyOf(ownerBySystemKey, Set.of(), Set.of()),
             new OwnerMapBuildInputs(
                 buildStyling(),
                 viewReading,

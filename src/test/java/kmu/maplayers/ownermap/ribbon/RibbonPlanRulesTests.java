@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class RibbonPlanRulesTests {
 
-    // A market four widths long parted by two. Neither is the design's own proportion, so a result
+    // A stake four widths long parted by two. Neither is the design's own proportion, so a result
     // that came from anywhere but these rules' own lengths is visible rather than coincidental.
     private static final RibbonSegmentLengths AUTHORED_LENGTHS = new RibbonSegmentLengths(4, 2);
 
@@ -24,7 +24,7 @@ final class RibbonPlanRulesTests {
     class ResolveUncontestedLengths {
 
         @Test
-        void shortensTheMarketRunOfItsOwnAuthoredPair() {
+        void shortensTheStakeRunOfItsOwnAuthoredPair() {
 
             var lengths = new RibbonPlanRules(AUTHORED_LENGTHS, new UncontestedRibbonRuns(true))
                 .resolveUncontestedLengths();

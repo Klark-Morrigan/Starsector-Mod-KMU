@@ -85,12 +85,12 @@ import static org.mockito.Mockito.when;
 /**
  * A layer the owner-map tier has never heard of, keyed by a two-valued rule with nothing to do with
  * who holds a system - whether a system carries a comm relay - built and labelled through the tier
- * over a sector that answers no holder at all.
+ * over a sector whose own owners it never reads.
  *
  * <p>What it pins is what the owner reading and the declared categories exist for: everything the
  * tier paints for an owner - its fill, its border, its seams, its name and the category each draws
  * in - and everything it paints for a cell nobody owns comes off the layer's own answers. The
- * layer's categories are its own set, not the holder layers' four, and the sector is never asked
+ * layer's categories are its own set, not the four KMU's own layers share, and the sector is never asked
  * who an owner is, so a tier that still worked any of it out from the sector would fail here rather
  * than quietly colour this layer by whatever an owner ID happened to name in the game.
  *
@@ -106,7 +106,7 @@ import static org.mockito.Mockito.when;
 final class RelayOwnerLayerIntegrationTests {
 
     // The two owner values, and each one's shades - the relay-bearing systems bright, the rest in
-    // a second pair, both unlike anything a holder layer would carry.
+    // a second pair, both unlike anything KMU's own layers would carry.
     private static final String RELAY = "carries_relay";
     private static final String NO_RELAY = "lacks_relay";
     private static final ColourPair RELAY_PALETTE = new ColourPair(Color.CYAN, Color.BLUE);
@@ -144,7 +144,7 @@ final class RelayOwnerLayerIntegrationTests {
     private MockedStatic<LabelAnchorSpecification> specificationMock;
     private MockedStatic<LazyFontCache> fontsMock;
 
-    /** The categories a relay layer divides its cells into - none of them a holder category. */
+    /** The categories a relay layer divides its cells into - none of them one KMU's own layers declare. */
     private enum RelayCategory
             implements MapStyleCategory {
 
@@ -359,7 +359,7 @@ final class RelayOwnerLayerIntegrationTests {
         @Test
         void paintsEachSystemByTheLayersOwnRule() {
             // The core asks the layer which systems each owner holds and reads nothing about owners
-            // itself. That the core reaches no holder answer on the way is the layering gate's to
+            // itself. That the core reaches none of KMU's own answers on the way is the layering gate's to
             // say rather than this case's: this suite sits in a package the gate closes to them, so
             // it could not name one to stand in for.
             var cache = buildCacheSeeding(CellSeedRule.SEED_DRAWN_SYSTEMS);
@@ -510,7 +510,7 @@ final class RelayOwnerLayerIntegrationTests {
 
     /**
      * The relay layer's owner source: a system carries a relay or it does not, read off its ID alone
-     * over the walk the tier hands it - no settlement, no holder, no grouping.
+     * over the walk the tier hands it - no settlement, no ruler, no grouping.
      */
     private static final class RelaySourceFake implements OwnerSource {
 

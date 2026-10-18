@@ -7,7 +7,6 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
-import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHoverPermissionFixture;
 import kmu.maplayers.base.layer.MapLayer;
@@ -61,7 +60,10 @@ final class MapLayerCellTooltipTests {
     private final MapHoverTooltip tooltipMock = mock(MapHoverTooltip.class);
     private final MapLayer tooltipLayerMock = mock(MapLayer.class);
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
-    private final IntelScreenViewFake intelScreenFake = new IntelScreenViewFake();
+
+    // The screens seated on the sector the box is drawn over, wired to no intel screen so every read
+    // resolves to the map screen's pick.
+    private MapLayerScreens screens;
 
     @BeforeEach
     void registerALayerShowingATooltip() {
@@ -74,16 +76,7 @@ final class MapLayerCellTooltipTests {
         when(layerRendererMock.resolveHoverTooltip())
             .thenReturn(Optional.of(tooltipMock));
 
-        MapLayerRosters.replaceRosterWith(tooltipLayerMock);
-
-        // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
-        // each test from the intel screen closed, which resolves reads to the map screen's pick.
-        MapLayerScreens.registerIntelScreen(intelScreenFake);
-    }
-
-    @AfterEach
-    void restoreARegisteredLayer() {
-        MapLayerRosters.restoreNonEmptyRoster();
+        screens = MapLayerRosters.createScreensOver(tooltipLayerMock);
     }
 
     @Nested
@@ -105,7 +98,7 @@ final class MapLayerCellTooltipTests {
             when(sectorMock.getStarSystems())
                 .thenReturn(List.of(systemMock));
 
-            MapHoverFixtures.hoverASystemOnAnInstalledSector(sectorMock, SYSTEM_ID);
+            MapHoverFixtures.hoverASystemOnAnInstalledSector(sectorMock, screens, SYSTEM_ID);
         }
 
         @AfterEach

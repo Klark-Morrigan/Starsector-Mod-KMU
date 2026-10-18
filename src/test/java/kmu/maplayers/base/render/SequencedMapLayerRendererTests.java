@@ -19,6 +19,8 @@ import kmu.maplayers.base.hover.cover.MapCover;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
+import kmu.maplayers.base.layer.MapLayerArrangements;
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
@@ -647,13 +649,16 @@ final class SequencedMapLayerRendererTests {
             .toList();
     }
 
-    // One screen's picks, of no particular identity: the cases are about the frame reading the
-    // showing screen once and carrying it, not about which of the mod's screens that is.
+    // One screen's picks, of no particular identity and over an empty bar: the cases are about the
+    // frame reading the showing screen once and carrying it, not about which of the mod's screens that
+    // is or what it offers.
     private static ScreenLayerPicks createStandInScreenPicks() {
 
         return new ScreenLayerPicks(
             mock(ActiveLayerSelection.class),
             new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
-            ScreenMemoryScopes.createStandInScreen());
+            ScreenMemoryScopes.createStandInScreen(),
+            MapLayerRosters.createRosterOf(),
+            MapLayerArrangements.createUnarrangedBar());
     }
 }

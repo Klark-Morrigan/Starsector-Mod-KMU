@@ -73,7 +73,7 @@ import java.util.Set;
  * switch between them rebuilds nothing; two set differently rebuild at the switch, which is the same
  * rebuild changing that pick on one screen already costs, paid at a different moment.
  *
- * <p>Everything held here is derived from one sector, and nothing here enters a save: the holder
+ * <p>Everything held here is derived from one sector, and nothing here enters a save: the cache
  * belongs to that sector's installed map machinery and goes with it, so no field needs transient
  * marking and nothing needs emptying when a sector changes. Every baseline starts at its
  * rebuild-forcing seed, so the first frame after a sector is installed on builds both halves from
@@ -323,14 +323,14 @@ public final class OwnerMapCache
                 .resolveProfiler()
                 .open(REBUILD_DRAWABLES_SECTION)) {
 
-            var wasHoldingReused = rebuildDrawables(staleHalves, view, walk);
+            var wereOwnersReused = rebuildDrawables(staleHalves, view, walk);
 
             // Traces the content rebuild's result: what the render will paint, so a wrong or empty
             // render can be confirmed against what was built. The count reported is whichever view
             // was built this rebuild - the normal styled cells or the debug overlay's base loops -
             // which is why it is named rather than counted: the two are not one quantity.
             //
-            // Beside it, whether the holding was carried over rather than read, and which sidebar
+            // Beside it, whether the owners were carried over rather than read, and which sidebar
             // preference a player touched since the last rebuild. Those signals decide nothing -
             // the bake folds the sampled values - so this is the only place the answer lands where
             // the rebuild it preceded can be read against it. It is context rather than cause: a
@@ -338,7 +338,7 @@ public final class OwnerMapCache
             drawablesScope.tagCall("contentRevision=" + staleHalves.contentRevision()
                 + " " + drawables.describeBuiltCounts()
                 + " geometryRebuilt=" + staleHalves.isCellCutStale()
-                + " holdingReused=" + wasHoldingReused
+                + " ownersReused=" + wereOwnersReused
                 + " signalsRaised=" + signalTracker.describeRaisesSinceTheLastReading());
         }
 
@@ -358,7 +358,7 @@ public final class OwnerMapCache
     // The draw lists themselves: one view or the other, the names minted from the placements it
     // left, and the staleness this rebuild has just answered drained.
     //
-    // Reports whether the holding was carried over from the last rebuild rather than read, for the
+    // Reports whether the owners were carried over from the last rebuild rather than read, for the
     // line the rebuild writes: a rebuild that reused it cost what the paint costs, and a reader of
     // that line should be able to tell the two apart without the scan rows beneath.
     private boolean rebuildDrawables(
@@ -373,7 +373,7 @@ public final class OwnerMapCache
         // what the fold is for - where a drain after the build would discard it on the assumption
         // that the build had read everything, an assumption reused owners do not meet.
         var staleSystemKeys = machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys();
-        var wasHoldingReused = false;
+        var wereOwnersReused = false;
 
         // The view's two answers about its owners, resolved once for this rebuild under one
         // sampling of whatever it reads live, and handed to every stage below.
@@ -396,7 +396,7 @@ public final class OwnerMapCache
             standingOwners = null;
 
         } else {
-            wasHoldingReused = rebuildProductionView(staleHalves, viewReading, walk, staleSystemKeys);
+            wereOwnersReused = rebuildProductionView(staleHalves, viewReading, walk, staleSystemKeys);
         }
 
         // The name choice comes off this rebuild's own sampling rather than the preference, so
@@ -404,7 +404,7 @@ public final class OwnerMapCache
         drawables.rebuildLabels(staleHalves.contentInputs().nameFormat().areNamesDrawn());
         decider.recordContentRebuilt(staleHalves);
 
-        return wasHoldingReused;
+        return wereOwnersReused;
     }
 
     // The production view, off the view's source over this rebuild's walk of the sector. Apart
@@ -416,18 +416,18 @@ public final class OwnerMapCache
             SectorWalk walk,
             Set<SystemKey> staleSystemKeys) {
 
-        var wasHoldingReused = decider.canReuseStandingHolding(
+        var wereOwnersReused = decider.canReuseStandingOwners(
             staleHalves,
             standingOwners != null,
             staleSystemKeys);
 
-        if (!wasHoldingReused) {
+        if (!wereOwnersReused) {
 
             standingOwners = OwnerMapBuilder.resolveOwners(
                 viewReading.source(),
                 walk,
                 staleHalves.contentInputs());
-            decider.recordHoldingResolved(staleHalves);
+            decider.recordOwnersResolved(staleHalves);
         }
 
         drawables.rebuildClustersAndBands(
@@ -437,7 +437,7 @@ public final class OwnerMapCache
             staleHalves.contentInputs(),
             standingOwners);
 
-        return wasHoldingReused;
+        return wereOwnersReused;
     }
 
     // Nothing stale enough to rebuild. In the normal view, fold in any per-system owner changes the
@@ -445,7 +445,7 @@ public final class OwnerMapCache
     // clusters; that batch opens a reading of its own, since none was opened for this frame.
     // The static debug overlay has no draw lists to patch, so its batch is dropped instead. Under a
     // filter the incremental re-shape is bypassed too: it re-derives owners through the normal
-    // (non-filter) holding, which would overwrite the spotlit keys and corrupt the spotlight. A
+    // (non-filter) resolve, which would overwrite the spotlit keys and corrupt the spotlight. A
     // dropped batch owes the next frame a full rebuild, since nothing else would show the change.
     //
     // The drain happens here rather than inside the fold, and before either branch is chosen,
@@ -473,7 +473,7 @@ public final class OwnerMapCache
         // deferral leaves the change for a full rebuild that has to read it for itself.
         standingOwners = null;
 
-        if (!drawables.canFoldHolderChanges()) {
+        if (!drawables.canFoldOwnerChanges()) {
 
             LOG.debug("Owner map dropped " + staleSystemKeys.size()
                 + " marked system(s) it cannot fold; next frame rebuilds");

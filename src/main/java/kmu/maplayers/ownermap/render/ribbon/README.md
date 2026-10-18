@@ -167,7 +167,7 @@ from the three separate reasons one can owe a band:
 
 | Reason | Which cells |
 | --- | --- |
-| the count moved | the systems a change marked, whether or not their holder changed |
+| the count moved | the systems a change marked, whether or not their owner changed |
 | the ring moved | the cells the batch redrew - the ring around a flip, and any system whose own facts moved - each of which lost the band laid in its old shape |
 | the room moved | the cells a re-fitted name reaches, which the flip need never have touched |
 

@@ -5,7 +5,7 @@ import kmlib.opengl.GlVertexRuns;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.profiling.MapBuildCounters;
-import kmu.maplayers.base.render.clusters.SplitFillBuilder.ClusterFill;
+import kmu.maplayers.base.render.clusters.TracedFill.ClusterFill;
 import kmu.maplayers.base.theme.ThemeFixtures;
 
 import org.junit.jupiter.api.Nested;

@@ -2,17 +2,21 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.alliances.AllianceRecord;
+import kmlib.starsector.factions.alliances.FactionAlliances;
+
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.ownermap.owners.holders.base.HolderCategories;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
-import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static kmu.starsector.SectorFactionFixtures.stubNamedFaction;
 
@@ -30,8 +34,9 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class PoliticalHolderViewTests {
 
-    private static final HolderGrouping SAMPLED_GROUPING =
-        HolderGroupingFixture.buildGroupOf("hegemony", "persean");
+    // The live alliance set a case poses: Hegemony and Persean standing together, Tri-Tachyon alone.
+    private static final FactionAlliances SAMPLED_ALLIANCES = FactionAlliances.buildFrom(List.of(
+        new AllianceRecord("pact", "Pact", List.of("hegemony", "persean"))));
 
     // The interface with every default answering for real and nothing else stated, so a case reads
     // the default alone.
@@ -110,8 +115,8 @@ final class PoliticalHolderViewTests {
             try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
 
                 alliancesMock
-                    .when(NexerelinAlliances::resolveGrouping)
-                    .thenReturn(SAMPLED_GROUPING);
+                    .when(NexerelinAlliances::resolveFactionAlliances)
+                    .thenReturn(SAMPLED_ALLIANCES);
 
                 var affiliation = viewMock.resolveContestAffiliation();
 

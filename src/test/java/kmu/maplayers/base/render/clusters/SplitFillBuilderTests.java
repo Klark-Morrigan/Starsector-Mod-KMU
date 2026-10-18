@@ -11,7 +11,6 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,9 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Pins which of the three fills a cluster actually pays for: nothing at all for a "No color"
- * fill, one tessellation of the frontier when every member fills solid, and a per-state carve
- * only when the cluster is spotlit or genuinely holds non-solid members.
+ * Pins which of the two traced fills a cluster actually pays for: one tessellation of the frontier
+ * when every member fills solid, and a per-state carve only when the cluster is spotlit or
+ * genuinely holds non-solid members.
  *
  * <p>That fast path is the point - the common case is an owner that only fills solid, and it
  * must come out of the same smoothed loops the border strokes rather than out of a trace of
@@ -43,10 +42,13 @@ final class SplitFillBuilderTests {
     private static final String REGION_KEY = "cluster";
     private static final String HELD_SYSTEM_ID = "A";
     private static final String HATCHED_SYSTEM_ID = "B";
+
     private static final SystemKey HELD_SYSTEM = buildCellKey(HELD_SYSTEM_ID);
     private static final SystemKey HATCHED_SYSTEM = buildCellKey(HATCHED_SYSTEM_ID);
+
     private static final HatchPattern HATCH_PATTERN =
         ThemeFixtures.createHatchPattern(200, Math.PI / 4);
+
     private static final double WELD_TOLERANCE = 1e-3;
     private static final double MITER_SPIKE_LIMIT = 4.0;
 
@@ -110,30 +112,11 @@ final class SplitFillBuilderTests {
     class TraceFill {
 
         @Test
-        void drawsNothingForANoColourFill() {
-            // An owner the player has switched the fill off for pays no tessellation at all,
-            // rather than baking triangles the draw pass would then skip - and every body it
-            // holds cuts to nothing, since the bodies themselves still stroke and hold a label.
-            var tracedFill = createSplitFillBuilder().traceFill(
-                false, // Is not spotlit.
-                buildSolidOnlySplit(),
-                REGION_KEY,
-                null); // No fill colour.
-
-            assertThat(tracedFill.buildFillFor(HOME_BODY).solidTriangles())
-                .isEmpty();
-            assertThat(tracedFill.buildFillFor(HOME_BODY).hatchSegments())
-                .isEmpty();
-            assertThat(tracedFill.buildFillFor(DISTANT_BODY).solidTriangles())
-                .isEmpty();
-        }
-
-        @Test
         void tessellatesTheFrontierWhenEveryMemberFillsSolid() {
             // The fast path: no trace of its own, just the smoothed loops the border strokes, so
             // the fill lands exactly where the border does.
             var fill = createSplitFillBuilder()
-                .traceFill(false, buildSolidOnlySplit(), REGION_KEY, Color.RED)
+                .traceFill(false, buildSolidOnlySplit(), REGION_KEY)
                 .buildFillFor(HOME_BODY);
 
             assertThat(computeTotalTriangleArea(fill.solidTriangles()))
@@ -150,8 +133,7 @@ final class SplitFillBuilderTests {
             var tracedFill = createSplitFillBuilder().traceFill(
                 false, // Is not spotlit.
                 buildSolidOnlySplit(),
-                REGION_KEY,
-                Color.RED);
+                REGION_KEY);
 
             assertThat(computeTotalTriangleArea(tracedFill.buildFillFor(HOME_BODY).solidTriangles()))
                 .isCloseTo(1e6, within(1.0));
@@ -164,7 +146,7 @@ final class SplitFillBuilderTests {
             // Non-solid members force the carve even off the spotlight, so solid and hatched
             // fills read apart inside the one frontier.
             var fill = createSplitFillBuilder()
-                .traceFill(false, buildHatchedSplit(), REGION_KEY, Color.RED)
+                .traceFill(false, buildHatchedSplit(), REGION_KEY)
                 .buildFillFor(HOME_BODY);
 
             assertThat(fill.solidTriangles())
@@ -190,8 +172,7 @@ final class SplitFillBuilderTests {
                         List.of(FIRST_TWIN, SECOND_TWIN),
                         Set.of(SECOND_TWIN),
                         Set.of()),
-                    REGION_KEY,
-                    Color.RED)
+                    REGION_KEY)
                 .buildFillFor(BOTH_CELLS_BODY);
 
             // One inset cell: 1850 wide (150 off the outer edge, nothing off the shared seam) by
@@ -208,8 +189,7 @@ final class SplitFillBuilderTests {
             var tracedFill = createSplitFillBuilder().traceFill(
                 false, // Is not spotlit.
                 buildHatchedSplit(),
-                REGION_KEY,
-                Color.RED);
+                REGION_KEY);
 
             assertThat(tracedFill.buildFillFor(HOME_BODY).solidTriangles())
                 .isNotEmpty();
@@ -224,10 +204,10 @@ final class SplitFillBuilderTests {
             // The spotlight always splits: its fill is per state even where it dominates
             // everywhere, so a spotlit owner does not fall into the solid fast path.
             var solid = createSplitFillBuilder()
-                .traceFill(false, buildSolidOnlySplit(), REGION_KEY, Color.RED)
+                .traceFill(false, buildSolidOnlySplit(), REGION_KEY)
                 .buildFillFor(HOME_BODY);
             var spotlit = createSplitFillBuilder()
-                .traceFill(true, buildSolidOnlySplit(), REGION_KEY, Color.RED)
+                .traceFill(true, buildSolidOnlySplit(), REGION_KEY)
                 .buildFillFor(HOME_BODY);
 
             // The carve traces its own rings and clips them to the frontier, so it cannot come
@@ -238,8 +218,9 @@ final class SplitFillBuilderTests {
 
         @Test
         void leavesTheHatchEmptyWhenNoMemberIsHatched() {
+
             var fill = createSplitFillBuilder()
-                .traceFill(true, buildSolidOnlySplit(), REGION_KEY, Color.RED)
+                .traceFill(true, buildSolidOnlySplit(), REGION_KEY)
                 .buildFillFor(HOME_BODY);
 
             assertThat(fill.hatchSegments())
@@ -250,6 +231,7 @@ final class SplitFillBuilderTests {
     // This suite's subject is which cells each state fills, so a case asserts on the geometry that
     // comes back rather than on what the cuts along the way recorded.
     private static SplitFillBuilder createSplitFillBuilder() {
+
         return new SplitFillBuilder(
             EDGES,
             GROUPING,
@@ -259,6 +241,7 @@ final class SplitFillBuilderTests {
 
     // Both members held outright - the common case, and the one the solid fast path is for.
     private static FillSplit buildSolidOnlySplit() {
+
         return FillSplit.splitMembersByFillState(
             GROUPING,
             List.of(HELD_SYSTEM, HATCHED_SYSTEM),
@@ -268,6 +251,7 @@ final class SplitFillBuilderTests {
 
     // One member solid, one hatched - the split the carve exists to draw.
     private static FillSplit buildHatchedSplit() {
+
         return FillSplit.splitMembersByFillState(
             GROUPING,
             List.of(HELD_SYSTEM, HATCHED_SYSTEM),
@@ -278,6 +262,7 @@ final class SplitFillBuilderTests {
     // An axis-aligned square ring, counter-clockwise, spanning [minX, minX + side] x
     // [minY, minY + side].
     private static List<double[]> buildSquare(double minX, double minY, double side) {
+
         return List.of(
             new double[] {minX, minY},
             new double[] {minX + side, minY},
@@ -288,17 +273,22 @@ final class SplitFillBuilderTests {
     // Sums the unsigned area of every triangle in a flat [x, y, x, y, ...] soup, six floats per
     // triangle - what the fill actually covers.
     private static double computeTotalTriangleArea(float[] triangles) {
+
         var floatsPerTriangle = 6;
         var total = 0.0;
+
         for (var i = 0; i + floatsPerTriangle <= triangles.length; i += floatsPerTriangle) {
+
             var ax = triangles[i];
             var ay = triangles[i + 1];
             var bx = triangles[i + 2];
             var by = triangles[i + 3];
             var cx = triangles[i + 4];
             var cy = triangles[i + 5];
+
             total += Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) / 2.0;
         }
+
         return total;
     }
 }

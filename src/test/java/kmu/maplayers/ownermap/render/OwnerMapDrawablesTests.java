@@ -44,12 +44,12 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 
 /**
- * Pins what the holder of the built draw lists answers about them: whether anything stands, whether
+ * Pins what the drawables keeping the built draw lists answer about them: whether anything stands, whether
  * a per-system change can be folded into it, what a rebuild left for the render to paint, that the
  * two base views are never both standing, and that releasing it leaves nothing behind.
  *
  * <p>Building the production view needs a live sector and is the integration tests'. The debug
- * overlay's build is held here, because what it does to the holder is the whole of its effect: it
+ * overlay's build is held here, because what it does to the drawables is the whole of its effect: it
  * replaces the other view rather than drawing over it, so a build that left both standing would
  * paint one of them for a reason no reader could name. Its own tracing is stood in for.
  */
@@ -60,7 +60,7 @@ final class OwnerMapDrawablesTests {
     private static final RevisedCellGeometry CELL_GEOMETRY =
         new RevisedCellGeometry(new CellGeometryCache(), 1);
 
-    // An overlay reporting two traced loops, so the count the holder names is neither zero nor the
+    // An overlay reporting two traced loops, so the count the drawables name is neither zero nor the
     // styled-cell count the production branch would have reported.
     private static final ClusterBorderStageOverlay TRACED_OVERLAY = new ClusterBorderStageOverlay(
         List.of(new float[] {0, 0}, new float[] {1, 1}),
@@ -236,7 +236,7 @@ final class OwnerMapDrawablesTests {
         }
 
         // Builds the debug view over a stood-in trace and a neutralised anchor fit, which is all
-        // the holder does with either.
+        // the drawables do with either.
         private void traceBordersThrough(OwnerMapDrawables drawables) {
             traceBordersThrough(drawables, new OwnerSourceFake());
         }
@@ -268,10 +268,10 @@ final class OwnerMapDrawablesTests {
     }
 
     @Nested
-    class CanFoldHolderChanges {
+    class CanFoldOwnerChanges {
 
         // The builders a production rebuild drives, stood in for: what each builds is pinned where
-        // it lives, and all this asks is what the holder makes of a build that ran.
+        // it lives, and all this asks is what the drawables make of a build that ran.
         private final StaticSeams seams = new StaticSeams();
 
         @AfterEach
@@ -283,19 +283,19 @@ final class OwnerMapDrawablesTests {
         void refusesBeforeAnythingHasBeenBuilt() {
             // There is nothing to patch, so the frame's marks are drained and dropped rather than
             // folded into draw lists that do not exist.
-            assertThat(new OwnerMapDrawables(LABEL_FACE_SOURCE).canFoldHolderChanges())
+            assertThat(new OwnerMapDrawables(LABEL_FACE_SOURCE).canFoldOwnerChanges())
                 .isFalse();
         }
 
         @Test
         void allowsOverAnUnfilteredProductionBuild() {
-            // The incremental re-shape re-derives holders through the normal holding, so it is
+            // The incremental re-shape re-derives owners through the normal resolve, so it is
             // safe exactly while no spotlight has keyed the cells to something else.
             var drawables = new OwnerMapDrawables(LABEL_FACE_SOURCE);
 
             buildProductionThrough(drawables, OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
 
-            assertThat(drawables.canFoldHolderChanges())
+            assertThat(drawables.canFoldOwnerChanges())
                 .isTrue();
         }
 
@@ -307,7 +307,7 @@ final class OwnerMapDrawablesTests {
 
             drawables.ensureClustersNonNull(viewMock);
 
-            assertThat(drawables.canFoldHolderChanges())
+            assertThat(drawables.canFoldOwnerChanges())
                 .isFalse();
         }
 

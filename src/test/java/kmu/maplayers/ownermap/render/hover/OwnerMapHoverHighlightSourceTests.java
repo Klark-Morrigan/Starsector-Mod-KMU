@@ -41,12 +41,13 @@ final class OwnerMapHoverHighlightSourceTests {
     class ResolveCandidateFrontierLoopsOf {
 
         @Test
-        void returnsTheHoldersOwnBorderLoops() {
-            // Every loop the holder traced is a candidate; which of them encloses this cell is
+        void returnsTheOwnersOwnBorderLoops() {
+            // Every loop the owner traced is a candidate; which of them encloses this cell is
             // the highlight's own geometric question, not one answered here.
             var loops = List.of(
                 buildSquareRun(0, 0, 100),
                 buildSquareRun(500, 0, 100));
+
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
@@ -59,7 +60,7 @@ final class OwnerMapHoverHighlightSourceTests {
         @Test
         void answersTheHoveredSystemOfAPairSharingAnId() {
             // The cursor and the holding share one address, so hovering one of two systems that
-            // answer to "A" haloes that system's own holder - where a lookup by ID alone would
+            // answer to "A" haloes that system's own owner - where a lookup by ID alone would
             // have handed back the other's frontier.
             var hovered = new SystemKey("A", "", "8b3");
             var loops = List.of(buildSquareRun(0, 0, 100));
@@ -89,8 +90,8 @@ final class OwnerMapHoverHighlightSourceTests {
         }
 
         @Test
-        void returnsNothingWhenTheHolderBakedNoBorder() {
-            // The holder's border is "No color", so its cluster group carries no loops - an owned cell
+        void returnsNothingWhenTheOwnerBakedNoBorder() {
+            // The owner's border is "No color", so its cluster group carries no loops - an owned cell
             // that still has nothing to halo.
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
@@ -119,7 +120,7 @@ final class OwnerMapHoverHighlightSourceTests {
     class ResolveHighlightColourOf {
 
         @Test
-        void paintsAnOwnedCellInItsHoldersShade() {
+        void paintsAnOwnedCellInItsOwnersShade() {
 
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
@@ -184,8 +185,8 @@ final class OwnerMapHoverHighlightSourceTests {
     }
 
     // Clusters carrying just what the source reads: who owns each system, each cell's shape,
-    // and the holder's traced loops. A null cluster group stands for an owner with none - the state
-    // an unowned cell's holder lookup lands in.
+    // and the owner's traced loops. A null cluster group stands for an owner with none - the state
+    // an unowned cell's owner lookup lands in.
     private static OwnerMapClusters buildClustersWith(
             Map<String, SystemOwner> ownerBySystemId,
             Map<String, List<double[]>> fillPolygonBySystemId,
@@ -197,7 +198,7 @@ final class OwnerMapHoverHighlightSourceTests {
             clusterGroup);
     }
 
-    // The same clusters with its holders stated by key, for the one case a name cannot pose:
+    // The same clusters with its owners stated by key, for the one case a name cannot pose:
     // two systems sharing a vanilla ID, only one of which the cursor is over.
     private static OwnerMapClusters buildClustersHeldByKey(
             Map<SystemKey, SystemOwner> ownerBySystemKey,
@@ -210,7 +211,7 @@ final class OwnerMapHoverHighlightSourceTests {
             clusterGroup);
     }
 
-    // Writes the cells and the holder's cluster group onto a built map, which is all the source reads
+    // Writes the cells and the owner's cluster group onto a built map, which is all the source reads
     // beyond the holding the two builders above differ in how they state.
     private static OwnerMapClusters fillClusters(
             OwnerMapClusters clusters,
@@ -218,6 +219,7 @@ final class OwnerMapHoverHighlightSourceTests {
             StyledClusterGroup clusterGroup) {
 
         for (var cell : fillPolygonBySystemId.entrySet()) {
+
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(cell.getKey()),
                 OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(cell.getValue()));

@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
@@ -36,14 +37,16 @@ public final class MapHoverFixtures {
      * is how a frame with something to draw a box about is posed.
      *
      * @param sector   the sector whose map the cursor is over
+     * @param screens  the screens seated on that sector's machinery, which say what draws there
      * @param systemId the ID of the system under it
      * @return that sector's machinery, which is what the box resolves as it draws
      */
     public static SectorMapMachinery hoverASystemOnAnInstalledSector(
             SectorAPI sector,
+            MapLayerScreens screens,
             String systemId) {
 
-        var machinery = SectorMapMachineryIndex.installMachineryOn(sector);
+        var machinery = SectorMapMachineryIndex.installMachineryOn(sector, screens);
 
         hoverASystemIn(machinery, systemId);
 

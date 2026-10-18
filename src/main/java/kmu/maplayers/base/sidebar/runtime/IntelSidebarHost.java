@@ -93,8 +93,8 @@ public final class IntelSidebarHost
 
         // The intel screen's own picks: a switch or a hide on the map screen leaves both where they were,
         // and reopening the intel screen returns to them rather than inheriting the map's. The fold goes
-        // under the same screen, the base composing it from these picks.
-        super(MapLayerScreens.getIntelPicks(), OPENS_DOCKED, screenClaim);
+        // under the same screen, the base composing both from the one scope.
+        super(MapLayerScreens.INTEL_SCOPE, OPENS_DOCKED, screenClaim);
 
         this.intelScreen = intelScreen;
     }

@@ -45,7 +45,7 @@ final class UnownedStyleResolverTests {
 
         @Test
         void countsAnInhabitedSystemThePassFoundNoOwnerFor() {
-            // A layer whose holding rule admits only some markets leaves a system settled solely
+            // A layer whose owner rule admits only some settlements leaves a system settled solely
             // outside them with no owner, and it reaches this rule that way. It is still inhabited,
             // so it must not fall to the backdrop the uninhabited-systems checkbox switches off.
             assertThat(UnownedStyleResolver.isSettledSystem(

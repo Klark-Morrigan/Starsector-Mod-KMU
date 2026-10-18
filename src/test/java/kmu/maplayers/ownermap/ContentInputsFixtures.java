@@ -109,7 +109,7 @@ public final class ContentInputsFixtures {
      * A reading spelling the cluster names a stated way, for the suites about what a drawn name
      * costs the map around it.
      *
-     * @param nameFormat how this build's cluster labels spell their holders' names
+     * @param nameFormat how this build's cluster labels spell their owners' names
      * @return that pick over the inert reading
      */
     public static ContentInputs createInputsSpellingNames(OwnerNameFormatChoice nameFormat) {

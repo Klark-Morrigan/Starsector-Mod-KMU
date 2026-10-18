@@ -56,7 +56,7 @@ public final class KmuConditionIconGrid {
         Objects.requireNonNull(actionConsumer, "actionConsumer");
 
         var entries = model.getEntries();
-        var metrics = computeKmuConditionIconButtonLayouts(entries);
+        var metrics = computeButtonLayouts(entries);
         var placements = computeLayout(metrics, width);
         var height = computeHeightForPlacements(placements);
         var gridPanel = parentPanel.createCustomPanel(
@@ -160,13 +160,12 @@ public final class KmuConditionIconGrid {
         return last.y() + last.height();
     }
 
-    private static List<KmuConditionIconButtonLayout> computeKmuConditionIconButtonLayouts(
-            List<KmuConditionPickerEntry> entries) {
+    private static List<KmuConditionIconButtonLayout> computeButtonLayouts(List<KmuConditionPickerEntry> entries) {
 
         var metrics = new ArrayList<KmuConditionIconButtonLayout>();
 
         for (var entry : entries) {
-            metrics.add(KmuConditionIconButton.computeKmuConditionIconButtonLayout(entry));
+            metrics.add(KmuConditionIconButton.computeLayout(entry));
         }
 
         return metrics;

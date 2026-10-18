@@ -41,7 +41,7 @@ public final class KmuMapSidebarSettings {
     private static final String SIDEBAR_COLOUR_SCHEME_FIELD =
         "kmu_map_visuals_sidebar_colours_scheme";
 
-    private static final String SIDEBAR_CHEVRON_COLOR_FIELD =
+    private static final String SIDEBAR_CHEVRON_COLOUR_FIELD =
         "kmu_map_visuals_sidebar_colours_chevron";
 
     // The same sidebar box drawn on the intel screen sits flush against the left edge of that
@@ -259,7 +259,7 @@ public final class KmuMapSidebarSettings {
      */
     public static NotchChevronColourChoice getMapSidebarChevronColour() {
         return KmuLunaSettings.readChoice(
-            SIDEBAR_CHEVRON_COLOR_FIELD,
+            SIDEBAR_CHEVRON_COLOUR_FIELD,
             DEFAULT_SIDEBAR_CHEVRON_COLOUR);
     }
 

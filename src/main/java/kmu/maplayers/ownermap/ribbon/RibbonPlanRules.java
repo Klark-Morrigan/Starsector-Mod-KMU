@@ -24,7 +24,7 @@ public final class RibbonPlanRules {
     private final UncontestedRibbonRuns uncontestedRuns;
 
     /**
-     * @param lengths         how far a holding's segment and an interjection run
+     * @param lengths         how far a stake's segment and an interjection run
      * @param uncontestedRuns how far those runs reach on a cell no owner but its own painter holds
      *                        anything in
      */
@@ -37,7 +37,7 @@ public final class RibbonPlanRules {
         this.uncontestedLengths = uncontestedRuns.resolveRunLengths(lengths);
     }
 
-    /** @return how far a holding's segment and an interjection run */
+    /** @return how far a stake's segment and an interjection run */
     public RibbonSegmentLengths lengths() {
         return lengths;
     }
@@ -57,7 +57,7 @@ public final class RibbonPlanRules {
      * a previous pass's lengths - and produce a band at proportions nobody set. The one pairing
      * that is ever correct is the one inside this value, so it is the only one reachable.
      *
-     * @return the holding run cut to a single width where the shortening is on, and the authored
+     * @return the stake run cut to a single width where the shortening is on, and the authored
      *         lengths where it is not
      */
     public RibbonSegmentLengths resolveUncontestedLengths() {

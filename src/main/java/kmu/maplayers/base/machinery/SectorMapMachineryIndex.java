@@ -66,12 +66,16 @@ public final class SectorMapMachineryIndex {
      * one's cached drawing: the two are separated by the install, not by whatever each holder
      * happens to notice has changed.
      *
-     * @param sector the sector the map layers are being installed on; null installs nothing and
-     *               yields the detached machinery, since the switch can be flipped with no game
-     *               loaded
+     * @param sector          the sector the map layers are being installed on; null installs nothing
+     *                        and yields the detached machinery, since the switch can be flipped with
+     *                        no game loaded
+     * @param seatedMachinery what the new machinery holds from its first moment rather than making on
+     *                        first ask; see {@link SectorMapMachinery#SectorMapMachinery}
      * @return the machinery that sector's machinery is now held in
      */
-    public static SectorMapMachinery installMachineryOn(SectorAPI sector) {
+    public static SectorMapMachinery installMachineryOn(
+            SectorAPI sector,
+            InstalledMachinery... seatedMachinery) {
 
         if (sector == null) {
             return DETACHED_MACHINERY;
@@ -85,7 +89,7 @@ public final class SectorMapMachineryIndex {
             if (replaced != null) {
                 replaced.disposeMachinery();
             }
-            return new SectorMapMachinery(sector);
+            return new SectorMapMachinery(sector, seatedMachinery);
         });
 
         LOG.debug("Map layer machinery installed; machinery=" + machineryBySector.size());

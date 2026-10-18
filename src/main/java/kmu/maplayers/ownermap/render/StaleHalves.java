@@ -23,9 +23,9 @@ import kmu.maplayers.ownermap.ContentInputs;
  * @param isCellCutStale  whether those differ from what the standing cells were cut from
  * @param contentInputs   the sidebar preferences a rebuild would bake under, sampled once
  * @param contentRevision the fold of every input the clusters are styled under
- * @param holdingRevision the fold of only those inputs that reach the resolve of who holds
+ * @param ownersRevision  the fold of only those inputs that reach the resolve of who owns
  *                        what, so a rebuild can tell a pick that moved the paint from one that
- *                        moved the holding
+ *                        moved the owners
  * @param isContentStale  whether anything at all is owed, the cut included - false is the frame
  *                        that stops at the decision
  */
@@ -34,6 +34,6 @@ record StaleHalves(
     boolean isCellCutStale,
     ContentInputs contentInputs,
     int contentRevision,
-    int holdingRevision,
+    int ownersRevision,
     boolean isContentStale) {
 }

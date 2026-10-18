@@ -8,26 +8,26 @@ import kmu.settings.KmuOwnerMapRibbonSettings;
  * <p>Every populated cell bands, so what is left to answer about an uncontested one is only how
  * loudly. A cell some rival holds something in is the readout the whole design exists for, and its
  * runs are the player's authored lengths; a cell held by one owner alone reports a footprint its
- * fill has already named the owner of, and needs to say only how many holdings are there. At the
- * authored run length a large lone holding would lay more band than the contested cells the design
- * was built around - out-shouting the very cells a reader is meant to be drawn to. A holding run of
- * one width keeps such a cell a tally rather than a statement.
+ * fill has already named the owner of, and needs to say only how many stakes are there. At the
+ * authored run length an owner with many stakes in a cell would lay more band than the contested
+ * cells the design was built around - out-shouting the very cells a reader is meant to be drawn
+ * to. A stake run of one width keeps such a cell a tally rather than a statement.
  *
  * <p>Stated as its own value rather than as a second length beside the authored pair, because it
  * is a change to those lengths for one kind of cell and not a proportion of its own: a knob to
  * tune would be one more ratio a player has to hold against the two that already decide how a
  * contested band reads.
  *
- * @param isRunShortened whether the holding runs on such a cell are cut to one width each, instead
+ * @param isRunShortened whether the stake runs on such a cell are cut to one width each, instead
  *                       of the length the player authored for contested bands
  */
 public record UncontestedRibbonRuns(
     boolean isRunShortened) {
 
-    // How far one holding's run reaches on an uncontested cell when the runs are shortened: the
+    // How far one stake's run reaches on an uncontested cell when the runs are shortened: the
     // shortest run a band can draw, since the width is the unit every length in the design is a
     // multiple of.
-    private static final int ONE_WIDTH_PER_MARKET = 1;
+    private static final int ONE_WIDTH_PER_STAKE = 1;
 
     /**
      * Reads the player's live answer for the uncontested cells.
@@ -46,19 +46,19 @@ public record UncontestedRibbonRuns(
     /**
      * The lengths an uncontested cell's runs are laid at, given the ones a contested cell's are.
      *
-     * <p>Only the holding run is answered for here. The parting keeps the player's own length, since
-     * what it separates - one holding from the next - is the same statement on an uncontested cell
+     * <p>Only the stake run is answered for here. The parting keeps the player's own length, since
+     * what it separates - one stake from the next - is the same statement on an uncontested cell
      * as on any other, and shortening it too would leave a tally whose ticks and gaps say nothing
      * apart.
      *
      * @param authoredLengths the lengths the player set, which a contested band is laid at
-     * @return those same lengths, or the holding run cut to a single width where the shortening is on
+     * @return those same lengths, or the stake run cut to a single width where the shortening is on
      */
     public RibbonSegmentLengths resolveRunLengths(RibbonSegmentLengths authoredLengths) {
 
         return isRunShortened
             ? new RibbonSegmentLengths(
-                ONE_WIDTH_PER_MARKET,
+                ONE_WIDTH_PER_STAKE,
                 authoredLengths.interjectionLengthUnits())
             : authoredLengths;
     }

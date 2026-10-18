@@ -1,5 +1,7 @@
 package kmu.conditions.ui.picker.dialog;
 
+import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import com.fs.starfarer.api.ui.ButtonAPI;
 
 import kmu.conditions.domain.KmuConditionRepository;
@@ -37,84 +39,104 @@ class KmuConditionPickerDialogDelegateTests {
 
         @Test
         void resolvesActionPassedAsButtonId() {
+
             var action = buildAction();
 
             assertThat(KmuConditionPickerDialogDelegate.resolveActionFromUiEvent(action, null))
-                    .contains(action);
+                .contains(action);
         }
 
         @Test
         void resolvesActionPassedAsData() {
+
             var action = buildAction();
 
             assertThat(KmuConditionPickerDialogDelegate.resolveActionFromUiEvent("button-id", action))
-                    .contains(action);
+                .contains(action);
         }
 
         @Test
         void resolvesActionStoredOnButtonCustomData() {
+
             var action = buildAction();
             var button = buildButtonWithCustomData(action);
 
             assertThat(KmuConditionPickerDialogDelegate.resolveActionFromUiEvent(button, null))
-                    .contains(action);
+                .contains(action);
         }
 
         @Test
         void ignoresUnrelatedUiEvents() {
+
             assertThat(KmuConditionPickerDialogDelegate.resolveActionFromUiEvent("button-id", "payload"))
-                    .isEmpty();
+                .isEmpty();
         }
 
         private ButtonAPI buildButtonWithCustomData(Object customData) {
+
             return (ButtonAPI) Proxy.newProxyInstance(
-                    ButtonAPI.class.getClassLoader(),
-                    new Class<?>[] {ButtonAPI.class},
-                    (proxy, method, args) -> {
-                        if ("getCustomData".equals(method.getName())) {
-                            return customData;
-                        }
-                        if ("toString".equals(method.getName())) {
-                            return "ButtonAPI test double";
-                        }
-                        if ("hashCode".equals(method.getName())) {
-                            return System.identityHashCode(proxy);
-                        }
-                        if ("equals".equals(method.getName())) {
-                            return proxy == args[0];
-                        }
-                        return resolveDefaultValue(method.getReturnType());
-                    });
+                ButtonAPI.class.getClassLoader(),
+                new Class<?>[] {ButtonAPI.class},
+                (proxy, method, args) -> {
+
+                    if ("getCustomData".equals(method.getName())) {
+                        return customData;
+                    }
+
+                    if ("toString".equals(method.getName())) {
+                        return "ButtonAPI test double";
+                    }
+
+                    if ("hashCode".equals(method.getName())) {
+                        return System.identityHashCode(proxy);
+                    }
+
+                    if ("equals".equals(method.getName())) {
+                        return proxy == args[0];
+                    }
+
+                    return resolveDefaultValue(method.getReturnType());
+                });
         }
 
         private Object resolveDefaultValue(Class<?> returnType) {
+
             if (!returnType.isPrimitive()) {
                 return null;
             }
+
             if (returnType == boolean.class) {
                 return false;
             }
+
             if (returnType == byte.class) {
                 return (byte) 0;
             }
+
             if (returnType == short.class) {
                 return (short) 0;
             }
+
             if (returnType == int.class) {
                 return 0;
             }
+
             if (returnType == long.class) {
                 return 0L;
             }
+
             if (returnType == float.class) {
                 return 0f;
             }
+
             if (returnType == double.class) {
                 return 0d;
             }
+
             if (returnType == char.class) {
                 return '\0';
             }
+
             return null;
         }
     }
@@ -124,53 +146,70 @@ class KmuConditionPickerDialogDelegateTests {
 
         @Test
         void panelPluginHandlesButtonPressedActions() {
+
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
+                new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
+
             var marketFake = new EditableMarketFake();
             var actionHandler = new KmuConditionPickerActionHandler(
-                    service,
-                    new KmuConditionPickerModelFactory(service),
-                    marketFake);
+                service,
+                new KmuConditionPickerModelFactory(service),
+                marketFake);
+
             var feedbackSink = new RecordingFeedbackSink();
             var delegate = new KmuConditionPickerDialogDelegate(
-                    actionHandler,
-                    feedbackSink,
-                    720f,
-                    560f);
-            var action = KmuConditionPickerAction.fromEntry(
-                    actionHandler.getModel().getEntries().get(0));
+                actionHandler,
+                feedbackSink,
+                720f,
+                560f);
 
-            delegate.getCustomPanelPlugin().buttonPressed(action);
+            var action = KmuConditionPickerAction.fromEntry(
+                actionHandler.getModel().getEntries().get(0));
+
+            delegate
+                .getCustomPanelPlugin()
+                .buttonPressed(action);
 
             assertThat(actionHandler.getModel().getEntries())
-                    .extracting(KmuConditionPickerEntry::getState)
-                    .containsExactly(KmuConditionPickerEntryState.PRESENT);
-            assertThat(marketFake.conditionIds).containsExactly("hot");
-            assertThat(feedbackSink.messages).containsExactly("Added condition: hot");
+                .extracting(KmuConditionPickerEntry::getState)
+                .containsExactly(KmuConditionPickerEntryState.PRESENT);
+
+            assertThat(marketFake.conditionIds)
+                .containsExactly("hot");
+            assertThat(feedbackSink.messages)
+                .containsExactly("Added condition: hot");
         }
 
         @Test
         void panelPluginIgnoresPresentConditionActionsWithoutFeedback() {
+
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
+                new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
+
             var marketFake = new EditableMarketFake("hot");
             var actionHandler = new KmuConditionPickerActionHandler(
-                    service,
-                    new KmuConditionPickerModelFactory(service),
-                    marketFake);
+                service,
+                new KmuConditionPickerModelFactory(service),
+                marketFake);
+
             var feedbackSink = new RecordingFeedbackSink();
             var delegate = new KmuConditionPickerDialogDelegate(
-                    actionHandler,
-                    feedbackSink,
-                    720f,
-                    560f);
+                actionHandler,
+                feedbackSink,
+                720f,
+                560f);
+
             var action = KmuConditionPickerAction.fromEntry(
-                    actionHandler.getModel().getEntries().get(0));
+                actionHandler.getModel().getEntries().get(0));
 
-            delegate.getCustomPanelPlugin().buttonPressed(action);
+            delegate
+                .getCustomPanelPlugin()
+                .buttonPressed(action);
 
-            assertThat(marketFake.conditionIds).containsExactly("hot");
-            assertThat(feedbackSink.messages).isEmpty();
+            assertThat(marketFake.conditionIds)
+                .containsExactly("hot");
+            assertThat(feedbackSink.messages)
+                .isEmpty();
         }
     }
 
@@ -193,31 +232,34 @@ class KmuConditionPickerDialogDelegateTests {
             // wording that any dialog with nothing to commit can read. The bar-arranging dialog wants
             // a word of its own precisely because it does have something to leave the player with.
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
+                new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
+
             var delegate = new KmuConditionPickerDialogDelegate(
-                    new KmuConditionPickerActionHandler(
-                            service,
-                            new KmuConditionPickerModelFactory(service),
-                            new EditableMarketFake()),
-                    new RecordingFeedbackSink(),
-                    720f,
-                    560f);
+                new KmuConditionPickerActionHandler(
+                    service,
+                    new KmuConditionPickerModelFactory(service),
+                    new EditableMarketFake()),
+                new RecordingFeedbackSink(),
+                720f,
+                560f);
 
             assertThat(delegate.getConfirmText())
-                    .isEqualTo("Close");
+                .isEqualTo("Close");
         }
     }
 
     private static KmuConditionPickerAction buildAction() {
-        return KmuConditionPickerAction.fromEntry(new KmuConditionPickerEntry(
-                "hot",
-                "Hot",
-                "graphics/icons/markets/hot.png",
-                KmuConditionPickerEntryState.ABSENT,
-                "Test tooltip"));
+
+        return KmuConditionPickerAction.fromEntry(
+            new KmuConditionPickerEntry
+                .Builder("hot", "Hot", KmuConditionPickerEntryState.ABSENT)
+                .withIcon("graphics/icons/markets/hot.png")
+                .withTooltipText("Test tooltip")
+                .build());
     }
 
     private static final class ConditionRepositoryFake implements KmuConditionRepository {
+
         private final List<KmuConditionSpec> specs;
 
         private ConditionRepositoryFake(KmuConditionSpec... specs) {
@@ -231,16 +273,20 @@ class KmuConditionPickerDialogDelegateTests {
 
         @Override
         public Optional<KmuConditionSpec> findConditionSpec(String conditionId) {
-            return specs.stream()
-                    .filter(spec -> spec.getId().equals(conditionId))
-                    .findFirst();
+
+            return specs
+                .stream()
+                .filter(spec -> spec.getId().equals(conditionId))
+                .findFirst();
         }
     }
 
     private static final class EditableMarketFake implements KmuEditableMarket {
+
         private final Set<String> conditionIds = new LinkedHashSet<>();
 
         private EditableMarketFake(String... conditionIds) {
+
             for (var conditionId : conditionIds) {
                 this.conditionIds.add(conditionId);
             }
@@ -254,6 +300,16 @@ class KmuConditionPickerDialogDelegateTests {
         @Override
         public boolean hasCondition(String conditionId) {
             return conditionIds.contains(conditionId);
+        }
+
+        @Override
+        public Optional<MarketAPI> findStarsectorMarket() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<MarketConditionAPI> findCondition(String conditionId) {
+            return Optional.empty();
         }
 
         @Override
@@ -271,6 +327,7 @@ class KmuConditionPickerDialogDelegateTests {
     }
 
     private static final class RecordingFeedbackSink implements KmuConditionPickerFeedbackSink {
+
         private final List<String> messages = new ArrayList<>();
 
         @Override

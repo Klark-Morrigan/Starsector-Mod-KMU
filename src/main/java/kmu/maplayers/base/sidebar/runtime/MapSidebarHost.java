@@ -56,8 +56,8 @@ public final class MapSidebarHost
 
     MapSidebarHost(ScreenClaim screenClaim) {
         // The sector map's own picks, so neither its tab nor its hiding is moved by a switch on the intel
-        // screen - and the fold goes under the same screen, the base composing it from these picks.
-        super(MapLayerScreens.getMapPicks(), OPENS_DOCKED, screenClaim);
+        // screen - and the fold goes under the same screen, the base composing both from the one scope.
+        super(MapLayerScreens.MAP_SCOPE, OPENS_DOCKED, screenClaim);
     }
 
     @Override

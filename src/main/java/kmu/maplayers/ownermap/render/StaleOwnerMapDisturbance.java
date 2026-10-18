@@ -69,21 +69,21 @@ final class StaleOwnerMapDisturbance {
      *
      * @param systemKey           the system that changed hands, whose own cell redraws
      * @param neighbourSystemKeys the systems whose cells share an edge with it
-     * @param oldHolder           who held it before, or null if nobody did
-     * @param newHolder           who holds it now, or null if nobody does
+     * @param oldOwner            who owned it before, or null if nobody did
+     * @param newOwner            who owns it now, or null if nobody does
      */
     void recordFlip(
             SystemKey systemKey,
             Collection<SystemKey> neighbourSystemKeys,
-            SystemOwner oldHolder,
-            SystemOwner newHolder) {
+            SystemOwner oldOwner,
+            SystemOwner newOwner) {
 
-        if (oldHolder != null) {
-            affectedOwnerIds.add(oldHolder.ownerId());
+        if (oldOwner != null) {
+            affectedOwnerIds.add(oldOwner.ownerId());
         }
 
-        if (newHolder != null) {
-            affectedOwnerIds.add(newHolder.ownerId());
+        if (newOwner != null) {
+            affectedOwnerIds.add(newOwner.ownerId());
         }
 
         cellKeysToRedraw.add(systemKey);

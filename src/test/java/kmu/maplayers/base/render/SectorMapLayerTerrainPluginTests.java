@@ -4,10 +4,8 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.LocationAPI;
 
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
-import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -56,7 +54,9 @@ final class SectorMapLayerTerrainPluginTests {
 
     private final MapLayer drawingLayerMock = mock(MapLayer.class);
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
-    private final IntelScreenViewFake intelScreenFake = new IntelScreenViewFake();
+
+    // The screens seated on the sector each case installs, which is where the surface reads what draws.
+    private MapLayerScreens screens;
 
     // The surface reads the compatibility constraint before it draws anything, and that read reaches
     // LunaLib, which no test has. Held for the class so every case runs against a stated constraint
@@ -65,7 +65,7 @@ final class SectorMapLayerTerrainPluginTests {
     private MockedStatic<KmuMapHoverSettings> mapLayerSettingsMock;
 
     // The running game, held for the class because every case wants the same one: no sector, so the
-    // registry resolves to the registered default pick and the presence read behind the compatibility
+    // screens resolve to the registered default pick and the presence read behind the compatibility
     // constraint fails closed to no map showing. Which sector is drawn is settled by where the
     // surface's terrain sits, not by this.
     private MockedStatic<Global> globalMock;
@@ -104,16 +104,8 @@ final class SectorMapLayerTerrainPluginTests {
         when(drawingLayerMock.resolveRenderer(any()))
             .thenReturn(layerRendererMock);
 
-        MapLayerRosters.replaceRosterWith(drawingLayerMock);
-
-        // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
-        // each test from the intel screen closed, which resolves reads to the map screen's pick.
-        MapLayerScreens.registerIntelScreen(intelScreenFake);
-    }
-
-    @AfterEach
-    void restoreARegisteredLayer() {
-        MapLayerRosters.restoreNonEmptyRoster();
+        // Wired to no intel screen, so every read resolves to the map screen's pick.
+        screens = MapLayerRosters.createScreensOver(drawingLayerMock);
     }
 
     // The index is process-wide, so a sector installed on by one case would otherwise still be
@@ -149,7 +141,7 @@ final class SectorMapLayerTerrainPluginTests {
             // sector's machinery the frame belongs to. A surface resolving anything else would paint
             // one sector's overlay from another sector's cells.
             var plugin = new SectorMapLayerTerrainPlugin();
-            var machinery = seatSurfacesInAnInstalledSector(plugin);
+            var machinery = seatSurfacesInAnInstalledSector(screens, plugin);
 
             plugin.renderOnMap(1.5f, 0.25f);
 
@@ -190,7 +182,7 @@ final class SectorMapLayerTerrainPluginTests {
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screens, plugin);
 
             plugin.renderOnMap(1.5f, 0.25f);
 
@@ -214,22 +206,16 @@ final class SectorMapLayerTerrainPluginTests {
             // ignored one of the two would either snap out from under the sidebar thinning beside it, or
             // paint over a map that is itself fading away.
             var plugin = new SectorMapLayerTerrainPlugin();
+            var screensMock = mock(MapLayerScreens.class);
 
-            seatSurfacesInAnInstalledSector(plugin);
+            when(screensMock.resolveDrawnLayer())
+                .thenReturn(drawingLayerMock);
+            when(screensMock.resolveShownFadeOnLiveScreen())
+                .thenReturn(0.5f);
 
-            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class);
-                 var layerScreensMock = mockStatic(MapLayerScreens.class)) {
+            seatSurfacesInAnInstalledSector(screensMock, plugin);
 
-                layerRegistryMock
-                    .when(MapLayerRegistry::getDrawnLayer)
-                    .thenReturn(drawingLayerMock);
-
-                layerScreensMock
-                    .when(MapLayerScreens::resolveShownFadeOnLiveScreen)
-                    .thenReturn(0.5f);
-
-                plugin.renderOnMap(1.5f, 0.25f);
-            }
+            plugin.renderOnMap(1.5f, 0.25f);
 
             verify(layerRendererMock)
                 .renderOnMap(1.5f, 0.125f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
@@ -242,7 +228,7 @@ final class SectorMapLayerTerrainPluginTests {
             // it, the moment the cursor reaches a cell above all.
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screens, plugin);
 
             plugin.renderOnMap(1.5f, 0.25f);
 
@@ -268,7 +254,7 @@ final class SectorMapLayerTerrainPluginTests {
             var plugin = new SectorMapLayerTerrainPlugin();
             var secondPlugin = new SectorMapLayerTerrainPlugin();
 
-            var machinery = seatSurfacesInAnInstalledSector(plugin, secondPlugin);
+            var machinery = seatSurfacesInAnInstalledSector(screens, plugin, secondPlugin);
 
             MapFramePreparationClaim.resolveClaimIn(machinery).renderInUICoordsBelowUI(null);
 
@@ -290,8 +276,8 @@ final class SectorMapLayerTerrainPluginTests {
             var plugin = new SectorMapLayerTerrainPlugin();
             var otherSectorsPlugin = new SectorMapLayerTerrainPlugin();
 
-            var machinery = seatSurfacesInAnInstalledSector(plugin);
-            var otherMachinery = seatSurfacesInAnInstalledSector(otherSectorsPlugin);
+            var machinery = seatSurfacesInAnInstalledSector(screens, plugin);
+            var otherMachinery = seatSurfacesInAnInstalledSector(screens, otherSectorsPlugin);
 
             MapFramePreparationClaim.resolveClaimIn(machinery).renderInUICoordsBelowUI(null);
             MapFramePreparationClaim.resolveClaimIn(otherMachinery).renderInUICoordsBelowUI(null);
@@ -314,7 +300,7 @@ final class SectorMapLayerTerrainPluginTests {
             var plugin = new SectorMapLayerTerrainPlugin();
             var secondPlugin = new SectorMapLayerTerrainPlugin();
 
-            var machinery = seatSurfacesInAnInstalledSector(plugin, secondPlugin);
+            var machinery = seatSurfacesInAnInstalledSector(screens, plugin, secondPlugin);
 
             MapFramePreparationClaim.resolveClaimIn(machinery).renderInUICoordsBelowUI(null);
 
@@ -333,7 +319,7 @@ final class SectorMapLayerTerrainPluginTests {
             // before this pass emits any of them.
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screens, plugin);
 
             plugin.renderOnMap(1.5f, 0.25f);
 
@@ -352,7 +338,7 @@ final class SectorMapLayerTerrainPluginTests {
             // A claim spent for good would leave the map painting the draw lists of whichever frame
             // happened to prepare first, which is the opposite fault and the worse one.
             var plugin = new SectorMapLayerTerrainPlugin();
-            var machinery = seatSurfacesInAnInstalledSector(plugin);
+            var machinery = seatSurfacesInAnInstalledSector(screens, plugin);
             var claim = MapFramePreparationClaim.resolveClaimIn(machinery);
 
             claim.renderInUICoordsBelowUI(null);
@@ -377,7 +363,7 @@ final class SectorMapLayerTerrainPluginTests {
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screens, plugin);
 
             plugin.renderOnMap(1.5f, 0.25f);
 
@@ -395,7 +381,7 @@ final class SectorMapLayerTerrainPluginTests {
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screens, plugin);
 
             assertThatCode(() -> {
                 plugin.renderOnMap(1.5f, 0.25f);
@@ -420,11 +406,11 @@ final class SectorMapLayerTerrainPluginTests {
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screens, plugin);
             plugin.renderOnMap(1.5f, 0.25f);
 
             SectorMapMachineryIndex.disposeAllMachinery();
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screens, plugin);
             plugin.renderOnMap(1.5f, 0.25f);
 
             verify(layerRendererMock)
@@ -440,11 +426,11 @@ final class SectorMapLayerTerrainPluginTests {
             when(silentLayerMock.getId())
                 .thenReturn("silent");
 
-            MapLayerRosters.replaceRosterWith(silentLayerMock);
+            screens = MapLayerRosters.createScreensOver(silentLayerMock);
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screens, plugin);
 
             plugin.renderOnMap(1f, 1f);
 
@@ -455,11 +441,11 @@ final class SectorMapLayerTerrainPluginTests {
         void drawsNothingWithoutAnActiveLayer() {
             // The pre-registration frame: the terrain can be added before any composition root has
             // run, so the surface must survive a null pick rather than dereference it.
-            MapLayerRosters.forgetEveryLayer();
+            screens = MapLayerRosters.createScreensOver();
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            seatSurfacesInAnInstalledSector(plugin);
+            seatSurfacesInAnInstalledSector(screens, plugin);
 
             assertThatCode(() -> plugin.renderOnMap(1f, 1f))
                 .doesNotThrowAnyException();

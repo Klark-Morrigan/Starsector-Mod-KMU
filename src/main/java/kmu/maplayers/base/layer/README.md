@@ -16,6 +16,7 @@ the shared vocabulary and the per-screen key scheme these types compose their ke
 
 - [What a layer is](#what-a-layer-is)
 - [The roster](#the-roster)
+- [One of each, handed out](#one-of-each-handed-out)
 - [A screen's two picks](#a-screens-two-picks)
 - [What a screen is drawing](#what-a-screen-is-drawing)
 - [Which tabs a screen is offered](#which-tabs-a-screen-is-offered)
@@ -50,12 +51,11 @@ KMU's own two layers answer out of their string key classes and the `Map - Keybi
 
 ## The roster
 
-`MapLayerRegistry` holds every registered layer,
-and answers what is in play on the screen showing this frame.
+`MapLayerRegistry` holds every registered layer.
+What is in play on the screen showing this frame is [the screens'](#a-screens-two-picks) answer,
+since it is a reading of that screen's picks.
 
-Registration is one layer at a time and accumulates,
-so a mod that depends on KMU registers its own as it loads
-and lands to the right of the layers it was built on.
+Registration is one layer at a time and accumulates.
 That arrival order is the whole of the row's order -
 no layer states a rank,
 none being in a position to see the row it stands in -
@@ -65,8 +65,37 @@ so `NoLayer` leads the strip while declining and the political map is what a fre
 
 Two *different* layers under one ID are arbitrated rather than tabbed twice,
 both tabs otherwise reading and writing the one stored pick that names them.
-Nothing is settled at load,
-a mod registering after KMU's own load has returned being the ordinary case rather than the exception.
+
+## One of each, handed out
+
+The roster,
+the arrangement and the screens are instances,
+one of each for the process.
+`MapLayers.registerAll` makes them at application load and hands back the screens,
+which are built over the other two.
+The entry point seats those screens on every sector's machinery as it installs the layers there,
+through `SectorMapMachineryIndex.installMachineryOn(sector, seatedMachinery)`.
+
+Seated rather than handed to each reader,
+because the readers that matter most are built by the engine:
+the terrain surface is rebuilt from the save,
+and the guard it draws through is made on first ask.
+Both reach the machinery and nothing else,
+so `MapLayerScreens.resolveScreensIn(machinery)` is how they find the screens.
+A machinery nothing was seated on -
+the detached one -
+answers unwired screens,
+over an empty roster,
+on which nothing draws.
+
+The sidebar hosts live for the process and draw whichever sector is loaded,
+so they resolve their screen's picks on each ask through `resolveScreensForLiveSector`.
+The roster and the arrangement ride on each screen's picks,
+which is how the tab row and the arranging dialog reach them.
+
+Nothing here has a reset hook.
+A reader holds what it was given,
+and a fresh instance starts from nothing.
 
 ## A screen's two picks
 
@@ -109,11 +138,11 @@ and the session's rather than the save's.
 
 What a screen is set to and what is on it are the same answer except while a dissolve runs,
 and `ScreenDrawnLayer` is where they part.
-It is what `MapLayerRegistry.getDrawnLayer` and `isDrawnLayer` both resolve through,
+It is what `MapLayerScreens.resolveDrawnLayer` and `ScreenLayerPicks.isDrawingLayer` both resolve through,
 and what [the render surface's guard](../render/README.md#a-layer-that-throws) asks for the layer it runs,
 so every pass driven by "what draws" reads one answer,
 and the two picks are left saying only what they are each about.
-The registry says *drawn* rather than *active* for that reason:
+The screens say *drawn* rather than *active* for that reason:
 active is what a screen is set to,
 which is `ActiveLayerSelection`'s word and stays there.
 
@@ -205,7 +234,7 @@ removed or renamed costs the player nothing and needs no migration,
 and a file that cannot be read is worth exactly the unarranged row.
 
 Which store answers is bound at the composition root and read through `LiveMapLayerArrangement`,
-so nothing on the frame path names a file and an install that bound none reads as unarranged.
+so nothing on the frame path names a file and one bound to no store reads as unarranged.
 What is bound in play is `SessionHeldMapLayerArrangement` over the stored one,
 the row being assembled on every frame the sidebar draws and every key it routes,
 which is more often than a file may be opened.

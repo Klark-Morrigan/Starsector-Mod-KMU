@@ -10,7 +10,6 @@ import kmlib.starsector.factions.FactionNames;
 import kmlib.starsector.factions.relation.PlayerRelations;
 
 import kmu.conditions.domain.KmuEditableMarket;
-import kmu.conditions.domain.StarsectorEditableMarket;
 import kmu.starsector.StarsectorGravityWellResolver;
 
 import java.util.Objects;
@@ -40,40 +39,28 @@ final class StarsectorConditionPickerLocationFactory {
      */
     KmuConditionPickerLocation create(KmuEditableMarket market) {
 
-        if (!(market instanceof StarsectorEditableMarket)) {
-            return unknownLocation();
-        }
+        return market
+            .findStarsectorMarket()
+            .map(this::createStarsectorLocation)
+            .orElseGet(KmuConditionPickerLocation::createUnknownLocation);
+    }
 
-        var starsectorMarket = ((StarsectorEditableMarket) market).getMarket();
-        if (starsectorMarket == null) {
-            return unknownLocation();
-        }
+    private KmuConditionPickerLocation createStarsectorLocation(MarketAPI starsectorMarket) {
 
         var faction = factionFor(starsectorMarket);
 
         // Resolved once for both its fields: the walk climbs the whole orbit chain.
         var gravityWell = gravityWellResolver.resolve(starsectorMarket);
 
-        return new KmuConditionPickerLocation(
-            planetName(starsectorMarket),
-            planetType(starsectorMarket),
-            pickerFaction(faction),
-            starSystemName(starsectorMarket),
-            gravityWellDisplayName(gravityWell),
-            gravityWellName(gravityWell),
-            constellationName(starsectorMarket));
-    }
-
-    private KmuConditionPickerLocation unknownLocation() {
-
-        return new KmuConditionPickerLocation(
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
+        return new KmuConditionPickerLocation.Builder()
+            .withPlanetName(planetName(starsectorMarket))
+            .withPlanetType(planetType(starsectorMarket))
+            .withFaction(pickerFaction(faction))
+            .withStarSystemName(starSystemName(starsectorMarket))
+            .withGravityWellTypeName(gravityWellDisplayName(gravityWell))
+            .withGravityWellName(gravityWellName(gravityWell))
+            .withConstellationName(constellationName(starsectorMarket))
+            .build();
     }
 
     private String marketName(MarketAPI market) {

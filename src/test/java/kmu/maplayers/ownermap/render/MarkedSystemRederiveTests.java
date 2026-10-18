@@ -85,7 +85,7 @@ final class MarkedSystemRederiveTests {
         }
 
         @Test
-        void recordsTheNewHolderWhenASystemChangesHands() {
+        void recordsTheNewOwnerWhenASystemChangesHands() {
 
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
@@ -115,7 +115,7 @@ final class MarkedSystemRederiveTests {
         }
 
         @Test
-        void dropsTheHolderOfASystemThatLostItsLastSettlement() {
+        void dropsTheOwnerOfASystemThatLostItsLastSettlement() {
             // Emptied: the entry goes rather than being left pointing at the owner that lost it,
             // since every reader takes an absent entry for "nobody holds this".
             var clusters = buildSettledIn(Map.of(FLIPPED_SYSTEM, HEGEMONY));
@@ -148,7 +148,7 @@ final class MarkedSystemRederiveTests {
         @Test
         void addsASystemTakingItsFirstSettlementToTheInhabitedSet() {
             // A haven appearing where nothing stood, on a layer whose holding cannot account for
-            // whoever built it: no holder moves, so this set is the only record of the change and
+            // whoever built it: no owner moves, so this set is the only record of the change and
             // the cell over it the only surface that can report one.
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(),
@@ -228,7 +228,7 @@ final class MarkedSystemRederiveTests {
         @Test
         void dropsThePickPresenceOfASystemItNowHolds() {
             // Presence is what spares a cell nobody holds, so a system the batch has just given to
-            // the pick leaves the set rather than being carried in it under a holder that draws it
+            // the pick leaves the set rather than being carried in it under an owner that draws it
             // anyway - which is the set a full rebuild would have resolved, asked only of the
             // systems its holding left out.
             var clusters = OwnerMapClusterFixtures.createClustersSpotlighting(

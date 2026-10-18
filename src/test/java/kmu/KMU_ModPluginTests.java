@@ -16,6 +16,7 @@ import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerStandings;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
@@ -43,6 +44,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -113,6 +115,8 @@ class KMU_ModPluginTests {
                     var reflectionTracingMock = mockStatic(ReflectionTracingInstaller.class);
                     var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
 
+                answerTheRegistrationWithUnwiredScreens(mapLayersMock);
+
                 new KMU_ModPlugin().onApplicationLoad();
 
                 // The profiling step is pinned as a call rather than as a binding, because what it
@@ -155,6 +159,8 @@ class KMU_ModPluginTests {
                 lunaSettingsMock.when(KmuLunaSettings::describeLunaLibIntegration)
                     .thenCallRealMethod();
 
+                answerTheRegistrationWithUnwiredScreens(mapLayersMock);
+
                 new KMU_ModPlugin().onApplicationLoad();
             }
 
@@ -190,7 +196,41 @@ class KMU_ModPluginTests {
                     SectorMapMachineryIndex::disposeAllMachinery);
                 machineryOrder.verify(
                     installers.machineryIndexMock,
-                    () -> SectorMapMachineryIndex.installMachineryOn(loadedSectorMock));
+                    () -> SectorMapMachineryIndex.installMachineryOn(
+                        eq(loadedSectorMock),
+                        any(MapLayerScreens.class)));
+            }
+        }
+
+        @Test
+        void seatsTheScreensTheLayersWereRegisteredUnder() {
+            // Every pass the engine builds reads its screens off the sector's machinery, so what is
+            // seated there has to be what the launch registered the layers under: any other screens
+            // would offer a roster nothing was registered into.
+            var screens = MapLayerScreens.createUnwiredScreens();
+
+            try (var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
+                    var mapLayersMock = mockStatic(MapLayers.class);
+                    var profilingMock = mockStatic(ProfilingCaptureInstaller.class);
+                    var reflectionTracingMock = mockStatic(ReflectionTracingInstaller.class);
+                    var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
+
+                mapLayersMock
+                    .when(MapLayers::registerAll)
+                    .thenReturn(screens);
+
+                new KMU_ModPlugin().onApplicationLoad();
+            }
+
+            try (var installers = new MapLayerInstallerMocks();
+                    var switches = new FeatureSwitchSeams(loadedSectorMock)) {
+
+                switches.switchMapLayers(true);
+
+                new KMU_ModPlugin().onGameLoad(false);
+
+                installers.machineryIndexMock.verify(
+                    () -> SectorMapMachineryIndex.installMachineryOn(loadedSectorMock, screens));
             }
         }
 
@@ -447,6 +487,16 @@ class KMU_ModPluginTests {
         }
     }
 
+    // Answers the stood-in registration with screens nothing draws on, so the screens the plugin holds
+    // for later loads are a real value whichever case ran first - a stand-in left to its own default
+    // would hand the plugin null.
+    private static void answerTheRegistrationWithUnwiredScreens(MockedStatic<MapLayers> mapLayersMock) {
+
+        mapLayersMock
+            .when(MapLayers::registerAll)
+            .thenReturn(MapLayerScreens.createUnwiredScreens());
+    }
+
     // The game and the switches a load and a settings change read, stood in together with the features
     // they decide on. The switches are live LunaLib reads, which no test classpath can reach.
     private static final class FeatureSwitchSeams implements AutoCloseable {
@@ -554,7 +604,8 @@ class KMU_ModPluginTests {
         private void verifyEveryStandUpFor(SectorAPI sector, VerificationMode howOften) {
 
             machineryIndexMock.verify(
-                () -> SectorMapMachineryIndex.installMachineryOn(sector), howOften);
+                () -> SectorMapMachineryIndex.installMachineryOn(eq(sector), any(MapLayerScreens.class)),
+                howOften);
 
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.installAll(sector), howOften);
@@ -587,7 +638,9 @@ class KMU_ModPluginTests {
 
             var standUpOrder = openCallOrder();
 
-            standUpOrder.verify(machineryIndexMock, () -> SectorMapMachineryIndex.installMachineryOn(sector));
+            standUpOrder.verify(
+                machineryIndexMock,
+                () -> SectorMapMachineryIndex.installMachineryOn(eq(sector), any(MapLayerScreens.class)));
             standUpOrder.verify(substrateRefreshMock, () -> MapSubstrateRefreshInstaller.installAll(sector));
             standUpOrder.verify(standingsMock, () -> MapLayerStandings.applyArrangementTo(sector));
             standUpOrder.verify(surfaceMock, () -> MapSurfaceInstaller.installAll(sector));

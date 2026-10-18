@@ -74,8 +74,7 @@ public final class KmuConditionIconButton {
         return entry;
     }
 
-    static KmuConditionIconButtonLayout computeKmuConditionIconButtonLayout(
-            KmuConditionPickerEntry entry) {
+    static KmuConditionIconButtonLayout computeLayout(KmuConditionPickerEntry entry) {
 
         Objects.requireNonNull(entry, "entry");
 

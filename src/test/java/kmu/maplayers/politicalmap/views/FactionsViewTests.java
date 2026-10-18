@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.views;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
+
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
@@ -80,11 +82,19 @@ final class FactionsViewTests {
             stubNamedFaction(sectorMock, "hegemony", "Hegemony");
 
             try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+
                 alliancesMock
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(HolderGrouping.identity());
 
-                assertThat(FactionsView.INSTANCE
+                // The contest affiliation reads the alliance set as well, and nobody allied is the
+                // answer that leaves the name this case is about to the grouping alone.
+                alliancesMock
+                    .when(NexerelinAlliances::resolveFactionAlliances)
+                    .thenReturn(FactionAlliances.NONE);
+
+                assertThat(FactionsView
+                        .INSTANCE
                         .resolveViewReading(sectorMock)
                         .reading()
                         .resolveName("hegemony", OwnerNameFormatChoice.SHORT))

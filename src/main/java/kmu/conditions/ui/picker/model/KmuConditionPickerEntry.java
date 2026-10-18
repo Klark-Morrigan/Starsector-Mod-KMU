@@ -18,75 +18,20 @@ public final class KmuConditionPickerEntry {
     private final String tooltipText;
     private final String sourceModName;
     private final KmuConditionTooltipRenderer tooltipRenderer;
-    private final boolean suppressed;
-    private final boolean hidden;
+    private final boolean isSuppressed;
+    private final boolean isHidden;
 
-    public KmuConditionPickerEntry(
-            String conditionId,
-            String name,
-            String icon,
-            KmuConditionPickerEntryState state,
-            String tooltipText) {
+    private KmuConditionPickerEntry(Builder builder) {
 
-        this(conditionId, name, icon, state, tooltipText, null);
-    }
-
-    public KmuConditionPickerEntry(
-            String conditionId,
-            String name,
-            String icon,
-            KmuConditionPickerEntryState state,
-            String tooltipText,
-            String sourceModName) {
-
-        this(conditionId, name, icon, state, tooltipText, sourceModName, false, false);
-    }
-
-    public KmuConditionPickerEntry(
-            String conditionId,
-            String name,
-            String icon,
-            KmuConditionPickerEntryState state,
-            String tooltipText,
-            String sourceModName,
-            boolean suppressed,
-            boolean hidden) {
-
-        this(conditionId, name, icon, state, tooltipText, sourceModName, null, suppressed, hidden);
-    }
-
-    KmuConditionPickerEntry(
-            String conditionId,
-            String name,
-            String icon,
-            KmuConditionPickerEntryState state,
-            String tooltipText,
-            String sourceModName,
-            KmuConditionTooltipRenderer tooltipRenderer) {
-
-        this(conditionId, name, icon, state, tooltipText, sourceModName, tooltipRenderer, false, false);
-    }
-
-    KmuConditionPickerEntry(
-            String conditionId,
-            String name,
-            String icon,
-            KmuConditionPickerEntryState state,
-            String tooltipText,
-            String sourceModName,
-            KmuConditionTooltipRenderer tooltipRenderer,
-            boolean suppressed,
-            boolean hidden) {
-
-        this.conditionId = requireFieldText(conditionId, "conditionId");
-        this.name = requireFieldText(name, "name");
-        this.icon = normaliseText(icon);
-        this.state = Objects.requireNonNull(state, "state");
-        this.tooltipText = getTextOrEmpty(tooltipText);
-        this.sourceModName = normaliseText(sourceModName);
-        this.tooltipRenderer = tooltipRenderer;
-        this.suppressed = suppressed;
-        this.hidden = hidden;
+        this.conditionId = requireFieldText(builder.conditionId, "conditionId");
+        this.name = requireFieldText(builder.name, "name");
+        this.icon = normaliseText(builder.icon);
+        this.state = Objects.requireNonNull(builder.state, "state");
+        this.tooltipText = getTextOrEmpty(builder.tooltipText);
+        this.sourceModName = normaliseText(builder.sourceModName);
+        this.tooltipRenderer = builder.tooltipRenderer;
+        this.isSuppressed = builder.isSuppressed;
+        this.isHidden = builder.isHidden;
     }
 
     public String getConditionId() {
@@ -122,14 +67,82 @@ public final class KmuConditionPickerEntry {
     }
 
     public boolean isSuppressed() {
-        return suppressed;
+        return isSuppressed;
     }
 
     public boolean isHidden() {
-        return hidden;
+        return isHidden;
     }
 
     public String descriptionLine() {
         return conditionId + " - " + state.getDisplayName();
+    }
+
+    /**
+     * Builds an entry from the three parts every entry has, plus whichever of the rest are known.
+     *
+     * <p>The rest are named where they are set. Two of them are flags and three are strings, which a
+     * positional list cannot tell apart at the call site.
+     */
+    public static final class Builder {
+
+        private final String conditionId;
+        private final String name;
+        private final KmuConditionPickerEntryState state;
+
+        private String icon;
+        private String tooltipText;
+        private String sourceModName;
+        private KmuConditionTooltipRenderer tooltipRenderer;
+        private boolean isSuppressed;
+        private boolean isHidden;
+
+        public Builder(String conditionId, String name, KmuConditionPickerEntryState state) {
+
+            this.conditionId = conditionId;
+            this.name = name;
+            this.state = state;
+        }
+
+        public Builder withIcon(String icon) {
+
+            this.icon = icon;
+            return this;
+        }
+
+        public Builder withTooltipText(String tooltipText) {
+
+            this.tooltipText = tooltipText;
+            return this;
+        }
+
+        public Builder withSourceModName(String sourceModName) {
+
+            this.sourceModName = sourceModName;
+            return this;
+        }
+
+        public Builder withSuppressed(boolean isSuppressed) {
+
+            this.isSuppressed = isSuppressed;
+            return this;
+        }
+
+        public Builder withHidden(boolean isHidden) {
+
+            this.isHidden = isHidden;
+            return this;
+        }
+
+        public KmuConditionPickerEntry build() {
+            return new KmuConditionPickerEntry(this);
+        }
+
+        // Package-private: only the model factory holds a live condition to render from.
+        Builder withTooltipRenderer(KmuConditionTooltipRenderer tooltipRenderer) {
+
+            this.tooltipRenderer = tooltipRenderer;
+            return this;
+        }
     }
 }

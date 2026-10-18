@@ -11,6 +11,7 @@ import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerStandings;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
@@ -53,8 +54,8 @@ public class KMU_ModPlugin
     // can tell which of them moved. Listed here because deciding what runs is the entry point's
     // whole subject; what each half does is its installers'.
     //
-    // This one is every layer's - a layer another mod registers with KMU draws through the same
-    // installers, and this switch takes it down with KMU's own.
+    // This one is every layer's - every registered layer draws through the same installers, and this
+    // switch takes all of them down together.
     private static final ToggledFeature mapLayers = new ToggledFeature(
         KmuFeatureSettings::areMapLayersEnabled,
         KMU_ModPlugin::installMapLayers,
@@ -93,6 +94,11 @@ public class KMU_ModPlugin
         mapLayers,
         marketConditionManager,
         randomAssortmentOfThingsCompatibility);
+
+    // The screens the map layers draw on, over the roster this launch registered, seated on every sector
+    // the layers are installed on. Unwired until the registration below replaces them, so a launch whose
+    // registration failed installs layers that draw nothing rather than ones that throw.
+    private static MapLayerScreens mapLayerScreens = MapLayerScreens.createUnwiredScreens();
 
     @Override
     public void onApplicationLoad() {
@@ -134,7 +140,7 @@ public class KMU_ModPlugin
         // KMU's own layers, and a fault in one of those reported under LunaLib would name the
         // wrong mod.
         KmuWiringSteps.runGuardedStep(
-            MapLayers::registerAll,
+            () -> mapLayerScreens = MapLayers.registerAll(),
             "Failed to register KMU map layers");
 
         // Answer every switch where the player flips it, rather than at the next load. One
@@ -202,8 +208,9 @@ public class KMU_ModPlugin
     static void installMapLayers(SectorAPI sector) {
 
         // First, and taken back last: everything below derives what it draws from this sector, and
-        // this is where that sector's share of it is held.
-        SectorMapMachineryIndex.installMachineryOn(sector);
+        // this is where that sector's share of it is held. The screens go in with it, so every pass
+        // reaching this sector's machinery - the engine's own among them - reads the same ones.
+        SectorMapMachineryIndex.installMachineryOn(sector, mapLayerScreens);
 
         // Beside that machinery and above every layer: the sweep it drives keeps a record several
         // map families read, so it accrues for as long as the layers are standing at all rather

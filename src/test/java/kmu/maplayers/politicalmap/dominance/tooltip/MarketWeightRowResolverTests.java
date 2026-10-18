@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelText;
 import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.MARKET_STATS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
@@ -160,7 +161,7 @@ final class MarketWeightRowResolverTests {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(rows.get(0).line().valueText())
+            assertThat(rows.get(0).line().value().valueText())
                 .isEqualTo("4,000");
         }
 
@@ -314,7 +315,7 @@ final class MarketWeightRowResolverTests {
             // unmarked one reads as a size this colony has.
             var rows = resolveFixedRatedHiddenMarketRows();
 
-            assertThat(readSizeLine(rows).valueText())
+            assertThat(readSizeLine(rows).value().valueText())
                 .isEqualTo("2.5 (fixed) :: 2,500");
         }
 
@@ -324,7 +325,7 @@ final class MarketWeightRowResolverTests {
             // one case a player is most likely to read as the map miscounting a large secret base.
             var rows = resolveFixedRatedHiddenMarketRows();
 
-            assertThat(readSizeLine(rows).valueWorkingText())
+            assertThat(readSizeLine(rows).value().valueWorkingText())
                 .isEqualTo("7 ::");
         }
 
@@ -337,7 +338,7 @@ final class MarketWeightRowResolverTests {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(readSizeLine(rows).valueWorkingText())
+            assertThat(readSizeLine(rows).value().valueWorkingText())
                 .isNull();
         }
 
@@ -406,7 +407,7 @@ final class MarketWeightRowResolverTests {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(readStationLine(rows).labelText())
+            assertThat(readLabelText(readStationLine(rows)))
                 .isEqualTo("Selkie Station (Military)");
         }
 
@@ -419,7 +420,7 @@ final class MarketWeightRowResolverTests {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(readStationLine(rows).labelText())
+            assertThat(readLabelText(readStationLine(rows)))
                 .isEqualTo("Jangala");
         }
 
@@ -435,7 +436,7 @@ final class MarketWeightRowResolverTests {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(readStationLine(rows).labelText())
+            assertThat(readLabelText(readStationLine(rows)))
                 .isEqualTo("Fort Ludd");
         }
 
@@ -487,7 +488,7 @@ final class MarketWeightRowResolverTests {
 
             var patrolEntry = rows.get(0).children().get(2);
 
-            assertThat(patrolEntry.line().labelText())
+            assertThat(readLabelText(patrolEntry.line()))
                 .isEqualTo("Patrols");
             assertThat(readLabelTexts(patrolEntry.children()))
                 .containsExactly("Small: 2", "Medium: 1");
@@ -521,7 +522,7 @@ final class MarketWeightRowResolverTests {
 
             var patrolEntry = rows.get(0).children().get(2);
 
-            assertThat(patrolEntry.line().labelText())
+            assertThat(readLabelText(patrolEntry.line()))
                 .isEqualTo("Patrols");
             assertThat(patrolEntry.children())
                 .isEmpty();
@@ -538,9 +539,9 @@ final class MarketWeightRowResolverTests {
 
             var tierLine = rows.get(0).children().get(2).children().get(0).line();
 
-            assertThat(tierLine.valueWorkingText())
+            assertThat(tierLine.value().valueWorkingText())
                 .isEqualTo("0.25 /");
-            assertThat(tierLine.valueText())
+            assertThat(tierLine.value().valueText())
                 .isEqualTo("500");
         }
 
@@ -558,9 +559,9 @@ final class MarketWeightRowResolverTests {
                 .get(2)
                 .line();
 
-            assertThat(patrolLine.valueWorkingText())
+            assertThat(patrolLine.value().valueWorkingText())
                 .isNull();
-            assertThat(patrolLine.valueText())
+            assertThat(patrolLine.value().valueText())
                 .isEqualTo("500");
         }
 
@@ -608,9 +609,9 @@ final class MarketWeightRowResolverTests {
                 List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules());
 
-            assertThat(rows.get(0).line().labelText())
+            assertThat(readLabelText(rows.get(0).line()))
                 .isEqualTo("Galatia Academy");
-            assertThat(rows.get(0).line().valueText())
+            assertThat(rows.get(0).line().value().valueText())
                 .isEqualTo("0");
         }
 
@@ -669,7 +670,7 @@ final class MarketWeightRowResolverTests {
                 List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules());
 
-            assertThat(rows.get(0).line().isValueUncounted())
+            assertThat(rows.get(0).line().value().isValueUncounted())
                 .isTrue();
         }
 

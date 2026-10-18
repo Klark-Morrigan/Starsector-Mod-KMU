@@ -19,35 +19,35 @@ package kmu.settings;
  */
 public final class KmuOwnerMapStyleSettings {
 
-    private static final String FACTION_OUTER_BORDER_COLOR_FIELD =
+    private static final String FACTION_OUTER_BORDER_COLOUR_FIELD =
         "kmu_map_politics_visuals_faction_outerBorder_colour";
     private static final String FACTION_OUTER_BORDER_OPACITY_FIELD =
         "kmu_map_politics_visuals_faction_outerBorder_opacity";
     private static final String FACTION_OUTER_BORDER_WIDTH_FIELD =
         "kmu_map_politics_visuals_faction_outerBorder_width";
-    private static final String FACTION_INNER_BORDER_COLOR_FIELD =
+    private static final String FACTION_INNER_BORDER_COLOUR_FIELD =
         "kmu_map_politics_visuals_faction_innerBorder_colour";
     private static final String FACTION_INNER_BORDER_OPACITY_FIELD =
         "kmu_map_politics_visuals_faction_innerBorder_opacity";
     private static final String FACTION_INNER_BORDER_WIDTH_FIELD =
         "kmu_map_politics_visuals_faction_innerBorder_width";
-    private static final String FACTION_FILL_COLOR_FIELD = "kmu_map_politics_visuals_faction_fill_colour";
+    private static final String FACTION_FILL_COLOUR_FIELD = "kmu_map_politics_visuals_faction_fill_colour";
     private static final String FACTION_FILL_OPACITY_FIELD = "kmu_map_politics_visuals_faction_fill_opacity";
     private static final String FACTION_NAME_OPACITY_FIELD = "kmu_map_politics_visuals_faction_name_opacity";
 
-    private static final String INDEPENDENT_OUTER_BORDER_COLOR_FIELD =
+    private static final String INDEPENDENT_OUTER_BORDER_COLOUR_FIELD =
         "kmu_map_politics_visuals_independent_outerBorder_colour";
     private static final String INDEPENDENT_OUTER_BORDER_OPACITY_FIELD =
         "kmu_map_politics_visuals_independent_outerBorder_opacity";
     private static final String INDEPENDENT_OUTER_BORDER_WIDTH_FIELD =
         "kmu_map_politics_visuals_independent_outerBorder_width";
-    private static final String INDEPENDENT_INNER_BORDER_COLOR_FIELD =
+    private static final String INDEPENDENT_INNER_BORDER_COLOUR_FIELD =
         "kmu_map_politics_visuals_independent_innerBorder_colour";
     private static final String INDEPENDENT_INNER_BORDER_OPACITY_FIELD =
         "kmu_map_politics_visuals_independent_innerBorder_opacity";
     private static final String INDEPENDENT_INNER_BORDER_WIDTH_FIELD =
         "kmu_map_politics_visuals_independent_innerBorder_width";
-    private static final String INDEPENDENT_FILL_COLOR_FIELD =
+    private static final String INDEPENDENT_FILL_COLOUR_FIELD =
         "kmu_map_politics_visuals_independent_fill_colour";
     private static final String INDEPENDENT_FILL_OPACITY_FIELD =
         "kmu_map_politics_visuals_independent_fill_opacity";
@@ -56,7 +56,8 @@ public final class KmuOwnerMapStyleSettings {
 
     // Ahead of the decivilised shades because it decides whether there is anything for them to
     // paint: switched off, such a system is not of this category at all and draws as uninhabited.
-    private static final String DECIVILISED_SHOULD_DRAW_TERRITORY_FIELD =
+    // The ID names what the player sees change; the constant names what the switch decides.
+    private static final String SHOULD_COUNT_DECIVILISED_SYSTEMS_AS_POPULATED_FIELD =
         "kmu_map_politics_visuals_decivilised_shouldDrawTerritory";
 
     // A factionless category carries no colour field: it has no faction palette to pick from, so
@@ -110,7 +111,7 @@ public final class KmuOwnerMapStyleSettings {
     // a settled place nobody speaks for, and a map of polities can honestly follow either half of
     // that - which is the player's call rather than the mod's, and the half already on screen is
     // the one a switch should have to be thrown to leave.
-    private static final boolean DEFAULT_DECIVILISED_SHOULD_DRAW_TERRITORY = true;
+    private static final boolean DEFAULT_SHOULD_COUNT_DECIVILISED_SYSTEMS_AS_POPULATED = true;
 
     private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.45;
     private static final double DEFAULT_DECIVILISED_BORDER_WIDTH = 3.0;
@@ -137,7 +138,7 @@ public final class KmuOwnerMapStyleSettings {
      */
     public static OwnerPaletteChoice getFactionOuterBorderColour() {
         return KmuLunaSettings.readChoice(
-            FACTION_OUTER_BORDER_COLOR_FIELD,
+            FACTION_OUTER_BORDER_COLOUR_FIELD,
             DEFAULT_FACTION_OUTER_BORDER_COLOUR);
     }
 
@@ -161,7 +162,7 @@ public final class KmuOwnerMapStyleSettings {
      */
     public static OwnerPaletteChoice getFactionInnerBorderColour() {
         return KmuLunaSettings.readChoice(
-            FACTION_INNER_BORDER_COLOR_FIELD,
+            FACTION_INNER_BORDER_COLOUR_FIELD,
             DEFAULT_FACTION_INNER_BORDER_COLOUR);
     }
 
@@ -186,7 +187,7 @@ public final class KmuOwnerMapStyleSettings {
      *         unfilled
      */
     public static OwnerPaletteChoice getFactionFillColour() {
-        return KmuLunaSettings.readChoice(FACTION_FILL_COLOR_FIELD, DEFAULT_FACTION_FILL_COLOUR);
+        return KmuLunaSettings.readChoice(FACTION_FILL_COLOUR_FIELD, DEFAULT_FACTION_FILL_COLOUR);
     }
 
     /** @return the fill opacity for faction systems, 0..1 */
@@ -208,7 +209,7 @@ public final class KmuOwnerMapStyleSettings {
      */
     public static OwnerPaletteChoice getIndependentOuterBorderColour() {
         return KmuLunaSettings.readChoice(
-            INDEPENDENT_OUTER_BORDER_COLOR_FIELD,
+            INDEPENDENT_OUTER_BORDER_COLOUR_FIELD,
             DEFAULT_INDEPENDENT_OUTER_BORDER_COLOUR);
     }
 
@@ -236,7 +237,7 @@ public final class KmuOwnerMapStyleSettings {
      */
     public static OwnerPaletteChoice getIndependentInnerBorderColour() {
         return KmuLunaSettings.readChoice(
-            INDEPENDENT_INNER_BORDER_COLOR_FIELD,
+            INDEPENDENT_INNER_BORDER_COLOUR_FIELD,
             DEFAULT_INDEPENDENT_INNER_BORDER_COLOUR);
     }
 
@@ -264,7 +265,7 @@ public final class KmuOwnerMapStyleSettings {
      */
     public static OwnerPaletteChoice getIndependentFillColour() {
         return KmuLunaSettings.readChoice(
-            INDEPENDENT_FILL_COLOR_FIELD,
+            INDEPENDENT_FILL_COLOUR_FIELD,
             DEFAULT_INDEPENDENT_FILL_COLOUR);
     }
 
@@ -297,8 +298,8 @@ public final class KmuOwnerMapStyleSettings {
      */
     public static boolean shouldCountDecivilisedSystemsAsPopulated() {
         return KmuLunaSettings.readBoolean(
-            DECIVILISED_SHOULD_DRAW_TERRITORY_FIELD,
-            DEFAULT_DECIVILISED_SHOULD_DRAW_TERRITORY);
+            SHOULD_COUNT_DECIVILISED_SYSTEMS_AS_POPULATED_FIELD,
+            DEFAULT_SHOULD_COUNT_DECIVILISED_SYSTEMS_AS_POPULATED);
     }
 
     /**

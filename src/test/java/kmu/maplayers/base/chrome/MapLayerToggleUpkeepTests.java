@@ -11,6 +11,8 @@ import kmlib.testfixtures.starsector.ui.map.controls.MapFilterRowFake;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
+import kmu.maplayers.base.layer.MapLayerArrangements;
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
@@ -120,14 +122,18 @@ final class MapLayerToggleUpkeepTests {
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
             var upkeep = buildUpkeepOnTheMapScreen(
-                SWITCH_OPEN, () -> screenPicks, () -> shownRow, toggleAttacherMock);
+                SWITCH_OPEN,
+                () -> screenPicks,
+                () -> shownRow,
+                toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
             upkeep.advance(PAUSED_FRAME);
 
             // The common frame: the box held for this screen is still on the row that is up, so there
             // is nothing to append and nothing appended a second time.
-            verify(toggleAttacherMock, times(1)).attachToggleTo(any(), any());
+            verify(toggleAttacherMock, times(1))
+                .attachToggleTo(any(), any());
         }
 
         @Test
@@ -140,7 +146,10 @@ final class MapLayerToggleUpkeepTests {
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
             var upkeep = buildUpkeepOnTheMapScreen(
-                SWITCH_OPEN, () -> screenPicks, shownRow::get, toggleAttacherMock);
+                SWITCH_OPEN,
+                () -> screenPicks,
+                shownRow::get,
+                toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
             shownRow.set(rebuiltRow);
@@ -150,8 +159,10 @@ final class MapLayerToggleUpkeepTests {
             // nobody can see, so the new row gets one of its own.
             var storedVisibility = readStoredVisibility(screenPicks);
 
-            verify(toggleAttacherMock).attachToggleTo(firstRow, storedVisibility);
-            verify(toggleAttacherMock).attachToggleTo(rebuiltRow, storedVisibility);
+            verify(toggleAttacherMock)
+                .attachToggleTo(firstRow, storedVisibility);
+            verify(toggleAttacherMock)
+                .attachToggleTo(rebuiltRow, storedVisibility);
         }
 
         @Test
@@ -166,7 +177,10 @@ final class MapLayerToggleUpkeepTests {
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
             var upkeep = buildUpkeepOnTheMapScreen(
-                SWITCH_OPEN, liveScreenPicks::get, shownRow::get, toggleAttacherMock);
+                SWITCH_OPEN,
+                liveScreenPicks::get,
+                shownRow::get,
+                toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
 
@@ -180,7 +194,8 @@ final class MapLayerToggleUpkeepTests {
 
             // Moving to the other screen and back does not append a second box to the first screen's
             // row: each screen's box is held against that screen's own picks.
-            verify(toggleAttacherMock, times(2)).attachToggleTo(any(), any());
+            verify(toggleAttacherMock, times(2))
+                .attachToggleTo(any(), any());
             verify(toggleAttacherMock, times(1))
                 .attachToggleTo(mapRow, readStoredVisibility(mapScreenPicks));
         }
@@ -191,10 +206,10 @@ final class MapLayerToggleUpkeepTests {
             var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
 
             buildUpkeepOnTheMapScreen(
-                SWITCH_CLOSED,
-                MapLayerToggleUpkeepTests::buildScreenPicks,
-                ShownFilterRows::createRowWithRoomToSpare,
-                toggleAttacherMock)
+                    SWITCH_CLOSED,
+                    MapLayerToggleUpkeepTests::buildScreenPicks,
+                    ShownFilterRows::createRowWithRoomToSpare,
+                    toggleAttacherMock)
                 .advance(PAUSED_FRAME);
 
             // The hatch is closed, so the row is left exactly as the game built it.
@@ -207,10 +222,10 @@ final class MapLayerToggleUpkeepTests {
             var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
 
             buildUpkeepOnTheMapScreen(
-                SWITCH_OPEN,
-                MapLayerToggleUpkeepTests::buildScreenPicks,
-                () -> null,
-                toggleAttacherMock)
+                    SWITCH_OPEN,
+                    MapLayerToggleUpkeepTests::buildScreenPicks,
+                    () -> null,
+                    toggleAttacherMock)
                 .advance(PAUSED_FRAME);
 
             // Every screen showing no map, which is most of them - the ordinary answer rather than
@@ -224,16 +239,17 @@ final class MapLayerToggleUpkeepTests {
             var rowReadCount = new AtomicInteger();
 
             Supplier<MapFilterRow> resolveShownRow = () -> {
+
                 rowReadCount.getAndIncrement();
                 return ShownFilterRows.createRowWithRoomToSpare();
             };
 
             new MapLayerToggleUpkeep(
-                SWITCH_OPEN,
-                MapLayerToggleUpkeepTests::buildScreenPicks,
-                resolveShownRow,
-                () -> CoreUITabId.FLEET,
-                buildAcceptingAttacherMock())
+                    SWITCH_OPEN,
+                    MapLayerToggleUpkeepTests::buildScreenPicks,
+                    resolveShownRow,
+                    () -> CoreUITabId.FLEET,
+                    buildAcceptingAttacherMock())
                 .advance(PAUSED_FRAME);
 
             // The row read walks the running game's widget tree by name to find, on a screen that
@@ -251,6 +267,7 @@ final class MapLayerToggleUpkeepTests {
             var shownCoreTab = new AtomicReference<>(CoreUITabId.MAP);
 
             Supplier<MapFilterRow> resolveShownRow = () -> {
+
                 rowReadCount.getAndIncrement();
                 throw new IllegalStateException("this build's map tab is not shaped that way");
             };
@@ -298,7 +315,8 @@ final class MapLayerToggleUpkeepTests {
 
             // A refusal is not an attachment, so nothing is held - which is what lets a row the
             // layout had not placed yet take a box on a later frame.
-            verify(toggleAttacherMock, times(2)).attachToggleTo(any(), any());
+            verify(toggleAttacherMock, times(2))
+                .attachToggleTo(any(), any());
         }
 
         @Test
@@ -308,10 +326,10 @@ final class MapLayerToggleUpkeepTests {
             var shownRow = ShownFilterRows.createRowOver(rowFake);
 
             buildUpkeepOnTheMapScreen(
-                SWITCH_OPEN,
-                MapLayerToggleUpkeepTests::buildScreenPicksOverAHiddenSave,
-                () -> shownRow,
-                buildAcceptingAttacherMock())
+                    SWITCH_OPEN,
+                    MapLayerToggleUpkeepTests::buildScreenPicksOverAHiddenSave,
+                    () -> shownRow,
+                    buildAcceptingAttacherMock())
                 .advance(PAUSED_FRAME);
 
             // On the frame it goes up, not the one after: a box that opened ticked over a hidden save
@@ -329,7 +347,10 @@ final class MapLayerToggleUpkeepTests {
             var screenPicks = buildScreenPicksReading(areLayersShown);
 
             var upkeep = buildUpkeepOnTheMapScreen(
-                SWITCH_OPEN, () -> screenPicks, () -> shownRow, buildAcceptingAttacherMock());
+                SWITCH_OPEN,
+                () -> screenPicks,
+                () -> shownRow,
+                buildAcceptingAttacherMock());
 
             upkeep.advance(PAUSED_FRAME);
             areLayersShown.set(false);
@@ -348,10 +369,10 @@ final class MapLayerToggleUpkeepTests {
             var screenPicks = buildScreenPicksOverAHiddenSave();
 
             buildUpkeepOnTheMapScreen(
-                SWITCH_OPEN,
-                () -> screenPicks,
-                ShownFilterRows::createRowWithRoomToSpare,
-                buildAcceptingAttacherMock())
+                    SWITCH_OPEN,
+                    () -> screenPicks,
+                    ShownFilterRows::createRowWithRoomToSpare,
+                    buildAcceptingAttacherMock())
                 .advance(PAUSED_FRAME);
 
             // The hide the player made in an earlier session, honoured again now that there is a box
@@ -366,10 +387,10 @@ final class MapLayerToggleUpkeepTests {
             var screenPicks = buildScreenPicksOverAHiddenSave();
 
             buildUpkeepOnTheMapScreen(
-                SWITCH_OPEN,
-                () -> screenPicks,
-                ShownFilterRows::createRowWithRoomToSpare,
-                buildRefusingAttacherMock())
+                    SWITCH_OPEN,
+                    () -> screenPicks,
+                    ShownFilterRows::createRowWithRoomToSpare,
+                    buildRefusingAttacherMock())
                 .advance(PAUSED_FRAME);
 
             // The whole reason the word is said here rather than anywhere earlier: a screen that
@@ -413,7 +434,10 @@ final class MapLayerToggleUpkeepTests {
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
             var upkeep = buildUpkeepOnTheMapScreen(
-                isSwitchOpen::get, () -> screenPicks, () -> shownRow, toggleAttacherMock);
+                isSwitchOpen::get,
+                () -> screenPicks,
+                () -> shownRow,
+                toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
             isSwitchOpen.set(false);
@@ -425,7 +449,9 @@ final class MapLayerToggleUpkeepTests {
             // hatch restores the word rather than appending a second box beside the first.
             assertThat(screenPicks.layerVisibility().areLayersShown())
                 .isFalse();
-            verify(toggleAttacherMock, times(1)).attachToggleTo(any(), any());
+
+            verify(toggleAttacherMock, times(1))
+                .attachToggleTo(any(), any());
         }
 
         @Test
@@ -437,6 +463,7 @@ final class MapLayerToggleUpkeepTests {
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
             Supplier<MapFilterRow> resolveShownRow = () -> {
+
                 if (shownCoreTab.get() == CoreUITabId.MAP) {
                     throw new IllegalStateException("the map screen no longer has this shape");
                 }
@@ -453,7 +480,8 @@ final class MapLayerToggleUpkeepTests {
             assertThatCode(() -> upkeep.advance(PAUSED_FRAME))
                 .doesNotThrowAnyException();
 
-            verify(toggleAttacherMock, never()).attachToggleTo(any(), any());
+            verify(toggleAttacherMock, never())
+                .attachToggleTo(any(), any());
 
             shownCoreTab.set(CoreUITabId.INTEL);
             upkeep.advance(PAUSED_FRAME);
@@ -566,17 +594,25 @@ final class MapLayerToggleUpkeepTests {
         return buildScreenPicksOver(storedVisibilityMock);
     }
 
+    // Over an empty roster and an unarranged bar, which tabs the screen offers being no part of what
+    // the box does.
     private static ScreenLayerPicks buildScreenPicksOver(MapLayerVisibility storedVisibility) {
+
         return new ScreenLayerPicks(
             mock(ActiveLayerSelection.class),
             new ControlBackedMapLayerVisibility(storedVisibility),
-            ScreenMemoryScopes.createStandInScreen());
+            ScreenMemoryScopes.createStandInScreen(),
+            MapLayerRosters.createRosterOf(),
+            MapLayerArrangements.createUnarrangedBar());
     }
 
     // The stored pick a box is bound to, dug out of the picks so a case states which of the two
     // readings it means. A mock, so it can be verified as well as read.
     private static MapLayerVisibility readStoredVisibility(ScreenLayerPicks screenPicks) {
-        return screenPicks.layerVisibility().getStoredVisibility();
+
+        return screenPicks
+            .layerVisibility()
+            .getStoredVisibility();
     }
 
     // An attachment that succeeds, standing a real box on the row it is handed - so the pass's own

@@ -67,8 +67,11 @@ public final class MapLayers {
      * political-map tab hosts the view-selector radio over the roster {@link #selectPoliticalMapViews}
      * chooses, with the faction view its default so the overlay is up the first time the sector map
      * opens rather than blank.
+     *
+     * @return the screens the layers draw on, over the roster registered here and the player's
+     *         arrangement of it - for the entry point to seat on every sector it installs the layers on
      */
-    public static void registerAll() {
+    public static MapLayerScreens registerAll() {
 
         registerOpenlyKnownColonies();
         registerFactionAlliances();
@@ -82,24 +85,27 @@ public final class MapLayers {
             FactionsView.INSTANCE,
             selectAllianceSource());
 
-        MapLayerRegistry.registerLayer(NoLayer.INSTANCE);
-        MapLayerRegistry.registerLayer(politicalMap);
+        var layerRegistry = new MapLayerRegistry();
 
-        registerBarArrangement();
-
-        // Each screen keeps its own tab, so the overlay has to follow the tab of the screen being
-        // looked at rather than one fixed screen's. This is the live binding that tells the two apart;
-        // naming it here keeps the registry ignorant of any concrete screen.
-        MapLayerScreens.registerIntelScreen(new VanillaIntelScreenView(MapLayerGameReach.MAP_VIEW.getReporter()));
+        layerRegistry.registerLayer(NoLayer.INSTANCE);
+        layerRegistry.registerLayer(politicalMap);
 
         // The spotlight is the other thing a settings change can invalidate, and it is the layer's:
         // healed under that layer's own views, so it is installed where the layer is made rather than
         // beside the switch listener, which answers which feature the settings switched.
         FilterSelectionHeal.installHealOnSettingsChange(politicalMap.resolveViewRegistry());
+
+        // Each screen keeps its own tab, so the overlay has to follow the tab of the screen being
+        // looked at rather than one fixed screen's. The intel binding is what tells the two apart;
+        // naming it here keeps the screens ignorant of any concrete one.
+        return new MapLayerScreens(
+            layerRegistry,
+            createBarArrangement(),
+            new VanillaIntelScreenView(MapLayerGameReach.MAP_VIEW.getReporter()));
     }
 
     /**
-     * Binds where the player's bar arrangement is read from: the game's own common data, held for the
+     * Where the player's bar arrangement is read from: the game's own common data, held for the
      * session once read. Kept as its own step because binding a store is a different decision from
      * registering a layer - what the row holds is KMU's to name, while how the player arranged it is
      * theirs and outlives every campaign.
@@ -107,10 +113,12 @@ public final class MapLayers {
      * <p>The two wrappings are each one job. The file is where a preference about the interface belongs,
      * per user rather than per save; holding what it read is what lets the bar ask on every frame it
      * draws and on every key it routes without opening a file for the answer.
+     *
+     * @return the arrangement bound to that store
      */
-    static void registerBarArrangement() {
+    static LiveMapLayerArrangement createBarArrangement() {
 
-        LiveMapLayerArrangement.registerArrangementSelection(
+        return new LiveMapLayerArrangement(
             new SessionHeldMapLayerArrangement(
                 new PersistedMapLayerArrangement(new VanillaCommonDataStore())));
     }

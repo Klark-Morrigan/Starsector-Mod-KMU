@@ -16,7 +16,7 @@ import java.awt.Color;
  *
  * <p>The tier holds an owner key and nothing else about an owner. Without this seam it would have
  * to work those answers out for itself, which means reading them off whatever the key happens to
- * mean - and a key that names a holder on one layer names a relay's presence on another. So a
+ * mean - and a key that names a ruling owner on one layer names a relay's presence on another. So a
  * layer resolves one reading per rebuild and the tier asks it, never learning what an owner is.
  *
  * <p>One reading per rebuild, not per question: an answer may depend on a live source (which

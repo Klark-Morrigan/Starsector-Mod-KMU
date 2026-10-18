@@ -81,8 +81,8 @@ final class CellCutInputsTests {
         }
 
         @Test
-        void separatesReadingsAcrossAnUndiscoveredMarketsFlip() {
-            // The second reveal reaches the cells through inhabitation: an undiscovered market
+        void separatesReadingsAcrossAnUndiscoveredSettlementsFlip() {
+            // The second reveal reaches the cells through inhabitation: an undiscovered settlement
             // counted makes its system drawn, which seeds a cell that was not there before.
             assertThat(new CellCutInputs(GEOMETRY_REVISION, SEED_INPUTS, DEV_TOGGLES))
                 .isNotEqualTo(new CellCutInputs(

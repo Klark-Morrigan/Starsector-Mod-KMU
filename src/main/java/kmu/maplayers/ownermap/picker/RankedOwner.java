@@ -6,7 +6,7 @@ import kmlib.starsector.ui.widgets.lists.SelectableListItem;
  * One row of an owner-map filter picker: an owner the player can spotlight, paired with the metrics
  * the picker ranks and labels it by. The pairing is what keeps a layer's numbers off every other
  * layer's option - a view instantiates this over its own stats type, so a view painted by weighing
- * markets ranks owners by market metrics and a view painted by another mechanic ranks them by that
+ * economies ranks owners by economic metrics and a view painted by another mechanic ranks them by that
  * mechanic's metrics, without either stats record growing a field for the other's benefit.
  *
  * <p>This is the owner map's declaration of the picker's {@link SelectableListItem} seam, and the

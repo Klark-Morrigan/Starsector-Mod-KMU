@@ -6,6 +6,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelText;
 import static kmu.starsector.SectorFactionFixtures.HEGEMONY;
 import static kmu.starsector.SectorFactionFixtures.HEGEMONY_CREST;
 import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
@@ -63,15 +64,15 @@ final class FactionTooltipLineTests {
                 1200,
                 IS_WEIGHED);
 
-            assertThat(line.labelText())
+            assertThat(readLabelText(line))
                 .isEqualTo("The Hegemony");
             assertThat(line.mark())
                 .isEqualTo(HEGEMONY_MARK);
-            assertThat(line.valueText())
+            assertThat(line.value().valueText())
                 .isEqualTo("1,200");
-            assertThat(line.countedValue())
+            assertThat(line.value().countedValue())
                 .isEqualTo(1200);
-            assertThat(line.isValueUncounted())
+            assertThat(line.value().isValueUncounted())
                 .isFalse();
         }
 
@@ -85,11 +86,11 @@ final class FactionTooltipLineTests {
                 0,
                 IS_NEVER_WEIGHED);
 
-            assertThat(line.labelText())
+            assertThat(readLabelText(line))
                 .isEqualTo("The Hegemony");
-            assertThat(line.valueText())
+            assertThat(line.value().valueText())
                 .isEqualTo("0");
-            assertThat(line.isValueUncounted())
+            assertThat(line.value().isValueUncounted())
                 .isTrue();
         }
     }

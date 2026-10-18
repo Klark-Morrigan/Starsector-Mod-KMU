@@ -152,7 +152,11 @@ public class SectorMapLayerTerrainPlugin
         // game catches: a layer that throws is switched off on this sector and the map draws on.
         DrawnLayerGuard
             .resolveGuardIn(machinery)
-            .runOnDrawnRenderer(layerRenderer -> drawFrameThrough(layerRenderer, machinery, factor, alphaMult));
+            .runOnDrawnRenderer(layerRenderer -> drawFrameThrough(
+                layerRenderer,
+                machinery,
+                factor,
+                alphaMult));
     }
 
     /**
@@ -220,7 +224,9 @@ public class SectorMapLayerTerrainPlugin
         // with, so hiding thins the picture rather than cutting it - and thins it on the same curve the
         // rest of the layers' footprint rides. A screen settled hidden never reaches here at all, the
         // active pick resolving to nothing once the dissolve is over.
-        var shownAlpha = alphaMult * MapLayerScreens.resolveShownFadeOnLiveScreen();
+        var shownAlpha = alphaMult * MapLayerScreens
+            .resolveScreensIn(machinery)
+            .resolveShownFadeOnLiveScreen();
 
         for (var band : paintedBands) {
             layerRenderer.renderOnMap(factor, shownAlpha, band);

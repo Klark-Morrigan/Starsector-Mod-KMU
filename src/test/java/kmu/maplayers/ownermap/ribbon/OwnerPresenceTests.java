@@ -19,19 +19,19 @@ final class OwnerPresenceTests {
         new ColourPair(new Color(140, 160, 220), new Color(40, 60, 120));
 
     @Nested
-    class HasMarkets {
+    class HasStakes {
 
         @Test
-        void isTrueForASingleHolding() {
+        void isTrueForASingleStake() {
 
-            assertThat(new OwnerPresence("first", PALETTE, 1).hasMarkets())
+            assertThat(new OwnerPresence("first", PALETTE, 1).hasStakes())
                 .isTrue();
         }
 
         @Test
-        void isFalseForNoHoldings() {
+        void isFalseForNoStakes() {
 
-            assertThat(new OwnerPresence("first", PALETTE, 0).hasMarkets())
+            assertThat(new OwnerPresence("first", PALETTE, 0).hasStakes())
                 .isFalse();
         }
     }

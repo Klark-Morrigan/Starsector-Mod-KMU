@@ -113,7 +113,7 @@ record HoveredBox(
         // The crisp pick rather than the dissolve the overlay rides out. A box reporting what the cursor
         // is over has nothing left to report the moment the player switches the layers off, and it reads
         // the pick rather than painting through the pass that carries the fade.
-        if (!MapLayerScreens.areLayersShownOnLiveScreen()) {
+        if (!MapLayerScreens.resolveScreensIn(machinery).areLayersShownOnLiveScreen()) {
             return Optional.empty();
         }
         return DrawnLayerGuard

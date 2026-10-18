@@ -196,7 +196,7 @@ which `Alliance.getMembersCopy()` gives without a scan.
 
 None of the poll or hover reads sit under a profiling row,
 so `kmu_profiling` cannot show this cost.
-Rebuild reads show only as self time in `ownerMap.rebuildDrawables`, `ownerMap.resolveHolding` and `mapLayer.refresh`.
+Rebuild reads show only as self time in `ownerMap.rebuildDrawables`, `ownerMap.resolveOwners` and `mapLayer.refresh`.
 
 ## What changed from 0.12.1e to 0.12.2d
 

@@ -52,7 +52,7 @@ final class OwnerMapDrawables {
     // either view above so they draw over whichever is live - turning border tracing on must not
     // hide them. Empty unless the names or the anchor overlay is on; they feed both. The two are
     // one value because a placement is only reusable as a pair with the rules it was sized under,
-    // and this holder is what owns them across the rebuilds that reuse them.
+    // and this class is what owns them across the rebuilds that reuse them.
     private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
 
     // The cached owner-name labels, built from the placements above. Each owns a GL buffer, so
@@ -61,7 +61,7 @@ final class OwnerMapDrawables {
     private final List<Label> ownerLabels = new ArrayList<>();
 
     // The face the sector settled its labels on, asked when a rebuild fits names rather than when these
-    // drawables are made: settling reads every owner name, which a holder made before the first
+    // drawables are made: settling reads every owner name, which drawables made before the first
     // rebuild has no call to pay for. The fit records the face beside its placements, so everything
     // drawn after it reads the face from there.
     private final Supplier<FontAtlas> labelFaceSource;
@@ -114,9 +114,10 @@ final class OwnerMapDrawables {
      * @return whether a per-system owner change can be folded into the standing clusters: the
      *         production view is built - by a build that ran, not the placeholder a failed one
      *         stands behind - and not under a filter, since the incremental re-shape derives
-     *         owners through the normal holding, which would overwrite the spotlit keys
+     *         owners through the normal resolve, which would overwrite the spotlit keys
      */
-    public boolean canFoldHolderChanges() {
+    public boolean canFoldOwnerChanges() {
+
         return clusters != null
             && clusters.getBuildInputs().wasBuilt()
             && !clusters.getBuildInputs().contentInputs().isFiltering();
@@ -137,6 +138,7 @@ final class OwnerMapDrawables {
      *         it built
      */
     public String describeBuiltCounts() {
+
         return borderStageOverlay != null
             ? "debugBaseLoops=" + borderStageOverlay.baseLoops().size()
             : "styledCells=" + clusters.getStyledCellByCellKey().size();
@@ -150,6 +152,7 @@ final class OwnerMapDrawables {
      * @param view the view the placeholder is built under
      */
     public void ensureClustersNonNull(OwnerPaintedView view) {
+
         if (clusters == null) {
             clusters = OwnerMapClusters.createEmpty(view);
         }
@@ -166,9 +169,10 @@ final class OwnerMapDrawables {
     public void disposeAll() {
 
         LabelsBuilder.disposeAll(ownerLabels);
-        ownerLabels.clear();
 
+        ownerLabels.clear();
         standingAnchors.discardAnchors();
+
         clusters = null;
         borderStageOverlay = null;
     }
@@ -246,6 +250,7 @@ final class OwnerMapDrawables {
             contentInputs,
             owners,
             readStylingOf(viewReading, contentInputs));
+
         borderStageOverlay = null;
 
         // The cells go over carrying the revision they stand at rather than the live

@@ -3,7 +3,7 @@ package kmu.maplayers.ownermap.picker;
 /**
  * What an owner's metrics answer on a layer that paints by them: whether this owner comes to nought on
  * the very metric its layer paints by. One rule with a per-layer metric - weight on a layer that
- * weighs markets, whatever another mechanic counts on its own layer - so an owner listed because it is
+ * weighs economies, whatever another mechanic counts on its own layer - so an owner listed because it is
  * present and greyed because it paints nothing says the same thing on every layer.
  *
  * <p>Answered by the metrics rather than by the view or by {@link RankedOwner}, because the answer is

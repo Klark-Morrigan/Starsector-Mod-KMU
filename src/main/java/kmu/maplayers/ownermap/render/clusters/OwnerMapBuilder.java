@@ -63,8 +63,8 @@ public final class OwnerMapBuilder {
     // have a row of their own so a rebuild that carried them over reads as missing that row, rather
     // than as a source's scans that each happened to cost nothing - and whatever the source profiles
     // of its own lands beneath it.
-    private static final ProfileSection RESOLVE_HOLDING_SECTION =
-        ProfileSection.registerSection("ownerMap.resolveHolding");
+    private static final ProfileSection RESOLVE_OWNERS_SECTION =
+        ProfileSection.registerSection("ownerMap.resolveOwners");
 
     private static final ProfileSection REBUILD_SECTION =
         ProfileSection.registerSection("ownerMap.rebuildClusters");
@@ -100,7 +100,7 @@ public final class OwnerMapBuilder {
             SectorWalk walk,
             ContentInputs contentInputs) {
 
-        try (var holdingScope = ActiveProfiler.resolveProfiler().open(RESOLVE_HOLDING_SECTION)) {
+        try (var ownersScope = ActiveProfiler.resolveProfiler().open(RESOLVE_OWNERS_SECTION)) {
             return source.resolveOwners(walk, contentInputs.selectedOwnerId());
         }
     }

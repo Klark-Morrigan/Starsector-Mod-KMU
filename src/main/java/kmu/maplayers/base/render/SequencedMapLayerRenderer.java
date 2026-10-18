@@ -176,7 +176,7 @@ public final class SequencedMapLayerRenderer<S>
 
         return new SequencedMapLayerRenderer<>(
             parts,
-            MapLayerScreens::resolveLivePicks,
+            () -> MapLayerScreens.resolveScreensIn(machinery).resolveLivePicks(),
             MapCoverReader.createForLiveScreen(),
             machinery.resolveHoverState(),
             hoverState -> buildLiveHoverPublisher(hoverState, machinery),

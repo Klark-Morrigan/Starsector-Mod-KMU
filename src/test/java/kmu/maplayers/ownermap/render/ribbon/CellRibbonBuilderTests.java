@@ -327,7 +327,7 @@ final class CellRibbonBuilderTests {
 
         @Test
         void compressesACrowdedBandRatherThanCuttingItShort() {
-            // A market-dense system plans more band than its cell has outline. Every run still
+            // A stake-dense system plans more band than its cell has outline. Every run still
             // draws - the whole point of compressing what a width is worth rather than truncating
             // is that no owner drops off the readout - so a crowded cell reads as crowded.
             var crowdedRuns = new ArrayList<RibbonSegment>();

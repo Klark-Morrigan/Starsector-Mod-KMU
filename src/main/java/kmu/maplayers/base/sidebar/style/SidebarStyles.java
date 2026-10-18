@@ -10,10 +10,6 @@ import kmlib.starsector.ui.render.gl.style.BoxColours;
 import kmlib.starsector.ui.render.gl.style.ControlHoverWash;
 import kmlib.starsector.ui.render.gl.style.ControlPressLight;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
-import kmlib.starsector.ui.sound.PointerArrivalVolumes;
-import kmlib.starsector.ui.sound.StarsectorUiSound;
-import kmlib.starsector.ui.sound.UiSoundCue;
-import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.widgets.tabs.style.HotkeyStyle;
 import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
@@ -24,25 +20,17 @@ import kmlib.starsector.ui.widgets.tabs.style.TextHalo;
 import kmu.maplayers.base.faces.ProbedText;
 import kmu.maplayers.base.faces.SettledFaces;
 import kmu.settings.KmuMapSidebarSettings;
-import kmu.settings.KmuMapSoundSettings;
 
 import java.awt.Color;
 import java.util.Set;
 
 /**
- * Composes the look bundles a sidebar host wears: the tab style its band is laid out and painted from,
- * the widget style the panel around it is painted from, and the sound scheme its moments answer by.
- * Which look a screen wears is its host's answer, but a look built from the running game's colours, the
- * player's live scheme choice, and the levels the player set cannot be a constant a host holds, so the
- * composition sits here as a factory each host calls with its own dimensions - one place the sidebar's
- * shades, faces, and volumes are written down, so two screens sharing a look cannot drift into two
- * spellings of it.
- *
- * <p>The sound scheme is a bundle of its own rather than something read off the widget style, because
- * the two halves of the panel take it at different moments: the paint pass carries it inside the style
- * it draws from, while the controller answering pointer events is handed one directly at the point it is
- * built. Both compose through the same factory, which is what keeps a panel from looking and sounding
- * from two.
+ * Composes the look bundles a sidebar host wears: the tab style its band is laid out and painted from, and
+ * the widget style the panel around it is painted from. Which look a screen wears is its host's answer, but
+ * a look built from the running game's colours and the player's live scheme choice cannot be a constant a
+ * host holds, so the composition sits here as a factory each host calls with its own dimensions - one place
+ * the sidebar's shades and faces are written down, so two screens sharing a look cannot drift into two
+ * spellings of it. The widget style also carries how the panel sounds, which {@link SidebarSounds} composes.
  *
  * <p>Which palette those shades come from is the player's, not a host's: the frame, the control accents,
  * the notch, and the tab row's chrome rule all resolve from one scheme choice, so the panel cannot end
@@ -206,77 +194,6 @@ public final class SidebarStyles {
         return composeStyle(tabStyle, SidebarFraming.CHROME_DARK);
     }
 
-    /**
-     * How the sidebar answers a press, the pointer arriving, and its list moving under the wheel: the
-     * engine's own roles, the panel being drawn to sit among vanilla chrome, at the levels the player set
-     * them to.
-     *
-     * <p>The roles are vanilla's and the balance is not, which is the whole of what this composes. What
-     * the engine mixed its mouseover for is a screen carrying a handful of hit targets, and this panel
-     * packs a column of them into a strip - so matching the chrome around it means matching it under one
-     * pointer sweep, which the IDs alone cannot do at any volume they ship with.
-     *
-     * <p>Read here rather than watched, on the rule the colours beside it follow: a scheme is composed
-     * whenever the panel's look is, which is often enough that a slider moved mid-session is heard
-     * shortly after. A binding that pushed changes over would be a second mechanism for a value already
-     * re-read.
-     *
-     * <p>Public because the panel's controller takes the scheme directly rather than reading it off the
-     * widget style each frame - the moments it answers are pointer events, not paint passes - so both
-     * sides have to compose from this one factory, or the panel would look and sound from two.
-     *
-     * @return the scheme this sidebar's moments sound by
-     */
-    public static UiSoundScheme buildSidebarSoundScheme() {
-
-        var arrivalVolumes = new PointerArrivalVolumes(
-            KmuMapSoundSettings.getMapSidebarPanelChromeArrivalVolume(),
-            KmuMapSoundSettings.getMapSidebarSingleOptionControlArrivalVolume(),
-            KmuMapSoundSettings.getMapSidebarListedItemArrivalVolume());
-
-        return new UiSoundScheme(
-            // The press keeps the engine's own level, having no slider of its own: it is one act the
-            // player asked for, so the case for quietening it - a sweep crossing many things at once -
-            // never arises.
-            UiSoundCue.createAtFullVolume(StarsectorUiSound.BUTTON_PRESSED),
-            resolveArrivalSound(arrivalVolumes),
-            arrivalVolumes,
-            resolveListScrollCue());
-    }
-
-    // What the wheel makes as it moves the sidebar's list, or nothing at all once the player has pulled its
-    // slider to the bottom - the library's own rule for a level composed from a slider, silence being
-    // stated by naming no cue rather than by playing one at zero.
-    //
-    // A level of its own and not part of the arrival balance: the wheel is one act the player asked for,
-    // sounding once however far the list travels, where the arrival levels are set against how many things
-    // one sweep of the pointer crosses.
-    private static UiSoundCue resolveListScrollCue() {
-
-        return UiSoundCue.createIfAudible(
-            StarsectorUiSound.LIST_SCROLLED,
-            KmuMapSoundSettings.getMapSidebarListScrollVolume());
-    }
-
-    // Whether the pointer sounds at all, which is the balance's own answer: a player who has pulled every
-    // level down to nothing has asked for a panel that is quiet under the pointer, and a look states that
-    // by naming no role rather than by playing one at zero. Named per moment and not per kind because one
-    // role covers every arrival - silencing one kind alone is a balance the scheme has no way to hold.
-    private static StarsectorUiSound resolveArrivalSound(PointerArrivalVolumes arrivalVolumes) {
-        return isEveryArrivalSilenced(arrivalVolumes) ? null : StarsectorUiSound.BUTTON_MOUSEOVER;
-    }
-
-    // Silence read off the levels rather than off a switch of its own, so the sliders are the only place
-    // the panel's volume is stated. Compared against the floor rather than for equality with it: the
-    // levels arrive from a stored double narrowed to a float, and a slider parked at its own minimum has
-    // no business turning on how that landed.
-    private static boolean isEveryArrivalSilenced(PointerArrivalVolumes arrivalVolumes) {
-
-        return arrivalVolumes.panelChromeVolume() <= UiSoundCue.SILENT_VOLUME
-            && arrivalVolumes.singleOptionControlVolume() <= UiSoundCue.SILENT_VOLUME
-            && arrivalVolumes.listedItemVolume() <= UiSoundCue.SILENT_VOLUME;
-    }
-
     // The accent steps the panel is ruled and framed in, under whichever palette the player pointed it
     // at. One place the choice is turned into shades, so the widget style and the tab row cannot come to
     // read it differently - but two call sites, since a tab style is also built for the layout pass, where
@@ -299,112 +216,68 @@ public final class SidebarStyles {
         };
     }
 
-    // The paint a row wears, which is the chrome's own: the engine paints a tab and a button from
-    // different colours, so a palette shared between the two would leave one of them copying shades its
-    // vanilla counterpart never wears. Both are resolved from the one scheme the panel answers to, so the
-    // rows part by which vanilla control they imitate and never by which palette.
-    private static TabPalette composeTabPalette(TabChrome chrome, AccentColours accentColours) {
+    // The band height is the one part of a tab style the host decides; the chrome decides the rest.
+    private static TabStyle composeTabStyle(TabChrome chrome, float headerBandHeight) {
+        return resolveChromeConvention(chrome).composeTabStyle(headerBandHeight);
+    }
+
+    // The one place the chrome is switched on. Composed afresh on every call rather than held per chrome:
+    // the palette tracks a restyled install and the player's scheme, the face tracks the sector, and the
+    // sharpness tracks a dial the player may move while the panel is on screen.
+    private static ChromeConvention resolveChromeConvention(TabChrome chrome) {
+
+        var accentColours = resolveAccentColours();
 
         return switch (chrome) {
-
-            // A vanilla tab takes no accent at all beyond the rule around the row, which has no vanilla
-            // counterpart to copy - so the panel's own base is what the strip is ruled in.
-            case STRIP -> TabPalette.createMapTabPalette(accentColours.base());
-
-            // A vanilla button takes nothing but its accent, and takes all of it - so the whole set goes
-            // over rather than the steps picked out one at a time.
-            case RAISED_BUTTON -> TabPalette.createRaisedButtonPalette(accentColours);
+            case STRIP -> composeStripConvention(accentColours);
+            case RAISED_BUTTON -> composeRaisedButtonConvention(accentColours);
         };
     }
 
-    // The face a row is lettered in, which is the chrome's own for the same reason its palette is: the
-    // vanilla tabs a strip copies and the vanilla buttons a raised row copies are set in different faces,
-    // so a row sharing one would letter itself unlike the very chrome it was drawn to match. It is the
-    // one field both tiers read - the layout snaps a tab to it and the paint pass draws in it - so the
-    // choice made here is what a tab is measured by as well as what it says.
-    //
+    // The sector map's own Sector/System row.
+    private static ChromeConvention composeStripConvention(AccentColours accentColours) {
+
+        return new ChromeConvention(
+            TabChrome.STRIP,
+            new TabBox(STRIP_TAB_WIDTH, STRIP_TAB_HEIGHT, STRIP_TAB_GAP),
+            // A vanilla tab takes no accent at all beyond the rule around the row, which has no vanilla
+            // counterpart to copy - so the panel's own base is what the strip is ruled in.
+            TabPalette.createMapTabPalette(accentColours.base()),
+            HotkeyStyle.createUnderlined(),
+            settleTabFace(STRIP_FONT),
+            // The tabs are opaque surfaces of their own, so the labels already have a fill of known shade
+            // behind them.
+            TextHalo.NONE,
+            (float) KmuMapSidebarSettings.getMapSidebarPixelFontSharpness());
+    }
+
+    // The intel screen's row of map toggles.
+    private static ChromeConvention composeRaisedButtonConvention(AccentColours accentColours) {
+
+        return new ChromeConvention(
+            TabChrome.RAISED_BUTTON,
+            // The buttons are laid to the row the layout measured and take their channel from inside their
+            // own tab.
+            TabBox.SNAPPED,
+            // A vanilla button takes nothing but its accent, and takes all of it - so the whole set goes
+            // over rather than the steps picked out one at a time.
+            TabPalette.createRaisedButtonPalette(accentColours),
+            HotkeyStyle.createPlain(),
+            settleTabFace(RAISED_BUTTON_FONT),
+            // The buttons stand over whatever the visor is showing, so their strokes want an edge to sit
+            // against.
+            TextHalo.createBlackHairline(),
+            (float) KmuMapSidebarSettings.getIntelSidebarPixelFontSharpness());
+    }
+
     // Drawn at the size the installed atlas states, read each time a style is composed: a bitmap face is
-    // crisp at one size only, both faces here are hard-edged pixel atlases that visibly blur at any other,
+    // crisp at one size only, both tab faces are hard-edged pixel atlases that visibly blur at any other,
     // and a localised install carries a taller atlas under the same basename than vanilla does. The face is
     // the one the running sector settled the chrome's own on.
-    private static TextFace resolveTabFace(TabChrome chrome) {
-
-        var font = switch (chrome) {
-            case STRIP -> STRIP_FONT;
-            case RAISED_BUTTON -> RAISED_BUTTON_FONT;
-        };
+    private static TextFace settleTabFace(StarsectorFont font) {
 
         return InstalledFaces.createNativeFace(
             SettledFaces.resolveFacesForLiveSector().settleFace(font, TAB_TEXTS));
-    }
-
-    // How a row marks the key it answers to, which the chrome decides for the same reason it decides
-    // the palette and the face: the vanilla tabs a strip copies underline their key and the vanilla
-    // buttons a raised row copies leave theirs bare. Resolved from the chrome rather than handed in
-    // beside it, so a row marked one way while wearing the other chrome cannot be composed at all - the
-    // mismatch the styled hotkey exists to avoid is unrepresentable rather than merely avoided.
-    private static HotkeyStyle resolveHotkeyStyle(TabChrome chrome) {
-
-        return switch (chrome) {
-            case STRIP -> HotkeyStyle.createUnderlined();
-            case RAISED_BUTTON -> HotkeyStyle.createPlain();
-        };
-    }
-
-    // Whether a row's labels stand inside a dark ring of themselves, which follows what the text is drawn
-    // over rather than what it is drawn in: the buttons stand over whatever the visor is showing, so their
-    // strokes want an edge to sit against, where the strip's tabs are opaque surfaces of their own and its
-    // labels already have a fill of known shade behind them. Both rows are lettered in hard-edged atlases,
-    // so the face is not what parts them here.
-    private static TextHalo resolveTextHalo(TabChrome chrome) {
-
-        return switch (chrome) {
-            case STRIP -> TextHalo.NONE;
-            case RAISED_BUTTON -> TextHalo.createBlackHairline();
-        };
-    }
-
-    // The box a chrome stands its tabs in, following the chrome for the same reason its palette and face
-    // do. A strip copies the sector map's Sector/System row, whose tabs are a fixed box the label centres
-    // in rather than one grown to fit it; a raised row copies the intel screen's buttons, which are laid
-    // to the row the layout measured and take their channel from inside their own tab.
-    private static TabBox resolveTabBox(TabChrome chrome) {
-
-        return switch (chrome) {
-            case STRIP -> new TabBox(STRIP_TAB_WIDTH, STRIP_TAB_HEIGHT, STRIP_TAB_GAP);
-            case RAISED_BUTTON -> TabBox.SNAPPED;
-        };
-    }
-
-    // A tab style over the shared paint: the chrome's own palette - its per-state fills and its
-    // interaction lifts - resolved live so it tracks a restyled install, plus the box it stands its tabs
-    // in, the face, the ring around it, and the hotkey convention that chrome carries. All of them follow
-    // from the chrome rather than travelling beside it, since each is a convention of the vanilla control
-    // the row imitates and not a free choice; the band height alone is the host's, being the one
-    // dimension the two screens genuinely set apart.
-    private static TabStyle composeTabStyle(TabChrome chrome, float headerBandHeight) {
-
-        return new TabStyle(
-            chrome,
-            headerBandHeight,
-            resolveTabBox(chrome),
-            composeTabPalette(chrome, resolveAccentColours()),
-            resolveHotkeyStyle(chrome),
-            resolveTabFace(chrome),
-            resolveTextHalo(chrome),
-            resolvePixelFaceSharpness(chrome));
-    }
-
-    // How hard a row's labels read. Both chromes are lettered in atlases that carry no antialiasing of
-    // their own, so both answer this - and they answer it differently, because each is read against the
-    // vanilla chrome it stands beside rather than against some one right amount for the mod. Read live so
-    // the dial answers while the panel is on screen.
-    private static float resolvePixelFaceSharpness(TabChrome chrome) {
-
-        return switch (chrome) {
-            case STRIP -> (float) KmuMapSidebarSettings.getMapSidebarPixelFontSharpness();
-            case RAISED_BUTTON -> (float) KmuMapSidebarSettings.getIntelSidebarPixelFontSharpness();
-        };
     }
 
     // The sidebar's look built fresh from the live colours, framed by the given convention: a black body
@@ -449,7 +322,7 @@ public final class SidebarStyles {
                 KmuMapSidebarSettings.getMapSidebarChevronColour(),
                 accentColours.base(),
                 accentColours.bright()),
-            buildSidebarSoundScheme());
+            SidebarSounds.buildSoundScheme());
     }
 
     /**

@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins what an uncontested cell's runs are laid at, and that the knob behind it reaches the market
+ * Pins what an uncontested cell's runs are laid at, and that the knob behind it reaches the stake
  * run alone.
  *
  * <p>Both halves fail quietly if they drift. A shortening that reached the parting as well would
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class UncontestedRibbonRunsTests {
 
-    // A market three widths long parted by two, so a shortened run is told from the parting beside
+    // A stake three widths long parted by two, so a shortened run is told from the parting beside
     // it by value rather than by both happening to come out at one.
     private static final RibbonSegmentLengths AUTHORED_LENGTHS = new RibbonSegmentLengths(3, 2);
 
@@ -29,18 +29,18 @@ final class UncontestedRibbonRunsTests {
     class ResolveRunLengths {
 
         @Test
-        void cutsTheMarketRunToOneWidthWhereTheRunsAreShortened() {
+        void cutsTheStakeRunToOneWidthWhereTheRunsAreShortened() {
 
             var lengths = new UncontestedRibbonRuns(true)
                 .resolveRunLengths(AUTHORED_LENGTHS);
 
-            assertThat(lengths.marketLengthUnits())
+            assertThat(lengths.stakeLengthUnits())
                 .isEqualTo(ONE_WIDTH);
         }
 
         @Test
         void leavesThePartingAtItsAuthoredLengthWhereTheRunsAreShortened() {
-            // The parting says the same thing on an uncontested cell as on any other - one market
+            // The parting says the same thing on an uncontested cell as on any other - one stake
             // ends, the next begins - so the shortening has no business with it.
             var lengths = new UncontestedRibbonRuns(true)
                 .resolveRunLengths(AUTHORED_LENGTHS);

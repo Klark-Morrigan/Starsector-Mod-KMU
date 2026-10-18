@@ -291,7 +291,7 @@ final class OwnerMapCacheTests {
 
         @Test
         void dropsAMarkedSystemRatherThanFoldingItWhileTheMapIsFiltered() {
-            // The fold re-derives holders through the unfiltered holding, which would overwrite the
+            // The fold re-derives owners through the unfiltered resolve, which would overwrite the
             // spotlight's synthetic keys - so a filtered map drops the mark rather than folding it,
             // and leaves nothing on the board for the next frame to find either.
             openEverySeamARebuildReaches(createSpotlitClusters());

@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins what a frame is decided to owe, what the baselines that decision is taken against advance
- * on, and when the standing holding may be painted over rather than read.
+ * on, and when the standing owners may be painted over rather than read.
  *
  * <p>Nothing here opens a reading of the sector: the decision is answerable from the board and
  * the settings alone, which is the property the class exists to keep, so the sector the machinery
@@ -225,14 +225,14 @@ final class OwnerMapRebuildDeciderTests {
                 .isTrue();
             assertThat(staleHalves.isCellCutStale())
                 .isFalse();
-            assertThat(staleHalves.holdingRevision())
-                .isNotEqualTo(rebuilt.holdingRevision());
+            assertThat(staleHalves.ownersRevision())
+                .isNotEqualTo(rebuilt.ownersRevision());
         }
 
         @Test
-        void owesARebuildButKeepsTheHoldingRevisionWhenAStylePickMoves() {
+        void owesARebuildButKeepsTheOwnersRevisionWhenAStylePickMoves() {
             // The name format reaches the paint and nothing before it, so the rebuild it owes is
-            // one that may keep the holding it already read.
+            // one that may keep the owners it already read.
             var rebuilt = decideAndRecordARebuild();
 
             pickNameFormat(OwnerNameFormatChoice.SHORT);
@@ -241,8 +241,8 @@ final class OwnerMapRebuildDeciderTests {
 
             assertThat(staleHalves.isContentStale())
                 .isTrue();
-            assertThat(staleHalves.holdingRevision())
-                .isEqualTo(rebuilt.holdingRevision());
+            assertThat(staleHalves.ownersRevision())
+                .isEqualTo(rebuilt.ownersRevision());
         }
 
         @Test
@@ -261,25 +261,25 @@ final class OwnerMapRebuildDeciderTests {
     }
 
     @Nested
-    class CanReuseStandingHolding {
+    class CanReuseStandingOwners {
 
         @Test
         void isTrueWhenNothingReachingTheResolveMoved() {
 
             decideAndRecordARebuild();
 
-            assertThat(decider.canReuseStandingHolding(decideAfterABuild(), true, Set.of()))
+            assertThat(decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of()))
                 .isTrue();
         }
 
         @Test
         void isTrueWhenOnlyAStylePickMoved() {
-            // The case the holding revision exists for: a rebuild is owed, and the holding it would
-            // read afresh is the one already standing.
+            // The case the owners revision exists for: a rebuild is owed, and the owners it would
+            // read afresh are the ones already standing.
             decideAndRecordARebuild();
             pickNameFormat(OwnerNameFormatChoice.SHORT);
 
-            assertThat(decider.canReuseStandingHolding(decideAfterABuild(), true, Set.of()))
+            assertThat(decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of()))
                 .isTrue();
         }
 
@@ -288,17 +288,17 @@ final class OwnerMapRebuildDeciderTests {
             // A cache's first rebuild has nothing to keep, whatever the revisions say.
             decideAndRecordARebuild();
 
-            assertThat(decider.canReuseStandingHolding(decideAfterABuild(), false, Set.of()))
+            assertThat(decider.canReuseStandingOwners(decideAfterABuild(), false, Set.of()))
                 .isFalse();
         }
 
         @Test
         void isFalseWhenASystemIsMarked() {
-            // A marked system is one the sector moved under, so a holding read before it moved no
-            // longer says who holds it.
+            // A marked system is one the sector moved under, so owners read before it moved no
+            // longer say who owns it.
             decideAndRecordARebuild();
 
-            assertThat(decider.canReuseStandingHolding(
+            assertThat(decider.canReuseStandingOwners(
                     decideAfterABuild(),
                     true,
                     Set.of(buildCellKey("marked"))))
@@ -307,22 +307,22 @@ final class OwnerMapRebuildDeciderTests {
 
         @Test
         void isFalseWhenTheCellsAreRecut() {
-            // A recut admits or drops systems, so the holding has to be read over the new set.
+            // A recut admits or drops systems, so the owners have to be read over the new set.
             decideAndRecordARebuild();
             raiseTheGeometrySignal();
 
-            assertThat(decider.canReuseStandingHolding(decideAfterABuild(), true, Set.of()))
+            assertThat(decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of()))
                 .isFalse();
         }
 
         @Test
         void isFalseWhenAPickReachingTheResolveMoved() {
             // The spotlight decides who holds a cell rather than only how it is coloured, so the
-            // holding revision folds it and a moved pick reads the holding afresh.
+            // owners revision folds it and a moved pick reads the owners afresh.
             decideAndRecordARebuild();
             spotlight(HEGEMONY_ID);
 
-            assertThat(decider.canReuseStandingHolding(decideAfterABuild(), true, Set.of()))
+            assertThat(decider.canReuseStandingOwners(decideAfterABuild(), true, Set.of()))
                 .isFalse();
         }
     }
@@ -370,8 +370,8 @@ final class OwnerMapRebuildDeciderTests {
     class RecordContentRebuilt {
 
         @Test
-        void clearsTheRebuildWithoutLettingTheHoldingBeKept() {
-            // The clusters and the holding advance apart: a rebuild that painted over a holding it
+        void clearsTheRebuildWithoutLettingTheOwnersBeKept() {
+            // The clusters and the owners advance apart: a rebuild that painted over owners it
             // never recorded resolving has nothing a later rebuild may keep.
             var staleHalves = decideWithNothingBuilt();
 
@@ -382,7 +382,7 @@ final class OwnerMapRebuildDeciderTests {
 
             assertThat(nextHalves.isContentStale())
                 .isFalse();
-            assertThat(decider.canReuseStandingHolding(nextHalves, true, Set.of()))
+            assertThat(decider.canReuseStandingOwners(nextHalves, true, Set.of()))
                 .isFalse();
         }
 
@@ -401,22 +401,22 @@ final class OwnerMapRebuildDeciderTests {
     }
 
     @Nested
-    class RecordHoldingResolved {
+    class RecordOwnersResolved {
 
         @Test
-        void letsTheHoldingBeKeptWhileTheRebuildIsStillOwed() {
-            // A rebuild that resolved the holding and then threw leaves the holding good to keep,
+        void letsTheOwnersBeKeptWhileTheRebuildIsStillOwed() {
+            // A rebuild that resolved the owners and then threw leaves the owners good to keep,
             // so the retry paints over it rather than reading the sector again.
             var staleHalves = decideWithNothingBuilt();
 
             decider.recordCellsCut(staleHalves);
-            decider.recordHoldingResolved(staleHalves);
+            decider.recordOwnersResolved(staleHalves);
 
             var nextHalves = decideAfterABuild();
 
             assertThat(nextHalves.isContentStale())
                 .isTrue();
-            assertThat(decider.canReuseStandingHolding(nextHalves, true, Set.of()))
+            assertThat(decider.canReuseStandingOwners(nextHalves, true, Set.of()))
                 .isTrue();
         }
     }
@@ -517,7 +517,7 @@ final class OwnerMapRebuildDeciderTests {
         var staleHalves = decideWithNothingBuilt();
 
         decider.recordCellsCut(staleHalves);
-        decider.recordHoldingResolved(staleHalves);
+        decider.recordOwnersResolved(staleHalves);
         decider.recordContentRebuilt(staleHalves);
 
         return staleHalves;

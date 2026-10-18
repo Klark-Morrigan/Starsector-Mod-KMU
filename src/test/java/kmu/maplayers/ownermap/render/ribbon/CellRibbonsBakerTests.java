@@ -141,7 +141,7 @@ final class CellRibbonsBakerTests {
             // The wiring the whole step turns on, and the one case that can fail if the bake reads
             // the wrong set: the pass gates on what the sector holds, not on what this layer
             // painted, so a haven no owner holds is offered a band like any settled cell. Handed
-            // the holder map instead, this cell would be skipped and every other case here would
+            // the owner map instead, this cell would be skipped and every other case here would
             // still pass.
             var clusters = buildHeldAndUnheldDrawnCells();
 
@@ -293,8 +293,8 @@ final class CellRibbonsBakerTests {
         return drawCells(
             OwnerMapClusterFixtures.createClustersOwnedBy(
                 Map.of(
-                    BANDED_SYSTEM_ID, buildHolder(),
-                    OTHER_BANDED_SYSTEM_ID, buildHolder()),
+                    BANDED_SYSTEM_ID, buildOwner(),
+                    OTHER_BANDED_SYSTEM_ID, buildOwner()),
                 buildSourcePlanningEveryCell()),
             BANDED_CELL,
             OTHER_BANDED_CELL);
@@ -307,7 +307,7 @@ final class CellRibbonsBakerTests {
 
         return drawCells(
             OwnerMapClusterFixtures.createClustersSettledIn(
-                Map.of(BANDED_SYSTEM_ID, buildHolder()),
+                Map.of(BANDED_SYSTEM_ID, buildOwner()),
                 Set.of(BANDED_SYSTEM_ID, UNHELD_SETTLED_SYSTEM_ID),
                 buildSourcePlanningEveryCell()),
             BANDED_CELL,
@@ -407,9 +407,9 @@ final class CellRibbonsBakerTests {
         return StarSystemFixture.buildSystem(systemId);
     }
 
-    // Any holder, which the fixture also counts as making its system inhabited - the set the band
+    // Any owner, which the fixture also counts as making its system inhabited - the set the band
     // pass gates on. Which owner holds it decides nothing here.
-    private static SystemOwner buildHolder() {
+    private static SystemOwner buildOwner() {
         return new SystemOwner("hegemony", new ColourPair(Color.WHITE, Color.GRAY));
     }
 }

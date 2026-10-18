@@ -33,7 +33,7 @@ public final class SelectableOwnerCache
         implements InstalledMachinery {
 
     // The machinery this cache belongs to, and so the sector every list here is walked from. Taken
-    // whole rather than as a bare sector so the sector a walk reads and the holder its answer is
+    // whole rather than as a bare sector so the sector a walk reads and the machinery its answer is
     // memoised in cannot name two different ones.
     private final SectorMapMachinery machinery;
 

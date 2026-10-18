@@ -183,7 +183,7 @@ public record PoliticalMapSectorSnapshot(
             rules,
             pass.colonyKnowledge());
 
-        return SystemDominance.resolveDominantFactionId(
+        return SystemDominance.resolveDominantBlocId(
             footprintByFactionId,
             HolderRankingRules.createByMarketProximity(
                 system,

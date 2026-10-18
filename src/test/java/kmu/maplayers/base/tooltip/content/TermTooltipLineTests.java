@@ -19,16 +19,11 @@ final class TermTooltipLineTests {
     // note, qualifier, count or working until an account states one on it.
     private static final CellTooltipEntryLine TERM_LINE = new CellTooltipEntryLine(
         null,
-        LABEL_TEXT,
+        new CellTooltipLineName.Spoken(LABEL_TEXT, null),
         null,
         null,
         null,
-        null,
-        null,
-        VALUE_TEXT,
-        null,
-        null,
-        false,
+        new CellTooltipLineValue(VALUE_TEXT, null, null, false),
         false);
 
     @Nested

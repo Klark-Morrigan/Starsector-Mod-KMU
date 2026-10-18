@@ -27,7 +27,7 @@ import java.util.Set;
  * rather than two calls that have to be handed matching pieces.
  *
  * <p>The inhabited set sits with the sites because the two answer one refusal between them: nobody
- * lives in the cell, so there are no holdings for a band to report, or it has no recorded site,
+ * lives in the cell, so there are no stakes for a band to report, or it has no recorded site,
  * leaving the band nowhere to start from.
  *
  * <p>The ring store is the cells' own rather than a copy. A bake runs whenever a name may have

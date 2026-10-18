@@ -27,6 +27,9 @@ import java.util.Optional;
  */
 final class ColonyQualifier {
 
+    // What a name saying none of the vocabulary yields, a withheld one included.
+    private static final WordInName NO_WORD_IN_NAME = null;
+
     private ColonyQualifier() {
     }
 
@@ -57,7 +60,13 @@ final class ColonyQualifier {
             return line;
         }
 
-        var wordInName = findFirstWordInName(words, line);
+        // A line withholding its name says none of the vocabulary: the blocks drawn in its place stand
+        // for words without spelling them, so there is nothing to match and nothing to gild. Every word
+        // due is read at the end of the line instead, which is where a line whose name happens to carry
+        // none of them states them anyway.
+        var wordInName = line.name().selectByCase(
+            spokenName -> findFirstWordInName(words, spokenName.labelText()),
+            withheldName -> NO_WORD_IN_NAME);
         var statedWords = new ArrayList<>(words);
         var qualifiedLine = line;
 
@@ -161,20 +170,9 @@ final class ColonyQualifier {
     // Read off the line's own label rather than off a name handed in beside it: what the reader can
     // see is exactly what the line says, and a second copy of the name would be free to disagree
     // with it. What counts as the name saying a word at all is KmlibStrings.findWholeWordIndex's.
-    //
-    // A line withholding its name says none of the vocabulary: the blocks drawn in its place stand for
-    // words without spelling them, so there is nothing to match and nothing to gild. Every word due is
-    // read at the end of the line instead, which is where a line whose name happens to carry none of
-    // them states them anyway.
-    private static WordInName findFirstWordInName(List<String> words, CellTooltipEntryLine line) {
+    private static WordInName findFirstWordInName(List<String> words, String colonyName) {
 
-        if (line.hasRedactedName()) {
-            return null;
-        }
-
-        var colonyName = line.labelText();
-
-        WordInName firstWordInName = null;
+        WordInName firstWordInName = NO_WORD_IN_NAME;
 
         for (var wordIndex = 0; wordIndex < words.size(); wordIndex++) {
 

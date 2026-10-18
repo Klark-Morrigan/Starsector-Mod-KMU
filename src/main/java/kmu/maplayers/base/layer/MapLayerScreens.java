@@ -2,6 +2,10 @@ package kmu.maplayers.base.layer;
 
 import kmlib.starsector.ui.intel.IntelScreenView;
 
+import kmu.maplayers.base.machinery.InstalledMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
+
 import java.util.List;
 
 /**
@@ -11,8 +15,8 @@ import java.util.List;
  * <p>Apart from {@link MapLayerRegistry} because they answer different questions and change for
  * different reasons. The registry's roster is the set of layers that exist, settled once at startup and
  * the same for the whole process; this is where the player's own state lives, per screen, in the save,
- * moving whenever they touch a tab or a control. A reader wanting "what draws" asks the registry, and
- * one wanting "what has this screen been set to" asks here.
+ * moving whenever they touch a tab or a control. A reader wanting "what has this screen been set to" asks
+ * here, and so does one wanting "what draws", which is a reading of the live screen's picks.
  *
  * <p>Each screen is named once here, as the {@link ScreenMemoryScope} every one of its keys is composed
  * through, and each screen's pair is its own {@link PersistedActiveLayerSelection} and
@@ -29,51 +33,114 @@ import java.util.List;
  * on both, so a pass reading one fixed screen's pick would paint the sector map's choice onto the intel
  * screen and ignore the tab the player is looking at. Only the intel screen is asked, since the two are
  * never up together, so "not the intel screen" is the sector map.
+ *
+ * <p>One for the process, made by the composition root and seated on every sector's machinery as it is
+ * installed. Seated rather than handed to each reader, because the passes that read it most - the map's
+ * terrain surface and the guard it draws through - are built by the engine, and the machinery they
+ * resolve is the one thing they can reach. It is the process's rather than a sector's all the same: the
+ * machinery releasing it lets go of its own reference and nothing more.
  */
-public final class MapLayerScreens {
+public final class MapLayerScreens
+        implements InstalledMachinery {
 
-    // The two screens as the save knows them. Every per-screen key resolves through one of these, so the
-    // segment has one spelling and a screen is named here and nowhere else.
-    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
-    private static final ScreenMemoryScope INTEL_SCOPE = new ScreenMemoryScope("intel");
+    /** The sector map as the save knows it, under which every one of that screen's keys is composed. */
+    public static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
 
-    // Each screen's show-or-hide pick as the rest of the mod reads it: the stored pick behind the rule
-    // that a hide is acted on only while that screen has a control able to reverse it. Held as that
-    // reading rather than as the stored pick, so no consumer can be handed the raw choice by accident -
-    // the one entitled to it is whatever stands the control, and it asks the reading for it by name.
-    private static final ControlBackedMapLayerVisibility MAP_LAYER_VISIBILITY =
-        new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(MAP_SCOPE));
-    private static final ControlBackedMapLayerVisibility INTEL_LAYER_VISIBILITY =
-        new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(INTEL_SCOPE));
+    /** The intel screen as the save knows it, under which every one of that screen's keys is composed. */
+    public static final ScreenMemoryScope INTEL_SCOPE = new ScreenMemoryScope("intel");
+
+    // The roster both screens pick from.
+    private final MapLayerRegistry layerRegistry;
+
+    // The player's arrangement of that roster, which both screens' bars share.
+    private final LiveMapLayerArrangement layerArrangement;
 
     // Each screen's picks, built under that screen's own scope, with the scope beside them. The map host
     // draws through the map value and the overlay follows it; the intel host draws through the intel value.
-    private static final ScreenLayerPicks MAP_PICKS = new ScreenLayerPicks(
-        new PersistedActiveLayerSelection(MAP_SCOPE),
-        MAP_LAYER_VISIBILITY,
-        MAP_SCOPE);
-    private static final ScreenLayerPicks INTEL_PICKS = new ScreenLayerPicks(
-        new PersistedActiveLayerSelection(INTEL_SCOPE),
-        INTEL_LAYER_VISIBILITY,
-        INTEL_SCOPE);
+    private final ScreenLayerPicks mapPicks;
+    private final ScreenLayerPicks intelPicks;
 
-    // Reads whether the intel screen is the one up. Null until the composition root supplies it, which
-    // resolves every read to the map screen's pick - the answer to give before any screen is wired,
-    // since the sector map is the overlay's home.
-    private static IntelScreenView intelScreen;
+    // Reads whether the intel screen is the one up. Null resolves every read to the map screen's pick -
+    // the answer for screens wired to no game, since the sector map is the overlay's home.
+    private final IntelScreenView intelScreen;
 
-    private MapLayerScreens() {
+    /**
+     * @param layerRegistry    the roster both screens pick from
+     * @param layerArrangement the player's arrangement of that roster, shared by both screens' bars
+     * @param intelScreen      reads whether the intel screen is the one showing, or null for screens that
+     *                         always answer for the sector map
+     */
+    public MapLayerScreens(
+            MapLayerRegistry layerRegistry,
+            LiveMapLayerArrangement layerArrangement,
+            IntelScreenView intelScreen) {
+
+        this.layerRegistry = layerRegistry;
+        this.layerArrangement = layerArrangement;
+        this.intelScreen = intelScreen;
+        this.mapPicks = buildPicksFor(MAP_SCOPE);
+        this.intelPicks = buildPicksFor(INTEL_SCOPE);
     }
 
     /**
-     * Records the intel-screen seam that says which screen is up, so every read below can answer from
-     * the picks of the screen the player is looking at. Called by the composition root, the one place a
-     * concrete screen binding is named.
+     * Screens over an empty roster, no store and no intel screen: what a sector nothing was installed
+     * on reads, so a pass reaching one draws nothing rather than branching on an absence.
      *
-     * @param intelScreen reads whether the intel screen is the one showing
+     * @return screens on which nothing draws
      */
-    public static void registerIntelScreen(IntelScreenView intelScreen) {
-        MapLayerScreens.intelScreen = intelScreen;
+    public static MapLayerScreens createUnwiredScreens() {
+
+        return new MapLayerScreens(
+            new MapLayerRegistry(),
+            new LiveMapLayerArrangement(null), null);
+    }
+
+    /**
+     * The screens seated on the running game's sector, for a holder that lives for the process and is
+     * driven by the engine with nothing in hand - a sidebar host asked by the frame for its picks.
+     *
+     * @return the screens the live sector's layers were installed under, or unwired ones with no game
+     *         loaded
+     */
+    public static MapLayerScreens resolveScreensForLiveSector() {
+        return resolveScreensIn(SectorMapMachineryIndex.resolveMachineryForLiveSector());
+    }
+
+    /**
+     * The screens seated on {@code machinery}, or unwired ones where none were - the detached machinery,
+     * which is nobody's sector.
+     *
+     * @param machinery the machinery of the sector being drawn
+     * @return the screens the layers on that sector were installed under
+     */
+    public static MapLayerScreens resolveScreensIn(SectorMapMachinery machinery) {
+
+        return machinery.resolveMachinery(
+            MapLayerScreens.class,
+            MapLayerScreens::createUnwiredScreens);
+    }
+
+    /**
+     * Returns both screens to the reading a run that has never put a control up gives, whatever their
+     * saves hold.
+     *
+     * <p>Both together, because the thing being unwound is a fact about the run rather than about
+     * either screen: a caller unwinding one and not the other would leave an arrangement no session can
+     * actually be in, one screen acting on its stored hide and the other refusing to.
+     *
+     * <p>Owed on every campaign load. These two are held for the process while the picks beneath them
+     * read the loaded sector's memory, so a campaign hidden with a box standing would otherwise lend its
+     * word to the next campaign loaded in the same session - which has no box on any row yet, and may
+     * turn out to be unable to take one.
+     */
+    public void forgetControlsAttached() {
+
+        mapPicks
+            .layerVisibility()
+            .forgetControlAttached();
+        intelPicks
+            .layerVisibility()
+            .forgetControlAttached();
     }
 
     /**
@@ -87,24 +154,66 @@ public final class MapLayerScreens {
      *
      * @return the picks of both screens, the map screen's first
      */
-    public static List<ScreenLayerPicks> getAllScreenPicks() {
-        return List.of(MAP_PICKS, INTEL_PICKS);
-    }
-
-    /**
-     * @return the map screen's picks, for the map host to draw through, switch and flip, so the host and
-     *         the overlay read one value rather than each resolving their own
-     */
-    public static ScreenLayerPicks getMapPicks() {
-        return MAP_PICKS;
+    public List<ScreenLayerPicks> getAllScreenPicks() {
+        return List.of(mapPicks, intelPicks);
     }
 
     /**
      * @return the intel screen's picks, its own under its own keys, so the intel sidebar's tab and its
      *         show-or-hide state are independent of the map screen's and survive reload on their own
      */
-    public static ScreenLayerPicks getIntelPicks() {
-        return INTEL_PICKS;
+    public ScreenLayerPicks getIntelPicks() {
+        return intelPicks;
+    }
+
+    /**
+     * @return the player's arrangement of the roster, for a pass bringing what stands on a sector into
+     *         line with the bar
+     */
+    public LiveMapLayerArrangement getLayerArrangement() {
+        return layerArrangement;
+    }
+
+    /**
+     * @return the roster both screens pick from, for a pass acting on every installed layer
+     */
+    public MapLayerRegistry getLayerRegistry() {
+        return layerRegistry;
+    }
+
+    /**
+     * @return the map screen's picks, for the map host to draw through, switch and flip, so the host and
+     *         the overlay read one value rather than each resolving their own
+     */
+    public ScreenLayerPicks getMapPicks() {
+        return mapPicks;
+    }
+
+    /**
+     * @return whether the layers are picked to show on the screen showing this frame, answered the
+     *         moment the pick flips. The crisp reading, for whatever has to stand down at once rather
+     *         than ride the dissolve out - a control switched off must stop answering the player
+     *         immediately, whatever is still fading off the screen
+     */
+    public boolean areLayersShownOnLiveScreen() {
+
+        return resolveLivePicks()
+            .layerVisibility()
+            .areLayersShown();
+    }
+
+    /**
+     * @return the layer on the screen showing this frame, or null before any layer is registered, or
+     *         once that screen's layers have wholly faded off it. This is what the map surface dispatches
+     *         its render pass through, so the paint follows the tab the player is looking at without the
+     *         surface naming a layer; it follows the live screen rather than one fixed screen, so the
+     *         intel screen's own tab governs what paints there while the sector map keeps its own pick
+     */
+    public MapLayer resolveDrawnLayer() {
+
+        return resolveLivePicks()
+            .drawnLayer()
+            .resolveDrawnLayer();
     }
 
     /**
@@ -122,20 +231,31 @@ public final class MapLayerScreens {
      *         other's. It is also what a control on a screen's own chrome is stood through: the tab and the
      *         hide are both its business, one to take over and one to move
      */
-    public static ScreenLayerPicks resolveLivePicks() {
+    public ScreenLayerPicks resolveLivePicks() {
+
         return isIntelScreenLive()
-            ? INTEL_PICKS
-            : MAP_PICKS;
+            ? intelPicks
+            : mapPicks;
     }
 
     /**
-     * @return whether the layers are picked to show on the screen showing this frame, answered the
-     *         moment the pick flips. The crisp reading, for whatever has to stand down at once rather
-     *         than ride the dissolve out - a control switched off must stop answering the player
-     *         immediately, whatever is still fading off the screen
+     * The picks of the screen {@code memoryScope} names, for a holder that names its screen by the scope
+     * its own preferences are stored under - so what it stores and what it draws cannot be two screens'.
+     *
+     * @param memoryScope one of {@link #MAP_SCOPE} and {@link #INTEL_SCOPE}
+     * @return that screen's picks
+     * @throws IllegalArgumentException for a scope naming neither screen
      */
-    public static boolean areLayersShownOnLiveScreen() {
-        return resolveLivePicks().layerVisibility().areLayersShown();
+    public ScreenLayerPicks resolvePicksFor(ScreenMemoryScope memoryScope) {
+
+        for (var screenPicks : getAllScreenPicks()) {
+
+            if (screenPicks.memoryScope().equals(memoryScope)) {
+                return screenPicks;
+            }
+        }
+
+        throw new IllegalArgumentException("no screen is saved under " + memoryScope);
     }
 
     /**
@@ -143,47 +263,38 @@ public final class MapLayerScreens {
      *         and 1 with them wholly shown, for a pass multiplying it into what it paints so the
      *         whole footprint thins together rather than one part snapping out from under another
      */
-    public static float resolveShownFadeOnLiveScreen() {
-        return resolveLivePicks().layerVisibility().resolveShownFade();
+    public float resolveShownFadeOnLiveScreen() {
+
+        return resolveLivePicks()
+            .layerVisibility()
+            .resolveShownFade();
     }
 
     /**
-     * Returns both screens to the reading a run that has never put a control up gives, whatever their
-     * saves hold.
-     *
-     * <p>Both together, because the thing being unwound is a fact about the run rather than about
-     * either screen: a caller unwinding one and not the other would leave an arrangement no session can
-     * actually be in, one screen acting on its stored hide and the other refusing to.
-     *
-     * <p>Owed on every campaign load. These two are held for the process while the picks beneath them
-     * read the loaded sector's memory, so a campaign hidden with a box standing would otherwise lend its
-     * word to the next campaign loaded in the same session - which has no box on any row yet, and may
-     * turn out to be unable to take one.
+     * Nothing to release: the screens are the process's, and outlive every sector they are seated on.
      */
-    public static void forgetControlsAttached() {
-
-        MAP_LAYER_VISIBILITY.forgetControlAttached();
-        INTEL_LAYER_VISIBILITY.forgetControlAttached();
+    @Override
+    public void disposeMachinery() {
     }
 
-    /**
-     * Forgets what either screen was showing, leaving the reading screens that have never drawn give.
-     *
-     * <p>Package-private, and the running game asks it of nothing. What a screen was showing is only
-     * ever consulted while that screen is switched off and part-way through a dissolve, and a campaign
-     * load takes both controls back - so both screens read as shown until a box stands again, and the
-     * first frame of a new campaign catches its own pick before any dissolve could ask for one. What
-     * needs this is a process that poses a switched-off screen without drawing one first, which a
-     * running game never does.
-     */
-    static void forgetDrawnLayers() {
+    // One screen's picks under its own scope, over the roster and arrangement both screens share. The
+    // show-or-hide pick is held as the reading behind a control rather than as the stored pick, so no
+    // consumer can be handed the raw choice by accident - the one entitled to it is whatever stands the
+    // control, and it asks the reading for it by name.
+    private ScreenLayerPicks buildPicksFor(ScreenMemoryScope memoryScope) {
 
-        MAP_PICKS.drawnLayer().forgetDrawnLayer();
-        INTEL_PICKS.drawnLayer().forgetDrawnLayer();
+        return new ScreenLayerPicks(
+            new PersistedActiveLayerSelection(memoryScope, layerRegistry),
+            new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(memoryScope)),
+            memoryScope,
+            layerRegistry,
+            layerArrangement);
     }
 
     // Whether the intel screen is the one up, which is what "live screen" means above.
-    private static boolean isIntelScreenLive() {
-        return intelScreen != null && intelScreen.isIntelTabOpen();
+    private boolean isIntelScreenLive() {
+
+        return intelScreen != null
+            && intelScreen.isIntelTabOpen();
     }
 }

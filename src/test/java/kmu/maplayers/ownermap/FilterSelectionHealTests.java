@@ -6,8 +6,10 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.maplayers.ownermap.picker.OwnerMetricsFake;
@@ -18,6 +20,8 @@ import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.settings.KmuLunaSettings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -50,6 +54,9 @@ import static org.mockito.Mockito.when;
  * game can lose an owner from the picker without a load or a view switch to heal against, and the live
  * entry a sidebar click takes - since each resolves the running sector once and must hand exactly that
  * one down.
+ *
+ * <p>The screens a heal walks are the ones seated on the sector's machinery, so every case seats them
+ * there as the composition root does.
  */
 final class FilterSelectionHealTests {
 
@@ -62,6 +69,19 @@ final class FilterSelectionHealTests {
 
     private final OwnerPaintedView viewMock = mock(OwnerPaintedView.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
+
+    private final MapLayerScreens screens = MapLayerRosters.createScreensOverNoLayer();
+
+    @BeforeEach
+    void seatTheScreensOnTheSector() {
+        SectorMapMachineryIndex.installMachineryOn(sectorMock, screens);
+    }
+
+    @AfterEach
+    void clearEveryMachineryThisCaseMade() {
+        // The index is process-wide, so a sector installed here would otherwise outlive its case.
+        SectorMapMachineryIndex.disposeAllMachinery();
+    }
 
     @Nested
     class HealStaleSelectionAgainstActiveView {
@@ -146,7 +166,7 @@ final class FilterSelectionHealTests {
                 assertThat(healedSlots)
                     .extracting(slot -> slot.screenSlot().memoryScope())
                     .containsExactlyInAnyOrderElementsOf(
-                        MapLayerScreens.getAllScreenPicks().stream()
+                        screens.getAllScreenPicks().stream()
                             .map(ScreenLayerPicks::memoryScope)
                             .toList());
 
@@ -205,7 +225,7 @@ final class FilterSelectionHealTests {
         @Test
         void readsNoOwnersUntilOneIsThereToJudge() {
             // The cost contract, which matters because every settings change arrives here and
-            // most saves hold no spotlight: resolving the view's owners is a whole grouped holder
+            // most saves hold no spotlight: resolving the view's owners is a whole grouped
             // pass over the sector, so it must not run before the heal has found a stored ID worth
             // judging. Pinned on the seam that pass goes through, the pass itself being the view's.
             try (var selectionMock = mockStatic(FilterSelection.class)) {
@@ -363,11 +383,11 @@ final class FilterSelectionHealTests {
     // panels on different views - or one with its map off. Which screens those are stays
     // MapLayerScreens' answer: the views are handed out against the scopes it names rather than against
     // two spelled-out screens.
-    private static void stubOneViewPerScreen(
+    private void stubOneViewPerScreen(
             MapLayerViewRegistry viewRegistryMock,
             OwnerPaintedView... viewPerScreen) {
 
-        var screenPicks = MapLayerScreens.getAllScreenPicks();
+        var screenPicks = screens.getAllScreenPicks();
 
         for (var screenIndex = 0; screenIndex < screenPicks.size(); screenIndex++) {
 

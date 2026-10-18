@@ -63,7 +63,7 @@ public record OwnerMapHoverHighlightSource(
     public Color resolveHighlightColourOf(SystemKey cellKey, ElementPaintSelection paintSelection) {
         // The owner off the live occupancy; the neutral off the scheme the build painted in, so
         // the halo over an unowned cell is the shade its own outline drew in.
-        return MapPalettes.pickHolderPaletteColour(
+        return MapPalettes.pickOwnerPaletteColour(
             paintSelection,
             clusters.getOccupancy().readOwnerOf(cellKey),
             clusters.getBuildInputs().styling().readNeutralColour());

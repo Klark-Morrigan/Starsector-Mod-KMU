@@ -31,7 +31,8 @@ final class PersistedActiveLayerSelectionTests {
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
-    private final PersistedActiveLayerSelection selection = new PersistedActiveLayerSelection(SCREEN_SCOPE);
+
+    private PersistedActiveLayerSelection selection;
 
     private SectorMemoryFake sectorMemoryFake;
 
@@ -48,7 +49,9 @@ final class PersistedActiveLayerSelectionTests {
         when(secondLayerMock.isOfferedAsDefaultPick())
             .thenReturn(true);
 
-        MapLayerRosters.replaceRosterWith(firstLayerMock, secondLayerMock);
+        selection = new PersistedActiveLayerSelection(
+            SCREEN_SCOPE,
+            MapLayerRosters.createRosterOf(firstLayerMock, secondLayerMock));
 
         sectorMemoryFake = new SectorMemoryFake();
     }

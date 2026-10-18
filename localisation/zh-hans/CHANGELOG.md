@@ -107,6 +107,10 @@
 | `HolderPass.over(SectorAPI, ColonyReadRules, HolderGrouping)` | `HolderPass.createOver(SectorAPI, ColonyReadRules, HolderGrouping)` |
 | `SystemColonyReading.readColoniesIn(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` | `readColonyReadingOf(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` |
 | `SharedBlocSortModes.declareMarketSizeMode(List)` | `SizedBlocMetrics.createMarketSizeMode(List)` |
+| `SidebarStyles.buildSidebarSoundScheme()` | `SidebarSounds.buildSoundScheme()` |
+| `MapPalettes.pickHolderPaletteColour(ElementPaintSelection, SystemOwner, Color)` | `pickOwnerPaletteColour(ElementPaintSelection, SystemOwner, Color)` |
+| `OwnerPresence` 的 `marketCount`，连同 `marketCount()` 和 `hasMarkets()`，以及 `RibbonSegmentLengths.marketLengthUnits()` | `stakeCount`、`stakeCount()`、`hasStakes()` 和 `stakeLengthUnits()`。所有者地图的核心不再使用 *holder* 和 *market* 二词，构建会确保这一点 |
+| `SystemDominance.resolveDominantFactionId(Map, HolderRankingRules)` | `resolveDominantBlocId(Map, HolderRankingRules)`：它为集团排名 |
 
 ##### 接缝
 
@@ -163,6 +167,18 @@
 | `BaseSidebarHost` | 宿主实现 `composeTabStyle()` 并读取 `resolveTabStyle()`，后者保留样式，直到设置修订号或星域已确定的字体变化 |
 | `SystemCellTooltip`、`PoliticalMapCellTooltip`、`SystemClaimTooltip` 和 `SystemDominationTooltip` 上的 `resolveDeepestHeldLevelFor(SectorAPI, StarSystemAPI)` | 已移除：按键从绘制所保留的组合主体读取 `deepestHeldLevel()`，因此图层只在 `composeBody` 中给出其深度 |
 | `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`，基于调用方已读取的权重，因此为星系排名并解释其分数的悬停框只为每个市场计算一次权重 |
+| `CellTooltipEntryLine` 的十二参数构造函数，以及 `labelText()`、`redactedWordLengths()`、`labelFinding()` 和 `hasRedactedName()` | `CellTooltipEntryLine(CellTooltipMark, CellTooltipLineName, CellTooltipIndexPlace, String, CellTooltipQualifier, CellTooltipLineValue, boolean)`。名称为密封类型 `CellTooltipLineName`，即 `Spoken` 或 `Withheld`，通过 `selectByCase(Function, Function)` 读取，因此没有哪一行能既说出又隐去其名称 |
+| `valueText()`、`countedValue()`、`valueWorkingText()` 和 `isValueUncounted()`，位于 `CellTooltipEntryLine` 上 | 改为 `value()` 上的同名四项，即一个 `CellTooltipLineValue` |
+| 静态的 `MapLayerRegistry`、`LiveMapLayerArrangement` 和 `MapLayerScreens`，连同其重置钩子 | 改为由 `MapLayers.registerAll()` 构建的实例，它返回建立在另外两者之上的 `MapLayerScreens`。入口通过 `SectorMapMachineryIndex.installMachineryOn(SectorAPI, InstalledMachinery...)` 将其安放到每个星域上，各渲染通道用 `MapLayerScreens.resolveScreensIn(SectorMapMachinery)` 读取 |
+| `MapLayerRegistry.getDrawnLayer()`、`isDrawnLayer(MapLayer)` 和 `isDrawnLayerOn(ScreenLayerPicks, MapLayer)` | `MapLayerScreens.resolveDrawnLayer()` 和 `ScreenLayerPicks.isDrawingLayer(MapLayer)` |
+| `MapLayerScreens.registerIntelScreen(IntelScreenView)` 和 `LiveMapLayerArrangement.registerArrangementSelection(MapLayerArrangementSelection)` | 改为构造函数参数：`MapLayerScreens(MapLayerRegistry, LiveMapLayerArrangement, IntelScreenView)` 和 `LiveMapLayerArrangement(MapLayerArrangementSelection)` |
+| `ScreenLayerPicks(ActiveLayerSelection, ControlBackedMapLayerVisibility, ScreenMemoryScope)` 和 `PersistedActiveLayerSelection(ScreenMemoryScope)` | 各自还接收其屏幕从中选择图层的 `MapLayerRegistry`，前者还接收 `LiveMapLayerArrangement` |
+| `BaseSidebarHost(ScreenLayerPicks, boolean, ScreenClaim)` 和 `BaseSidebarHost(SidebarFoldSelection, ScreenLayerPicks, ScreenClaim)` | `BaseSidebarHost(ScreenMemoryScope, boolean, ScreenClaim)`，从当前星域读取该屏幕的选择，以及 `BaseSidebarHost(SidebarFoldSelection, Supplier, ScreenClaim)` |
+| `MapLayerArrangementDialog.openDialog()` 和 `BarOpeners.buildOpenerSpec(TabStyle)` | `openDialog(ScreenLayerPicks)` 和 `buildOpenerSpec(TabStyle, ScreenLayerPicks)`：屏幕的选择携带图层列表和存储位置 |
+| `SplitFillBuilder.ClusterFill` 和 `SplitFillBuilder.traceFill(boolean, FillSplit, String, Color)` | `TracedFill.ClusterFill` 和 `traceFill(boolean, FillSplit, String)`。设为无颜色的填充直接取 `TracedFill.UNPAINTED`，不经描绘 |
+| `KmuConditionPickerEntry` 的构造函数 | `KmuConditionPickerEntry.Builder(String, String, KmuConditionPickerEntryState)`，每个可选部分一个方法，最后调用 `build()` |
+| `KmuConditionPickerLocation(String, String, KmuPickerFaction, String, String, String, String)` | `KmuConditionPickerLocation.Builder()`，对一无所知的位置则用 `createUnknownLocation()` |
+| 需经类型转换才能取得的 `StarsectorEditableMarket.getMarket()` | `KmuEditableMarket.findStarsectorMarket()` 和 `findCondition(String)`，该端口的每个实现都须提供 |
 
 ##### 移至 KMLib
 

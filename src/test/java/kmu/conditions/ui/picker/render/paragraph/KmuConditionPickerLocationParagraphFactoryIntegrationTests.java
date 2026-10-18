@@ -31,14 +31,15 @@ final class KmuConditionPickerLocationParagraphFactoryIntegrationTests {
     private static KmuConditionPickerModel buildModelHoldingEveryField() {
 
         var faction = new KmuPickerFaction("Hegemony", null, null, "Vengeful (-100 / 100)", null);
-        var location = new KmuConditionPickerLocation(
-            "Valis",
-            "terran world",
-            faction,
-            "Corvus Star System",
-            "yellow star",
-            "Corvus",
-            "Orion Constellation");
+        var location = new KmuConditionPickerLocation.Builder()
+            .withPlanetName("Valis")
+            .withPlanetType("terran world")
+            .withFaction(faction)
+            .withStarSystemName("Corvus Star System")
+            .withGravityWellTypeName("yellow star")
+            .withGravityWellName("Corvus")
+            .withConstellationName("Orion Constellation")
+            .build();
 
         return new KmuConditionPickerModel(List.of(), location);
     }

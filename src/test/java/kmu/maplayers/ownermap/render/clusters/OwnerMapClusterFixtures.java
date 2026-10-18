@@ -80,8 +80,8 @@ public final class OwnerMapClusterFixtures {
     }
 
     /**
-     * A clusters carrying the given holders and nothing else: empty draw lists, an inert theme,
-     * the holder layers' categories, a reading placing every owner at full strength, and no
+     * A clusters carrying the given owners and nothing else: empty draw lists, an inert theme,
+     * KMU's own layers' categories, a reading placing every owner at full strength, and no
      * filter.
      *
      * <p>The view is a Mockito mock rather than a concrete one so a test naming no view stays
@@ -107,7 +107,7 @@ public final class OwnerMapClusterFixtures {
     }
 
     /**
-     * The same clusters with its holders stated by key rather than by name, for the one case a
+     * The same clusters with its owners stated by key rather than by name, for the one case a
      * name cannot pose: two systems sharing a vanilla ID, which differ only in the entity arms.
      *
      * @param ownerBySystemKey who holds each system, addressed as the build addresses it
@@ -235,7 +235,7 @@ public final class OwnerMapClusterFixtures {
      * currently holds.
      *
      * @param ownerBySystemId who holds each system
-     * @param nameFormat      how this build's cluster labels spell their holders' names
+     * @param nameFormat      how this build's cluster labels spell their owners' names
      * @return a live clusters, ready to have draw records written into it
      */
     public static OwnerMapClusters createClustersSpellingNames(
@@ -249,7 +249,7 @@ public final class OwnerMapClusterFixtures {
      * The same clusters retaining a stated owner source.
      *
      * @param ownerBySystemId who holds each system
-     * @param nameFormat      how this build's cluster labels spell their holders' names
+     * @param nameFormat      how this build's cluster labels spell their owners' names
      * @param ownerSource     the source the build retains
      * @return a live clusters, ready to have draw records written into it
      */
@@ -306,7 +306,7 @@ public final class OwnerMapClusterFixtures {
      * carry, for a suite whose subject is what the theme says about an owner that view surfaced.
      *
      * <p>Those two are the only inputs the builders above leave unreachable: a caller can write
-     * holders, cells and a spotlight on top through the model's own accessors, but the view and
+     * owners, cells and a spotlight on top through the model's own accessors, but the view and
      * the theme are read-only once built - and a theme left null answers a global-tier read with
      * nothing at all rather than with a tier that paints nothing.
      *

@@ -128,7 +128,7 @@ public final class OwnerMapRebuildSeams {
      * Stands in for every class any layer's rebuild reaches, answering each the one way a rebuild
      * wants unless it is one of the four handed back below.
      *
-     * @return the open arrangement, which its holder closes on the way out
+     * @return the open arrangement, which its caller closes on the way out
      */
     public static OwnerMapRebuildSeams openEverySeamARebuildNeeds() {
         return new OwnerMapRebuildSeams();

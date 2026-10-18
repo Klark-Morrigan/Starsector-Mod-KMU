@@ -14,10 +14,8 @@ import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.chrome.VanillaMapLayerToggleAttacher;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
-import kmu.maplayers.base.layer.MapLayerArrangements;
-import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.NoLayer;
+import kmu.maplayers.base.layer.SessionHeldMapLayerArrangement;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceFixture;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry;
@@ -77,20 +75,6 @@ final class MapLayersTests {
     @AfterEach
     void clearOpenlyKnownColonies() {
         clearRegistrations();
-    }
-
-    @AfterEach
-    void unbindTheArrangementStoreTheWiringLeft() {
-        // The wiring binds a store reading the player's own common-data file, and the holder is static,
-        // so a case that ran it would otherwise leave every later row in the run reading that file.
-        MapLayerArrangements.forgetTheArrangement();
-    }
-
-    @AfterEach
-    void restoreTheRosterTheWiringLeft() {
-        // The wiring registers KMU's real layers into a static roster, so a case that ran it would
-        // otherwise leave the political map standing in every later roster read in the same run.
-        MapLayerRosters.restoreNonEmptyRoster();
     }
 
     @AfterEach
@@ -287,9 +271,8 @@ final class MapLayersTests {
 
                 stubNexEnabled(globalMock, false);
 
-                MapLayers.registerAll();
-
-                var politicalMap = (PoliticalMapLayer) MapLayerRegistry.getLayers().get(1);
+                var layers = MapLayers.registerAll().getLayerRegistry().getLayers();
+                var politicalMap = (PoliticalMapLayer) layers.get(1);
 
                 healMock.verify(() -> FilterSelectionHeal.installHealOnSettingsChange(
                     politicalMap.resolveViewRegistry()));
@@ -327,9 +310,8 @@ final class MapLayersTests {
 
                 stubNexEnabled(globalMock, false);
 
-                MapLayers.registerAll();
-
-                var layers = MapLayerRegistry.getLayers();
+                var layerRegistry = MapLayers.registerAll().getLayerRegistry();
+                var layers = layerRegistry.getLayers();
 
                 assertThat(layers)
                     .hasSize(2);
@@ -337,7 +319,7 @@ final class MapLayersTests {
                     .isSameAs(NoLayer.INSTANCE);
                 assertThat(layers.get(1))
                     .isInstanceOf(PoliticalMapLayer.class);
-                assertThat(MapLayerRegistry.getDefaultLayer())
+                assertThat(layerRegistry.getDefaultLayer())
                     .isSameAs(layers.get(1));
             }
         }
@@ -362,6 +344,18 @@ final class MapLayersTests {
                 assertThat(FactionAllianceRegistry.readAlliances(mock(SectorAPI.class)))
                     .isEqualTo(FactionAlliances.NONE);
             }
+        }
+    }
+
+    @Nested
+    class CreateBarArrangement {
+
+        @Test
+        void holdsWhatItReadsForTheSession() {
+            // The bar asks for its arrangement on every frame it draws and every key it routes, so the
+            // store behind it has to be the one that keeps a read rather than reopening the file.
+            assertThat(MapLayers.createBarArrangement().resolveArrangementSelection())
+                .isInstanceOf(SessionHeldMapLayerArrangement.class);
         }
     }
 

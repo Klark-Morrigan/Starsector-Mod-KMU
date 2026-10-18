@@ -138,7 +138,7 @@ final class DebugBorderTracingBuilderTests {
         @Test
         void capturesOneFusedBaseLoopWithBothSmoothingGatesOff() {
 
-            stubHolders(Map.of(
+            stubOwners(Map.of(
                 HELD_SYSTEM,
                 HEGEMONY_OWNER,
                 NEIGHBOUR_SYSTEM,
@@ -165,7 +165,7 @@ final class DebugBorderTracingBuilderTests {
         @Test
         void capturesTheDespikedStageOnlyWhenSandingIsGatedOn() {
 
-            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(buildSandingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
@@ -184,7 +184,7 @@ final class DebugBorderTracingBuilderTests {
         @Test
         void roundsTheBaseDirectlyWhenSandingIsGatedOff() {
 
-            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(buildRoundingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
@@ -235,7 +235,7 @@ final class DebugBorderTracingBuilderTests {
         @Test
         void leavesAnOwnedCellToTheClusterPassRatherThanOutliningItTwice() {
 
-            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
@@ -252,7 +252,7 @@ final class DebugBorderTracingBuilderTests {
         @Test
         void capturesNothingForAClusterThatTracesNoRing() {
 
-            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
 
             var geometryCacheMock = mock(CellGeometryCache.class);
 
@@ -405,7 +405,7 @@ final class DebugBorderTracingBuilderTests {
     // The owners the overlay is to trace. Stated rather than resolved: what owns a system is the
     // layer's source's answer, so a case states the answer instead of naming whatever mechanic would
     // have worked it out.
-    private void stubHolders(Map<String, SystemOwner> statedOwnerBySystemId) {
+    private void stubOwners(Map<String, SystemOwner> statedOwnerBySystemId) {
         ownerBySystemId = statedOwnerBySystemId;
     }
 

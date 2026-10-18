@@ -75,7 +75,7 @@ final class PaintedCellBuilderTests {
         private static final String SYSTEM_ID = "hegemony-system";
 
         // Two of the systems in the unowned fixture's inhabited set - one settled by a
-        // decivilised world, one by a live settlement no holder was resolved for - so a test can
+        // decivilised world, one by a live settlement no owner was resolved for - so a test can
         // address either unowned category by which ID it builds the cell as, and can tell the
         // two reasons a
         // cell counts as settled apart.
@@ -93,7 +93,7 @@ final class PaintedCellBuilderTests {
         private static final Color PRESENCE_LIFTED = Color.ORANGE;
 
         // The neutral shade an unowned cell resolves both its palette slots to, distinct from
-        // every holder/desaturation colour so an observed outline names the unowned path.
+        // every owner/desaturation colour so an observed outline names the unowned path.
         private static final Color UNOWNED_NEUTRAL = Color.PINK;
 
         // A corner shape that rounds the shared 10-unit cell without being clamped: the step-back
@@ -109,7 +109,7 @@ final class PaintedCellBuilderTests {
         // Two systems the sector answers to one ID for - vanilla's own unnamed deep space, which
         // only their anchors tell apart - and the rival holding the second of them. Its seam shade
         // is distinct from every other colour here, so an observed seam names which of the pair's
-        // holders the cell read.
+        // owners the cell read.
         private static final SystemKey FIRST_TWIN = new SystemKey("deep space", "", "8b3");
         private static final SystemKey SECOND_TWIN = new SystemKey("deep space", "", "38d53");
         private static final Color RIVAL_PRIMARY = Color.CYAN;
@@ -135,7 +135,7 @@ final class PaintedCellBuilderTests {
                 1.0);
 
         @Test
-        void appliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
+        void appliesTheOpacityMultiplierAndKeepsTheOwnerPaletteWhenNotDesaturated() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildReadingAdjusting(new ElementStyleAdjustment(0.5, false))),
@@ -149,7 +149,7 @@ final class PaintedCellBuilderTests {
         }
 
         @Test
-        void drawsTwoSystemsSharingAnIdInTheirOwnHoldersColours() {
+        void drawsTwoSystemsSharingAnIdInTheirOwnersColours() {
             // The collision the whole address exists for, at the cell that shows it: both systems
             // answer to one vanilla ID and are held by different owners, so the two cells paint in
             // two shades - where a holding keyed by ID drew the second in the first's colours.
@@ -199,7 +199,7 @@ final class PaintedCellBuilderTests {
         }
 
         @Test
-        void leavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
+        void leavesTheOwnerPaletteAndOpacityUntouchedForTheNoneAdjustment() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildReadingAdjusting(ElementStyleAdjustment.NONE)),
@@ -232,7 +232,7 @@ final class PaintedCellBuilderTests {
         @Test
         void recedesANonSpotlightedOwnerUnderFilterAndIgnoresTheView() {
             // Under an active filter the view's per-owner seams are bypassed: a real (non-spotlit)
-            // holder takes the pass's shared recede, not whatever the view would have said. The view
+            // owner takes the pass's shared recede, not whatever the view would have said. The view
             // stub returns the identity adjustment, so seeing the recede applied proves the filter,
             // not the view, styled the cell.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
@@ -249,7 +249,7 @@ final class PaintedCellBuilderTests {
         @Test
         void drawsACellWithNoStarAsUninhabited() {
             // A cell that draws as no system - a shard of a dead star's leftover space the
-            // redistribution pass leaves behind - has no holder and no market to have died, so it
+            // redistribution pass leaves behind - has no owner and no settlement to have died, so it
             // paints as plain uninhabited. The null star must resolve through the draws-as
             // map without being taken for decivilised: the decivilised category is "No color"
             // here, so had the null ID been routed there the cell would have dropped to null.
@@ -388,9 +388,10 @@ final class PaintedCellBuilderTests {
         }
 
         @Test
-        void drawsAnInhabitedCellWithNoHolderAsSettledRatherThanBackdrop() {
-            // A layer whose holding rule admits only some markets leaves a system settled
-            // solely outside them with no holder, and it arrives here holderless - exactly as an
+        void drawsAnInhabitedCellWithNoOwnerAsSettledRatherThanBackdrop() {
+            // A layer whose owner rule admits only some settlements leaves a system settled
+
+            // solely outside them with no owner, and it arrives here ownerless - exactly as an
             // empty system does. It must still take the settled bundle, since the uninhabited
             // bundle is what the uninhabited-systems checkbox switches off, and a
             // populated system erased by that checkbox is the map lying about what is there.
@@ -696,7 +697,7 @@ final class PaintedCellBuilderTests {
 
         // The shared unowned backdrop: the theme plus the pass's spotlight state, since an
         // unowned cell's recede is the filter's. What the null-system cases read off it is
-        // that a cell drawing as no system resolves no holder and is not taken for settled; that
+        // that a cell drawing as no system resolves no owner and is not taken for settled; that
         // neither read reaches its collection with a null key at all is the resolver's own rule,
         // pinned over null-hostile collections in UnownedStyleResolverTests.
         private static OwnerMapClusters buildUnownedDrawablesWith(
@@ -802,17 +803,17 @@ final class PaintedCellBuilderTests {
         }
 
         // The same backdrop holding the two systems that answer to one ID, each under its own
-        // owner - the only arrangement that tells a cell reading its holder by key from one
+        // owner - the only arrangement that tells a cell reading its owner by key from one
         // narrowing to the ID first.
         private static OwnerMapClusters buildDrawablesHeldByTwins() {
 
-            var holders = new LinkedHashMap<SystemKey, SystemOwner>();
+            var owners = new LinkedHashMap<SystemKey, SystemOwner>();
 
-            holders.put(FIRST_TWIN, OWNER);
-            holders.put(SECOND_TWIN, RIVAL_OWNER);
+            owners.put(FIRST_TWIN, OWNER);
+            owners.put(SECOND_TWIN, RIVAL_OWNER);
 
             return new OwnerMapClusters(
-                SystemOccupancy.createCopyOf(holders, Set.of(), Set.of()),
+                SystemOccupancy.createCopyOf(owners, Set.of(), Set.of()),
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         OwnerMapClusterFixtures.createRenderStyleForEveryCategory(STYLE),
@@ -839,7 +840,7 @@ final class PaintedCellBuilderTests {
                 boolean isFiltering,
                 ElementStyleAdjustment recede) {
 
-            // A filtered pass carries the selected owner's ID; the fixture's holder is never that
+            // A filtered pass carries the selected owner's ID; the fixture's owner is never that
             // owner, so it reads as non-spotlit and the recede applies. Off filter the ID is null.
             return new OwnerMapClusters(
                 SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()),

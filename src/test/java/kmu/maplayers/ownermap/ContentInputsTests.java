@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
  * <p>The first is what it reads. Each pick is stored per save under a key of its own, all five are
  * stored per screen, and one of them - the spotlight - is stored per view as well, so a reading that
  * crossed two of those keys would paint the map by a pick the player made somewhere else. The picks
- * are written here through the very holders the sidebar writes them through, over a memory that really
+ * are written here through the very stores the sidebar writes them through, over a memory that really
  * stores, so a value written under one key and read under another fails rather than passing on two
  * stubs that agree.
  *
@@ -70,7 +70,7 @@ public final class ContentInputsTests {
     private SectorMemoryFake sectorMemoryFake;
 
     // The board the sidebar's writers raise on. Nothing here reads it - what a flip raises is the
-    // holders' own suites to pin - but every writer takes one.
+    // stores' own suites to pin - but every writer takes one.
     private MapLayerRefreshBoard board;
 
     @BeforeEach
@@ -279,7 +279,7 @@ public final class ContentInputsTests {
 
         @Test
         void dropsTheSpotlightAndTheRecedeBehindIt() {
-            // The debug border-tracing view paints real holders across the whole sector,
+            // The debug border-tracing view paints real owners across the whole sector,
             // so it must not recede anything - and a spotlight left standing would also have it
             // naming synthetic keys no view can spell.
             var cleared = buildReadingSpotlighting(SPOTLIT_OWNER_ID).clearFilterPick();
@@ -316,7 +316,7 @@ public final class ContentInputsTests {
 
     // The slot a spotlight is seeded into, addressed as the sidebar addresses it: this mod's store
     // namespace, the screen the pick was made on, and the view whose picker made it. Written through
-    // the real holder rather than stubbed, so a sampling that composed any of the three differently
+    // the real store rather than stubbed, so a sampling that composed any of the three differently
     // reads back nothing.
     private static SelectionSlot createSpotlightSlot(ScreenMemoryScope memoryScope) {
 

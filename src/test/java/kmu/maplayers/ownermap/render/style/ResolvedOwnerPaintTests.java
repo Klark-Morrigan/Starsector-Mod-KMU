@@ -40,10 +40,10 @@ final class ResolvedOwnerPaintTests {
     private static final ColourPair DESATURATION_PALETTE =
         new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY);
 
-    // The holder whose shades the owner path reads, carrying the same pair the palette above holds
-    // so a case can tell "read off the holder" from "read off the stated shades" by nothing but
+    // The owner whose shades the owner path reads, carrying the same pair the palette above holds
+    // so a case can tell "read off the owner" from "read off the stated shades" by nothing but
     // which factory it called.
-    private static final SystemOwner HOLDER =
+    private static final SystemOwner OWNER =
         new SystemOwner("hegemony", new ColourPair(OWN_PRIMARY, OWN_SECONDARY));
 
     // The element opacity every case states, and the mute one applies over it. Distinct so the
@@ -71,7 +71,7 @@ final class ResolvedOwnerPaintTests {
         void picksOutOfTheDesaturationPaletteWhenTheAdjustmentDesaturates() {
             // The swap is one decision for the whole owner, so it is applied as the paint source is
             // resolved rather than per element: a fill reading the desaturated shades while the
-            // border beside it reads the holder's own would split one surface into two owners.
+            // border beside it reads the owner's own would split one surface into two owners.
             var paint = buildPaintAdjustedBy(new ElementStyleAdjustment(MUTE_FACTOR, true))
                 .pickPaintOf(buildElementAt(OwnerPaletteSlot.SECONDARY));
 
@@ -134,14 +134,14 @@ final class ResolvedOwnerPaintTests {
     class ResolveFrom {
 
         @Test
-        void readsAHolderShadesThroughTheStylingItWasResolvedUnder() {
+        void readsAnOwnersShadesThroughTheStylingItWasResolvedUnder() {
             // The owner path: the bundle and adjustment come off the styling, and the shades off
             // whoever holds the system, so all three describe one owner.
             var styling = new OwnerStyling(
                 buildStyleAt(OwnerPaletteSlot.PRIMARY),
                 new ElementStyleAdjustment(MUTE_FACTOR, false));
 
-            var paint = ResolvedOwnerPaint.resolveFrom(styling, HOLDER, DESATURATION_PALETTE);
+            var paint = ResolvedOwnerPaint.resolveFrom(styling, OWNER, DESATURATION_PALETTE);
 
             assertThat(paint.style())
                 .isSameAs(styling.style());
@@ -152,13 +152,13 @@ final class ResolvedOwnerPaintTests {
         }
 
         @Test
-        void sinksAHolderToTheDesaturationShadesWhereTheStylingDesaturates() {
+        void sinksAnOwnerToTheDesaturationShadesWhereTheStylingDesaturates() {
 
             var paint = ResolvedOwnerPaint.resolveFrom(
                 new OwnerStyling(
                     buildStyleAt(OwnerPaletteSlot.PRIMARY),
                     new ElementStyleAdjustment(MUTE_FACTOR, true)),
-                HOLDER,
+                OWNER,
                 DESATURATION_PALETTE);
 
             assertThat(paint.palette())

@@ -108,6 +108,10 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `HolderPass.over(SectorAPI, ColonyReadRules, HolderGrouping)` | `HolderPass.createOver(SectorAPI, ColonyReadRules, HolderGrouping)` |
 | `SystemColonyReading.readColoniesIn(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` | `readColonyReadingOf(SectorAPI, StarSystemAPI, Colonies, ColonyKnowledge)` |
 | `SharedBlocSortModes.declareMarketSizeMode(List)` | `SizedBlocMetrics.createMarketSizeMode(List)` |
+| `SidebarStyles.buildSidebarSoundScheme()` | `SidebarSounds.buildSoundScheme()` |
+| `MapPalettes.pickHolderPaletteColour(ElementPaintSelection, SystemOwner, Color)` | `pickOwnerPaletteColour(ElementPaintSelection, SystemOwner, Color)` |
+| `OwnerPresence`'s `marketCount`, with `marketCount()` and `hasMarkets()`, and `RibbonSegmentLengths.marketLengthUnits()` | `stakeCount`, `stakeCount()`, `hasStakes()` and `stakeLengthUnits()`. The owner-map core no longer says *holder* or *market*, and the build holds it to that |
+| `SystemDominance.resolveDominantFactionId(Map, HolderRankingRules)` | `resolveDominantBlocId(Map, HolderRankingRules)`: it ranks blocs |
 
 ##### Seams
 
@@ -164,6 +168,18 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `BaseSidebarHost` | A host implements `composeTabStyle()` and reads `resolveTabStyle()`, which keeps the style until the settings revision or the sector's settled faces move |
 | `resolveDeepestHeldLevelFor(SectorAPI, StarSystemAPI)` on `SystemCellTooltip`, `PoliticalMapCellTooltip`, `SystemClaimTooltip` and `SystemDominationTooltip` | Gone: the press reads `deepestHeldLevel()` off the composed body the paint holds, so a layer states its depth only in `composeBody` |
 | `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`, over the weights the caller read, so a box ranking a system and explaining its scores weighs each market once |
+| `CellTooltipEntryLine`'s twelve-part constructor, with `labelText()`, `redactedWordLengths()`, `labelFinding()` and `hasRedactedName()` | `CellTooltipEntryLine(CellTooltipMark, CellTooltipLineName, CellTooltipIndexPlace, String, CellTooltipQualifier, CellTooltipLineValue, boolean)`. The name is a sealed `CellTooltipLineName`, `Spoken` or `Withheld`, read through `selectByCase(Function, Function)`, so no line both says and withholds its name |
+| `valueText()`, `countedValue()`, `valueWorkingText()` and `isValueUncounted()` on `CellTooltipEntryLine` | The same four on `value()`, a `CellTooltipLineValue` |
+| `MapLayerRegistry`, `LiveMapLayerArrangement` and `MapLayerScreens`, static, with their reset hooks | Instances `MapLayers.registerAll()` builds, returning the `MapLayerScreens` built over the other two. The entry point seats them on each sector through `SectorMapMachineryIndex.installMachineryOn(SectorAPI, InstalledMachinery...)`, and a pass reads them with `MapLayerScreens.resolveScreensIn(SectorMapMachinery)` |
+| `MapLayerRegistry.getDrawnLayer()`, `isDrawnLayer(MapLayer)` and `isDrawnLayerOn(ScreenLayerPicks, MapLayer)` | `MapLayerScreens.resolveDrawnLayer()` and `ScreenLayerPicks.isDrawingLayer(MapLayer)` |
+| `MapLayerScreens.registerIntelScreen(IntelScreenView)` and `LiveMapLayerArrangement.registerArrangementSelection(MapLayerArrangementSelection)` | Constructor arguments: `MapLayerScreens(MapLayerRegistry, LiveMapLayerArrangement, IntelScreenView)` and `LiveMapLayerArrangement(MapLayerArrangementSelection)` |
+| `ScreenLayerPicks(ActiveLayerSelection, ControlBackedMapLayerVisibility, ScreenMemoryScope)` and `PersistedActiveLayerSelection(ScreenMemoryScope)` | Each also takes the `MapLayerRegistry` its screen picks from, and the picks the `LiveMapLayerArrangement` too |
+| `BaseSidebarHost(ScreenLayerPicks, boolean, ScreenClaim)` and `BaseSidebarHost(SidebarFoldSelection, ScreenLayerPicks, ScreenClaim)` | `BaseSidebarHost(ScreenMemoryScope, boolean, ScreenClaim)`, which reads that screen's picks off the live sector, and `BaseSidebarHost(SidebarFoldSelection, Supplier, ScreenClaim)` |
+| `MapLayerArrangementDialog.openDialog()` and `BarOpeners.buildOpenerSpec(TabStyle)` | `openDialog(ScreenLayerPicks)` and `buildOpenerSpec(TabStyle, ScreenLayerPicks)`: the picks carry the roster and the store |
+| `SplitFillBuilder.ClusterFill` and `SplitFillBuilder.traceFill(boolean, FillSplit, String, Color)` | `TracedFill.ClusterFill` and `traceFill(boolean, FillSplit, String)`. A fill set to no colour takes `TracedFill.UNPAINTED` without being traced |
+| `KmuConditionPickerEntry`'s constructors | `KmuConditionPickerEntry.Builder(String, String, KmuConditionPickerEntryState)`, a method per optional part, then `build()` |
+| `KmuConditionPickerLocation(String, String, KmuPickerFaction, String, String, String, String)` | `KmuConditionPickerLocation.Builder()`, or `createUnknownLocation()` for a location nothing is known of |
+| `StarsectorEditableMarket.getMarket()`, reached by a cast | `KmuEditableMarket.findStarsectorMarket()` and `findCondition(String)`, which every implementation of the port provides |
 
 ##### Moved to KMLib
 

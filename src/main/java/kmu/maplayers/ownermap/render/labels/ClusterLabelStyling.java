@@ -111,7 +111,7 @@ final class ClusterLabelStyling {
             Function<String, OwnerStyleDecision> styleDecisionByOwnerId,
             ColourPair desaturationPalette) {
 
-        var ownerByOwnerId = mapHolderByOwnerId(ownerBySystemKey);
+        var ownerByOwnerId = mapOwnerByOwnerId(ownerBySystemKey);
 
         return memoisePerOwnerId(ownerId -> resolveLabelColour(
             ownerByOwnerId.get(ownerId),
@@ -176,7 +176,7 @@ final class ClusterLabelStyling {
     // One owner per owner ID, so an owner's shade can be resolved from its ID alone. Every system
     // of an owner resolves to the same two palette shades, so which of them is kept is
     // immaterial; first seen wins.
-    private static Map<String, SystemOwner> mapHolderByOwnerId(
+    private static Map<String, SystemOwner> mapOwnerByOwnerId(
             Map<SystemKey, SystemOwner> ownerBySystemKey) {
 
         var ownerByOwnerId = new HashMap<String, SystemOwner>();

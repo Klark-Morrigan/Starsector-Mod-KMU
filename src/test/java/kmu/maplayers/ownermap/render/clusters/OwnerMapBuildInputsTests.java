@@ -53,8 +53,8 @@ final class OwnerMapBuildInputsTests {
     private static final Set<SystemKey> CONTESTED = Set.of(buildCellKey("contested-system"));
 
     // The owner a paint is resolved for, and the shades the record sinks a desaturated one to.
-    // Distinct from the holder's own pair, so a resolved palette names which of the two it took.
-    private static final SystemOwner HOLDER =
+    // Distinct from the owner's own pair, so a resolved palette names which of the two it took.
+    private static final SystemOwner OWNER =
         new SystemOwner(OWNER_ID, new ColourPair(Color.RED, Color.BLUE));
 
     private static final ColourPair DESATURATION_PALETTE =
@@ -157,7 +157,7 @@ final class OwnerMapBuildInputsTests {
             var contentInputs = ContentInputsFixtures.createInertInputs();
             var readingMock = buildReadingAdjustingBy(adjustment);
             var paint = buildInputsUnder(readingMock, contentInputs)
-                .resolveOwnerPaintOf(HOLDER);
+                .resolveOwnerPaintOf(OWNER);
 
             assertThat(paint.adjustment())
                 .isSameAs(adjustment);
@@ -177,7 +177,7 @@ final class OwnerMapBuildInputsTests {
             var paint = buildInputsUnder(
                     buildReadingAdjustingBy(new ElementStyleAdjustment(1.0, true)),
                     ContentInputsFixtures.createInertInputs())
-                .resolveOwnerPaintOf(HOLDER);
+                .resolveOwnerPaintOf(OWNER);
 
             assertThat(paint.palette())
                 .isSameAs(DESATURATION_PALETTE);
@@ -191,8 +191,8 @@ final class OwnerMapBuildInputsTests {
                 buildReadingAdjustingBy(adjustment),
                 ContentInputsFixtures.createInertInputs());
 
-            inputs.resolveOwnerPaintOf(HOLDER);
-            var paint = inputs.resolveOwnerPaintOf(HOLDER);
+            inputs.resolveOwnerPaintOf(OWNER);
+            var paint = inputs.resolveOwnerPaintOf(OWNER);
 
             assertThat(paint.adjustment())
                 .isSameAs(adjustment);
@@ -208,8 +208,8 @@ final class OwnerMapBuildInputsTests {
             var readingMock = buildReadingAdjustingBy(new ElementStyleAdjustment(0.5, false));
             var inputs = buildInputsUnder(readingMock, contentInputs);
 
-            inputs.resolveOwnerPaintOf(HOLDER);
-            inputs.resolveOwnerPaintOf(HOLDER);
+            inputs.resolveOwnerPaintOf(OWNER);
+            inputs.resolveOwnerPaintOf(OWNER);
 
             verify(readingMock, times(1))
                 .resolveStyleAdjustment(OWNER_ID, contentInputs);
@@ -230,7 +230,7 @@ final class OwnerMapBuildInputsTests {
         }
     }
 
-    // Inputs over a real theme, the holder layers' categories and a distinct desaturation palette,
+    // Inputs over a real theme, KMU's own layers' categories and a distinct desaturation palette,
     // so a paint resolved through them names which of the record's own shades it took.
     private static OwnerMapBuildInputs buildInputsUnder(
             OwnerReading reading,

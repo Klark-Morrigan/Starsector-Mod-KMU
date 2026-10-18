@@ -3,7 +3,6 @@ package kmu.maplayers.base.tooltip.content;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,13 +12,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Pins what a listed thing is composed of and what it leaves unstated: a plain line calls nothing out
  * and shows its number alone, a line whose name is withheld carries the shape of it and never the name,
  * a qualifier, a stretch of the name that is itself a finding, a remark and a working are each layered
- * onto one without disturbing what it already carried, and a line with no value, no account of what it
- * is called, two accounts of it, or a stretch running past its name is refused where the caller that
- * composed it is still on the stack rather than surfacing inside a draw with nothing to say which line
- * was meant.
+ * onto one without disturbing what it already carried, and a line with no value, no name, or a stretch
+ * running past its name is refused where the caller that composed it is still on the stack rather than
+ * surfacing inside a draw with nothing to say which line was meant.
  *
  * <p>What the line's mark is and how it is coloured is {@link CellTooltipMarkTests}'s: the line holds a
- * mark or holds none, and cannot state anything about one it does not have.
+ * mark or holds none, and cannot state anything about one it does not have. What a name holds is
+ * {@link CellTooltipLineNameTests}'.
  */
 final class CellTooltipEntryLineTests {
 
@@ -34,14 +33,11 @@ final class CellTooltipEntryLineTests {
     // What a line showing nothing at its head carries where a mark would be.
     private static final CellTooltipMark NO_MARK = null;
 
-    // What a line saying its name outright carries where the shape of a withheld one would be, and what
-    // a line withholding its name carries where the name would be. Exactly one of the two stands on
-    // every line.
-    private static final List<Integer> NO_REDACTION = null;
+    // What a factory is handed where a caller has no name for the line at all.
     private static final String NO_NAME = null;
 
-    // What a line whose name says none of the box's findings carries there, which is every line until
-    // a resolver finds one of its words already on it.
+    // What a name saying none of the box's findings carries there, which is every name until a
+    // resolver finds one of its words already on it.
     private static final CellTooltipLabelFinding NO_LABEL_FINDING = null;
 
     // What a line with no place in any ordering carries there - the plain case, and what every line
@@ -52,14 +48,23 @@ final class CellTooltipEntryLineTests {
     // every line until one is remarked on.
     private static final String NO_NOTE = null;
 
+    // What a line calling no status out carries in the qualifier slot.
+    private static final CellTooltipQualifier NO_QUALIFIER = null;
+
     // What a line whose value is words rather than a number the block adds up carries in the counted
     // slot - every line built through the plain factories, which are handed the value already worded.
     private static final Integer NO_COUNT = null;
+
+    // What a line showing its number alone carries where the working would be.
+    private static final String NO_WORKING = null;
 
     // What every line built through the factory is: one of the things a block lists rather than a note
     // about them, carrying a number it earned rather than one an account recorded for it.
     private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
     private static final boolean IS_VALUE_EARNED = false;
+
+    // What a line whose number an account recorded rather than earned carries.
+    private static final boolean IS_VALUE_UNCOUNTED = true;
 
     @Nested
     class CreateLine {
@@ -73,17 +78,12 @@ final class CellTooltipEntryLineTests {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         CREST_MARK,
-                        "The Hegemony",
-                        NO_REDACTION,
-                        NO_LABEL_FINDING,
+                        new CellTooltipLineName.Spoken("The Hegemony", NO_LABEL_FINDING),
                         NO_PLACE,
                         NO_NOTE,
-                        null,
-                        "1,200",
-                        NO_COUNT,
-                        null,
-                        IS_LISTED_IN_ITS_OWN_RIGHT,
-                        IS_VALUE_EARNED));
+                        NO_QUALIFIER,
+                        new CellTooltipLineValue("1,200", NO_COUNT, NO_WORKING, IS_VALUE_EARNED),
+                        IS_LISTED_IN_ITS_OWN_RIGHT));
         }
 
         @Test
@@ -101,7 +101,7 @@ final class CellTooltipEntryLineTests {
             // Neither said nor withheld is not an absence the label can draw: a line is called
             // something, or its name is kept back and its shape stands where the name would.
             assertThatThrownBy(() -> CellTooltipEntryLine.createLine(CREST_MARK, NO_NAME, "1,200"))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(NullPointerException.class);
         }
 
         @Test
@@ -122,9 +122,9 @@ final class CellTooltipEntryLineTests {
             // in for lines the box could not draw can add them up and word the total the same way.
             var line = CellTooltipEntryLine.createCountedLine(CREST_MARK, "The Hegemony", 23600);
 
-            assertThat(line.valueText())
+            assertThat(line.value().valueText())
                 .isEqualTo("23,600");
-            assertThat(line.countedValue())
+            assertThat(line.value().countedValue())
                 .isEqualTo(23600);
         }
 
@@ -136,17 +136,12 @@ final class CellTooltipEntryLineTests {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         CREST_MARK,
-                        "The Hegemony",
-                        NO_REDACTION,
-                        NO_LABEL_FINDING,
+                        new CellTooltipLineName.Spoken("The Hegemony", NO_LABEL_FINDING),
                         NO_PLACE,
                         NO_NOTE,
-                        null,
-                        "1,200",
-                        1200,
-                        null,
-                        IS_LISTED_IN_ITS_OWN_RIGHT,
-                        IS_VALUE_EARNED));
+                        NO_QUALIFIER,
+                        new CellTooltipLineValue("1,200", 1200, NO_WORKING, IS_VALUE_EARNED),
+                        IS_LISTED_IN_ITS_OWN_RIGHT));
         }
 
         @Test
@@ -157,6 +152,7 @@ final class CellTooltipEntryLineTests {
             assertThat(CellTooltipEntryLine
                     .createCountedLine(CREST_MARK, "The Hegemony", 1200)
                     .statesUncountedValue()
+                    .value()
                     .countedValue())
                 .isEqualTo(1200);
         }
@@ -179,67 +175,20 @@ final class CellTooltipEntryLineTests {
 
         @Test
         void carriesTheShapeOfItsNameInPlaceOfIt() {
-
+            // The name is never handed to the factory, so the line holds only its shape and there is
+            // no text on it a later change could be tempted to draw.
             var line = CellTooltipEntryLine.createRedactedLine(CREST_MARK, WITHHELD_NAME, "820");
 
             assertThat(line)
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         CREST_MARK,
-                        NO_NAME,
-                        List.of(7, 4),
-                        NO_LABEL_FINDING,
+                        new CellTooltipLineName.Withheld(List.of(7, 4)),
                         NO_PLACE,
                         NO_NOTE,
-                        null,
-                        "820",
-                        NO_COUNT,
-                        null,
-                        IS_LISTED_IN_ITS_OWN_RIGHT,
-                        IS_VALUE_EARNED));
-        }
-
-        @Test
-        void leavesTheNameOffTheLineEntirely() {
-            // The point of the shape rather than a consequence of it: the factory is never handed the
-            // name, so no part of the line holds text a later change could be tempted to draw.
-            assertThat(CellTooltipEntryLine
-                    .createRedactedLine(NO_MARK, WITHHELD_NAME, "820")
-                    .labelText())
-                .isNull();
-        }
-
-        @Test
-        void holdsTheShapeApartFromTheListItWasDerivedFrom() {
-            // A caller deriving the lengths from a list it goes on using cannot reshape a name the box
-            // has already stated.
-            var derivedLengths = new ArrayList<>(List.of(7, 4));
-            var line = CellTooltipEntryLine.createRedactedLine(NO_MARK, derivedLengths, "820");
-
-            derivedLengths.add(11);
-
-            assertThat(line.redactedWordLengths())
-                .containsExactly(7, 4);
-        }
-
-        @Test
-        void refusesALineNamedAndWithheldAtOnce() {
-            // Two accounts of what the line is called, and the label draws one: held together, the same
-            // line would come out named on one surface and blocked out on another.
-            assertThatThrownBy(() -> new CellTooltipEntryLine(
-                    NO_MARK,
-                    "Tigra City",
-                    WITHHELD_NAME,
-                    NO_LABEL_FINDING,
-                    NO_PLACE,
-                    NO_NOTE,
-                    null,
-                    "820",
-                    NO_COUNT,
-                    null,
-                    IS_LISTED_IN_ITS_OWN_RIGHT,
-                    IS_VALUE_EARNED))
-                .isInstanceOf(IllegalArgumentException.class);
+                        NO_QUALIFIER,
+                        new CellTooltipLineValue("820", NO_COUNT, NO_WORKING, IS_VALUE_EARNED),
+                        IS_LISTED_IN_ITS_OWN_RIGHT));
         }
 
         @Test
@@ -261,14 +210,10 @@ final class CellTooltipEntryLineTests {
             // is stated and counted like any other - a listing cut short still adds up.
             var line = CellTooltipEntryLine.createRedactedCountedLine(CREST_MARK, WITHHELD_NAME, 820);
 
-            assertThat(line.labelText())
-                .isNull();
-            assertThat(line.redactedWordLengths())
-                .containsExactly(7, 4);
-            assertThat(line.valueText())
-                .isEqualTo("820");
-            assertThat(line.countedValue())
-                .isEqualTo(820);
+            assertThat(line.name())
+                .isEqualTo(new CellTooltipLineName.Withheld(List.of(7, 4)));
+            assertThat(line.value())
+                .isEqualTo(new CellTooltipLineValue("820", 820, NO_WORKING, IS_VALUE_EARNED));
         }
     }
 
@@ -294,29 +239,6 @@ final class CellTooltipEntryLineTests {
     }
 
     @Nested
-    class HasRedactedName {
-
-        @Test
-        void returnsTrueForALineKeepingItsNameBack() {
-
-            assertThat(CellTooltipEntryLine
-                    .createRedactedLine(CREST_MARK, WITHHELD_NAME, "820")
-                    .hasRedactedName())
-                .isTrue();
-        }
-
-        @Test
-        void returnsFalseForALineSayingWhatItIsCalled() {
-            // The one judgement every surface goes through, so a line that says its name cannot be
-            // drawn as though something had been kept back from it.
-            assertThat(CellTooltipEntryLine
-                    .createLine(CREST_MARK, "Tigra City", "820")
-                    .hasRedactedName())
-                .isFalse();
-        }
-    }
-
-    @Nested
     class QualifiedWith {
 
         @Test
@@ -330,17 +252,12 @@ final class CellTooltipEntryLineTests {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         CREST_MARK,
-                        "The Hegemony",
-                        NO_REDACTION,
-                        NO_LABEL_FINDING,
+                        new CellTooltipLineName.Spoken("The Hegemony", NO_LABEL_FINDING),
                         NO_PLACE,
                         NO_NOTE,
                         CellTooltipQualifier.stateFinding("(core)"),
-                        "1,200",
-                        NO_COUNT,
-                        null,
-                        IS_LISTED_IN_ITS_OWN_RIGHT,
-                        IS_VALUE_EARNED));
+                        new CellTooltipLineValue("1,200", NO_COUNT, NO_WORKING, IS_VALUE_EARNED),
+                        IS_LISTED_IN_ITS_OWN_RIGHT));
         }
 
         @Test
@@ -351,10 +268,8 @@ final class CellTooltipEntryLineTests {
                 .createRedactedLine(CREST_MARK, WITHHELD_NAME, "820")
                 .qualifiedWith("undiscovered");
 
-            assertThat(line.hasRedactedName())
-                .isTrue();
-            assertThat(line.redactedWordLengths())
-                .containsExactly(7, 4);
+            assertThat(line.name())
+                .isEqualTo(new CellTooltipLineName.Withheld(List.of(7, 4)));
         }
 
         @Test
@@ -383,17 +298,12 @@ final class CellTooltipEntryLineTests {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         NO_MARK,
-                        "Abandoned Station",
-                        NO_REDACTION,
-                        new CellTooltipLabelFinding(0, 9),
+                        new CellTooltipLineName.Spoken("Abandoned Station", new CellTooltipLabelFinding(0, 9)),
                         NO_PLACE,
                         NO_NOTE,
-                        null,
-                        "0",
-                        NO_COUNT,
-                        null,
-                        IS_LISTED_IN_ITS_OWN_RIGHT,
-                        IS_VALUE_EARNED));
+                        NO_QUALIFIER,
+                        new CellTooltipLineValue("0", NO_COUNT, NO_WORKING, IS_VALUE_EARNED),
+                        IS_LISTED_IN_ITS_OWN_RIGHT));
         }
 
         @Test
@@ -407,8 +317,8 @@ final class CellTooltipEntryLineTests {
 
             assertThat(line.qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
-            assertThat(line.labelFinding())
-                .isEqualTo(new CellTooltipLabelFinding(0, 9));
+            assertThat(line.name())
+                .isEqualTo(new CellTooltipLineName.Spoken("Abandoned Station", new CellTooltipLabelFinding(0, 9)));
         }
 
         @Test
@@ -440,8 +350,8 @@ final class CellTooltipEntryLineTests {
             var plainLine = CellTooltipEntryLine.createLine(NO_MARK, "Abandoned Station", "0");
             plainLine.callsOutInLabel(0, 9);
 
-            assertThat(plainLine.labelFinding())
-                .isNull();
+            assertThat(plainLine.name())
+                .isEqualTo(new CellTooltipLineName.Spoken("Abandoned Station", NO_LABEL_FINDING));
         }
     }
 
@@ -459,17 +369,12 @@ final class CellTooltipEntryLineTests {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         CREST_MARK,
-                        "Sentinel Gantries",
-                        NO_REDACTION,
-                        NO_LABEL_FINDING,
+                        new CellTooltipLineName.Spoken("Sentinel Gantries", NO_LABEL_FINDING),
                         NO_PLACE,
                         "last seen 34 days ago (c206.05.12)",
-                        null,
-                        "0",
-                        NO_COUNT,
-                        null,
-                        IS_LISTED_IN_ITS_OWN_RIGHT,
-                        IS_VALUE_EARNED));
+                        NO_QUALIFIER,
+                        new CellTooltipLineValue("0", NO_COUNT, NO_WORKING, IS_VALUE_EARNED),
+                        IS_LISTED_IN_ITS_OWN_RIGHT));
         }
 
         @Test
@@ -512,17 +417,12 @@ final class CellTooltipEntryLineTests {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         CREST_MARK,
-                        "The Hegemony",
-                        NO_REDACTION,
-                        NO_LABEL_FINDING,
+                        new CellTooltipLineName.Spoken("The Hegemony", NO_LABEL_FINDING),
                         new CellTooltipIndexPlace("[2]", CellTooltipIndexOutcome.WON),
                         NO_NOTE,
-                        null,
-                        "1,200",
-                        NO_COUNT,
-                        null,
-                        IS_LISTED_IN_ITS_OWN_RIGHT,
-                        IS_VALUE_EARNED));
+                        NO_QUALIFIER,
+                        new CellTooltipLineValue("1,200", NO_COUNT, NO_WORKING, IS_VALUE_EARNED),
+                        IS_LISTED_IN_ITS_OWN_RIGHT));
         }
 
         @Test
@@ -564,10 +464,23 @@ final class CellTooltipEntryLineTests {
                 .createLine(NO_MARK, "Tigra City", "0")
                 .statesUncountedValue();
 
-            assertThat(line.isValueUncounted())
+            assertThat(line.value().isValueUncounted())
                 .isTrue();
             assertThat(line.isAside())
                 .isFalse();
+        }
+
+        @Test
+        void keepsTheWorkingTheValueAlreadyShows() {
+            // The value is one part of the line, so restating whether its number was earned must carry
+            // the rest of that part across rather than drop the working laid on before it.
+            var line = CellTooltipEntryLine
+                .createLine(NO_MARK, "Small: 2", "500")
+                .derivesValueFrom("0.25 /")
+                .statesUncountedValue();
+
+            assertThat(line.value())
+                .isEqualTo(new CellTooltipLineValue("500", NO_COUNT, "0.25 /", IS_VALUE_UNCOUNTED));
         }
 
         @Test
@@ -577,7 +490,7 @@ final class CellTooltipEntryLineTests {
             var plainLine = CellTooltipEntryLine.createLine(NO_MARK, "Culann", "6");
             plainLine.statesUncountedValue();
 
-            assertThat(plainLine.isValueUncounted())
+            assertThat(plainLine.value().isValueUncounted())
                 .isFalse();
         }
     }
@@ -606,9 +519,9 @@ final class CellTooltipEntryLineTests {
                 .indexedAt("[2]", CellTooltipIndexOutcome.WON)
                 .readsAsAside();
 
-            assertThat(line.valueWorkingText())
+            assertThat(line.value().valueWorkingText())
                 .isEqualTo("(3 markets) - 1 =");
-            assertThat(line.valueText())
+            assertThat(line.value().valueText())
                 .isEqualTo("+2");
             assertThat(line.indexPlace().text())
                 .isEqualTo("[2]");
@@ -640,17 +553,12 @@ final class CellTooltipEntryLineTests {
                 .isEqualTo(
                     new CellTooltipEntryLine(
                         NO_MARK,
-                        "Small: 2",
-                        NO_REDACTION,
-                        NO_LABEL_FINDING,
+                        new CellTooltipLineName.Spoken("Small: 2", NO_LABEL_FINDING),
                         NO_PLACE,
                         NO_NOTE,
-                        null,
-                        "500",
-                        NO_COUNT,
-                        "0.25 /",
-                        IS_LISTED_IN_ITS_OWN_RIGHT,
-                        IS_VALUE_EARNED));
+                        NO_QUALIFIER,
+                        new CellTooltipLineValue("500", NO_COUNT, "0.25 /", IS_VALUE_EARNED),
+                        IS_LISTED_IN_ITS_OWN_RIGHT));
         }
 
         @Test
@@ -667,12 +575,25 @@ final class CellTooltipEntryLineTests {
         }
 
         @Test
+        void keepsANumberNothingEarned() {
+            // The value is one part of the line, so stating its working must carry the rest of that
+            // part across rather than restore a quietened number to a finding.
+            var line = CellTooltipEntryLine
+                .createCountedLine(NO_MARK, "Tigra City", 0)
+                .statesUncountedValue()
+                .derivesValueFrom("0 x");
+
+            assertThat(line.value())
+                .isEqualTo(new CellTooltipLineValue("0", 0, "0 x", IS_VALUE_UNCOUNTED));
+        }
+
+        @Test
         void leavesTheLineItWasBuiltFromShowingItsNumberAlone() {
 
             var plainLine = CellTooltipEntryLine.createLine(NO_MARK, "Small: 2", "500");
             plainLine.derivesValueFrom("0.25 /");
 
-            assertThat(plainLine.valueWorkingText())
+            assertThat(plainLine.value().valueWorkingText())
                 .isNull();
         }
     }

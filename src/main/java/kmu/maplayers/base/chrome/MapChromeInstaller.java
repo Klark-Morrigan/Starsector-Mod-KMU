@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.scripts.SectorScripts;
 
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 
@@ -83,7 +84,9 @@ public final class MapChromeInstaller {
         // campaign's stored hide would otherwise be acted on from the first frame, on the strength of
         // a control the previous campaign put up. Before the registration, since a load with no sector
         // to install into is a load with no box either.
-        MapLayerScreens.forgetControlsAttached();
+        MapLayerScreens
+            .resolveScreensIn(SectorMapMachineryIndex.resolveMachineryFor(sector))
+            .forgetControlsAttached();
 
         SectorScripts.installTransientScript(sector, MapLayerToggleUpkeep::new);
     }

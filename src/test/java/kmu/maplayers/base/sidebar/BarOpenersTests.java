@@ -4,6 +4,7 @@ import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.widgets.tabs.BandButtonSpec;
 import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.sidebar.style.SidebarLookScope;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 
@@ -91,10 +92,16 @@ final class BarOpenersTests {
     }
 
     // The host row the opener is asked to stand in: the strip's own style, boxed as the sector map boxes
-    // it, so the button's box is measured against a row several times wider than the mark.
+    // it, so the button's box is measured against a row several times wider than the mark. Asked for any
+    // screen's picks, since which bar the press arranges is the dialog's business and not the button's.
     private static BandButtonSpec buildOpener() {
+
         return BarOpeners.buildOpenerSpec(
-            SidebarStyles.buildStripTabStyle(HOST_BAND_HEIGHT)
-                .withTabBox(new TabBox(HOST_TAB_WIDTH, HOST_TAB_HEIGHT, HOST_TAB_GAP)));
+            SidebarStyles
+                .buildStripTabStyle(HOST_BAND_HEIGHT)
+                .withTabBox(new TabBox(HOST_TAB_WIDTH, HOST_TAB_HEIGHT, HOST_TAB_GAP)),
+            MapLayerRosters
+                .createScreensOverNoLayer()
+                .getMapPicks());
     }
 }

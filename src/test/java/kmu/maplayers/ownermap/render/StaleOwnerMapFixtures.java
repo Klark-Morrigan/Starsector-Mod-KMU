@@ -52,23 +52,23 @@ final class StaleOwnerMapFixtures {
     private StaleOwnerMapFixtures() {
     }
 
-    // A holder of the given owner. Only the owner ID is read by what these suites assert, so
-    // the shades are one shared placeholder pair - which is also what makes two holders of one
+    // A system owner of the given owner ID. Only the ID is read by what these suites assert, so
+    // the shades are one shared placeholder pair - which is also what makes two system owners of one
     // owner compare equal, as the re-derive's own no-change test needs them to.
     static SystemOwner buildOwnerOf(String ownerId) {
         return new SystemOwner(ownerId, new ColourPair(Color.GRAY, Color.GRAY));
     }
 
-    // The holders of the given systems, keyed by system, for a case stating who holds what before
+    // The owners of the given systems, keyed by system, for a case stating who holds what before
     // the batch runs.
     static Map<String, SystemOwner> buildOwnersOf(Map<String, String> ownerIdBySystemId) {
 
-        var holderBySystemId = new LinkedHashMap<String, SystemOwner>();
+        var ownerBySystemId = new LinkedHashMap<String, SystemOwner>();
 
         for (var entry : ownerIdBySystemId.entrySet()) {
-            holderBySystemId.put(entry.getKey(), buildOwnerOf(entry.getValue()));
+            ownerBySystemId.put(entry.getKey(), buildOwnerOf(entry.getValue()));
         }
-        return holderBySystemId;
+        return ownerBySystemId;
     }
 
     static StarSystemAPI buildSystem(String systemId) {

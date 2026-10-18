@@ -33,12 +33,16 @@ and the view-state text.
 `BaseSidebarHost` holds the plumbing common to both
 (controller, fold selection, layer selection, the per-load reseed, the shortcut jump, and the composed live gate),
 leaving each concrete host only the genuine differences.
-A concrete host names its screen's picks and its opening fold;
+A concrete host names its screen's scope and its opening fold;
 everything a real screen's host would otherwise compose for itself -
 the persisted fold,
 the sound player behind the controller -
 is composed in the base,
 which is what keeps the two hosts down to what actually differs.
+The one scope names both the fold's key and the picks drawn,
+which the base resolves on each ask from the screens seated on the live sector:
+a host lives for the process,
+while the screens it draws are reached through whichever sector is installed.
 
 | | `MapSidebarHost` | `IntelSidebarHost` |
 | --- | --- | --- |

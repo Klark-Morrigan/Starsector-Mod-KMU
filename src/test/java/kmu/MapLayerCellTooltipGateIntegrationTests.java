@@ -12,11 +12,9 @@ import com.fs.starfarer.api.input.InputEventAPI;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
-import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRosters;
-import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput;
@@ -106,22 +104,18 @@ class MapLayerCellTooltipGateIntegrationTests {
         when(sectorMock.getStarSystems())
             .thenReturn(List.of(systemMock));
 
-        MapLayerRosters.replaceRosterWith(tooltipLayerMock);
-
-        // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
-        // each test from the intel screen closed, which resolves reads to the map screen's pick.
-        MapLayerScreens.registerIntelScreen(new IntelScreenViewFake());
-
         // Everything below the map gate is open, so what the box does is the gate's answer alone.
         // Hovered on the sector every case runs as the live one, that being the machinery both
-        // listeners resolve.
-        MapHoverFixtures.hoverASystemOnAnInstalledSector(sectorMock, SYSTEM_ID);
+        // listeners resolve; the screens seated there are wired to no intel screen, so every read
+        // resolves to the map screen's pick.
+        MapHoverFixtures.hoverASystemOnAnInstalledSector(
+            sectorMock,
+            MapLayerRosters.createScreensOver(tooltipLayerMock),
+            SYSTEM_ID);
     }
 
     @AfterEach
     void restoreTheSharedState() {
-
-        MapLayerRosters.restoreNonEmptyRoster();
 
         // The index is process-wide, so a sector left installed would carry this test's hover into
         // the next one.

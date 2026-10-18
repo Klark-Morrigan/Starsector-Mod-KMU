@@ -33,7 +33,7 @@ final class OwnerPresenceIndexBuilderTests {
 
         @Test
         void leavesOneEntryForAPairRecordedTwice() {
-            // An arm that meets an owner more than once in a system - two markets of one owner -
+            // An arm that meets an owner more than once in a system - two settlements of one owner -
             // records the pair twice, and the system must still be one lit cell rather than two.
             var builder = new OwnerPresenceIndexBuilder();
 

@@ -64,14 +64,14 @@ final class OwnerMapOverlayRendererTests {
     // which renderer each band reaches rather than what it emits.
     private static final MapFrame PAINTING_FRAME = new MapFrame(1f, 1f);
 
-    // What the cursor was resolved to on this sector's map, for the case about which holder the
+    // What the cursor was resolved to on this sector's map, for the case about which owner the
     // highlight traces.
     private static final MapHover HOVERED_CELL = MapHoverFixture.buildHoverOn(
         buildCellKey("system_id"),
         List.of(buildCellKey("system_id")));
 
-    // The hover holder of the sector this compositor's draw lists belong to. Made per case, since a
-    // compositor is built with the holder of its own installed machinery.
+    // The hover state of the sector this compositor's draw lists belong to. Made per case, since a
+    // compositor is built with the hover state of its own installed machinery.
     private final MapHoverState hoverState = new MapHoverState();
 
     // The picker preview, stood in for. It is the one sub-layer the compositor is handed rather
@@ -214,7 +214,7 @@ final class OwnerMapOverlayRendererTests {
         }
 
         @Test
-        void lightsTheCellItsOwnHoverHolderNames() {
+        void lightsTheCellItsOwnHoverStateNames() {
             // The highlight brightens a cell the cache's draw lists cut, so the hover it traces has
             // to be the one the pass over those very lists published. Read off whichever sector was
             // running instead, this would wash a cell the sector it is compositing never drew -
@@ -736,7 +736,7 @@ final class OwnerMapOverlayRendererTests {
             .thenReturn(false);
     }
 
-    // The compositor under test, over the case's own cache, hover holder and preview seam. Built
+    // The compositor under test, over the case's own cache, hover state and preview seam. Built
     // inside a case rather than once per suite, so a case standing in for the highlight's
     // construction reaches the one this compositor makes for itself.
     private OwnerMapOverlayRenderer buildOverlayRendererOver(OwnerMapCache cache) {

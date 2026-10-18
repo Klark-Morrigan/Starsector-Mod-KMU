@@ -62,7 +62,10 @@ or how the choice is configured.
 
 ## The ports
 
-The domain names no Starsector type.
+The domain names no Starsector type,
+with one exception:
+`KmuEditableMarket` hands out the game market and live condition behind it,
+because the picker reads its location and condition icons from them.
 Each port has one live binding beside it,
 prefixed `Starsector`:
 

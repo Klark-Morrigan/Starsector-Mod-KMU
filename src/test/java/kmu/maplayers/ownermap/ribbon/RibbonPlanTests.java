@@ -36,11 +36,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * <p>Two things carry the whole design and are stated here on literals. Which reading a cell falls
  * under is checked from both sides: the authored lengths wherever some owner other than the painter
  * holds something, the absent-painter case where the painter holds nothing itself and a single other owner
- * is enough, and a lone holder's cell banding at the shortened runs while a contested one beside it
+ * is enough, and a lone owner's cell banding at the shortened runs while a contested one beside it
  * keeps the authored ones under that same shortening. The contest is stated a second time over a
  * cell no fill covers, where there is no painter to be a rival of and a second owner holding
  * something is what makes one; those cases are read off the run lengths, which is the only place
- * the reading a cell took is visible. The partings - a dark one between two markets of one owner,
+ * the reading a cell took is visible. The partings - a dark one between two stakes of one owner,
  * and one more in the outgoing owner's shade wherever another owner's run follows - are checked on a
  * run long enough to have an inside, across a handover, and at the end of a band, which is the one
  * boundary that stays open.
@@ -76,7 +76,7 @@ final class RibbonPlanTests {
 
         @Test
         void drawsThePainterAloneWhereItIsTheOnlyOwnerPresent() {
-            // The single-holder cell: nobody contests the system, and the band is there to say
+            // The single-owner cell: nobody contests the system, and the band is there to say
             // how much is in it rather than whose it is - which its fill has already said.
             var plan = RibbonPlan.planCellRibbon(
                 Optional.of(HEGEMONY),
@@ -92,8 +92,8 @@ final class RibbonPlanTests {
         }
 
         @Test
-        void leavesAnOwnerHoldingNothingOutOfAnOtherwiseSingleHolderCell() {
-            // An owner counted at nothing holds no market the score was decided on, so it is not
+        void leavesAnOwnerHoldingNothingOutOfAnOtherwiseSingleOwnerCell() {
+            // An owner counted at nothing holds no stake the score was decided on, so it is not
             // presence: it takes no run of its own, and the cell stays the painter's uncontested
             // one rather than becoming a contest.
             var plan = RibbonPlan.planCellRibbon(
@@ -110,9 +110,9 @@ final class RibbonPlanTests {
         }
 
         @Test
-        void drawsEachMarketAtOneWidthOnAnUncontestedCell() {
+        void drawsEachStakeAtOneWidthOnAnUncontestedCell() {
             // The shortening, which is what keeps a large lone holding from laying more band than
-            // the contested cells the readout exists for. Only the market runs shorten: the
+            // the contested cells the readout exists for. Only the stake runs shorten: the
             // parting keeps its own length, or the ticks and the gaps between them would be
             // indistinguishable.
             var plan = RibbonPlan.planCellRibbon(
@@ -204,8 +204,8 @@ final class RibbonPlanTests {
         }
 
         @Test
-        void partsOneOwnersMarketsWithInterjectionsInItsDarkShade() {
-            // Three markets of one owner come out as three bright segments with two dark
+        void partsOneOwnersStakesWithInterjectionsInItsDarkShade() {
+            // Three stakes of one owner come out as three bright segments with two dark
             // partings strictly between them - the run itself neither opens nor closes on one,
             // and the only other parting here is the divider the owner ahead of it is closed by.
             var plan = RibbonPlan.planCellRibbon(
@@ -227,7 +227,7 @@ final class RibbonPlanTests {
 
         @Test
         void closesAnOwnersRunInItsOwnDarkShadeWhereAnotherOwnersRunFollows() {
-            // Hegemony with three markets beside Tri-Tachyon with two. The divider between them
+            // Hegemony with three stakes beside Tri-Tachyon with two. The divider between them
             // is Hegemony's dark shade, not Tri-Tachyon's: it closes the run it follows, which
             // is what makes it read as the Hegemony's holdings ending rather than as a gap
             // belonging to nobody.
@@ -252,7 +252,7 @@ final class RibbonPlanTests {
 
         @Test
         void leavesTheLastOwnersRunOpen() {
-            // Three owners of one market each: a divider at each of the two handovers and none
+            // Three owners of one stake each: a divider at each of the two handovers and none
             // after the last run, since a band ending on a divider would part its final owner
             // from nothing at all.
             var plan = RibbonPlan.planCellRibbon(
@@ -274,8 +274,8 @@ final class RibbonPlanTests {
         }
 
         @Test
-        void drawsNoPartingInsideAnOwnerHoldingASingleMarket() {
-            // A one-market owner has no inside, so nothing parts it from itself - the smallest
+        void drawsNoPartingInsideAnOwnerHoldingASingleStake() {
+            // A one-stake owner has no inside, so nothing parts it from itself - the smallest
             // rival mark the ribbon can make is one bright segment, and the only dark run in
             // this band is the divider between the two owners.
             var plan = RibbonPlan.planCellRibbon(
@@ -349,7 +349,7 @@ final class RibbonPlanTests {
         void shortensALoneOwnersRunsBesideAnEmptyOneOnACellNoFillCovers() {
             // The same painterless cell with its second owner counted at nothing. What makes such a
             // cell a contest is a second owner holding something, not a second entry in the list -
-            // so this is the lone holder's cell it looks like, and takes the shortened runs.
+            // so this is the lone owner's cell it looks like, and takes the shortened runs.
             var plan = RibbonPlan.planCellRibbon(
                 NO_PAINTER,
                 List.of(buildTriTachyonPresence(2), buildDiktatPresence(0)),
@@ -446,7 +446,7 @@ final class RibbonPlanTests {
         @Test
         void leavesOutAnOwnerHoldingNothingWhileDrawingTheRest() {
             // The Diktat is listed but holds nothing counted, so it takes no run; the band is
-            // the painter's two markets and the one real rival, with no gap where it was. It
+            // the painter's two stakes and the one real rival, with no gap where it was. It
             // takes no divider either: the single dark run at the handover is the Hegemony's,
             // closing the run it actually follows.
             var plan = RibbonPlan.planCellRibbon(
@@ -492,7 +492,7 @@ final class RibbonPlanTests {
 
         @Test
         void laysNoDividerAfterTheLastOwnerWithSomethingToDraw() {
-            // An owner ranked last on a weight it holds no markets behind still reaches the rule.
+            // An owner ranked last on a weight it holds no stakes behind still reaches the rule.
             // It draws no run, so the band has to end on Tri-Tachyon's segment: a divider for
             // the empty owner would close the band on a parting belonging to an owner that is not
             // in it.
@@ -514,7 +514,7 @@ final class RibbonPlanTests {
 
         @Test
         void takesBothRunLengthsFromTheOnesItWasGiven() {
-            // Neither length is the rule's own: a four-wide market parted by two reads as the
+            // Neither length is the rule's own: a four-wide stake parted by two reads as the
             // same holdings at the proportions the player set. The divider takes that same
             // parting length, so no knob can make one boundary say more than the other.
             var plan = RibbonPlan.planCellRibbon(
@@ -552,7 +552,7 @@ final class RibbonPlanTests {
 
         @Test
         void addsUpEveryRunOfAPlannedRibbon() {
-            // The two halves over one cell: five markets, three partings inside the two runs
+            // The two halves over one cell: five stakes, three partings inside the two runs
             // and the divider between them, summed into the budget the drawn width is settled
             // against on a crowded cell.
             var plan = RibbonPlan.planCellRibbon(
@@ -636,21 +636,21 @@ final class RibbonPlanTests {
 
     // The three owners the cases are stated over, each with its own pair of shades so a run can
     // be told from its neighbour's and a bright segment from the parting inside it. Each names
-    // only what makes it that owner, leaving how many markets it holds the one thing a case says.
+    // only what makes it that owner, leaving how many stakes it holds the one thing a case says.
     //
     // Both the IDs and the shades are the shared ones, since an owner drawing one colour here and
     // another in the suites that read a band back through a palette would let two of them mean
     // different things by the same owner while all of them passed.
-    private static OwnerPresence buildHegemonyPresence(int marketCount) {
-        return buildPresence(HEGEMONY, HEGEMONY_BRIGHT, HEGEMONY_DARK, marketCount);
+    private static OwnerPresence buildHegemonyPresence(int stakeCount) {
+        return buildPresence(HEGEMONY, HEGEMONY_BRIGHT, HEGEMONY_DARK, stakeCount);
     }
 
-    private static OwnerPresence buildTriTachyonPresence(int marketCount) {
-        return buildPresence(TRITACHYON, TRITACHYON_BRIGHT, TRITACHYON_DARK, marketCount);
+    private static OwnerPresence buildTriTachyonPresence(int stakeCount) {
+        return buildPresence(TRITACHYON, TRITACHYON_BRIGHT, TRITACHYON_DARK, stakeCount);
     }
 
-    private static OwnerPresence buildDiktatPresence(int marketCount) {
-        return buildPresence(DIKTAT, DIKTAT_BRIGHT, DIKTAT_DARK, marketCount);
+    private static OwnerPresence buildDiktatPresence(int stakeCount) {
+        return buildPresence(DIKTAT, DIKTAT_BRIGHT, DIKTAT_DARK, stakeCount);
     }
 
     // The one shape every owner above is built in, so a presence gaining a component is one edit
@@ -659,11 +659,11 @@ final class RibbonPlanTests {
             String ownerId,
             Color brightShade,
             Color darkShade,
-            int marketCount) {
+            int stakeCount) {
 
         return new OwnerPresence(
             ownerId,
             new ColourPair(brightShade, darkShade),
-            marketCount);
+            stakeCount);
     }
 }

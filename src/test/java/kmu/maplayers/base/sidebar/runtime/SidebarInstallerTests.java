@@ -17,14 +17,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 class SidebarInstallerTests {
 
     @Nested
-    class InstallPoliticalMapSidebar {
+    class InstallSidebarListeners {
 
         @Test
         void reinstallsEverySidebarListenerFreshAsTransient() {
 
             var listenerManager = new RecordingListenerManager();
 
-            SidebarInstaller.installPoliticalMapSidebar(buildSector(listenerManager));
+            SidebarInstaller.installSidebarListeners(buildSector(listenerManager));
 
             // Remove-then-add the sidebar's render and input listeners: one remove per class clears
             // whatever this session registered, then a fresh render+input instance is added for each
@@ -46,7 +46,7 @@ class SidebarInstallerTests {
         void toleratesAMissingListenerManager() {
 
             var sidebarInstallOnNullManager = (Runnable) () ->
-                SidebarInstaller.installPoliticalMapSidebar(buildSector(null));
+                SidebarInstaller.installSidebarListeners(buildSector(null));
 
             assertThatCode(sidebarInstallOnNullManager::run)
                 .doesNotThrowAnyException();

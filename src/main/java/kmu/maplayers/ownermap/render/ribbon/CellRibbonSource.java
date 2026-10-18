@@ -252,7 +252,7 @@ public final class CellRibbonSource {
     // The point a cell's band is laid out from, or null on a cell no band is laid on at all.
     //
     // Two refusals in one answer, since both are the same fact about the cell rather than about
-    // the band. Nobody lives in it, so there are no holdings for a band to report how a system
+    // the band. Nobody lives in it, so there are no stakes for a band to report how a system
     // splits between - a band over empty space would be a readout of nothing; or it has no recorded
     // site, leaving the band nowhere to start from rather than starting it somewhere arbitrary.
     //

@@ -176,12 +176,12 @@ public final class LiveSidebarPlacement {
     // The hatch is asked ahead of the count, so the one state it exists to reach costs no roster walk to
     // arrive at. Both reads are per frame with the rest of the band's chrome: the roster is append-only
     // and whole at no one moment, and the hatch is one the player moves mid-session.
-    static BandButtonSpec resolveOpenerSpec(TabStyle tabStyle) {
+    static BandButtonSpec resolveOpenerSpec(TabStyle tabStyle, ScreenLayerPicks screenPicks) {
 
-        if (!isThereAnythingToArrange()) {
+        if (!isThereAnythingToArrange(screenPicks.layerRegistry())) {
             return null;
         }
-        return BarOpeners.buildOpenerSpec(tabStyle);
+        return BarOpeners.buildOpenerSpec(tabStyle, screenPicks);
     }
 
     // The body the active layer opens, built under the scope of the screen whose panel asked for it. Every
@@ -231,7 +231,7 @@ public final class LiveSidebarPlacement {
             new HeaderBandSpec(
                 tabStyle,
                 buildTabsSpec(layers, activeLayer, screenPicks.layerSelection()),
-                resolveOpenerSpec(tabStyle)),
+                resolveOpenerSpec(tabStyle, screenPicks)),
             buildBodyControls(activeLayer, screenPicks),
             measurers,
             // The live scroll and fold, so the body lays out at its interpolated width and the notch
@@ -245,12 +245,12 @@ public final class LiveSidebarPlacement {
     // Whether arranging the bar could change anything: two layers that paint, so a move changes which of
     // them the map shows and a hide leaves one still standing - or the dev hatch open, which says to stand
     // the opener whatever the roster holds.
-    private static boolean isThereAnythingToArrange() {
+    private static boolean isThereAnythingToArrange(MapLayerRegistry layerRegistry) {
 
         if (KmuMapControlSettings.isMapLayerArrangementOpenerAlwaysShown()) {
             return true;
         }
-        return PaintingLayers.countPaintingLayers(MapLayerRegistry.getLayers())
+        return PaintingLayers.countPaintingLayers(layerRegistry.getLayers())
             >= LEAST_ARRANGEABLE_PAINTING_LAYERS;
     }
 

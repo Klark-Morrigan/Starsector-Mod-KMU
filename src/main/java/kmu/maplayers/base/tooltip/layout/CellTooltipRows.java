@@ -249,17 +249,18 @@ public final class CellTooltipRows {
         // A number an account recorded for the line rather than one the line achieved reads in that
         // same quiet shade. Drawn as loudly as the numbers around it, such a value invites the reader
         // to compare it with them - which is the one thing it cannot be compared with.
+        var value = line.value();
         var valueSpan = new TextSpan(
-            line.valueText(),
-            line.isValueUncounted()
+            value.valueText(),
+            value.isValueUncounted()
                 ? CellTooltipLabels.resolveQuietColour()
                 : valueColour);
 
-        if (!KmlibStrings.hasText(line.valueWorkingText())) {
+        if (!KmlibStrings.hasText(value.valueWorkingText())) {
             return row.carriesValue(valueSpan);
         }
         return row.carriesValueRuns(List.of(
-            new TextSpan(line.valueWorkingText(), CellTooltipLabels.resolveQuietColour()),
+            new TextSpan(value.valueWorkingText(), CellTooltipLabels.resolveQuietColour()),
             valueSpan));
     }
 

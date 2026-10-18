@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * read as having flipped nothing skips the clustering and cluster group work entirely.
  *
  * <p>The one-sided transfers are the cases worth guarding hardest. A system taking its first
- * settlement has no old holder and an emptied one has no new holder, so a reading that took "both
+ * settlement has no old owner and an emptied one has no new owner, so a reading that took "both
  * sides present" for the definition of a flip would skip exactly the two changes a player is most
  * likely to be watching for.
  *
@@ -52,7 +52,7 @@ final class StaleOwnerMapDisturbanceTests {
         }
 
         @Test
-        void isTrueForASystemThatOnlyGainedAHolder() {
+        void isTrueForASystemThatOnlyGainedAnOwner() {
             // A first settlement has no losing side. Reading a flip off both sides being present
             // would leave the new cluster group undrawn until some later full rebuild.
             var disturbance = new StaleOwnerMapDisturbance();
@@ -64,8 +64,8 @@ final class StaleOwnerMapDisturbanceTests {
         }
 
         @Test
-        void isTrueForASystemThatOnlyLostItsHolder() {
-            // The mirror: an emptied system has no gaining side, and its old holder's
+        void isTrueForASystemThatOnlyLostItsOwner() {
+            // The mirror: an emptied system has no gaining side, and its old owner's
             // cluster group is exactly the one that has to stop drawing the cell.
             var disturbance = new StaleOwnerMapDisturbance();
 
@@ -78,7 +78,7 @@ final class StaleOwnerMapDisturbanceTests {
         @Test
         void isFalseForARestyleAlone() {
             // A system whose last settlement went, or one the spotlit owner just settled, draws
-            // differently with its holder exactly where it was - so nothing above the cell is
+            // differently with its owner exactly where it was - so nothing above the cell is
             // owed, and a batch of these must not re-fit every name on the map.
             var disturbance = new StaleOwnerMapDisturbance();
 
@@ -94,7 +94,7 @@ final class StaleOwnerMapDisturbanceTests {
 
         @Test
         void redrawsTheFlippedSystemAndItsNeighbours() {
-            // The neighbour's own holder did not move, but the edge it shares with the flipped
+            // The neighbour's own owner did not move, but the edge it shares with the flipped
             // system just turned from a same-owner seam into a cluster border, so it re-shapes
             // too or the border draws down one side only.
             var disturbance = new StaleOwnerMapDisturbance();

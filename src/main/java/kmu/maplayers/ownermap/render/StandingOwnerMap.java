@@ -18,7 +18,7 @@ import java.util.List;
  * would leave a name standing over an owner that no longer holds the cell beneath it. Carrying them
  * as one value is what stops a step of that redraw being handed a different three.
  *
- * <p>Assembled by the holder of these four once its drained batch has something in it, which is the
+ * <p>Assembled by the cache keeping these four once its drained batch has something in it, which is the
  * only caller in a position to know: it holds the board the batch came off. A frame that drained
  * nothing - nearly every frame - returns without building one.
  *

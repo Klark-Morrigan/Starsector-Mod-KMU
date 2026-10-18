@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.alliances.AllianceRecord;
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.SectorPassIndex;
@@ -37,6 +39,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -119,11 +122,13 @@ final class ClaimsViewTests {
             var openedOver = new ArrayList<SectorPassIndex>();
 
             var view = new ClaimsView((knownColonyReader, sectorIndex) -> {
+
                 openedOver.add(sectorIndex);
                 return mock(ClaimBreakdownReader.class);
             });
 
-            view.resolveHolderProvider().resolveHolder(pass, null);
+            view.resolveHolderProvider()
+                .resolveHolder(pass, null);
 
             assertThat(openedOver)
                 .containsExactly(pass.sectorIndex());
@@ -141,11 +146,14 @@ final class ClaimsViewTests {
             var openedOver = new ArrayList<SectorPassIndex>();
 
             var view = new ClaimsView((knownColonyReader, sectorIndex) -> {
+
                 openedOver.add(sectorIndex);
                 return mock(ClaimBreakdownReader.class);
             });
 
-            var resolve = view.resolveSystemHolderResolveSource().openResolveOver(pass);
+            var resolve = view
+                .resolveSystemHolderResolveSource()
+                .openResolveOver(pass);
 
             assertThat(resolve)
                 .isInstanceOf(ClaimSystemHolderResolve.class);
@@ -207,7 +215,15 @@ final class ClaimsViewTests {
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(HolderGroupingFixture.buildGroupOf("hegemony", "persean"));
 
-                assertThat(ClaimsView.INSTANCE
+                // The same alliance as who stands together in a contest, which the reading's source
+                // reads beside the grouping.
+                alliancesMock
+                    .when(NexerelinAlliances::resolveFactionAlliances)
+                    .thenReturn(FactionAlliances.buildFrom(List.of(
+                        new AllianceRecord("pact", "Pact", List.of("hegemony", "persean")))));
+
+                assertThat(ClaimsView
+                        .INSTANCE
                         .resolveViewReading(sectorMock)
                         .reading()
                         .resolveName("hegemony", OwnerNameFormatChoice.SHORT))
@@ -279,7 +295,9 @@ final class ClaimsViewTests {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of("hegemony", ANY_CLAIMANT_STATS)));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
+                assertThat(ClaimsView
+                        .INSTANCE
+                        .resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .containsExactly(new RankedOwner<>(
@@ -304,15 +322,19 @@ final class ClaimsViewTests {
             var aggregatedPasses = new ArrayList<HolderPass>();
 
             var view = new ClaimsView((knownColonyReader, sectorIndex) -> {
+
                 openedUnder.add(knownColonyReader);
                 openedOver.add(sectorIndex);
+
                 return claimReaderMock;
             });
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
+                aggregatorMock
+                    .when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenAnswer(invocation -> {
+
                         aggregatedPasses.add(invocation.getArgument(0));
                         return buildReadOf(Map.of());
                     });
@@ -346,10 +368,13 @@ final class ClaimsViewTests {
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
+                aggregatorMock
+                    .when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of()));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
+                assertThat(ClaimsView
+                        .INSTANCE
+                        .resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .sortModes()
                         .modes())
@@ -373,7 +398,8 @@ final class ClaimsViewTests {
                     var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                     var weightingRulesMock = mockStatic(DominanceRules.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
+                aggregatorMock
+                    .when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of()));
 
                 // The one live read this entry is meant to make, stood in as the plain fog.

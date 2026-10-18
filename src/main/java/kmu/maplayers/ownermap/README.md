@@ -165,14 +165,17 @@ cluster border -
 and `enforcePackageVocabulary` holds it to them;
 the list and the reason for it are in [the map layers README](../README.md#the-vocabulary).
 
-The core is also closed to the four words that say what a holder is:
+The core is also closed to the words that say what a holder is and what it is counted by:
+*holder*,
 *faction*,
 *colony*,
+*market*,
 *bloc*
 and *alliance*.
 They are the subject of `owners/holders` and nothing else here,
 so the gate leaves that subtree out
 and the core says *owner*.
+What a presence band counts is a *stake*.
 
 Nothing in the tier names a layer built on it.
 The frozen save keys a layer's choices live under are that layer's,

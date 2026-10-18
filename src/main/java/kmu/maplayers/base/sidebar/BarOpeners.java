@@ -8,6 +8,7 @@ import kmlib.starsector.ui.widgets.tabs.BandButtonSpec;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.chrome.arrange.MapLayerArrangementDialog;
+import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 
 import java.util.List;
@@ -53,16 +54,18 @@ public final class BarOpeners {
      * button reading as selected would wear the row's shown look with nothing to be showing. It wears the
      * row's own look otherwise, so it reads as part of the strip it stands on.
      *
-     * @param hostStyle the tab style the panel's own row is drawn in
+     * @param hostStyle   the tab style the panel's own row is drawn in
+     * @param screenPicks the picks of the screen the panel draws for, whose bar a press arranges
      * @return the band button the sidebar flies after its last tab
      */
-    public static BandButtonSpec buildOpenerSpec(TabStyle hostStyle) {
+    public static BandButtonSpec buildOpenerSpec(TabStyle hostStyle, ScreenLayerPicks screenPicks) {
+
         return new BandButtonSpec(
             new TabsSpec(
                 List.of(NO_LABEL),
                 List.of(),
                 ControlSpec.NO_SELECTION,
-                cell -> MapLayerArrangementDialog.INSTANCE.openDialog()),
+                cell -> MapLayerArrangementDialog.INSTANCE.openDialog(screenPicks)),
             SidebarStyles.buildBandButtonTabStyle(hostStyle, resolveIconAspect()),
             // Stating no tint of its own, so the row's own resting label shade is the whole of the mark's
             // colour and the pointer's light lands on that: the picture fills the button, so it is what
@@ -81,7 +84,6 @@ public final class BarOpeners {
     private static float resolveIconAspect() {
 
         var sprite = StarsectorSprites.loadSprite(OPENER_ICON_PATH);
-
         return sprite == null || sprite.getHeight() <= 0f
             ? SQUARE_ICON_ASPECT
             : sprite.getWidth() / sprite.getHeight();

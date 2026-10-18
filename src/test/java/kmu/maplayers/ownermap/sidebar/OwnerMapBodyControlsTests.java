@@ -8,9 +8,7 @@ import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.controls.specs.HorizontalRadioSpec;
 import kmlib.starsector.ui.controls.specs.InteractiveSpec;
 import kmlib.starsector.ui.controls.specs.ReselectBehaviour;
-import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -60,8 +58,8 @@ import static org.mockito.Mockito.when;
  * screen the controls were built with, which is what fails if either writer were handed one resolved
  * when the click landed: the repaint would then reach whichever sector was running rather than the one
  * whose sidebar is up, and the write would land on whichever panel was showing rather than the one the
- * control sits on. The intel screen is posed open throughout, so the built screen is never the live
- * one and a writer resolving its own could not pass by luck.
+ * control sits on. The built screen is a stand-in neither of the mod's screens is saved under, so a
+ * writer resolving a screen of its own could not pass by luck.
  */
 final class OwnerMapBodyControlsTests {
 
@@ -115,13 +113,6 @@ final class OwnerMapBodyControlsTests {
             .when(Misc::getTextColor)
             .thenReturn(TEXT);
 
-        // The intel screen posed open, so the live screen is a screen these controls were not built
-        // on. The holder is static, so a fresh fake per test also keeps a neighbour's wiring out.
-        var intelScreenFake = new IntelScreenViewFake();
-
-        intelScreenFake.setIntelTabOpen(true);
-        MapLayerScreens.registerIntelScreen(intelScreenFake);
-
         // Full names unless a case says otherwise - the radio lights off the stored choice, and a
         // choice nobody made reads as full names.
         when(nameFormatMock.getSelectedNameFormat(any()))
@@ -131,7 +122,6 @@ final class OwnerMapBodyControlsTests {
     @AfterEach
     void clearColours() {
 
-        MapLayerScreens.registerIntelScreen(null);
         miscMock.close();
         KmuStringsSettingsFake.clearSettings();
     }
