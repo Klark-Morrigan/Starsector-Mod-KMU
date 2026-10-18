@@ -35,7 +35,7 @@ import java.util.function.Supplier;
  *
  * <p>The stack is emitted one band at a time, because the map can put its own drawing between two
  * of the layers: the map holds its own nebula icons, drawn over the sector as a large blended
- * sprite under Starscape, so a sub-layer is either dimmed by that haze or clear of it. Which side
+ * sprite under Starscape, so a sub-layer is either dimmed by those nebulae or clear of them. Which side
  * each lands on is the player's, read per pass as an {@link OwnerMapBandLayout} and asked of it
  * per sub-layer; the surfaces above only say which band they are painting, and the geometry below
  * is emitted the same way whichever band asks for it.

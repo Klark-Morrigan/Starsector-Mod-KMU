@@ -319,22 +319,22 @@ kmu_map_politics_visuals_hoverTooltip_isEnabled,,,,启用悬停提示框,,Boolea
 [默认值：开启]",,,,,地图 - 政治 - 外观
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_starscape_positionRelativeToNebulae_header,,,,星云绘制顺序,,Header,星云绘制顺序,,,,,,,,,地图 - 政治 - 外观
-kmu_map_politics_visuals_starscape_positionRelativeToNebulae_fills,,,,领土填充,,Radio,Below,"Below, Above",,,"领土填充（每个区域自身的颜色，以及共享区域上的斜线填充）绘制在地图星云之下还是之上。抬高填充时，无论边界设置如何，边界都会一同抬高，因为绘制在自身边界之上的填充会留下一个空白单元；悬停高亮也会随之抬高，因为它提亮的是光标下方的填充。Above 绘制在星景视图覆盖于星域之上的雾霭之外，Below 则会被其调暗。示意图视图没有这种雾霭，因此在那里此设置只改变叠加层内部的顺序。
+kmu_map_politics_visuals_starscape_positionRelativeToNebulae_fills,,,,领土填充,,Radio,Below,"Below, Above",,,"领土填充（每个区域自身的颜色，以及共享区域上的斜线填充）绘制在地图星云之下还是之上。抬高填充时，无论边界设置如何，边界都会一同抬高，因为绘制在自身边界之上的填充会留下一个空白单元；悬停高亮也会随之抬高，因为它提亮的是光标下方的填充。Above 不受星景模式覆盖于星域之上的地图星云影响，Below 则会被其调暗。关闭星景模式时地图星云不会覆盖于星域之上，因此这时该设置只改变叠加层内部的顺序。
 [默认值：Below]
 
 Below：之下
 Above：之上",,,,,地图 - 政治 - 外观
-kmu_map_politics_visuals_starscape_positionRelativeToNebulae_borders,,,,边界,,Radio,Below,"Below, Above",,,"边界（区域边界、省界，以及荒蛮与无人星系周围的轮廓）绘制在地图星云之下还是之上。边界可以单独抬高，但不能沉到填充之下： [领土填充设为 Above 时，无论此处如何设置，边界都绘制在上方] 。Above 绘制在星景视图覆盖于星域之上的雾霭之外，Below 则会被其调暗。示意图视图没有这种雾霭，因此在那里此设置只改变叠加层内部的顺序。
+kmu_map_politics_visuals_starscape_positionRelativeToNebulae_borders,,,,边界,,Radio,Below,"Below, Above",,,"边界（区域边界、省界，以及荒蛮与无人星系周围的轮廓）绘制在地图星云之下还是之上。边界可以单独抬高，但不能沉到填充之下： [领土填充设为 Above 时，无论此处如何设置，边界都绘制在上方] 。Above 不受星景模式覆盖于星域之上的地图星云影响，Below 则会被其调暗。关闭星景模式时地图星云不会覆盖于星域之上，因此这时该设置只改变叠加层内部的顺序。
 [默认值：Below]
 
 Below：之下
 Above：之上",,,,,地图 - 政治 - 外观
-kmu_map_politics_visuals_starscape_positionRelativeToNebulae_presenceRibbons,,,,存在色带,,Radio,Below,"Below, Above",,,"存在色带（单元边界内侧、表明哪些势力在此拥有殖民地的分段描边）绘制在地图星云之下还是之上。Below 会被星景视图覆盖于星域之上的雾霭调暗，Above 则不受其影响。示意图视图没有这种雾霭，因此在那里此设置只改变叠加层内部的顺序。
+kmu_map_politics_visuals_starscape_positionRelativeToNebulae_presenceRibbons,,,,存在色带,,Radio,Below,"Below, Above",,,"存在色带（单元边界内侧、表明哪些势力在此拥有殖民地的分段描边）绘制在地图星云之下还是之上。Below 会被星景模式覆盖于星域之上的地图星云调暗，Above 则不受其影响。关闭星景模式时地图星云不会覆盖于星域之上，因此这时该设置只改变叠加层内部的顺序。
 [默认值：Below]
 
 Below：之下
 Above：之上",,,,,地图 - 政治 - 外观
-kmu_map_politics_visuals_starscape_positionRelativeToNebulae_labels,,,,势力名称,,Radio,Above,"Below, Above",,,"区域名称绘制在地图星云之下还是之上。Above 绘制在星景视图覆盖于星域之上的雾霭之外，Below 则会被其调暗；这影响的是文字而不是形状，因此在这些设置中，只有它决定名称能否被读出，而不只是读起来有多醒目。示意图视图没有这种雾霭，因此在那里此设置只改变叠加层内部的顺序。
+kmu_map_politics_visuals_starscape_positionRelativeToNebulae_labels,,,,势力名称,,Radio,Above,"Below, Above",,,"区域名称绘制在地图星云之下还是之上。Above 不受星景模式覆盖于星域之上的地图星云影响，Below 则会被其调暗；这影响的是文字而不是形状，因此在这些设置中，只有它决定名称能否被读出，而不只是读起来有多醒目。关闭星景模式时地图星云不会覆盖于星域之上，因此这时该设置只改变叠加层内部的顺序。
 [默认值：Above]
 
 Below：之下

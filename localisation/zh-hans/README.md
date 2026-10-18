@@ -283,6 +283,7 @@ which every KM mod's shares.
 | screen | 界面 | as in 星图界面 and 情报信息界面 |
 | sector map widget (the map, on whichever screen draws it) | 星图控件 | from 星图, with 控件, the control word; the settings and the notices already use it; not 地图控件, the Map - Dev header |
 | sidebar | 侧边栏 | the usual Chinese UI word |
+| Starscape mode, in it, with it off (the map with vanilla's Starscape filter ticked, or not) | 星景模式; 在星景模式下, 关闭星景模式时 | vanilla's 星景 with 模式, mode: the map's look rather than the button that switches it; not 星景视图, since 视图 is a political map view |
 | tab | 标签页 | the usual Chinese UI word; 标签 alone would read as a label |
 | tab bar | 标签栏 | from 标签页, with 栏 for a bar, as in 筛选栏 |
 
@@ -409,6 +410,7 @@ So a word of one axis never stands in for another:
 | fill | 填充 | the usual graphics word |
 | hatch fill | 斜线填充 | 斜线, diagonal lines, before 填充 |
 | inner border | 内边界（省界） | the province seam |
+| nebulae (the map's, which an overlay part paints below or above) | 地图星云 | vanilla's 星云 with 地图, as the settings and the compatibility notices write it |
 | no fill | 不填充 | the negative of 填充 |
 | outer border | 外边界（国界） | the national border |
 | outline (an uninhabited or decivilised system's border) | 轮廓 | the plain word, as the settings write it |
@@ -462,6 +464,7 @@ So a word of one axis never stands in for another:
 | --- | --- | --- |
 | alliance record (one alliance as plain data) | 联盟记录 | 联盟 with 记录, a record |
 | alliance set (every alliance at one moment) | 联盟集合 | 联盟 with 集合, a set |
+| body (what a hover box states beneath its heading) | 主体 | the plain word for the main part of something |
 | breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
 | compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
 | footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
@@ -470,6 +473,7 @@ So a word of one axis never stands in for another:
 | overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
 | part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
 | pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
+| press (a strike of the detail key) | 按键 | the plain word for pressing a key, as the Map - Keybinds tab uses it |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
 | refresh poll (the periodic check that marks changed systems) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
 | register (a record the map keeps in sector memory) | 登记 | the plain word for writing something into a record |
@@ -532,6 +536,7 @@ which is how the tooltip heading reads: the faction's name, then 核心领土.
 | in seconds | 单位为秒 | as in pixels |
 | in world units | 单位为世界单位 | as in pixels, with 世界单位 |
 | The settings below apply only while X is on | 以下设置仅在 [X] 开启时生效 | as Applies only while X is on, with X bracketed for the highlight |
+| the X tab, the Y section (where a setting sits) | X 标签页, Y 部分 | as the Features tab's note writes 在 [开发] 标签页的 [日志] 部分; each name takes its own noun, so a tab and a section never read as one |
 | true / false (Boolean defaults) | 开启 / 关闭 | a switch's on and off, more natural than 真 and 假 |
 
 #### Setting names
@@ -539,6 +544,7 @@ which is how the tooltip heading reads: the faction's name, then 核心领土.
 | English | 简体中文 | Note |
 | --- | --- | --- |
 | dev settings | 开发设置 | from the Dev tabs, 开发 |
+| Nebula draw order (and its Territory fills, Borders, Presence bands, Faction names) | 星云绘制顺序 (领土填充, 边界, 存在色带, 势力名称) | 星云 with 绘制顺序, the order things are drawn in; the four names are the [drawing](#drawing) words for what each one moves |
 | opacity | 不透明度 | the usual graphics word |
 | profiling | 性能分析 | the usual computing word, as the Map - Dev tab writes it |
 | thickness, width | 粗细, 宽度 | the usual words for a line's weight and a span's width |
