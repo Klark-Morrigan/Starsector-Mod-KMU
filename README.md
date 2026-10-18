@@ -15,6 +15,8 @@
   - [Console commands](#console-commands)
   - [Compatibility](#compatibility)
   - [Diagnostics](#diagnostics)
+- [Q&A](#qa)
+  - [The nebulae in Starscape mode obscure parts of the map. Can I hide them?](#the-nebulae-in-starscape-mode-obscure-parts-of-the-map-can-i-hide-them)
 - [Creative applications](#creative-applications)
 - [For developers](#for-developers)
   - [Versioning](#versioning)
@@ -245,6 +247,16 @@ the mod has been made specifically compatible with:
   To trace issues interacting with vanilla UI.
 - **Profiling** toggle and level in **KMU** map dev settings combined with usage of **kmu_profiling** console command.
   To trace where performance drops occur.
+
+## Q&A
+
+### The nebulae in Starscape mode obscure parts of the map. Can I hide them?
+
+You can choose which parts of **Map Layers** are painted above the **Starscape** nebulae and which stay below them.
+Open the *Map - Politics - Visuals* settings tab
+and find its **Nebula draw order** section,
+which holds four settings:
+**Territory fills**, **Borders**, **Presence bands** and **Faction names**.
 
 ## Creative applications
 

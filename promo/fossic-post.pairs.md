@@ -26,6 +26,7 @@ Change this file with either post.
 - [Settings](#settings)
 - [Console commands](#console-commands)
 - [Compatibility](#compatibility)
+- [Q&A](#qa)
 - [Feedback](#feedback)
 - [Post-release roadmap](#post-release-roadmap)
 - [AI usage disclaimer](#ai-usage-disclaimer)
@@ -611,7 +612,7 @@ The English README's Languages section says the same to an English reader.
   - Notes: Sector map widget in [features and screens][kmu-features]; terrain in [space][kmu-space].
 - EN: And to be visible in the Starscape mode, the starscape terrain variant is tagged as a slipstream.
   - ZH: 为了在星景模式下也能显示，星景地形变体被标记为滑流。
-  - Notes: Starscape in [screens and the map][kmu-screens].
+  - Notes: Starscape in [screens and the map][kmu-screens]; Starscape mode in [features and screens][kmu-features].
     Slipstream in [space][kmu-space].
 - EN: Custom terrain is the only thing that has to be serialised into saves as Java class references, and that's why a clean uninstall is required for disabling the mod.
   - ZH: 自定义地形是唯一必须以 Java 类引用的形式序列化进存档的内容，这也是禁用本 Mod 前需要干净卸载的原因。
@@ -644,6 +645,25 @@ The English README's Languages section says the same to an English reader.
   - ZH: 此外，当星图控件停靠到屏幕外时（停靠是 RAT 在玩家停靠市场或打开任何界面时隐藏星图控件的方式），本 Mod 会将其设为不可见，从而跳过相关渲染，在不显示星图的菜单中应能带来少许性能提升（在超空间中更明显）。
   - Notes: Hyperspace in KMLib's [vanilla terms][kmlib-vanilla].
     Dock in [features and screens][kmu-features].
+
+## Q&A
+
+- EN: Q&A
+  - ZH: 常见问题
+  - Notes: Q&A in [KMLib's forum terms][kmlib-forum].
+- EN: Q: The nebulae in Starscape mode obscure parts of the map. Can I hide them?
+  - ZH: 问：星景模式下的星云会遮挡地图的部分内容，能把它们隐藏吗？
+  - Notes: Nebula in [space][kmu-space]; Starscape mode in [features and screens][kmu-features].
+- EN: A: You can choose which parts of Map Layers are painted above the Starscape nebulae and which stay below them.
+  - ZH: 答：你可以选择地图图层的哪些部分绘制在星景模式的星云之上、哪些留在星云之下。
+  - Notes: map layers in [features and screens][kmu-features].
+    The Starscape nebulae are the ones Starscape mode draws, so 星景模式的星云 rather than a bare 星景星云.
+- EN: Open the Map - Politics - Visuals settings tab and find its Nebula draw order section, which holds four settings: Territory fills, Borders, Presence bands and Faction names.
+  - ZH: 打开设置中的地图 - 政治 - 外观标签页，找到其中的星云绘制顺序部分，共有四项设置：领土填充、边界、存在色带和势力名称。
+  - Notes: the tab, section and setting names as the Chinese settings screen writes them,
+    each after its own verb so the tab and the section read apart; 部分 for a section, as the settings notes write it.
+    Nebula draw order in [settings][kmu-settings]; the four names in [the political map][kmu-politics].
+    Map - Politics - Visuals in [settings tabs][kmu-tabs].
 
 ## Feedback
 
