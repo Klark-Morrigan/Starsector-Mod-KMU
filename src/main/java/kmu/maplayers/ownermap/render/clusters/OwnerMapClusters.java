@@ -9,6 +9,8 @@ import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.hover.MapHoverTargets;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
 import kmu.maplayers.base.render.clusters.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
+import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.ownermap.OwnerPaintedView;
@@ -112,12 +114,26 @@ public final class OwnerMapClusters
         return paintedCells;
     }
 
-    // The two cell reads the framework seams oblige, answered off the store above. Delegated rather
-    // than left to each caller to reach through getPaintedCells, because these two are what
-    // ClusterDrawLists and PaintedCellShapes ask for by name - a seam cannot be satisfied by a
-    // getter that hands back something holding the answer.
+    // The cell reads the framework seams oblige, answered off the store above. Delegated rather than
+    // left to each caller to reach through getPaintedCells, because these are what ClusterDrawLists
+    // and PaintedCellShapes ask for by name - a seam cannot be satisfied by a getter that hands back
+    // something holding the answer.
 
     @Override
+    public List<FusedCell> getFusedCells() {
+
+        return paintedCells.getFusedCells();
+    }
+
+    @Override
+    public List<LoneCell> getLoneCells() {
+
+        return paintedCells.getLoneCells();
+    }
+
+    /**
+     * @return each drawn cell's draw record, keyed by cell key, read-only
+     */
     public Map<SystemKey, StyledCell> getStyledCellByCellKey() {
 
         return paintedCells.getStyledCellByCellKey();

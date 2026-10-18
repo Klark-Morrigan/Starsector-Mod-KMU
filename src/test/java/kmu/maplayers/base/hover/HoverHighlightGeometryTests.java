@@ -219,7 +219,7 @@ final class HoverHighlightGeometryTests {
     }
 
     private static MapHover hoverOf(String cellId) {
-        return new MapHover(buildCellKey(cellId), List.of(buildCellKey(cellId)));
+        return MapHoverFixture.buildHoverOn(buildCellKey(cellId), List.of(buildCellKey(cellId)));
     }
 
     // A source answering for the one hovered cell every case here uses, handing back the very

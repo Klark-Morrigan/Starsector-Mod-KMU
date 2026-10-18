@@ -258,6 +258,48 @@ final class SystemClaimTooltipTests {
     class ComposeBody {
 
         @Test
+        void reachesTheAccountBehindAScoredStanding() {
+            // What the key at the foot of the box would reach: the colonies behind the faction, and
+            // the terms behind a colony's score - the deeper tiers accounting for the very score the
+            // shallowest states, and stopping where the mechanic's arithmetic does.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
+
+            assertThat(readComposedDepth())
+                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
+        }
+
+        @Test
+        void reachesTheAccountBehindAPresenceTheContestNeverWeighed() {
+            // Such a faction's colonies are exactly what the player can read nowhere else in the box,
+            // its line stating a nought and nothing more - so the key has something to open even
+            // where the mechanic weighed the whole system at nothing.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                null,
+                List.of(buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
+
+            assertThat(readComposedDepth())
+                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
+        }
+
+        @Test
+        void reachesNoDeeperWhereTheProjectionListsNobody() {
+            // The deeper tiers account for the factions this box lists, and the fog has left it
+            // listing none. Every level would state the same claim line, so the key would do nothing
+            // the player could see - and a hint over it would advertise that it would.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                null,
+                List.of(buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
+
+            assertThat(readComposedDepth())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
+        }
+
+        @Test
         void namesTheClaimantWithItsCrestAndScoreUnderTheClaimHeading() {
 
             stubBreakdown(new SystemClaimBreakdown(
@@ -1691,84 +1733,9 @@ final class SystemClaimTooltipTests {
         }
     }
 
-    @Nested
-    class ResolveDeepestHeldLevelFor {
-
-        @Test
-        void offersTheAccountBehindAScoredStanding() {
-            // What the key at the foot of the box would reach: the colonies behind the faction, and
-            // the terms behind a colony's score - the deeper tiers accounting for the very score the
-            // shallowest states, and stopping where the mechanic's arithmetic does.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                HEGEMONY,
-                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
-        }
-
-        @Test
-        void offersTheAccountBehindAPresenceTheContestNeverWeighed() {
-            // Such a faction's colonies are exactly what the player can read nowhere else in the box,
-            // its line stating a nought and nothing more - so the key has something to open even
-            // where the mechanic weighed the whole system at nothing.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                null,
-                List.of(buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
-        }
-
-        @Test
-        void offersNothingWhereTheProjectionListsNobody() {
-            // The deeper tiers account for the factions this box lists, and the fog has left it
-            // listing none. Every level would state the same claim line, so the key would do nothing
-            // the player could see - and a hint over it would advertise that it would.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                null,
-                List.of(buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
-        }
-
-        @Test
-        void agreesWithTheDepthThePaintReports() {
-            // The invariant the two-path design rests on, and the one place this box can break it: the
-            // press asks here while the paint takes the depth off the body it just composed, and the
-            // two run through separate reads of the system. Drifting, the hint would name a step the
-            // key does not take - or the key would act where the box said it would not.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                HEGEMONY,
-                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(readComposedDepth());
-        }
-
-        @Test
-        void agreesWithThePaintOverASystemListingNobody() {
-            // The same agreement at the other end, which is the half that would strand a player: a box
-            // the fog left listing nobody must report the shallowest through both paths, or the key
-            // would act over a box drawing no hint at all.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                null,
-                List.of(buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(readComposedDepth());
-        }
-    }
-
-    // How deep the paint says the box goes, off the body it composed - the counterpart to the
-    // press-time read, taken at the shallowest level since the depth reported is a fact about the
-    // system rather than about how deep this particular paint was asked to read.
+    // How deep the box goes, off the body it composed - the bound the hint and the key both read -
+    // taken at the shallowest level since the depth reported is a fact about the system rather than
+    // about how deep this particular composition was asked to read.
     private HoverTooltipDetailLevel readComposedDepth() {
 
         return tooltip

@@ -55,6 +55,11 @@ The look is in that table because it is the host's:
 `resolveWidgetStyle()` answers what the panel is painted in
 and `HEADER_BAND_HEIGHT` how tall its tab row stands,
 and the same tab style feeds both the layout and the paint pass.
+A host composes that style (`composeTabStyle`) and `BaseSidebarHost.resolveTabStyle` keeps it
+until KMU's settings revision moves or another sector's faces are on screen -
+every knob it reads is one of those settings,
+and its face is settled per sector -
+so the placement refresh and the paint each frame read one composition rather than building two.
 The two screens sit in different company -
 one floating free on the map,
 the other overlaid on the intel visor amid that screen's own chrome -

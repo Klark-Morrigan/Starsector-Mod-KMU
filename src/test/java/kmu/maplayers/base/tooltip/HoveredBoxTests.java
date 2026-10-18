@@ -8,6 +8,7 @@ import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
@@ -439,7 +440,9 @@ final class HoveredBoxTests {
         @Test
         void isTrueForAHoveredCell() {
 
-            var hover = new MapHover(buildCellKey(SYSTEM_ID), List.of(buildCellKey(SYSTEM_ID)));
+            var hover = MapHoverFixture.buildHoverOn(
+                buildCellKey(SYSTEM_ID),
+                List.of(buildCellKey(SYSTEM_ID)));
 
             assertThat(HoveredBox.shouldDrawTooltipFor(hover))
                 .isTrue();

@@ -3,6 +3,7 @@ package kmu.maplayers.base.render;
 import com.fs.starfarer.api.Global;
 
 import kmlib.logging.ChangedLineTrace;
+import kmlib.starsector.systems.SectorStarSystems;
 import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
@@ -56,7 +57,8 @@ import java.util.function.Supplier;
  *
  * @param <S> what a frame is painted under, as the layer's stand-down read finds it
  */
-public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
+public final class SequencedMapLayerRenderer<S>
+        implements MapLayerRenderer {
 
     private static final Logger LOG = Global.getLogger(SequencedMapLayerRenderer.class);
 
@@ -113,7 +115,9 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
     // framework's problem: a logger named after a library class would sit outside the switch a
     // player reaches for when the map looks wrong.
     private final ChangedLineTrace iconOrderTrace = ChangedLineTrace.createWholeLineTrace(
-        LOG, "Map icon order", MapIconOrderTrace::describeTerrainIconOrder);
+        LOG,
+        "Map icon order",
+        MapIconOrderTrace::describeTerrainIconOrder);
 
     // Which vanilla widgets the cursor is inside, reported when that changes. The hover comes from
     // the map's own geometry and knows nothing of the chrome laid over it, which is what the covers
@@ -121,7 +125,9 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
     // cursor, so a cover that stops fitting a game build is diagnosed from the tree rather than
     // guessed at. Logged here for the reason above.
     private final ChangedLineTrace widgetsUnderCursorTrace = ChangedLineTrace.createKeyedLineTrace(
-        LOG, "Map-tab widget trace", MapTabWidgetTrace::describeWidgetsUnderCursor);
+        LOG,
+        "Map-tab widget trace",
+        MapTabWidgetTrace::describeWidgetsUnderCursor);
 
     // The cursor read, taken from the source above on the first pass that wants one.
     private MapHoverPublisher hoverPublisher;
@@ -173,7 +179,7 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
             MapLayerScreens::resolveLivePicks,
             MapCoverReader.createForLiveScreen(),
             machinery.resolveHoverState(),
-            SequencedMapLayerRenderer::buildLiveHoverPublisher,
+            hoverState -> buildLiveHoverPublisher(hoverState, machinery),
             new MapFrameBeats(
                 machinery.resolveProfilingOrigin(),
                 MapFrameSections.resolveLayerSection(layerId)));
@@ -195,6 +201,7 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
     public void prepareFrame(float factor) {
 
         try (var beatScope = frameBeats.openBeat(MapFrameSections.PREPARE)) {
+
             // Which screen is showing, read once and carried: the subject this frame paints and the
             // preferences the refresh builds under are both that screen's, so resolving the screen
             // twice could paint one panel's subject under the other panel's picks - a map neither
@@ -208,6 +215,7 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
                 standDownTheHoverForThisFrame();
                 return;
             }
+
             try (var layerScope = frameBeats.openLayerRow()) {
 
                 traceReflectiveReadings();
@@ -228,6 +236,7 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
     public void renderOnMap(float factor, float alphaMult, MapOverlayBand band) {
 
         try (var beatScope = frameBeats.openBeat(MapFrameSections.resolveRenderSection(band))) {
+
             // The subject read, asked again rather than remembered: a field holding the frame's answer
             // would be render state on a renderer that deliberately holds none. It agrees with the
             // preparation's because a pass and the frame that prepared it are the same screen - the
@@ -235,7 +244,9 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
             if (resolveLiveSubject() == null) {
                 return;
             }
+
             try (var layerScope = frameBeats.openLayerRow()) {
+
                 // The engine's two loose values become the frame every pass below takes whole. Built
                 // here because this is the last point that still speaks the engine's signature: the
                 // seam above mirrors vanilla's call so the trail back to it survives, and everything
@@ -251,6 +262,7 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
     public Optional<MapHoverTooltip> resolveHoverTooltip() {
 
         try (var beatScope = frameBeats.openBeat(MapFrameSections.TOOLTIP)) {
+
             // The layer's own tooltip switch, off means no box from it - and the framework draws
             // whatever the other layers offer regardless, which is the point of scoping it here
             // rather than at the dispatcher.
@@ -294,11 +306,13 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
             if (!isHoverWantedThisFrame) {
                 return;
             }
+
             if (hoverPublisher == null) {
                 hoverPublisher = hoverPublisherSource.apply(hoverState);
             }
 
             try (var layerScope = frameBeats.openLayerRow()) {
+
                 // The cursor read sits between the frame's refresh and this pass's draw: after the
                 // refresh, so it tests against the shapes the frame actually paints, and before the
                 // draw, so the highlight layers have an answer when they emit. It is the one point
@@ -344,7 +358,13 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
     // that is running, while the renderer is made whenever its sector's machinery is first asked for
     // it. Built the same way for every layer, since one built differently would report a different
     // cursor for the same frame.
-    private static MapHoverPublisher buildLiveHoverPublisher(MapHoverState hoverState) {
+    //
+    // The hovered system is found in the machinery's own sector, the one whose hover holder this
+    // publishes into, and asked for at the moment rather than held, since a machinery made before a
+    // game is up names its sector only once one is.
+    private static MapHoverPublisher buildLiveHoverPublisher(
+            MapHoverState hoverState,
+            SectorMapMachinery machinery) {
 
         var soundPlayer = new VanillaUiSoundPlayer();
 
@@ -361,7 +381,8 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
             // Taken from the shared permission rather than composed here, so this pass and the box
             // that reports what it finds answer from one reading: a hover resolved on a frame no box
             // may draw on would light a cell the map then refuses to name.
-            MapHoverPermission.createForLiveScreen()::isCursorLocatable);
+            MapHoverPermission.createForLiveScreen()::isCursorLocatable,
+            systemKey -> SectorStarSystems.findSystemByKey(machinery.resolveSector(), systemKey));
     }
 
     // Answers the moment the frame just closed settled on, that frame's last pass having had the
@@ -377,13 +398,17 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
         if (hoverPublisher == null) {
             return;
         }
+
         hoverPublisher.announceSettledArrival();
     }
 
     // What the showing screen's frame is painted under, for a beat that is not carrying the
     // preparation's reading of the screen.
     private S resolveLiveSubject() {
-        return parts.subjectRead().apply(liveScreenSource.get());
+
+        return parts
+            .subjectRead()
+            .apply(liveScreenSource.get());
     }
 
     // A frame with nothing to paint reads no cursor on any of its passes and leaves no cell lit
@@ -411,6 +436,7 @@ public final class SequencedMapLayerRenderer<S> implements MapLayerRenderer {
         if (!KmuLoggingSettings.areReflectionProbesEnabled()) {
             return;
         }
+
         iconOrderTrace.traceWhenChanged();
         widgetsUnderCursorTrace.traceWhenChanged();
     }

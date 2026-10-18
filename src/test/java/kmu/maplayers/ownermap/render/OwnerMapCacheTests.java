@@ -12,6 +12,7 @@ import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.sidebar.FilterSelection;
@@ -226,6 +227,51 @@ final class OwnerMapCacheTests {
                 argThat(walk -> walk.sector() == emptySectorMock),
                 any(),
                 eq(Set.of(MARKED_CELL))));
+        }
+
+        @Test
+        void announcesARebuildOfWhatItDraws() {
+            // What the hover box keeps its composed reading against: a box read before the rebuild
+            // describes a map that is no longer drawn.
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            assertThat(readDrawListsRevision())
+                .isEqualTo(1);
+        }
+
+        @Test
+        void announcesAFoldOfAMarkedSystem() {
+            // A fold redraws only the marked systems, and the hovered one may be among them.
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            emptySectorMachinery.resolveRefreshBoard().markSystemGroupingStale(MARKED_CELL);
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            assertThat(readDrawListsRevision())
+                .isEqualTo(2);
+        }
+
+        @Test
+        void announcesNothingOnAFrameOwingNothing() {
+            // Nearly every frame: a raise here would drop the hover box's reading every frame, which
+            // is the per-frame read the box keeps it to avoid.
+            openEverySeamARebuildReaches(OwnerMapClusterFixtures.createClustersOwnedBy(Map.of()));
+
+            var cache = buildCacheOver(emptySectorMachinery);
+
+            cache.refreshDrawLists(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
+            cache.refreshDrawLists(VIEW, SCREEN);
+
+            assertThat(readDrawListsRevision())
+                .isEqualTo(1);
         }
 
         @Test
@@ -524,6 +570,14 @@ final class OwnerMapCacheTests {
                 preferences.uninhabitedOutline(),
                 preferences.filterRecede()),
             CellSeedRule.SEED_DRAWN_SYSTEMS);
+    }
+
+    // How many times the cache over the empty sector announced a rebuild of what it draws.
+    private int readDrawListsRevision() {
+
+        return emptySectorMachinery
+            .resolveRefreshBoard()
+            .getRevision(MapLayerCommonRefreshSignal.DRAW_LISTS);
     }
 
     // Moves the name-format pick the next frame samples.

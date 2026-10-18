@@ -7,7 +7,9 @@ import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.ui.input.UiCursor;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
+import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
+import kmu.maplayers.base.faces.SettledFaces;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayer;
@@ -18,6 +20,7 @@ import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
+import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapKeybindSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -169,6 +172,7 @@ final class BaseSidebarHostTests {
             host.handleKeyPress(eventMock);
 
             verifyNoInteractions(layerSelectionMock);
+
             verify(eventMock, never())
                 .consume();
         }
@@ -249,6 +253,7 @@ final class BaseSidebarHostTests {
             try (var keybindsMock = mockStatic(KmuMapKeybindSettings.class)) {
                 host.handleKeyPress(mockKeyPress(SECOND_KEYCODE));
             }
+
             advanceAWholeTraverse(host);
 
             verify(layerSelectionMock)
@@ -549,6 +554,7 @@ final class BaseSidebarHostTests {
     // A host carrying nothing but the plumbing under test: the shared key handling is the base's, so the
     // per-screen answers are stubbed out rather than bound to either live screen.
     private static SidebarHostFake createHost(ActiveLayerSelection layerSelection) {
+
         return createHost(
             new ScreenLayerPicks(
                 layerSelection,
@@ -561,6 +567,7 @@ final class BaseSidebarHostTests {
     // A host whose own screen is up and whose layers are on it, so what the gate then answers is down to
     // the claim alone.
     private static SidebarHostFake createHostOnAShowingScreen(ScreenClaim screenClaim) {
+
         return createHost(
             createPicks(mockVisibility(true, FULLY_SHOWN)),
             screenClaim,
@@ -570,6 +577,7 @@ final class BaseSidebarHostTests {
     // A host on a showing, unclaimed screen carrying the given show-or-hide pick, so what the gate and the
     // fade then answer is down to that pick alone.
     private static SidebarHostFake createHostWithVisibility(MapLayerVisibility layerVisibility) {
+
         return createHost(
             createPicks(layerVisibility),
             ScreenClaims.createUnclaimedScreen(),
@@ -596,6 +604,7 @@ final class BaseSidebarHostTests {
     // One screen's picks around the given show-or-hide pick, for the cases whose subject is that pick and
     // which have no use for the tab beside it.
     private static ScreenLayerPicks createPicks(MapLayerVisibility layerVisibility) {
+
         return new ScreenLayerPicks(
             mock(ActiveLayerSelection.class),
             standAControlOver(layerVisibility),
@@ -608,6 +617,7 @@ final class BaseSidebarHostTests {
     private static ControlBackedMapLayerVisibility standAControlOver(MapLayerVisibility storedVisibility) {
 
         var layerControl = new ControlBackedMapLayerVisibility(storedVisibility);
+
         layerControl.recordControlAttached();
 
         return layerControl;
@@ -632,6 +642,7 @@ final class BaseSidebarHostTests {
     // LWJGL, there being no display under a unit test to point at; a placement with no tabs laid in it and
     // no collapse handle then leaves the frame nothing to hover whatever the stub answers.
     private static void advanceAWholeTraverse(SidebarHostFake host) {
+
         try (var cursorMock = mockStatic(UiCursor.class)) {
 
             cursorMock
@@ -648,10 +659,97 @@ final class BaseSidebarHostTests {
         }
     }
 
+    @Nested
+    class ResolveTabStyle {
+
+        private final SettledFaces settledFacesMock = mock(SettledFaces.class);
+
+        @Test
+        void keepsTheComposedStyleWhileNothingMoves() {
+            // The panel is laid out and painted every frame it shows, from a style that only a setting
+            // or a different sector can change.
+            try (var settingsMock = mockStatic(KmuLunaSettings.class);
+                 var facesMock = mockStatic(SettledFaces.class)) {
+
+                settingsMock
+                    .when(KmuLunaSettings::getSettingsRevision)
+                    .thenReturn(1);
+                facesMock
+                    .when(SettledFaces::resolveFacesForLiveSector)
+                    .thenReturn(settledFacesMock);
+
+                var host = createHost(mock(ActiveLayerSelection.class));
+                var firstStyle = host.resolveTabStyle();
+
+                assertThat(host.resolveTabStyle())
+                    .isSameAs(firstStyle);
+                assertThat(host.tabStyleCompositionCount)
+                    .isEqualTo(1);
+            }
+        }
+
+        @Test
+        void composesAgainOnceASettingMoves() {
+            // Every knob the style reads is one of KMU's settings - the colour scheme, the sharpness -
+            // so a moved revision is a style that may read differently.
+            try (var settingsMock = mockStatic(KmuLunaSettings.class);
+                 var facesMock = mockStatic(SettledFaces.class)) {
+
+                settingsMock
+                    .when(KmuLunaSettings::getSettingsRevision)
+                    .thenReturn(1);
+                facesMock
+                    .when(SettledFaces::resolveFacesForLiveSector)
+                    .thenReturn(settledFacesMock);
+
+                var host = createHost(mock(ActiveLayerSelection.class));
+                var firstStyle = host.resolveTabStyle();
+
+                settingsMock
+                    .when(KmuLunaSettings::getSettingsRevision)
+                    .thenReturn(2);
+
+                assertThat(host.resolveTabStyle())
+                    .isNotSameAs(firstStyle);
+                assertThat(host.tabStyleCompositionCount)
+                    .isEqualTo(2);
+            }
+        }
+
+        @Test
+        void composesAgainOnceAnotherSectorsFacesAreOnScreen() {
+            // The tab face is settled against the sector's own names, so a style kept across a load
+            // would letter the next sector's tabs in a face settled for the last one's.
+            try (var settingsMock = mockStatic(KmuLunaSettings.class);
+                 var facesMock = mockStatic(SettledFaces.class)) {
+
+                settingsMock
+                    .when(KmuLunaSettings::getSettingsRevision)
+                    .thenReturn(1);
+                facesMock
+                    .when(SettledFaces::resolveFacesForLiveSector)
+                    .thenReturn(settledFacesMock);
+
+                var host = createHost(mock(ActiveLayerSelection.class));
+                var firstStyle = host.resolveTabStyle();
+
+                facesMock
+                    .when(SettledFaces::resolveFacesForLiveSector)
+                    .thenReturn(mock(SettledFaces.class));
+
+                assertThat(host.resolveTabStyle())
+                    .isNotSameAs(firstStyle);
+                assertThat(host.tabStyleCompositionCount)
+                    .isEqualTo(2);
+            }
+        }
+    }
+
     // How far onto the hovered shade one of the host's tabs stands, read the way the render pass reads it -
     // through the interaction sources, which is where a blink and a hover are composed into the one value a
     // strip paints from.
     private static float hoverFractionAt(SidebarHostFake host, int tabIndex) {
+
         return host
             .getController()
             .getInteractionSources()
@@ -674,13 +772,18 @@ final class BaseSidebarHostTests {
     // handling and the shared half of the gate are under test here, and each concrete host pins its own
     // screen read, anchor, edges, and look. A host resolving no placement is never asked to paint, so it
     // has no look to give.
-    private static final class SidebarHostFake extends BaseSidebarHost {
+    private static final class SidebarHostFake
+            extends BaseSidebarHost {
 
         private final boolean isHostScreenShowing;
 
         // How often the screen half of the gate was asked, so "the console short-circuits it" can be
         // pinned as never reached rather than merely as an answer that came out false anyway.
         private int screenReadCount;
+
+        // How often a tab style was composed, so the memo in front of it is observed as a composition
+        // not made rather than as an equal style handed back.
+        private int tabStyleCompositionCount;
 
         private SidebarHostFake(
                 SidebarFoldSelection foldSelection,
@@ -705,6 +808,13 @@ final class BaseSidebarHostTests {
         @Override
         public Set<BoxEdge> resolveBorderEdges(TabPanelPlacement placement) {
             return BoxEdge.ALL;
+        }
+
+        @Override
+        protected TabStyle composeTabStyle() {
+
+            tabStyleCompositionCount++;
+            return mock(TabStyle.class);
         }
 
         @Override

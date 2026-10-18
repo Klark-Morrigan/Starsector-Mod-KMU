@@ -179,7 +179,7 @@ public final class SystemClaimTooltip
             ClaimContestBlock.values(),
             block -> buildListedEntries(
                 reading,
-                block.selectStandings(contest),
+                contest.selectStandingsIn(block),
                 block.isStatingEligibilityOnLine()));
 
         // How deep the box goes goes back beside the blocks, judged on the very contest they were
@@ -226,18 +226,6 @@ public final class SystemClaimTooltip
         // holds beside it; no patrol enters the arithmetic anywhere, so the level below has nothing to
         // show and the cycle collapses from here instead of offering it.
         return HoverTooltipDetailLevel.MARKET_STATS;
-    }
-
-    @Override
-    public HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
-            SectorAPI sector,
-            StarSystemAPI system) {
-
-        // The deeper tiers account for the colonies behind the factions this box lists, so a box
-        // listing none has nothing for them to account for: every level would state the same claim
-        // line and the key would do nothing the player could see.
-        return resolveDeepestHeldLevel(readListedContest(new SectorPassIndex(sector), system)
-            .hasListedStanding());
     }
 
     // What hangs beneath one listed faction as the account of where its standing came from.

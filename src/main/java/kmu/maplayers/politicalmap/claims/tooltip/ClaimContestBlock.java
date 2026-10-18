@@ -1,12 +1,9 @@
 package kmu.maplayers.politicalmap.claims.tooltip;
 
-import kmlib.starsector.systems.claims.FactionClaimStanding;
-
 import kmu.maplayers.politicalmap.tooltip.ContestBlockHeading;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
 import kmu.util.KmuPoliticalMapStringKeys;
 
-import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -19,11 +16,12 @@ import java.util.function.Function;
  * claim and end on eligibility, while those name blocs by how they stand to a system's holder and end
  * on candidacy.
  *
- * <p>Each block carries the three things that make it itself: the heading it draws under, which of
- * the contest's standings it takes, and whether its lines have to say which of them could have taken
- * the system. The third follows from the first - a block headed by an eligibility needs no line
- * repeating it, while the two headed by a relation take both kinds and can tell them apart nowhere
- * else - so the pairing is declared here rather than decided again wherever the lines are built.
+ * <p>Each block carries the two things that make it itself: the heading it draws under, and whether
+ * its lines have to say which of its factions could have taken the system. The second follows from the
+ * first - a block headed by an eligibility needs no line repeating it, while the two headed by a
+ * relation take both kinds and can tell them apart nowhere else - so the pairing is declared here
+ * rather than decided again wherever the lines are built. Which standings each block takes is the
+ * contest's, routed once for every block ({@link ListedClaimContest}).
  *
  * <p>The claim block is deliberately not among them. It names the claimant rather than selecting over
  * the standings, and what it lists turns on what the banner above it said, so it is appended on its
@@ -35,7 +33,6 @@ enum ClaimContestBlock implements ContestBlockHeading {
     ALLIED(
         ContestBlockHeading.createFixedKeySource(
             KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER),
-        ListedClaimContest::selectAlliedStandings,
         ClaimContestBlock.IS_STATING_ELIGIBILITY_ON_LINE),
 
     /**
@@ -46,7 +43,6 @@ enum ClaimContestBlock implements ContestBlockHeading {
     FRIENDLY(
         ContestBlockHeading.createFixedKeySource(
             KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER),
-        ListedClaimContest::selectFriendlyStandings,
         ClaimContestBlock.IS_STATING_ELIGIBILITY_ON_LINE),
 
     /**
@@ -57,7 +53,6 @@ enum ClaimContestBlock implements ContestBlockHeading {
      */
     CONTESTED(
         ContestWording::resolveHeadingKey,
-        contest -> contest.selectRivalStandings(FactionClaimStanding::isTerritorial),
         ClaimContestBlock.IS_ELIGIBILITY_LEFT_TO_THE_HEADING),
 
     /**
@@ -67,7 +62,6 @@ enum ClaimContestBlock implements ContestBlockHeading {
     NON_TERRITORIAL(
         ContestBlockHeading.createFixedKeySource(
             KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
-        contest -> contest.selectRivalStandings(standing -> !standing.isTerritorial()),
         ClaimContestBlock.IS_ELIGIBILITY_LEFT_TO_THE_HEADING);
 
     // Whether the block's lines have to say which of the factions listed could have taken the system.
@@ -78,16 +72,13 @@ enum ClaimContestBlock implements ContestBlockHeading {
     private static final boolean IS_ELIGIBILITY_LEFT_TO_THE_HEADING = false;
 
     private final Function<ContestWording, String> headingKeySource;
-    private final Function<ListedClaimContest, List<FactionClaimStanding>> standingsSource;
     private final boolean isStatingEligibilityOnLine;
 
     ClaimContestBlock(
             Function<ContestWording, String> headingKeySource,
-            Function<ListedClaimContest, List<FactionClaimStanding>> standingsSource,
             boolean isStatingEligibilityOnLine) {
 
         this.headingKeySource = headingKeySource;
-        this.standingsSource = standingsSource;
         this.isStatingEligibilityOnLine = isStatingEligibilityOnLine;
     }
 
@@ -103,15 +94,5 @@ enum ClaimContestBlock implements ContestBlockHeading {
      */
     boolean isStatingEligibilityOnLine() {
         return isStatingEligibilityOnLine;
-    }
-
-    /**
-     * The standings this block lists, out of the one contest the whole box was read from.
-     *
-     * @param contest the hovered system's contest as the box may state it
-     * @return the standings in the order the breakdown handed them over, strongest first
-     */
-    List<FactionClaimStanding> selectStandings(ListedClaimContest contest) {
-        return standingsSource.apply(contest);
     }
 }

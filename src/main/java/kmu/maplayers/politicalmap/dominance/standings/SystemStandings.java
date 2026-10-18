@@ -7,6 +7,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -58,25 +59,32 @@ public final class SystemStandings {
 
     /**
      * Ranks the one hovered system's factions into two-tier standings under a pass's rule, dev
-     * reveal, and grouping: reads who is present in the system beside each faction's footprint in
-     * it, then folds and ranks both through the pure rule below. The live entry the tooltip
-     * resolves a hover through.
+     * reveal, and grouping: reads who is present in the system, folds each faction's weighed
+     * markets into its footprint, then ranks both through the pure rule below. The live entry the
+     * tooltip resolves a hover through.
      *
-     * <p>Both reads come off the pass's one walk of the system, so who is present and what was
-     * weighed for them are two readings of one set of colonies rather than two walks that can part
-     * company.
+     * <p>Taken over the weights the caller already read rather than reading them here, because the
+     * box that ranks a system goes on to explain each score from the same weights: read twice, every
+     * market in the system would be weighed twice for one hover. Both they and the presence come
+     * off the pass's one walk of the system, so who is present and what was weighed for them are
+     * two readings of one set of colonies rather than two walks that can part company.
      *
-     * @param system the hovered system whose colonies are ranked
-     * @param pass   the weighting rule, colony rule, grouping and colony walk this ranking resolves
-     *               under, sampled once by the caller so the whole ranking uses one set of knobs
+     * @param system                the hovered system whose colonies are ranked
+     * @param pass                  the colony rule, grouping and colony walk this ranking resolves
+     *                              under, sampled once by the caller so the whole ranking uses one
+     *                              set of knobs
+     * @param breakdownsByFactionId each faction's weighed markets in the system, as the pass read
+     *                              them
      * @return the system's groups ranked descending by summed score, each with its members ranked
      *         within; empty when the player knows of no colony there
      */
     public static List<GroupStanding> rankByDominationScore(
             StarSystemAPI system,
-            DominancePass pass) {
+            DominancePass pass,
+            Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
+
         return rankByDominationScore(
-            pass.readFootprintsByFaction(system),
+            KnownMarketFootprints.foldFootprintsByFaction(breakdownsByFactionId),
             pass.readKnownColonyFactionIds(system),
             pass.grouping());
     }

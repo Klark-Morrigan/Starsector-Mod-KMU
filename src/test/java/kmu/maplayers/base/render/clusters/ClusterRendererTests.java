@@ -1,6 +1,5 @@
 package kmu.maplayers.base.render.clusters;
 
-import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.render.MapFrame;
@@ -12,8 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,6 +45,7 @@ final class ClusterRendererTests {
 
         @Test
         void readsNoDrawListsWhenThereIsNothingToPaint() {
+
             var drawListsFake = new ClusterDrawListsFake(true);
 
             ClusterRenderer.renderFillsOnMap(drawListsFake, PAINTING_FRAME);
@@ -74,6 +72,7 @@ final class ClusterRendererTests {
 
         @Test
         void readsNoDrawListsWhenThereIsNothingToPaint() {
+
             var drawListsFake = new ClusterDrawListsFake(true);
 
             ClusterRenderer.renderBordersOnMap(drawListsFake, PAINTING_FRAME);
@@ -95,8 +94,8 @@ final class ClusterRendererTests {
         }
     }
 
-    // A hand-built draw list that reports whether the pass got past the guard. It answers the two
-    // maps and the global tier only after recording the read, so "nothing was painted" is observed
+    // A hand-built draw list that reports whether the pass got past the guard. It answers the cells,
+    // the clusters and the global tier only after recording the read, so "nothing was painted" is observed
     // where the emission would first reach for something to paint - which is checkable without a
     // GL context, unlike the emission itself.
     private static final class ClusterDrawListsFake implements ClusterDrawLists {
@@ -118,20 +117,33 @@ final class ClusterRendererTests {
 
         @Override
         public GlobalStyle getGlobalStyle() {
+
             hasReadDrawLists = true;
             return ThemeFixtures.createInertGlobalStyle();
         }
 
         @Override
-        public Map<SystemKey, StyledCell> getStyledCellByCellKey() {
+        public List<StyledCell.FusedCell> getFusedCells() {
+
             hasReadDrawLists = true;
-            return Map.of(
-                buildCellKey("cell"),
-                new StyledCell.FusedCell(new float[0], HIDDEN_PAINT, 0f));
+            return List.of(new StyledCell.FusedCell(new float[0], HIDDEN_PAINT, 0f));
+        }
+
+        @Override
+        public List<StyledCell.LoneCell> getLoneCells() {
+
+            hasReadDrawLists = true;
+            return List.of(new StyledCell.LoneCell(
+                new float[0],
+                new float[0],
+                HIDDEN_PAINT,
+                HIDDEN_PAINT,
+                0f));
         }
 
         @Override
         public Map<String, StyledClusterGroup> getStyledClusterGroupByOwnerId() {
+
             hasReadDrawLists = true;
             return Map.of(
                 "owner",

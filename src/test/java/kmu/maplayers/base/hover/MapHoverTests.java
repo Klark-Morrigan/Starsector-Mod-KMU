@@ -24,18 +24,26 @@ final class MapHoverTests {
 
         @Test
         void isFalseForNone() {
-            assertThat(MapHover.NONE.isHovering()).isFalse();
-            assertThat(MapHover.NONE.clusterMemberSystemKeys()).isEmpty();
+
+            assertThat(MapHover.NONE.isHovering())
+                .isFalse();
+            assertThat(MapHover.NONE.hoveredSystem())
+                .isNull();
+            assertThat(MapHover.NONE.clusterMemberSystemKeys())
+                .isEmpty();
         }
 
         @Test
         void isTrueWhenACellResolved() {
-            var hover = new MapHover(
+
+            var hover = MapHoverFixture.buildHoverOn(
                 buildCellKey("system"),
                 buildCellKeys("system", "neighbour"));
 
-            assertThat(hover.isHovering()).isTrue();
-            assertThat(hover.hoveredSystemKey()).isEqualTo(buildCellKey("system"));
+            assertThat(hover.isHovering())
+                .isTrue();
+            assertThat(hover.hoveredSystemKey())
+                .isEqualTo(buildCellKey("system"));
             assertThat(hover.clusterMemberSystemKeys())
                 .containsExactlyElementsOf(buildCellKeys("system", "neighbour"));
         }
@@ -46,8 +54,9 @@ final class MapHoverTests {
 
         @Test
         void ignoreLaterEditsToTheCallersList() {
+
             var callersMembers = new ArrayList<>(buildCellKeys("system"));
-            var hover = new MapHover(buildCellKey("system"), callersMembers);
+            var hover = MapHoverFixture.buildHoverOn(buildCellKey("system"), callersMembers);
 
             callersMembers.add(buildCellKey("added-after-publishing"));
 
@@ -57,11 +66,13 @@ final class MapHoverTests {
 
         @Test
         void cannotBeModified() {
-            var hover = new MapHover(buildCellKey("system"), buildCellKeys("system"));
 
-            assertThatThrownBy(() ->
-                    hover.clusterMemberSystemKeys().add(buildCellKey("intruder")))
-                    .isInstanceOf(UnsupportedOperationException.class);
+            var hover = MapHoverFixture.buildHoverOn(buildCellKey("system"), buildCellKeys("system"));
+
+            assertThatThrownBy(() -> hover
+                    .clusterMemberSystemKeys()
+                    .add(buildCellKey("intruder")))
+                .isInstanceOf(UnsupportedOperationException.class);
         }
     }
 }

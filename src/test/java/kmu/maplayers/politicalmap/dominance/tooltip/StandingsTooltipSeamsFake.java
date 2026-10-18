@@ -17,6 +17,7 @@ import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
@@ -33,6 +34,7 @@ import java.util.Optional;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.atLeastOnce;
@@ -214,7 +216,8 @@ public final class StandingsTooltipSeamsFake {
         standingsMock
             .when(() -> SystemStandings.rankByDominationScore(
                 any(StarSystemAPI.class),
-                any(DominancePass.class)))
+                any(DominancePass.class),
+                anyMap()))
             .thenReturn(List.copyOf(rankedStandings));
 
         // Every box gets the one stand-in resolver, which answers each block with that block's entries.
@@ -247,6 +250,20 @@ public final class StandingsTooltipSeamsFake {
             .thenReturn(Optional.of(statusRow));
 
         return statusRow;
+    }
+
+    /**
+     * Asserts the system was ranked over the given weights - the very ones the box read, rather than a
+     * reading of the ranking's own.
+     *
+     * @param breakdownsByFactionId the weights the box is expected to have handed the ranking
+     */
+    public static void verifyRankedOver(Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
+
+        standingsMock.verify(() -> SystemStandings.rankByDominationScore(
+            any(StarSystemAPI.class),
+            any(DominancePass.class),
+            same(breakdownsByFactionId)));
     }
 
     /** Asserts the pass was read under the grouping the injecting view answered with. */

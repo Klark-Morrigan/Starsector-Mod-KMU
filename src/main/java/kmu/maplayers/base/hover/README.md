@@ -19,7 +19,10 @@ Part of [the map layers framework](../../README.md).
 
 ## The values
 
-`MapHover` is the hovered cell and the cluster around it.
+`MapHover` is the hovered cell and the cluster around it,
+with the live system the cell names riding beside its key.
+The system is looked up where the cursor reaches the cell and carried on from the last reading while it stays there,
+so the box drawing every frame the cursor rests walks no system to find it.
 `MapHoverState` is the holder the map render pass publishes to and the later UI passes read,
 since only that pass can invert a cursor pixel to a world point -
 one per sector,
@@ -56,9 +59,14 @@ since a second reading of which screens may resolve a hover could only come to d
 
 It also answers the *moment* the cursor reaches a cell,
 over KMLib's own `KeyedHoverArrival`:
-one latch for the tick the player hears and the line the trace prints,
-since both ask the same question
-and two would be two chances to disagree about when the cursor got somewhere.
+one latch for the tick the player hears,
+the line the trace prints
+and the arrival count `MapHoverState` keeps,
+since all three ask the same question
+and two latches would be two chances to disagree about when the cursor got somewhere.
+The count is what work held for one visit to a cell is kept against -
+the hover box's composition -
+since the hover itself is parked and published again on every frame a foreign map draws.
 The latch is stepped only by a hit-test that actually ran:
 a frame with no draw lists or no readable transform clears the hover like any other park
 but leaves the last cell the cursor was *seen* on standing,

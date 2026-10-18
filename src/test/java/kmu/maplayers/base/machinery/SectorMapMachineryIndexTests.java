@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.refresh.MovableSystemSectorFake;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -257,7 +258,9 @@ class SectorMapMachineryIndexTests {
             SectorMapMachineryIndex
                 .installMachineryOn(sectorMock)
                 .resolveHoverState()
-                .publishHover(new MapHover(buildCellKey(HOVERED_SYSTEM_ID), List.of(buildCellKey(HOVERED_SYSTEM_ID))));
+                .publishHover(MapHoverFixture.buildHoverOn(
+                    buildCellKey(HOVERED_SYSTEM_ID),
+                    List.of(buildCellKey(HOVERED_SYSTEM_ID))));
 
             SectorMapMachineryIndex.disposeAllMachinery();
 

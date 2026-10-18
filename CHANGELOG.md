@@ -24,7 +24,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- **Minor optimisations**. The political map does less repeated work when it redraws: faction colours, each owner's paint and the border settings are read once per redraw rather than once per system or cell.
+- **Minor optimisations**. The political map does less repeated work when it redraws: faction colours, each owner's paint and the border settings are read once per redraw rather than once per system or cell. The hover box reads the system under the cursor once while the cursor rests there, rather than on every frame, and reads it again when the map is redrawn or you move back onto the system.
 
 ### For developers
 
@@ -33,6 +33,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Added
 
+- **The hover box is profiled**, as `mapLayer.hoverBox.paint` for each frame it draws and `mapLayer.hoverBox.compose` for each time it reads the sector.
+- **`CellBoxMemo`**: the box a sector last composed, kept while nothing it was read under moves.
+- **`MapLayerCommonRefreshSignal.DRAW_LISTS`**: raised by the overlay cache once it has rebuilt what it draws, in full or for marked systems.
+- **`MapHoverState.getCellArrivalCount()`**: how many times the cursor has reached a cell it was not on, for work held for one visit to a cell.
+- **`KnownMarketFootprints.foldFootprintsByFaction(Map)`**: the footprints folded out of breakdowns already read.
 - **`ColonyKind.isUngoverned()`**: whether a place is people living under nobody's authority, for every reader telling governed colonies from ungoverned ones.
 - **`FactionStanding.isWeighed()`**: whether the pass weighed the faction's colonies, so a reader branching on the kind asks rather than testing the sealed type.
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**: the mark a faction's line opens on, for a line marked as that faction's.
@@ -153,6 +158,12 @@ The build closes `kmu.maplayers.base` to `kmu.mods`, `kmu.conditions` and `kmu.m
 | `FactionAllianceSource.readAlliances()`, `FactionAllianceRegistry.readAlliances()` and `ColonyKnowledge.observingUnderTheFog()` | Each takes the `SectorAPI` whose alliances are asked for |
 | `StarsectorMarketUiContextResolver()`, `StarsectorInteractionDialogPickerOpener()` and `StarsectorConditionPickerFeedbackSink()`, reading the running game's sector | Gone: each takes the `SectorAPI` the console command resolves once |
 | `KmuConditionPickerEditor(KmuConditionService, KmuConditionPickerDialogOpener)`, its three-argument form, and `KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler)` and `(KmuConditionPickerActionHandler, float, float)` | Each also takes the `KmuConditionPickerFeedbackSink` a picker reports to |
+| `MapHover(SystemKey, List)` | `MapHover(SystemKey, StarSystemAPI, List)`: the hover carries the live system its key named when the cursor reached the cell |
+| `MapHoverPublisher(MapHoverState, ModelviewMatrixReader, CellArrivalAnnouncer, BooleanSupplier)` | Also takes the `Function<SystemKey, StarSystemAPI>` it finds the hovered system with, asked once per cell reached |
+| `ClusterDrawLists.getStyledCellByCellKey()` | `getFusedCells()` and `getLoneCells()`, parted once per rebuild. `OwnerMapClusters` and `PaintedCellStore` keep `getStyledCellByCellKey()`, now read-only: write through `putPaintedCell` and `removePaintedCell` |
+| `BaseSidebarHost` | A host implements `composeTabStyle()` and reads `resolveTabStyle()`, which keeps the style until the settings revision or the sector's settled faces move |
+| `resolveDeepestHeldLevelFor(SectorAPI, StarSystemAPI)` on `SystemCellTooltip`, `PoliticalMapCellTooltip`, `SystemClaimTooltip` and `SystemDominationTooltip` | Gone: the press reads `deepestHeldLevel()` off the composed body the paint holds, so a layer states its depth only in `composeBody` |
+| `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`, over the weights the caller read, so a box ranking a system and explaining its scores weighs each market once |
 
 ##### Moved to KMLib
 

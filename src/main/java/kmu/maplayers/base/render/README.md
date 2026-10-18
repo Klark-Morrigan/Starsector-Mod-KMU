@@ -554,6 +554,18 @@ each adding one thing:
 the stand-aside,
 then the band.
 
+The stand-aside asks whether a Starscape map is on screen,
+and both Starscape surfaces ask it on every frame a map is up,
+in either look.
+The answer walks the intel screen's live widgets
+and cannot move between two surfaces of one frame,
+so it is settled once per frame and sector by `StarscapeFrameRead`,
+kept against the frame boundary `MapFramePreparationClaim` already sees.
+Before any boundary is seen every ask reads afresh,
+the same fail-open the claim takes.
+The read itself goes through the one `MapPresence` binding the base surface holds,
+so no surface carries a binding of its own.
+
 `MapLayerTerrainInstaller` is what puts any of them into a loaded save
 and keeps exactly one of each there,
 and it owns the type IDs they are built under.

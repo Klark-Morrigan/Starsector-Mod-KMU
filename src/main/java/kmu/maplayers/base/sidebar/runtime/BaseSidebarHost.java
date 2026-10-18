@@ -8,13 +8,16 @@ import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 import kmlib.starsector.ui.widgets.tabs.TabPanelHotkeys;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabStrip;
+import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
+import kmu.maplayers.base.faces.SettledFaces;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
+import kmu.settings.KmuLunaSettings;
 
 import java.util.List;
 
@@ -52,7 +55,8 @@ import java.util.List;
  * matters because hosts are process-lifetime singletons: without the reseed, one save's panel state would
  * carry into the next save loaded in the same run.
  */
-public abstract class BaseSidebarHost implements SidebarHost {
+public abstract class BaseSidebarHost
+        implements SidebarHost {
 
     // The two ends of the panel's own alpha: wholly painted, and gone. A claim's strength is subtracted
     // from the first, so what a claim reports is named where claims are and never mirrored here.
@@ -86,6 +90,13 @@ public abstract class BaseSidebarHost implements SidebarHost {
     // was actually drawn rather than laying out one of their own. Null whenever nothing is on screen: the
     // draw drops it as it stands down, so no pass can hit-test a panel that has left.
     private TabPanelPlacement drawnPlacement;
+
+    // The tab style this host last composed, and the two things it was composed under: KMU's settings,
+    // which every knob the style reads is one of, and the faces the sector on screen settled, which the
+    // tab face is taken from. Null until first asked for.
+    private TabStyle memoisedTabStyle;
+    private int memoisedSettingsRevision;
+    private SettledFaces memoisedFaces;
 
     /**
      * A host whose fold persists in the save under the same screen its picks are held for, which is what
@@ -125,6 +136,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
         this.foldSelection = foldSelection;
         this.screenPicks = screenPicks;
         this.screenClaim = screenClaim;
+
         // The seed takes the library's own balance rather than the player's, being the one controller
         // nothing can be heard through: a host is a process-lifetime singleton built before any sector
         // exists, so no panel is on screen for a pointer to reach until the load below replaces it. What
@@ -155,6 +167,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
         if (visibility.areLayersShown()) {
             return hostScreenState;
         }
+
         // The fade is consulted only for a screen already switched off, so a shown screen's line costs
         // the pick alone: the reading behind it takes a clock and the hide-pace setting with it.
         var hidingState = visibility.resolveShownFade() > FULLY_HIDDEN
@@ -174,6 +187,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
      */
     @Override
     public final TabPanelPlacement refreshPlacement() {
+
         drawnPlacement = computePlacement();
         return drawnPlacement;
     }
@@ -216,6 +230,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
      */
     @Override
     public final void handleKeyPress(InputEventAPI event) {
+
         var layers = ScreenLayerTabs.resolveTabbedLayers(screenPicks);
         var tabIndex = TabPanelHotkeys.findTabForKey(
             event.getEventValue(),
@@ -224,7 +239,11 @@ public abstract class BaseSidebarHost implements SidebarHost {
         if (tabIndex == TabStrip.NO_TAB) {
             return;
         }
-        screenPicks.layerSelection().selectLayer(layers.get(tabIndex));
+
+        screenPicks
+            .layerSelection()
+            .selectLayer(layers.get(tabIndex));
+
         controller.startHotkeyBlinkAt(tabIndex);
         event.consume();
     }
@@ -246,6 +265,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
      */
     @Override
     public final boolean isOverlayShowing() {
+
         // Cheapest first. The claim settles the console with a field read; the pick behind it is a lookup
         // in sector memory; the screen read walks live widgets. The likelier order would put the screen
         // first - the panel's screens are off far more often than anything claims them or the layers are
@@ -272,10 +292,10 @@ public abstract class BaseSidebarHost implements SidebarHost {
         if (claimFade <= HIDDEN) {
             return HIDDEN;
         }
+
         // The two dissolves compose rather than one winning, which is what lets a modal raised over a
         // panel already thinning darken over it: neither has to know the other is running.
         var fade = claimFade * screenPicks.layerVisibility().resolveShownFade();
-
         return fade <= HIDDEN || !isHostScreenShowing()
             ? HIDDEN
             : fade;
@@ -288,6 +308,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
      */
     @Override
     public final void restoreFoldFromSave() {
+
         // The first controller a player can actually reach, so this is where the panel's own balance
         // arrives: composed from the sliders rather than taken from the library, and composed afresh on
         // each load so a level changed between saves is answered at the next one.
@@ -306,6 +327,14 @@ public abstract class BaseSidebarHost implements SidebarHost {
     protected abstract TabPanelPlacement computePlacement();
 
     /**
+     * Composes this host's tab style from the live settings and faces. Asked through
+     * {@link #resolveTabStyle()} only, which keeps it until either moves.
+     *
+     * @return the tab style this host's screen wears
+     */
+    protected abstract TabStyle composeTabStyle();
+
+    /**
      * @return a short description of this host's own screen state, in its own words - the screen half of
      *         the view-state line, the show-or-hide half being every host's alike and prefixed by
      *         {@link #describeViewState()}
@@ -319,6 +348,33 @@ public abstract class BaseSidebarHost implements SidebarHost {
      */
     protected final ScreenLayerPicks getScreenPicks() {
         return screenPicks;
+    }
+
+    /**
+     * This host's tab style, composed once and kept until KMU's settings or the sector's settled faces
+     * move.
+     *
+     * <p>Kept because the panel is laid out and painted every frame it shows, and the style behind both
+     * reads the colour scheme, a sharpness knob and a settled face each time it is composed - answers that
+     * move only when a setting does or a different sector is loaded.
+     *
+     * @return the tab style the panel is laid out and painted from this frame
+     */
+    protected final TabStyle resolveTabStyle() {
+
+        var settingsRevision = KmuLunaSettings.getSettingsRevision();
+        var settledFaces = SettledFaces.resolveFacesForLiveSector();
+
+        if (memoisedTabStyle == null
+                || settingsRevision != memoisedSettingsRevision
+                || settledFaces != memoisedFaces) {
+
+            memoisedTabStyle = composeTabStyle();
+            memoisedSettingsRevision = settingsRevision;
+            memoisedFaces = settledFaces;
+        }
+
+        return memoisedTabStyle;
     }
 
     /**
@@ -355,6 +411,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
     // through whatever its own mod stores bindings in; the binder skips a non-positive keycode, so an
     // unbound layer contributes a row without ever matching a press.
     private static List<Integer> resolveLayerKeycodes(List<MapLayer> layers) {
+
         return layers.stream()
             .map(MapLayer::resolveShortcutKeycode)
             .toList();

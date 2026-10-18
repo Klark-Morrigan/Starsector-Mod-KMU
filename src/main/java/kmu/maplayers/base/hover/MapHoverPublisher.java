@@ -1,6 +1,7 @@
 package kmu.maplayers.base.hover;
 
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.input.KeyedHoverArrival;
@@ -13,6 +14,7 @@ import kmu.maplayers.base.geometry.CellHitTest;
 import org.apache.log4j.Logger;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 
 /**
  * Works out which cell the cursor is over on the map, publishes it for the frame, and answers the
@@ -38,11 +40,12 @@ import java.util.function.BooleanSupplier;
  *
  * <p>Which frames are an <em>arrival</em> is the same question the trace has always asked - the cell
  * changed under a cursor that was somewhere else before - so one {@link KeyedHoverArrival} answers
- * both what is sounded and what is logged. Two latches over one question would be two chances to
- * disagree about when the cursor got somewhere, and a tick without a line beside it is exactly the
- * moment the trace exists to explain.
+ * what is sounded, what is logged and what the hover state counts as a fresh visit. Two latches over
+ * one question would be two chances to disagree about when the cursor got somewhere, and a tick
+ * without a line beside it is exactly the moment the trace exists to explain.
  */
 public final class MapHoverPublisher {
+
     private static final Logger LOG = Global.getLogger(MapHoverPublisher.class);
 
     // Whether the cursor has just reached a cell it was not on. Keyed by the cell rather than by the
@@ -67,6 +70,11 @@ public final class MapHoverPublisher {
     // renderer underneath cannot change while the game runs, so the binding is a fixed collaborator
     // of this publisher's session-long life.
     private final ModelviewMatrixReader modelviewMatrixReader;
+
+    // Finds the live system a hovered key names, in the sector whose map this publisher reads. A
+    // walk of every system, so it is asked only when the cursor reaches a cell it was not on - the
+    // hover carries the answer on from there.
+    private final Function<SystemKey, StarSystemAPI> findSystemByKey;
 
     // Where this publisher's answer is left for the passes that need it. One sector's, handed over
     // at construction rather than resolved per publish: a publisher belongs to the machinery of the
@@ -95,17 +103,21 @@ public final class MapHoverPublisher {
      * @param isCursorLocatableOnThisPass whether the pass now running is one the cursor can be
      *                                    located against, from
      *                                    {@code MapHoverGates#isCursorLocatableOn}
+     * @param findSystemByKey             finds the live system a key names in the sector whose
+     *                                    map this publisher reads, or null where it names none
      */
     public MapHoverPublisher(
             MapHoverState hoverState,
             ModelviewMatrixReader modelviewMatrixReader,
             CellArrivalAnnouncer cellArrivalAnnouncer,
-            BooleanSupplier isCursorLocatableOnThisPass) {
+            BooleanSupplier isCursorLocatableOnThisPass,
+            Function<SystemKey, StarSystemAPI> findSystemByKey) {
 
         this.hoverState = hoverState;
         this.modelviewMatrixReader = modelviewMatrixReader;
         this.cellArrivalAnnouncer = cellArrivalAnnouncer;
         this.isCursorLocatableOnThisPass = isCursorLocatableOnThisPass;
+        this.findSystemByKey = findSystemByKey;
     }
 
     /**
@@ -126,16 +138,21 @@ public final class MapHoverPublisher {
         if (settledCellReading == null) {
             return;
         }
+
         // A completed hit test that found no cell is a sighting: the cursor is on nothing. Forgetting
         // the cell is what makes stepping off one and back onto it a fresh arrival, the map being
         // mostly the space between cells.
         if (!settledCellReading.hover().isHovering()) {
+
             cellArrival.resetArrival();
             return;
         }
+
         if (!cellArrival.detectArrivalAt(settledCellReading.hover().hoveredSystemKey())) {
             return;
         }
+
+        hoverState.recordCellArrival();
         cellArrivalAnnouncer.announceCellArrival();
         logHoverArrival(settledCellReading);
     }
@@ -168,23 +185,29 @@ public final class MapHoverPublisher {
         // over - and the point it lands on is inside real cells, so this cannot be left to the
         // guards below to catch: they only reject an answer that fails to arrive.
         if (!isCursorLocatableOnThisPass.getAsBoolean()) {
+
             parkHoverWithoutASighting();
             return;
         }
+
         // Nothing painted, so there are no cell shapes to test the cursor against. That is a
         // missing input rather than an answer about where the cursor is, so the sighting stands.
         if (targets == null) {
+
             parkHoverWithoutASighting();
             return;
         }
+
         // No reading means it could not be trusted - the cursor has left the window, the transform
         // is not the map's, or it will not invert. Which of the three it was does not change the
         // answer here: a cell resolved from an untrustworthy point is worse than none.
         var cursorRead = MapCursor.readCursorDuringMapPass(factor, modelviewMatrixReader);
         if (cursorRead == null) {
+
             parkHoverWithoutASighting();
             return;
         }
+
         var hoveredSystemKey = CellHitTest.resolveSystemKeyAt(
             cursorRead.worldPoint().x,
             cursorRead.worldPoint().y,
@@ -196,10 +219,28 @@ public final class MapHoverPublisher {
             ? MapHover.NONE
             : new MapHover(
                 hoveredSystemKey,
+                resolveHoveredSystem(hoveredSystemKey),
                 targets.getClusterIndex().findClusterMembersOf(hoveredSystemKey));
 
         settledCellReading = new SettledCellReading(hover, cursorRead);
         hoverState.publishHover(hover);
+    }
+
+    // The live system the hovered key names. Carried on from the last completed reading while the
+    // cursor stays on its cell, and looked up only where it reached another one.
+    //
+    // Taken from the reading rather than from the published hover, because a pass that cannot read
+    // parks the hover and leaves the reading standing: a foreign map drawing beside the real one
+    // parks it on every frame, and a lookup keyed off the parked hover would walk the sector each
+    // time.
+    private StarSystemAPI resolveHoveredSystem(SystemKey hoveredSystemKey) {
+
+        if (settledCellReading != null
+                && hoveredSystemKey.equals(settledCellReading.hover().hoveredSystemKey())) {
+
+            return settledCellReading.hover().hoveredSystem();
+        }
+        return findSystemByKey.apply(hoveredSystemKey);
     }
 
     // Parks the hover for a pass whose inputs never arrived, leaving the last sighting standing.
@@ -240,6 +281,7 @@ public final class MapHoverPublisher {
         if (!LOG.isDebugEnabled()) {
             return;
         }
+
         LOG.debug("Map hover resolved; system="
             + settledReading.hover().hoveredSystemKey()
             + " clusterMembers="
@@ -258,6 +300,8 @@ public final class MapHoverPublisher {
      *                   cell
      * @param cursorRead the pixel, the transform and the world point it was resolved through
      */
-    private record SettledCellReading(MapHover hover, MapCursorRead cursorRead) {
+    private record SettledCellReading(
+        MapHover hover,
+        MapCursorRead cursorRead) {
     }
 }

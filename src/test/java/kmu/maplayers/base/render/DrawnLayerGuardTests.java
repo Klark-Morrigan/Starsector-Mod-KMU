@@ -2,7 +2,7 @@ package kmu.maplayers.base.render;
 
 import kmlib.testfixtures.logging.LogAppenderFake;
 
-import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -161,7 +161,7 @@ final class DrawnLayerGuardTests {
 
             machinery
                 .resolveHoverState()
-                .publishHover(new MapHover(hoveredKey, List.of(hoveredKey)));
+                .publishHover(MapHoverFixture.buildHoverOn(hoveredKey, List.of(hoveredKey)));
 
             failTheDrawnLayer();
 

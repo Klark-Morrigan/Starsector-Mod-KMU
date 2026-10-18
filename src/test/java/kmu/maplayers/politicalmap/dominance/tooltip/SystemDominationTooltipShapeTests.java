@@ -23,6 +23,7 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
 import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
 import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeamsFixture;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
@@ -120,7 +122,7 @@ final class SystemDominationTooltipShapeTests {
             claimBreakdownReaderFake,
             sector -> allianceSet,
             ContestWordingFixtures.CONTESTED_WORDING),
-        (system, pass, detailLevel) -> FactionAccountResolver.NO_ACCOUNT);
+        (system, pass, breakdownsByFactionId, detailLevel) -> FactionAccountResolver.NO_ACCOUNT);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
@@ -137,27 +139,28 @@ final class SystemDominationTooltipShapeTests {
 
     @AfterEach
     void clearColoursAndTheRankingSeams() {
+
         StandingsTooltipSeamsFake.clearSeams();
         CellTooltipPaletteFake.clearPalette();
     }
 
     @Nested
-    class ResolveDeepestHeldLevelFor {
+    class ComposeBody {
 
         @Test
-        void offersTheAccountBehindTheScoresRanked() {
+        void reachesTheAccountBehindTheScoresRanked() {
             // What the key at the foot of the box would reach: as deep as the box's own account goes,
             // the deeper tiers accounting for the very scores the shallowest ranks by. How deep that
             // is comes from the box rather than from this shape, which knows only that there is
             // somebody to account for.
             StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
 
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+            assertThat(readComposedDepth())
                 .isEqualTo(HoverTooltipDetailLevel.PATROL_DETAILS);
         }
 
         @Test
-        void offersTheAccountBehindAStandingOverACollapsedSystem() {
+        void reachesTheAccountBehindAStandingOverACollapsedSystem() {
             // The status line and the standings answer different questions of the one pass: a system
             // whose colonies have all collapsed is headed Decivilised and still ranks whoever holds
             // them, and those colonies are exactly what a deeper level opens up. Judged off the
@@ -166,43 +169,18 @@ final class SystemDominationTooltipShapeTests {
             StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
             StandingsTooltipSeamsFake.stubStatusRow("Decivilised");
 
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+            assertThat(readComposedDepth())
                 .isEqualTo(HoverTooltipDetailLevel.PATROL_DETAILS);
         }
 
         @Test
-        void offersNothingForASystemRankingNobody() {
+        void reachesNoDeeperForASystemRankingNobody() {
             // Nobody ranks, so there is no score for a deeper tier to account for and every level
             // would state the same banner - a key press the player could not see the result of. The
             // hint goes with it rather than advertising one.
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+            assertThat(readComposedDepth())
                 .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
-
-        @Test
-        void agreesWithTheDepthThePaintReports() {
-            // The invariant the two-path design rests on, and the one place this shape can break it:
-            // the press ranks the system here while the paint takes the depth off the ranking it
-            // already holds. Drifting, the hint would name a step the key does not take - or the key
-            // would act where the box said it would not.
-            StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(readComposedDepth());
-        }
-
-        @Test
-        void agreesWithThePaintOverASystemRankingNobody() {
-            // The same agreement at the other end, which is the half that would strand a player: a
-            // system nobody ranks in must report the shallowest through both paths, or the key would
-            // act over a box drawing no hint at all.
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(readComposedDepth());
-        }
-    }
-
-    @Nested
-    class ComposeBody {
 
         @Test
         void resolvesTheFactionsWithTheAccountTheBoxAsksFor() {
@@ -510,6 +488,7 @@ final class SystemDominationTooltipShapeTests {
 
     // The leading group as the resolver hands it over: a bloc carrying its crest and summed score.
     private static CellTooltipEntry createLeadingGroupEntry() {
+
         return CellTooltipEntry.createEntry(
             CellTooltipEntryLine.createLine(BLOC_MARK, "Rebel Pact", BLOC_SCORE));
     }
@@ -518,6 +497,7 @@ final class SystemDominationTooltipShapeTests {
     // about a group hands over. The one entry a cut can be read off: what it carries is subordinated,
     // so the shallowest level lists the group alone and the next one down opens it.
     private static CellTooltipEntry createAccountedLeadingGroupEntry() {
+
         return createLeadingGroupEntry()
             .nesting(List.of(CellTooltipEntry.createEntry(
                 CellTooltipEntryLine.createLine(null, "Chicomoztoc", BLOC_SCORE))));
@@ -526,6 +506,7 @@ final class SystemDominationTooltipShapeTests {
     // A second, lower-ranked group, named and scored apart from the leader so a case about which block
     // a group lands in cannot pass by reading the leader's line twice.
     private static CellTooltipEntry createRivalGroupEntry() {
+
         return CellTooltipEntry.createEntry(
             CellTooltipEntryLine.createLine(RIVAL_MARK, "Persean League", RIVAL_SCORE));
     }
@@ -533,6 +514,7 @@ final class SystemDominationTooltipShapeTests {
     // A third group between the two, named and scored apart from both, so a case about the block an
     // alliance routes a group into cannot pass by reading either of the other lines.
     private static CellTooltipEntry createAlliedGroupEntry() {
+
         return CellTooltipEntry.createEntry(
             CellTooltipEntryLine.createLine(ALLY_MARK, "Tri-Tachyon", ALLY_SCORE));
     }
@@ -547,6 +529,7 @@ final class SystemDominationTooltipShapeTests {
     // The three groups every routing case is posed over, ranked leader first: an alliance set states
     // which of them stand together, so the ranking itself is the same in all of them.
     private static void stubThreeGroupsRanked() {
+
         StandingsTooltipSeamsFake.stubRankedGroups(
             List.of(
                 createGroupStanding(LEADER_BLOC),
@@ -566,26 +549,30 @@ final class SystemDominationTooltipShapeTests {
     // the whole tree, so they go through the reading above rather than each naming a level it has no
     // opinion about.
     private List<String> readBodyLabelTextsAt(HoverTooltipDetailLevel detailLevel) {
+
         return readRowOpeningWords(TooltipSection.readRowsInOrder(
             tooltip.composeBody(sectorMock, systemMock, detailLevel).blocks().readSections()));
     }
 
-    // How deep the paint says the box goes, off the body it composed - the counterpart to the
-    // press-time read, taken at the shallowest level since the depth reported is a fact about the
-    // system rather than about how deep this particular paint was asked to read.
+    // How deep the box goes, off the body it composed - the bound the hint and the key both read -
+    // taken at the shallowest level since the depth reported is a fact about the system rather than
+    // about how deep this particular composition was asked to read.
     private HoverTooltipDetailLevel readComposedDepth() {
+
         return tooltip
             .composeBody(sectorMock, systemMock, FACTIONS)
             .deepestHeldLevel();
     }
 
     private List<TooltipRow> readBodyRows() {
+
         return TooltipSection.readRowsInOrder(
             tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections());
     }
 
     // A box whose account comes from the source handed in, under the same seams as every other case.
     private SystemDominationTooltip buildTooltipAccountingThrough(FactionAccountSourceFake accountSourceFake) {
+
         return new SystemDominationTooltip(
             StandingsTooltipSeamsFake.VIEW_GROUPING_SOURCE,
             PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake),
@@ -617,6 +604,7 @@ final class SystemDominationTooltipShapeTests {
         public FactionAccountResolver createFactionAccountResolver(
                 StarSystemAPI system,
                 DominancePass pass,
+                Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId,
                 HoverTooltipDetailLevel detailLevel) {
 
             requestedLevels.add(detailLevel);

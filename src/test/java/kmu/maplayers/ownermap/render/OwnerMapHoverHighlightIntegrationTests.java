@@ -6,7 +6,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.hover.HoverHighlight;
 import kmu.maplayers.base.hover.HoverHighlightGeometry;
-import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -146,7 +146,7 @@ final class OwnerMapHoverHighlightIntegrationTests {
 
         return new HoverHighlightGeometry().resolveHighlightFor(
             new OwnerMapHoverHighlightSource(clusters),
-            new MapHover(UNPOPULATED_CELL, List.of(UNPOPULATED_CELL)));
+            MapHoverFixture.buildHoverOn(UNPOPULATED_CELL, List.of(UNPOPULATED_CELL)));
     }
 
     // A build holding nobody and settling nowhere, so the cell routes to the uninhabited category,

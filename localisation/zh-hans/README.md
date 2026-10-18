@@ -438,7 +438,9 @@ So a word of one axis never stands in for another:
 | category (the kind a map sorts a cell into, which picks its style) | 类别 | the plain word for a class something is sorted into |
 | cluster group (one owner's clusters drawn together) | 区域组 | from 区域, a cluster, with 组, a group |
 | cover (anything drawn over the map where the cursor rests) | 遮挡 | to block from view, which a cover does to the cells under it |
+| cursor | 光标 | the usual UI word for the pointer on screen |
 | dev display (an overlay a Dev setting draws over the map) | 调试显示 | 调试, the usual word for debugging, with 显示, a display |
+| frame (one drawing of the screen) | 帧 | the usual graphics word; per frame is 每帧 |
 | gate (the switch a smoothing pass runs under) | 开关 | the plain word for a switch, as the settings' own toggles are |
 | paint (everything one owner's elements draw from) | 绘制方式 | 绘制, to draw, with 方式, a manner; kept apart from 上色, colouring a territory |
 | paint scheme (the theme and palettes one build styles by) | 绘制方案 | 绘制, to draw, with 方案, a scheme |
@@ -460,13 +462,19 @@ So a word of one axis never stands in for another:
 | --- | --- | --- |
 | alliance record (one alliance as plain data) | 联盟记录 | 联盟 with 记录, a record |
 | alliance set (every alliance at one moment) | 联盟集合 | 联盟 with 集合, a set |
+| breakdown (the parts a colony's weight is summed from) | 权重明细 | 权重, weight, with 明细, an itemised account |
+| compose (a hover box reading the sector into what it states) | 组合 | the plain word for putting parts together |
+| footprint (one faction's markets folded into totals) | 足迹 | the plain word for a footprint, as the type's name |
 | grouping (how factions fold into blocs) | 分组 | the plain word for sorting things into groups |
 | moved to KMLib (a changelog heading), forward to (a method handing its call on) | 移至 KMLib, 转交给 | 移至, moved to; 转交, to pass on, kept apart from 转发器, KMLib's relay |
+| overlay cache (what an owner-painted layer keeps built between frames) | 叠加层缓存 | 叠加层, the overlay, with 缓存, the usual computing word for a cache |
+| part (sort cells by their form) | 划分 | the plain word for dividing things into kinds |
 | pass (one rebuild's reading of the sector) | 本次计算 | 本次, this time, with 计算, a working-out; the pass is the reading one rebuild works from |
 | reading (an owner's looks and names) | 读取 | the plain word for reading something off; a reader is 读取方 |
 | refresh poll (the periodic check that marks changed systems) | 刷新轮询 | 刷新, to refresh, with 轮询, the usual computing word for polling |
 | register (a record the map keeps in sector memory) | 登记 | the plain word for writing something into a record |
 | remark (the note a hover line carries about a colony) | 备注 | the plain word for a note added to something |
+| settled face (the font a sector's text was checked against and kept) | 已确定的字体 | 已确定, settled, with 字体, a font |
 | stale, drain (a system marked for redrawing, and taking every such mark off the set) | 过期, 取出 | the plain words for out of date and for taking something out |
 | sweep (one walk of the whole sector) | 扫描 | the usual word for a pass over everything |
 | tie-break (how a dead heat between blocs is settled) | 平局裁定 | 平局, a draw, with 裁定, a ruling |

@@ -23,7 +23,7 @@
 
 ### 变更
 
-- **小幅优化**。政治地图重绘时减少了重复工作：势力配色、每个所有者的绘制方式和边界设置在每次重绘时只读取一次，而不再按星系或单元逐一读取。
+- **小幅优化**。政治地图重绘时减少了重复工作：势力配色、每个所有者的绘制方式和边界设置在每次重绘时只读取一次，而不再按星系或单元逐一读取。光标停留期间，悬停框只读取一次光标下的星系，而不再每帧读取；地图重绘或你重新移到该星系上时，它会再次读取。
 
 ### 面向开发者
 
@@ -32,6 +32,11 @@
 
 #### 新增
 
+- **悬停框会被性能分析**：每帧绘制记为 `mapLayer.hoverBox.paint`，每次读取星域记为 `mapLayer.hoverBox.compose`。
+- **`CellBoxMemo`**：星域上次组合出的悬停框，在其读取所依据的一切都未变化时保留。
+- **`MapLayerCommonRefreshSignal.DRAW_LISTS`**：叠加层缓存在完整重建或为已标记星系重建其绘制内容后发出。
+- **`MapHoverState.getCellArrivalCount()`**：光标抵达一个原本不在其上的单元的次数，供按每次停留保留的工作使用。
+- **`KnownMarketFootprints.foldFootprintsByFaction(Map)`**：由已读取的权重明细汇总出的足迹。
 - **`ColonyKind.isUngoverned()`**：某处是否住着不受任何权力管辖的人，供每个区分有人管辖与无人管辖殖民地的读取方使用。
 - **`FactionStanding.isWeighed()`**：本次计算是否为该势力的殖民地计算过权重，按种类分支的读取方据此询问，而不必检查密封类型。
 - **`FactionTooltipLine.resolveCrestMark(SectorAPI, String)`**：势力所在行开头的标记，供标记为该势力的行使用。
@@ -152,6 +157,12 @@
 | `FactionAllianceSource.readAlliances()`、`FactionAllianceRegistry.readAlliances()` 和 `ColonyKnowledge.observingUnderTheFog()` | 各自接收要询问其联盟的 `SectorAPI` |
 | 读取正在运行的游戏中星域的 `StarsectorMarketUiContextResolver()`、`StarsectorInteractionDialogPickerOpener()` 和 `StarsectorConditionPickerFeedbackSink()` | 已移除：各自接收控制台命令只解析一次的 `SectorAPI` |
 | `KmuConditionPickerEditor(KmuConditionService, KmuConditionPickerDialogOpener)` 及其三参数形式，以及 `KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler)` 和 `(KmuConditionPickerActionHandler, float, float)` | 各自还接收选择器报告所用的 `KmuConditionPickerFeedbackSink` |
+| `MapHover(SystemKey, List)` | `MapHover(SystemKey, StarSystemAPI, List)`：悬停携带光标抵达单元时其键所指的实时星系 |
+| `MapHoverPublisher(MapHoverState, ModelviewMatrixReader, CellArrivalAnnouncer, BooleanSupplier)` | 还接收用于查找悬停星系的 `Function<SystemKey, StarSystemAPI>`，每抵达一个单元只询问一次 |
+| `ClusterDrawLists.getStyledCellByCellKey()` | `getFusedCells()` 和 `getLoneCells()`，每次重建只划分一次。`OwnerMapClusters` 和 `PaintedCellStore` 保留 `getStyledCellByCellKey()`，但改为只读：写入改用 `putPaintedCell` 和 `removePaintedCell` |
+| `BaseSidebarHost` | 宿主实现 `composeTabStyle()` 并读取 `resolveTabStyle()`，后者保留样式，直到设置修订号或星域已确定的字体变化 |
+| `SystemCellTooltip`、`PoliticalMapCellTooltip`、`SystemClaimTooltip` 和 `SystemDominationTooltip` 上的 `resolveDeepestHeldLevelFor(SectorAPI, StarSystemAPI)` | 已移除：按键从绘制所保留的组合主体读取 `deepestHeldLevel()`，因此图层只在 `composeBody` 中给出其深度 |
+| `SystemStandings.rankByDominationScore(StarSystemAPI, DominancePass)` | `rankByDominationScore(StarSystemAPI, DominancePass, Map)`，基于调用方已读取的权重，因此为星系排名并解释其分数的悬停框只为每个市场计算一次权重 |
 
 ##### 移至 KMLib
 

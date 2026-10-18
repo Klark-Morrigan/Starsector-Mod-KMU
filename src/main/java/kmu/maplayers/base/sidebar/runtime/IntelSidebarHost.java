@@ -51,7 +51,8 @@ import java.util.Set;
  * line. Every read reaches the game's concrete intel panel through the KMLib seam, which fails closed, so a
  * missing link simply hides the sidebar.
  */
-public final class IntelSidebarHost extends BaseSidebarHost {
+public final class IntelSidebarHost
+        extends BaseSidebarHost {
 
     /**
      * The one intel-screen host; the render and input listeners registered for the intel screen reference it.
@@ -89,10 +90,12 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     private final IntelScreenView intelScreen;
 
     IntelSidebarHost(IntelScreenView intelScreen, ScreenClaim screenClaim) {
+
         // The intel screen's own picks: a switch or a hide on the map screen leaves both where they were,
         // and reopening the intel screen returns to them rather than inheriting the map's. The fold goes
         // under the same screen, the base composing it from these picks.
         super(MapLayerScreens.getIntelPicks(), OPENS_DOCKED, screenClaim);
+
         this.intelScreen = intelScreen;
     }
 
@@ -102,11 +105,12 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         // frames are drawn in, rather than in the base its controls are ruled in - this panel sits inside
         // that chrome and its frame abuts the visor's. The controls inside keep the base whichever way
         // the frame goes, which the frame colour being its own knob is what allows.
-        return SidebarStyles.buildChromeFramedStyle(buildTabStyle());
+        return SidebarStyles.buildChromeFramedStyle(resolveTabStyle());
     }
 
     @Override
     public Set<BoxEdge> resolveBorderEdges(TabPanelPlacement placement) {
+
         return decideBorderEdges(
             placement.body().box().y(),
             intelScreen.getMapVisorRect());
@@ -114,30 +118,42 @@ public final class IntelSidebarHost extends BaseSidebarHost {
 
     @Override
     protected TabPanelPlacement computePlacement() {
+
         var mapVisorRect = intelScreen.getMapVisorRect();
         if (mapVisorRect == null) {
             return null;
         }
+
         return LiveSidebarPlacement.resolveIntelPlacement(
             mapVisorRect,
             new SidebarHostPanel(
-                buildTabStyle(),
+                resolveTabStyle(),
                 getController(),
                 getScreenPicks(),
                 layoutBorderEdges()));
     }
 
     @Override
+    protected TabStyle composeTabStyle() {
+        // Raised buttons, matching the row of vanilla map toggles standing above this panel on the same
+        // screen - and with them the plain bound key those buttons present.
+        return SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT);
+    }
+
+    @Override
     protected String describeHostScreenViewState() {
+
         if (!intelScreen.isIntelTabOpen()) {
             return "intel tab not showing";
         }
+
         // The seam reports the visor's absence as one state, so the diagnostic names both ways it can
         // arise rather than claiming one: a sibling sub-tab (Planets, Factions) is showing, or a
         // large-description item has blanked the preview.
         if (intelScreen.getMapVisorRect() == null) {
             return "intel tab; no visor (sub-tab or blanked preview)";
         }
+
         // A lit visor is the whole gate, so this last pair reports which look it is wearing rather than a
         // reason for hiding: it is what says whether the Starscape surfaces are the ones that should be
         // painting under the panel.
@@ -160,8 +176,9 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // the top and right frame the sidebar inside the visor. The left is dropped here and by
     // decideBorderEdges alike, so the reserved space and the stroke never disagree on it.
     //
-    // TODO: Collapse the bottom strip when the box reaches the visor bottom. Its stroke drops there (see
-    //  decideBorderEdges), but its reserved inset stays, so a flush box keeps a thin bare strip under it.
+    // TODO: Collapse the bottom strip when the box reaches the visor bottom.
+    // Its stroke drops there (see decideBorderEdges), but its reserved inset stays,
+    // so a flush box keeps a thin bare strip under it.
     static Set<BoxEdge> layoutBorderEdges() {
         return EnumSet.of(BoxEdge.TOP, BoxEdge.RIGHT, BoxEdge.BOTTOM);
     }
@@ -171,6 +188,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // rounding tolerance) so a shared bottom border does not double the visor's frame. Derived from the
     // reserved edges so the left, dropped there, is never stroked here.
     static Set<BoxEdge> decideBorderEdges(float boxBottomY, Rectangle mapVisorRect) {
+
         var edges = EnumSet.copyOf(layoutBorderEdges());
         var isBottomFlush = mapVisorRect != null
             && boxBottomY <= mapVisorRect.y() + BOTTOM_FLUSH_TOLERANCE;
@@ -178,12 +196,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         if (isBottomFlush) {
             edges.remove(BoxEdge.BOTTOM);
         }
-        return edges;
-    }
 
-    // Raised buttons, matching the row of vanilla map toggles standing above this panel on the same
-    // screen - and with them the plain bound key those buttons present.
-    private static TabStyle buildTabStyle() {
-        return SidebarStyles.buildRaisedButtonTabStyle(HEADER_BAND_HEIGHT);
+        return edges;
     }
 }

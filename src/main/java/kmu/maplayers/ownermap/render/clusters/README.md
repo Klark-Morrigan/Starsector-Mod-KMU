@@ -238,7 +238,7 @@ where a single soup over the whole owner could only be clipped to all of them at
 
 Holding the framework's packets is what lets it satisfy `ClusterDrawLists` outright,
 so the framework's emission paints this layer without either side naming the other:
-the two maps it hands over are the two it already keeps,
+the cells and cluster groups it hands over are the ones it already keeps,
 and the owner keys stay opaque across the seam.
 What is the layer's is entirely upstream of it -
 which is why `ClusterGroupBuilder` keeps its name
@@ -273,6 +273,14 @@ Everything after the ring is cut to one particular ring,
 so a cell re-shaped while keeping any of it would draw the last shape's work inside this shape's cell.
 Owning the five in one place is what makes a re-shape clear them by construction,
 rather than by each caller on a larger model remembering the same five fields.
+
+The draw records are also kept parted by form,
+fused cells apart from lone ones,
+which is how the emission walks them.
+They are parted on the first read after a write rather than on every read,
+since the emission reads them several times a frame and only a rebuild or a refresh writes.
+The map of records it hands out is read-only for that reason:
+a record put straight into it would leave the parted lists drawing the cells as they stood before.
 
 The ring and the `StyledCell` arrive as one `PaintedCell` from the builder,
 and that pairing is what lets the clusters answer `base.hover`'s `PaintedCellShapes` -

@@ -7,6 +7,7 @@ import kmlib.profiling.ProfileOrigin;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MovableSystemSectorFake;
 
@@ -98,7 +99,7 @@ class SectorMapMachineryTests {
             // carries that key on the other's - and name that system in the other's box.
             machinery
                 .resolveHoverState()
-                .publishHover(new MapHover(
+                .publishHover(MapHoverFixture.buildHoverOn(
                     buildCellKey(SHARED_SYSTEM_ID),
                     List.of(buildCellKey(SHARED_SYSTEM_ID))));
 

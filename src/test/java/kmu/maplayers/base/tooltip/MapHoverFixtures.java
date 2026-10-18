@@ -2,6 +2,8 @@ package kmu.maplayers.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.systems.SectorStarSystems;
+
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
@@ -59,11 +61,14 @@ public final class MapHoverFixtures {
     public static void hoverASystemIn(SectorMapMachinery machinery, String systemId) {
 
         // Keyed by the ID alone, which is the key a system posed with no centre and no anchor is
-        // read off - so the box resolves the posed system back out of the sector.
+        // read off - so the posed system is found back out of the sector, as the cursor read finds
+        // it where the cursor arrives. A sector posing no such system leaves the hover over a key
+        // that names none, which is a hover no box draws for.
         var systemKey = buildCellKey(systemId);
+        var system = SectorStarSystems.findSystemByKey(machinery.resolveSector(), systemKey);
 
         machinery
             .resolveHoverState()
-            .publishHover(new MapHover(systemKey, List.of(systemKey)));
+            .publishHover(new MapHover(systemKey, system, List.of(systemKey)));
     }
 }

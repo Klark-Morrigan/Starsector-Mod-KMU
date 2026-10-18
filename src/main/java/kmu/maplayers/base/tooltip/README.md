@@ -77,6 +77,11 @@ What the cursor is over is resolved once,
 by `HoveredBox`,
 and read by both passes -
 a chain spelled out twice is one edit away from the key acting on a frame the box does not draw.
+The hovered system is taken off the published hover rather than found again:
+the cursor read looks it up once,
+where the cursor reaches the cell
+([the hover](../hover/README.md)),
+since a lookup by key walks every system and the box draws every frame the cursor rests there.
 
 ## The detail level
 
@@ -155,6 +160,23 @@ how the box is *set* is `CellTooltipLook` and the line it *ends* on is `CellTool
 each answering a question of its own,
 so a layer changing none of them cannot be affected by either.
 
+What a layer composes is read off the sector once per visit to a cell rather than once per frame.
+`CellBoxMemo` holds the last composition -
+the title lines and the body together -
+per sector,
+and the box lays that out again on every frame it stays good.
+It is kept against the box,
+the sector,
+the system,
+the level,
+the cursor's visits to a cell (`MapHoverState.getCellArrivalCount`)
+and the rebuilds of what the map draws (`MapLayerCommonRefreshSignal.DRAW_LISTS`).
+The economy drifting under a still cursor moves none of them,
+which is the one lag it accepts;
+[the caching notes](../../../../../../../docs/dev/caching.md#the-hover-box) say why.
+The fit and the look stay outside it,
+being the screen's and the player's rather than the sector's.
+
 `CellTooltipLook` is one look for every layer -
 the name in the game's own title face over body-face rows,
 so a KM hover reads as part of the interface rather than as text laid over it -
@@ -184,11 +206,14 @@ and it comes back beside the blocks rather than being asked for (`ComposedCellBo
 that turns on what the body found,
 so a layer that read its system to compose the blocks already holds the answer.
 Asked separately,
-the box would pay for that read a second time every frame the cursor rests on the cell -
+the box would pay for that read a second time -
 and the hint could describe a reading the body beside it no longer agrees with.
-The key handler asks through `resolveDeepestHeldLevelFor` instead,
-that being the one caller with nothing composed to take the answer from,
-and it asks once per press,
+The key handler takes it off the same composition,
+the one `CellBoxMemo` holds for the cell the cursor rests on,
+composing afresh only where nothing held still answers -
+so a press over a resting cell reads nothing,
+and the key and the hint cannot be judged off two readings.
+It asks once per press,
 at every level:
 the bound is what says whether a press would show the player anything,
 so no level settles that question without it.

@@ -39,13 +39,18 @@ import kmu.maplayers.base.machinery.SectorMapMachinery;
  * <p>Read and written on the game thread alone - both the UI render pass and the terrain pass run
  * there - so the state needs no publication guarantee of its own.
  */
-public final class MapFramePreparationClaim implements CampaignUIRenderingListener,
-        InstalledMachinery {
+public final class MapFramePreparationClaim
+        implements CampaignUIRenderingListener, InstalledMachinery {
 
     // Where this claim stands. One field rather than a pair of flags, because the three states are
     // exactly three: a fourth combination of "boundary not seen" with "preparation taken" has no
     // meaning here, and holding two flags is what would let one be written.
     private FramePreparationState state = FramePreparationState.BOUNDARY_UNKNOWN;
+
+    // How many frames have begun since the boundary was first seen - the number a read settled once
+    // per frame is kept against, since the boundary that opens a preparation is the one that ends
+    // whatever was settled for the frame before.
+    private int openedFrameCount;
 
     // Reached through resolveClaimIn, so the only claims that exist are ones machinery holds.
     MapFramePreparationClaim() {
@@ -65,9 +70,11 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
         if (state == FramePreparationState.BOUNDARY_UNKNOWN) {
             return true;
         }
+
         if (state == FramePreparationState.PREPARATION_TAKEN) {
             return false;
         }
+
         state = FramePreparationState.PREPARATION_TAKEN;
         return true;
     }
@@ -95,7 +102,9 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
      */
     @Override
     public void renderInUICoordsBelowUI(ViewportAPI viewport) {
+
         state = FramePreparationState.PREPARATION_OPEN;
+        openedFrameCount++;
     }
 
     @Override
@@ -121,9 +130,26 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
      * @return that sector's claim
      */
     static MapFramePreparationClaim resolveClaimIn(SectorMapMachinery machinery) {
+
         return machinery.resolveMachinery(
             MapFramePreparationClaim.class,
             MapFramePreparationClaim::new);
+    }
+
+    /**
+     * @return how many frames have begun on this claim, which only grows - meaningful only while
+     *         {@link #isFrameBoundaryKnown()}
+     */
+    int getOpenedFrameCount() {
+        return openedFrameCount;
+    }
+
+    /**
+     * @return whether a frame boundary has been seen, so a read settled once per frame has a frame to
+     *         be settled for; until then every read is its own
+     */
+    boolean isFrameBoundaryKnown() {
+        return state != FramePreparationState.BOUNDARY_UNKNOWN;
     }
 
     // Where a claim stands, as the three states it can actually be in. An enum rather than flags so

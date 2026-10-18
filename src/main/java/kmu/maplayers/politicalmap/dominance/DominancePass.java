@@ -212,9 +212,10 @@ public record DominancePass(
      * the same fold {@link #readFootprintsByFaction} sums away, kept whole so a caller can state
      * the parts a score was made of.
      *
-     * <p>Beside the footprints rather than derived from them, because a footprint is the total
-     * and a total cannot be taken apart again. Both come off the one walk under the one rule, so
-     * the parts a box lists always add up to the number the map painted with.
+     * <p>The footprints are folded out of these, a total being unable to be taken apart again, so
+     * the parts a box lists always add up to the number the map painted with. A caller needing both
+     * reads these and folds them ({@code KnownMarketFootprints.foldFootprintsByFaction}) rather than
+     * reading the footprints as well, which would weigh every market twice.
      *
      * @param system the system whose markets are folded
      * @return each faction's weighed colonies with the breakdown of each colony's weight, keyed by

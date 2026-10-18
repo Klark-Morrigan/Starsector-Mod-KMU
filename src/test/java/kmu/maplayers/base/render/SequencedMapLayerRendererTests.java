@@ -9,6 +9,7 @@ import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.profiling.snapshot.ProfileOriginTree;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.MapHoverTargets;
@@ -91,7 +92,7 @@ final class SequencedMapLayerRendererTests {
 
     // A hover left standing from an earlier frame, so a parked read is told apart from one that
     // never had anything to drop.
-    private static final MapHover HOVERED_CELL = new MapHover(
+    private static final MapHover HOVERED_CELL = MapHoverFixture.buildHoverOn(
         buildCellKey("system_id"),
         List.of(buildCellKey("system_id")));
 

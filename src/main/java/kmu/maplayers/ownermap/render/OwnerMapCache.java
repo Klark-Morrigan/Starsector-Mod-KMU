@@ -85,7 +85,8 @@ import java.util.Set;
  * rebuild reads comes off the machinery this cache was made for rather than off the running
  * game: asking the running game is how a cache comes to be handed a second sector at all.
  */
-public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
+public final class OwnerMapCache
+        implements MapFrameCache<OwnerPaintedView> {
 
     private static final Logger LOG = Global.getLogger(OwnerMapCache.class);
 
@@ -276,8 +277,8 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         // Both views null means neither has been built for this sector, so the first frame forces
         // the build even if the content revision happens to match its unbuilt seed.
         var staleHalves = decider.decideWhatIsStale(view, memoryScope, drawables.hasNothingBuilt());
-
         if (!staleHalves.isContentStale()) {
+
             applyStandingMapUpdates(staleHalves);
             return;
         }
@@ -340,6 +341,18 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
                 + " holdingReused=" + wasHoldingReused
                 + " signalsRaised=" + signalTracker.describeRaisesSinceTheLastReading());
         }
+
+        announceDrawListsRebuilt();
+    }
+
+    // Tells whatever reads what the map shows that it was rebuilt. Raised only once a rebuild has
+    // completed, so a rebuild that threw part way leaves the hover box on the reading it already
+    // holds - which still matches the last good draw lists left on screen.
+    private void announceDrawListsRebuilt() {
+
+        machinery
+            .resolveRefreshBoard()
+            .requestRefresh(MapLayerCommonRefreshSignal.DRAW_LISTS);
     }
 
     // The draw lists themselves: one view or the other, the names minted from the placements it
@@ -480,6 +493,8 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
                 staleHalves.cellCut().visibilityRules()),
             drawables.toStandingMap(cellGeometry),
             staleSystemKeys);
+
+        announceDrawListsRebuilt();
     }
 
     // The face this sector's labels are fitted in, off this cache's own machinery rather than the

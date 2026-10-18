@@ -53,9 +53,14 @@ Composition stops where the cut would,
 since the deeper tiers are the expensive ones.
 The account resolver is built only where the level shows a line of one
 (`isAdmittingAccounts`).
-So the shallowest level makes no `readWeightBreakdownsByFaction`,
-no unweighed-colony read and no `SystemColonyReading` walk at all -
+So the shallowest level makes no unweighed-colony read and no `SystemColonyReading` walk at all -
 the walk behind those being the most expensive thing a hover does.
+The weights are read once at every level, by `readWeightBreakdownsByFaction`:
+the ranking's totals are folded out of them (`SystemStandings.rankByDominationScore`),
+and the account is handed the same breakdowns rather than weighing the system again.
+The totals cost that one weighing whatever the level,
+so reading the parts beside them adds nothing at the shallowest
+and saves a second weighing at every level below it.
 Below it the same rule runs on inside `MarketWeightRowResolver`:
 a colony's factors are worked out only from `MARKET_STATS`,
 its patrol tiers only at `PATROL_DETAILS`.
@@ -68,7 +73,7 @@ the status line,
 the headings and which of them a group falls under,
 and the lines naming the blocs and their member factions.
 What hangs beneath a faction as the account of its score is a `FactionAccountResolver`,
-asked for once per paint.
+asked for once per composition of the box.
 `StandingRowResolver` applies it where the standing and the line named from it are both in hand,
 so no faction's colonies can be listed under another's name.
 It also sets the two-tier shape:

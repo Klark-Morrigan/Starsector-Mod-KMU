@@ -4,6 +4,7 @@ import kmlib.math.geometry.RingPath;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.render.clusters.PaintedCell;
+import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbon;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonPath;
 import kmu.maplayers.ownermap.render.ribbon.RibbonBand;
@@ -18,6 +19,7 @@ import java.util.List;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Pins the invariant the cursor read leans on, which stays invisible until a hover lands on the
@@ -36,6 +38,14 @@ final class PaintedCellStoreTests {
     private static final SystemKey SYSTEM_CELL = buildCellKey("system");
     private static final SystemKey KEPT_CELL = buildCellKey("kept");
     private static final SystemKey DROPPED_CELL = buildCellKey("dropped");
+
+    // One draw record of each form, for the cases about how the store parts them. Neither is drawn,
+    // so neither needs a paint.
+    private static final StyledCell.FusedCell FUSED_CELL =
+        new StyledCell.FusedCell(new float[0], null, 0f);
+
+    private static final StyledCell.LoneCell LONE_CELL_RECORD =
+        new StyledCell.LoneCell(new float[0], new float[0], null, null, 0f);
 
     @Nested
     class PutPaintedCell {
@@ -64,6 +74,7 @@ final class PaintedCellStoreTests {
             // The drift the paired write exists to prevent: a re-shaped cell must not keep
             // answering the cursor with the extent it had before it was re-shaped.
             var store = new PaintedCellStore();
+
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
 
             var reshaped = buildPaintedCellOn(buildTriangleRing());
@@ -85,7 +96,6 @@ final class PaintedCellStoreTests {
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
             store.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
-
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildTriangleRing()));
 
             assertThat(store.getRibbonByCellKey())
@@ -101,7 +111,6 @@ final class PaintedCellStoreTests {
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
             store.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
-
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildTriangleRing()));
 
             assertThat(store.getRibbonPathByCellKey())
@@ -118,7 +127,6 @@ final class PaintedCellStoreTests {
 
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildSquareRing()));
             store.getRingPathCache().putRingPath(SYSTEM_CELL, RingPath.nothingLeftToTrace());
-
             store.putPaintedCell(SYSTEM_CELL, buildPaintedCellOn(buildTriangleRing()));
 
             assertThat(store.getRingPathCache().findRingPathOf(SYSTEM_CELL))
@@ -199,6 +207,108 @@ final class PaintedCellStoreTests {
 
             assertThat(store.getRingPathCache().findRingPathOf(SYSTEM_CELL))
                 .isNull();
+        }
+    }
+
+    @Nested
+    class GetStyledCellByCellKey {
+
+        @Test
+        void refusesAWriteThatBypassesTheStore() {
+            // Every write has to go through the store, which is what tells the parted lists that
+            // the cells moved: a record put straight into the map would leave the emission drawing
+            // the cells as they stood before it.
+            var store = new PaintedCellStore();
+
+            assertThatThrownBy(() -> store
+                    .getStyledCellByCellKey()
+                    .put(SYSTEM_CELL, FUSED_CELL))
+                .isInstanceOf(UnsupportedOperationException.class);
+        }
+    }
+
+    @Nested
+    class GetFusedCells {
+
+        @Test
+        void listsTheFusedCellsInTheOrderTheyWereRecorded() {
+
+            var store = new PaintedCellStore();
+            var secondFusedCell = new StyledCell.FusedCell(new float[0], null, 0f);
+
+            store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
+            store.putPaintedCell(DROPPED_CELL, new PaintedCell(LONE_CELL_RECORD, buildSquareRing()));
+            store.putPaintedCell(KEPT_CELL, new PaintedCell(secondFusedCell, buildSquareRing()));
+
+            assertThat(store.getFusedCells())
+                .containsExactly(FUSED_CELL, secondFusedCell);
+        }
+
+        @Test
+        void keepsTheSameListWhileNoCellIsWritten() {
+            // The emission reads the cells several times a frame and only a rebuild writes, so a
+            // fresh parting per read would be the per-frame work this list exists to save.
+            var store = new PaintedCellStore();
+
+            store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
+
+            assertThat(store.getFusedCells())
+                .isSameAs(store.getFusedCells());
+        }
+
+        @Test
+        void partsTheCellsAgainAfterAWrite() {
+
+            var store = new PaintedCellStore();
+
+            store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
+            store.getFusedCells();
+            store.putPaintedCell(SYSTEM_CELL, new PaintedCell(LONE_CELL_RECORD, buildSquareRing()));
+
+            assertThat(store.getFusedCells())
+                .isEmpty();
+        }
+
+        @Test
+        void partsTheCellsAgainAfterARemoval() {
+
+            var store = new PaintedCellStore();
+
+            store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
+            store.getFusedCells();
+            store.removePaintedCell(SYSTEM_CELL);
+
+            assertThat(store.getFusedCells())
+                .isEmpty();
+        }
+    }
+
+    @Nested
+    class GetLoneCells {
+
+        @Test
+        void listsOnlyTheLoneCells() {
+
+            var store = new PaintedCellStore();
+
+            store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
+            store.putPaintedCell(KEPT_CELL, new PaintedCell(LONE_CELL_RECORD, buildSquareRing()));
+
+            assertThat(store.getLoneCells())
+                .containsExactly(LONE_CELL_RECORD);
+        }
+
+        @Test
+        void partsTheCellsAgainAfterAWrite() {
+
+            var store = new PaintedCellStore();
+
+            store.putPaintedCell(SYSTEM_CELL, new PaintedCell(FUSED_CELL, buildSquareRing()));
+            store.getLoneCells();
+            store.putPaintedCell(SYSTEM_CELL, new PaintedCell(LONE_CELL_RECORD, buildSquareRing()));
+
+            assertThat(store.getLoneCells())
+                .containsExactly(LONE_CELL_RECORD);
         }
     }
 
@@ -288,6 +398,7 @@ final class PaintedCellStoreTests {
     // Two distinct rings, so a case that swaps one for the other is caught by identity. Nothing
     // here reads the geometry, only which instance is held against a cell.
     private static List<double[]> buildSquareRing() {
+
         return List.of(
             new double[] {0, 0},
             new double[] {1, 0},
@@ -296,6 +407,7 @@ final class PaintedCellStoreTests {
     }
 
     private static List<double[]> buildTriangleRing() {
+
         return List.of(
             new double[] {0, 0},
             new double[] {2, 0},
@@ -305,6 +417,7 @@ final class PaintedCellStoreTests {
     // A band that draws something, which is all these cases ask of it: what distinguishes it from
     // CellRibbon.NONE is that it has a run at all, not what the run looks like.
     private static CellRibbon buildAnyRibbon() {
+
         return new CellRibbon(List.of(
             new RibbonBand(Color.WHITE, new float[] {0, 0, 1, 0, 1, 1})));
     }
@@ -312,6 +425,7 @@ final class PaintedCellStoreTests {
     // A path that draws something, which is all these cases ask of it: what distinguishes it from
     // CellRibbonPath.NONE is that it has a stretch at all, not where that stretch runs.
     private static CellRibbonPath buildAnyRibbonPath() {
+
         return new CellRibbonPath(
             List.of(new float[] {0, 0, 1, 0, 1, 1}),
             List.of(),

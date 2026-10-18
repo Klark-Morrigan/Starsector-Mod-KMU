@@ -118,32 +118,6 @@ public abstract class PoliticalMapCellTooltip
     }
 
     /**
-     * The deepest level this box holds anything at for the hovered system.
-     *
-     * <p>Asked per hovered system rather than once per box: the deeper tiers account for the colonies
-     * behind what this box lists, so a system it lists nothing for holds nothing below the shallowest
-     * level, and every level would draw the same thing. The hint is dropped there rather than offering
-     * a key that changes nothing on screen.
-     *
-     * <p>Answered through the very read the body is built from, so a box cannot offer to expand a
-     * listing it is about to draw as empty - which the fog alone can produce, a faction present only
-     * through colonies the player has not found leaving nothing this box may state.
-     *
-     * <p>Re-declared abstract rather than left at the inherited shallowest, because there is no honest
-     * default here: a box of this layer inheriting that answer would silently withhold the hint over a
-     * system it has plenty more to say about, and nothing on screen would say the key was worth
-     * pressing.
-     *
-     * @param sector the live sector, whose economy the answer may read
-     * @param system the star system under the cursor
-     * @return the deepest level with something to show for this system
-     */
-    @Override
-    protected abstract HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
-        SectorAPI sector,
-        StarSystemAPI system);
-
-    /**
      * The deepest level this box's account of one listed faction reaches, over a system it names
      * somebody in.
      *
@@ -160,10 +134,12 @@ public abstract class PoliticalMapCellTooltip
      * behind it named somebody to account for, and no deeper than the box's own voice where it did
      * not.
      *
-     * <p>The one place the two halves are joined, so a shape cannot combine them one way for the
-     * paint and another for the press - the drift that would put the hint and the key at odds over
-     * one system. Taken by the shape from the read it already holds rather than reading the system
-     * again, which is why the halves arrive here separately.
+     * <p>Judged per hovered system: the deeper tiers account for the colonies behind what the box
+     * lists, so a system it lists nobody for holds nothing below the shallowest level - which the fog
+     * alone can produce, a faction present only through colonies the player has not found. The one
+     * place the two halves are joined, so no shape of this layer combines them its own way. Taken by
+     * the shape from the read its body was built from rather than reading the system again, which is
+     * why the halves arrive here separately.
      *
      * @param isNamingAnybody whether the read behind the box left it a faction to account for
      * @return the level the cycle wraps at for this box over this system

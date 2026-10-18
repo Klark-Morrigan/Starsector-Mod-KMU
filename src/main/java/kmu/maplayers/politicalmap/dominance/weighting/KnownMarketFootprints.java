@@ -29,8 +29,10 @@ import java.util.Map;
  * <p>Every weight is worked out once, as a {@link MarketWeightBreakdown} the scalar
  * weight is then summed over. A caller that wants the number reads the footprint;
  * one that has to explain the number reads {@link #readBreakdownByFaction} for the
- * same markets' parts. Neither can show a total the other's arithmetic disagrees
- * with, because there is only the one arithmetic.
+ * same markets' parts, and one that needs both folds the footprints out of those parts
+ * ({@link #foldFootprintsByFaction}) rather than weighing every market a second time.
+ * Neither can show a total the other's arithmetic disagrees with, because there is only
+ * the one arithmetic.
  *
  * <p>Beside those two sits a third read that weighs nothing:
  * {@link #readUnweighedColoniesByFaction}, the colonies present in the system that the economy
@@ -74,22 +76,44 @@ public final class KnownMarketFootprints {
             DominanceRules rules,
             ColonyKnowledge colonyKnowledge) {
 
+        return foldFootprintsByFaction(readBreakdownByFaction(colonies, rules, colonyKnowledge));
+    }
+
+    /**
+     * Folds each faction's weighed markets into the footprint the dominance rule compares, off
+     * breakdowns already read.
+     *
+     * <p>What {@link #readByFaction} sums, offered on its own for a caller that holds the
+     * breakdowns anyway: a box that ranks a system and then explains each score would otherwise
+     * weigh every market twice for one hover.
+     *
+     * @param breakdownsByFactionId each faction's weighed markets, as {@link #readBreakdownByFaction}
+     *                              reads them
+     * @return each faction's footprint, keyed by faction ID in the order the breakdowns were keyed;
+     *         empty when no faction holds a weighed market
+     */
+    public static Map<String, MarketFootprint> foldFootprintsByFaction(
+            Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
+
         var footprintByFactionId = new LinkedHashMap<String, MarketFootprint>();
-        for (var market : readWeighedColonies(colonies, colonyKnowledge)) {
-            var factionId = market.getFaction().getId();
-            var breakdown = MarketWeights.readBreakdown(market, rules);
+
+        for (var entry : breakdownsByFactionId.entrySet()) {
+
+            var footprint = MarketFootprint.EMPTY;
 
             // Whether the colony is on a planet is read off the breakdown rather than from the
             // market again: the tie-break here and the box that names a station colony's station
             // must not be able to disagree about what kind of place a colony is.
-            footprintByFactionId.put(
-                factionId,
-                footprintByFactionId
-                    .getOrDefault(factionId, MarketFootprint.EMPTY)
-                    .addMarket(
-                        breakdown.computeTotalWeight(),
-                        !breakdown.isStationMarket()));
+            for (var breakdown : entry.getValue()) {
+
+                footprint = footprint.addMarket(
+                    breakdown.computeTotalWeight(),
+                    !breakdown.isStationMarket());
+            }
+
+            footprintByFactionId.put(entry.getKey(), footprint);
         }
+
         return footprintByFactionId;
     }
 
@@ -118,11 +142,14 @@ public final class KnownMarketFootprints {
             ColonyKnowledge colonyKnowledge) {
 
         var breakdownsByFactionId = new LinkedHashMap<String, List<MarketWeightBreakdown>>();
+
         for (var market : readWeighedColonies(colonies, colonyKnowledge)) {
+
             breakdownsByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
                 .add(MarketWeights.readBreakdown(market, rules));
         }
+
         return breakdownsByFactionId;
     }
 
@@ -159,8 +186,11 @@ public final class KnownMarketFootprints {
             ColonyKnowledge colonyKnowledge) {
 
         var coloniesByFactionId = new LinkedHashMap<String, List<UnweighedColony>>();
+
         for (var colony : readUnweighedColonies(colonies, colonyKnowledge)) {
+
             var market = colony.market();
+
             coloniesByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
                 .add(new UnweighedColony(
@@ -169,6 +199,7 @@ public final class KnownMarketFootprints {
                     colony.isHidden(),
                     Markets.readNameplate(market)));
         }
+
         return coloniesByFactionId;
     }
 
@@ -196,6 +227,7 @@ public final class KnownMarketFootprints {
         for (var colony : selectColonies(colonies, colonyKnowledge, true)) {
             markets.add(colony.market());
         }
+
         return markets;
     }
 
@@ -228,10 +260,12 @@ public final class KnownMarketFootprints {
         var selectedColonies = new ArrayList<Colony>();
 
         for (var colony : colonyKnowledge.readKnownColonies(colonies)) {
+
             if (colony.isListedByEconomy() == shouldSelectListedByEconomy) {
                 selectedColonies.add(colony);
             }
         }
+
         return selectedColonies;
     }
 }

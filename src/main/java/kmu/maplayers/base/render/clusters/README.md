@@ -262,20 +262,26 @@ since the stroke scales its pixel width off it -
 the renderer hands over the frame's scale and the stroke says what width that comes to.
 
 What it paints arrives through `ClusterDrawLists`,
-which is four reads and no more -
+which is five reads and no more -
 is there anything to paint,
 the sector-wide style tier,
-the cell records,
+the fused cells,
+the lone cells,
 and the cluster groups keyed by owner.
-A layer's own built state satisfies it directly wherever its draw lists already are those two maps,
-so nothing is copied or adapted per frame.
+The cells arrive already parted by form
+because every pass over them draws one form only and the passes run every frame:
+parting them there would test every drawn cell's type per pass per frame,
+for an answer only a rebuild can change.
+A layer parts them once per rebuild and hands the same lists over until the next,
+so nothing is copied or adapted per frame,
+and the emission walks each list with no lambda per cell.
 
 The seam exists because the emission is the framework's and the built state is not.
 Typed on one layer's model,
 the only cluster painter there is would have to live in that layer's package,
 and a second layer would reach it by importing the first or by copying the emission wholesale.
-Four reads is what it actually uses,
-so four reads is what a layer has to answer.
+Five reads is what it actually uses,
+so five reads is what a layer has to answer.
 
 `debug/`'s `ClusterBorderStageRenderer` is the diagnostic analogue,
 over its own overlay record rather than these lists.

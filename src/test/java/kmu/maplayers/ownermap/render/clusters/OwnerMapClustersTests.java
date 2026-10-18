@@ -5,6 +5,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
+import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
@@ -55,6 +56,9 @@ final class OwnerMapClustersTests {
 
     // The cell the draw lists are exercised over, keyed as the cut keys a cell.
     private static final SystemKey SYSTEM_CELL = buildCellKey("system");
+
+    // A second cell, for the case that needs one of each form.
+    private static final SystemKey LONE_CELL = buildCellKey("lone");
 
     @Nested
     class CreateEmpty {
@@ -129,7 +133,8 @@ final class OwnerMapClustersTests {
         @Test
         void withTheDrawListsAndTierTheBuildItselfHolds() {
 
-            var styledCell = buildAnyStyledCell();
+            var fusedCell = new StyledCell.FusedCell(new float[0], null, 0f);
+            var loneCell = new StyledCell.LoneCell(new float[0], new float[0], null, null, 0f);
             var styledClusterGroup = buildAnyStyledClusterGroup();
 
             // A real theme rather than the shared fixture's inert one, since the global tier is
@@ -155,19 +160,28 @@ final class OwnerMapClustersTests {
                     Set.of(),
                     Set.of()));
 
-            clusters.getStyledCellByCellKey().put(SYSTEM_CELL, styledCell);
+            clusters.getPaintedCells().putPaintedCell(
+                SYSTEM_CELL,
+                new PaintedCell(fusedCell, List.of()));
+
+            clusters.getPaintedCells().putPaintedCell(
+                LONE_CELL,
+                new PaintedCell(loneCell, List.of()));
+
             clusters.getStyledClusterGroupByOwnerId().put("owner", styledClusterGroup);
 
             // Read through the seam rather than off the class, which is what the framework
-            // emission sees. Satisfying the interface with anything other than the build's own two
-            // maps - a copy, or a second pair left empty - would paint a frame that no assertion
+            // emission sees. Satisfying the interface with anything other than the build's own
+            // cells - a copy, or a second set left empty - would paint a frame that no assertion
             // over the layer's accessors could tell apart from a correct one.
             ClusterDrawLists drawLists = clusters;
 
             assertThat(drawLists.isEmpty())
                 .isFalse();
-            assertThat(drawLists.getStyledCellByCellKey())
-                .containsExactlyEntriesOf(Map.of(SYSTEM_CELL, styledCell));
+            assertThat(drawLists.getFusedCells())
+                .containsExactly(fusedCell);
+            assertThat(drawLists.getLoneCells())
+                .containsExactly(loneCell);
             assertThat(drawLists.getStyledClusterGroupByOwnerId())
                 .containsExactlyEntriesOf(Map.of("owner", styledClusterGroup));
             assertThat(drawLists.getGlobalStyle())
@@ -436,9 +450,12 @@ final class OwnerMapClustersTests {
 
         var drawables = OwnerMapClusterFixtures.createClustersOwnedBy(Map.of());
 
-        // The draw lists are not constructor inputs; fill the internally-created maps so
+        // The draw lists are not constructor inputs; fill the internally-created ones so
         // this fixture's only varying state is what isEmpty reads.
-        drawables.getStyledCellByCellKey().putAll(styledCells);
+        styledCells.forEach((cellKey, styledCell) -> drawables
+            .getPaintedCells()
+            .putPaintedCell(cellKey, new PaintedCell(styledCell, List.of())));
+
         drawables.getStyledClusterGroupByOwnerId().putAll(clusters);
 
         return drawables;

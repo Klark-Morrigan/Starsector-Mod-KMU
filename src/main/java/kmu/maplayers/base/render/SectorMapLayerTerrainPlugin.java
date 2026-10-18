@@ -62,9 +62,10 @@ public class SectorMapLayerTerrainPlugin
     private static final EnumSet<CampaignEngineLayers> ACTIVE_LAYERS =
         EnumSet.noneOf(CampaignEngineLayers.class);
 
-    // Whether a vanilla map host is on screen. One binding shared by the render constraint and the
-    // warning below, so the two cannot disagree about what counts as a map being up.
-    private static final MapPresence MAP_PRESENCE = new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter());
+    // What the game is showing a map on. One binding shared by the render constraint, the warning
+    // below and the Starscape surfaces' stand-aside, so none of them can disagree about what counts
+    // as a map being up - and none of the surfaces carries a binding of its own into the save.
+    static final MapPresence MAP_PRESENCE = new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter());
 
     // What the foreign-pass line says about these layers. KMLib appends what the live tree holds around
     // any embedded map, and carries the stack of the pass.
@@ -165,6 +166,26 @@ public class SectorMapLayerTerrainPlugin
         return BOTH_BANDS;
     }
 
+    /**
+     * The machinery of the sector this surface is drawing.
+     *
+     * <p>The render hook names no sector and there is no seam to hand one in through, the engine
+     * rebuilding this plugin from the save - so the terrain entity it rides on is the handle it has,
+     * and that entity's containing location is its sector's hyperspace. Resolved per frame and never
+     * held: machinery is a live object, and a field on this plugin is a field in the save.
+     *
+     * @return that sector's machinery, or null where the engine has not yet seated this plugin's
+     *         entity or where nothing is installed in the location it sits in - both of which mean
+     *         nothing to draw
+     */
+    SectorMapMachinery resolveMachineryBeingDrawn() {
+
+        var terrainEntity = getEntity();
+        return terrainEntity == null
+            ? null
+            : SectorMapMachineryIndex.resolveMachineryIn(terrainEntity.getContainingLocation());
+    }
+
     // One pass of the drawn layer's frame: its preparation where this pass owns it, its cursor read,
     // and its bands.
     private void drawFrameThrough(
@@ -204,25 +225,5 @@ public class SectorMapLayerTerrainPlugin
         for (var band : paintedBands) {
             layerRenderer.renderOnMap(factor, shownAlpha, band);
         }
-    }
-
-    /**
-     * The machinery of the sector this surface is drawing.
-     *
-     * <p>The render hook names no sector and there is no seam to hand one in through, the engine
-     * rebuilding this plugin from the save - so the terrain entity it rides on is the handle it has,
-     * and that entity's containing location is its sector's hyperspace. Resolved per frame and never
-     * held: machinery is a live object, and a field on this plugin is a field in the save.
-     *
-     * @return that sector's machinery, or null where the engine has not yet seated this plugin's
-     *         entity or where nothing is installed in the location it sits in - both of which mean
-     *         nothing to draw
-     */
-    private SectorMapMachinery resolveMachineryBeingDrawn() {
-
-        var terrainEntity = getEntity();
-        return terrainEntity == null
-            ? null
-            : SectorMapMachineryIndex.resolveMachineryIn(terrainEntity.getContainingLocation());
     }
 }

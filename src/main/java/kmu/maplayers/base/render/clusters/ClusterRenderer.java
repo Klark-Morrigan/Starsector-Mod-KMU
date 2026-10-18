@@ -11,8 +11,6 @@ import kmlib.profiling.ProfileSection;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.render.MapFrame;
-import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
-import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
 
 import org.lwjgl.opengl.GL11;
 
@@ -157,16 +155,12 @@ public final class ClusterRenderer {
         // the cluster fills is a matter of grouping the fill pass rather than of layering. A
         // fused cell is not reached at all: its fill is its cluster's, drawn above, so this pass
         // sees only the cells that have one.
-        drawEachCellOfForm(
-            frame,
-            LoneCell.class,
-            lone -> emitIfVisible(
-                lone.fillPaint(),
-                frame.getAlphaMult(),
-                () -> GlRuns.drawScaled(
-                    GL11.GL_TRIANGLES,
-                    lone.fillTriangles(),
-                    frame.getFactor())));
+        for (var lone : frame.drawLists().getLoneCells()) {
+
+            if (bindPaintIfVisible(lone.fillPaint(), frame.getAlphaMult())) {
+                GlRuns.drawScaled(GL11.GL_TRIANGLES, lone.fillTriangles(), frame.getFactor());
+            }
+        }
     }
 
     // Lays the hatch over the solid fill, at the theme's stroke. The stroke is the sector-wide
@@ -226,52 +220,36 @@ public final class ClusterRenderer {
 
         for (var group : frame.drawLists().getStyledClusterGroupByOwnerId().values()) {
 
-            emitIfVisible(
-                group.fill(),
-                frame.getAlphaMult(),
-                () -> {
-                    for (var cluster : group.clusters()) {
+            if (!bindPaintIfVisible(group.fill(), frame.getAlphaMult())) {
+                continue;
+            }
 
-                        GlRuns.drawScaled(
-                            primitiveMode,
-                            selectRun.apply(cluster),
-                            frame.getFactor());
-                    }
-            });
-        }
-    }
+            for (var cluster : group.clusters()) {
 
-    // Draws one element of every cell of one form, skipping the cells of the other. Each pass over
-    // the cells names the form it draws and what it draws for it, rather than restating the walk,
-    // the narrowing, and which of the frame's lists the cells come out of - which is what keeps a
-    // later pass from being written over every cell and reaching for a part the form it meant does
-    // not have.
-    private static <T extends StyledCell> void drawEachCellOfForm(
-            ClusterMapFrame frame,
-            Class<T> form,
-            Consumer<T> drawCell) {
-
-        for (var cell : frame.drawLists().getStyledCellByCellKey().values()) {
-
-            if (form.isInstance(cell)) {
-                drawCell.accept(form.cast(cell));
+                GlRuns.drawScaled(
+                    primitiveMode,
+                    selectRun.apply(cluster),
+                    frame.getFactor());
             }
         }
     }
 
-    // Binds one element's colour and emits its runs, or skips both when the element puts no ink
-    // on the map. Every pass here does exactly this, so binding and the hidden test travel
-    // together rather than being restated per loop - which is what keeps a new run from being
-    // added with the colour bound but the hidden test forgotten, drawing an invisible element in
-    // the previous one's colour.
-    private static void emitIfVisible(UiElementPaint paint, float alphaMult, Runnable emitRuns) {
+    // Binds one element's colour and answers whether its runs are to be emitted, binding nothing
+    // where the element puts no ink on the map. Every pass here asks exactly this before emitting,
+    // so binding and the hidden test travel together rather than being restated per loop - which is
+    // what keeps a new run from being added with the colour bound but the hidden test forgotten,
+    // drawing an invisible element in the previous one's colour.
+    //
+    // Answered rather than handed the runs to emit, so a pass over every cell of a form allocates
+    // nothing per cell per frame.
+    private static boolean bindPaintIfVisible(UiElementPaint paint, float alphaMult) {
 
         if (paint.isHidden()) {
-            return;
+            return false;
         }
 
         GlColour.set(paint.colour(), alphaMult * paint.alpha());
-        emitRuns.run();
+        return true;
     }
 
     // Strokes the interior seams first, then the lone cells' outlines, then the cluster boundaries
@@ -283,27 +261,23 @@ public final class ClusterRenderer {
     // its own loops in the cluster draw list.
     private static void strokeBorderRuns(ClusterMapFrame frame) {
 
-        drawEachCellOfForm(
-            frame,
-            FusedCell.class,
-            fused -> emitIfVisible(
-                fused.seamPaint(),
-                frame.getAlphaMult(),
-                () -> {
-                    GL11.glLineWidth(fused.seamWidth());
-                    GlRuns.drawScaled(GL11.GL_LINES, fused.seamEdges(), frame.getFactor());
-                }));
+        for (var fused : frame.drawLists().getFusedCells()) {
 
-        drawEachCellOfForm(
-            frame,
-            LoneCell.class,
-            lone -> emitIfVisible(
-                lone.outlinePaint(),
-                frame.getAlphaMult(),
-                () -> {
-                    GL11.glLineWidth(lone.outlineWidth());
-                    GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), frame.getFactor());
-                }));
+            if (bindPaintIfVisible(fused.seamPaint(), frame.getAlphaMult())) {
+
+                GL11.glLineWidth(fused.seamWidth());
+                GlRuns.drawScaled(GL11.GL_LINES, fused.seamEdges(), frame.getFactor());
+            }
+        }
+
+        for (var lone : frame.drawLists().getLoneCells()) {
+
+            if (bindPaintIfVisible(lone.outlinePaint(), frame.getAlphaMult())) {
+
+                GL11.glLineWidth(lone.outlineWidth());
+                GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), frame.getFactor());
+            }
+        }
 
         // The cluster boundaries in the owner's own style, over the interior seams so a boundary
         // dominates where they meet. Each loop is closed and already rounded, so it strokes as
@@ -311,28 +285,26 @@ public final class ClusterRenderer {
         // use. Colour and width bind once per owner, as the fills do.
         for (var group : frame.drawLists().getStyledClusterGroupByOwnerId().values()) {
 
-            emitIfVisible(
-                group.border(),
-                frame.getAlphaMult(),
-                () -> {
+            if (!bindPaintIfVisible(group.border(), frame.getAlphaMult())) {
+                continue;
+            }
 
-                    GL11.glLineWidth(group.borderWidth());
+            GL11.glLineWidth(group.borderWidth());
 
-                    for (var cluster : group.clusters()) {
+            for (var cluster : group.clusters()) {
 
-                        // The two are walked apart rather than through the cluster's own loop
-                        // list, which would allocate one per cluster per frame; the stroke
-                        // itself does not distinguish them.
-                        GlRuns.drawScaled(
-                            GL11.GL_LINE_LOOP,
-                            cluster.outerLoop(),
-                            frame.getFactor());
+                // The two are walked apart rather than through the cluster's own loop list, which
+                // would allocate one per cluster per frame; the stroke itself does not distinguish
+                // them.
+                GlRuns.drawScaled(
+                    GL11.GL_LINE_LOOP,
+                    cluster.outerLoop(),
+                    frame.getFactor());
 
-                        for (var enclaveLoop : cluster.enclaveLoops()) {
-                            GlRuns.drawScaled(GL11.GL_LINE_LOOP, enclaveLoop, frame.getFactor());
-                        }
-                    }
-            });
+                for (var enclaveLoop : cluster.enclaveLoops()) {
+                    GlRuns.drawScaled(GL11.GL_LINE_LOOP, enclaveLoop, frame.getFactor());
+                }
+            }
         }
     }
 }

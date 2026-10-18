@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render;
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.HoverHighlightSource;
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.MapLayerHoverGatesFake;
 import kmu.maplayers.base.labels.LabelRenderer;
@@ -65,7 +66,7 @@ final class OwnerMapOverlayRendererTests {
 
     // What the cursor was resolved to on this sector's map, for the case about which holder the
     // highlight traces.
-    private static final MapHover HOVERED_CELL = new MapHover(
+    private static final MapHover HOVERED_CELL = MapHoverFixture.buildHoverOn(
         buildCellKey("system_id"),
         List.of(buildCellKey("system_id")));
 

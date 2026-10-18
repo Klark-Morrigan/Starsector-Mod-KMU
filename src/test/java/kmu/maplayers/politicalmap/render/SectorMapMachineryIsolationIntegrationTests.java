@@ -10,6 +10,7 @@ import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
 import kmu.maplayers.base.geometry.CellSeedRule;
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -118,7 +119,7 @@ final class SectorMapMachineryIsolationIntegrationTests {
     // A cursor resting on the cell both sectors have an ID for - the one hover that could be
     // mistaken for the other sector's.
     private static final MapHover HOVERED_SHARED_CELL =
-        new MapHover(buildCellKey(SHARED_SYSTEM_ID), List.of(buildCellKey(SHARED_SYSTEM_ID)));
+        MapHoverFixture.buildHoverOn(buildCellKey(SHARED_SYSTEM_ID), List.of(buildCellKey(SHARED_SYSTEM_ID)));
 
     private PoliticalMapRebuildSeams seams;
 

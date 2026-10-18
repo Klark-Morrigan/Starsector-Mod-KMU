@@ -24,6 +24,8 @@ including the `Fingerprints` primitive this document's revision counters fold th
   - [Clusters and draw lists](#clusters-and-draw-lists)
   - [Cluster-label placements](#cluster-label-placements)
   - [Hover lookups](#hover-lookups)
+  - [The hover box](#the-hover-box)
+  - [Reads settled once a frame](#reads-settled-once-a-frame)
   - [Sidebar pickers](#sidebar-pickers)
   - [Settled faces](#settled-faces)
   - [Per-rebuild memos](#per-rebuild-memos)
@@ -248,6 +250,7 @@ a producer reaching one it was not handed is a producer that can raise on a map 
 | Signal | Home | Raised by | Read by |
 | --- | --- | --- | --- |
 | `MapLayerCommonRefreshSignal.GEOMETRY` | `MapLayerCommonRefreshSignal` | the drawn-system set or moving-system set changing | the geometry cache |
+| `MapLayerCommonRefreshSignal.DRAW_LISTS` | `MapLayerCommonRefreshSignal` | the overlay cache, after a full rebuild or a fold of marked systems | the hover box's memo |
 | `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental owner refresh, or a full rebuild where the standing map cannot take one |
 | grouping revision | `MapLayerRefreshBoard` | every system marked into the set above | the sidebar picker memo |
 | `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance records differing from the last poll's | every political view's content revision |
@@ -563,6 +566,74 @@ indexes each cluster by its members once per rebuild,
 so the hover highlight resolves a hit system to its whole cluster with a lookup instead of re-running the cluster search per frame.
 Deriving it from the same clustering the map drew is what keeps the highlighted region identical to the region that carries the name.
 
+The hovered system rides on the published hover beside its key.
+Finding a system by key walks every system in the sector,
+so the cursor read looks it up once where the cursor reaches the cell
+and carries it on from its last reading while the cursor stays there.
+
+### The hover box
+
+[`CellBoxMemo`](../../src/main/java/kmu/maplayers/base/tooltip/layout/CellBoxMemo.java)
+holds the last box composed on a sector:
+its title lines and its body,
+which together are every read of the sector the box makes.
+The box draws every frame the cursor rests on a cell,
+and the deeper levels walk every colony in the system,
+so the composition is read once per visit and laid out again each frame from what was held.
+The fit and the look stay outside it:
+they answer to the screen and the player's sliders,
+and laying out is cheap.
+
+It is kept against six things:
+the box,
+the sector,
+the system's key,
+the detail level,
+the cursor's arrivals at a cell (`MapHoverState.getCellArrivalCount`),
+and the `DRAW_LISTS` signal.
+One entry, since the cursor is over one cell at a time.
+The arrivals count rather than the hover,
+because a foreign map's pass parks the hover and the real one publishes it again every frame it draws beside it.
+The signal is raised by the overlay cache once a rebuild or a fold completes,
+and every setting,
+colony event,
+alliance change
+and view input that moves the map leads to one.
+
+This is **the per-frame path's second stated exception**
+to the rule that every live input needs a revision.
+The economy drifts under a still cursor -
+a colony's stability or size moving with no event fired -
+and nothing announces that.
+The box then shows the reading from when the cursor arrived,
+which is the same lag the fills have between rebuilds,
+and the next visit to the cell reads it afresh.
+Reading the economy every frame to catch that drift would cost the whole read the memo exists to save.
+
+The machinery holds it,
+so it goes with the sector;
+the sector is still in its key,
+because the machinery standing in where no game is loaded is shared by every sector without one.
+
+### Reads settled once a frame
+
+Two smaller reads are kept for a frame or across frames on the same terms.
+
+Whether a Starscape map is on screen is asked by both Starscape surfaces every frame a map is up,
+and it walks the intel screen's live widgets.
+[`StarscapeFrameRead`](../../src/main/java/kmu/maplayers/base/render/StarscapeFrameRead.java)
+answers it once per frame and sector,
+against the frame boundary `MapFramePreparationClaim` already sees,
+and reads every ask afresh until that boundary has been seen.
+
+A sidebar host's tab style is composed once and kept by `BaseSidebarHost.resolveTabStyle`
+until KMU's settings revision moves or another sector's settled faces are on screen,
+those being everything it is composed from.
+
+The drawn cells are parted into fused and lone ones once per write batch rather than per pass
+([`PaintedCellStore`](../../src/main/java/kmu/maplayers/ownermap/render/clusters/PaintedCellStore.java)),
+the emission drawing each form in a pass of its own.
+
 ### Sidebar pickers
 
 `RevisionMemo` is the memo any layer's sidebar holds its resolved picker in,
@@ -824,7 +895,7 @@ on load and on every settings change.
 - The per-frame path must stay int compares.
   Any new live input needs a revision of its own folded into a fingerprint -
   never a per-frame scan to detect change.
-  The settled faces are the one stated exception.
+  The settled faces and [the hover box](#the-hover-box) are the two stated exceptions.
 - An incremental update must read back the same inputs the full build used,
   and go through the same primitives,
   so the two cannot diverge.

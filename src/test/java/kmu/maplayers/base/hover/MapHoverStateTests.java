@@ -24,6 +24,46 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class MapHoverStateTests {
 
     @Nested
+    class GetCellArrivalCount {
+
+        @Test
+        void startsAtNone() {
+
+            assertThat(new MapHoverState().getCellArrivalCount())
+                .isZero();
+        }
+
+        @Test
+        void countsEveryArrivalRecorded() {
+
+            var state = new MapHoverState();
+
+            state.recordCellArrival();
+            state.recordCellArrival();
+
+            assertThat(state.getCellArrivalCount())
+                .isEqualTo(2);
+        }
+
+        @Test
+        void standsStillThroughParksAndPublishes() {
+            // A foreign map's pass parks and the real one publishes again on every frame it draws
+            // beside it, and none of that is the cursor moving - only an arrival counts.
+            var state = new MapHoverState();
+
+            state.publishHover(MapHoverFixture.buildHoverOn(
+                buildCellKey("system"),
+                List.of(buildCellKey("system"))));
+
+            state.clearHover();
+            state.expireHoverIfNoPassPublished();
+
+            assertThat(state.getCellArrivalCount())
+                .isZero();
+        }
+    }
+
+    @Nested
     class GetHover {
 
         @Test
@@ -41,7 +81,7 @@ final class MapHoverStateTests {
         void isWhatTheNextReadSees() {
 
             var state = new MapHoverState();
-            var hover = new MapHover(buildCellKey("system"), List.of(buildCellKey("system")));
+            var hover = MapHoverFixture.buildHoverOn(buildCellKey("system"), List.of(buildCellKey("system")));
 
             state.publishHover(hover);
 
@@ -54,9 +94,9 @@ final class MapHoverStateTests {
 
             var state = new MapHoverState();
 
-            state.publishHover(new MapHover(buildCellKey("first"), List.of(buildCellKey("first"))));
+            state.publishHover(MapHoverFixture.buildHoverOn(buildCellKey("first"), List.of(buildCellKey("first"))));
 
-            var second = new MapHover(buildCellKey("second"), List.of(buildCellKey("second")));
+            var second = MapHoverFixture.buildHoverOn(buildCellKey("second"), List.of(buildCellKey("second")));
 
             state.publishHover(second);
 
@@ -73,7 +113,7 @@ final class MapHoverStateTests {
 
             var state = new MapHoverState();
 
-            state.publishHover(new MapHover(buildCellKey("system"), List.of(buildCellKey("system"))));
+            state.publishHover(MapHoverFixture.buildHoverOn(buildCellKey("system"), List.of(buildCellKey("system"))));
             state.clearHover();
 
             assertThat(state.getHover())
@@ -91,7 +131,7 @@ final class MapHoverStateTests {
             // The grace this is stated over: a hover published during the frame just closed is the
             // map's current answer, and the box that reports it has yet to draw.
             var state = new MapHoverState();
-            var hover = new MapHover(buildCellKey("system"), List.of(buildCellKey("system")));
+            var hover = MapHoverFixture.buildHoverOn(buildCellKey("system"), List.of(buildCellKey("system")));
 
             state.publishHover(hover);
             state.expireHoverIfNoPassPublished();
@@ -106,7 +146,7 @@ final class MapHoverStateTests {
             // the last cell any map resolved would be named anywhere the pointer went.
             var state = new MapHoverState();
 
-            state.publishHover(new MapHover(buildCellKey("system"), List.of(buildCellKey("system"))));
+            state.publishHover(MapHoverFixture.buildHoverOn(buildCellKey("system"), List.of(buildCellKey("system"))));
             state.expireHoverIfNoPassPublished();
             state.expireHoverIfNoPassPublished();
 
@@ -119,7 +159,7 @@ final class MapHoverStateTests {
             // A map that is still drawing publishes every frame, so the window reopens with each of
             // them and the hover under a resting pointer never blinks.
             var state = new MapHoverState();
-            var hover = new MapHover(buildCellKey("system"), List.of(buildCellKey("system")));
+            var hover = MapHoverFixture.buildHoverOn(buildCellKey("system"), List.of(buildCellKey("system")));
 
             for (var frame = 0; frame < 3; frame++) {
 
@@ -137,7 +177,7 @@ final class MapHoverStateTests {
             // the hover it would expire is the one that pass already parked.
             var state = new MapHoverState();
 
-            state.publishHover(new MapHover(buildCellKey("system"), List.of(buildCellKey("system"))));
+            state.publishHover(MapHoverFixture.buildHoverOn(buildCellKey("system"), List.of(buildCellKey("system"))));
             state.clearHover();
             state.expireHoverIfNoPassPublished();
             state.expireHoverIfNoPassPublished();

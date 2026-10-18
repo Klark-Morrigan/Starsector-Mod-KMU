@@ -1,5 +1,7 @@
 package kmu.maplayers.base.hover;
 
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.map.transform.CampaignMapTransform;
 import kmlib.starsector.ui.map.transform.MapCursor;
@@ -22,6 +24,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector2f;
 import org.mockito.MockedStatic;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -122,6 +125,12 @@ final class MapHoverPublisherTests {
     private ModelviewMatrixReader readerMock;
     private UiSoundPlayerFake soundPlayerFake;
 
+    // The live systems the two cells name, and every key the publisher looked one up by - the walk
+    // of the sector a lookup stands for being what the publisher is meant to make once per cell.
+    private final StarSystemAPI hoveredSystemMock = mock(StarSystemAPI.class);
+    private final StarSystemAPI neighbourSystemMock = mock(StarSystemAPI.class);
+    private List<SystemKey> lookedUpSystemKeys;
+
     // The frame's targets with one drawn cell, clustered with a neighbour so a published hover
     // proves it carries the whole cluster and not just the cell it resolved.
     private static MapHoverTargets buildTargetsWithOneCell() {
@@ -172,7 +181,11 @@ final class MapHoverPublisherTests {
         // It starts carrying a standing hover from an earlier frame, so a parking assertion
         // distinguishes "parked" from "left alone": both publish nothing new, only the first clears.
         hoverState = new MapHoverState();
-        hoverState.publishHover(new MapHover(buildCellKey("stale"), List.of(buildCellKey("stale"))));
+        hoverState.publishHover(MapHoverFixture.buildHoverOn(
+            buildCellKey("stale"),
+            List.of(buildCellKey("stale"))));
+
+        lookedUpSystemKeys = new ArrayList<>();
     }
 
     @AfterEach
@@ -300,6 +313,65 @@ final class MapHoverPublisherTests {
         }
 
         @Test
+        void publishesTheSystemTheHoveredCellNames() {
+
+            buildPublisher()
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            assertThat(hoverState.getHover().hoveredSystem())
+                .isSameAs(hoveredSystemMock);
+        }
+
+        @Test
+        void findsTheSystemOnceWhileTheCursorRestsOnItsCell() {
+            // The lookup walks every system in the sector, and the box describing the cell draws on
+            // every frame the cursor rests there - so it is made where the cursor arrives and carried
+            // on from there.
+            var publisher = buildPublisher();
+
+            driveOneFrame(publisher, buildTargetsWithOneCell());
+            driveOneFrame(publisher, buildTargetsWithOneCell());
+            driveOneFrame(publisher, buildTargetsWithOneCell());
+
+            assertThat(lookedUpSystemKeys)
+                .containsExactly(HOVERED_SYSTEM_KEY);
+            assertThat(hoverState.getHover().hoveredSystem())
+                .isSameAs(hoveredSystemMock);
+        }
+
+        @Test
+        void findsTheSystemOnceAcrossAPassThatParksTheHover() {
+            // A foreign map's pass parks the hover on every frame it draws beside the real one, so a
+            // lookup keyed off the published hover would walk the sector each time.
+            var publisher = buildPublisher();
+            driveOneFrame(publisher, buildTargetsWithOneCell());
+
+            isCursorLocatable = false;
+            driveOneFrame(publisher, buildTargetsWithOneCell());
+
+            isCursorLocatable = true;
+            driveOneFrame(publisher, buildTargetsWithOneCell());
+
+            assertThat(lookedUpSystemKeys)
+                .containsExactly(HOVERED_SYSTEM_KEY);
+        }
+
+        @Test
+        void findsTheSystemAgainForACellReachedFromItsNeighbour() {
+
+            var publisher = buildPublisher();
+            driveOneFrame(publisher, buildTargetsWithTwoCells());
+
+            stubCursorAt(POINT_ON_NEIGHBOUR_CELL);
+            driveOneFrame(publisher, buildTargetsWithTwoCells());
+
+            assertThat(lookedUpSystemKeys)
+                .containsExactly(HOVERED_SYSTEM_KEY, NEIGHBOUR_SYSTEM_KEY);
+            assertThat(hoverState.getHover().hoveredSystem())
+                .isSameAs(neighbourSystemMock);
+        }
+
+        @Test
         void readsNoCursorOnAPassItCannotBeLocatedAgainst() {
             // Skipped rather than resolved and discarded: the read is a matrix readback and an
             // unproject, and under Fast Rendering a hop to the render thread besides. A foreign map
@@ -360,6 +432,24 @@ final class MapHoverPublisherTests {
 
             assertThat(soundPlayerFake.getPlayedCues())
                 .containsExactly(CELL_ARRIVAL_CUE);
+        }
+
+        @Test
+        void countsEachArrivalOnTheHoverState() {
+            // What a reader holding work done for one visit to a cell keys it on: resting on the cell
+            // counts once, and stepping off and back onto it counts again.
+            var publisher = buildPublisher();
+            driveOneFrame(publisher, buildTargetsWithOneCell());
+            driveOneFrame(publisher, buildTargetsWithOneCell());
+
+            stubCursorAt(POINT_OFF_CELL);
+            driveOneFrame(publisher, buildTargetsWithOneCell());
+
+            stubCursorAt(POINT_ON_CELL);
+            driveOneFrame(publisher, buildTargetsWithOneCell());
+
+            assertThat(hoverState.getCellArrivalCount())
+                .isEqualTo(2);
         }
 
         @Test
@@ -610,7 +700,21 @@ final class MapHoverPublisherTests {
             publishedInto,
             readerMock,
             () -> soundPlayerFake.playCueIfPresent(cellArrivalCue),
-            () -> isCursorLocatable);
+            () -> isCursorLocatable,
+            this::findSystemByKey);
+    }
+
+    // The sector's systems as the publisher finds them, recording each lookup.
+    private StarSystemAPI findSystemByKey(SystemKey systemKey) {
+
+        lookedUpSystemKeys.add(systemKey);
+
+        if (HOVERED_SYSTEM_KEY.equals(systemKey)) {
+            return hoveredSystemMock;
+        }
+        return NEIGHBOUR_SYSTEM_KEY.equals(systemKey)
+            ? neighbourSystemMock
+            : null;
     }
 
     // One frame as the map surface drives it: the read each of its passes makes, then the moment

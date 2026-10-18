@@ -33,12 +33,39 @@ public final class MapHoverState {
     // the pass that sets it and the frame tick that reads it are not the same caller.
     private volatile boolean hasPassPublishedSinceLastFrame;
 
+    // How many times the cursor has reached a cell it was not on. Only the frame's preparation
+    // writes it, but the box that reads it draws in a separate pass.
+    private volatile int cellArrivalCount;
+
+    /**
+     * How many times the cursor has reached a cell it was not on, stepping off one and back onto it
+     * included.
+     *
+     * <p>Counted rather than read off the hover, because the hover is parked and published again
+     * on every frame a foreign map draws beside the real one: what a reader keyed on it would see
+     * as the cursor leaving and returning, this sees as the cursor resting. A reader holding work
+     * done for one visit to a cell keys it on this, so the next visit reads the cell afresh.
+     *
+     * @return the arrivals so far on this sector's map, which only ever grows
+     */
+    public int getCellArrivalCount() {
+        return cellArrivalCount;
+    }
+
     /**
      * @return what the cursor is over as of the last map render, or {@link MapHover#NONE}
      *         when it is over no cell or the map is not being drawn
      */
     public MapHover getHover() {
         return hover;
+    }
+
+    /**
+     * Counts one arrival: the cursor has reached a cell it was not on. Called once per arrival by
+     * whatever settles the frame's answer, never per pass.
+     */
+    public void recordCellArrival() {
+        cellArrivalCount++;
     }
 
     /**

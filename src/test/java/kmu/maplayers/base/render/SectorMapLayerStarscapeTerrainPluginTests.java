@@ -12,8 +12,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import java.util.function.BooleanSupplier;
+
 import static kmu.maplayers.base.render.MapSurfaceFixtures.seatSurfacesInAnInstalledSector;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -165,6 +168,35 @@ final class SectorMapLayerStarscapeTerrainPluginTests {
 
             verify(layerRendererMock)
                 .publishHoverForPass(FACTOR);
+        }
+
+        @Test
+        void readsWhetherStarscapeIsShowingOnceAFrameForBothSurfaces() {
+            // The read walks the intel screen's live widgets, and both Starscape surfaces ask it
+            // every frame a map is up - so the first of them settles it for the frame.
+            var starscapeReadCount = new int[1];
+
+            BooleanSupplier countedRead = () -> {
+
+                starscapeReadCount[0]++;
+                return true;
+            };
+
+            var plugin = new SectorMapLayerStarscapeTerrainPlugin(countedRead);
+            var abovePlugin = new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(countedRead);
+            var machinery = seatSurfacesInAnInstalledSector(plugin, abovePlugin);
+
+            stubTheActiveLayersRendererOnAShownScreen();
+
+            MapFramePreparationClaim
+                .resolveClaimIn(machinery)
+                .renderInUICoordsBelowUI(null);
+
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
+            abovePlugin.renderOnMap(FACTOR, ALPHA_MULT);
+
+            assertThat(starscapeReadCount[0])
+                .isEqualTo(1);
         }
 
         @Test

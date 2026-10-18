@@ -13,12 +13,14 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.maplayers.politicalmap.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
 import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * The {@link MapHoverTooltip} the faction and alliance views inject: the ranked contest behind a held
@@ -89,8 +91,9 @@ public final class SystemDominationTooltip
             HoverTooltipDetailLevel detailLevel) {
 
         // One reading answers both halves: the blocks the box draws, and whether the key at its foot
-        // has anything to offer over this system. Asked apart they would be two rankings of one
-        // system per frame, and the hint could describe a contest the body does not draw.
+        // has anything to offer over this system - which the press reads off this same composition.
+        // Asked apart they would be two rankings of one system, and the hint could describe a
+        // contest the body does not draw.
         var ranking = readRankedStandings(sector, system);
 
         return new ComposedCellBody(
@@ -106,16 +109,6 @@ public final class SystemDominationTooltip
         return HoverTooltipDetailLevel.PATROL_DETAILS;
     }
 
-    @Override
-    public HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
-            SectorAPI sector,
-            StarSystemAPI system) {
-
-        // The press-time path, which composes nothing and so has to rank the system for itself. A
-        // paint reaches the same judgement above, off the ranking it already holds.
-        return resolveDeepestHeldLevel(hasAnyStanding(readRankedStandings(sector, system)));
-    }
-
     // The account of every faction the box lists, read once for the whole box rather than per
     // faction: read per faction, two of them could be explained from different selections over the
     // system, and the walk behind them is the most expensive thing a hover does. The pass remembers
@@ -123,13 +116,13 @@ public final class SystemDominationTooltip
     //
     // Taken off the pass rather than assembled here: the weighting rule and the visibility rule are
     // the pass's, and a box that named them itself could explain a system under a rule the map did
-    // not paint it under.
+    // not paint it under. The weights themselves are the ranking's, handed over rather than read
+    // again, so each market is weighed once per box.
     static FactionAccountResolver createFactionAccountResolver(
             StarSystemAPI system,
             DominancePass pass,
+            Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId,
             HoverTooltipDetailLevel detailLevel) {
-
-        var breakdownsByFactionId = pass.readWeightBreakdownsByFaction(system);
 
         // The colonies the pass could not weigh, selected beside the ones it did. They stay a
         // separate read rather than becoming a second kind of breakdown because the pass must see
@@ -137,7 +130,7 @@ public final class SystemDominationTooltip
         var unweighedColoniesByFactionId = pass.readUnweighedColoniesByFaction(system);
 
         // What the box may say about each colony beyond its weight, settled once for the whole box
-        // off the same walk the two reads above came from: what sort of place it is, whether the
+        // off the same walk the weights and the read above came from: what sort of place it is, whether the
         // player has found it, and - unless somebody is looking at it as the box is drawn - when it
         // was last seen.
         var colonyReading = SystemColonyReading.readColonyReadingOf(
@@ -176,11 +169,15 @@ public final class SystemDominationTooltip
     // makes.
     private FactionAccountResolver createAdmittedAccountResolver(
             StarSystemAPI system,
-            DominancePass pass,
+            RankedStandings ranking,
             HoverTooltipDetailLevel detailLevel) {
 
         return detailLevel.isAdmittingAccounts()
-            ? factionAccountSource.createFactionAccountResolver(system, pass, detailLevel)
+            ? factionAccountSource.createFactionAccountResolver(
+                system,
+                ranking.pass(),
+                ranking.breakdownsByFactionId(),
+                detailLevel)
             : FactionAccountResolver.NO_ACCOUNT;
     }
 
@@ -202,11 +199,22 @@ public final class SystemDominationTooltip
             sector,
             paintedGroupingSource.resolveGrouping());
 
+        // Every market weighed once for the box: the parts an account lists, with the totals the
+        // ranking compares folded out of those same parts. Read whatever the level, since the
+        // totals cost the same weighing either way and only the parts are kept besides.
+        var breakdownsByFactionId = pass.readWeightBreakdownsByFaction(system);
+
+        var groupStandings = SystemStandings.rankByDominationScore(
+            system,
+            pass,
+            breakdownsByFactionId);
+
         return new RankedStandings(
             pass,
             StandingBlockRouting.routeRankedStandings(
-                SystemStandings.rankByDominationScore(system, pass),
-                buildBlockRules(sector, pass.grouping())));
+                groupStandings,
+                buildBlockRules(sector, pass.grouping())),
+            breakdownsByFactionId);
     }
 
     // What the blocks are placed by, bound to this hover's sector and to the grouping the map painted
@@ -253,7 +261,7 @@ public final class SystemDominationTooltip
         var rowResolver = StandingRowResolver.createForBox(
             sector,
             pass.grouping(),
-            createAdmittedAccountResolver(system, pass, detailLevel));
+            createAdmittedAccountResolver(system, ranking, detailLevel));
 
         // Each block is named through the one resolver and under the pass's own grouping, so which
         // block a group falls in is the only thing that varies between them: a group reads the same
@@ -275,35 +283,46 @@ public final class SystemDominationTooltip
     interface FactionAccountSource {
 
         /**
-         * @param system      the star system under the cursor
-         * @param pass        the weighting rule, colony rule, grouping and colony walk the ranking
-         *                    resolved under, so an account reading further into the system reads it
-         *                    under the same knobs and off the same walk rather than repeating it
-         * @param detailLevel how deep the box has been asked to read, so an account carrying tiers of
-         *                    its own works out only the ones that will be drawn
+         * @param system                the star system under the cursor
+         * @param pass                  the weighting rule, colony rule, grouping and colony walk the
+         *                              ranking resolved under, so an account reading further into the
+         *                              system reads it under the same knobs and off the same walk
+         *                              rather than repeating it
+         * @param breakdownsByFactionId each faction's weighed markets as the ranking weighed them, so
+         *                              the account explains the very scores it ranked
+         * @param detailLevel           how deep the box has been asked to read, so an account carrying
+         *                              tiers of its own works out only the ones that will be drawn
          * @return what to hang beneath each listed faction
          */
         FactionAccountResolver createFactionAccountResolver(
             StarSystemAPI system,
             DominancePass pass,
+            Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId,
             HoverTooltipDetailLevel detailLevel);
     }
 
     /**
-     * One reading of a hovered system's standings: the pass it was ranked under, and where the
-     * groups it ranked are listed.
+     * One reading of a hovered system's standings: the pass it was ranked under, where the groups it
+     * ranked are listed, and the weights the ranking was summed from.
      *
-     * <p>The two travel as one value because the box reads them against each other - the status
+     * <p>The three travel as one value because the box reads them against each other - the status
      * line and the accounts hanging under the groups come off the pass, the block each group falls
-     * in off the routing. Passed apart, one read's routing could arrive beside another read's pass,
-     * and the box would explain one reading of the system under another's rule.
+     * in off the routing, and each account's parts off the weights. Passed apart, one read's routing
+     * could arrive beside another read's pass, and the box would explain one reading of the system
+     * under another's rule.
      *
      * <p>The ranking itself is not carried beside them. Every group it found is placed in some
      * block, so the routing answers both what the box lists and what it has to list at all, and a
      * value holding the ranking as well would be holding one thing in two states.
+     *
+     * @param pass                  the pass the system was ranked under
+     * @param routing               which block each ranked group is listed under
+     * @param breakdownsByFactionId each faction's weighed markets, which the ranking's totals were
+     *                              folded from
      */
     private record RankedStandings(
         DominancePass pass,
-        StandingBlockRouting routing) {
+        StandingBlockRouting routing,
+        Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
     }
 }

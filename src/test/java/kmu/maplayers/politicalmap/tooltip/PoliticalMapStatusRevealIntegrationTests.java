@@ -40,6 +40,7 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelTex
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -111,7 +112,8 @@ final class PoliticalMapStatusRevealIntegrationTests {
         standingsMock
             .when(() -> SystemStandings.rankByDominationScore(
                 any(StarSystemAPI.class),
-                any(DominancePass.class)))
+                any(DominancePass.class),
+                anyMap()))
             .thenReturn(List.of());
 
         when(systemMock.getPlanets())

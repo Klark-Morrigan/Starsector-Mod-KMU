@@ -35,7 +35,8 @@ import java.util.Set;
  * since the on-map sidebar is the player's primary way in to the map layers and has the screen width to
  * sit open.
  */
-public final class MapSidebarHost extends BaseSidebarHost {
+public final class MapSidebarHost
+        extends BaseSidebarHost {
 
     /**
      * The one on-map host; the render and input listeners registered for the sector map reference it. This
@@ -63,7 +64,7 @@ public final class MapSidebarHost extends BaseSidebarHost {
     public WidgetStyle resolveWidgetStyle() {
         // The map's own look: the chosen colour scheme's accents over a black body, with the frame
         // taking that same accent since this panel floats free and has no neighbouring chrome to match.
-        return SidebarStyles.buildAccentFramedStyle(buildTabStyle());
+        return SidebarStyles.buildAccentFramedStyle(resolveTabStyle());
     }
 
     @Override
@@ -78,10 +79,16 @@ public final class MapSidebarHost extends BaseSidebarHost {
         // Reserves inset space for all four edges, the same full set resolveBorderEdges strokes, so the
         // reserved strips and the stroke never disagree.
         return LiveSidebarPlacement.resolveMapPlacement(new SidebarHostPanel(
-            buildTabStyle(),
+            resolveTabStyle(),
             getController(),
             getScreenPicks(),
             BoxEdge.ALL));
+    }
+
+    @Override
+    protected TabStyle composeTabStyle() {
+        // The seamless strip, matching the vanilla Sector/System tabs this row hangs beneath.
+        return SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT);
     }
 
     @Override
@@ -94,10 +101,5 @@ public final class MapSidebarHost extends BaseSidebarHost {
         // Per-host rather than a host-blind "a map is showing somewhere": this panel anchors to the
         // sector map's own screen, so it needs that screen up and not merely a map on some other one.
         return CampaignMapView.isSectorMapShowing(MapLayerGameReach.MAP_VIEW.getReporter());
-    }
-
-    // The seamless strip, matching the vanilla Sector/System tabs this row hangs beneath.
-    private static TabStyle buildTabStyle() {
-        return SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT);
     }
 }
