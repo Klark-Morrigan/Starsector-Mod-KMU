@@ -11,7 +11,10 @@ import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModelFactory;
+import kmu.util.KmuStringsSettingsFake;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -26,84 +29,137 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuConditionPickerActionHandlerTests {
 
+    @BeforeEach
+    void installStrings() {
+        KmuStringsSettingsFake.installSettings();
+    }
+
+    @AfterEach
+    void clearStrings() {
+        KmuStringsSettingsFake.clearSettings();
+    }
+
     @Nested
     class Handle {
 
         @Test
         void addsAbsentConditionRefreshesModelAndShowsFeedback() {
+
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    buildSpec("hot", "Hot", true)));
+                buildSpec("hot", "Hot", true)));
+
             var marketFake = new EditableMarketFake();
             var handler = new KmuConditionPickerActionHandler(
-                    service,
-                    new KmuConditionPickerModelFactory(service),
-                    marketFake);
-            var entry = handler.getModel().getEntries().get(0);
+                service,
+                new KmuConditionPickerModelFactory(service),
+                marketFake);
+
+            var entry = handler
+                .getModel()
+                .getEntries()
+                .get(0);
 
             var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
 
-            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
+            assertThat(result.getStatus())
+                .isEqualTo(KmuConditionAddStatus.ADDED);
+
             assertThat(handler.getModel().getEntries())
-                    .extracting(KmuConditionPickerEntry::getState)
-                    .containsExactly(KmuConditionPickerEntryState.PRESENT);
+                .extracting(KmuConditionPickerEntry::getState)
+                .containsExactly(KmuConditionPickerEntryState.PRESENT);
+
             assertThat(handler.getFeedback())
-                    .hasValueSatisfying(feedback -> {
-                        assertThat(feedback.getStatus()).isEqualTo(KmuConditionAddStatus.ADDED);
-                        assertThat(feedback.getMessage()).isEqualTo("Added condition: hot");
-                        assertThat(feedback.isFailure()).isFalse();
-                    });
-            assertThat(marketFake.conditionIds).containsExactly("hot");
-            assertThat(marketFake.calls).containsExactly("add:hot", "surveyed:hot", "reapply");
+                .hasValueSatisfying(feedback -> {
+
+                    assertThat(feedback.getStatus())
+                        .isEqualTo(KmuConditionAddStatus.ADDED);
+                    assertThat(feedback.getMessage())
+                        .isEqualTo("Added condition: hot");
+                    assertThat(feedback.isFailure())
+                        .isFalse();
+                });
+
+            assertThat(marketFake.conditionIds)
+                .containsExactly("hot");
+            assertThat(marketFake.calls)
+                .containsExactly("add:hot", "surveyed:hot", "reapply");
         }
 
         @Test
         void presentConditionActionDoesNotMutateMarket() {
+
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    buildSpec("hot", "Hot", true)));
+                buildSpec("hot", "Hot", true)));
+
             var marketFake = new EditableMarketFake("hot");
             var handler = new KmuConditionPickerActionHandler(
-                    service,
-                    new KmuConditionPickerModelFactory(service),
-                    marketFake);
+                service,
+                new KmuConditionPickerModelFactory(service),
+                marketFake);
+
             var originalModel = handler.getModel();
-            var entry = handler.getModel().getEntries().get(0);
+
+            var entry = handler
+                .getModel()
+                .getEntries()
+                .get(0);
 
             var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
 
-            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.ALREADY_PRESENT);
-            assertThat(handler.getModel()).isSameAs(originalModel);
-            assertThat(handler.getFeedback()).isEmpty();
-            assertThat(marketFake.conditionIds).containsExactly("hot");
-            assertThat(marketFake.calls).isEmpty();
+            assertThat(result.getStatus())
+                .isEqualTo(KmuConditionAddStatus.ALREADY_PRESENT);
+            assertThat(handler.getModel())
+                .isSameAs(originalModel);
+            assertThat(handler.getFeedback())
+                .isEmpty();
+            assertThat(marketFake.conditionIds)
+                .containsExactly("hot");
+            assertThat(marketFake.calls)
+                .isEmpty();
         }
 
         @Test
         void failedAddRefreshesModelAndShowsFailureFeedback() {
+
             var exception = new IllegalStateException("add failed");
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    buildSpec("hot", "Hot", true)));
-            var marketFake = new EditableMarketFake()
-                    .failAddCondition(exception);
+                buildSpec("hot", "Hot", true)));
+
+            var marketFake = new EditableMarketFake().failAddCondition(exception);
             var handler = new KmuConditionPickerActionHandler(
-                    service,
-                    new KmuConditionPickerModelFactory(service),
-                    marketFake);
-            var entry = handler.getModel().getEntries().get(0);
+                service,
+                new KmuConditionPickerModelFactory(service),
+                marketFake);
+
+            var entry = handler
+                .getModel()
+                .getEntries()
+                .get(0);
 
             var result = handler.handle(KmuConditionPickerAction.fromEntry(entry));
 
-            assertThat(result.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
+            assertThat(result.getStatus())
+                .isEqualTo(KmuConditionAddStatus.FAILED);
+
             assertThat(handler.getModel().getEntries())
-                    .extracting(KmuConditionPickerEntry::getState)
-                    .containsExactly(KmuConditionPickerEntryState.ABSENT);
+                .extracting(KmuConditionPickerEntry::getState)
+                .containsExactly(KmuConditionPickerEntryState.ABSENT);
+
             assertThat(handler.getFeedback())
-                    .hasValueSatisfying(feedback -> {
-                        assertThat(feedback.getStatus()).isEqualTo(KmuConditionAddStatus.FAILED);
-                        assertThat(feedback.getMessage()).isEqualTo("Failed to add condition: hot");
-                        assertThat(feedback.isFailure()).isTrue();
-                    });
-            assertThat(marketFake.conditionIds).isEmpty();
-            assertThat(marketFake.calls).isEmpty();
+                .hasValueSatisfying(feedback -> {
+
+                    assertThat(feedback.getStatus())
+                        .isEqualTo(KmuConditionAddStatus.FAILED);
+                    assertThat(feedback.getMessage())
+                        .isEqualTo("Failed to add condition: hot");
+                    assertThat(feedback.isFailure())
+                        .isTrue();
+                });
+
+            assertThat(marketFake.conditionIds)
+                .isEmpty();
+            assertThat(marketFake.calls)
+                .isEmpty();
         }
     }
 
@@ -112,9 +168,11 @@ class KmuConditionPickerActionHandlerTests {
     }
 
     private static final class ConditionRepositoryFake implements KmuConditionRepository {
+
         private final LinkedHashMap<String, KmuConditionSpec> specsById = new LinkedHashMap<>();
 
         private ConditionRepositoryFake(KmuConditionSpec... specs) {
+
             for (var spec : specs) {
                 specsById.put(spec.getId(), spec);
             }
@@ -132,17 +190,21 @@ class KmuConditionPickerActionHandlerTests {
     }
 
     private static final class EditableMarketFake implements KmuEditableMarket {
+
         private final LinkedHashSet<String> conditionIds = new LinkedHashSet<>();
         private final List<String> calls = new ArrayList<>();
+
         private RuntimeException addConditionException;
 
         private EditableMarketFake(String... conditionIds) {
+
             for (var conditionId : conditionIds) {
                 this.conditionIds.add(conditionId);
             }
         }
 
         private EditableMarketFake failAddCondition(RuntimeException exception) {
+
             this.addConditionException = exception;
             return this;
         }
@@ -169,9 +231,11 @@ class KmuConditionPickerActionHandlerTests {
 
         @Override
         public void addCondition(String conditionId) {
+
             if (addConditionException != null) {
                 throw addConditionException;
             }
+
             calls.add("add:" + conditionId);
             conditionIds.add(conditionId);
         }

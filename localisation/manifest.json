@@ -2,6 +2,7 @@
   "defaultLocale": "en",
   "files": {
     "LunaSettings.csv": "data/config/LunaSettings.csv",
+    "commands.csv": "data/console/commands.csv",
     "strings.json": "data/strings/strings.json"
   },
   "locales": {

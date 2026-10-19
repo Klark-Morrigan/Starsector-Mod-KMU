@@ -17,7 +17,10 @@ import kmu.conditions.domain.KmuConditionService;
 import kmu.conditions.domain.KmuConditionSpec;
 import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.domain.StarsectorEditableMarket;
+import kmu.util.KmuStringsSettingsFake;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +43,16 @@ class KmuConditionPickerModelFactoryTests {
 
     private static final Color FACTION_COLOUR = new Color(90, 150, 240);
     private static final Color RELATIONSHIP_COLOUR = new Color(240, 80, 80);
+
+    @BeforeEach
+    void installStrings() {
+        KmuStringsSettingsFake.installSettings();
+    }
+
+    @AfterEach
+    void clearStrings() {
+        KmuStringsSettingsFake.clearSettings();
+    }
 
     @Nested
     class Create {

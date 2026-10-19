@@ -88,6 +88,7 @@ public final class KmuStringsSettingsFake {
         stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_LOCATION, "Location:");
         stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_LOCATION_UNKNOWN, "Unknown");
         stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_LOCATION_OWNED_BY, "owned by %s");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_LOCATION_SYSTEM_CENTER, "system center");
         stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_SUMMARY, "Conditions:");
         stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_SUMMARY_VISIBLE, "%d visible");
         stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_SUMMARY_SUPPRESSED, "%d suppressed");
@@ -102,6 +103,43 @@ public final class KmuStringsSettingsFake {
         stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_SUPPRESSED_BODY, "This condition is present on the market, but it's suppressed and has no effect.");
         stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE, "Hidden");
         stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_TITLE, "Metadata");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_LINE, "%s: %s");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_SOURCE, "source");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_ID, "id");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_ICON, "icon");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_HIDDEN, "hidden");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_SUPPRESSED, "suppressed");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_TRUE, "true");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_FALSE, "false");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_ENTRY_PRESENT, "Present");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_ENTRY_ABSENT, "Absent");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK, "%s: %s");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_ADDED, "Added condition");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_ALREADY_PRESENT, "Already present");
+        stringsByKey.put(
+            KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_CONDITION_NOT_FOUND,
+            "Condition not found");
+        stringsByKey.put(
+            KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_NOT_OFFERABLE,
+            "Not a placeable condition");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_FAILED, "Failed to add condition");
+        stringsByKey.put(
+            KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_UNKNOWN_CONDITION,
+            "unknown condition");
+        stringsByKey.put(
+            KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_OPENED,
+            "Opened Market Condition Manager.");
+        stringsByKey.put(
+            KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_NO_MARKET_CONTEXT,
+            "No active context supports market condition editing.");
+        stringsByKey.put(
+            KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_UNSUPPORTED_TARGET,
+            "Current market does not support market condition editing.");
+        stringsByKey.put(
+            KmuMarketConditionStringKeys.CONDITION_MANAGER_COMMAND_SWITCHED_OFF,
+            "The Market Condition Manager is unfinished and switched off. Switch it on under LunaLib's mod "
+                + "settings, on KMU's Features tab, to try it anyway.");
         stringsByKey.put(KmuMarketConditionStringKeys.DIALOG_CLOSE, "Close");
         stringsByKey.put(KmuMapStringKeys.MAP_LAYER_ARRANGE_TITLE, "Arrange Map Layers");
         stringsByKey.put(

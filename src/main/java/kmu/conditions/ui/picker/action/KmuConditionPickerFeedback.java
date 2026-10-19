@@ -2,28 +2,39 @@ package kmu.conditions.ui.picker.action;
 
 import kmu.conditions.domain.KmuConditionAddResult;
 import kmu.conditions.domain.KmuConditionAddStatus;
+import kmu.util.KmuMarketConditionStringKeys;
+import kmu.util.KmuStringKeys;
 
 import java.util.Objects;
 
 public final class KmuConditionPickerFeedback {
-    private static final String MESSAGE_SEPARATOR = ": ";
-    private static final String UNKNOWN_CONDITION_ID = "unknown condition";
 
     private final KmuConditionAddStatus status;
     private final String message;
 
     private KmuConditionPickerFeedback(KmuConditionAddStatus status, String message) {
+
         this.status = Objects.requireNonNull(status, "status");
         this.message = Objects.requireNonNull(message, "message");
     }
 
     public static KmuConditionPickerFeedback from(KmuConditionAddResult result) {
+
         Objects.requireNonNull(result, "result");
-        var conditionId = result.getConditionId().orElse(UNKNOWN_CONDITION_ID);
+
+        var conditionId = result
+            .getConditionId()
+            .orElseGet(() -> KmuStringKeys.get(
+                KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_UNKNOWN_CONDITION));
+
         var status = result.getStatus();
+
         return new KmuConditionPickerFeedback(
             status,
-            describeStatus(status) + MESSAGE_SEPARATOR + conditionId);
+            KmuStringKeys.format(
+                KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK,
+                describeStatus(status),
+                conditionId));
     }
 
     public KmuConditionAddStatus getStatus() {
@@ -43,12 +54,13 @@ public final class KmuConditionPickerFeedback {
     // is exhaustive over the enum, so a new status breaks the build instead of reaching a
     // runtime throw.
     private static String describeStatus(KmuConditionAddStatus status) {
-        return switch (status) {
-            case ADDED -> "Added condition";
-            case ALREADY_PRESENT -> "Already present";
-            case CONDITION_NOT_FOUND -> "Condition not found";
-            case NOT_OFFERABLE -> "Not a placeable condition";
-            case FAILED -> "Failed to add condition";
-        };
+
+        return KmuStringKeys.get(switch (status) {
+            case ADDED -> KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_ADDED;
+            case ALREADY_PRESENT -> KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_ALREADY_PRESENT;
+            case CONDITION_NOT_FOUND -> KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_CONDITION_NOT_FOUND;
+            case NOT_OFFERABLE -> KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_NOT_OFFERABLE;
+            case FAILED -> KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_FAILED;
+        });
     }
 }

@@ -2,6 +2,7 @@ package kmu;
 
 import kmlib.testfixtures.localisation.LocaleParity;
 import kmlib.testfixtures.localisation.LocalisationDirectory;
+import kmlib.testfixtures.mods.console.commands.ConsoleCommandsTable;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,8 +29,41 @@ final class LocaleParityIntegrationTests {
     // and the column-header line in each bundle's settings table.
     private static final String FIELD_ID_PREFIX = KmuMod.MOD_ID + "_";
 
-    private static final LocaleParity LOCALE_PARITY =
-        new LocaleParity(new LocalisationDirectory(LOCALISATION_DIRECTORY), FIELD_ID_PREFIX);
+    private static final LocalisationDirectory DIRECTORY = new LocalisationDirectory(LOCALISATION_DIRECTORY);
+
+    private static final LocaleParity LOCALE_PARITY = new LocaleParity(DIRECTORY, FIELD_ID_PREFIX);
+
+    // What parts a translated help from the default's English copy beneath it, as the table spells it: Console
+    // Commands reads each backslash-n as a line break. Cutting the English copy once Console Commands draws the
+    // translation is deleting everything from here to the end of the cell.
+    private static final String ENGLISH_HELP_MARKER = "\\n\\n-- English --\\n";
+
+    @Nested
+    class ConsoleCommandHelp {
+
+        @Test
+        void everyTranslatedHelpEndsInTheDefaultsWordsVerbatim() {
+
+            // Console Commands draws in fonts of its own, which hold no CJK glyphs, so a Chinese help reads as a
+            // row of question marks. Each translation carries the English beneath it until that changes, and this
+            // is what keeps the copy saying what the English table says.
+            var manifest = DIRECTORY.readManifest();
+            var defaultLocale = manifest.getDefaultLocale();
+            var defaultHelps = DIRECTORY.openBundle(defaultLocale).readConsoleCommands();
+
+            manifest
+                .declaredLocalesByTag()
+                .values()
+                .stream()
+                .filter(locale -> !locale.equals(defaultLocale))
+                .forEach(locale -> DIRECTORY.openBundle(locale).readConsoleCommands().forEach((command, cells) ->
+
+                    assertThat(cells.get(ConsoleCommandsTable.HELP_COLUMN))
+                        .as("%s help of %s", locale.localeTag(), command)
+                        .endsWith(ENGLISH_HELP_MARKER
+                            + defaultHelps.get(command).get(ConsoleCommandsTable.HELP_COLUMN))));
+        }
+    }
 
     @Nested
     class FindAllMismatches {
@@ -54,6 +88,7 @@ final class LocaleParityIntegrationTests {
             LOCALE_PARITY
                 .listModInfoFallbackFieldNames()
                 .forEach((localeTag, fallbackFieldNames) ->
+
                     testReporter.publishEntry(
                         localeTag + " launcher fields left to the base",
                         String.join(", ", fallbackFieldNames)));

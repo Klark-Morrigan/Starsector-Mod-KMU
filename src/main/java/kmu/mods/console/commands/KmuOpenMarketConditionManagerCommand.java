@@ -20,6 +20,8 @@ import kmu.conditions.ui.picker.action.StarsectorConditionPickerFeedbackSink;
 import kmu.conditions.ui.picker.dialog.StarsectorInteractionDialogPickerOpener;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuMarketConditionSettings;
+import kmu.util.KmuMarketConditionStringKeys;
+import kmu.util.KmuStringKeys;
 
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
@@ -34,14 +36,6 @@ public final class KmuOpenMarketConditionManagerCommand
     // argument as bad syntax rather than silently ignoring it.
     private static final ParameterSpec SPEC =
         ParameterSpec.takingNoArguments("kmu_mcm_open");
-
-    // What a player typing the command while the feature is off is told. It names where the switch
-    // is, because the command is registered by data file whatever the switch says: Console Commands
-    // reads commands.csv at load, so the command exists to be typed even when nothing will open,
-    // and a bare refusal would read as the command being broken.
-    private static final String FEATURE_SWITCHED_OFF_MESSAGE =
-        "The Market Condition Manager is unfinished and switched off."
-            + " Switch it on under LunaLib's mod settings, on KMU's Features tab, to try it anyway.";
 
     private final BooleanSupplier isFeatureSwitchedOn;
     private final Supplier<KmuConditionEditorOpenResult> openEditor;
@@ -73,9 +67,13 @@ public final class KmuOpenMarketConditionManagerCommand
         // Ahead of the context and syntax guards, because it is the more fundamental answer: a
         // player told they are in the wrong place would go and type the command somewhere else,
         // where a feature that is switched off still opens nothing.
+        //
+        // The refusal names where the switch is, because the command is registered by data file whatever the
+        // switch says: Console Commands reads commands.csv at load, so the command exists to be typed even when
+        // nothing will open, and a bare refusal would read as the command being broken.
         if (!isFeatureSwitchedOn.getAsBoolean()) {
 
-            output.showMessage(FEATURE_SWITCHED_OFF_MESSAGE);
+            output.showMessage(KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_COMMAND_SWITCHED_OFF));
             return CommandResult.ERROR;
         }
 

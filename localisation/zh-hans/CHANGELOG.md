@@ -20,6 +20,9 @@
 - **两个势力权重相同的星系在其中一方取得它时会重绘**，而不必等到下一次完整重绘。
 - **Nexerelin 联盟改名后，联盟视图会显示新名称**，而不再保留旧名称，直到其他变化重绘地图。
 - **市场条件管理器 (MCM) 不再在你已离开的殖民地上打开。**
+- **中文压缩包中的市场条件管理器 (MCM) 显示为中文。**
+- **中文压缩包的控制台指令帮助在英文之上附有中文译文**，待 Console Commands 的中文版能够显示中文时即可阅读。在此之前，中文会显示为 `?`，这是其 [Fossic 帖子中列出的已知问题](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299524)，玩家曾于 [2025-03-11](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299560)、[2025-11-22](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=348650) 和 [2026-01-12](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=357213) 反馈过。
+- **[KMLib]** **更新检查器会以中文打开中文压缩包的更新日志。**
 
 ### 变更
 
@@ -59,6 +62,7 @@
 
 - **政治地图*宣称*视图的悬停框读取交给它的星域**：状态行与宣称机制共用一次扫描，而不再让宣称读取正在运行的游戏中的星域。
 - **市场条件管理器 (MCM) 会把它捕获后继续执行的失败写入日志**，此前这些失败会被丢弃。
+- **中文显示的市场条件管理器 (MCM) 与控制台指令帮助：** `strings.json` 存放管理器的反馈、元数据行和打开时的消息，通过 `KmuMarketConditionStringKeys` 读取。`localisation/<locale>/commands.csv` 会写入 `data/console/commands.csv`，后者不再提交到仓库。译文帮助的末尾在 `-- English --` 一行之后附上英文帮助，由 `LocaleParityIntegrationTests` 核对其与英文表一致。
 
 #### 变更
 

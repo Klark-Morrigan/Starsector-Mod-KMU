@@ -34,6 +34,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class KmuConditionPickerDialogDelegateTests {
 
+    @BeforeEach
+    void installStarsectorSettings() {
+        KmuStringsSettingsFake.installSettings();
+    }
+
+    @AfterEach
+    void clearStarsectorSettings() {
+        KmuStringsSettingsFake.clearSettings();
+    }
+
     @Nested
     class ResolveActionFromUiEvent {
 
@@ -215,16 +225,6 @@ class KmuConditionPickerDialogDelegateTests {
 
     @Nested
     class GetConfirmText {
-
-        @BeforeEach
-        void installStarsectorSettings() {
-            KmuStringsSettingsFake.installSettings();
-        }
-
-        @AfterEach
-        void clearStarsectorSettings() {
-            KmuStringsSettingsFake.clearSettings();
-        }
 
         @Test
         void confirmTextIsTheSharedCloseWording() {

@@ -1,5 +1,8 @@
 package kmu.conditions.ui.editor;
 
+import kmu.util.KmuMarketConditionStringKeys;
+import kmu.util.KmuStringKeys;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,7 +28,7 @@ public final class KmuConditionEditorOpenResult {
 
         return new KmuConditionEditorOpenResult(
             KmuConditionEditorOpenStatus.OPENED,
-            "Opened Market Condition Manager.",
+            KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_OPENED),
             null);
     }
 
@@ -33,7 +36,7 @@ public final class KmuConditionEditorOpenResult {
 
         return new KmuConditionEditorOpenResult(
             KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT,
-            "No active context supports market condition editing.",
+            KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_NO_MARKET_CONTEXT),
             null);
     }
 
@@ -41,7 +44,7 @@ public final class KmuConditionEditorOpenResult {
 
         var normalisedReason = normaliseText(reason);
         var message = normalisedReason == null
-            ? "Current market does not support market condition editing."
+            ? KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_UNSUPPORTED_TARGET)
             : normalisedReason;
 
         return new KmuConditionEditorOpenResult(

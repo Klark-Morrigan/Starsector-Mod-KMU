@@ -24,6 +24,7 @@
     "condition_manager_location": "Location:",
     "condition_manager_location_unknown": "Unknown",
     "condition_manager_location_owned_by": "owned by %s",
+    "condition_manager_location_system_center": "system center",
 
     "condition_manager_summary": "Conditions:",
     "condition_manager_summary_visible": "%d visible",
@@ -41,6 +42,31 @@
     "condition_manager_tooltip_suppressed_body": "This condition is present on the market, but it's suppressed and has no effect.",
     "condition_manager_tooltip_hidden_title": "Hidden",
     "condition_manager_tooltip_hidden_body": "This condition is present on the market, but it's hidden and still applies its effects.",
+    "condition_manager_tooltip_metadata_title": "Metadata",
+    "condition_manager_tooltip_metadata_line": "%s: %s",
+    "condition_manager_tooltip_metadata_source": "source",
+    "condition_manager_tooltip_metadata_id": "id",
+    "condition_manager_tooltip_metadata_icon": "icon",
+    "condition_manager_tooltip_metadata_hidden": "hidden",
+    "condition_manager_tooltip_metadata_suppressed": "suppressed",
+    "condition_manager_tooltip_metadata_true": "true",
+    "condition_manager_tooltip_metadata_false": "false",
+
+    "condition_manager_entry_present": "Present",
+    "condition_manager_entry_absent": "Absent",
+
+    "condition_manager_feedback": "%s: %s",
+    "condition_manager_feedback_added": "Added condition",
+    "condition_manager_feedback_already_present": "Already present",
+    "condition_manager_feedback_condition_not_found": "Condition not found",
+    "condition_manager_feedback_not_offerable": "Not a placeable condition",
+    "condition_manager_feedback_failed": "Failed to add condition",
+    "condition_manager_feedback_unknown_condition": "unknown condition",
+
+    "condition_manager_open_opened": "Opened Market Condition Manager.",
+    "condition_manager_open_no_market_context": "No active context supports market condition editing.",
+    "condition_manager_open_unsupported_target": "Current market does not support market condition editing.",
+    "condition_manager_command_switched_off": "The Market Condition Manager is unfinished and switched off. Switch it on under LunaLib's mod settings, on KMU's Features tab, to try it anyway.",
 
     "dialog_close": "Close",
 

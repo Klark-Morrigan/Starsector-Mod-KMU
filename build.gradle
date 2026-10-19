@@ -142,6 +142,11 @@ enforcePackageVocabulary {
     // it is *decivilised*. Plurals are separate entries because the gate parts
     // words one at a time, so a phrase list closing the singular leaves the
     // plural open.
+    //
+    // The player reads one other word for a derelict, in one place: the hover
+    // box's qualifier says *abandoned*, as vanilla's Abandoned Station names
+    // say, so the box speaks the game's word beside the game's own names.
+    // Everywhere else - code, docs and every other string - says *derelict*.
     forbidWords under: 'kmu',
                 words: ['hulk', 'hulks',
                         'dead colony', 'dead colonies',

@@ -116,25 +116,49 @@ public final class KmuConditionEntryTooltipCreator
         var metadataLines = new ArrayList<String>();
 
         metadataLines.add(metadataText(
-            "source",
+            KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_SOURCE,
             entry.getSourceModName().orElse(StarsectorConditionRepository.VANILLA_SOURCE_NAME)));
 
-        metadataLines.add(metadataText("id", entry.getConditionId()));
+        metadataLines.add(metadataText(
+            KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_ID,
+            entry.getConditionId()));
 
         entry
             .getIcon()
-            .ifPresent(icon -> metadataLines.add(metadataText("icon", icon)));
+            .ifPresent(icon -> metadataLines.add(metadataText(
+                KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_ICON,
+                icon)));
 
         if (entry.isPresent()) {
 
-            metadataLines.add(metadataText("hidden", String.valueOf(entry.isHidden())));
-            metadataLines.add(metadataText("suppressed", String.valueOf(entry.isSuppressed())));
+            metadataLines.add(metadataText(
+                KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_HIDDEN,
+                describeFlag(entry.isHidden())));
+
+            metadataLines.add(metadataText(
+                KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_SUPPRESSED,
+                describeFlag(entry.isSuppressed())));
         }
 
-        KmuTooltipSection.add(tooltip, KmuTooltipSectionStyle.MUTED, "Metadata", metadataLines);
+        KmuTooltipSection.add(
+            tooltip,
+            KmuTooltipSectionStyle.MUTED,
+            KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_TITLE),
+            metadataLines);
     }
 
-    private String metadataText(String label, String value) {
-        return label + ": " + value;
+    private String describeFlag(boolean isSet) {
+
+        return KmuStringKeys.get(isSet
+            ? KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_TRUE
+            : KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_FALSE);
+    }
+
+    private String metadataText(String labelKey, String value) {
+
+        return KmuStringKeys.format(
+            KmuMarketConditionStringKeys.CONDITION_MANAGER_TOOLTIP_METADATA_LINE,
+            KmuStringKeys.get(labelKey),
+            value);
     }
 }

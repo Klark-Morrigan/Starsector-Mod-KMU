@@ -2,6 +2,8 @@ package kmu.conditions.ui.editor;
 
 import kmu.conditions.ui.context.KmuMarketUiContext;
 import kmu.conditions.ui.context.KmuMarketUiContextSource;
+import kmu.util.KmuMarketConditionStringKeys;
+import kmu.util.KmuStringKeys;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -20,6 +22,6 @@ public final class StarsectorConditionEditorTargetValidator implements KmuCondit
             return Optional.empty();
         }
 
-        return Optional.of("Current market does not support market condition editing.");
+        return Optional.of(KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_UNSUPPORTED_TARGET));
     }
 }

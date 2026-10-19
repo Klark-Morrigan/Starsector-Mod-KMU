@@ -47,9 +47,10 @@ Each release carries one zip per language, named for it:
 `KMU-<version>-en.zip` is English and `KMU-<version>-zh-hans.zip` is Simplified Chinese.
 Install one.
 Each is the whole mod;
-they differ only in the text of the settings screen, the Map sidebar, the hover boxes and the notices,
+they differ only in the text of the settings screen, the Map sidebar, the hover boxes, the notices,
+the Market Condition Manager and the console commands' help,
 in the launcher's mod list entry,
-and in the language of the `CHANGELOG.md` inside.
+and in the language of the `CHANGELOG.md` inside and the changelog an update checker links to.
 Settings carry over between them.
 
 ### English
@@ -324,13 +325,21 @@ KMU states no build wiring of its own for it.
 
 ### Localisation
 
-KMU's strings and settings-screen text are kept per language under [localisation/](localisation/),
+KMU's strings, settings-screen text and console command help are kept per language under [localisation/](localisation/),
 one bundle directory per locale,
 with [localisation/manifest.json](localisation/manifest.json) naming the locales, the default,
 and where each bundle file lands.
 Edit the bundle, never the copy:
-`data/strings/strings.json` and `data/config/LunaSettings.csv` are written from one bundle
+`data/strings/strings.json`, `data/config/LunaSettings.csv` and `data/console/commands.csv` are written from one bundle
 by `gradlew jar` and are not committed.
+A command table translates only its `help` column;
+the parity suite holds the command, class, tags and syntax to the default's,
+since those are what a player types and what the console runs.
+Each translated help is followed by the English one, after a `-- English --` line:
+Console Commands draws in fonts of its own that hold no Chinese, so until it does,
+the English copy is what a player can read.
+`LocaleParityIntegrationTests` holds that copy to the English table word for word,
+and cutting it later is deleting everything from the marker to the end of each cell.
 The launcher's `mod_info.json` is written the same way,
 from the committed [mod_info.base.json](mod_info.base.json)
 with the locale's own `mod_info.json`, where it has one, merged over it -
@@ -343,7 +352,8 @@ is KMLib's `writeLocaleFiles`, described in
 `LocaleParityIntegrationTests` holds every locale to the default under `test`.
 
 A translated locale also keeps a full translation of [CHANGELOG.md](CHANGELOG.md) in its bundle directory,
-which its zip ships in place of the root one and its release notes show:
+which its zip ships in place of the root one, its release notes show,
+and its version file names as the `changelogURL` an update checker links to:
 [localisation/zh-hans/CHANGELOG.md](localisation/zh-hans/CHANGELOG.md).
 The parity suite holds it to the root changelog point for point,
 so an entry added to one is added to every translation in the same pull request.

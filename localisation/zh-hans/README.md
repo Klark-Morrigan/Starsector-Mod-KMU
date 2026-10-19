@@ -66,9 +66,10 @@ so read both for the full picture.
 | File | What it is |
 | --- | --- |
 | [CHANGELOG.md](CHANGELOG.md) | A full translation of the root [CHANGELOG.md](../../CHANGELOG.md): every version, every section. The Chinese zip ships it, and each release's notes show its section for the version. |
+| [commands.csv](commands.csv) | The console commands' table: the help Console Commands prints for each `kmu_` command. Only the `help` column is translated; the rest is what a player types and what the console runs. Each help is the Chinese, then a `-- English --` line and the English help verbatim: Console Commands' own fonts hold no Chinese, so the Chinese draws as `?` until a version of it that does. |
 | [LunaSettings.csv](LunaSettings.csv) | The LunaLib settings screen: tab names, captions, setting names and descriptions. |
 | [mod_info.json](mod_info.json) | The launcher's mod list entry: `name` and `description` only, merged over the base. |
-| [strings.json](strings.json) | Every string KMU draws in game: the sidebar, hover boxes, dialogs and notices. |
+| [strings.json](strings.json) | Every string KMU draws in game: the sidebar, hover boxes, dialogs, notices and the Market Condition Manager. |
 
 Players of this bundle are expected to have the
 [Chinese core localisation](https://github.com/TruthOriginem/Starsector-Localization-CN)
@@ -294,8 +295,14 @@ which every KM mod's shares.
 | list separators (the condition manager's lines) | ` ； ` between groups, ` ， ` between items | an ASCII space either side, so the highlighted counts and names beside them still highlight |
 | market condition | 市场条件 | from vanilla's 殖民地条件, with 市场 since the manager works on markets |
 | Market Condition Manager (MCM) | 市场条件管理器 (MCM) | from 殖民地条件 |
+| Metadata (the hover box's last section) | 元数据 | the usual computing word |
 | owned by (a planet's faction) | 属于 | the game's own text has no such phrase; the faction's name follows after a space |
+| placeable (a condition the manager may add) | 可放置的 | 可, can be, with 放置, to place |
+| Present / Absent (a condition on the market) | 存在 / 不存在 | as the summary's 个存在 writes it |
+| `source`, `id`, `icon` (metadata lines) | 来源, ID, 图标 | the usual words; `ID` stays Latin, as KMLib's reference writes 字符串 ID |
+| system center (a system's middle where no star sits) | 星系中心 | vanilla's 星系 with 中心, center; vanilla never names it. Not 质心, barycentre, which is true only where stars orbit it, and false for a starless system such as a nebula |
 | suppressed (condition) | 被压制 | the plain passive for a condition held down but not removed |
+| true / false (a metadata line's answer) | 是 / 否 | a yes-or-no fact; a settings switch says 开启 / 关闭 instead, as [Descriptions](#descriptions) writes it |
 
 #### Compatibility
 
@@ -593,9 +600,13 @@ The ` - ` in a tab name is an ASCII hyphen with a space either side, as in Engli
 | English | 简体中文 | Note |
 | --- | --- | --- |
 | colonisable market | 可殖民市场 | vanilla writes only the negative, 无法殖民 |
+| console commands | 控制台指令 | as [Console Commands' Fossic thread](https://www.fossic.org/thread-14602-1-1.html) writes it throughout, never 命令; Console Commands, the mod, keeps its name |
 | cut-off systems | 被截断的星系 | 截断, to cut off, before vanilla's 星系 |
 | game logs | 游戏日志 | 日志, KMLib's word for a log |
 | performance measurements | 性能测量 | from 性能, with 测量, to measure |
+| section (one stretch of work the profiler times) | 计时段 | 计时, timing, with 段, a stretch |
+| self time (a section's own time, without the sections it ran) | 自身耗时 | 自身, its own, with 耗时, time taken |
+| timings | 性能计时 | from 性能, with 计时, timing |
 
 ### The forum banner
 

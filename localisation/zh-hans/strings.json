@@ -24,6 +24,7 @@
     "condition_manager_location": "位置：",
     "condition_manager_location_unknown": "未知",
     "condition_manager_location_owned_by": "属于 %s",
+    "condition_manager_location_system_center": "星系中心",
 
     "condition_manager_summary": "条件：",
     "condition_manager_summary_visible": "%d 个可见",
@@ -41,6 +42,31 @@
     "condition_manager_tooltip_suppressed_body": "该条件存在于此市场，但已被压制，不产生任何效果。",
     "condition_manager_tooltip_hidden_title": "隐藏",
     "condition_manager_tooltip_hidden_body": "该条件存在于此市场，但处于隐藏状态，其效果仍然生效。",
+    "condition_manager_tooltip_metadata_title": "元数据",
+    "condition_manager_tooltip_metadata_line": "%s：%s",
+    "condition_manager_tooltip_metadata_source": "来源",
+    "condition_manager_tooltip_metadata_id": "ID",
+    "condition_manager_tooltip_metadata_icon": "图标",
+    "condition_manager_tooltip_metadata_hidden": "隐藏",
+    "condition_manager_tooltip_metadata_suppressed": "被压制",
+    "condition_manager_tooltip_metadata_true": "是",
+    "condition_manager_tooltip_metadata_false": "否",
+
+    "condition_manager_entry_present": "存在",
+    "condition_manager_entry_absent": "不存在",
+
+    "condition_manager_feedback": "%s：%s",
+    "condition_manager_feedback_added": "已添加条件",
+    "condition_manager_feedback_already_present": "已存在",
+    "condition_manager_feedback_condition_not_found": "未找到条件",
+    "condition_manager_feedback_not_offerable": "不是可放置的条件",
+    "condition_manager_feedback_failed": "添加条件失败",
+    "condition_manager_feedback_unknown_condition": "未知条件",
+
+    "condition_manager_open_opened": "已打开市场条件管理器。",
+    "condition_manager_open_no_market_context": "当前没有可编辑市场条件的市场。",
+    "condition_manager_open_unsupported_target": "当前市场不支持编辑市场条件。",
+    "condition_manager_command_switched_off": "市场条件管理器尚未完成，目前处于关闭状态。如仍想试用，请在 LunaLib Mod 设置中，于 KMU 的功能标签页将其开启。",
 
     "dialog_close": "关闭",
 

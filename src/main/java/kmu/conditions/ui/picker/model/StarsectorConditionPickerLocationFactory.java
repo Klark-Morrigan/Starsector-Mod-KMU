@@ -11,6 +11,8 @@ import kmlib.starsector.factions.relation.PlayerRelations;
 
 import kmu.conditions.domain.KmuEditableMarket;
 import kmu.starsector.StarsectorGravityWellResolver;
+import kmu.util.KmuMarketConditionStringKeys;
+import kmu.util.KmuStringKeys;
 
 import java.util.Objects;
 
@@ -220,8 +222,14 @@ final class StarsectorConditionPickerLocationFactory {
             return entityName;
         }
 
+        // Named "system center" because that is the one name true of every kind vanilla makes. A system with a
+        // star has the star as its centre, named above. Vanilla adds a starless centre in two other cases:
+        // - a close binary or trinary, whose stars orbit it, so it is their barycentre;
+        // - a system with no star at all - a nebula, a rogue object, a hidden site - where it is only the
+        //   system's middle, and nothing orbits it for its mass.
+        // "Barycentre" or "centre of gravity" would be true of the first case alone.
         return entity.isSystemCenter()
-            ? "center of gravity"
+            ? KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_LOCATION_SYSTEM_CENTER)
             : null;
     }
 
