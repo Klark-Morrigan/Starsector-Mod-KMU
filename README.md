@@ -99,7 +99,7 @@ keybinds and underlying mechanics.
 
 ### Map layers
 
-**Sector Map Layers**
+**Sector Map Layers** (colloquially known as the **map mod**)
 is an overlay for the map screen **(Tab, Q)**,
 the intel screen **(E, 1)**,
 the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have **Random Assortment of Things** installed.

@@ -224,9 +224,10 @@ The English README's Languages section says the same to an English reader.
 
 ## Sector Map Layers
 
-- EN: Sector Map Layers is an overlay for the map screen (Tab, Q), the intel screen (E, 1), the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have Random Assortment of Things installed.
+- EN: Sector Map Layers (colloquially known as the map mod) is an overlay for the map screen (Tab, Q), the intel screen (E, 1), the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have Random Assortment of Things installed.
   - ZH: 星图图层是叠加在星图界面 (Tab, Q) 和情报信息界面 (E, 1) 上的叠加层；若安装了 Random Assortment of Things，也会显示在屏幕右下角的小地图上（它替换了原版的雷达）。
   - Notes: Sector Map Layers, map screen and overlay in [features and screens][kmu-features]; Intel in [screens and the map][kmu-screens].
+    The map mod nickname is left untranslated and out of the Fossic post.
     Minimap in [features and screens][kmu-features]; radar in [screens and the map][kmu-screens]; vanilla in [KMLib's forum terms][kmlib-forum].
 - EN: Everything is calculated and drawn off of game data, and it gets updated as the state of the sector changes.
   - ZH: 一切都根据游戏数据计算并绘制，并随星域局势的变化而更新。
