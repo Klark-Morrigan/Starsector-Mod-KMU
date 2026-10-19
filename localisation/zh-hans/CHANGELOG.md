@@ -159,7 +159,7 @@
 | `BorderTraceStyle(EdgeInsetRule, double, double, double)` | `BorderTraceStyle(EdgeInset, double, double)`：描绘携带的正是塑造单元所用的同一个 `EdgeInset` |
 | `KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_NAME` 及其 `strings.json` 键 | `KmuOwnerMapStringKeys.OWNER_MAP_CTL_SORT_NAME`。各排序词汇的名称模式为 `OwnerMetricSortMode.createNameMode(List)` |
 | `FactionAllianceSource.readAlliances()`、`FactionAllianceRegistry.readAlliances()` 和 `ColonyKnowledge.observingUnderTheFog()` | 各自接收要询问其联盟的 `SectorAPI` |
-| 读取正在运行的游戏中星域的 `StarsectorMarketUiContextResolver()`、`StarsectorInteractionDialogPickerOpener()` 和 `StarsectorConditionPickerFeedbackSink()` | 已移除：各自接收控制台命令只解析一次的 `SectorAPI` |
+| 读取正在运行的游戏中星域的 `StarsectorMarketUiContextResolver()`、`StarsectorInteractionDialogPickerOpener()` 和 `StarsectorConditionPickerFeedbackSink()` | 已移除：各自接收控制台指令只解析一次的 `SectorAPI` |
 | `KmuConditionPickerEditor(KmuConditionService, KmuConditionPickerDialogOpener)` 及其三参数形式，以及 `KmuConditionPickerDialogDelegate(KmuConditionPickerActionHandler)` 和 `(KmuConditionPickerActionHandler, float, float)` | 各自还接收选择器报告所用的 `KmuConditionPickerFeedbackSink` |
 | `MapHover(SystemKey, List)` | `MapHover(SystemKey, StarSystemAPI, List)`：悬停携带光标抵达单元时其键所指的实时星系 |
 | `MapHoverPublisher(MapHoverState, ModelviewMatrixReader, CellArrivalAnnouncer, BooleanSupplier)` | 还接收用于查找悬停星系的 `Function<SystemKey, StarSystemAPI>`，每抵达一个单元只询问一次 |
@@ -432,4 +432,4 @@
   - **Nexerelin** 兼容性。
   - **Random Assortment of Things** 兼容性。
   - 基于 **LunaLib** 的设置。
-  - *kmu_profiling* 控制台命令。
+  - *kmu_profiling* 控制台指令。

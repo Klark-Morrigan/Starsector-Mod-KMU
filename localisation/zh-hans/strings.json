@@ -124,7 +124,7 @@
     "political_map_tooltip_qualifier_hidden": "隐藏",
     "political_map_tooltip_qualifier_unlisted": "未列出",
     "political_map_tooltip_qualifier_non_territorial": "非领土",
-    "political_map_tooltip_qualifier_fraction": "(%d/%d)",
+    "political_map_tooltip_qualifier_fraction": "（%d/%d）",
 
     "political_map_tooltip_last_seen": "上次观测：%s（%s）",
 

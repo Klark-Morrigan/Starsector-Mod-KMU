@@ -593,7 +593,6 @@ The ` - ` in a tab name is an ASCII hyphen with a space either side, as in Engli
 | English | 简体中文 | Note |
 | --- | --- | --- |
 | colonisable market | 可殖民市场 | vanilla writes only the negative, 无法殖民 |
-| console commands | 控制台指令 | Console Commands, the mod, keeps its name |
 | cut-off systems | 被截断的星系 | 截断, to cut off, before vanilla's 星系 |
 | game logs | 游戏日志 | 日志, KMLib's word for a log |
 | performance measurements | 性能测量 | from 性能, with 测量, to measure |
