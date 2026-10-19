@@ -66,10 +66,10 @@ so read both for the full picture.
 | File | What it is |
 | --- | --- |
 | [CHANGELOG.md](CHANGELOG.md) | A full translation of the root [CHANGELOG.md](../../CHANGELOG.md): every version, every section. The Chinese zip ships it, and each release's notes show its section for the version. |
-| [commands.csv](commands.csv) | The console commands' table: the help Console Commands prints for each `kmu_` command. Only the `help` column is translated; the rest is what a player types and what the console runs. Each help is the Chinese, then a `-- English --` line and the English help verbatim: Console Commands' own fonts hold no Chinese, so the Chinese draws as `?` until a version of it that does. |
+| [commands.csv](commands.csv) | The console commands' table: the help Console Commands prints for each `kmu_` command. Only the `help` column is translated; the rest is what a player types and what the console runs. Each help carries the English after it, by [KMLib's rule for console text](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#rules). |
 | [LunaSettings.csv](LunaSettings.csv) | The LunaLib settings screen: tab names, captions, setting names and descriptions. |
 | [mod_info.json](mod_info.json) | The launcher's mod list entry: `name` and `description` only, merged over the base. |
-| [strings.json](strings.json) | Every string KMU draws in game: the sidebar, hover boxes, dialogs, notices and the Market Condition Manager. |
+| [strings.json](strings.json) | Every string KMU draws in game: the sidebar, hover boxes, dialogs, notices and the Market Condition Manager, and what its console command prints, whose `console_` strings carry the English after them as the help does. |
 
 Players of this bundle are expected to have the
 [Chinese core localisation](https://github.com/TruthOriginem/Starsector-Localization-CN)
@@ -596,6 +596,9 @@ which is how the tooltip heading reads: the faction's name, then 核心领土.
 The ` - ` in a tab name is an ASCII hyphen with a space either side, as in English.
 
 ### Console commands
+
+The console's own words, and the English copy every console text carries, are in
+[KMLib's console commands](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#console-commands).
 
 | English | 简体中文 | Note |
 | --- | --- | --- |

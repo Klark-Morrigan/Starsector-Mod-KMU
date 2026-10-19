@@ -63,10 +63,15 @@
     "condition_manager_feedback_failed": "Failed to add condition",
     "condition_manager_feedback_unknown_condition": "unknown condition",
 
-    "condition_manager_open_opened": "Opened Market Condition Manager.",
-    "condition_manager_open_no_market_context": "No active context supports market condition editing.",
-    "condition_manager_open_unsupported_target": "Current market does not support market condition editing.",
-    "condition_manager_command_switched_off": "The Market Condition Manager is unfinished and switched off. Switch it on under LunaLib's mod settings, on KMU's Features tab, to try it anyway.",
+    "console_condition_manager_opened": "Opened Market Condition Manager.",
+    "console_condition_manager_no_market_context": "No active context supports market condition editing.",
+    "console_condition_manager_unsupported_target": "Current market does not support market condition editing.",
+    "console_condition_manager_switched_off": "The Market Condition Manager is unfinished and switched off. Switch it on under LunaLib's mod settings, on KMU's Features tab, to try it anyway.",
+    "console_condition_manager_failed_to_open": "Failed to open Market Condition Manager",
+    "console_condition_manager_failed_to_resolve_context": "Failed to resolve current market context",
+    "console_condition_manager_failed_to_validate_target": "Failed to validate MCM target",
+    "console_condition_manager_failure": "%s.",
+    "console_condition_manager_failure_with_cause": "%s: %s",
 
     "dialog_close": "Close",
 

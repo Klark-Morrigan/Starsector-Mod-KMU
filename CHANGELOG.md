@@ -22,7 +22,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **The alliances view shows a Nexerelin alliance's new name once it is renamed**, rather than keeping the old name until something else redraws the map.
 - **The Market Condition Manager no longer opens on a colony you have already left.**
 - **The Chinese zip shows the Market Condition Manager in Chinese.**
-- **The Chinese zip's console help carries a Chinese translation above the English**, ready for when the Chinese version of Console Commands draws Chinese. Until then the Chinese shows as `?`, a [known issue on its Fossic thread](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299524) that players reported on [2025-03-11](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299560), [2025-11-22](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=348650) and [2026-01-12](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=357213).
+- **The Chinese zip's console text carries a Chinese translation beside the English**: the help shows the Chinese above the English, and the Market Condition Manager command prints its English, ready for when the Chinese version of Console Commands draws Chinese. Until then the Chinese shows as `?`, a [known issue on its Fossic thread](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299524) that players reported on [2025-03-11](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=299560), [2025-11-22](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=348650) and [2026-01-12](https://www.fossic.org/forum.php?mod=redirect&goto=findpost&ptid=14602&pid=357213).
 - **[KMLib]** **An update checker opens the Chinese zip's changelog in Chinese.**
 
 ### Changed
@@ -63,7 +63,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **The *Claims* view's hover box reads the sector it was handed**, through one walk shared by its status line and the claim mechanic, rather than letting the claim read the running game's sector.
 - **The Market Condition Manager logs the failures it carries on past**, where they were dropped.
-- **The Market Condition Manager and the console help in Chinese:** `strings.json` holds the manager's feedback, metadata lines and open messages, read through `KmuMarketConditionStringKeys`. `localisation/<locale>/commands.csv` is written to `data/console/commands.csv`, which is no longer committed. A translated help ends in the English one after a `-- English --` line, which `LocaleParityIntegrationTests` holds to the English table.
+- **The Market Condition Manager and the console help in Chinese:** `strings.json` holds the manager's feedback, metadata lines and open messages, read through `KmuMarketConditionStringKeys`. `localisation/<locale>/commands.csv` is written to `data/console/commands.csv`, which is no longer committed. A translated help ends in the English one after a `-- English --` line, and so does each `console_` string, which the command reads through KMLib's `ConsoleStrings`. KMLib's `LocaleParity` holds each copy to the English bundle. The log keeps the manager's failures in English, whatever the result says.
 
 #### Changed
 

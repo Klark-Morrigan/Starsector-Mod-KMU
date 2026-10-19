@@ -13,7 +13,10 @@ import kmlib.profiling.snapshot.WorstCall;
 import kmlib.testfixtures.mods.console.commands.output.CommandOutputFake;
 
 import kmu.maplayers.base.render.MapFrameSections;
+import kmu.util.KmuStringsSettingsFake;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lazywizard.console.BaseCommand.CommandContext;
@@ -45,6 +48,16 @@ final class KmuProfilingReportCommandTests {
 
     private final KmuProfilingReportCommand command =
         new KmuProfilingReportCommand(() -> profilerMock, outputFake, logFake);
+
+    @BeforeEach
+    void installStrings() {
+        KmuStringsSettingsFake.installSettings();
+    }
+
+    @AfterEach
+    void clearStrings() {
+        KmuStringsSettingsFake.clearSettings();
+    }
 
     @Nested
     class RunCommand {

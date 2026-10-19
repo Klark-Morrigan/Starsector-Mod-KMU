@@ -168,7 +168,7 @@ class KmuOpenMarketConditionManagerCommandTests {
             var command = new KmuOpenMarketConditionManagerCommand(
                 FEATURE_SWITCHED_ON,
                 () -> KmuConditionEditorOpenResult.failed(
-                    "Failed to open Market Condition Manager.",
+                    "Failed to open Market Condition Manager",
                     new IllegalStateException("dialog unavailable")),
                 outputFake);
 
@@ -178,6 +178,23 @@ class KmuOpenMarketConditionManagerCommandTests {
                 .isEqualTo(CommandResult.ERROR);
             assertThat(outputFake.getMessages())
                 .containsExactly("Failed to open Market Condition Manager: dialog unavailable");
+        }
+
+        @Test
+        void closesAFailureWhoseCauseSaysNothing() {
+            // Nothing to join, so the failure's own template closes the sentence.
+            var outputFake = new CommandOutputFake();
+            var command = new KmuOpenMarketConditionManagerCommand(
+                FEATURE_SWITCHED_ON,
+                () -> KmuConditionEditorOpenResult.failed(
+                    "Failed to open Market Condition Manager",
+                    new IllegalStateException()),
+                outputFake);
+
+            command.runCommand("", CommandContext.CAMPAIGN_MARKET);
+
+            assertThat(outputFake.getMessages())
+                .containsExactly("Failed to open Market Condition Manager.");
         }
 
         @Test

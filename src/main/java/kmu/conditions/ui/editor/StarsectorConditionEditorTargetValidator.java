@@ -1,5 +1,7 @@
 package kmu.conditions.ui.editor;
 
+import kmlib.mods.console.ConsoleStrings;
+
 import kmu.conditions.ui.context.KmuMarketUiContext;
 import kmu.conditions.ui.context.KmuMarketUiContextSource;
 import kmu.util.KmuMarketConditionStringKeys;
@@ -22,6 +24,9 @@ public final class StarsectorConditionEditorTargetValidator implements KmuCondit
             return Optional.empty();
         }
 
-        return Optional.of(KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_UNSUPPORTED_TARGET));
+        // Printed by the console, which is the one place a refusal reaches the player.
+        return Optional.of(ConsoleStrings.get(
+            KmuStringKeys.CATEGORY,
+            KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_UNSUPPORTED_TARGET));
     }
 }

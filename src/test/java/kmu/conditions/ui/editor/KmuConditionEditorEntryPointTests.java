@@ -3,8 +3,11 @@ package kmu.conditions.ui.editor;
 import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
+
 import kmu.conditions.ui.context.KmuMarketUiContext;
 import kmu.conditions.ui.context.KmuMarketUiContextSource;
+import kmu.util.KmuMarketConditionStringKeys;
 import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
@@ -216,9 +219,37 @@ class KmuConditionEditorEntryPointTests {
             assertThat(result.getStatus())
                 .isEqualTo(KmuConditionEditorOpenStatus.FAILED);
             assertThat(result.getMessage())
-                .isEqualTo("Failed to validate MCM target.");
+                .isEqualTo("Failed to validate MCM target");
             assertThat(reports)
                 .containsExactly("Failed to validate MCM target. / target check failed");
+        }
+
+        @Test
+        void logsEnglishWhileTheResultReadsThePlayersWording() {
+            // The log is what a bug report carries, so it stays English whatever language the player reads.
+            StarsectorSettingsFake.installSettings((category, key) ->
+                KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILED_TO_OPEN.equals(key)
+                    ? "Ouverture impossible"
+                    : null);
+
+            var reports = new ArrayList<String>();
+            var context = KmuMarketUiContext.withoutPanel(
+                buildMarket(),
+                KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
+
+            var entryPoint = new KmuConditionEditorEntryPoint(
+                () -> Optional.of(context),
+                ignored -> {
+                    throw new IllegalStateException("editor failed");
+                },
+                (message, cause) -> reports.add(message + " / " + cause.getMessage()));
+
+            var result = entryPoint.openForCurrentMarketDetailed();
+
+            assertThat(result.getMessage())
+                .isEqualTo("Ouverture impossible");
+            assertThat(reports)
+                .containsExactly("Failed to open Market Condition Manager. / editor failed");
         }
     }
 

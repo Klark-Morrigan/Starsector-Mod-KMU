@@ -5,11 +5,12 @@ package kmu.util;
  * grid, the hover over a condition, what adding one answers, what opening the manager answers,
  * and the dialog's close button.
  *
- * <p>Read through {@link KmuStringKeys}' accessors, which bind the category.
+ * <p>Read through {@link KmuStringKeys}' accessors, which bind the category. The {@code CONSOLE_} keys are what
+ * the console prints, and are read through {@link kmlib.mods.console.ConsoleStrings} instead: a translation of
+ * them carries an English copy the console can draw.
  */
 public final class KmuMarketConditionStringKeys {
 
-    public static final String CONDITION_MANAGER_COMMAND_SWITCHED_OFF = "condition_manager_command_switched_off";
     public static final String CONDITION_MANAGER_ENTRY_ABSENT = "condition_manager_entry_absent";
     public static final String CONDITION_MANAGER_ENTRY_PRESENT = "condition_manager_entry_present";
     public static final String CONDITION_MANAGER_FEEDBACK = "condition_manager_feedback";
@@ -26,10 +27,6 @@ public final class KmuMarketConditionStringKeys {
     public static final String CONDITION_MANAGER_LOCATION_SYSTEM_CENTER = "condition_manager_location_system_center";
     public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
     public static final String CONDITION_MANAGER_LOCATION_OWNED_BY = "condition_manager_location_owned_by";
-    public static final String CONDITION_MANAGER_OPEN_NO_MARKET_CONTEXT = "condition_manager_open_no_market_context";
-    public static final String CONDITION_MANAGER_OPEN_OPENED = "condition_manager_open_opened";
-    public static final String CONDITION_MANAGER_OPEN_UNSUPPORTED_TARGET =
-        "condition_manager_open_unsupported_target";
     public static final String CONDITION_MANAGER_SUMMARY = "condition_manager_summary";
     public static final String CONDITION_MANAGER_SUMMARY_VISIBLE = "condition_manager_summary_visible";
     public static final String CONDITION_MANAGER_SUMMARY_SUPPRESSED = "condition_manager_summary_suppressed";
@@ -55,6 +52,20 @@ public final class KmuMarketConditionStringKeys {
         "condition_manager_tooltip_metadata_suppressed";
     public static final String CONDITION_MANAGER_TOOLTIP_METADATA_TRUE = "condition_manager_tooltip_metadata_true";
     public static final String CONDITION_MANAGER_TOOLTIP_METADATA_FALSE = "condition_manager_tooltip_metadata_false";
+    public static final String CONSOLE_CONDITION_MANAGER_FAILED_TO_OPEN = "console_condition_manager_failed_to_open";
+    public static final String CONSOLE_CONDITION_MANAGER_FAILED_TO_RESOLVE_CONTEXT =
+        "console_condition_manager_failed_to_resolve_context";
+    public static final String CONSOLE_CONDITION_MANAGER_FAILED_TO_VALIDATE_TARGET =
+        "console_condition_manager_failed_to_validate_target";
+    public static final String CONSOLE_CONDITION_MANAGER_FAILURE = "console_condition_manager_failure";
+    public static final String CONSOLE_CONDITION_MANAGER_FAILURE_WITH_CAUSE =
+        "console_condition_manager_failure_with_cause";
+    public static final String CONSOLE_CONDITION_MANAGER_NO_MARKET_CONTEXT =
+        "console_condition_manager_no_market_context";
+    public static final String CONSOLE_CONDITION_MANAGER_OPENED = "console_condition_manager_opened";
+    public static final String CONSOLE_CONDITION_MANAGER_SWITCHED_OFF = "console_condition_manager_switched_off";
+    public static final String CONSOLE_CONDITION_MANAGER_UNSUPPORTED_TARGET =
+        "console_condition_manager_unsupported_target";
     public static final String DIALOG_CLOSE = "dialog_close";
 
     private KmuMarketConditionStringKeys() {

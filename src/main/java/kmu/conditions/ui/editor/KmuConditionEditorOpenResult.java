@@ -1,12 +1,16 @@
 package kmu.conditions.ui.editor;
 
-import kmu.util.KmuMarketConditionStringKeys;
-import kmu.util.KmuStringKeys;
+import kmlib.mods.console.ConsoleStrings;
 
 import java.util.Objects;
 import java.util.Optional;
 
 import static kmlib.text.KmlibStrings.normaliseText;
+
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_NO_MARKET_CONTEXT;
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_OPENED;
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_UNSUPPORTED_TARGET;
+import static kmu.util.KmuStringKeys.CATEGORY;
 
 public final class KmuConditionEditorOpenResult {
 
@@ -28,7 +32,7 @@ public final class KmuConditionEditorOpenResult {
 
         return new KmuConditionEditorOpenResult(
             KmuConditionEditorOpenStatus.OPENED,
-            KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_OPENED),
+            ConsoleStrings.get(CATEGORY, CONSOLE_CONDITION_MANAGER_OPENED),
             null);
     }
 
@@ -36,7 +40,7 @@ public final class KmuConditionEditorOpenResult {
 
         return new KmuConditionEditorOpenResult(
             KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT,
-            KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_NO_MARKET_CONTEXT),
+            ConsoleStrings.get(CATEGORY, CONSOLE_CONDITION_MANAGER_NO_MARKET_CONTEXT),
             null);
     }
 
@@ -44,7 +48,7 @@ public final class KmuConditionEditorOpenResult {
 
         var normalisedReason = normaliseText(reason);
         var message = normalisedReason == null
-            ? KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_UNSUPPORTED_TARGET)
+            ? ConsoleStrings.get(CATEGORY, CONSOLE_CONDITION_MANAGER_UNSUPPORTED_TARGET)
             : normalisedReason;
 
         return new KmuConditionEditorOpenResult(

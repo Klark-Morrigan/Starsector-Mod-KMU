@@ -1,5 +1,7 @@
 package kmu.conditions.ui.editor;
 
+import kmlib.mods.console.ConsoleStrings;
+
 import kmu.KmuErrorReporter;
 import kmu.conditions.ui.context.KmuMarketUiContext;
 import kmu.conditions.ui.context.KmuMarketUiContextResolver;
@@ -7,14 +9,21 @@ import kmu.conditions.ui.context.KmuMarketUiContextResolver;
 import java.util.Objects;
 import java.util.Optional;
 
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILED_TO_OPEN;
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILED_TO_RESOLVE_CONTEXT;
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILED_TO_VALIDATE_TARGET;
+import static kmu.util.KmuStringKeys.CATEGORY;
+
 public final class KmuConditionEditorEntryPoint {
 
-    // Failure messages, each reported to the error sink and returned on the
-    // result, so the two copies cannot drift.
+    // What the log says of each failure. The result says it again in the player's language, from a key of
+    // its own: a log is what a bug report carries, and its reader may not read the player's language.
     private static final String FAILED_TO_RESOLVE_MARKET_CONTEXT =
         "Failed to resolve current market context.";
+
     private static final String FAILED_TO_VALIDATE_TARGET =
         "Failed to validate MCM target.";
+
     private static final String FAILED_TO_OPEN_MANAGER =
         "Failed to open Market Condition Manager.";
 
@@ -70,7 +79,7 @@ public final class KmuConditionEditorEntryPoint {
             errorReporter.report(FAILED_TO_RESOLVE_MARKET_CONTEXT, runtimeException);
 
             return KmuConditionEditorOpenResult.failed(
-                FAILED_TO_RESOLVE_MARKET_CONTEXT,
+                ConsoleStrings.get(CATEGORY, CONSOLE_CONDITION_MANAGER_FAILED_TO_RESOLVE_CONTEXT),
                 runtimeException);
         }
 
@@ -90,7 +99,7 @@ public final class KmuConditionEditorEntryPoint {
             errorReporter.report(FAILED_TO_VALIDATE_TARGET, runtimeException);
 
             return KmuConditionEditorOpenResult.failed(
-                FAILED_TO_VALIDATE_TARGET,
+                ConsoleStrings.get(CATEGORY, CONSOLE_CONDITION_MANAGER_FAILED_TO_VALIDATE_TARGET),
                 runtimeException);
         }
 
@@ -108,7 +117,7 @@ public final class KmuConditionEditorEntryPoint {
             errorReporter.report(FAILED_TO_OPEN_MANAGER, runtimeException);
 
             return KmuConditionEditorOpenResult.failed(
-                FAILED_TO_OPEN_MANAGER,
+                ConsoleStrings.get(CATEGORY, CONSOLE_CONDITION_MANAGER_FAILED_TO_OPEN),
                 runtimeException);
         }
     }

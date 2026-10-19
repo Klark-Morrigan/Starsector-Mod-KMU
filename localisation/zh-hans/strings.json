@@ -63,10 +63,15 @@
     "condition_manager_feedback_failed": "添加条件失败",
     "condition_manager_feedback_unknown_condition": "未知条件",
 
-    "condition_manager_open_opened": "已打开市场条件管理器。",
-    "condition_manager_open_no_market_context": "当前没有可编辑市场条件的市场。",
-    "condition_manager_open_unsupported_target": "当前市场不支持编辑市场条件。",
-    "condition_manager_command_switched_off": "市场条件管理器尚未完成，目前处于关闭状态。如仍想试用，请在 LunaLib Mod 设置中，于 KMU 的功能标签页将其开启。",
+    "console_condition_manager_opened": "已打开市场条件管理器。\n\n-- English --\nOpened Market Condition Manager.",
+    "console_condition_manager_no_market_context": "当前没有可编辑市场条件的市场。\n\n-- English --\nNo active context supports market condition editing.",
+    "console_condition_manager_unsupported_target": "当前市场不支持编辑市场条件。\n\n-- English --\nCurrent market does not support market condition editing.",
+    "console_condition_manager_switched_off": "市场条件管理器尚未完成，目前处于关闭状态。如仍想试用，请在 LunaLib Mod 设置中，于 KMU 的功能标签页将其开启。\n\n-- English --\nThe Market Condition Manager is unfinished and switched off. Switch it on under LunaLib's mod settings, on KMU's Features tab, to try it anyway.",
+    "console_condition_manager_failed_to_open": "无法打开市场条件管理器\n\n-- English --\nFailed to open Market Condition Manager",
+    "console_condition_manager_failed_to_resolve_context": "无法确定当前所在的市场\n\n-- English --\nFailed to resolve current market context",
+    "console_condition_manager_failed_to_validate_target": "无法检查 MCM 的目标\n\n-- English --\nFailed to validate MCM target",
+    "console_condition_manager_failure": "%s。\n\n-- English --\n%s.",
+    "console_condition_manager_failure_with_cause": "%s：%s\n\n-- English --\n%s: %s",
 
     "dialog_close": "关闭",
 

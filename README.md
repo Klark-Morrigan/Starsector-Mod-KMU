@@ -335,11 +335,12 @@ by `gradlew jar` and are not committed.
 A command table translates only its `help` column;
 the parity suite holds the command, class, tags and syntax to the default's,
 since those are what a player types and what the console runs.
-Each translated help is followed by the English one, after a `-- English --` line:
+Each translated help is followed by the English one, after a `-- English --` line,
+and so is each `strings.json` string the console prints, whose key starts with `console_`:
 Console Commands draws in fonts of its own that hold no Chinese, so until it does,
 the English copy is what a player can read.
-`LocaleParityIntegrationTests` holds that copy to the English table word for word,
-and cutting it later is deleting everything from the marker to the end of each cell.
+KMLib's [console text rule](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#console-commands)
+reads those strings and holds each copy to the English bundle word for word.
 The launcher's `mod_info.json` is written the same way,
 from the committed [mod_info.base.json](mod_info.base.json)
 with the locale's own `mod_info.json`, where it has one, merged over it -

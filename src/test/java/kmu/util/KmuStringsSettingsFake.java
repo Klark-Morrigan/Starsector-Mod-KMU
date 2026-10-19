@@ -4,6 +4,7 @@ import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.SettingsColourSource;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.SettingsStringSource;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.UiElementSource;
+import kmlib.testfixtures.starsector.strings.KmlibStringsSettingsFake;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -72,13 +73,13 @@ public final class KmuStringsSettingsFake {
     private static final Map<String, String> STRINGS_BY_KEY = buildStringsByKey();
 
     /**
-     * Resolves the (category, key) pair against KMU's localisation map.
-     * Returns {@code null} for any category other than KMU's so the
-     * proxy stays well-behaved when other code paths probe it.
+     * Resolves the (category, key) pair against KMU's localisation map, and KMLib's category through KMLib's own
+     * fake: KMU's console commands build on KMLib's, which print KMLib's strings. Returns {@code null} for any
+     * other category so the proxy stays well-behaved when other code paths probe it.
      */
     private static final SettingsStringSource KMU_STRINGS = (category, key) -> {
         if (!KmuStringKeys.CATEGORY.equals(category)) {
-            return null;
+            return KmlibStringsSettingsFake.KMLIB_STRINGS.get(category, key);
         }
         return STRINGS_BY_KEY.get(key);
     };
@@ -128,18 +129,29 @@ public final class KmuStringsSettingsFake {
             KmuMarketConditionStringKeys.CONDITION_MANAGER_FEEDBACK_UNKNOWN_CONDITION,
             "unknown condition");
         stringsByKey.put(
-            KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_OPENED,
+            KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_OPENED,
             "Opened Market Condition Manager.");
         stringsByKey.put(
-            KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_NO_MARKET_CONTEXT,
+            KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_NO_MARKET_CONTEXT,
             "No active context supports market condition editing.");
         stringsByKey.put(
-            KmuMarketConditionStringKeys.CONDITION_MANAGER_OPEN_UNSUPPORTED_TARGET,
+            KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_UNSUPPORTED_TARGET,
             "Current market does not support market condition editing.");
         stringsByKey.put(
-            KmuMarketConditionStringKeys.CONDITION_MANAGER_COMMAND_SWITCHED_OFF,
+            KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_SWITCHED_OFF,
             "The Market Condition Manager is unfinished and switched off. Switch it on under LunaLib's mod "
                 + "settings, on KMU's Features tab, to try it anyway.");
+        stringsByKey.put(
+            KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILED_TO_OPEN,
+            "Failed to open Market Condition Manager");
+        stringsByKey.put(
+            KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILED_TO_RESOLVE_CONTEXT,
+            "Failed to resolve current market context");
+        stringsByKey.put(
+            KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILED_TO_VALIDATE_TARGET,
+            "Failed to validate MCM target");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILURE, "%s.");
+        stringsByKey.put(KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILURE_WITH_CAUSE, "%s: %s");
         stringsByKey.put(KmuMarketConditionStringKeys.DIALOG_CLOSE, "Close");
         stringsByKey.put(KmuMapStringKeys.MAP_LAYER_ARRANGE_TITLE, "Arrange Map Layers");
         stringsByKey.put(

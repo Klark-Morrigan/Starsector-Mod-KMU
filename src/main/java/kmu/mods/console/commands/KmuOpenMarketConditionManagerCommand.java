@@ -2,6 +2,7 @@ package kmu.mods.console.commands;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.mods.console.ConsoleStrings;
 import kmlib.mods.console.commands.BaseKmlibCommand;
 import kmlib.mods.console.commands.output.CommandOutput;
 import kmlib.mods.console.commands.output.ConsoleCommandOutput;
@@ -20,14 +21,18 @@ import kmu.conditions.ui.picker.action.StarsectorConditionPickerFeedbackSink;
 import kmu.conditions.ui.picker.dialog.StarsectorInteractionDialogPickerOpener;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuMarketConditionSettings;
-import kmu.util.KmuMarketConditionStringKeys;
-import kmu.util.KmuStringKeys;
 
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import static kmlib.text.KmlibStrings.normaliseText;
+
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILED_TO_OPEN;
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILURE;
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILURE_WITH_CAUSE;
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_SWITCHED_OFF;
+import static kmu.util.KmuStringKeys.CATEGORY;
 
 public final class KmuOpenMarketConditionManagerCommand
         extends BaseKmlibCommand {
@@ -73,7 +78,7 @@ public final class KmuOpenMarketConditionManagerCommand
         // nothing will open, and a bare refusal would read as the command being broken.
         if (!isFeatureSwitchedOn.getAsBoolean()) {
 
-            output.showMessage(KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_COMMAND_SWITCHED_OFF));
+            output.showMessage(ConsoleStrings.get(CATEGORY, CONSOLE_CONDITION_MANAGER_SWITCHED_OFF));
             return CommandResult.ERROR;
         }
 
@@ -95,7 +100,9 @@ public final class KmuOpenMarketConditionManagerCommand
 
         } catch (RuntimeException runtimeException) {
 
-            output.showMessage("Failed to open Market Condition Manager: " + runtimeException.getMessage());
+            output.showMessage(describeFailure(
+                ConsoleStrings.get(CATEGORY, CONSOLE_CONDITION_MANAGER_FAILED_TO_OPEN),
+                runtimeException));
             return CommandResult.ERROR;
         }
 
@@ -115,23 +122,23 @@ public final class KmuOpenMarketConditionManagerCommand
 
     private String messageFor(KmuConditionEditorOpenResult result) {
 
-        var causeMessage = result.getCause()
-            .map(RuntimeException::getMessage)
-            .map(message -> normaliseText(message))
-            .orElse(null);
-
-        if (result.getStatus() == KmuConditionEditorOpenStatus.FAILED
-                && causeMessage != null) {
-
-            var message = result.getMessage();
-            if (message.endsWith(".")) {
-                message = message.substring(0, message.length() - 1);
-            }
-
-            return message + ": " + causeMessage;
+        if (result.getStatus() != KmuConditionEditorOpenStatus.FAILED) {
+            return result.getMessage();
         }
+        return describeFailure(result.getMessage(), result.getCause().orElse(null));
+    }
 
-        return result.getMessage();
+    // A failure, with what threw where it says anything. The two templates carry the closing punctuation, so a
+    // translation places it as its language does rather than this code trimming an English full stop.
+    private static String describeFailure(String failure, RuntimeException cause) {
+
+        var causeMessage = cause == null
+            ? null
+            : normaliseText(cause.getMessage());
+
+        return causeMessage == null
+            ? ConsoleStrings.format(CATEGORY, CONSOLE_CONDITION_MANAGER_FAILURE, failure)
+            : ConsoleStrings.format(CATEGORY, CONSOLE_CONDITION_MANAGER_FAILURE_WITH_CAUSE, failure, causeMessage);
     }
 
     // The one read of the running game the editor makes. The parts below take it as handed, so the
