@@ -127,7 +127,6 @@ The vanilla words KMLib's own text touches are in
 | --- | --- | --- |
 | Black hole | 黑洞 | `planets.json` `black_hole` |
 | Entity | 实体 | `custom_entities.json`, "Unidentified Entity" is 不明实体 |
-| Gate | 星门 | `descriptions.csv`, Active Gate is 激活的星门 |
 | Nebula | 星云 | `starfarer.api.jar` |
 | Orbital Station | 轨道空间站 | `industries.csv` |
 | Planet | 行星 | `starfarer.api.jar` |
@@ -150,13 +149,11 @@ The vanilla words KMLib's own text touches are in
 | Decivilized (condition) | 荒蛮之地 | `market_conditions.csv` |
 | Decivilized Subpopulation (condition) | 法外之地 | `market_conditions.csv` |
 | Docked (at a market) | 停靠 | `starfarer_obf.jar` refit, "Must be docked at a market" |
-| Hidden | 隐藏 | `starfarer_obf.jar`; "Comm Relay (hidden)" is 通讯中继站 (隐藏) |
 | Industry (a colony building) | 工业设施 | `IndustryListPanel`, "Industries on %s:"; 产业 only where the English means an economic sector |
 | Market size | 市场规模 | `starfarer_obf.jar` |
 | Militarized (ships only) | 军事化 | `hull_mods.csv` `militarized_subsystems`, the Militarized Subsystems hullmod (军事化子系统) for civilian hulls; vanilla uses the word for ships alone, so it never names [KMU's militarised station](#the-political-map) |
 | Military (facilities) | 军事设施 | `HAColonyDefensesFactor` in `starfarer.api.jar` |
 | Military Base | 军事基地 | `industries.csv` |
-| Outpost | 前哨站 | `market_conditions.csv` |
 | Patrol (the fleet) | 巡逻队 | `rules.csv`; 巡逻队 in 95 places, 巡逻舰队 in 6 |
 | Patrol HQ | 巡逻队总部 | `industries.csv` |
 | Pirate | 海盗 | Pirate Station is 海盗空间站 |
@@ -170,7 +167,6 @@ The vanilla words KMLib's own text touches are in
 
 | English | 简体中文 | Source |
 | --- | --- | --- |
-| Attitude (the relation number) | 关系 | `starfarer_obf.jar` faction screen, "Attitude: " is 关系： |
 | Hegemony | 霸主 | `hegemony.faction` `displayName` |
 | Independent (the faction's name) | 非势力团体 | `independent.faction` `displayName` |
 | Known allies | 已知的盟友 | `starfarer_obf.jar` faction screen |
@@ -223,11 +219,9 @@ KMU names them, and the code column says where vanilla keeps each one.
 
 | English | 简体中文 | Vanilla code | Note |
 | --- | --- | --- | --- |
-| discoverable | 可发现 | `SectorEntityToken.isDiscoverable()` | kept off the system map until the player's sensors find it, as the bundle's visibility overrides write it |
 | dynamic claim | 动态宣称 | `Misc.getClaimingFaction`, where no unconditional claim is set | 动态, changing as things change, the opposite of 无条件 |
 | hyperspace anchor | 超空间锚点 | `StarSystemAPI.getHyperspaceAnchor()` | a system's point in hyperspace |
 | sector memory | 星域记忆 | the game's `$` memory keys | where unconditional claims are set; from 星域 |
-| territorial, non-territorial (a faction) | 领土, 非领土 | `territorial` in a faction's `punitiveExpeditionData`, read by `Misc.getClaimingFaction` | only a territorial faction claims a system dynamically; 非领土势力 in prose; 领土 is also the word for territory |
 | unconditional claim | 无条件宣称 | the `$claimingFaction` memory key, `MemFlags.CLAIMING_FACTION` | wins over any dynamic claim |
 | unowned (a market the Neutral faction holds) | 无主 | a market owned by the faction `neutral`, named 中立 | a market's ownership only, never a system's, which is unpopulated, decivilised or settled instead; silent on whether anyone lives there; written beside 市场, and with 中立 where it first appears; not 未受控制, which reads as dominance, and not 无主之地, vanilla's label for Uninhabited |
 
@@ -300,7 +294,6 @@ which every KM mod's shares.
 | placeable (a condition the manager may add) | 可放置的 | 可, can be, with 放置, to place |
 | Present / Absent (a condition on the market) | 存在 / 不存在 | as the summary's 个存在 writes it |
 | `source`, `id`, `icon` (metadata lines) | 来源, ID, 图标 | the usual words; `ID` stays Latin, as KMLib's reference writes 字符串 ID |
-| system center (a system's middle where no star sits) | 星系中心 | vanilla's 星系 with 中心, center; vanilla never names it. Not 质心, barycentre, which is true only where stars orbit it, and false for a starless system such as a nebula |
 | suppressed (condition) | 被压制 | the plain passive for a condition held down but not removed |
 | true / false (a metadata line's answer) | 是 / 否 | a yes-or-no fact; a settings switch says 开启 / 关闭 instead, as [Descriptions](#descriptions) writes it |
 
@@ -603,13 +596,9 @@ The console's own words, and the English copy every console text carries, are in
 | English | 简体中文 | Note |
 | --- | --- | --- |
 | colonisable market | 可殖民市场 | vanilla writes only the negative, 无法殖民 |
-| console commands | 控制台指令 | as [Console Commands' Fossic thread](https://www.fossic.org/thread-14602-1-1.html) writes it throughout, never 命令; Console Commands, the mod, keeps its name |
-| cut-off systems | 被截断的星系 | 截断, to cut off, before vanilla's 星系 |
-| game logs | 游戏日志 | 日志, KMLib's word for a log |
 | performance measurements | 性能测量 | from 性能, with 测量, to measure |
 | section (one stretch of work the profiler times) | 计时段 | 计时, timing, with 段, a stretch |
 | self time (a section's own time, without the sections it ran) | 自身耗时 | 自身, its own, with 耗时, time taken |
-| timings | 性能计时 | from 性能, with 计时, timing |
 
 ### The forum banner
 
