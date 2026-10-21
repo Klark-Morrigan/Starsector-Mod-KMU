@@ -6,6 +6,7 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.starsector.systems.claims.ClaimStandingFixture;
 
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.ribbon.RibbonSegment;
@@ -139,8 +140,8 @@ final class ColonyCellRibbonsIntegrationTests {
             assertThat(band.segments())
                 .extracting(RibbonSegment::colour)
                 .contains(TRITACHYON_BRIGHT);
-            assertThat(FilteredPolitics.resolveFilteredHolder(pass, TRITACHYON).contestedSystemKeys())
-                .contains(buildCellKey(SYSTEM_ID));
+            assertThat(FilteredPolitics.resolveFilteredHolder(pass, TRITACHYON).fillStates().getNonSolidFillStateBySystemKey())
+                .containsEntry(buildCellKey(SYSTEM_ID), FillState.HATCHED);
         }
     }
 

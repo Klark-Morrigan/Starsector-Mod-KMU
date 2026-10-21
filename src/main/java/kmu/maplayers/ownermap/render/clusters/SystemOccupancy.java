@@ -127,14 +127,19 @@ public final class SystemOccupancy {
      * every system - the cell grouping, the owner-ID projection the shaper compares against, and
      * the label styling snapshot.
      *
-     * <p>Answers null for a system nobody owns, which is what an absent entry means. A caller with
-     * no system to name - a cell drawn as no star - asks nothing rather than probing with a null
-     * key.
+     * <p>Answers null for a system nobody owns, which is what an absent entry means. A cell drawn as
+     * no star names no system, and answers nobody too: it is answered here rather than probing the
+     * owner map with a null key, so a caller with such a cell asks like any other.
      *
-     * @param systemKey the system to read
-     * @return its owner, or null where nobody owns it
+     * @param systemKey the system to read, or null for a cell with no star of its own
+     * @return its owner, or null where nobody owns it or there is no system to own
      */
     public SystemOwner readOwnerOf(SystemKey systemKey) {
+
+        if (systemKey == null) {
+            return null;
+        }
+
         return ownerBySystemKey.get(systemKey);
     }
 

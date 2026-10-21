@@ -30,6 +30,7 @@ import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
@@ -342,11 +343,12 @@ final class ClusterAnchorsBuilderTests {
                 cellGeometry,
                 new ClusterLabelStylingSnapshot(
                     Map.of(buildCellKey(RIVAL_SYSTEM), TRITACHYON_OWNER),
-                    buildMapStylingDesaturatingTo(DESATURATION_PALETTE),
-                    OwnerReadingFake.createAnsweringNothing(),
-                    buildSpotlitPicksDrawingNames(
-                        HEGEMONY,
-                        new ElementStyleAdjustment(FULL_OPACITY, true)),
+                    new MapPaints(
+                        buildMapStylingDesaturatingTo(DESATURATION_PALETTE),
+                        OwnerReadingFake.createAnsweringNothing(),
+                        buildSpotlitPicksDrawingNames(
+                            HEGEMONY,
+                            new ElementStyleAdjustment(FULL_OPACITY, true))),
                     SETTLED_LABEL_FACE));
 
             assertThat(standingAnchors.getAnchors().get(0).colour())
@@ -687,9 +689,10 @@ final class ClusterAnchorsBuilderTests {
 
         return new ClusterLabelStylingSnapshot(
             buildKeyedValues(ownerBySystemId),
-            buildMapStylingDesaturatingTo(UNUSED_PALETTE),
-            OwnerReadingFake.createAnsweringNothing(),
-            contentInputs,
+            new MapPaints(
+                buildMapStylingDesaturatingTo(UNUSED_PALETTE),
+                OwnerReadingFake.createAnsweringNothing(),
+                contentInputs),
             SETTLED_LABEL_FACE);
     }
 
@@ -699,9 +702,10 @@ final class ClusterAnchorsBuilderTests {
 
         return new ClusterLabelStylingSnapshot(
             ownerBySystemKey,
-            buildMapStylingDesaturatingTo(UNUSED_PALETTE),
-            OwnerReadingFake.createAnsweringNothing(),
-            contentInputs,
+            new MapPaints(
+                buildMapStylingDesaturatingTo(UNUSED_PALETTE),
+                OwnerReadingFake.createAnsweringNothing(),
+                contentInputs),
             SETTLED_LABEL_FACE);
     }
 

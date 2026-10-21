@@ -184,33 +184,32 @@ public final class OwnerMapClusters
      * @return a builder over this build's paints and live occupancy
      */
     public PaintedCellBuilder createPaintedCellBuilder() {
-        return new PaintedCellBuilder(buildInputs.paints(), occupancy);
+        return new PaintedCellBuilder(buildInputs.getPaints(), occupancy);
     }
 
     /**
-     * The cluster-group builder this build's owners are traced by, over the paints and fill sets it
-     * was baked under and the cells it groups.
+     * The cluster-group builder this build's owners are traced by, over the paints and fill states
+     * it was baked under and the cells it groups.
      *
      * <p>The one place the pipeline states the builder's inputs, for the reason
      * {@link #createPaintedCellBuilder()} is. The grouping and edges arrive because a batch groups
-     * the cells afresh once its flips have folded, while the paints and fill sets stand for the
+     * the cells afresh once its flips have folded, while the paints and fill states stand for the
      * life of the build.
      *
      * @param cellGrouping       how the drawn cells group under the current owners, as
      *                           {@link #resolveCellGroupingOver} answers it
      * @param cellEdgesByCellKey the raw cells the borders are traced from
-     * @return a builder over this build's paints and fill sets and the given cells
+     * @return a builder over this build's paints and fill states and the given cells
      */
     public ClusterGroupBuilder createClusterGroupBuilder(
             CellGrouping cellGrouping,
             Map<SystemKey, List<CellEdge>> cellEdgesByCellKey) {
 
         return new ClusterGroupBuilder(
-            buildInputs.paints(),
+            buildInputs.getPaints(),
             cellGrouping,
             cellEdgesByCellKey,
-            buildInputs.unfilledSystemKeys(),
-            buildInputs.contestedSystemKeys());
+            buildInputs.getFillStates());
     }
 
     /**
@@ -220,17 +219,20 @@ public final class OwnerMapClusters
      * a single system flipping can sever one cluster group in two or bridge two into one, which no
      * amount of patching the standing index would catch.
      *
+     * <p>Takes the grouping rather than composing it, since every caller has just composed it for
+     * the shaping beside this call, and composing it again copies every owner once more.
+     *
      * @param cellEdgesByCellKey the adjacency the clusters are walked over
-     * @param systemKeyByCellKey the system each cell draws as, since a cluster is walked over
-     *                           cells but indexed by the systems in it
+     * @param cellGrouping       how the drawn cells group under the current owners, as
+     *                           {@link #resolveCellGroupingOver} answers it
      */
     public void reindexClusters(
             Map<SystemKey, List<CellEdge>> cellEdgesByCellKey,
-            Map<SystemKey, SystemKey> systemKeyByCellKey) {
+            CellGrouping cellGrouping) {
 
         clusterIndex = SystemClusterIndex.indexClusters(SystemClusters.findClusters(
             cellEdgesByCellKey,
-            resolveCellGroupingOver(systemKeyByCellKey)));
+            cellGrouping));
     }
 
     // Each owner's bodies with the fill, hatch, and cluster border they share, keyed by its
@@ -317,7 +319,7 @@ public final class OwnerMapClusters
 
     /**
      * @return what this build was baked under - the paint scheme, the view and its reading, the
-     *         sampled picks and the two fill sets - as the one reading every stage of it sampled.
+     *         sampled picks and the fill states - as the one reading every stage of it sampled.
      *         What a pass that runs after the build reads rather than asking the source again: a
      *         label re-fit or a band re-bake taken off a second reading would spell the names one
      *         way and have been sized for another
@@ -334,7 +336,7 @@ public final class OwnerMapClusters
     public GlobalStyle getGlobalStyle() {
 
         return buildInputs
-            .styling()
+            .getStyling()
             .renderStyle()
             .global();
     }

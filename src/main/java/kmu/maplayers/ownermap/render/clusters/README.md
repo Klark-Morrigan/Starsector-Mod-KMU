@@ -91,7 +91,7 @@ is traced under one reading of the trace's knobs.
   It stands up on the paints,
   the cells' edges,
   how the cells group under the owners,
-  and the two sets the fill splits by;
+  and the `SystemFillStates` the fill splits by;
   each call names the owner itself,
   whose ID keys the group and whose shades it paints in.
   The grouping is the caller's because it spans every cell on the map:
@@ -345,8 +345,8 @@ the `MapStyling` (the theme, the border trace, the layer's categories and the th
 the `ViewReading` (the view, the owner reading it was styled and named by,
 and the owner source it was resolved under),
 the `ContentInputs` it sampled,
-and the two sets the source derived about the fill -
-the unfilled systems and the contested ones.
+and the `SystemFillStates` the source decided -
+which systems hatch and which paint no fill.
 The source rides there for the incremental refresh alone,
 which reopens a per-system resolve under the sampling it patches;
 nothing styles or names by it.
@@ -355,16 +355,18 @@ They are one value because they are fixed together:
 set once when the build ends and read until the next one,
 where the occupancy beside them is folded per marked system.
 A reader takes the value and names which snapshot it reads -
-`styling()`,
-`viewReading()`,
-`contentInputs()` -
+`getStyling()`,
+`getViewReading()`,
+`getContentInputs()` -
 rather than reaching one field of it through a flat getter on the built map,
 which would let a pass compose a cell out of one snapshot's theme and another's reading without the type saying so.
 It holds the build's one `MapPaints`
 (in [`render.style`](../style/README.md)),
 resolved over its own scheme,
 reading and picks,
-and hands it out through `paints()`.
+and hands it out through `getPaints()`.
+The scheme and the picks are read back through those paints rather than held a second time beside them,
+so the two can never be two samplings.
 Held here rather than built by each stage,
 because the paints remember every answer,
 and the full build and every batch after it then share one memo rather than resolving each owner again.
@@ -381,9 +383,11 @@ the fill is what varies per system inside it.
 an owner with no exception among its systems fills its whole cluster from that one border
 and pays nothing for the split,
 the common case.
-The two exceptions each carve a sub-cluster out of the solid,
-hatched (`contestedSystemKeys`) and unfilled (`unfilledSystemKeys`),
-and both are decided upstream by the layer's owner source;
+The other two states each carve a sub-cluster out of the solid,
+hatched and unfilled.
+Each system's state is named once in the build's `SystemFillStates`,
+so no system is both,
+and which state each takes is decided upstream by the layer's owner source;
 what follows is how the draw honours them.
 
 The machinery is the framework's -

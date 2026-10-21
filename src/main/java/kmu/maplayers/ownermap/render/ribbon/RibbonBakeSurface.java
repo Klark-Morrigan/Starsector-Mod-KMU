@@ -79,7 +79,7 @@ public record RibbonBakeSurface(
             // a second reading could carve the bands around names the map is not drawing.
             resolveNameBoxes(
                 standingAnchors,
-                clusters.getBuildInputs().contentInputs().nameFormat()),
+                clusters.getBuildInputs().getContentInputs().nameFormat()),
             clusters.getPaintedCells().getRingPathCache());
     }
 

@@ -148,13 +148,9 @@ public final class OwnerMapBuilder {
                     styling,
                     viewReading,
                     contentInputs,
-                    // The owned systems this resolution paints no fill for - owned for border and
-                    // label but drawn empty inside the one frontier. Filled only by a source that
-                    // extends what an owner holds with systems it does not, and empty otherwise.
-                    owners.unfilledSystemKeys(),
-                    // The one thing this build derived about the spotlight: which of the spotlit
-                    // owner's systems it is present in without winning.
-                    owners.contestedSystemKeys()));
+                    // Which owned systems hatch - the spotlit owner's systems it is present in
+                    // without winning - and which paint no fill, owned for border and label alone.
+                    owners.fillStates()));
 
             shapeAndStyleCells(profiler, clusters, geometryCache);
 
@@ -162,13 +158,13 @@ public final class OwnerMapBuilder {
         }
     }
 
-    // Turns the cached raw cells into the two draw lists: each cell shaped against the holding and
+    // Turns the cached raw cells into the two draw lists: each cell shaped against the owners and
     // styled, the clusters re-derived off the keys that shaping fused them by, and each owner's
     // bodies traced across all of its cells.
     //
     // Written into the clusters rather than returned, because the clusters are what an incremental
     // re-shape later folds into. The builders themselves read nothing of them: each is handed the
-    // inputs the clusters retain - the paints, the occupancy, the fill sets - through the same
+    // inputs the clusters retain - the paints, the occupancy, the fill states - through the same
     // factories a batch uses, which is what makes a re-shaped cell identical to this build's.
     private static void shapeAndStyleCells(
             Profiler profiler,
@@ -188,9 +184,10 @@ public final class OwnerMapBuilder {
             CellGeometryCache geometryCache,
             ProfileScope shapeScope) {
 
-        // Shape the raw cells into merged clusters once, holding-aware. The agnostic geometry
+        // Shape the raw cells into merged clusters once, grouped by owner. The agnostic geometry
         // clusters by owner, so hand it each system's owner ID as the key. Cells consumed by
-        // the inset (fewer than three vertices left) drop out.
+        // the inset (fewer than three vertices left) drop out. The one grouping serves every step
+        // below, so no two of them group the cells by two readings of the owners.
         var cellGrouping = clusters.resolveCellGroupingOver(
             geometryCache.getSystemKeyByCellKey());
 
@@ -203,7 +200,7 @@ public final class OwnerMapBuilder {
         // is exactly the one the map merged into a single cluster.
         clusters.reindexClusters(
             geometryCache.getCellEdgesByCellKey(),
-            geometryCache.getSystemKeyByCellKey());
+            cellGrouping);
 
         buildAllClusterGroups(profiler, clusters, geometryCache, cellGrouping);
 

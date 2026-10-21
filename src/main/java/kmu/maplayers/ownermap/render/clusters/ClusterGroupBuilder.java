@@ -12,6 +12,7 @@ import kmu.maplayers.base.render.clusters.FillSplit;
 import kmu.maplayers.base.render.clusters.SplitFillBuilder;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.render.clusters.TracedFill;
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
@@ -21,7 +22,6 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Bakes one owner's cells into the {@link StyledClusterGroup} the renderer paints: every body
@@ -44,8 +44,8 @@ import java.util.Set;
  * owner's cluster group includes a cell no star of its own sits in, and it is the cells that carry the
  * edges a border is traced from.
  *
- * <p>Stands up on stated inputs: the paints, the cells and how they group, and the two sets the
- * fill splits by. It reads nothing of the build those came from, so the full rebuild and the
+ * <p>Stands up on stated inputs: the paints, the cells and how they group, and the state each
+ * system fills in. It reads nothing of the build those came from, so the full rebuild and the
  * incremental refresh hand it the same values and trace an owner identically - and a layer holding
  * them can trace owners without the pipeline.
  */
@@ -53,35 +53,30 @@ public final class ClusterGroupBuilder {
 
     private final Map<SystemKey, List<CellEdge>> cellEdgesByCellKey;
     private final CellGrouping cellGrouping;
-    private final Set<SystemKey> contestedSystemKeys;
+    private final SystemFillStates fillStates;
     private final MapPaints paints;
-    private final Set<SystemKey> unfilledSystemKeys;
 
     /**
-     * @param paints              the paints every owner draws in, with the scheme its border is
-     *                            traced and smoothed under
-     * @param cellGrouping        how the drawn cells group under the owners: it spans every cell on
-     *                            the map rather than one owner's, so it is resolved once by the
-     *                            caller - an owner resolving its own would rebuild the whole map's
-     *                            grouping per owner, and two owners could be traced against two
-     *                            readings of it
-     * @param cellEdgesByCellKey  the raw cells the borders are traced from
-     * @param unfilledSystemKeys  the owned systems drawn with no fill inside their owner's frontier
-     * @param contestedSystemKeys the spotlit systems the pick is present in but does not win, which
-     *                            hatch inside the spotlit frontier; empty off filter
+     * @param paints             the paints every owner draws in, with the scheme its border is
+     *                           traced and smoothed under
+     * @param cellGrouping       how the drawn cells group under the owners: it spans every cell on
+     *                           the map rather than one owner's, so it is resolved once by the
+     *                           caller - an owner resolving its own would rebuild the whole map's
+     *                           grouping per owner, and two owners could be traced against two
+     *                           readings of it
+     * @param cellEdgesByCellKey the raw cells the borders are traced from
+     * @param fillStates         the state each system fills in inside its owner's frontier
      */
     public ClusterGroupBuilder(
             MapPaints paints,
             CellGrouping cellGrouping,
             Map<SystemKey, List<CellEdge>> cellEdgesByCellKey,
-            Set<SystemKey> unfilledSystemKeys,
-            Set<SystemKey> contestedSystemKeys) {
+            SystemFillStates fillStates) {
 
         this.cellEdgesByCellKey = cellEdgesByCellKey;
         this.cellGrouping = cellGrouping;
-        this.contestedSystemKeys = contestedSystemKeys;
+        this.fillStates = fillStates;
         this.paints = paints;
-        this.unfilledSystemKeys = unfilledSystemKeys;
     }
 
     /**
@@ -205,8 +200,7 @@ public final class ClusterGroupBuilder {
                 FillSplit.splitMembersByFillState(
                     cellGrouping,
                     memberCellKeys,
-                    contestedSystemKeys,
-                    unfilledSystemKeys),
+                    fillStates),
                 ownerId);
     }
 }

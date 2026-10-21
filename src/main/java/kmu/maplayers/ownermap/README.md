@@ -71,7 +71,7 @@ Every place the tier needs a layer's answer is a seam the layer fills where it c
 
 | The tier asks | Through |
 | --- | --- |
-| who owns each system, which owned systems draw as a fill exception, what stands where and where the spotlit owner lives, for a whole rebuild | an `OwnerSource`, resolved with the reading through `OwnerPaintedView.resolveViewReading` and handed the rebuild's `SectorWalk` |
+| who owns each system, which owned systems draw hatched or unfilled, what stands where and where the spotlit owner lives, for a whole rebuild | an `OwnerSource`, resolved with the reading through `OwnerPaintedView.resolveViewReading` and handed the rebuild's `SectorWalk` |
 | who owns one marked system, whether anything stands in it and whether the spotlit owner does, for an incremental refresh | the `SystemOwnerResolve` that same source opens over the batch's own walk |
 | how a cell's presence band is counted | the same source's band planner |
 | each owner's shades, name, crest, recede and category, the shade an unowned cell paints in and the pair a receded one sinks toward | the `OwnerReading` resolved beside the source |
@@ -143,9 +143,9 @@ so a layer holding the same values gets the same answer without the pipeline:
 | --- | --- |
 | the style resolvers (`MapPaints`) | the `MapStyling`, the `OwnerReading` and the sampled `ContentInputs` |
 | the cell builder (`PaintedCellBuilder`) | the `MapPaints` and the `SystemOccupancy` |
-| the cluster-group builder (`ClusterGroupBuilder`) | the `MapPaints`, the cells' edges, their grouping under the owners, and the two fill sets |
+| the cluster-group builder (`ClusterGroupBuilder`) | the `MapPaints`, the cells' edges, their grouping under the owners, and the `SystemFillStates` |
 | the border trace and smoothing | the substrate's `ClusterBorderTrace` and `BorderSmoothing`, over rings and a style |
-| the label fit (`ClusterAnchorsBuilder`) | a `ClusterLabelStylingSnapshot`, the cells and the standing placements |
+| the label fit (`ClusterAnchorsBuilder`) | a `ClusterLabelStylingSnapshot` over the build's `MapPaints`, the cells and the standing placements |
 | the band planner | the source's `SystemRibbonPlanner`, over a `SectorWalk` and the `RibbonPlanRules` |
 
 Stating the inputs is what keeps an incremental re-shape identical to a full build.

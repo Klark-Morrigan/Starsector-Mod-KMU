@@ -15,10 +15,9 @@ import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
-import kmu.maplayers.ownermap.render.style.OwnerCategories;
 import kmu.maplayers.ownermap.render.style.OwnerStyleDecision;
-import kmu.maplayers.ownermap.render.style.OwnerStyleResolver;
 
 import org.lazywizard.lazylib.ui.LazyFont;
 
@@ -35,12 +34,12 @@ import java.util.function.Function;
  * search itself stays ignorant of owners.
  *
  * <p>Both attributes follow the owner reading off filter and the filter rules under one. The
- * colour is baked from the same {@link MapPalettes} mapping the border uses,
- * off the shared {@link OwnerStyleResolver#resolveOwnerStyleDecision} the fills read - so a
+ * colour is baked from the same {@link MapPalettes} mapping the border uses, off the very
+ * style decision the fills were painted from ({@link MapPaints#resolveOwnerStyleDecisionOf}) - so a
  * desaturated owner's name recolours with its fill. The name comes from the reading, except that
  * a filter's synthetic spotlight key (which the reading cannot name) resolves back to the
  * selected owner. Both resolvers memoise per owner ID, since every cluster of an owner shares one
- * decision, colour, and name.
+ * colour and name.
  */
 final class ClusterLabelStyling {
 
@@ -118,22 +117,6 @@ final class ClusterLabelStyling {
             nameStyles,
             styleDecisionByOwnerId.apply(ownerId),
             desaturationPalette));
-    }
-
-    // The per-owner style decisions one rebuild applies: each owner's category and adjustment as
-    // the shared resolver makes it (the reading's off filter, the filter rules under one), cached
-    // per owner ID like the name estimator resolver below, since every cluster of an owner shares
-    // one decision and the two label consumers both read it.
-    static Function<String, OwnerStyleDecision> newOwnerStyleDecisionResolver(
-            OwnerReading reading,
-            OwnerCategories categories,
-            ContentInputs contentInputs) {
-
-        return memoisePerOwnerId(ownerId -> OwnerStyleResolver.resolveOwnerStyleDecision(
-            ownerId,
-            reading,
-            categories,
-            contentInputs));
     }
 
     // The per-owner name estimators one rebuild fits against: each owner's name as the reading

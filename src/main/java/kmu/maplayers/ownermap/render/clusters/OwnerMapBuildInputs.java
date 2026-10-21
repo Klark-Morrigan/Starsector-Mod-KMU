@@ -1,20 +1,17 @@
 package kmu.maplayers.ownermap.render.clusters;
 
-import kmlib.starsector.systems.SystemKey;
-
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 
-import java.util.Set;
-
 /**
  * What one build was baked under, retained whole so a cell rebuilt after it is resolved against
  * exactly the inputs the full build used: the paint scheme, the view and the owner reading it was
- * styled by, the sidebar picks it sampled, and the two sets its owner source derived about the fill -
- * which owned systems paint no fill, and which spotlit systems the pick contests.
+ * styled by, the sidebar picks it sampled, and the fill state its owner source decided for each
+ * system - which owned systems hatch, and which paint no fill.
  *
  * <p>Fixed once the build ends, which is what parts it from the {@link SystemOccupancy} beside it:
  * the occupancy is folded per marked system as what stands there comes and goes, while nothing
@@ -22,51 +19,35 @@ import java.util.Set;
  * snapshot it reads, so a pass cannot compose a cell out of one build's theme and another's
  * reading without the type saying so.
  *
- * <p>The three snapshots stay three records rather than being flattened here, since each is one
- * sampling: the scheme is read once off the theme, the reading once off the view, the picks once
- * off the sidebar. What this adds is the two derived sets, which belong to no one of them - they
- * come off the owner source, and a fill split reads them beside the paint.
- *
- * <p>It also holds the one {@link MapPaints} resolved over those snapshots, which every cell and
- * cluster group of the build paints from. Held here rather than built by each stage, because a
- * stage building its own would resolve each owner's paint again, and the full build and a later
- * batch would each keep a memo of their own.
+ * <p>The scheme, the reading and the picks are held once, inside the build's one {@link MapPaints},
+ * which every cell and cluster group of the build paints from. Held here rather than built by each
+ * stage, because a stage building its own would resolve each owner's paint again, and the full
+ * build and a later batch would each keep a memo of their own. What this adds beside the paints is
+ * the view and its source, which a batch re-derives through, and the fill states, which come off
+ * the owner source rather than off any one of the three samplings.
  */
 public final class OwnerMapBuildInputs {
 
-    private final Set<SystemKey> contestedSystemKeys;
-    private final ContentInputs contentInputs;
+    private final SystemFillStates fillStates;
     private final MapPaints paints;
-    private final MapStyling styling;
-    private final Set<SystemKey> unfilledSystemKeys;
     private final ViewReading viewReading;
 
     /**
-     * @param styling             the resolved paint scheme every cell and cluster group is styled
-     *                            from
-     * @param viewReading         the view painted, the owner reading it was styled by, and the
-     *                            source its owners came from, which a batch re-derives a marked
-     *                            system through
-     * @param contentInputs       the sidebar picks the build sampled, as its one reading of them
-     * @param unfilledSystemKeys  the owned systems drawn with no fill: held by their owner for
-     *                            border and label but painting nothing inside its one frontier, so
-     *                            the boundary between what an owner holds and what its view extends
-     *                            it with reads as a seam where the fill stops
-     * @param contestedSystemKeys the spotlit systems the owner is present in but does not win, so
-     *                            their cells hatch inside the one spotlit frontier while the ones it
-     *                            wins fill solid; empty off filter
+     * @param styling       the resolved paint scheme every cell and cluster group is styled from
+     * @param viewReading   the view painted, the owner reading it was styled by, and the source its
+     *                      owners came from, which a batch re-derives a marked system through
+     * @param contentInputs the sidebar picks the build sampled, as its one reading of them
+     * @param fillStates    the state each system fills in: hatched where a spotlit owner is present
+     *                      in a system it does not win, unfilled where an owner holds a system for
+     *                      border and label alone, solid everywhere else
      */
     public OwnerMapBuildInputs(
             MapStyling styling,
             ViewReading viewReading,
             ContentInputs contentInputs,
-            Set<SystemKey> unfilledSystemKeys,
-            Set<SystemKey> contestedSystemKeys) {
+            SystemFillStates fillStates) {
 
-        this.contestedSystemKeys = contestedSystemKeys;
-        this.contentInputs = contentInputs;
-        this.styling = styling;
-        this.unfilledSystemKeys = unfilledSystemKeys;
+        this.fillStates = fillStates;
         this.viewReading = viewReading;
 
         paints = new MapPaints(styling, viewReading.reading(), contentInputs);
@@ -77,7 +58,7 @@ public final class OwnerMapBuildInputs {
      * falls back on after a failed first build is built under.
      *
      * <p>Each snapshot's own placeholder, named by the record that owns it, plus no reading, no
-     * source and two empty sets. It carries the active view rather than naming a concrete one,
+     * source and every system solid. It carries the active view rather than naming a concrete one,
      * keeping the model view-agnostic. The null reading and source are the honest record of a build
      * that never resolved either, and {@link #wasBuilt()} is what every reader that would reach them
      * asks first.
@@ -91,37 +72,31 @@ public final class OwnerMapBuildInputs {
             MapStyling.createEmpty(),
             new ViewReading(view, null, null),
             ContentInputs.createEmpty(),
-            Set.of(),
-            Set.of());
+            SystemFillStates.ALL_SOLID);
     }
 
-    /** @return the spotlit systems the owner is present in but does not win; empty off filter */
-    public Set<SystemKey> contestedSystemKeys() {
-        return contestedSystemKeys;
+    /** @return the sidebar picks the build sampled, as its paints hold them */
+    public ContentInputs getContentInputs() {
+        return paints.getContentInputs();
     }
 
-    /** @return the sidebar picks the build sampled */
-    public ContentInputs contentInputs() {
-        return contentInputs;
+    /** @return the state each system fills in; solid for any system not named */
+    public SystemFillStates getFillStates() {
+        return fillStates;
     }
 
     /** @return the paints every cell and cluster group of this build draws in, over its own snapshots */
-    public MapPaints paints() {
+    public MapPaints getPaints() {
         return paints;
     }
 
-    /** @return the resolved paint scheme every cell and cluster group is styled from */
-    public MapStyling styling() {
-        return styling;
-    }
-
-    /** @return the owned systems drawn with no fill */
-    public Set<SystemKey> unfilledSystemKeys() {
-        return unfilledSystemKeys;
+    /** @return the resolved paint scheme every cell and cluster group is styled from, as its paints hold it */
+    public MapStyling getStyling() {
+        return paints.getStyling();
     }
 
     /** @return the view painted, with the owner reading and source the build was styled by */
-    public ViewReading viewReading() {
+    public ViewReading getViewReading() {
         return viewReading;
     }
 

@@ -220,7 +220,7 @@ final class OwnerMapDrawablesTests {
             anchorsBuilderMock.verify(() -> ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 any(),
                 any(),
-                argThat(snapshot -> snapshot.mapStyling() == stylingCaptor.getValue())));
+                argThat(snapshot -> snapshot.paints().getStyling() == stylingCaptor.getValue())));
         }
 
         @Test

@@ -117,6 +117,32 @@ final class MapPaintsTests {
     }
 
     @Nested
+    class ResolveOwnerStyleDecisionOf {
+
+        @Test
+        void answersTheDecisionTheOwnersPaintWasResolvedFrom() {
+            // The label path reads the decision; the fill path reads the paint. Both off one memo,
+            // so the reading is asked once however many of either an owner's clusters make.
+            var expectedAdjustment = new ElementStyleAdjustment(0.5, false);
+            var contentInputs = ContentInputsFixtures.createInertInputs();
+            var readingMock = buildReadingAdjustingBy(expectedAdjustment);
+            var paints = buildPaintsOver(readingMock, contentInputs);
+
+            paints.resolveOwnerPaintOf(OWNER);
+
+            var actualDecision = paints.resolveOwnerStyleDecisionOf(OWNER_ID);
+
+            assertThat(actualDecision.adjustment())
+                .isSameAs(expectedAdjustment);
+            assertThat(actualDecision.category())
+                .isEqualTo(StandInCategoryFake.OWNED);
+
+            verify(readingMock, times(1))
+                .resolveStyleAdjustment(OWNER_ID, contentInputs);
+        }
+    }
+
+    @Nested
     class ResolveUnownedPaintOf {
 
         @Test

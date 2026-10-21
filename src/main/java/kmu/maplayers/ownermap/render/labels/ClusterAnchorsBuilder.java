@@ -126,7 +126,7 @@ public final class ClusterAnchorsBuilder {
         // this pass's own output as what stood before it.
         var standingNames = List.copyOf(standingAnchors.getAnchors());
 
-        if (!labelStyling.contentInputs().nameFormat().areNamesDrawn()
+        if (!labelStyling.paints().getContentInputs().nameFormat().areNamesDrawn()
                 && !KmuOwnerMapDiagnosticsSettings.getOwnerMapShowClusterAnchors()) {
             standingAnchors.replaceAnchors(List.of(), fitFingerprint);
 
@@ -231,21 +231,15 @@ public final class ClusterAnchorsBuilder {
             cells.getSiteBySystemKey(),
             cellGrouping);
 
-        // The desaturation palette is handed in already resolved - off the scheme the build beneath
-        // the names was styled by, production or tracing - so a desaturated owner's name matches its
-        // recoloured fill and border exactly without re-reading the profile here.
-        // The style decision every label follows is the same one the fills read
-        // (OwnerStyleResolver.resolveOwnerStyleDecision), cached per owner since the colour
-        // resolver reads both halves of it - the category and the adjustment:
-        // under a filter it recedes every non-spotlit owner and leaves the spotlit one full, so a
-        // receded name matches its receded fill and a spotlit name stays full, the drift a
-        // filter opens.
-        var contentInputs = labelStyling.contentInputs();
-        var categories = labelStyling.mapStyling().categories();
-        var styleDecisionByOwnerId = ClusterLabelStyling.newOwnerStyleDecisionResolver(
-            labelStyling.reading(),
-            categories,
-            contentInputs);
+        // Everything a label is styled by comes off the paints the build beneath the names was
+        // painted in, production or tracing. The desaturation palette is that scheme's, so a
+        // desaturated owner's name matches its recoloured fill and border exactly. The style
+        // decision every label follows is the very one the fills were painted from, remembered per
+        // owner by the paints: under a filter it recedes every non-spotlit owner and leaves the
+        // spotlit one full, so a receded name matches its receded fill and a spotlit name stays
+        // full, the drift a filter opens.
+        var paints = labelStyling.paints();
+        var styling = paints.getStyling();
 
         FontToleranceAnnouncement.announceIfMoved(spec);
 
@@ -255,12 +249,12 @@ public final class ClusterAnchorsBuilder {
             new ClusterLabelResolvers(
                 ClusterLabelStyling.newLabelColourResolver(
                     ownerBySystemKey,
-                    new OwnerNameStyles(categories.readNameStyles()),
-                    styleDecisionByOwnerId,
-                    labelStyling.mapStyling().desaturationPalette()),
+                    new OwnerNameStyles(styling.categories().readNameStyles()),
+                    paints::resolveOwnerStyleDecisionOf,
+                    styling.desaturationPalette()),
                 ClusterLabelStyling.newNameEstimatorResolver(
-                    labelStyling.reading(),
-                    contentInputs,
+                    paints.getReading(),
+                    paints.getContentInputs(),
                     fitFingerprint.labelFace())),
             reusableAnchors);
 

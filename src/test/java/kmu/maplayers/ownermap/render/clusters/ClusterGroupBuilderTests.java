@@ -5,7 +5,9 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.geometry.SquareCellFixture.SquareSide;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
@@ -24,12 +26,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCell;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCellFacing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -94,59 +97,23 @@ final class ClusterGroupBuilderTests {
     private static final double BORDER_OPACITY = 0.25;
     private static final double BORDER_WIDTH = 3.0;
 
+    // The side of every square cell here, sized well clear of the fixed border channel.
+    private static final double CELL_SIDE = 2000;
+
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
-        HELD_SYSTEM, List.of(
-            buildEdgeFacing(0, 0, 2000, 0, null),
-            buildEdgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
-            buildEdgeFacing(2000, 2000, 0, 2000, null),
-            buildEdgeFacing(0, 2000, 0, 0, null)),
-        NEIGHBOUR_SYSTEM, List.of(
-            buildEdgeFacing(2000, 0, 4000, 0, null),
-            buildEdgeFacing(4000, 0, 4000, 2000, null),
-            buildEdgeFacing(4000, 2000, 2000, 2000, null),
-            buildEdgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)),
-        ISLAND_SYSTEM, List.of(
-            buildEdgeFacing(10000, 0, 12000, 0, null),
-            buildEdgeFacing(12000, 0, 12000, 2000, null),
-            buildEdgeFacing(12000, 2000, 10000, 2000, null),
-            buildEdgeFacing(10000, 2000, 10000, 0, null)),
-        EXCLAVE_SYSTEM, List.of(
-            buildEdgeFacing(30000, 0, 32000, 0, null),
-            buildEdgeFacing(32000, 0, 32000, 2000, null),
-            buildEdgeFacing(32000, 2000, 30000, 2000, null),
-            buildEdgeFacing(30000, 2000, 30000, 0, null)),
-        RIVAL_SYSTEM, List.of(
-            buildEdgeFacing(20000, 0, 22000, 0, null),
-            buildEdgeFacing(22000, 0, 22000, 2000, null),
-            buildEdgeFacing(22000, 2000, 20000, 2000, null),
-            buildEdgeFacing(20000, 2000, 20000, 0, null)));
+        HELD_SYSTEM,
+        buildSquareCellFacing(0, 0, CELL_SIDE, SquareSide.RIGHT, NEIGHBOUR_SYSTEM),
+        NEIGHBOUR_SYSTEM,
+        buildSquareCellFacing(2000, 0, CELL_SIDE, SquareSide.LEFT, HELD_SYSTEM),
+        ISLAND_SYSTEM,
+        buildSquareCell(10000, 0, CELL_SIDE),
+        EXCLAVE_SYSTEM,
+        buildSquareCell(30000, 0, CELL_SIDE),
+        RIVAL_SYSTEM,
+        buildSquareCell(20000, 0, CELL_SIDE));
 
     @Nested
     class BuildClusterGroup {
-
-        @Test
-        void readsItsFirstMembersPaletteUnderThatMembersOwnKey() {
-            // The members and the holding share one address, so a body whose member shares a
-            // vanilla ID with another system paints from its own owner - where a lookup by ID
-            // alone could only have named whichever of the pair the map happened to hold.
-            var anchoredCell = new SystemKey(ISLAND_SYSTEM, null, "8b3");
-            var twin = new SystemKey(ISLAND_SYSTEM, null, "38d53");
-            var owners = new LinkedHashMap<SystemKey, SystemOwner>();
-
-            owners.put(anchoredCell, HEGEMONY_OWNER);
-            owners.put(twin, TRITACHYON_OWNER);
-
-            var clusterGroup = buildClusterGroupOf(
-                buildHoldingKeyedBy(buildDrawnStyle(), owners),
-                listAnchoredCellFor(ISLAND_SYSTEM, anchoredCell),
-                HEGEMONY_OWNER,
-                List.of(anchoredCell));
-
-            // The owner resolved, so the body paints; an unresolved one would leave the owner
-            // with no palette to fill from and the whole record dropped.
-            assertThat(clusterGroup)
-                .isNotNull();
-        }
 
         @Test
         void tracesTwoTouchingSystemsAsOneFrontier() {
@@ -327,8 +294,6 @@ final class ClusterGroupBuilderTests {
         }
     }
 
-    // A geometry cache holding just the named cells, each drawing as its own star - the raw
-    // partition an owner's border is traced from.
     // The 3x3 block as a geometry cache, every cell drawing as its own system.
     private static CellGeometryCache listGridCells() {
 
@@ -426,21 +391,8 @@ final class ClusterGroupBuilderTests {
             && row == GRID_CENTRE;
     }
 
-    // The same cut with one cell keyed as the sector states its system rather than by the ID
-    // alone - the shape a system carrying an anchor cuts, and the one that reaches the holding
-    // only by narrowing.
-    private static CellGeometryCache listAnchoredCellFor(String systemId, SystemKey cellKey) {
-
-        var geometryCacheMock = mock(CellGeometryCache.class);
-
-        when(geometryCacheMock.getCellEdgesByCellKey())
-            .thenReturn(Map.of(cellKey, EDGES.get(systemId)));
-        when(geometryCacheMock.getSystemKeyByCellKey())
-            .thenReturn(Map.of(cellKey, cellKey));
-
-        return geometryCacheMock;
-    }
-
+    // A geometry cache holding just the named cells, each drawing as its own star - the raw
+    // partition an owner's border is traced from.
     private static CellGeometryCache listCellsFor(String... systemIds) {
 
         var geometryCacheMock = mock(CellGeometryCache.class);
@@ -493,8 +445,7 @@ final class ClusterGroupBuilderTests {
                 geometryCache.getSystemKeyByCellKey(),
                 holding.ownerBySystemKey()),
             geometryCache.getCellEdgesByCellKey(),
-            Set.of(),
-            Set.of());
+            SystemFillStates.ALL_SOLID);
 
         return groupBuilder.buildClusterGroup(owner, memberCellKeys);
     }

@@ -33,7 +33,7 @@ public interface OwnerSource {
      *                       a walk over no sector yields empty owners
      * @param spotlitOwnerId the spotlit owner's ID, or null when none is spotlit - a source that
      *                       spotlights reads it, one that does not ignores it
-     * @return the owners per system, the fill exceptions among them, the inhabited systems and the
+     * @return the owners per system, the fill state of each, the inhabited systems and the
      *         spotlit owner's presence among the unowned ones
      */
     ResolvedOwners resolveOwners(SectorWalk walk, String spotlitOwnerId);

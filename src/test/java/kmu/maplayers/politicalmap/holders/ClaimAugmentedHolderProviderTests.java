@@ -8,6 +8,8 @@ import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
@@ -104,7 +106,7 @@ final class ClaimAugmentedHolderProviderTests {
 
             when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
-                    new HolderResolution(Map.of(buildCellKey("held"), heldHolder), Set.of(), Set.of()));
+                    new HolderResolution(Map.of(buildCellKey("held"), heldHolder), SystemFillStates.ALL_SOLID));
 
             var provider = new ClaimAugmentedHolderProvider(
                 baseProviderMock,
@@ -127,10 +129,10 @@ final class ClaimAugmentedHolderProviderTests {
                         Map.entry(buildCellKey("held"), heldHolder),
                         Map.entry(buildCellKey("claimed"), claimedHolder));
 
-                assertThat(resolution.unfilledSystemKeys())
-                    .containsExactly(buildCellKey("claimed"));
-                assertThat(resolution.contestedSystemKeys())
-                    .isEmpty();
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .containsEntry(buildCellKey("claimed"), FillState.UNFILLED);
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .doesNotContainValue(FillState.HATCHED);
             }
         }
 
@@ -147,7 +149,7 @@ final class ClaimAugmentedHolderProviderTests {
 
             when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
-                    new HolderResolution(Map.of(buildCellKey("shared"), heldHolder), Set.of(), Set.of()));
+                    new HolderResolution(Map.of(buildCellKey("shared"), heldHolder), SystemFillStates.ALL_SOLID));
 
             var provider = new ClaimAugmentedHolderProvider(
                 baseProviderMock,
@@ -167,8 +169,8 @@ final class ClaimAugmentedHolderProviderTests {
                 // so the claim over it adds no unfilled entry.
                 assertThat(resolution.ownerBySystemKey())
                     .containsExactly(Map.entry(buildCellKey("shared"), heldHolder));
-                assertThat(resolution.unfilledSystemKeys())
-                    .isEmpty();
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .doesNotContainValue(FillState.UNFILLED);
             }
         }
 
@@ -189,8 +191,9 @@ final class ClaimAugmentedHolderProviderTests {
                 .thenReturn(
                     new HolderResolution(
                         Map.of(buildCellKey("held"), spotlightHolder),
-                        Set.of(buildCellKey("held")),
-                        Set.of()));
+                        SystemFillStates.createOf(Map.of(
+                            buildCellKey("held"),
+                            FillState.HATCHED))));
 
             var provider = new ClaimAugmentedHolderProvider(
                 baseProviderMock,
@@ -216,12 +219,12 @@ final class ClaimAugmentedHolderProviderTests {
                 // bloc colour, which the style layer would recede.
                 assertThat(resolution.ownerBySystemKey().get(buildCellKey("claimed")))
                     .isSameAs(spotlightHolder);
-                assertThat(resolution.unfilledSystemKeys())
-                    .containsExactly(buildCellKey("claimed"));
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .containsEntry(buildCellKey("claimed"), FillState.UNFILLED);
 
                 // The base's contested set passes through the fold untouched.
-                assertThat(resolution.contestedSystemKeys())
-                    .containsExactly(buildCellKey("held"));
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .containsEntry(buildCellKey("held"), FillState.HATCHED);
             }
         }
 
@@ -238,7 +241,7 @@ final class ClaimAugmentedHolderProviderTests {
 
             when(baseProviderMock.resolveHolder(pass, "hegemony"))
                 .thenReturn(
-                    new HolderResolution(Map.of(buildCellKey("held"), spotlightHolder), Set.of(), Set.of()));
+                    new HolderResolution(Map.of(buildCellKey("held"), spotlightHolder), SystemFillStates.ALL_SOLID));
 
             var provider = new ClaimAugmentedHolderProvider(
                 baseProviderMock,
@@ -260,8 +263,8 @@ final class ClaimAugmentedHolderProviderTests {
                 // held cells - the claim shares its bloc's fate.
                 assertThat(resolution.ownerBySystemKey().get(buildCellKey("rival-claimed")))
                     .isSameAs(rivalClaimHolder);
-                assertThat(resolution.unfilledSystemKeys())
-                    .containsExactly(buildCellKey("rival-claimed"));
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .containsEntry(buildCellKey("rival-claimed"), FillState.UNFILLED);
             }
         }
 
@@ -277,7 +280,7 @@ final class ClaimAugmentedHolderProviderTests {
             var openedOver = new ArrayList<SectorPassIndex>();
 
             when(baseProviderMock.resolveHolder(pass, null))
-                .thenReturn(new HolderResolution(Map.of(), Set.of(), Set.of()));
+                .thenReturn(new HolderResolution(Map.of(), SystemFillStates.ALL_SOLID));
 
             var provider = new ClaimAugmentedHolderProvider(
                 baseProviderMock,
@@ -311,7 +314,7 @@ final class ClaimAugmentedHolderProviderTests {
             var openedUnder = new ArrayList<KnownColonyReader>();
 
             when(baseProviderMock.resolveHolder(pass, null))
-                .thenReturn(new HolderResolution(Map.of(), Set.of(), Set.of()));
+                .thenReturn(new HolderResolution(Map.of(), SystemFillStates.ALL_SOLID));
 
             var provider = new ClaimAugmentedHolderProvider(
                 baseProviderMock,

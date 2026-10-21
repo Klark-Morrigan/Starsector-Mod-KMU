@@ -9,6 +9,8 @@ import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
@@ -179,20 +181,21 @@ final class OwnerMapBuilderTests {
         }
 
         @Test
-        void carriesTheFillExceptionsTheOwnersStated() {
-            // The two sets the source co-produced with its owner map ride onto the build's inputs,
-            // which the fill split reads them off.
-            var contested = buildCellKey("askonia");
-            var unfilled = buildCellKey("eos");
+        void carriesTheFillStatesTheOwnersStated() {
+            // The fill states the source co-produced with its owner map ride onto the build's inputs
+            // whole, which the fill split reads them off.
+            var expectedFillStates = SystemFillStates.createOf(Map.of(
+                buildCellKey("askonia"),
+                FillState.HATCHED,
+                buildCellKey("eos"),
+                FillState.UNFILLED));
 
             var clusters = buildClustersOver(
                 buildReadingOver(new OwnerSourceFake()),
-                new ResolvedOwners(Map.of(), Set.of(contested), Set.of(unfilled), Set.of(), Set.of()));
+                new ResolvedOwners(Map.of(), expectedFillStates, Set.of(), Set.of()));
 
-            assertThat(clusters.getBuildInputs().contestedSystemKeys())
-                .containsExactly(contested);
-            assertThat(clusters.getBuildInputs().unfilledSystemKeys())
-                .containsExactly(unfilled);
+            assertThat(clusters.getBuildInputs().getFillStates())
+                .isSameAs(expectedFillStates);
         }
 
         @Test
@@ -204,7 +207,7 @@ final class OwnerMapBuilderTests {
 
             var clusters = buildClustersOver(viewReading, ResolvedOwners.createEmpty());
 
-            assertThat(clusters.getBuildInputs().viewReading())
+            assertThat(clusters.getBuildInputs().getViewReading())
                 .isSameAs(viewReading);
         }
 
@@ -216,7 +219,7 @@ final class OwnerMapBuilderTests {
                 buildReadingOver(new OwnerSourceFake()),
                 ResolvedOwners.createEmpty());
 
-            assertThat(clusters.getBuildInputs().styling())
+            assertThat(clusters.getBuildInputs().getStyling())
                 .isSameAs(STYLING);
         }
 
@@ -263,8 +266,7 @@ final class OwnerMapBuilderTests {
     private static ResolvedOwners buildOwnersHolding(SystemKey systemKey, SystemOwner owner) {
         return new ResolvedOwners(
             Map.of(systemKey, owner),
-            Set.of(),
-            Set.of(),
+            SystemFillStates.ALL_SOLID,
             Set.of(systemKey),
             Set.of());
     }

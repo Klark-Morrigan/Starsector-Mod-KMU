@@ -104,7 +104,7 @@ public final class CellRibbonsBaker {
             geometryCache.getSystemKeyByCellKey(),
             CellRibbonSource.createForPass(
                 walk,
-                clusters.getBuildInputs().viewReading().source(),
+                clusters.getBuildInputs().getViewReading().source(),
                 RibbonBakeSurface.createForPass(clusters, geometryCache, standingAnchors)),
             KmuOwnerMapDiagnosticsSettings.shouldShowOwnerMapRibbonPaths());
     }

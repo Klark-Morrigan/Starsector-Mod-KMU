@@ -7,7 +7,10 @@ import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.EdgeInset;
+import kmu.maplayers.base.geometry.SquareCellFixture.SquareSide;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.render.clusters.PaintedCell;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedViewFake;
@@ -30,12 +33,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCell;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCellFacing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -54,6 +58,9 @@ import static org.mockito.Mockito.when;
  * settled system nobody owns, and empty space - every form a cell or an owner can take.
  */
 final class OwnerMapBuilderIntegrationTests {
+
+    // The side of every square cell here, wide enough to clear the fixed border channel.
+    private static final double CELL_SIDE = 2000;
 
     private static final String HEGEMONY = "hegemony";
     private static final String TRITACHYON = "tritachyon";
@@ -94,8 +101,7 @@ final class OwnerMapBuilderIntegrationTests {
             HEGEMONY_OWNER,
             RIVAL_SYSTEM,
             TRITACHYON_OWNER)),
-        Set.of(),
-        Set.of(buildCellKey(NEIGHBOUR_SYSTEM)),
+        SystemFillStates.createOf(Map.of(buildCellKey(NEIGHBOUR_SYSTEM), FillState.UNFILLED)),
         buildKeyedSystemKeys(List.of(HELD_SYSTEM, NEIGHBOUR_SYSTEM, RIVAL_SYSTEM, SETTLED_SYSTEM)),
         Set.of());
 
@@ -162,8 +168,7 @@ final class OwnerMapBuilderIntegrationTests {
                 new MapPaints(STYLING, READING, CONTENT_INPUTS),
                 grouping,
                 geometryCache.getCellEdgesByCellKey(),
-                OWNERS.unfilledSystemKeys(),
-                OWNERS.contestedSystemKeys());
+                OWNERS.fillStates());
 
             var expectedHegemonyGroup = groupBuilder.buildClusterGroup(
                 HEGEMONY_OWNER,
@@ -206,7 +211,7 @@ final class OwnerMapBuilderIntegrationTests {
             var geometryCacheMock = mock(CellGeometryCache.class);
 
             when(geometryCacheMock.getCellEdgesByCellKey())
-                .thenReturn(buildKeyedValues(Map.of(HELD_SYSTEM, buildSquareCellAt(0, null))));
+                .thenReturn(buildKeyedValues(Map.of(HELD_SYSTEM, buildSquareCell(0, 0, CELL_SIDE))));
 
             when(geometryCacheMock.getSystemKeyByCellKey())
                 .thenReturn(buildDrawnSystemKeys(Map.of(
@@ -241,11 +246,11 @@ final class OwnerMapBuilderIntegrationTests {
 
         var edgesBySystemId = new LinkedHashMap<String, List<CellEdge>>();
 
-        edgesBySystemId.put(HELD_SYSTEM, buildSquareCellAt(0, NEIGHBOUR_SYSTEM));
-        edgesBySystemId.put(NEIGHBOUR_SYSTEM, buildLeftFacingSquareCellAt(2000, HELD_SYSTEM));
-        edgesBySystemId.put(RIVAL_SYSTEM, buildSquareCellAt(10000, null));
-        edgesBySystemId.put(SETTLED_SYSTEM, buildSquareCellAt(20000, null));
-        edgesBySystemId.put(EMPTY_SYSTEM, buildSquareCellAt(30000, null));
+        edgesBySystemId.put(HELD_SYSTEM, buildSquareCellFacing(0, 0, CELL_SIDE, SquareSide.RIGHT, NEIGHBOUR_SYSTEM));
+        edgesBySystemId.put(NEIGHBOUR_SYSTEM, buildSquareCellFacing(2000, 0, CELL_SIDE, SquareSide.LEFT, HELD_SYSTEM));
+        edgesBySystemId.put(RIVAL_SYSTEM, buildSquareCell(10000, 0, CELL_SIDE));
+        edgesBySystemId.put(SETTLED_SYSTEM, buildSquareCell(20000, 0, CELL_SIDE));
+        edgesBySystemId.put(EMPTY_SYSTEM, buildSquareCell(30000, 0, CELL_SIDE));
 
         var systemIdByCellId = new LinkedHashMap<String, String>();
 
@@ -261,30 +266,5 @@ final class OwnerMapBuilderIntegrationTests {
             .thenReturn(buildDrawnSystemKeys(systemIdByCellId));
 
         return geometryCacheMock;
-    }
-
-    // A 2000-unit square from the given x, counter-clockwise from its bottom-left corner, its right
-    // edge facing the given system and every other edge facing open space.
-    private static List<CellEdge> buildSquareCellAt(double minX, String rightNeighbourId) {
-
-        var maxX = minX + 2000;
-
-        return List.of(
-            buildEdgeFacing(minX, 0, maxX, 0, null),
-            buildEdgeFacing(maxX, 0, maxX, 2000, rightNeighbourId),
-            buildEdgeFacing(maxX, 2000, minX, 2000, null),
-            buildEdgeFacing(minX, 2000, minX, 0, null));
-    }
-
-    // The same square with its left edge facing the given system instead.
-    private static List<CellEdge> buildLeftFacingSquareCellAt(double minX, String leftNeighbourId) {
-
-        var maxX = minX + 2000;
-
-        return List.of(
-            buildEdgeFacing(minX, 0, maxX, 0, null),
-            buildEdgeFacing(maxX, 0, maxX, 2000, null),
-            buildEdgeFacing(maxX, 2000, minX, 2000, null),
-            buildEdgeFacing(minX, 2000, minX, 0, leftNeighbourId));
     }
 }

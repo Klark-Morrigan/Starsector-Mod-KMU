@@ -169,7 +169,7 @@ which `SpotlitOwners` mints and recognises:
 it builds the spotlit owner from the bloc's palette,
 so the claims resolve spotlights a claim the same way without reaching into this package.
 The geometry fuses it into one territory under one border,
-and the contested systems are reported apart (`HolderResolution.contestedSystemKeys`),
+and the contested systems are reported apart (as hatched in `HolderResolution.fillStates`),
 so the fill splits per cell inside that border.
 
 ## The picker's numbers

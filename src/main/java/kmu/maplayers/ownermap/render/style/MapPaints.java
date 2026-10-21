@@ -14,7 +14,8 @@ import java.util.Map;
  *
  * <p>The style resolvers' one entry point. An owner's fill, its cluster border and its cells' seams
  * all ask here, and so does every cell nobody owns, so no two of them can resolve a paint from two
- * readings of the same inputs. A stage that paints - the cell builder, the cluster-group builder -
+ * readings of the same inputs. A cluster's name asks here too, for the style decision its owner's
+ * fill was painted from, so the name and the fill beneath it are decided once. A stage that paints - the cell builder, the cluster-group builder -
  * takes one of these rather than the build it belongs to, which is what lets a layer stand such a
  * stage up without the pipeline around it.
  *
@@ -37,6 +38,10 @@ public final class MapPaints {
     private final Map<SystemOwner, ResolvedOwnerPaint> paintByOwner = new HashMap<>();
 
     private final OwnerReading reading;
+
+    // Each owner's style decision, resolved on first ask. Keyed by ID rather than by owner, because
+    // the label path names an owner by its ID alone.
+    private final Map<String, OwnerStyleDecision> styleDecisionByOwnerId = new HashMap<>();
     private final MapStyling styling;
 
     // Each shape of unowned paint, resolved on first ask and kept in the slot its two answers name.
@@ -62,6 +67,23 @@ public final class MapPaints {
     }
 
     /**
+     * @return the sidebar picks these paints resolve under, for a stage that also reads the picks -
+     *         the name format a label is spelled in - so the paint and the rest are one sampling
+     */
+    public ContentInputs getContentInputs() {
+        return contentInputs;
+    }
+
+    /**
+     * @return the painting layer's reading these paints resolve through, for a stage that also asks
+     *         it something other than a style - an owner's name - so both answers are one reading;
+     *         null only for the placeholder a failed build stands behind
+     */
+    public OwnerReading getReading() {
+        return reading;
+    }
+
+    /**
      * @return the scheme these paints resolve against, for a stage that also shapes what it paints -
      *         its border trace and the sector-wide smoothing and hatch knobs - so the shape and the
      *         paint are read off one scheme
@@ -84,6 +106,27 @@ public final class MapPaints {
      */
     public ResolvedOwnerPaint resolveOwnerPaintOf(SystemOwner owner) {
         return paintByOwner.computeIfAbsent(owner, this::resolveUncachedOwnerPaintOf);
+    }
+
+    /**
+     * The category one owner draws in and the adjustment it draws under, before any theme is
+     * applied - what an owner's paint is resolved from, and what its cluster name's colour is.
+     *
+     * <p>Asked here by both, and remembered, so a name and the fill beneath it are decided once
+     * rather than agreeing by being decided twice.
+     *
+     * @param ownerId the owner's ID - an owner ID, or one of the filter's synthetic keys
+     * @return the theme-free decision the owner draws under
+     */
+    public OwnerStyleDecision resolveOwnerStyleDecisionOf(String ownerId) {
+
+        return styleDecisionByOwnerId.computeIfAbsent(
+            ownerId,
+            uncachedOwnerId -> OwnerStyleResolver.resolveOwnerStyleDecision(
+                uncachedOwnerId,
+                reading,
+                styling.categories(),
+                contentInputs));
     }
 
     /**
@@ -136,11 +179,7 @@ public final class MapPaints {
         var ownerStyling = OwnerStyling.resolveFrom(
             styling.renderStyle(),
             styling.categories(),
-            OwnerStyleResolver.resolveOwnerStyleDecision(
-                owner.ownerId(),
-                reading,
-                styling.categories(),
-                contentInputs));
+            resolveOwnerStyleDecisionOf(owner.ownerId()));
 
         return ResolvedOwnerPaint.resolveFrom(
             ownerStyling,

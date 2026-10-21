@@ -6,6 +6,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
@@ -420,8 +421,7 @@ final class DebugBorderTracingBuilderTests {
 
         return new ResolvedOwners(
             buildKeyedValues(ownerBySystemId),
-            Set.of(),
-            Set.of(),
+            SystemFillStates.ALL_SOLID,
             inhabitedSystemKeys,
             Set.of());
     }

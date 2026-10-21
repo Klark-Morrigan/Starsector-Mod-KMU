@@ -408,6 +408,7 @@ So a word of one axis never stands in for another:
 | cell | 单元 | one system's area on the map, never a UI control |
 | cluster (a run of one owner's systems, and the name drawn over it) | 区域 | a region, since the run reads as one area on the map |
 | fill | 填充 | the usual graphics word |
+| fill state (how one system fills inside its cluster: solid fill, hatch fill or no fill) | 填充状态 | 填充 with 状态, a state |
 | hatch fill | 斜线填充 | 斜线, diagonal lines, before 填充 |
 | inner border | 内边界（省界） | the province seam |
 | nebulae (the map's, which an overlay part paints below or above) | 地图星云 | vanilla's 星云 with 地图, as the settings and the compatibility notices write it |
@@ -454,6 +455,7 @@ So a word of one axis never stands in for another:
 | shades (an owner's two colours) | 配色 | as in vanilla's 界面配色, a set of colours worn together |
 | smoothing (the sanding and rounding of a border) | 平滑 | the usual graphics word; one of its passes is 一道平滑处理 |
 | stage (a border's shape after one smoothing pass) | 阶段 | the plain word for one step of a process |
+| style decision (the category and recede one owner draws under) | 样式决定 | 样式, a style, with 决定, a decision |
 | theme (every style the map is drawn in) | 主题 | the usual UI word for a set of styles worn together |
 | tier (of the map layers framework) | 层 | the plain word for a layer of a structure, as in 三层; kept apart from 图层, a map layer |
 | unowned cell (a cell no owner on the layer holds) | 无所有者单元 | 无, no, with 所有者 and 单元; kept apart from 无主, a market the Neutral faction holds |

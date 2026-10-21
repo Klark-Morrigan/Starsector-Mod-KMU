@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
@@ -19,13 +18,13 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the pure partition behind a cluster's fill: which state each member system draws
- * in, how the members land in the three buckets at both the cell and system level, and which
- * systems one state names as its coincident neighbours. All of it decidable from plain sets,
- * which is why it lives apart from the tessellation in {@link SplitFillBuilder}.
+ * Pins the pure partition behind a cluster's fill: how the members land in the three buckets at
+ * both the cell and system level, and which systems one state names as its coincident neighbours.
+ * All of it decidable from plain values, which is why it lives apart from the tessellation in
+ * {@link SplitFillBuilder}. Which state one system draws in is {@link SystemFillStatesTests}'s.
  *
- * <p>The members and the two exception sets share one address, so a case states its systems by
- * key throughout.
+ * <p>The members and the fill states share one address, so a case states its systems by key
+ * throughout.
  */
 final class FillSplitTests {
 
@@ -40,64 +39,6 @@ final class FillSplitTests {
     // A cell its cluster covers without a star of its own in it - present among the
     // members' cells, absent from their systems.
     private static final SystemKey STARLESS_CELL = buildCellKey("starless-cell");
-
-    @Nested
-    class ClassifyFillState {
-
-        private static final String SYSTEM_ID = "some-system";
-        private static final SystemKey SYSTEM = buildCellKey(SYSTEM_ID);
-
-        @Test
-        void returnsSolidWhenTheSystemIsNeitherHatchedNorUnfilled() {
-
-            assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(), Set.of()))
-                .isEqualTo(FillState.SOLID);
-        }
-
-        @Test
-        void returnsHatchedWhenTheSystemIsHatched() {
-
-            assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(SYSTEM), Set.of()))
-                .isEqualTo(FillState.HATCHED);
-        }
-
-        @Test
-        void returnsUnfilledWhenTheSystemIsUnfilled() {
-
-            assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(), Set.of(SYSTEM)))
-                .isEqualTo(FillState.UNFILLED);
-        }
-
-        @Test
-        void favoursUnfilledOverHatchedWhenTheSystemIsBoth() {
-            // A system drawn empty is empty whatever else the layer says about it, so unfilled
-            // wins the tie.
-            assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(SYSTEM), Set.of(SYSTEM)))
-                .isEqualTo(FillState.UNFILLED);
-        }
-
-        @Test
-        void returnsSolidForACellWithNoStarOfItsOwn() {
-            // A null system has no per-system fill state, so it fills solid with the rest of the
-            // cluster rather than probing either exception set with a null key.
-            assertThat(FillSplit.classifyFillState(null, Set.of(buildCellKey("other")), Set.of(buildCellKey("other"))))
-                .isEqualTo(FillState.SOLID);
-        }
-
-        @Test
-        void drawsTwoSystemsSharingAnIdInTheirOwnStates() {
-            // The sets name a system the way the members do, so a colliding pair can draw in two
-            // different states - where a set keyed by ID could only have hatched both or neither.
-            var hatched = new SystemKey(SYSTEM_ID, "", "8b3");
-            var solid = new SystemKey(SYSTEM_ID, "", "38d53");
-
-            assertThat(FillSplit.classifyFillState(hatched, Set.of(hatched), Set.of()))
-                .isEqualTo(FillState.HATCHED);
-
-            assertThat(FillSplit.classifyFillState(solid, Set.of(hatched), Set.of()))
-                .isEqualTo(FillState.SOLID);
-        }
-    }
 
     @Nested
     class SplitMembersByFillState {
@@ -144,8 +85,7 @@ final class FillSplitTests {
             var split = FillSplit.splitMembersByFillState(
                 buildGroupingOf(Map.of("cell-solid", SOLID_SYSTEM_ID)),
                 buildCellKeys("cell-solid"),
-                Set.of(),
-                Set.of());
+                SystemFillStates.ALL_SOLID);
 
             assertThat(split.hasNonSolidMembers())
                 .isFalse();
@@ -184,8 +124,11 @@ final class FillSplitTests {
                 buildCellKey("cell-hatched"),
                 buildCellKey("cell-unfilled"),
                 STARLESS_CELL),
-            Set.of(HATCHED_SYSTEM),
-            Set.of(UNFILLED_SYSTEM));
+            SystemFillStates.createOf(Map.of(
+                HATCHED_SYSTEM,
+                FillState.HATCHED,
+                UNFILLED_SYSTEM,
+                FillState.UNFILLED)));
     }
 
     // A grouping that only has to answer "which system does this cell draw as" - the split reads

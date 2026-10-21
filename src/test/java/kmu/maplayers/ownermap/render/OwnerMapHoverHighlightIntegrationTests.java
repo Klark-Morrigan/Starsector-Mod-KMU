@@ -7,6 +7,7 @@ import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.hover.HoverHighlight;
 import kmu.maplayers.base.hover.HoverHighlightGeometry;
 import kmu.maplayers.base.hover.MapHoverFixture;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -33,7 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
@@ -167,8 +167,7 @@ final class OwnerMapHoverHighlightIntegrationTests {
                     OwnerReadingFake.createAnsweringNothing(),
                     new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
-                Set.of(),
-                Set.of()));
+                SystemFillStates.ALL_SOLID));
     }
 
     // Every category drawn by its outline alone, over a sector-wide tier carrying the given corner

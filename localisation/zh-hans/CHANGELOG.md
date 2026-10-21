@@ -54,7 +54,8 @@
 - **`MapStyling.readFromLunaSettings(OwnerCategories, OwnerReading, ContentInputs)`**：一次构建的绘制方案，只读取一次，再交给构建中按它着色的每个部分。
 - **`NexerelinAlliances.resolveFactionAlliancesIn(SectorAPI)`**：以 `FactionAllianceSource` 的方式给出实时联盟成员关系。Nexerelin 只为正在运行的游戏保存一套联盟，因此不会查询传入的星域。
 - **`MapStyling.resolveUnownedStyle(boolean)`**：无所有者单元所用的样式，使地图填充与边界描绘以同一方式查找它。
-- **`MapPaints`**：一次构建的绘制方式，基于该构建的绘制方案、所有者读取和采样的选择。它给出所有者与无所有者单元的绘制方式，每个都在解析后即记住。需要绘制的步骤直接接受它，而不是整个构建；`OwnerMapBuildInputs.paints()` 给出构建自身的那一个。
+- **`MapPaints`**：一次构建的绘制方式，基于该构建的绘制方案、所有者读取和采样的选择。它给出所有者与无所有者单元的绘制方式，以及区域名称着色所依据的样式决定 `resolveOwnerStyleDecisionOf(String)`，每个都在解析后即记住。需要绘制的步骤直接接受它，而不是整个构建；`OwnerMapBuildInputs.getPaints()` 给出构建自身的那一个。
+- **`SystemFillStates`**：每个星系的填充状态，列出每个以斜线或不填充绘制的星系，其余星系一律为实色填充。
 - **`SystemOccupancy.readOwnerOfMembers(CellGrouping, List)`**：一个区域组所含单元的所有者。
 - **`PoliticalHolderView`**，政治地图的每个视图都实现它：联盟集合的修订号（作为视图的内容修订号）、争夺中谁与谁站在一起、持有者类别，以及势力读取。
 - **`SectorClaims.readClaimantBlocId(String, HolderGrouping)`**：宣称所落入的集团，地图填充、选择器统计和色带都读取它。
@@ -145,10 +146,14 @@
 | `ArrangementDialogMapCover`、`CodexMapCover`、`ModalDialogMapCover` 和 `kmu.mods.console.ConsoleMapCover` | 一个 `ScreenClaimMapCover`，读取 `ScreenClaim.isScreenClaimed()` |
 | 自行组合可选 Mod 遮挡的 `MapCoverReader.createForLiveScreen()` | `MapCoverReader.registerOptionalModCovers(List)`，由 `MapLayers` 以已安装 Mod 的遮挡调用 |
 | 向 Nexerelin 询问是否提供联盟视图的 `VanillaMapLayerToggleAttacher()` | `VanillaMapLayerToggleAttacher.registerAllianceViewAvailability(BooleanSupplier)`，由 `MapLayers` 调用 |
-| `DebugBorderTracingBuilder.buildDebugDrawables(CellGeometryCache, ResolvedOwners, OwnerCategories, ContentInputs)` 和 `ClusterLabelStylingSnapshot.resolveForTracing(Map, ViewReading, ContentInputs, FontAtlas)` | `buildDebugDrawables(CellGeometryCache, ResolvedOwners, MapStyling)` 和 `resolveForTracing(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)`，两者都接收边界描绘重建读取的同一个 `MapStyling`。快照的 `desaturationPalette` 和 `categories` 组件改为其 `mapStyling` |
-| 记录类型 `OwnerMapBuildInputs`、`RibbonPlanRules` 和 `RibbonPlan` | 改为不可继承的类，构造函数和访问器不变。`OwnerMapBuildInputs` 持有构建的 `MapPaints`，只与自身相等；`RibbonPlan` 仍按其色段判断是否相等 |
+| `DebugBorderTracingBuilder.buildDebugDrawables(CellGeometryCache, ResolvedOwners, OwnerCategories, ContentInputs)` 和 `ClusterLabelStylingSnapshot.resolveForTracing(Map, ViewReading, ContentInputs, FontAtlas)` | `buildDebugDrawables(CellGeometryCache, ResolvedOwners, MapStyling)` 和 `resolveForTracing(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)`，两者都接收边界描绘重建读取的同一个 `MapStyling`。快照的 `desaturationPalette` 和 `categories` 组件改为其 `paints` |
+| 记录类型 `RibbonPlanRules` 和 `RibbonPlan` | 改为不可继承的类，构造函数和访问器不变。`RibbonPlan` 仍按其色段判断是否相等 |
+| `OwnerMapBuildInputs`，基于绘制方案、视图读取、选择和两个填充集合的记录类型 | 改为不可继承的类，基于绘制方案、视图读取、选择和 `SystemFillStates`，持有构建的 `MapPaints`，只与自身相等。读取方法为 `getStyling()`、`getViewReading()`、`getContentInputs()`、`getFillStates()` 和 `getPaints()` |
+| `HolderResolution` 与 `ResolvedOwners` 的 `contestedSystemKeys` 和 `unfilledSystemKeys`，以及 `FillSplit.splitMembersByFillState(CellGrouping, List, Set, Set)` 和 `FillSplit.classifyFillState(SystemKey, Set, Set)` | 合为一个 `SystemFillStates fillStates`，因此不会有星系同时以斜线和不填充绘制。拆分改为接受它：`splitMembersByFillState(CellGrouping, List, SystemFillStates)`；单个星系的状态由 `resolveFillStateOf(SystemKey)` 给出 |
+| `ClusterLabelStylingSnapshot(Map, MapStyling, OwnerReading, ContentInputs, FontAtlas)` | `ClusterLabelStylingSnapshot(Map, MapPaints, FontAtlas)`：正式构建的快照携带构建自身的绘制方式，因此名称按其填充所依据的同一样式决定着色 |
+| `OwnerMapClusters.reindexClusters(Map, Map)` | `reindexClusters(Map, CellGrouping)`，基于调用方刚组成的分组 |
 | `PaintedCellBuilder.buildPaintedCellForSystem(OwnerMapClusters, SystemKey, ShapedCell)` | `new PaintedCellBuilder(MapPaints, SystemOccupancy)`，再调用 `buildPaintedCell(SystemKey, ShapedCell)`：只依靠绘制方式与 `SystemOccupancy` 建立，无需外围的构建。`OwnerMapClusters.createPaintedCellBuilder()` 基于构建自身的这两者创建一个 |
-| `ClusterGroupBuilder.buildClusterGroup(OwnerMapClusters, CellGeometryCache, CellGrouping, String, List)` 和 `buildAllClusterGroups(OwnerMapClusters, CellGeometryCache, CellGrouping)` | `new ClusterGroupBuilder(MapPaints, CellGrouping, Map, Set, Set)`，再调用 `buildClusterGroup(SystemOwner, List)`：直接给出整个所有者，而不是在旁另给 ID。`OwnerMapClusters.createClusterGroupBuilder(CellGrouping, Map)` 基于构建自身的输入创建一个，由 `OwnerMapBuilder` 构建每个所有者的区域组 |
+| `ClusterGroupBuilder.buildClusterGroup(OwnerMapClusters, CellGeometryCache, CellGrouping, String, List)` 和 `buildAllClusterGroups(OwnerMapClusters, CellGeometryCache, CellGrouping)` | `new ClusterGroupBuilder(MapPaints, CellGrouping, Map, SystemFillStates)`，再调用 `buildClusterGroup(SystemOwner, List)`：直接给出整个所有者，而不是在旁另给 ID。`OwnerMapClusters.createClusterGroupBuilder(CellGrouping, Map)` 基于构建自身的输入创建一个，由 `OwnerMapBuilder` 构建每个所有者的区域组 |
 | `MapStyling(RenderStyle, OwnerCategories, ColourPair, ColourPair, ColourPair)` | `MapStyling(RenderStyle, ClusterBorderTrace, OwnerCategories, ColourPair, ColourPair, ColourPair)`：构建的边界描绘参数随主题一同携带，区域组不会再按各自的实时读取来描绘 |
 | 自行读取绘制方案的 `OwnerMapBuilder.buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners)` | `buildClusters(CellGeometryCache, ViewReading, ContentInputs, ResolvedOwners, MapStyling)`：重建只读取一次绘制方案，供它构建的一切使用 |
 | `RibbonPlanInputs(HolderPass, BlocPaletteReader, OwnerAffiliation, RibbonPlanRules)` 和 `RibbonPlanInputs.createForPass(HolderPass, OwnerAffiliation, RibbonPlanRules)` | `RibbonPlanInputs(HolderPass, OwnerAffiliation, RibbonPlanRules)`。`palettes()` 返回本次计算自身的配色读取，因此色带只能经由填充所用的同一读取着色 |

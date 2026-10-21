@@ -2,12 +2,11 @@ package kmu.maplayers.politicalmap.holders;
 
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.claims.FilteredClaims;
-
-import java.util.Set;
 
 /**
  * The holding source the Claims view resolves under: every claimed star system painted solid
@@ -34,7 +33,7 @@ import java.util.Set;
  * paint they carry off filter. That happens downstream of this provider and without a holder,
  * which is what keeps presence from reading here as a claim.
  *
- * <p>The resolution carries no fill exceptions either way. A system has exactly one claimant, so
+ * <p>The resolution fills every system solid either way. A system has exactly one claimant, so
  * there is no dominated-but-present state to hatch and nothing to leave empty - which lets the fill
  * split take its whole-cluster-solid fast path even under a filter.
  */
@@ -61,7 +60,6 @@ public final class ClaimsHolderProvider
         // fast path. The spotlight only changes which key a claim carries, never its fill.
         return new HolderResolution(
             FilteredClaims.resolveFilteredClaimsThrough(pass, claimReaderSource, selectedBlocId),
-            Set.of(),
-            Set.of());
+            SystemFillStates.ALL_SOLID);
     }
 }

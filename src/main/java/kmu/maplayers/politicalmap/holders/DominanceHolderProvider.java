@@ -1,12 +1,11 @@
 package kmu.maplayers.politicalmap.holders;
 
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
 import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
 import kmu.maplayers.politicalmap.dominance.SectorPolitics;
-
-import java.util.Set;
 
 /**
  * The held-dominance holding source: each inhabited system's dominant holder from the live
@@ -37,7 +36,6 @@ public final class DominanceHolderProvider implements HolderProvider {
         }
         return new HolderResolution(
             SectorPolitics.resolveDominantHolderBySystemKey(pass),
-            Set.of(),
-            Set.of());
+            SystemFillStates.ALL_SOLID);
     }
 }

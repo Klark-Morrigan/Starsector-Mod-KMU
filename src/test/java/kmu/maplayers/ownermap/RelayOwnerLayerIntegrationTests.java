@@ -23,6 +23,7 @@ import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.StyledCell;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -424,8 +425,7 @@ final class RelayOwnerLayerIntegrationTests {
 
         var owners = new ResolvedOwners(
             ownerBySystemKey,
-            Set.of(),
-            Set.of(),
+            SystemFillStates.ALL_SOLID,
             Set.of(
                 buildCellKey(RELAY_WEST),
                 buildCellKey(RELAY_EAST),
@@ -534,8 +534,7 @@ final class RelayOwnerLayerIntegrationTests {
 
             return new ResolvedOwners(
                 ownerBySystemKey,
-                Set.of(),
-                Set.of(),
+                SystemFillStates.ALL_SOLID,
                 ownerBySystemKey.keySet(),
                 Set.of());
         }

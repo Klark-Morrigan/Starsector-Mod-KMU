@@ -13,6 +13,7 @@ import kmlib.testfixtures.statics.StaticSeams;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.geometry.ShapedCell;
+import kmu.maplayers.base.geometry.SquareCellFixture.SquareSide;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.LabelsBuilder;
@@ -55,20 +56,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCell;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCellFacing;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.CELL_LESS_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.DISTANT_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.FLIPPED_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.HEGEMONY;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
+import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.SMALL_CELL_SIDE;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.TRITACHYON;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnerOf;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnersOf;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildSectorWithSystems;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildSquareCellFacing;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildTwoAdjacentCells;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -127,6 +129,10 @@ public final class IncrementalOwnerRefreshTests {
     // business and no case reads it; the face is what the re-fit has to measure in.
     private static final AnchorFitFingerprint STANDING_FIT =
         new AnchorFitFingerprint(null, GEOMETRY_REVISION - 1, STANDING_LABEL_FACE);
+
+    // A cell large enough to hold the authored band clear of its own border, so a re-bake that ran
+    // comes back with runs rather than with the empty band a collapsed inset would give.
+    private static final double BAND_SIZED_CELL_SIDE = 4000;
 
     @Nested
     class ApplyStaleOwnerUpdates {
@@ -588,8 +594,13 @@ public final class IncrementalOwnerRefreshTests {
 
             var cellEdgesByCellKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
 
-            cellEdgesByCellKey.put(firstCell, buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0));
-            cellEdgesByCellKey.put(twinCell, buildSquareCellFacing(NEIGHBOUR_SYSTEM, 100));
+            cellEdgesByCellKey.put(
+                firstCell,
+                buildSquareCellFacing(0, 0, SMALL_CELL_SIDE, SquareSide.BOTTOM, NEIGHBOUR_SYSTEM));
+
+            cellEdgesByCellKey.put(
+                twinCell,
+                buildSquareCellFacing(100, 0, SMALL_CELL_SIDE, SquareSide.BOTTOM, NEIGHBOUR_SYSTEM));
 
             var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
 
@@ -754,7 +765,7 @@ public final class IncrementalOwnerRefreshTests {
         // it - which is what lets a case about the reasons other than a re-shape use it.
         private void seedDrawnDistantCell(OwnerMapClusters clusters) {
 
-            seedDistantCellGeometry(clusters, buildIsolatedSquareCell(10000));
+            seedDistantCellGeometry(clusters, buildSquareCell(10000, 0, SMALL_CELL_SIDE));
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(DISTANT_SYSTEM),
@@ -766,7 +777,7 @@ public final class IncrementalOwnerRefreshTests {
         // actually cut, so a case reading a band back off a redrawn cell needs the edges to cut a
         // ring a band fits in - and reads back a band this batch laid rather than one it was given.
         private void seedBandSizedDistantCell(OwnerMapClusters clusters) {
-            seedDistantCellGeometry(clusters, buildBandSizedIsolatedCell());
+            seedDistantCellGeometry(clusters, buildSquareCell(10000, 10000, BAND_SIZED_CELL_SIDE));
         }
 
         // What both distant-cell arrangements share: the distant cell added to the two adjacent
@@ -780,9 +791,9 @@ public final class IncrementalOwnerRefreshTests {
             when(cellGeometry.cells().getCellEdgesByCellKey())
                 .thenReturn(buildKeyedValues(Map.of(
                     FLIPPED_SYSTEM,
-                    buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0),
+                    buildSquareCellFacing(0, 0, SMALL_CELL_SIDE, SquareSide.BOTTOM, NEIGHBOUR_SYSTEM),
                     NEIGHBOUR_SYSTEM,
-                    buildSquareCellFacing(FLIPPED_SYSTEM, 100),
+                    buildSquareCellFacing(100, 0, SMALL_CELL_SIDE, SquareSide.BOTTOM, FLIPPED_SYSTEM),
                     DISTANT_SYSTEM,
                     distantCellEdges)));
 
@@ -1032,29 +1043,6 @@ public final class IncrementalOwnerRefreshTests {
             new double[] {4000.0, 0.0},
             new double[] {4000.0, 4000.0},
             new double[] {0.0, 4000.0});
-    }
-
-    // The distant cell's own edges, cutting the band-sized square its recorded ring describes: the
-    // geometry a case needs when the cell it is about is redrawn and so cut afresh from its edges.
-    private static List<CellEdge> buildBandSizedIsolatedCell() {
-
-        return List.of(
-            buildEdgeFacing(10000, 10000, 14000, 10000, null),
-            buildEdgeFacing(14000, 10000, 14000, 14000, null),
-            buildEdgeFacing(14000, 14000, 10000, 14000, null),
-            buildEdgeFacing(10000, 14000, 10000, 10000, null));
-    }
-
-    // A closed four-edge cell whose every edge faces its own outer reach, so no flip anywhere can
-    // re-shape it - the cell a case needs when what it is about is the reasons other than a
-    // re-shape.
-    private static List<CellEdge> buildIsolatedSquareCell(double offsetX) {
-
-        return List.of(
-            buildEdgeFacing(offsetX, 0, offsetX + 50, 0, null),
-            buildEdgeFacing(offsetX + 50, 0, offsetX + 50, 50, null),
-            buildEdgeFacing(offsetX + 50, 50, offsetX, 50, null),
-            buildEdgeFacing(offsetX, 50, offsetX, 0, null));
     }
 
     // A clusters holding the given systems, every one of which it also counts settled - the only

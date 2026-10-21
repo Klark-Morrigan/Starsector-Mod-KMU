@@ -108,7 +108,7 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
     PreviewHighlightPaint resolvePreviewPaint(OwnerMapClusters clusters) {
 
         // The view the frame painted, off the inputs the build was baked under.
-        var view = clusters.getBuildInputs().viewReading().view();
+        var view = clusters.getBuildInputs().getViewReading().view();
 
         // The view's ID under the layer's own store namespace, which is how the picker reported the
         // hover: the ID is opaque, so a view named the same by another mod's picker is a different
@@ -160,7 +160,7 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
         // reading to ask has no shade to burn.
         var buildInputs = clusters.getBuildInputs();
         var palette = buildInputs.wasBuilt()
-            ? buildInputs.viewReading().reading().resolvePalette(ownerId)
+            ? buildInputs.getViewReading().reading().resolvePalette(ownerId)
             : null;
 
         return palette == null

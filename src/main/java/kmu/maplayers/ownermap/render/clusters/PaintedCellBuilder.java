@@ -89,12 +89,8 @@ public final class PaintedCellBuilder {
             return null;
         }
 
-        // A cell with no star of its own has no owner to look up, so the absent system skips the
-        // owner map rather than probing it for a key it does not hold - keeping the null-star path
-        // clear of whether the owner map happens to tolerate a null-key get.
-        var owner = systemKey == null
-            ? null
-            : occupancy.readOwnerOf(systemKey);
+        // A cell with no star of its own is answered nobody, and draws as an unowned cell.
+        var owner = occupancy.readOwnerOf(systemKey);
 
         return owner == null
             ? buildUnownedCell(systemKey, shaped)
