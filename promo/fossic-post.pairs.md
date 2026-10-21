@@ -763,8 +763,15 @@ The [source notes][source-notes] give why.
 - EN (back-translation): To the 远星汉化组 (the Chinese localisation team): this Chinese edition's fonts and vanilla terms come from their localisation.
   - ZH: 感谢远星汉化组：本中文版所用的字体和原版术语都出自他们的汉化。
   - Notes: Fossic only; the line states its own reason.
-- EN: To awesome folks over at Fractal Softworks forums, at r/Starsector, and in Discord communities for feedback and support.
-  - ZH: 感谢 Fractal Softworks 论坛、r/Starsector 和各 Discord 社区的朋友们给予的反馈与支持。
+- EN (back-translation): To 水仙Mk for facilitating the mod review process.
+  - ZH: 感谢水仙Mk 帮忙推进本 Mod 的审核。
+  - Notes: Fossic only, since the review is Fossic's own.
+    帮忙推进, helped move forward, and not 协助审核, which reads as taking part in the review itself.
+    Review in [KMLib's forum terms][kmlib-forum].
+- EN: To awesome folks over at Fractal Softworks and Fossic forums, at r/Starsector, and in Discord communities for feedback and support.
+  - ZH: 感谢 Fractal Softworks 论坛、Fossic、r/Starsector 和各 Discord 社区的朋友们给予的反馈与支持。
+  - Notes: Fossic alone, without 远行星号中文论坛 beside it: the reader is on it.
+    Fossic in [KMLib's forum terms][kmlib-forum].
 
 [source-notes]: fossic-post.bbcode
 [kmu-holds]: ../localisation/zh-hans/README.md#what-this-folder-holds

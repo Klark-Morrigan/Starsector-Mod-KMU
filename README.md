@@ -515,10 +515,13 @@ There is no separate diagram source format and no standalone diagram files to ke
 - To developers and maintainers of
   **LazyLib**,
   **LunaLib**,
-  **MagicLib**,
   **Console Commands**
   for providing features this mod relies on.
-- To awesome folks over at **r/Starsector** and in **Discord** communities
+- To developers and maintainers of **Nexerelin**
+  for bringing the politics of the sector to life.
+- To **Genir**
+  for implementing a more stable compatibility solution in **Fast Rendering**.
+- To awesome folks over at **Fractal Softworks** and **Fossic** forums, at **r/Starsector**, and in **Discord** communities
   for feedback and support.
 
 ## Licence
