@@ -333,6 +333,16 @@ and publishes the figures to this repo's `badges` branch.
 It calls KMLib at `master` rather than at the release pin,
 since it publishes figures and cannot affect a release.
 
+[publish-badges.yml](.github/workflows/publish-badges.yml) refreshes the download badges every 30 minutes and on demand,
+through KMLib's reusable
+[publish-download-badges](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#reusable-ci--release-actions)
+pipeline.
+It counts the release zips only,
+not the `.version` files that update checkers poll on every game start,
+and publishes the figures to this repo's `badges` branch.
+It calls KMLib at `master` rather than at the release pin,
+since it publishes figures and cannot affect a release.
+
 ### Localisation
 
 KMU's strings, settings-screen text and console command help are kept per language under [localisation/](localisation/),
