@@ -5,14 +5,9 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapStyling;
-import kmu.maplayers.ownermap.render.style.OwnerStyleResolver;
-import kmu.maplayers.ownermap.render.style.OwnerStyling;
-import kmu.maplayers.ownermap.render.style.ResolvedOwnerPaint;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -32,19 +27,16 @@ import java.util.Set;
  * off the sidebar. What this adds is the two derived sets, which belong to no one of them - they
  * come off the owner source, and a fill split reads them beside the paint.
  *
- * <p>A class rather than a record because it remembers as well as carries: each owner's paint is
- * resolved on first ask and kept for as long as these inputs are, every input to it being fixed with
- * them. Not safe for concurrent use.
+ * <p>It also holds the one {@link MapPaints} resolved over those snapshots, which every cell and
+ * cluster group of the build paints from. Held here rather than built by each stage, because a
+ * stage building its own would resolve each owner's paint again, and the full build and a later
+ * batch would each keep a memo of their own.
  */
 public final class OwnerMapBuildInputs {
 
-    // Each owner's paint, resolved on first ask. Every cell of an owner and its cluster group ask
-    // for the same paint, so a map of a few owners and many cells resolves it a few times rather
-    // than once per cell.
-    private final Map<SystemOwner, ResolvedOwnerPaint> paintByOwner = new HashMap<>();
-
     private final Set<SystemKey> contestedSystemKeys;
     private final ContentInputs contentInputs;
+    private final MapPaints paints;
     private final MapStyling styling;
     private final Set<SystemKey> unfilledSystemKeys;
     private final ViewReading viewReading;
@@ -76,6 +68,8 @@ public final class OwnerMapBuildInputs {
         this.styling = styling;
         this.unfilledSystemKeys = unfilledSystemKeys;
         this.viewReading = viewReading;
+
+        paints = new MapPaints(styling, viewReading.reading(), contentInputs);
     }
 
     /**
@@ -111,6 +105,11 @@ public final class OwnerMapBuildInputs {
         return contentInputs;
     }
 
+    /** @return the paints every cell and cluster group of this build draws in, over its own snapshots */
+    public MapPaints paints() {
+        return paints;
+    }
+
     /** @return the resolved paint scheme every cell and cluster group is styled from */
     public MapStyling styling() {
         return styling;
@@ -139,50 +138,5 @@ public final class OwnerMapBuildInputs {
     public boolean wasBuilt() {
 
         return viewReading.reading() != null;
-    }
-
-    /**
-     * Everything one owner's elements paint from under this build, cascading the retained reading,
-     * filter state and theme in one step and carrying the result down to the shades.
-     *
-     * <p>Asked of the inputs rather than assembled by each builder from the three snapshots: every
-     * input is this build's own retained reading, so an owner's fill, its cluster border, and its
-     * cells' interior seams all resolve from the same read and cannot diverge.
-     *
-     * <p>Resolved once per owner and remembered, since nothing it is resolved from moves while
-     * these inputs stand.
-     *
-     * @param owner whose elements to paint: its ID - an owner ID, or one of the filter's synthetic
-     *              keys - names its style, and its shades are what it paints in where nothing
-     *              desaturates it
-     * @return the bundle, the adjustment over it, and the shades its elements pick from
-     */
-    public ResolvedOwnerPaint resolveOwnerPaintOf(SystemOwner owner) {
-        return paintByOwner.computeIfAbsent(owner, this::resolveUncachedOwnerPaintOf);
-    }
-
-    // The paint resolved afresh, for the memo above to remember.
-    private ResolvedOwnerPaint resolveUncachedOwnerPaintOf(SystemOwner owner) {
-
-        return ResolvedOwnerPaint.resolveFrom(
-            resolveOwnerStyling(owner.ownerId()),
-            owner,
-            styling.desaturationPalette());
-    }
-
-    // The bundle and adjustment behind that paint: the layer's own per-owner decision mapped onto
-    // this build's theme. Private because a caller wanting one is a caller about to paint an
-    // element with it, and resolving the shades separately is how a fill comes to be muted while
-    // the border beside it is not.
-    private OwnerStyling resolveOwnerStyling(String ownerId) {
-
-        return OwnerStyling.resolveFrom(
-            styling.renderStyle(),
-            styling.categories(),
-            OwnerStyleResolver.resolveOwnerStyleDecision(
-                ownerId,
-                viewReading.reading(),
-                styling.categories(),
-                contentInputs));
     }
 }

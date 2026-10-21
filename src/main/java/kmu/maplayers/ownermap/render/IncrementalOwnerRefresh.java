@@ -66,6 +66,11 @@ public final class IncrementalOwnerRefresh {
     private final OwnerMapClusters clusters;
     private final CellGeometryCache geometryCache;
 
+    // The cell builder every re-shaped cell of the batch is baked by, over the paints the standing
+    // build was baked under and the occupancy the batch folds into. Made once per batch through the
+    // factory the full build uses, so a re-shaped cell is built from the values its neighbours were.
+    private final PaintedCellBuilder cellBuilder;
+
     // The batch's one walk of the sector. Every question asked about a marked system - its owner,
     // whether anybody lives there, the spotlit owner's presence in it, and the counts its band
     // reports - is answered off this single walk of it, through the source the standing build was
@@ -78,6 +83,8 @@ public final class IncrementalOwnerRefresh {
         this.clusters = standingMap.clusters();
         this.geometryCache = standingMap.cellGeometry().cells();
         this.walk = walk;
+
+        cellBuilder = clusters.createPaintedCellBuilder();
     }
 
     // Folds the changes of the systems marked stale into the standing clusters,
@@ -239,16 +246,24 @@ public final class IncrementalOwnerRefresh {
     // owners' clusters can have changed shape; every other owner's rings trace unchanged
     // cells, so they are left as-is. An owner's members are the cells it draws, so they are
     // grouped from the cells here to match what buildClusterGroup traces.
+    //
+    // The builder is made here rather than with the batch, since it traces against the grouping and
+    // the grouping is only settled once the flips have folded.
     private void rebuildAffectedClusterGroups(StaleOwnerMapDisturbance disturbance) {
 
         var cellGrouping = clusters.resolveCellGroupingOver(
             geometryCache.getSystemKeyByCellKey());
+
+        var groupBuilder = clusters.createClusterGroupBuilder(
+            cellGrouping,
+            geometryCache.getCellEdgesByCellKey());
 
         var cellsByOwner = cellGrouping.groupCellKeysByOwner();
 
         for (var ownerId : disturbance.getAffectedOwnerIds()) {
 
             rebuildClusterGroupInPlace(
+                groupBuilder,
                 cellGrouping,
                 ownerId,
                 cellsByOwner.get(ownerId));
@@ -338,10 +353,7 @@ public final class IncrementalOwnerRefresh {
             SystemOwner.mapOwnerIdBySystemKey(occupancy.getOwnerBySystemKey()),
             EdgeInset.asTheMapDraws());
 
-        var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-            clusters,
-            drawnSystemKey,
-            shaped);
+        var painted = cellBuilder.buildPaintedCell(drawnSystemKey, shaped);
 
         if (painted == null) {
             clusters.getPaintedCells().removePaintedCell(cellKey);
@@ -355,17 +367,15 @@ public final class IncrementalOwnerRefresh {
     // owner that lost its last member, or whose cluster no longer yields drawable
     // geometry, is removed so its fill and border stop drawing.
     private void rebuildClusterGroupInPlace(
+            ClusterGroupBuilder groupBuilder,
             CellGrouping cellGrouping,
             String ownerId,
             List<SystemKey> memberCellKeys) {
 
         var clusterGroup = memberCellKeys == null || memberCellKeys.isEmpty()
             ? null
-            : ClusterGroupBuilder.buildClusterGroup(
-                clusters,
-                geometryCache,
-                cellGrouping,
-                ownerId,
+            : groupBuilder.buildClusterGroup(
+                clusters.getOccupancy().readOwnerOfMembers(cellGrouping, memberCellKeys),
                 memberCellKeys);
 
         clusters.putStyledClusterGroup(ownerId, clusterGroup);

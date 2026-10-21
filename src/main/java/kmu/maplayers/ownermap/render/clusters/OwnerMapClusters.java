@@ -175,6 +175,45 @@ public final class OwnerMapClusters
     }
 
     /**
+     * The cell builder this build's cells are baked by, over the paints it was baked under and the
+     * occupancy it holds.
+     *
+     * <p>The one place the pipeline states the builder's inputs, so the full build and every batch
+     * folding into it after hand the builder the same two values and bake a cell identically.
+     *
+     * @return a builder over this build's paints and live occupancy
+     */
+    public PaintedCellBuilder createPaintedCellBuilder() {
+        return new PaintedCellBuilder(buildInputs.paints(), occupancy);
+    }
+
+    /**
+     * The cluster-group builder this build's owners are traced by, over the paints and fill sets it
+     * was baked under and the cells it groups.
+     *
+     * <p>The one place the pipeline states the builder's inputs, for the reason
+     * {@link #createPaintedCellBuilder()} is. The grouping and edges arrive because a batch groups
+     * the cells afresh once its flips have folded, while the paints and fill sets stand for the
+     * life of the build.
+     *
+     * @param cellGrouping       how the drawn cells group under the current owners, as
+     *                           {@link #resolveCellGroupingOver} answers it
+     * @param cellEdgesByCellKey the raw cells the borders are traced from
+     * @return a builder over this build's paints and fill sets and the given cells
+     */
+    public ClusterGroupBuilder createClusterGroupBuilder(
+            CellGrouping cellGrouping,
+            Map<SystemKey, List<CellEdge>> cellEdgesByCellKey) {
+
+        return new ClusterGroupBuilder(
+            buildInputs.paints(),
+            cellGrouping,
+            cellEdgesByCellKey,
+            buildInputs.unfilledSystemKeys(),
+            buildInputs.contestedSystemKeys());
+    }
+
+    /**
      * Re-derives the cluster index from the current owners.
      *
      * <p>Clusters are a function of ownership, so any pass that edits the owner map re-runs this:

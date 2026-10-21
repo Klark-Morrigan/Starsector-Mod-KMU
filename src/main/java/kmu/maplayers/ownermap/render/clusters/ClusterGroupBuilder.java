@@ -5,7 +5,7 @@ import kmlib.math.geometry.RingRegion;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.FillSplit;
@@ -14,10 +14,14 @@ import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.render.clusters.TracedFill;
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
+import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.MapPaints;
 
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Bakes one owner's cells into the {@link StyledClusterGroup} the renderer paints: every body
@@ -39,53 +43,65 @@ import java.util.List;
  * <p>Membership is the cells an owner draws, not the systems it holds: those differ wherever an
  * owner's cluster group includes a cell no star of its own sits in, and it is the cells that carry the
  * edges a border is traced from.
+ *
+ * <p>Stands up on stated inputs: the paints, the cells and how they group, and the two sets the
+ * fill splits by. It reads nothing of the build those came from, so the full rebuild and the
+ * incremental refresh hand it the same values and trace an owner identically - and a layer holding
+ * them can trace owners without the pipeline.
  */
 public final class ClusterGroupBuilder {
 
-    // Builds only; never instantiated.
-    private ClusterGroupBuilder() {
+    private final Map<SystemKey, List<CellEdge>> cellEdgesByCellKey;
+    private final CellGrouping cellGrouping;
+    private final Set<SystemKey> contestedSystemKeys;
+    private final MapPaints paints;
+    private final Set<SystemKey> unfilledSystemKeys;
+
+    /**
+     * @param paints              the paints every owner draws in, with the scheme its border is
+     *                            traced and smoothed under
+     * @param cellGrouping        how the drawn cells group under the owners: it spans every cell on
+     *                            the map rather than one owner's, so it is resolved once by the
+     *                            caller - an owner resolving its own would rebuild the whole map's
+     *                            grouping per owner, and two owners could be traced against two
+     *                            readings of it
+     * @param cellEdgesByCellKey  the raw cells the borders are traced from
+     * @param unfilledSystemKeys  the owned systems drawn with no fill inside their owner's frontier
+     * @param contestedSystemKeys the spotlit systems the pick is present in but does not win, which
+     *                            hatch inside the spotlit frontier; empty off filter
+     */
+    public ClusterGroupBuilder(
+            MapPaints paints,
+            CellGrouping cellGrouping,
+            Map<SystemKey, List<CellEdge>> cellEdgesByCellKey,
+            Set<SystemKey> unfilledSystemKeys,
+            Set<SystemKey> contestedSystemKeys) {
+
+        this.cellEdgesByCellKey = cellEdgesByCellKey;
+        this.cellGrouping = cellGrouping;
+        this.contestedSystemKeys = contestedSystemKeys;
+        this.paints = paints;
+        this.unfilledSystemKeys = unfilledSystemKeys;
     }
 
     /**
      * Builds one owner's cluster group from its member cells.
      *
-     * @param clusters       the build the owner belongs to, read for who holds its members and for
-     *                       the inputs the build was baked under - the theme, the filter state,
-     *                       and the two sets its fill splits by
-     * @param geometryCache  the raw cells the border is traced from
-     * @param cellGrouping   how the drawn cells group under this pass's owners, resolved once by
-     *                       the caller: it spans every cell on the map rather than this owner's, so
-     *                       an owner resolving its own would rebuild the whole map's grouping per
-     *                       owner, and two owners could be traced against two readings of it
-     * @param ownerId        the owner's ID - one the owner source resolved,
-     *                       or one of the filter's synthetic spotlight keys
+     * @param owner          the owner the cells are grouped under - one the owner source resolved,
+     *                       or one of the filter's synthetic spotlight keys - whose ID keys the
+     *                       group and whose shades it paints in
      * @param memberCellKeys the cells this owner draws
      * @return the owner's bodies with the paints they share, or null when it paints neither fill
      *         nor border, or when its cells yield no borderable geometry
      */
-    public static StyledClusterGroup buildClusterGroup(
-            OwnerMapClusters clusters,
-            CellGeometryCache geometryCache,
-            CellGrouping cellGrouping,
-            String ownerId,
+    public StyledClusterGroup buildClusterGroup(
+            SystemOwner owner,
             List<SystemKey> memberCellKeys) {
-
-        // What the build was baked under, named apart from the live occupancy read below: the
-        // paints and the fill sets are this build's own and move only with the next rebuild.
-        var buildInputs = clusters.getBuildInputs();
-        var globalStyle = buildInputs.styling().renderStyle().global();
 
         // What this owner's elements paint from, in one read: the bundle, the recede over it, and
         // the shades those resolve against - a desaturated owner swapping to the pass's shared
         // desaturation palette, exactly as its cells' seams do off this same call.
-        //
-        // Every system of an owner is held by the one owner the cells were grouped by, so any member
-        // resolves the same paint.
-        var ownerPaint = buildInputs.resolveOwnerPaintOf(
-            clusters
-                .getOccupancy()
-                .readOwnerOf(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0))));
-
+        var ownerPaint = paints.resolveOwnerPaintOf(owner);
         var style = ownerPaint.style();
         var fillColour = ownerPaint.pickColourOf(style.fill());
         var borderColour = ownerPaint.pickColourOf(style.outer());
@@ -94,28 +110,8 @@ public final class ClusterGroupBuilder {
             return null;
         }
 
-        // One trace for the whole cluster group: the cluster border's rings, and - for a spotlit
-        // footprint - the per-state sub-cluster rings its fill splits into, so border and fill
-        // offset under identical parameters and cannot drift apart. The build's own, so a group the
-        // incremental refresh redraws is traced as the full build traced its neighbours.
-        var borderTrace = buildInputs.styling().borderTrace();
-        var insetRings = borderTrace.traceRings(
-            memberCellKeys,
-            geometryCache.getCellEdgesByCellKey(),
-            cellGrouping);
+        var clusterRegions = traceClusterRegions(memberCellKeys);
 
-        if (insetRings.isEmpty()) {
-            return null;
-        }
-
-        var borderLoops = BorderSmoothing.resolveSmoothedBorderLoops(
-            insetRings,
-            globalStyle.borderSmoothing());
-
-        // The owner's loops sorted back into the bodies they bound: an owner holding cells in two
-        // places traces two outer rings plus whatever enclaves each encloses, and which enclave
-        // belongs to which body is what decides where its fill stops.
-        var clusterRegions = PolygonRegions.groupRingsIntoRegions(borderLoops);
         if (clusterRegions.isEmpty()) {
             return null;
         }
@@ -124,43 +120,13 @@ public final class ClusterGroupBuilder {
         // would then skip; the bodies still stroke and hold a label.
         var tracedFill = fillColour == null
             ? TracedFill.UNPAINTED
-            : traceOwnerFill(buildInputs, geometryCache, cellGrouping, ownerId, memberCellKeys);
+            : traceOwnerFill(owner.ownerId(), memberCellKeys);
 
         return new StyledClusterGroup(
             buildClusters(clusterRegions, tracedFill, borderColour),
             ownerPaint.pickPaintOf(style.fill()),
             ownerPaint.pickPaintOf(style.outer()),
             (float) style.outerWidth());
-    }
-
-    /**
-     * Builds every owner's cluster group into the clusters, keyed by its ID. Each owner
-     * is independent - its cluster(s) trace only its own cells - so the incremental refresh can
-     * rebuild one entry without touching the rest.
-     *
-     * @param clusters      the pass state to write the clusters into
-     * @param geometryCache the raw cells the borders are traced from
-     * @param cellGrouping  how the drawn cells group under this pass's owners, which both the
-     *                      owner membership below and every owner's own trace read
-     */
-    public static void buildAllClusterGroups(
-            OwnerMapClusters clusters,
-            CellGeometryCache geometryCache,
-            CellGrouping cellGrouping) {
-
-        var grouped = cellGrouping.groupCellKeysByOwner();
-
-        for (var owner : grouped.entrySet()) {
-
-            var clusterGroup = buildClusterGroup(
-                clusters,
-                geometryCache,
-                cellGrouping,
-                owner.getKey(),
-                owner.getValue());
-
-            clusters.putStyledClusterGroup(owner.getKey(), clusterGroup);
-        }
     }
 
     // Cuts each body's fill and flattens its loops into the GL runs the stroke walks. The fill is
@@ -193,20 +159,44 @@ public final class ClusterGroupBuilder {
         return clusters;
     }
 
-    // The spotlighted owner's whole footprint - won and contested systems alike - shares one key,
-    // so it clusters under one owner and then splits its fill inside each of its bodies. Whether
-    // that split happens is the fill builder's own call.
-    private static TracedFill traceOwnerFill(
-            OwnerMapBuildInputs buildInputs,
-            CellGeometryCache geometryCache,
-            CellGrouping cellGrouping,
+    // The owner's bodies: one trace for the whole cluster group, smoothed, then its loops sorted
+    // back into the bodies they bound. An owner holding cells in two places traces two outer rings
+    // plus whatever enclaves each encloses, and which enclave belongs to which body is what decides
+    // where its fill stops. Empty when the cells yield no borderable geometry.
+    //
+    // The trace and smoothing are the scheme's own, so a group the incremental refresh redraws is
+    // traced as the full build traced its neighbours.
+    private List<RingRegion> traceClusterRegions(List<SystemKey> memberCellKeys) {
+
+        var insetRings = paints.getStyling().borderTrace().traceRings(
+            memberCellKeys,
+            cellEdgesByCellKey,
+            cellGrouping);
+
+        if (insetRings.isEmpty()) {
+            return List.of();
+        }
+
+        var borderLoops = BorderSmoothing.resolveSmoothedBorderLoops(
+            insetRings,
+            paints.getStyling().renderStyle().global().borderSmoothing());
+
+        return PolygonRegions.groupRingsIntoRegions(borderLoops);
+    }
+
+    // The owner's fill, split by fill state inside each of its bodies: the spotlighted owner's whole
+    // footprint - won and contested systems alike - shares one key, so it clusters under one owner
+    // and then splits its fill. Whether that split happens is the fill builder's own call.
+    //
+    // Traced under the same parameters as the border, so the two cannot drift apart.
+    private TracedFill traceOwnerFill(
             String ownerId,
             List<SystemKey> memberCellKeys) {
 
-        var styling = buildInputs.styling();
+        var styling = paints.getStyling();
 
         return new SplitFillBuilder(
-                geometryCache.getCellEdgesByCellKey(),
+                cellEdgesByCellKey,
                 cellGrouping,
                 styling.borderTrace(),
                 styling.renderStyle().global().hatch().pattern())
@@ -215,8 +205,8 @@ public final class ClusterGroupBuilder {
                 FillSplit.splitMembersByFillState(
                     cellGrouping,
                     memberCellKeys,
-                    buildInputs.contestedSystemKeys(),
-                    buildInputs.unfilledSystemKeys()),
+                    contestedSystemKeys,
+                    unfilledSystemKeys),
                 ownerId);
     }
 }

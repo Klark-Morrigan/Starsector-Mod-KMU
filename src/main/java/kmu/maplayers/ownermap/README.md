@@ -30,6 +30,7 @@ see the [mod README](../../../../../../README.md) for project context.
 - [What belongs here](#what-belongs-here)
 - [What a layer supplies](#what-a-layer-supplies)
 - [What a layer holds](#what-a-layer-holds)
+- [The stages it wires](#the-stages-it-wires)
 - [The arrow](#the-arrow)
 - [The words it keeps](#the-words-it-keeps)
 - [Where each part lives](#where-each-part-lives)
@@ -131,6 +132,27 @@ process-wide state would hand every layer the same choices.
 `OwnerMapStaticStateIntegrationTests` holds the rule,
 failing on any static field under this package that is not final.
 
+## The stages it wires
+
+The cache and the rebuild it drives are the **default wiring** of the tier's stages,
+not the only way to reach them.
+Each stage stands up on the values it is handed and reads nothing of the build those came from,
+so a layer holding the same values gets the same answer without the pipeline:
+
+| Stage | Stands up on |
+| --- | --- |
+| the style resolvers (`MapPaints`) | the `MapStyling`, the `OwnerReading` and the sampled `ContentInputs` |
+| the cell builder (`PaintedCellBuilder`) | the `MapPaints` and the `SystemOccupancy` |
+| the cluster-group builder (`ClusterGroupBuilder`) | the `MapPaints`, the cells' edges, their grouping under the owners, and the two fill sets |
+| the border trace and smoothing | the substrate's `ClusterBorderTrace` and `BorderSmoothing`, over rings and a style |
+| the label fit (`ClusterAnchorsBuilder`) | a `ClusterLabelStylingSnapshot`, the cells and the standing placements |
+| the band planner | the source's `SystemRibbonPlanner`, over a `SectorWalk` and the `RibbonPlanRules` |
+
+Stating the inputs is what keeps an incremental re-shape identical to a full build.
+The full build and a batch hand a stage the same values,
+through the factories on the built clusters,
+rather than the stage reading them off the model it fills.
+
 ## The arrow
 
 This tier imports `kmu.maplayers.base` and no layer:
@@ -201,7 +223,7 @@ since that is what a player's stored setting is keyed by.
 | `picker` | the owner picker model: its rows (`SelectableOwner`, `RankedOwner`), the metrics they carry, the sort modes ranking them, and the presence index a preview lights |
 | `preferences` | the per-save body choices - name format, uninhabited outline, recede - and `OwnerMapBodyPreferences`, the set a layer builds over keys of its own |
 | [`render/clusters`](render/clusters/README.md) | cells into coloured, bordered clusters with their seams and split fills |
-| [`render/style`](render/style/README.md) | player settings into each element's colours, widths and opacities, and the categories a layer declares (`OwnerCategories`) |
+| [`render/style`](render/style/README.md) | player settings into each element's colours, widths and opacities, resolved per build through `MapPaints`, and the categories a layer declares (`OwnerCategories`) |
 | `render/labels` | what a cluster's name reads and what shade it draws in, handed to the substrate's overlay |
 | [`render/ribbon`](render/ribbon/README.md) | a planned band as triangles inside its cell's ring, and the draw |
 | [`ribbon`](ribbon/README.md) | what a band is made of before any geometry: the runs, their order and the count itself |

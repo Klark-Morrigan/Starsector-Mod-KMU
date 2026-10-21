@@ -2,11 +2,13 @@ package kmu.maplayers.ownermap.render.clusters;
 
 import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -134,6 +136,24 @@ public final class SystemOccupancy {
      */
     public SystemOwner readOwnerOf(SystemKey systemKey) {
         return ownerBySystemKey.get(systemKey);
+    }
+
+    /**
+     * Who owns the cells one cluster group is made of.
+     *
+     * <p>Asked of the first member alone, since the grouping keyed every member by the owner of the
+     * system it draws as, so each answers the same. Read through the system a cell draws as rather
+     * than the cell, which is how an absorbed cell with no star of its own still finds its owner.
+     *
+     * @param cellGrouping   how the drawn cells group under these owners
+     * @param memberCellKeys the group's cells, at least one
+     * @return the owner they were grouped under
+     */
+    public SystemOwner readOwnerOfMembers(
+            CellGrouping cellGrouping,
+            List<SystemKey> memberCellKeys) {
+
+        return readOwnerOf(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0)));
     }
 
     /**

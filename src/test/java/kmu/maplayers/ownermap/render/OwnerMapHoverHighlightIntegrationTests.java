@@ -21,7 +21,6 @@ import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.clusters.PaintedCellBuilder;
 import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.style.MapStyling;
@@ -133,10 +132,9 @@ final class OwnerMapHoverHighlightIntegrationTests {
             CornerRoundingStyle cornerRounding) {
 
         var clusters = buildUnpopulatedClustersUnder(cornerRounding);
-        var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-            clusters,
-            UNPOPULATED_CELL,
-            buildSquareCell());
+        var painted = clusters
+            .createPaintedCellBuilder()
+            .buildPaintedCell(UNPOPULATED_CELL, buildSquareCell());
 
         assertThat(painted)
             .as("the fixture must draw a cell for the chain to carry one")
