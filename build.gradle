@@ -355,11 +355,15 @@ dependencies {
     // jar is not on its runtime.
     utilsCompileOnly xstreamJars
 
-    // Runtime only, for the reason the tests take it: the tooling opens on the shipped geometry
-    // defaults by calling the mod's own settings accessors, and those reach KMLib's reader, which
-    // dies on NoClassDefFoundError without the jar. Outside a game the reader answers each
-    // accessor's fallback.
+    // Runtime only, for the reason the tests take them: the tooling opens on the shipped geometry
+    // defaults by calling the mod's own settings accessors, and those reach KMLib's reader. The
+    // reader logs through log4j, asks the game's Global whether LunaLib is up, and names LunaLib's
+    // own types, so each jar has to load or the window dies on NoClassDefFoundError before it
+    // opens. Outside a game Global holds no settings, so the reader answers each accessor's
+    // fallback.
     utilsRuntimeOnly files(lunaLibJarFile)
+    utilsRuntimeOnly files(project.ext.apiJarFile)
+    utilsRuntimeOnly findCoreJars(['log4j-*.jar'])
 
     // The fixtures KMLib publishes as a variant of their own - the fakes of its ports and the market
     // and colony shapes its reads are posed against. A variant rather than part of the jar above,
