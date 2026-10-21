@@ -4,8 +4,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreenControls;
-import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
@@ -32,7 +33,8 @@ import static org.mockito.Mockito.verify;
  * <p>Clearing reaches past the script to what the screens believe, which is the half a registration
  * check would miss: the screens are held for the process while the picks they govern read the loaded
  * sector, so the word that a screen has a control is the one thing here able to cross from one
- * campaign into the next.
+ * campaign into the next. The installer reads the screens off the sector's machinery, so that case
+ * seats one set of screens on both campaigns' sectors, as the composition root does.
  */
 final class MapChromeInstallerTests {
 
@@ -41,10 +43,9 @@ final class MapChromeInstallerTests {
     private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
 
     @AfterEach
-    void forgetTheControlsThisCaseStood() {
-        // The screens are static and the word never clears itself, so a case that stood one would
-        // otherwise decide what every later case in the JVM reads.
-        MapLayerScreenControls.forgetControlsAttached();
+    void clearEveryMachineryThisCaseMade() {
+        // The index is process-wide, so a sector installed here would otherwise outlive its case.
+        SectorMapMachineryIndex.disposeAllMachinery();
     }
 
     @Nested
@@ -101,9 +102,16 @@ final class MapChromeInstallerTests {
         @Test
         void installsOverNoControlCarriedInFromAnEarlierCampaign() {
 
+            var screens = MapLayerRosters.createScreensOverNoLayer();
+            var earlierSectorMock = mock(SectorAPI.class);
+            var nextSectorMock = mock(SectorAPI.class);
+
+            SectorMapMachineryIndex.installMachineryOn(earlierSectorMock, screens);
+            SectorMapMachineryIndex.installMachineryOn(nextSectorMock, screens);
+
             // An earlier campaign in this session, which got as far as standing a box on a row.
-            MapChromeInstaller.installAll(mock(SectorAPI.class));
-            MapLayerScreenControls.standAControlOnTheShownScreen();
+            MapChromeInstaller.installAll(earlierSectorMock);
+            MapLayerScreenControls.standAControlOnTheShownScreen(screens);
 
             try (var sectorMemoryFake = new SectorMemoryFake()) {
 
@@ -113,9 +121,9 @@ final class MapChromeInstallerTests {
                 // no box yet on any row here, and possibly no room for one.
                 sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
 
-                MapChromeInstaller.installAll(mock(SectorAPI.class));
+                MapChromeInstaller.installAll(nextSectorMock);
 
-                assertThat(MapLayerScreens.getMapPicks().layerVisibility().areLayersShown())
+                assertThat(screens.getMapPicks().layerVisibility().areLayersShown())
                     .isTrue();
             }
         }

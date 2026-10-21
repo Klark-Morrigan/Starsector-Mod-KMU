@@ -3,12 +3,14 @@ package kmu.maplayers.politicalmap.claims.ribbon;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.politicalmap.claims.PassClaimReaders;
+import kmu.maplayers.politicalmap.claims.SectorClaims;
 
 import java.util.Optional;
 
@@ -22,15 +24,17 @@ import java.util.Optional;
  * present or who leads.
  *
  * <p>A system the contest settled on nobody is planned all the same, without a painter. Vanilla
- * leaves a settled system unclaimed for several reasons - see
- * {@link kmu.maplayers.ownermap.owners.holders} for which - and this layer's fill
- * <em>is</em> the claim, so it says nothing about such a system at all. The band is what does.
+ * leaves a settled system unclaimed for several reasons -
+ * <a href="../README.md#inhabited-does-not-imply-claimed">the claim mechanic</a> says which - and this
+ * layer's fill <em>is</em> the claim, so it says nothing about such a system at all. The band is what
+ * does.
  *
  * <p>The counting itself is the shared rule's, off the pass's own walk of the system, which is why
  * the reader is built over that walk rather than one of its own: the contest and the count then
  * read one reading of the system instead of two.
  */
-public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
+public final class ClaimedSystemRibbonPlanner
+        implements SystemRibbonPlanner {
 
     private final ClaimBreakdownReader breakdownReader;
     private final RibbonPlanInputs inputs;
@@ -48,18 +52,20 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
     }
 
     /**
-     * The planner a view resolves its claimed bands through, reading vanilla's own claim contest
-     * over the bake's single walk of each system.
+     * The planner a view resolves its claimed bands through, reading the claim contest over the
+     * bake's single walk of each system.
      *
-     * @param inputs everything one bake's bands are settled from, sampled once by the bake
-     * @return the planner ranking claimed cells by the vanilla contest
+     * @param inputs            everything one bake's bands are settled from, sampled once by the bake
+     * @param claimReaderSource the source the view reads every claim through, so a band ranks the
+     *                          contest its cell was painted by
+     * @return the planner ranking claimed cells by that contest
      */
-    public static ClaimedSystemRibbonPlanner createForPass(RibbonPlanInputs inputs) {
+    public static ClaimedSystemRibbonPlanner createForPass(
+            RibbonPlanInputs inputs,
+            ClaimBreakdownReaderSource claimReaderSource) {
 
         return new ClaimedSystemRibbonPlanner(
-            new VanillaClaimBreakdownReader(
-                inputs.pass().colonyKnowledge(),
-                inputs.pass().sectorIndex()),
+            PassClaimReaders.openBreakdownReaderOver(inputs.pass(), claimReaderSource),
             inputs);
     }
 
@@ -87,9 +93,6 @@ public final class ClaimedSystemRibbonPlanner implements SystemRibbonPlanner {
     // of contest differ on it: with a painter, one rival is a contest; with none, there is nobody
     // to be a rival of, so it takes two blocs.
     private Optional<String> resolvePaintingBlocId(SystemClaimBreakdown contest) {
-
-        return Optional
-            .ofNullable(contest.claimantFactionId())
-            .map(inputs.grouping()::resolveBlocId);
+        return SectorClaims.readClaimantBlocId(contest.claimantFactionId(), inputs.grouping());
     }
 }

@@ -2,14 +2,12 @@ package kmu.maplayers.politicalmap.holders;
 
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
+import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.claims.FilteredClaims;
-import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -20,7 +18,7 @@ import java.util.Map;
  * base provider, with each claimed-but-unheld system folded in as an unfilled extension of
  * its claimant's territory.
  *
- * <p>Wraps the held-dominance {@link DefaultHolderProvider} rather than replacing it, so
+ * <p>Wraps the held-dominance {@link DominanceHolderProvider} rather than replacing it, so
  * the held resolve stays one concern and claims layer on top as a second. A system a bloc
  * claims but does not hold joins that bloc's holder map under the same key its held systems
  * carry - so the agnostic geometry fuses claimed and held cells into one bordered territory -
@@ -41,18 +39,8 @@ import java.util.Map;
  * once apiece. It also means both halves describe the sector as it stood at one moment, so the
  * fill and the claim extending it into the same territory cannot disagree about what is there.
  */
-public final class ClaimAugmentedHolderProvider implements HolderProvider {
-
-    /**
-     * The shared instance: the held-dominance default extended with vanilla claims. Stateless
-     * once built - the base provider is stateless, and what stands in for the claim reader is
-     * the means of opening one rather than a reader - so every pass reuses it, and it is what
-     * {@link kmu.maplayers.politicalmap.views.DominancePaintedView} resolves holding through.
-     */
-    public static final ClaimAugmentedHolderProvider INSTANCE =
-        new ClaimAugmentedHolderProvider(
-            DefaultHolderProvider.INSTANCE,
-            VanillaClaimBreakdownReader::new);
+public final class ClaimAugmentedHolderProvider
+        implements HolderProvider {
 
     private final HolderProvider heldHolderProvider;
     private final ClaimReaderSource claimReaderSource;
@@ -60,8 +48,21 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
     ClaimAugmentedHolderProvider(
             HolderProvider heldHolderProvider,
             ClaimReaderSource claimReaderSource) {
+
         this.heldHolderProvider = heldHolderProvider;
         this.claimReaderSource = claimReaderSource;
+    }
+
+    /**
+     * The held-dominance default extended with the claims a view reads. Stateless once built - the
+     * base provider is stateless, and what stands in for the claim reader is the means of opening
+     * one rather than a reader - so every pass reuses one.
+     *
+     * @param claimReaderSource the source the view reads every claim through
+     * @return the provider folding those claims onto held dominance
+     */
+    public static ClaimAugmentedHolderProvider createReadingThrough(ClaimReaderSource claimReaderSource) {
+        return new ClaimAugmentedHolderProvider(DominanceHolderProvider.INSTANCE, claimReaderSource);
     }
 
     @Override
@@ -71,11 +72,9 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
 
         // The claims arrive already under whatever spotlight is active, so the fold only has to
         // answer which claimed systems join the holder map, never which key each one carries.
-        // The reader is opened over this pass rather than held across passes, so it reads the
-        // colonies the held half just read rather than walking every system a second time.
-        var claimingHolderBySystemKey = FilteredClaims.resolveFilteredClaims(
+        var claimingHolderBySystemKey = FilteredClaims.resolveFilteredClaimsThrough(
             pass,
-            PassClaimReaders.openClaimReaderOver(pass, claimReaderSource),
+            claimReaderSource,
             selectedBlocId);
 
         return foldClaimsIntoHeld(held, claimingHolderBySystemKey);
@@ -94,12 +93,15 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
         var unfilledSystemKeys = new LinkedHashSet<>(held.unfilledSystemKeys());
 
         for (var claim : claimingHolderBySystemKey.entrySet()) {
+
             if (ownerBySystemKey.containsKey(claim.getKey())) {
                 continue;
             }
+
             ownerBySystemKey.put(claim.getKey(), claim.getValue());
             unfilledSystemKeys.add(claim.getKey());
         }
+
         return new HolderResolution(
             ownerBySystemKey,
             held.contestedSystemKeys(),

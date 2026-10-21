@@ -12,6 +12,7 @@ import kmlib.testfixtures.starsector.ui.widgets.lists.AnomalySortMode;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.starsector.StarsectorUiColoursMock;
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.AfterEach;
@@ -101,7 +102,7 @@ final class ListPickerBinderIntegrationTests {
         // sort labels are its own and arrive already drawn.
         stringsMock = Mockito.mockStatic(KmuStringKeys.class);
         stringsMock
-            .when(() -> KmuStringKeys.get(KmuStringKeys.MAP_LAYER_CTL_COLUMNS_CAPTION))
+            .when(() -> KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_CTL_COLUMNS_CAPTION))
             .thenReturn("Columns");
     }
 

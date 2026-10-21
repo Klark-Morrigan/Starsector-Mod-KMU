@@ -11,11 +11,11 @@ import kmu.settings.KmuOwnerMapStyleSettings;
 /**
  * One receding context's per-save, per-screen state: whether its backdrop is muted (dimmed) and whether
  * it is desaturated (recoloured to the desaturation profile), plus how those two toggles resolve into
- * a receded bloc's {@link ElementStyleAdjustment}. It is instantiable so each context that recedes
+ * a receded owner's {@link ElementStyleAdjustment}. It is instantiable so each context that recedes
  * owns its own toggle set rather than sharing one - a layer's filter recede (the "rest of the sector"
  * behind a spotlight) and a view's own backdrop are separate backdrops a player tunes independently, so
  * each holds its own instance over its own memory keys, which whoever owns the backdrop names. Within
- * one instance the two toggles still resolve through a single rule, so a receded bloc reads the same everywhere that
+ * one instance the two toggles still resolve through a single rule, so a receded owner reads the same everywhere that
  * instance is applied.
  *
  * <p>The set names the context and the screen names the panel, so one instance backs both screens
@@ -111,17 +111,17 @@ public final class RecedePreferences {
     }
 
     /**
-     * Resolves how a bloc this set recedes draws under one screen's toggles: Mute scales its opacity by
+     * Resolves how an owner this set recedes draws under one screen's toggles: Mute scales its opacity by
      * the modifier (0 hides it, 1 leaves it), Desaturate recolours it, and the two combine. Both off is
-     * {@link ElementStyleAdjustment#NONE}, so a bloc this set does not recede draws untouched.
+     * {@link ElementStyleAdjustment#NONE}, so an owner this set does not recede draws untouched.
      *
      * @param memoryScope the screen being painted for, whose panel holds the two toggles
-     * @return the styling every bloc this set recedes takes this pass, resolved in one place so the
+     * @return the styling every owner this set recedes takes this pass, resolved in one place so the
      *         recede reads the same in every context that applies this set
      */
     public ElementStyleAdjustment resolveRecedeAdjustment(ScreenMemoryScope memoryScope) {
         // Mute scales by the Luna modifier reading, not a constant, so the screen knob tunes how far a
-        // receded bloc dims; unread while Mute is off, which leaves opacity untouched at 1. One knob
+        // receded owner dims; unread while Mute is off, which leaves opacity untouched at 1. One knob
         // for every set: its LunaLib field ID is a frozen shipped key, and its spelling says nothing
         // about which set reads it.
         double opacityMultiplier = isMuted(memoryScope)

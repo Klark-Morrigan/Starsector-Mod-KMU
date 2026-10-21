@@ -3,7 +3,10 @@ package kmu.mods.console.commands;
 import kmlib.testfixtures.mods.console.commands.output.CommandOutputFake;
 
 import kmu.conditions.ui.editor.KmuConditionEditorOpenResult;
+import kmu.util.KmuStringsSettingsFake;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lazywizard.console.BaseCommand.CommandContext;
@@ -21,6 +24,16 @@ class KmuOpenMarketConditionManagerCommandTests {
     // guard ahead of the behaviour they are about: read off, the command answers nothing else.
     private static final BooleanSupplier FEATURE_SWITCHED_ON = () -> true;
     private static final BooleanSupplier FEATURE_SWITCHED_OFF = () -> false;
+
+    @BeforeEach
+    void installStrings() {
+        KmuStringsSettingsFake.installSettings();
+    }
+
+    @AfterEach
+    void clearStrings() {
+        KmuStringsSettingsFake.clearSettings();
+    }
 
     @Nested
     class RunCommand {
@@ -155,7 +168,7 @@ class KmuOpenMarketConditionManagerCommandTests {
             var command = new KmuOpenMarketConditionManagerCommand(
                 FEATURE_SWITCHED_ON,
                 () -> KmuConditionEditorOpenResult.failed(
-                    "Failed to open Market Condition Manager.",
+                    "Failed to open Market Condition Manager",
                     new IllegalStateException("dialog unavailable")),
                 outputFake);
 
@@ -165,6 +178,23 @@ class KmuOpenMarketConditionManagerCommandTests {
                 .isEqualTo(CommandResult.ERROR);
             assertThat(outputFake.getMessages())
                 .containsExactly("Failed to open Market Condition Manager: dialog unavailable");
+        }
+
+        @Test
+        void closesAFailureWhoseCauseSaysNothing() {
+            // Nothing to join, so the failure's own template closes the sentence.
+            var outputFake = new CommandOutputFake();
+            var command = new KmuOpenMarketConditionManagerCommand(
+                FEATURE_SWITCHED_ON,
+                () -> KmuConditionEditorOpenResult.failed(
+                    "Failed to open Market Condition Manager",
+                    new IllegalStateException()),
+                outputFake);
+
+            command.runCommand("", CommandContext.CAMPAIGN_MARKET);
+
+            assertThat(outputFake.getMessages())
+                .containsExactly("Failed to open Market Condition Manager.");
         }
 
         @Test

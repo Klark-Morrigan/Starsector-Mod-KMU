@@ -9,11 +9,11 @@ import com.fs.starfarer.api.Global;
  * <p>Needed because the menu is raised over whatever was already on screen without taking that
  * screen down. The map goes on being drawn behind it and the terrain pass goes on running, so a
  * hover left ungated resolves cells the player cannot see and ticks at each one as the cursor
- * crosses them - audible with no map open anywhere, which is how it was first noticed.
+ * crosses them - audible with no map open anywhere.
  *
  * <p>Reads {@link com.fs.starfarer.api.campaign.CampaignUIAPI#isShowingMenu()}, published API and a
- * single call, which makes this the cheapest cover in the set: no reflection, no geometry, and no
- * dependence on an optional mod. That is what puts it first in the order.
+ * single call: no reflection, no geometry, and no dependence on an optional mod. Where that ranks it
+ * is {@link MapCoverReader}'s to state.
  *
  * <p>No cursor test, for the same reason the console needs none: a menu over the screen covers the
  * cursor wherever it is.

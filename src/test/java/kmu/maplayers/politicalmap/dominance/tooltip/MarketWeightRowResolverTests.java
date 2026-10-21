@@ -7,8 +7,6 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.maplayers.ownermap.tooltip.ColonyQualifierTests;
-import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
@@ -19,8 +17,9 @@ import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.UnweighedColony;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.settings.HiddenMarketScalingChoice;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,15 +31,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelText;
 import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.MARKET_STATS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.FULL_STABILITY;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.LAST_SEEN;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.FULL_STABILITY;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.LAST_SEEN;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -72,7 +72,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>What a colony's line calls out about the place is pinned here only as far as this resolver
  * decides it: which facts each of the two lists hands over, and that they reach the line naming the
  * colony rather than a term beneath it. Which words those facts come to, in which order, is the
- * shared read's own question and is pinned by {@link ColonyQualifierTests}.
+ * shared read's own question and is pinned by ColonyQualifierTests.
  *
  * <p>How a line's numbers read is stood apart from and pinned by {@link MarketFactorTextTests}; the
  * values asserted below are read only where the case is about which line carries which.
@@ -109,12 +109,12 @@ final class MarketWeightRowResolverTests {
 
     @BeforeEach
     void installStrings() {
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested
@@ -161,7 +161,7 @@ final class MarketWeightRowResolverTests {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(rows.get(0).line().valueText())
+            assertThat(rows.get(0).line().value().valueText())
                 .isEqualTo("4,000");
         }
 
@@ -315,7 +315,7 @@ final class MarketWeightRowResolverTests {
             // unmarked one reads as a size this colony has.
             var rows = resolveFixedRatedHiddenMarketRows();
 
-            assertThat(readSizeLine(rows).valueText())
+            assertThat(readSizeLine(rows).value().valueText())
                 .isEqualTo("2.5 (fixed) :: 2,500");
         }
 
@@ -325,7 +325,7 @@ final class MarketWeightRowResolverTests {
             // one case a player is most likely to read as the map miscounting a large secret base.
             var rows = resolveFixedRatedHiddenMarketRows();
 
-            assertThat(readSizeLine(rows).valueWorkingText())
+            assertThat(readSizeLine(rows).value().valueWorkingText())
                 .isEqualTo("7 ::");
         }
 
@@ -338,7 +338,7 @@ final class MarketWeightRowResolverTests {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(readSizeLine(rows).valueWorkingText())
+            assertThat(readSizeLine(rows).value().valueWorkingText())
                 .isNull();
         }
 
@@ -407,7 +407,7 @@ final class MarketWeightRowResolverTests {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(readStationLine(rows).labelText())
+            assertThat(readLabelText(readStationLine(rows)))
                 .isEqualTo("Selkie Station (Military)");
         }
 
@@ -420,7 +420,7 @@ final class MarketWeightRowResolverTests {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(readStationLine(rows).labelText())
+            assertThat(readLabelText(readStationLine(rows)))
                 .isEqualTo("Jangala");
         }
 
@@ -436,7 +436,7 @@ final class MarketWeightRowResolverTests {
                 NO_UNWEIGHED_COLONIES,
                 buildRules());
 
-            assertThat(readStationLine(rows).labelText())
+            assertThat(readLabelText(readStationLine(rows)))
                 .isEqualTo("Fort Ludd");
         }
 
@@ -488,7 +488,7 @@ final class MarketWeightRowResolverTests {
 
             var patrolEntry = rows.get(0).children().get(2);
 
-            assertThat(patrolEntry.line().labelText())
+            assertThat(readLabelText(patrolEntry.line()))
                 .isEqualTo("Patrols");
             assertThat(readLabelTexts(patrolEntry.children()))
                 .containsExactly("Small: 2", "Medium: 1");
@@ -522,7 +522,7 @@ final class MarketWeightRowResolverTests {
 
             var patrolEntry = rows.get(0).children().get(2);
 
-            assertThat(patrolEntry.line().labelText())
+            assertThat(readLabelText(patrolEntry.line()))
                 .isEqualTo("Patrols");
             assertThat(patrolEntry.children())
                 .isEmpty();
@@ -539,9 +539,9 @@ final class MarketWeightRowResolverTests {
 
             var tierLine = rows.get(0).children().get(2).children().get(0).line();
 
-            assertThat(tierLine.valueWorkingText())
+            assertThat(tierLine.value().valueWorkingText())
                 .isEqualTo("0.25 /");
-            assertThat(tierLine.valueText())
+            assertThat(tierLine.value().valueText())
                 .isEqualTo("500");
         }
 
@@ -559,9 +559,9 @@ final class MarketWeightRowResolverTests {
                 .get(2)
                 .line();
 
-            assertThat(patrolLine.valueWorkingText())
+            assertThat(patrolLine.value().valueWorkingText())
                 .isNull();
-            assertThat(patrolLine.valueText())
+            assertThat(patrolLine.value().valueText())
                 .isEqualTo("500");
         }
 
@@ -609,9 +609,9 @@ final class MarketWeightRowResolverTests {
                 List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules());
 
-            assertThat(rows.get(0).line().labelText())
+            assertThat(readLabelText(rows.get(0).line()))
                 .isEqualTo("Galatia Academy");
-            assertThat(rows.get(0).line().valueText())
+            assertThat(rows.get(0).line().value().valueText())
                 .isEqualTo("0");
         }
 
@@ -670,7 +670,7 @@ final class MarketWeightRowResolverTests {
                 List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules());
 
-            assertThat(rows.get(0).line().isValueUncounted())
+            assertThat(rows.get(0).line().value().isValueUncounted())
                 .isTrue();
         }
 

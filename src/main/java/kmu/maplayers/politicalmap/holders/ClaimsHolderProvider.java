@@ -1,13 +1,11 @@
 package kmu.maplayers.politicalmap.holders;
 
 import kmlib.starsector.systems.claims.ClaimReaderSource;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
+import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.claims.FilteredClaims;
-import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 
 import java.util.Set;
 
@@ -40,19 +38,18 @@ import java.util.Set;
  * there is no dominated-but-present state to hatch and nothing to leave empty - which lets the fill
  * split take its whole-cluster-solid fast path even under a filter.
  */
-public final class ClaimsHolderProvider implements HolderProvider {
-
-    /**
-     * The one shared instance, reading vanilla claims. Stateless once built - what it holds is
-     * the means of opening a reader rather than a reader - so every pass reuses it, and the
-     * Claims view resolves holding through it.
-     */
-    public static final ClaimsHolderProvider INSTANCE =
-        new ClaimsHolderProvider(VanillaClaimBreakdownReader::new);
+public final class ClaimsHolderProvider
+        implements HolderProvider {
 
     private final ClaimReaderSource claimReaderSource;
 
-    ClaimsHolderProvider(ClaimReaderSource claimReaderSource) {
+    /**
+     * Stateless once built - what it holds is the means of opening a reader rather than a reader -
+     * so every pass reuses one.
+     *
+     * @param claimReaderSource the source the view reads every claim through
+     */
+    public ClaimsHolderProvider(ClaimReaderSource claimReaderSource) {
         this.claimReaderSource = claimReaderSource;
     }
 
@@ -63,10 +60,7 @@ public final class ClaimsHolderProvider implements HolderProvider {
         // contested and no unfilled systems, which the fill split reads as its whole-cluster-solid
         // fast path. The spotlight only changes which key a claim carries, never its fill.
         return new HolderResolution(
-            FilteredClaims.resolveFilteredClaims(
-                pass,
-                PassClaimReaders.openClaimReaderOver(pass, claimReaderSource),
-                selectedBlocId),
+            FilteredClaims.resolveFilteredClaimsThrough(pass, claimReaderSource, selectedBlocId),
             Set.of(),
             Set.of());
     }

@@ -117,17 +117,17 @@ public final class CellRibbonsBaker {
     /**
      * Bakes the bands of the named cells alone, leaving every other cell's as it stands.
      *
-     * <p>For the incremental refresh, whose cells are the handful a colony change disturbed. A
+     * <p>For the incremental refresh, whose cells are the handful a marked change disturbed. A
      * cell that draws nothing is skipped rather than being an error: the caller names the cells
-     * something happened to, and one of them losing its last colony is one of the things that
-     * can have happened.
+     * something happened to, and one of them losing the last thing standing in it is one of the
+     * things that can have happened.
      *
      * @param cellKeys the cells to re-bake
      */
     public void bakeCellRibbonsOf(Collection<SystemKey> cellKeys) {
 
-        // A band's count walks a system's colonies once per bake, and under some mechanics settles a
-        // contest over them - so this is the one part of a rebuild that could rival the known
+        // A band's count walks what a system holds once per bake, and under some mechanics settles
+        // a contest over it - so this is the one part of a rebuild that could rival the known
         // label-fit stall, and it is profiled on its own so a rebuild that slows down says which
         // half slowed. One scope over the whole loop rather than one per cell, since a scope per
         // cell would cost about what a cell costs.

@@ -5,19 +5,21 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.style.SectorBlocPalettes;
-import kmu.maplayers.politicalmap.dominance.SectorPolitics;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Resolves which faction lays claim to each star system and in which colours that claimant
- * paints - the claim counterpart to {@link SectorPolitics}'s held-dominance resolve.
+ * paints - the claim counterpart to the dominance package's {@code SectorPolitics} held-dominance
+ * resolve.
  *
- * <p>Where {@link SectorPolitics} reads who <em>holds</em> a system from the live economy,
+ * <p>Where {@code SectorPolitics} reads who <em>holds</em> a system from the live economy,
  * this reads who <em>claims</em> it through the {@link ClaimReader} port, then routes the
  * claimant through the same grouping fold and palette lookup the held pass uses. Reusing
  * {@link SectorBlocPalettes#resolveOwnerOf} gives a claim the identical alliance rollup and
@@ -60,11 +62,10 @@ public final class SectorClaims {
             ClaimReader claimReader) {
 
         var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
-        var palettes = new SectorBlocPalettes(pass.sector(), pass.grouping());
 
         for (var system : pass.readSystems()) {
 
-            var holder = resolveClaimingHolderIn(system, pass, claimReader, palettes);
+            var holder = resolveClaimingHolderIn(system, pass, claimReader);
 
             if (holder != null) {
                 ownerBySystemKey.put(SystemKey.readKeyOf(system), holder);
@@ -83,24 +84,39 @@ public final class SectorClaims {
      *
      * @param system      the system to read; null yields null
      * @param pass        the reading of the sector, whose grouping folds the claimant into its bloc
+     *                    and whose palettes colour that bloc
      * @param claimReader the claim source, opened over that same pass
-     * @param palettes    the shades a bloc paints in, over the pass's own sector and grouping
      * @return the claiming holder, or null where nobody claims the system or the claimant's colour
      *         faction does not resolve
      */
     public static SystemOwner resolveClaimingHolderIn(
             StarSystemAPI system,
             HolderPass pass,
-            ClaimReader claimReader,
-            SectorBlocPalettes palettes) {
+            ClaimReader claimReader) {
 
         if (system == null) {
             return null;
         }
-        var claimantId = claimReader.readClaimingFactionId(system);
 
-        return claimantId == null
-            ? null
-            : palettes.resolveOwnerOf(pass.grouping().resolveBlocId(claimantId));
+        return readClaimantBlocId(claimReader.readClaimingFactionId(system), pass.grouping())
+            .map(pass.palettes()::resolveOwnerOf)
+            .orElse(null);
+    }
+
+    /**
+     * The bloc a claim lands on: the claimant faction folded to its bloc under a grouping.
+     *
+     * <p>Stated once for every reader of a claim - the fill, the picker's stats and the band - so a
+     * claim cannot be credited to one bloc in the fill and to another in the stats or the band.
+     *
+     * @param claimantFactionId the faction holding the claim; null where nobody claims the system
+     * @param grouping          the grouping the claimant is folded under
+     * @return the claimant's bloc, or empty where nobody claims the system
+     */
+    public static Optional<String> readClaimantBlocId(String claimantFactionId, HolderGrouping grouping) {
+
+        return Optional
+            .ofNullable(claimantFactionId)
+            .map(grouping::resolveBlocId);
     }
 }

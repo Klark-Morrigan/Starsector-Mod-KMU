@@ -89,7 +89,7 @@ final class UninhabitedOutlinePreferenceTests {
         @Test
         void isFalseBeforeTheSectorExists() {
             // No sector means no save to read, which the shipped default treats as off - only
-            // faction-held, independent, and decivilised systems draw.
+            // held, independent, and decivilised systems draw.
             sectorMemoryFake.removeSector();
 
             assertThat(preference.isOutlineDrawn(SCREEN_SCOPE))

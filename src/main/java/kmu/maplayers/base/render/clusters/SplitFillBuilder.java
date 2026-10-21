@@ -7,7 +7,6 @@ import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 
-import java.awt.Color;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,22 +77,19 @@ public final class SplitFillBuilder {
      * either re-tracing the whole holding per body or handing back a list of fills for a caller
      * to line up against its bodies by position.
      *
-     * @param isSpotlit  whether this is the filter's spotlighted owner
-     * @param split      the owner's members by fill state
-     * @param owner      the owner, which the sub-cluster keys are derived from
-     * @param fillColour the resolved fill colour, or null for a "No color" fill that draws no
-     *                   cluster at all
+     * <p>An owner whose fill is "No color" has nothing to trace and takes
+     * {@link TracedFill#UNPAINTED} without asking.
+     *
+     * @param isSpotlit whether this is the filter's spotlighted owner
+     * @param split     the owner's members by fill state
+     * @param owner     the owner, which the sub-cluster keys are derived from
      * @return the owner's fill, ready to be cut to each body it holds
      */
     public TracedFill traceFill(
             boolean isSpotlit,
             FillSplit split,
-            String owner,
-            Color fillColour) {
+            String owner) {
 
-        if (fillColour == null) {
-            return TracedFill.UNPAINTED;
-        }
         if (!isSpotlit && !split.hasNonSolidMembers()) {
             return TracedFill.WHOLE_CLUSTER;
         }
@@ -159,19 +155,5 @@ public final class SplitFillBuilder {
             cellEdgesByCellKey,
             new CellGrouping(cellGrouping.systemKeyByCellKey(), subClusterOwnerBySystemKey),
             split.resolveCoincidentSystemKeysOf(state));
-    }
-
-    /**
-     * One cluster's fill as the two runs it paints: the solid triangle soup for the solid-state
-     * cells and the hatch GL_LINES for the hatched ones. Named for the cluster rather than for
-     * what holds it, since the pair is the same two runs whatever a layer groups its cells by.
-     *
-     * <p>The unfilled state carries no geometry - it paints nothing - so a cluster with no
-     * hatched members leaves the hatch empty and one that fills solid throughout carries only
-     * its solid triangles.
-     */
-    public record ClusterFill(
-        float[] solidTriangles,
-        float[] hatchSegments) {
     }
 }

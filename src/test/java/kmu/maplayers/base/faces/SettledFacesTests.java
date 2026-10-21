@@ -2,7 +2,7 @@ package kmu.maplayers.base.faces;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.FactionNames;
+import kmlib.starsector.factions.SectorFactions;
 import kmlib.starsector.markets.SectorMarkets;
 import kmlib.starsector.strings.StarsectorStrings;
 import kmlib.starsector.systems.SectorStarSystems;
@@ -67,9 +67,9 @@ final class SettledFacesTests {
             ArgumentCaptor<Function<ProbedText, List<String>>> readerCaptor = ArgumentCaptor.forClass(Function.class);
 
             try (var installedFacesMock = mockStatic(InstalledFaces.class);
-                    var factionNamesMock = mockStatic(FactionNames.class)) {
+                    var sectorFactionsMock = mockStatic(SectorFactions.class)) {
 
-                factionNamesMock.when(() -> FactionNames.listEveryName(sectorMock))
+                sectorFactionsMock.when(() -> SectorFactions.listFactionNames(sectorMock))
                     .thenReturn(List.of(LOCALISED_FACTION_NAME));
 
                 SettledFaces.resolveFacesIn(new SectorMapMachinery(sectorMock));
@@ -152,9 +152,9 @@ final class SettledFacesTests {
             ArgumentCaptor<Function<ProbedText, List<String>>> readerCaptor = ArgumentCaptor.forClass(Function.class);
 
             try (var installedFacesMock = mockStatic(InstalledFaces.class);
-                    var factionNamesMock = mockStatic(FactionNames.class)) {
+                    var sectorFactionsMock = mockStatic(SectorFactions.class)) {
 
-                factionNamesMock.when(() -> FactionNames.listEveryName(sectorMock))
+                sectorFactionsMock.when(() -> SectorFactions.listFactionNames(sectorMock))
                     .thenReturn(List.of(LOCALISED_FACTION_NAME));
 
                 SettledFaces.createForSector(sectorMock);
@@ -173,9 +173,9 @@ final class SettledFacesTests {
         @Test
         void readsFactionNamesOffTheSectorsFactions() {
 
-            try (var factionNamesMock = mockStatic(FactionNames.class)) {
+            try (var sectorFactionsMock = mockStatic(SectorFactions.class)) {
 
-                factionNamesMock.when(() -> FactionNames.listEveryName(sectorMock))
+                sectorFactionsMock.when(() -> SectorFactions.listFactionNames(sectorMock))
                     .thenReturn(List.of("Tri-Tachyon", LOCALISED_FACTION_NAME));
 
                 assertThat(SettledFaces.readTexts(sectorMock, ProbedText.FACTION_NAMES))

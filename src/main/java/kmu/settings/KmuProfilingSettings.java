@@ -5,11 +5,9 @@ import kmlib.profiling.ProfileLevel;
 /**
  * How much of what the mod does is measured.
  *
- * <p>Its own class beside the knob classes {@link KmuLunaSettings} lists, and split from them by
- * the same rule: this is read where the mod's start-up wiring is composed rather than by any
- * feature. Which profiler is bound is a decision about the whole mod, and the map layers - which
- * are what a capture mostly measures - must not be the ones deciding whether they are being
- * watched.
+ * <p>Read where the mod's start-up wiring is composed rather than by any feature. Which profiler
+ * is bound is a decision about the whole mod, and the map layers - which are what a capture mostly
+ * measures - must not be the ones deciding whether they are being watched.
  *
  * <p>The frame-beat budget is the other row of the same section, and is here beside the level even
  * though the measured code is what reads it back. It reaches that code as a bound value the
@@ -40,7 +38,7 @@ public final class KmuProfilingSettings {
     /**
      * @return how long one beat of a map frame - a preparation, a paint band, a cursor read, a
      *         tooltip - may take before a running capture reports it as over budget, in
-     *         milliseconds; 4ms by default, and 0 for no bound at all. Asked as each beat ends
+     *         milliseconds; 0 for no bound at all. Asked as each beat ends
      *         while a capture is running, so moving it holds the next frame to what it now says
      */
     public static double getMapFrameBeatBudgetMillis() {
@@ -50,7 +48,7 @@ public final class KmuProfilingSettings {
     }
 
     /**
-     * @return how much detail a capture keeps: nothing at all (the default), the beats and passes a
+     * @return how much detail a capture keeps: nothing at all, the beats and passes a
      *         frame is made of, or those plus what one turn of a per-item loop costs. Read as the
      *         setting changes rather than per measurement, the level being a property of the
      *         profiler that is bound

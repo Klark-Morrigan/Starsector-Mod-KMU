@@ -9,26 +9,27 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static kmu.util.KmuValues.normaliseText;
+import static kmlib.text.KmlibStrings.normaliseText;
 
-public final class StarsectorEditableMarket implements KmuEditableMarket {
+public final class StarsectorEditableMarket
+        implements KmuEditableMarket {
+
     private final MarketAPI market;
 
     public StarsectorEditableMarket(MarketAPI market) {
         this.market = Objects.requireNonNull(market, "market");
     }
 
-    public MarketAPI getMarket() {
-        return market;
-    }
-
     @Override
     public Set<String> getConditionIds() {
+
         var conditions = market.getConditions();
         if (conditions == null) {
             return new LinkedHashSet<>();
         }
-        return conditions.stream()
+
+        return conditions
+            .stream()
             .filter(Objects::nonNull)
             .map(MarketConditionAPI::getId)
             .filter(Objects::nonNull)
@@ -45,11 +46,19 @@ public final class StarsectorEditableMarket implements KmuEditableMarket {
         return market.isConditionSuppressed(conditionId);
     }
 
+    @Override
+    public Optional<MarketAPI> findStarsectorMarket() {
+        return Optional.of(market);
+    }
+
+    @Override
     public Optional<MarketConditionAPI> findCondition(String conditionId) {
-        String normalisedId = normaliseText(conditionId);
+
+        var normalisedId = normaliseText(conditionId);
         if (normalisedId == null) {
             return Optional.empty();
         }
+
         return Optional.ofNullable(market.getFirstCondition(normalisedId));
     }
 
@@ -60,6 +69,7 @@ public final class StarsectorEditableMarket implements KmuEditableMarket {
 
     @Override
     public void markConditionSurveyed(String conditionId) {
+
         var condition = market.getFirstCondition(conditionId);
         if (condition != null) {
             condition.setSurveyed(true);

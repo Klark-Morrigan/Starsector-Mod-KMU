@@ -51,8 +51,8 @@ public final class CellRibbonBuilder {
      * answer rather than a failure. A cell narrowed to a neck in one place is not that cell: the
      * neck costs its own stretch of ring and the band goes on the longest of what is left.
      *
-     * <p>The other way a cell comes back bare - it planned no band at all, nothing but the bloc it
-     * is painted for being present in it - is answered before this, by whatever traced the path:
+     * <p>The other way a cell comes back bare - it planned no band at all, nothing the layer counts
+     * being present in it - is answered before this, by whatever traced the path:
      * such a cell must not pay for a ring walk nothing would be laid on. So the plan handed over
      * here is one with runs in it.
      *
@@ -112,7 +112,7 @@ public final class CellRibbonBuilder {
 
         // The names are carved off the path rather than off the plan, and that is the whole of
         // how a band keeps out of a name's room. Cutting the plan instead would leave a run
-        // partly eaten, and a run's length is the readout - a colony drawn two thirds as long as
+        // partly eaten, and a run's length is the readout - a stake drawn two thirds as long as
         // its neighbours says something false about the system. Carved off the path, what a name
         // costs is room, which the clamp below already knows how to answer.
         var clearArcs = path.findClearArcs(nameBoxes);
@@ -141,7 +141,7 @@ public final class CellRibbonBuilder {
         }
         // As near the cell's top centre as the stretch allows, rather than wherever the ring
         // the names left happens to open. Every cell's band is read from that landmark - the
-        // holding bloc first, running clockwise - so a band that could begin there and does
+        // holding owner first, running clockwise - so a band that could begin there and does
         // not costs the reader the one thing every cell's band has in common.
         return new RibbonBandLayout(
             path.placeSpanNearestStart(stretch, totalLengthUnits * lengthUnitWorld),
@@ -184,7 +184,7 @@ public final class CellRibbonBuilder {
     //
     // Compressing the length while leaving the width alone is deliberate. The band says its piece
     // through the proportions between its runs, and shortening every run by one factor keeps all
-    // of them - a crowded system reads as crowded, with each bloc's share intact. Thinning the
+    // of them - a crowded system reads as crowded, with each owner's share intact. Thinning the
     // band instead would fade the whole readout on precisely the cells carrying the most to say,
     // and would leave the path traced at an inset the band no longer matches.
     private static double computeLengthUnit(

@@ -5,17 +5,18 @@ import kmlib.starsector.entities.EntityNameplate;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
+import kmu.maplayers.base.tooltip.content.TermTooltipLine;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.ownermap.tooltip.ColonyQualifier;
-import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
-import kmu.maplayers.ownermap.tooltip.TermTooltipLine;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolTierFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.StationFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.UnweighedColony;
+import kmu.maplayers.politicalmap.tooltip.AccountedColony;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.settings.HiddenMarketScalingChoice;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ import java.util.List;
  *
  * <p>Pure over a breakdown and a rule with no Starsector types, so a whole box's worth of lines is
  * resolved without a live economy. How one line's numbers read is {@link MarketFactorText}'s; what a
- * colony's line calls out beyond its weight is {@link ColonyQualifier}'s.
+ * colony's line calls out beyond its weight is {@link SystemColonyReading#describeColony}'s.
  */
 public final class MarketWeightRowResolver {
 
@@ -61,16 +62,6 @@ public final class MarketWeightRowResolver {
     // A tier nobody fields is not listed. Its line would state patrols the colony does not have,
     // and the reader is looking for what the weight is made of, not what it is not.
     private static final int NO_PATROLS = 0;
-
-    // Where the economy stands on a colony that reached one list or the other. The weight read
-    // walks the economy's own set, so everything it weighed is listed by construction and
-    // everything on the unweighed list is there precisely because it is not.
-    private static final boolean IS_LISTED_BY_ECONOMY = true;
-    private static final boolean IS_NOT_LISTED_BY_ECONOMY = false;
-
-    // What this box leads a colony's line with, which is nothing: taking a system is the claim
-    // contest's finding, and this box is an account of a different one.
-    private static final String NO_LEADING_FINDING = null;
 
     private MarketWeightRowResolver() {
     }
@@ -125,25 +116,24 @@ public final class MarketWeightRowResolver {
     // The kind comes off the box's walk of the system rather than off the breakdown, the weight
     // read having no reason to carry one: everything it weighs is a place somebody keeps. It is
     // asked all the same, so what a line may call out is decided in one place for both lists.
+    //
+    // Listed by the economy by construction, the weight read walking the economy's own set - which
+    // is also why everything on the unweighed list is not.
     private static CellTooltipEntry resolveMarketEntry(
             MarketWeightBreakdown breakdown,
             WeightAccountReading reading) {
 
         var colonyReading = reading.colonyReading();
-        var line = createCountedMapEntityLine(
+        var line = CellTooltipEntryLine.createCountedEntityLine(
             breakdown.marketNameplate(),
-            breakdown.marketNameplate().displayName(),
             breakdown.computeTotalWeight());
 
         return CellTooltipEntry
             .createEntry(colonyReading.describeColony(
                 line,
-                breakdown.marketId(),
-                colonyReading.readQualifierFacts(
+                AccountedColony.createEconomyListedColony(
                     breakdown.marketId(),
-                    breakdown.isHiddenMarket(),
-                    IS_LISTED_BY_ECONOMY,
-                    NO_LEADING_FINDING)))
+                    breakdown.isHiddenMarket())))
             .nesting(resolveFactorEntries(breakdown, reading));
     }
 
@@ -162,10 +152,8 @@ public final class MarketWeightRowResolver {
             UnweighedColony colony,
             SystemColonyReading colonyReading) {
 
-        var line = createCountedMapEntityLine(
-                colony.nameplate(),
-                colony.nameplate().displayName(),
-                NO_WEIGHT)
+        var line = CellTooltipEntryLine
+            .createCountedEntityLine(colony.nameplate(), NO_WEIGHT)
             .statesUncountedValue();
 
         // The kind and the concealment are read off the colony itself rather than off the walk
@@ -173,59 +161,25 @@ public final class MarketWeightRowResolver {
         // the line's findings can only ever be about the colony it names.
         return CellTooltipEntry.createEntry(colonyReading.describeColony(
             line,
-            colony.marketId(),
-            colonyReading.readQualifierFacts(
-                colony.marketId(),
-                colony.kind(),
-                colony.isHiddenMarket(),
-                IS_NOT_LISTED_BY_ECONOMY,
-                NO_LEADING_FINDING)));
+            AccountedColony.createOffEconomyColony(colony.marketId(), colony.isHiddenMarket()),
+            colony.kind()));
     }
 
-    // A line naming something the sector map draws - a colony or the station defending it - led by
-    // the glyph the map marks it with, and carrying whatever the account counted it for.
+    // The station's line, led by the glyph the map marks it with like the colony line above it. Only
+    // those two levels take one: a stability or a size has nothing on the map to point at, so a glyph
+    // there would stand in for a number.
     //
-    // Shared by the two levels that take a mark rather than spelled out at each, so the box arrives
-    // at one rule for a line about a thing on the map instead of one rule per level.
-    //
-    // Takes the subject's nameplate whole rather than its two halves, so the glyph can only have come
-    // from the entity the line is about - and read off the breakdown that entity arrived in rather
-    // than looked up here, so that entity is the one the number belongs to.
-    //
-    // The stated name is passed beside it because one of the three lines says more than the entity's
-    // bare name, and it is derived from this very nameplate at each call site, so the pair still
-    // cannot come from two different entities.
-    private static CellTooltipEntryLine createMapEntityLine(
-            EntityNameplate entity,
+    // The stated name is passed beside the nameplate because it may say more than the station's bare
+    // name, and it is derived from this very nameplate, so the pair cannot come from two entities.
+    private static CellTooltipEntryLine createStationLine(
+            EntityNameplate station,
             String statedName,
             String valueText) {
 
         return CellTooltipEntryLine.createLine(
-            resolveMapEntityMark(entity),
+            CellTooltipMark.resolveMarkForMapIcon(station.mapIcon()),
             statedName,
             valueText);
-    }
-
-    // The same line where what it carries is a weight the account adds up - a colony's, or the nought
-    // of one nothing was worked out for. The number travels rather than words for it, so a listing of
-    // colonies too long to draw whole can be closed by a row summing the ones it left out.
-    private static CellTooltipEntryLine createCountedMapEntityLine(
-            EntityNameplate entity,
-            String statedName,
-            int countedValue) {
-
-        return CellTooltipEntryLine.createCountedLine(
-            resolveMapEntityMark(entity),
-            statedName,
-            countedValue);
-    }
-
-    // The glyph the map marks an entity with, read off the entity the line is about. Shared by both
-    // shapes of line so a colony and a station are marked alike whether or not the number beside them
-    // is one the account sums. Only those two levels take one: a stability or a size has nothing on
-    // the map to point at, so a glyph there would stand in for a number.
-    private static CellTooltipMark resolveMapEntityMark(EntityNameplate entity) {
-        return CellTooltipMark.resolveMarkForMapIcon(entity.mapIcon());
     }
 
     // The factors of one colony, in the order the weight read applied them - the stability that
@@ -248,6 +202,7 @@ public final class MarketWeightRowResolver {
         if (!reading.detailLevel().isReadingAtLeast(HoverTooltipDetailLevel.MARKET_STATS)) {
             return List.of();
         }
+
         var rules = reading.rules();
         var entries = new ArrayList<CellTooltipEntry>();
 
@@ -255,8 +210,9 @@ public final class MarketWeightRowResolver {
         // weighting off it moves no factor, and a line for it would read as a cause of cuts that
         // are all zero.
         if (rules.isStabilityWeighted()) {
+
             entries.add(TermTooltipLine.buildTermEntry(
-                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY),
+                KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY),
                 MarketFactorText.formatStability(breakdown.marketStability())));
         }
         entries.add(resolveBaseSizeEntry(breakdown, rules));
@@ -266,7 +222,7 @@ public final class MarketWeightRowResolver {
         // same reason the colony line above it does, this being the only line in the breakdown whose
         // subject the map draws.
         breakdown.station().ifPresent(station -> entries.add(CellTooltipEntry.createEntry(
-            createMapEntityLine(
+            createStationLine(
                 station.stationNameplate(),
                 resolveStationName(breakdown, station),
                 MarketFactorText.formatStation(station)))));
@@ -289,10 +245,13 @@ public final class MarketWeightRowResolver {
             MarketWeightBreakdown breakdown,
             StationFactor station) {
 
-        var stationName = station.stationNameplate().displayName();
+        var stationName = station
+            .stationNameplate()
+            .displayName();
 
         if (breakdown.isStationMarket()
                 && stationName.equals(breakdown.marketNameplate().displayName())) {
+
             return MarketFactorText.formatMilitaryStationName(stationName);
         }
         return stationName;
@@ -311,13 +270,15 @@ public final class MarketWeightRowResolver {
 
         var isFixedRating = isFixedRating(breakdown, rules);
         var line = TermTooltipLine.buildTermLine(
-            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
+            KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
             MarketFactorText.formatBaseSize(breakdown.baseSize(), isFixedRating));
 
         if (isFixedRating) {
+
             line = line.derivesValueFrom(
                 MarketFactorText.formatRawSizeWorking(breakdown.baseSize().rawMarketSize()));
         }
+
         return CellTooltipEntry.createEntry(line);
     }
 
@@ -325,6 +286,7 @@ public final class MarketWeightRowResolver {
     // rather than its own. Read off the rule and the colony together, because the token applies
     // only where both hold - a visible colony always counts by its real size.
     private static boolean isFixedRating(MarketWeightBreakdown breakdown, DominanceRules rules) {
+
         return breakdown.isHiddenMarket()
             && rules.baseSize().hiddenMarketScaling() == HiddenMarketScalingChoice.FIXED;
     }
@@ -337,7 +299,7 @@ public final class MarketWeightRowResolver {
 
         return CellTooltipEntry
             .createEntry(TermTooltipLine.buildTermLine(
-                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS),
+                KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS),
                 MarketFactorText.formatPatrols(patrols)))
             .nesting(resolveTierEntries(patrols, detailLevel));
     }
@@ -354,11 +316,12 @@ public final class MarketWeightRowResolver {
         if (!detailLevel.isReadingAtLeast(HoverTooltipDetailLevel.PATROL_DETAILS)) {
             return List.of();
         }
+
         var entries = new ArrayList<CellTooltipEntry>();
 
-        appendTierEntry(entries, KmuStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_SMALL, patrols.small());
-        appendTierEntry(entries, KmuStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_MEDIUM, patrols.medium());
-        appendTierEntry(entries, KmuStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_LARGE, patrols.large());
+        appendTierEntry(entries, KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_SMALL, patrols.small());
+        appendTierEntry(entries, KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_MEDIUM, patrols.medium());
+        appendTierEntry(entries, KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_LARGE, patrols.large());
 
         return entries;
     }
@@ -378,9 +341,10 @@ public final class MarketWeightRowResolver {
         if (tier.count() <= NO_PATROLS) {
             return;
         }
+
         var line = TermTooltipLine.buildTermLine(
                 KmuStringKeys.format(
-                    KmuStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_TIER,
+                    KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_PATROL_TIER,
                     KmuStringKeys.get(tierNameKey),
                     tier.count()),
                 MarketFactorText.formatPatrolTierTotal(tier))

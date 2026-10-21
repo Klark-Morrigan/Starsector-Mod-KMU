@@ -151,10 +151,6 @@ final class SystemCellTooltipTests {
     // same reason.
     private static final float FADED_LEADER_OPACITY = 0.1f;
 
-    // What one press may cost the box in reads of the hovered system. Stated as its own number rather
-    // than asserted as "at least one", since what the press-time seam is for is being paid for once.
-    private static final int ONE_ASK_PER_PRESS = 1;
-
     // Where the hint sits in a box whose body is one listed block - the heading, that block, then the
     // line at the foot. Its own name because the boxes about the fit list rather than banner, so their
     // body is one block whatever it lists.
@@ -200,11 +196,13 @@ final class SystemCellTooltipTests {
 
     @BeforeEach
     void installColours() {
+
         CellTooltipPaletteFake.installPalette();
     }
 
     @BeforeEach
     void installLineHeights() {
+
         lineHeightsMock = LazyFontLineHeightReaderMock.install(FaceLineHeightReaderFake.createVanillaLineHeights());
     }
 
@@ -213,34 +211,44 @@ final class SystemCellTooltipTests {
 
         settingsMock = mockStatic(KmuMapTooltipSettings.class);
 
-        settingsMock.when(KmuMapTooltipSettings::getMapTooltipNestingLevelShrink)
+        settingsMock
+            .when(KmuMapTooltipSettings::getMapTooltipNestingLevelShrink)
             .thenReturn(NESTING_LEVEL_SHRINK);
-        settingsMock.when(KmuMapTooltipSettings::getMapTooltipLineGap)
+        settingsMock
+            .when(KmuMapTooltipSettings::getMapTooltipLineGap)
             .thenReturn(LINE_GAP);
-        settingsMock.when(KmuMapTooltipSettings::getMapTooltipTier2LineGap)
+        settingsMock
+            .when(KmuMapTooltipSettings::getMapTooltipTier2LineGap)
             .thenReturn(TIER_2_LINE_GAP);
-        settingsMock.when(KmuMapTooltipSettings::getMapTooltipTier3LineGap)
+        settingsMock
+            .when(KmuMapTooltipSettings::getMapTooltipTier3LineGap)
             .thenReturn(TIER_3_LINE_GAP);
-        settingsMock.when(KmuMapTooltipSettings::getMapTooltipLeaderThickness)
+        settingsMock
+            .when(KmuMapTooltipSettings::getMapTooltipLeaderThickness)
             .thenReturn(LEADER_THICKNESS);
-        settingsMock.when(KmuMapTooltipSettings::getMapTooltipLeaderOpacity)
+        settingsMock
+            .when(KmuMapTooltipSettings::getMapTooltipLeaderOpacity)
             .thenReturn(LEADER_OPACITY);
-        settingsMock.when(KmuMapTooltipSettings::getMapTooltipRedactionDarkeningStrength)
+        settingsMock
+            .when(KmuMapTooltipSettings::getMapTooltipRedactionDarkeningStrength)
             .thenReturn(REDACTION_DARKENING_STRENGTH);
     }
 
     @AfterEach
     void clearColours() {
+
         CellTooltipPaletteFake.clearPalette();
     }
 
     @AfterEach
     void clearDensitySettings() {
+
         settingsMock.close();
     }
 
     @AfterEach
     void clearLineHeights() {
+
         lineHeightsMock.close();
     }
 
@@ -328,11 +336,32 @@ final class SystemCellTooltipTests {
         }
 
         @Test
-        void asksTheBoxItsBoundOncePerPress() {
-            // The press-time seam costs a walk of the hovered system, and it is the one question the
-            // level cannot settle without: how deep the box goes is what says whether the press shows
-            // the player anything. Asked once, so a press pays for one read however far the player is
-            // reading.
+        void readsNothingOverACellTheBoxIsDrawnFor() {
+            // The press is struck over the box the player is looking at, whose composition is held:
+            // its bound comes off that, so the press reads the system no more times than the paint
+            // did.
+            var tooltipFake = buildTooltipOfferingDetail();
+            var sector = buildSectorWithEconomy();
+            var system = buildNamedSystem();
+
+            try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
+
+                rendererMock.when(CursorTooltipRenderer::resolveHeightBudget)
+                    .thenReturn(ROOM_FOR_ANY_BOX);
+
+                tooltipFake.renderFor(sector, system, FACTIONS);
+            }
+
+            tooltipFake.resolveNextLevelFor(sector, system, FACTIONS);
+
+            assertThat(tooltipFake.bodyCompositionCount)
+                .isEqualTo(1);
+        }
+
+        @Test
+        void composesTheBoxOnceWhereNoneIsHeld() {
+            // A press before any paint has nothing held to take the bound from, so it composes the
+            // box - once, however far the player is reading.
             var tooltipFake = buildTooltipSayingSomething();
 
             tooltipFake.resolveNextLevelFor(
@@ -340,8 +369,22 @@ final class SystemCellTooltipTests {
                 buildNamedSystem(),
                 PATROL_DETAILS);
 
-            assertThat(tooltipFake.deeperDetailAskCount)
-                .isEqualTo(ONE_ASK_PER_PRESS);
+            assertThat(tooltipFake.bodyCompositionCount)
+                .isEqualTo(1);
+        }
+
+        @Test
+        void offersNothingWithoutALiveEconomy() {
+            // No box is drawn over such a sector, so there is nothing for the press to move on from.
+            var tooltipFake = buildTooltipOfferingDetail();
+
+            assertThat(tooltipFake.resolveNextLevelFor(
+                    mock(SectorAPI.class),
+                    buildNamedSystem(),
+                    FACTIONS))
+                .isEmpty();
+            assertThat(tooltipFake.hasBuiltBodySections)
+                .isFalse();
         }
     }
 
@@ -621,19 +664,18 @@ final class SystemCellTooltipTests {
         }
 
         @Test
-        void drawsTheHintFromTheCompositionRatherThanAskingTheBoxAgain() {
+        void drawsTheHintFromTheCompositionRatherThanReadingTheSystemAgain() {
             // The whole reason the offer travels back beside the blocks. A layer reads its system to
-            // build the body and already holds the answer, so asking again would charge that read to a
-            // line of fine print - once per frame for as long as the cursor rests on the cell. The
-            // hint is drawn all the same, which is what parts this from simply dropping the question.
+            // build the body and already holds the answer, so reading again would charge that read to
+            // a line of fine print. The hint is drawn all the same, which is what parts this from
+            // simply dropping the question.
             var tooltipFake = buildTooltipOfferingDetail();
-
             var sections = captureDrawnBox(tooltipFake).sections();
 
             assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW))
                 .isNotNull();
-            assertThat(tooltipFake.deeperDetailAskCount)
-                .isZero();
+            assertThat(tooltipFake.bodyCompositionCount)
+                .isEqualTo(1);
         }
 
         @Test
@@ -780,6 +822,31 @@ final class SystemCellTooltipTests {
         }
 
         @Test
+        void composesTheBoxOnceWhileTheCursorRestsOnACell() {
+            // A box draws every frame the cursor is over its cell, and the read behind it answers the
+            // same thing every frame - so the second paint lays out what the first composed.
+            var tooltipFake = buildTooltipSayingSomething();
+            var sector = buildSectorWithEconomy();
+            var system = buildNamedSystem();
+
+            try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
+
+                rendererMock.when(CursorTooltipRenderer::resolveHeightBudget)
+                    .thenReturn(ROOM_FOR_ANY_BOX);
+
+                tooltipFake.renderFor(sector, system, FACTIONS);
+                tooltipFake.renderFor(sector, system, FACTIONS);
+
+                rendererMock.verify(
+                    () -> CursorTooltipRenderer.render(Mockito.any(), Mockito.any()),
+                    Mockito.times(2));
+            }
+
+            assertThat(tooltipFake.bodyCompositionCount)
+                .isEqualTo(1);
+        }
+
+        @Test
         void drawsNothingWithoutALiveEconomy() {
             // Bodies read the economy for what a layer holds in the system, so a sector without one is
             // not asked for a body at all.
@@ -837,6 +904,7 @@ final class SystemCellTooltipTests {
                     sectionsCaptor.capture(),
                     styleCaptor.capture()));
         }
+
         return new DrawnBox(sectionsCaptor.getValue(), styleCaptor.getValue());
     }
 
@@ -844,6 +912,7 @@ final class SystemCellTooltipTests {
     // own voice - the one lookup a renderer makes per row, read off the look the paint was handed rather
     // than off any row, since the sizing is the box's decision and not any one line's.
     private static double resolveBodySizeAt(TooltipStyle typography, int subordinationLevel) {
+
         return typography
             .resolveStyleFor(TooltipLineStyle.PARAGRAPH, subordinationLevel)
             .face()
@@ -892,11 +961,13 @@ final class SystemCellTooltipTests {
         var entries = new ArrayList<CellTooltipEntry>(labelTexts.length);
 
         for (var labelText : labelTexts) {
+
             entries.add(CellTooltipEntry.createEntry(CellTooltipEntryLine.createCountedLine(
                 null,
                 labelText,
                 LISTED_ENTRY_VALUE)));
         }
+
         return new SystemCellTooltipFake(List.of(), List.of()).listing(entries);
     }
 
@@ -947,11 +1018,15 @@ final class SystemCellTooltipTests {
     // A layer's tooltip standing in for any concrete one: it contributes the heading lines and the blocks
     // it was handed, and records whether it was asked for the body, which is what the economy gate is
     // observed through.
-    private static final class SystemCellTooltipFake extends SystemCellTooltip {
+    private static final class SystemCellTooltipFake
+            extends SystemCellTooltip {
 
         private final List<TooltipRow> titleRows;
         private final List<TooltipRow> bodyRows;
         private boolean hasBuiltBodySections;
+
+        // How many times the body was composed, for the case about a box held between paints.
+        private int bodyCompositionCount;
 
         // The depth the body was asked for, held rather than acted on: a stand-in body hands back the
         // blocks it was built with whatever it is asked, so what it can say about the level is that it
@@ -965,10 +1040,6 @@ final class SystemCellTooltipTests {
         // What this box lists under a heading, for the cases about a box with less room than its
         // content needs. Empty for a box whose lines each stand alone, which is every other case here.
         private List<CellTooltipEntry> listedEntries = List.of();
-
-        // How many times the box was asked that through the press-time seam. Counted rather than
-        // flagged, since what a paint must not do is ask it even once.
-        private int deeperDetailAskCount;
 
         // A layer heading its box with nothing, which is the ordinary case and the one most cases here
         // are about - so only a case actually about the heading block names one.
@@ -996,6 +1067,7 @@ final class SystemCellTooltipTests {
                 HoverTooltipDetailLevel detailLevel) {
 
             hasBuiltBodySections = true;
+            bodyCompositionCount++;
             bodyDetailLevel = detailLevel;
 
             // Each line stated as a block of its own, through the very body a real layer composes
@@ -1007,21 +1079,15 @@ final class SystemCellTooltipTests {
             for (var bodyRow : bodyRows) {
                 body.appendBannerSection(Optional.of(bodyRow));
             }
+
             body.appendSection(LISTED_BLOCK_HEADING, listedEntries);
+
             // The depth is stated beside the blocks the way a real box states it, off the same
             // stand-in answer - so a case reading the hint reads it from this box's composition
             // rather than from a second seam only the stand-in has.
-            return new ComposedCellBody(body.readBlocks(), deepestHeldLevel);
-        }
-
-        @Override
-        protected HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
-                SectorAPI sector,
-                StarSystemAPI system) {
-
-            deeperDetailAskCount++;
-
-            return deepestHeldLevel;
+            return new ComposedCellBody(
+                body.readBlocks(),
+                deepestHeldLevel);
         }
 
         // Puts this box in the detail cycle, holding every tier the levels declare - the box that has
@@ -1033,6 +1099,7 @@ final class SystemCellTooltipTests {
         // Puts this box in the detail cycle with its account ending at deepestHeldLevel, which is what
         // a box explaining a mechanic the deeper tiers say nothing about states.
         private SystemCellTooltipFake offeringDownTo(HoverTooltipDetailLevel deepestHeldLevel) {
+
             this.deepestHeldLevel = deepestHeldLevel;
             return this;
         }
@@ -1040,6 +1107,7 @@ final class SystemCellTooltipTests {
         // Gives this box a block listing several things, which is content a box short of room can
         // give some of up.
         private SystemCellTooltipFake listing(List<CellTooltipEntry> listedEntries) {
+
             this.listedEntries = listedEntries;
             return this;
         }

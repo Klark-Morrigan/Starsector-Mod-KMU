@@ -125,7 +125,7 @@ public final class ContinentCoastOverlay {
 
         // Against the fixture's own owners, because that is the map on screen: a pocket one
         // owner rings is pushed out into that owner's fills rather than keeping the channel.
-        water = laid.fillWater(fixture.getOwnerBySite(), settings.resolvePocketShaping());
+        water = laid.fillWater(fixture.getOwnerBySite(), ViewerSettings.POCKET_SHAPING);
 
         // One set asked of each search in turn, each under the switches that show it. Separate
         // asks rather than one gathered set, because they are laid independently: a formation

@@ -1,7 +1,5 @@
 package kmu.maplayers.base.hover;
 
-import kmlib.math.geometry.PolygonRegions;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -11,14 +9,13 @@ import static kmu.maplayers.base.hover.HighlightShapeFixtures.buildSquare;
 import static kmu.maplayers.base.hover.HighlightShapeFixtures.buildSquareRun;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins the rule every highlight settles a cell by: which of a group's traced loops is the cluster
- * the cell belongs to, and what that cell covers once clamped to it.
+ * the cell belongs to.
  *
- * <p>Both are read off the polygons and runs handed in, so no shaping, styling or GL is involved
- * in the answers - hand-built squares are the whole fixture.
+ * <p>The answer is read off the polygons and runs handed in, so no shaping, styling or GL is
+ * involved - hand-built squares are the whole fixture.
  */
 final class CellFrontierGeometryTests {
 
@@ -95,56 +92,5 @@ final class CellFrontierGeometryTests {
                     buildSquare(10, 10, 80)))
                 .isNull();
         }
-    }
-
-    @Nested
-    class ClipCellsToFrontier {
-
-        @Test
-        void joinsAbuttingCellsIntoOneBoundary() {
-            // Two cells of one cluster lit together: the edge they share is interior to the region
-            // they cover, so it is dropped rather than left as a seam inside a lit shape.
-            var loops = CellFrontierGeometry.clipCellsToFrontier(
-                List.of(buildSquare(10, 10, 40), buildSquare(50, 10, 40)),
-                buildSquareRun(0, 0, 200));
-
-            assertThat(loops)
-                .hasSize(1);
-            assertThat(computeArea(loops.get(0)))
-                .isCloseTo(3200.0, within(1e-2));
-        }
-
-        @Test
-        void clampsACellPokingPastTheFrontier() {
-            // The shaped cell reaches past the frontier that encloses its centre - the corner the
-            // border's rounding cut, which the raw cell keeps. Only the overlap
-            // [50,100]x[50,100] survives, so nothing washes past the line the border strokes.
-            var loops = CellFrontierGeometry.clipCellsToFrontier(
-                List.of(buildSquare(50, 50, 80)),
-                buildSquareRun(0, 0, 100));
-
-            assertThat(loops)
-                .hasSize(1);
-            assertThat(computeArea(loops.get(0)))
-                .isCloseTo(2500.0, within(1e-2));
-        }
-
-        @Test
-        void answersTheCellsOwnBoundaryWithoutAFrontier() {
-            // A cell no loop encloses has nothing to be clamped to, so it covers itself whole.
-            var loops = CellFrontierGeometry.clipCellsToFrontier(
-                List.of(buildSquare(10, 10, 40)),
-                null);
-
-            assertThat(loops)
-                .hasSize(1);
-            assertThat(computeArea(loops.get(0)))
-                .isCloseTo(1600.0, within(1e-2));
-        }
-    }
-
-    // A boundary loop's unsigned area - what it covers, whichever way the tessellator wound it.
-    private static double computeArea(List<double[]> loop) {
-        return Math.abs(PolygonRegions.computeSignedArea(loop));
     }
 }

@@ -57,8 +57,9 @@ import java.util.Set;
  * KMU's LunaLib settings change (detected off LunaLib's change event via
  * {@link KmuLunaSettings#getSettingsRevision()}), when the view switches or samples a different
  * live input, when one of the sidebar preferences the bake reads holds a different value
- * ({@link ContentInputs}), or when the geometry itself was rebuilt; between those, a colony resize
- * marks just its own system stale and drives an incremental re-shape. So switching a colour,
+ * ({@link ContentInputs}), or when the geometry itself was rebuilt; between those, a change in one system
+ * marks just its own system stale and drives an incremental re-shape - or, where the standing map
+ * cannot take one (under a filter, or behind the debug overlay), a full rebuild. So switching a colour,
  * dragging an opacity slider or picking a spotlight takes effect live, and the per-frame path is
  * otherwise a couple of int compares, never a per-frame economy scan.
  *
@@ -72,7 +73,7 @@ import java.util.Set;
  * switch between them rebuilds nothing; two set differently rebuild at the switch, which is the same
  * rebuild changing that pick on one screen already costs, paid at a different moment.
  *
- * <p>Everything held here is derived from one sector, and nothing here enters a save: the holder
+ * <p>Everything held here is derived from one sector, and nothing here enters a save: the cache
  * belongs to that sector's installed map machinery and goes with it, so no field needs transient
  * marking and nothing needs emptying when a sector changes. Every baseline starts at its
  * rebuild-forcing seed, so the first frame after a sector is installed on builds both halves from
@@ -84,7 +85,8 @@ import java.util.Set;
  * rebuild reads comes off the machinery this cache was made for rather than off the running
  * game: asking the running game is how a cache comes to be handed a second sector at all.
  */
-public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
+public final class OwnerMapCache
+        implements MapFrameCache<OwnerPaintedView> {
 
     private static final Logger LOG = Global.getLogger(OwnerMapCache.class);
 
@@ -207,9 +209,9 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         return drawables.getClusterAnchors();
     }
 
-    /** @return the cached faction-name labels */
-    public List<Label> getFactionLabels() {
-        return drawables.getFactionLabels();
+    /** @return the cached owner-name labels */
+    public List<Label> getOwnerLabels() {
+        return drawables.getOwnerLabels();
     }
 
     /**
@@ -275,11 +277,12 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         // Both views null means neither has been built for this sector, so the first frame forces
         // the build even if the content revision happens to match its unbuilt seed.
         var staleHalves = decider.decideWhatIsStale(view, memoryScope, drawables.hasNothingBuilt());
-
         if (!staleHalves.isContentStale()) {
+
             applyStandingMapUpdates(staleHalves);
             return;
         }
+
         rebuildWhatIsStale(staleHalves, view);
     }
 
@@ -302,7 +305,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         // sector three times over.
         //
         // Paired with the visibility rules the cut is taken under, so the layer's source reads
-        // colonies under the very rule that decided which systems got cells.
+        // each system under the very rule that decided which systems got cells.
         //
         // Discarded with the rebuild. A kept one would draw the next rebuild off the sector this
         // one saw, which is the change a rebuild exists to show.
@@ -313,20 +316,21 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         if (staleHalves.isCellCutStale()) {
             rebuildGeometry(staleHalves, sector, walk.sectorIndex());
         }
+
         // Everything derived from the cells under one scope, the cut having timed itself: what
         // the draw lists cost this rebuild is this span, and every stage it drives sits inside it.
         try (var drawablesScope = ActiveProfiler
                 .resolveProfiler()
                 .open(REBUILD_DRAWABLES_SECTION)) {
 
-            var wasHoldingReused = rebuildDrawables(staleHalves, view, walk);
+            var wereOwnersReused = rebuildDrawables(staleHalves, view, walk);
 
             // Traces the content rebuild's result: what the render will paint, so a wrong or empty
             // render can be confirmed against what was built. The count reported is whichever view
             // was built this rebuild - the normal styled cells or the debug overlay's base loops -
             // which is why it is named rather than counted: the two are not one quantity.
             //
-            // Beside it, whether the holding was carried over rather than read, and which sidebar
+            // Beside it, whether the owners were carried over rather than read, and which sidebar
             // preference a player touched since the last rebuild. Those signals decide nothing -
             // the bake folds the sampled values - so this is the only place the answer lands where
             // the rebuild it preceded can be read against it. It is context rather than cause: a
@@ -334,15 +338,27 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             drawablesScope.tagCall("contentRevision=" + staleHalves.contentRevision()
                 + " " + drawables.describeBuiltCounts()
                 + " geometryRebuilt=" + staleHalves.isCellCutStale()
-                + " holdingReused=" + wasHoldingReused
+                + " ownersReused=" + wereOwnersReused
                 + " signalsRaised=" + signalTracker.describeRaisesSinceTheLastReading());
         }
+
+        announceDrawListsRebuilt();
+    }
+
+    // Tells whatever reads what the map shows that it was rebuilt. Raised only once a rebuild has
+    // completed, so a rebuild that threw part way leaves the hover box on the reading it already
+    // holds - which still matches the last good draw lists left on screen.
+    private void announceDrawListsRebuilt() {
+
+        machinery
+            .resolveRefreshBoard()
+            .requestRefresh(MapLayerCommonRefreshSignal.DRAW_LISTS);
     }
 
     // The draw lists themselves: one view or the other, the names minted from the placements it
     // left, and the staleness this rebuild has just answered drained.
     //
-    // Reports whether the holding was carried over from the last rebuild rather than read, for the
+    // Reports whether the owners were carried over from the last rebuild rather than read, for the
     // line the rebuild writes: a rebuild that reused it cost what the paint costs, and a reader of
     // that line should be able to tell the two apart without the scan rows beneath.
     private boolean rebuildDrawables(
@@ -357,7 +373,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         // what the fold is for - where a drain after the build would discard it on the assumption
         // that the build had read everything, an assumption reused owners do not meet.
         var staleSystemKeys = machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys();
-        var wasHoldingReused = false;
+        var wereOwnersReused = false;
 
         // The view's two answers about its owners, resolved once for this rebuild under one
         // sampling of whatever it reads live, and handed to every stage below.
@@ -378,8 +394,9 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             // The overlay read owners for itself and drops what was marked, so nothing standing
             // can be trusted to say who owns what once it has run.
             standingOwners = null;
+
         } else {
-            wasHoldingReused = rebuildProductionView(staleHalves, viewReading, walk, staleSystemKeys);
+            wereOwnersReused = rebuildProductionView(staleHalves, viewReading, walk, staleSystemKeys);
         }
 
         // The name choice comes off this rebuild's own sampling rather than the preference, so
@@ -387,7 +404,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         drawables.rebuildLabels(staleHalves.contentInputs().nameFormat().areNamesDrawn());
         decider.recordContentRebuilt(staleHalves);
 
-        return wasHoldingReused;
+        return wereOwnersReused;
     }
 
     // The production view, off the view's source over this rebuild's walk of the sector. Apart
@@ -399,18 +416,20 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             SectorWalk walk,
             Set<SystemKey> staleSystemKeys) {
 
-        var wasHoldingReused = decider.canReuseStandingHolding(
+        var wereOwnersReused = decider.canReuseStandingOwners(
             staleHalves,
             standingOwners != null,
             staleSystemKeys);
 
-        if (!wasHoldingReused) {
+        if (!wereOwnersReused) {
+
             standingOwners = OwnerMapBuilder.resolveOwners(
                 viewReading.source(),
                 walk,
                 staleHalves.contentInputs());
-            decider.recordHoldingResolved(staleHalves);
+            decider.recordOwnersResolved(staleHalves);
         }
+
         drawables.rebuildClustersAndBands(
             cellGeometry,
             walk,
@@ -418,24 +437,23 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
             staleHalves.contentInputs(),
             standingOwners);
 
-        return wasHoldingReused;
+        return wereOwnersReused;
     }
 
-    // Nothing stale enough to rebuild. In the normal view, fold in any per-system holder changes a
-    // colony resize marked, re-shaping only those systems and their neighbours over the standing
+    // Nothing stale enough to rebuild. In the normal view, fold in any per-system owner changes the
+    // board marked, re-shaping only those systems and their neighbours over the standing
     // clusters; that batch opens a reading of its own, since none was opened for this frame.
-    // The static debug overlay has no draw lists to patch, so its staleness is dropped instead -
-    // it refreshes on the next full rebuild (any settings or geometry change). Under a filter the
-    // incremental re-shape is bypassed too: it re-derives holders through the normal (non-filter)
-    // holding, which would overwrite the spotlit keys and corrupt the spotlight, so a filtered
-    // map defers holder changes to the next full rebuild instead.
+    // The static debug overlay has no draw lists to patch, so its batch is dropped instead. Under a
+    // filter the incremental re-shape is bypassed too: it re-derives owners through the normal
+    // (non-filter) resolve, which would overwrite the spotlit keys and corrupt the spotlight. A
+    // dropped batch owes the next frame a full rebuild, since nothing else would show the change.
     //
     // The drain happens here rather than inside the fold, and before either branch is chosen,
     // because this cache is what holds the board: the fold is reached through static entry points
     // naming no sector, so a drain made there would have to ask the running game whose staleness it
     // was emptying. Draining unconditionally is what keeps the two outcomes equivalent - one folds
-    // what it took, the other drops it, and neither leaves a mark standing for the next frame to
-    // find.
+    // what it took, the other drops it and owes the rebuild, and neither leaves a mark standing for
+    // the next frame to find.
     //
     // Having drained, this is also what answers the frame that owes nothing, which is nearly every
     // frame: it returns before assembling the standing map for a fold that would find nothing in it.
@@ -445,19 +463,25 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
     private void applyStandingMapUpdates(StaleHalves staleHalves) {
 
         var staleSystemKeys = machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys();
-
         if (staleSystemKeys.isEmpty()) {
             return;
         }
+
         // A marked system is one the sector moved under, so the owners the last rebuild resolved
         // no longer say who owns it - whether or not the fold below is allowed to run. Dropped on
         // both outcomes: the fold edits the standing map rather than the kept owners, and the
         // deferral leaves the change for a full rebuild that has to read it for itself.
         standingOwners = null;
 
-        if (!drawables.canFoldHolderChanges()) {
+        if (!drawables.canFoldOwnerChanges()) {
+
+            LOG.debug("Owner map dropped " + staleSystemKeys.size()
+                + " marked system(s) it cannot fold; next frame rebuilds");
+
+            decider.recordRebuildOwed();
             return;
         }
+
         // The four halves go over as one value, and the standing pair goes in whole: a re-fit
         // leaves its own placements and rules in it, and a frame that re-fits nothing leaves both
         // alone, since the placements it did not touch are still described by the rules already
@@ -469,10 +493,12 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
                 staleHalves.cellCut().visibilityRules()),
             drawables.toStandingMap(cellGeometry),
             staleSystemKeys);
+
+        announceDrawListsRebuilt();
     }
 
     // The face this sector's labels are fitted in, off this cache's own machinery rather than the
-    // running sector's: the labels name this sector's factions. Settled once for the sector and asked
+    // running sector's: the labels name this sector's owners. Settled once for the sector and asked
     // again by each fit, which costs a lookup; the fit records it for the mint and the bake after it.
     private FontAtlas settleLabelFace() {
         return LabelFonts.settleMapLabelFace(SettledFaces.resolveFacesIn(machinery));
@@ -483,7 +509,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
     // the frontier resolution or the cell radius changed, since either reseeds them all. Feeds the
     // cache the currently-moving systems so they are left out of the partition (they seed no cell
     // and clip no neighbour), the rebuild's reading of the sector, whose visibility rules put a
-    // forced or undiscovered-colony system on the drawn set, and the layer's own rule for which of
+    // forced or undiscovered settled system on the drawn set, and the layer's own rule for which of
     // the systems that reading draws seed a cell at all.
     private void rebuildGeometry(
             StaleHalves staleHalves,
@@ -517,6 +543,7 @@ public final class OwnerMapCache implements MapFrameCache<OwnerPaintedView> {
         // this one. Counted rather than taken from the reachable-set revision, which stands
         // still through a seed-input or dev-toggle recut.
         cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
+
         decider.recordCellsCut(staleHalves);
     }
 }

@@ -9,12 +9,13 @@ import kmlib.starsector.ui.controls.specs.HorizontalRadioSpec;
 import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.FilterSelectionHeal;
 import kmu.maplayers.ownermap.MapLayerViewRegistry;
-import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.NameFormatPreference;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.util.KmuOwnerMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -40,13 +41,13 @@ import java.util.List;
 public final class OwnerMapBodyControls {
 
     // The name radio's segments, in the order the layout lays them out left to right: the two drawn
-    // forms longest-first, then No. The lit segment opens the sentence its trailing caption closes -
-    // "Full faction names", "No faction names" - which is why that caption is lowercase. The labels,
-    // the lit segment and a click's choice are all read off this one order.
-    private static final List<FactionNameFormatChoice> NAME_SEGMENT_CHOICES = List.of(
-        FactionNameFormatChoice.FULL,
-        FactionNameFormatChoice.SHORT,
-        FactionNameFormatChoice.NONE);
+    // forms longest-first, then No. The lit segment opens the sentence its trailing caption
+    // closes - "Full" or "No" followed by the caption's "... names" - which is why that caption is
+    // lowercase. The labels, the lit segment and a click's choice are all read off this one order.
+    private static final List<OwnerNameFormatChoice> NAME_SEGMENT_CHOICES = List.of(
+        OwnerNameFormatChoice.FULL,
+        OwnerNameFormatChoice.SHORT,
+        OwnerNameFormatChoice.NONE);
 
     private OwnerMapBodyControls() {
     }
@@ -57,7 +58,7 @@ public final class OwnerMapBodyControls {
      *                    flip or a pick repaints that sector's overlay and is filed as that screen's own
      * @return the tab's view-agnostic sub-options, top to bottom: the uninhabited-systems checkbox
      *         (lit when uninhabited systems draw), then the Full/Short/No name radio (its lit
-     *         segment the active choice) with its trailing "faction names" label
+     *         segment the active choice) with its trailing owner-names label
      */
     public static List<ControlSpec> buildSharedControls(
             OwnerMapBodyPreferences preferences,
@@ -70,7 +71,7 @@ public final class OwnerMapBodyControls {
             CheckboxSpec.lit(
                 // The plain text tone: the box states an option rather than calling anything out.
                 new TextSpan(
-                    KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_UNINHABITED),
+                    KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_UNINHABITED),
                     StarsectorUiColour.VANILLA_TEXT.resolve()),
                 outline.isOutlineDrawn(target.memoryScope()),
                 cellIndex -> PanelToggles.flipToggle(
@@ -84,7 +85,7 @@ public final class OwnerMapBodyControls {
                         .toList(),
                     NAME_SEGMENT_CHOICES.indexOf(nameFormat.getSelectedNameFormat(target.memoryScope())),
                     segmentIndex -> selectNameFormatSegment(nameFormat, segmentIndex, target))
-                .showsCaption(KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_FACTION_NAMES)));
+                .showsCaption(KmuStringKeys.get(nameFormat.getCaptionKey())));
     }
 
     /**
@@ -108,9 +109,11 @@ public final class OwnerMapBodyControls {
             ScreenMemoryScope memoryScope) {
 
         var labels = new ArrayList<String>();
+
         for (var view : viewRegistry.getViews()) {
             labels.add(KmuStringKeys.get(view.getSegmentLabelKey()));
         }
+
         // No caption: the segment labels already name the views, so a trailing word would only repeat
         // what the row reads as.
         return HorizontalRadioSpec.of(
@@ -120,11 +123,12 @@ public final class OwnerMapBodyControls {
     }
 
     // The resolved label of one name-radio segment.
-    private static String resolveNameSegmentLabel(FactionNameFormatChoice choice) {
+    private static String resolveNameSegmentLabel(OwnerNameFormatChoice choice) {
+
         return switch (choice) {
-            case FULL -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_FULL);
-            case SHORT -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_SHORT);
-            case NONE -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_NONE);
+            case FULL -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_FULL);
+            case SHORT -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_SHORT);
+            case NONE -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_NONE);
         };
     }
 
@@ -139,32 +143,35 @@ public final class OwnerMapBodyControls {
         if (segmentIndex < 0 || segmentIndex >= NAME_SEGMENT_CHOICES.size()) {
             return;
         }
+
         nameFormat.selectNameFormat(
             target.memoryScope(),
             NAME_SEGMENT_CHOICES.get(segmentIndex),
             target.board());
     }
 
-    // Activates the view its clicked segment names, on the screen the radio was placed on - where the
-    // carried screen becomes the address of the slot written. Any index outside the registered views is
-    // ignored, so a stray hit changes nothing. Each view remembers its own spotlight (a faction ID
-    // under a view painting lone factions, a group ID under one painting groups), so a switch loads
-    // the switched-in view's stored bloc rather than clearing - the choice survives moving between views and the tab
-    // being switched away from. The switched-in view's slot is then healed against its current
-    // selectable blocs, so a bloc that lapsed since it was last shown (a faction removed, a group
+    // Activates the view its clicked segment names, on the screen the radio was placed on - where
+    // the carried screen becomes the address of the slot written. Any index outside the registered
+    // views is ignored, so a stray hit changes nothing. Each view remembers its own spotlight,
+    // since one view's owner IDs mean nothing under another, so a switch loads the switched-in
+    // view's stored owner rather than clearing - the choice survives moving between views and the
+    // tab being switched away from. The switched-in view's slot is then healed against its current
+    // selectable owners, so an owner that lapsed since it was last shown (an owner removed, a group
     // dissolved) does not spotlight an empty footprint; the switch itself repaints, so the cleared
-    // spotlight shows without its own refresh request. The heal covers every screen, this one included,
-    // since what lapsed lapsed for both panels, and judges against the sector the body was built for.
+    // spotlight shows without its own refresh request. The heal covers every screen, this one
+    // included, since what lapsed lapsed for both panels, and judges against the sector the body
+    // was built for.
     private static void selectViewSegment(
             MapLayerViewRegistry viewRegistry,
             SectorAPI sector,
             int segmentIndex,
             ScreenMemoryScope memoryScope) {
 
-        List<OwnerPaintedView> views = viewRegistry.getViews();
+        var views = viewRegistry.getViews();
         if (segmentIndex < 0 || segmentIndex >= views.size()) {
             return;
         }
+
         viewRegistry.selectView(memoryScope, views.get(segmentIndex));
         FilterSelectionHeal.healStaleSelectionAgainstActiveView(sector, viewRegistry);
     }

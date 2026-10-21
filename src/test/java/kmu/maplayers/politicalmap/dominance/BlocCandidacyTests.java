@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.dominance;
 
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.claims;
 
 import kmlib.testfixtures.starsector.systems.claims.ClaimReaderFake;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,18 +12,18 @@ import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildAbandonedStationMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildEconomylessSectorWithSystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildHolderPassOver;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWithSystems;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.findSystemIn;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.listSystemMarkets;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_FACTION_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.TRITACHYON_FACTION_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildAbandonedStationMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildEconomylessSectorWithSystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildHolderPassOver;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWithSystems;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.findSystemIn;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -54,7 +54,7 @@ final class ClaimStatsAggregatorIntegrationTests {
         void countsOneClaimPerClaimedSystem() {
             // Claims accumulate across systems rather than overwriting: a faction claiming two
             // systems reads as two claims on one entry, which is the count the layer paints.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("system-a"),
@@ -66,7 +66,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             claimReaderFake.setClaim("system-b", "hegemony");
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(2, 0)));
         }
 
@@ -75,7 +75,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             // Market size is whole-sector, not claim-scoped: a faction claiming one system and
             // holding its colonies in two others totals all three colonies. Claim-scoped size would
             // read zero here, since a claimant usually does not hold what it claims.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("claimed-system"),
@@ -86,7 +86,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(1, 8)));
         }
 
@@ -95,7 +95,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             // A faction that claims territory but holds no market in the sector reads as claims with
             // a zero market size - normal rather than a defect, since it still paints on this layer
             // and so is still worth spotlighting.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("claimed-system"));
@@ -104,7 +104,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
@@ -113,8 +113,8 @@ final class ClaimStatsAggregatorIntegrationTests {
             // The fold applies no gate of its own: a faction holding colonies but claiming nothing
             // still gets an entry, at zero claims. Dropping it is the claims view's call, since it is
             // the view that knows a claimless bloc paints nothing on its layer.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets("shared-system", buildVisibleMarket(tritachyon, 4)));
@@ -123,7 +123,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             claimReaderFake.setClaim("shared-system", "hegemony");
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new ClaimStats(1, 0)),
                     entry("tritachyon", new ClaimStats(0, 4)));
@@ -133,8 +133,8 @@ final class ClaimStatsAggregatorIntegrationTests {
         void foldsAnAlliancesMembersIntoOneBloc() {
             // Both metrics fold through the pass's grouping, so an alliance's one entry carries a
             // member's claim beside another member's colonies - never the members surfacing apart.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets("claimed-system"),
@@ -149,9 +149,9 @@ final class ClaimStatsAggregatorIntegrationTests {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                        HolderPass.over(sectorMock, UNDER_THE_FOG, grouping),
+                        HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping),
                         claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("alliance-1", new ClaimStats(1, 3)));
         }
 
@@ -164,7 +164,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         new ClaimReaderFake())
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .isEmpty();
         }
 
@@ -178,7 +178,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
@@ -187,7 +187,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(null),
                         new ClaimReaderFake())
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .isEmpty();
         }
 
@@ -196,7 +196,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             // The row the picker had no way to offer: a faction whose one station the economy never
             // registered lives in the sector, so the map draws it a run and the box names it - and
             // until the fold read habitation it had no entry here to be listed by.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("unregistered-system"));
@@ -208,7 +208,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         new ClaimReaderFake())
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(0, 4)));
         }
 
@@ -217,7 +217,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             // A bloc holding one of each reads one combined size rather than the listed half alone.
             // The metric answers how much colony the bloc lives on, so what the economy happens to
             // register is no part of the question.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var listedColony = buildVisibleMarket(hegemony, 5);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony),
@@ -231,7 +231,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         new ClaimReaderFake())
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsExactly(entry("hegemony", new ClaimStats(0, 9)));
         }
 
@@ -251,7 +251,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         new ClaimReaderFake())
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .isEmpty();
         }
 
@@ -260,7 +260,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             // The claim-bound rule, posed where the two arms disagree: a bloc claiming two systems
             // and living in three others names the two alone. Letting habitation contribute would
             // name systems this layer draws the bloc nothing in, and light them under the pointer.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("claimed-a"),
@@ -288,8 +288,8 @@ final class ClaimStatsAggregatorIntegrationTests {
             // claims against two named systems, one against one. Counting and naming come off the
             // one claimant read, so a reading where they disagree is a reading where the lit cells
             // and the number on the row beneath the pointer stopped meaning the same thing.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets("system-a"),
@@ -306,7 +306,7 @@ final class ClaimStatsAggregatorIntegrationTests {
                 buildHolderPassOver(sectorMock),
                 claimReaderFake);
 
-            assertThat(read.statsByBlocId())
+            assertThat(read.statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new ClaimStats(2, 0)),
                     entry("tritachyon", new ClaimStats(1, 0)));
@@ -340,8 +340,8 @@ final class ClaimStatsAggregatorIntegrationTests {
         void indexesAnAlliancesMembersClaimsUnderTheAlliance() {
             // The index folds through the pass's grouping exactly as the count does, so an alliance
             // row lights both members' claimed systems rather than the one member the ID names.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets("hegemony-claim"),
@@ -358,7 +358,7 @@ final class ClaimStatsAggregatorIntegrationTests {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                        HolderPass.over(sectorMock, UNDER_THE_FOG, grouping),
+                        HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping),
                         claimReaderFake)
                     .presenceIndex()
                     .readPresentSystemKeys("alliance-1"))
@@ -370,7 +370,7 @@ final class ClaimStatsAggregatorIntegrationTests {
             // The mirror of the claim-bound rule at its edge: a bloc listed for its colonies alone
             // is a row the picker offers with nothing for a preview to light, so it must answer
             // empty rather than the systems it lives in.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sectorMock = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("home-system", buildVisibleMarket(hegemony, 5)));

@@ -2,7 +2,9 @@ package kmu.maplayers.base.tooltip.layout;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipLineValue;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
@@ -20,7 +22,7 @@ import java.util.Optional;
  *
  * <p>So the row says both things a reader needs to reconstruct the list: how many entries stand behind
  * it, and their total. The total is summed off the very lines that were dropped
- * ({@link CellTooltipEntryLine#countedValue}) and worded through the call those lines worded their own
+ * ({@link CellTooltipLineValue#countedValue}) and worded through the call those lines worded their own
  * numbers with, so the stand-in reads as one of the list's own members rather than as a figure arrived
  * at some other way.
  *
@@ -54,7 +56,7 @@ final class WithheldEntriesLine {
     static CellTooltipEntryLine buildLine(List<CellTooltipEntry> withheldEntries) {
 
         var labelText = KmuStringKeys.format(
-            KmuStringKeys.MAP_LAYER_TOOLTIP_WITHHELD_ENTRIES,
+            KmuMapStringKeys.MAP_LAYER_TOOLTIP_WITHHELD_ENTRIES,
             withheldEntries.size());
 
         return sumCountedValues(withheldEntries)
@@ -79,14 +81,16 @@ final class WithheldEntriesLine {
         var hasCountedEntry = false;
 
         for (var entry : withheldEntries) {
-            var line = entry.line();
 
-            if (line.countedValue() == null || line.isValueUncounted()) {
+            var value = entry.line().value();
+            if (value.countedValue() == null || value.isValueUncounted()) {
                 continue;
             }
-            countedTotal += line.countedValue();
+
+            countedTotal += value.countedValue();
             hasCountedEntry = true;
         }
+
         return hasCountedEntry
             ? Optional.of(countedTotal)
             : Optional.empty();

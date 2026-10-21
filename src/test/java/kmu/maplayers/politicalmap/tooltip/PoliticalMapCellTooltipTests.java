@@ -10,14 +10,13 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -31,7 +30,7 @@ import java.util.stream.Stream;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,10 +41,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what naming the claim in a single place buys the layer: every one of its boxes runs on that one
- * read, and each heads with the decree holding the hovered system unless its own body states that
- * decree. Both are asserted over the boxes as a set rather than on either of them, since the point is
- * not that two boxes agree today but that agreeing is not each box's decision to make.
+ * Pins what naming the claim in a single place buys the layer: each box heads with the decree holding
+ * the hovered system unless its own body states that decree. Asserted over the boxes as a set rather
+ * than on either of them, since the point is not that two boxes agree today but that agreeing is not
+ * each box's decision to make.
  *
  * <p>The line itself has its own suite ({@link CoreTerritoryHeadingTests}) and the contest below it
  * belongs to each box, so what is left here is where the heading comes from, which boxes take it, and
@@ -81,21 +80,6 @@ public final class PoliticalMapCellTooltipTests {
     @AfterEach
     void clearColours() {
         CellTooltipPaletteFake.clearPalette();
-    }
-
-    @Nested
-    class VanillaClaimBreakdownReaderBinding {
-
-        @Test
-        void isTheOneEveryViewsBoxRunsOn() {
-            // The regression this guards: a view minting a reader of its own reads the same mechanic
-            // through a second computation, which nothing on screen would show the player disagreeing.
-            assertThat(SystemDominationTooltip.createPaintedBy(HolderGrouping::identity).claimBreakdownReader)
-                .isSameAs(PoliticalMapCellTooltip.VANILLA_CLAIM_BREAKDOWN_READER);
-
-            assertThat(SystemClaimTooltip.INSTANCE.claimBreakdownReader)
-                .isSameAs(PoliticalMapCellTooltip.VANILLA_CLAIM_BREAKDOWN_READER);
-        }
     }
 
     @Nested
@@ -159,7 +143,7 @@ public final class PoliticalMapCellTooltipTests {
                 String viewName,
                 Function<ClaimBreakdownReader, PoliticalMapCellTooltip> buildBox) {
 
-            // Why the port carries two reads at all: a heading only has to know whether a decree holds
+            // Why the decree is a read of its own: a heading only has to know whether a decree holds
             // the system, and answering that through the full breakdown would charge the scoring of
             // every market in it to every hover. The fake derives one read from the other, so only a
             // case watching the calls can hold this.
@@ -169,7 +153,7 @@ public final class PoliticalMapCellTooltipTests {
                 .buildTitleRows(sectorMock, systemMock);
 
             verify(claimBreakdownReaderMock, description(viewName + " reads the decree on its own"))
-                .readCoreFactionId(systemMock);
+                .readDecreedFactionId(systemMock);
             verify(claimBreakdownReaderMock, never())
                 .readBreakdown(any());
         }
@@ -209,16 +193,14 @@ public final class PoliticalMapCellTooltipTests {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
-            // The alliance seam is stood in as the identity grouping and the wording as the contested
-            // one: these cases are about the heading over the box, which neither reaches.
+            // The alliance seam is stood in as no alliance and the wording as the contested one: these
+            // cases are about the heading over the box, which neither reaches.
             return Stream.of(
                 describeBox(
                     "the faction and alliance views' box",
                     reader -> new SystemDominationTooltip(
                         HolderGrouping::identity,
-                        reader,
-                        HolderGrouping::identity,
-                        ContestWordingFixtures.CONTESTED_WORDING)));
+                        PoliticalBoxSeamsFixture.buildPlainSeamsOver(reader))));
         }
     }
 
@@ -234,15 +216,14 @@ public final class PoliticalMapCellTooltipTests {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
-            // The alliance seam is stood in as the identity grouping and the wording as the contested
-            // one: these cases are about the heading over the box, which neither reaches.
+            // The alliance seam is stood in as no alliance and the wording as the contested one: these
+            // cases are about the heading over the box, which neither reaches.
             return Stream.of(
                 describeBox(
                     "the claims view's box",
                     reader -> new SystemClaimTooltip(
                         reader,
-                        HolderGrouping::identity,
-                        ContestWordingFixtures.CONTESTED_WORDING)));
+                        PoliticalBoxSeamsFixture.buildPlainSeamsOver(reader))));
         }
     }
 

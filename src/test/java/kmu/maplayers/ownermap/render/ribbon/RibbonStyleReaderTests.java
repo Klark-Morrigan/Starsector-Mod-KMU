@@ -49,7 +49,7 @@ final class RibbonStyleReaderTests {
                     .isEqualTo(WIDTH_WORLD);
                 assertThat(style.insetPadWorld())
                     .isEqualTo(INSET_PAD_WORLD);
-                assertThat(style.lengths().marketLengthUnits())
+                assertThat(style.lengths().stakeLengthUnits())
                     .isEqualTo(SEGMENT_LENGTH_UNITS);
                 assertThat(style.lengths().interjectionLengthUnits())
                     .isEqualTo(INTERJECTION_LENGTH_UNITS);

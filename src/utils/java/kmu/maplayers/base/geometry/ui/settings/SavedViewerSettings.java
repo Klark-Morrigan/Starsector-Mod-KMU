@@ -20,16 +20,13 @@ import java.nio.file.Path;
  * against one call to the defaults, and the cheaper of the two wins by default - which is how
  * a drawer full of probes comes to measure a map nobody asked about.
  *
- * <p><b>A test should NOT use this.</b> A test pins the geometry the mod ships, which is the
- * defaults and must stay the defaults however the window is set - otherwise the suite passes
- * or fails by what someone last dragged a slider to. Explaining the picture and pinning the
- * product are opposite jobs, and this one is the first.
+ * <p>What the mod ships is a different question, answered by the defaults whatever the window
+ * was last set to. This answers what the window shows.
  */
 public final class SavedViewerSettings {
 
     // Under the user's home rather than in the checkout, so a knob survives a clean, a branch
-    // switch and a fresh clone - which is what it did when the JDK kept it, and losing that
-    // would be trading one silent forgetting for another.
+    // switch and a fresh clone.
     private static final Path SAVED_VALUES_FILE = Path.of(
         System.getProperty("user.home"), ".kmu", "sector-geometry-viewer.json");
 
@@ -52,42 +49,31 @@ public final class SavedViewerSettings {
     /**
      * Reads the knobs the window was last left at.
      *
-     * <p>The rows are what remember, so the panel is built to read them - built headless and
-     * thrown away, since only the settings it filled in are wanted. Nothing is refreshed: the
-     * callbacks a row fires as it takes its remembered value have nowhere to go here, and
-     * there is no map to redraw.
-     *
      * @return the settings, or the shipped defaults where the window has never been opened
      */
     public static ViewerSettings readSavedSettings() {
+        return readSavedSettingsIn(SAVED_VALUES_FILE);
+    }
 
-        System.setProperty("java.awt.headless", "true");
-        SavedValues.rememberIn(SAVED_VALUES_FILE);
+    /**
+     * Reads the knobs a saved-values file holds, as the window would open on them.
+     *
+     * <p>Installs the file as the saved values, which is where every knob reads from. Each knob
+     * is read under the same key and fallback its row opens on, and nothing is redrawn: there is
+     * no window to redraw.
+     *
+     * @param file the saved values, such as a copy kept from another session
+     * @return the settings, or the defaults for every knob the file does not hold
+     */
+    public static ViewerSettings readSavedSettingsIn(Path file) {
+
+        SavedValues.rememberIn(file);
 
         var settings = new ViewerSettings();
 
-        new ViewerSettingsPanel(settings, new ViewerRefreshes() {
-
-            @Override
-            public void rebuildGeometry() {
-            }
-
-            @Override
-            public void refreshCoastlines() {
-            }
-
-            @Override
-            public void refreshVoidV4() {
-            }
-
-            @Override
-            public void refreshUnboundedCells() {
-            }
-
-            @Override
-            public void repaintMap() {
-            }
-        }).buildRows();
+        for (var knob : ViewerSettingsPanel.listEveryKnob()) {
+            knob.applySavedTo(settings);
+        }
 
         return settings;
     }

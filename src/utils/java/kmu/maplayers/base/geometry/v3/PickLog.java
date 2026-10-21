@@ -7,6 +7,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -40,9 +42,14 @@ public final class PickLog {
         try {
             Files.createDirectories(PICK_FILE.getParent());
             Files.writeString(PICK_FILE, "");
-        } catch (IOException e) {
-            throw new UncheckedIOException("cannot open " + PICK_FILE.toAbsolutePath(), e);
+
+        } catch (IOException ioException) {
+
+            throw new UncheckedIOException(
+                "cannot open " + PICK_FILE.toAbsolutePath(),
+                ioException);
         }
+
         return new PickLog();
     }
 
@@ -57,6 +64,47 @@ public final class PickLog {
      */
     public static Path getPickFile() {
         return PICK_FILE;
+    }
+
+    /**
+     * The picks for one sector, as the viewer wrote them down.
+     *
+     * <p>Read here, beside the writing, so the line format has one home. A missing file and
+     * picks from another sector are both ordinary: the log is emptied per session and holds
+     * whichever sectors were looked at.
+     *
+     * @param sectorName which fixture the picks were taken on
+     * @return each pick as {x, y}, in the order they were taken; empty where there are none
+     */
+    public static List<double[]> readPicks(String sectorName) {
+
+        var picks = new ArrayList<double[]>();
+
+        if (!Files.exists(PICK_FILE)) {
+            return picks;
+        }
+
+        try {
+            for (var line : Files.readAllLines(PICK_FILE)) {
+
+                if (!line.startsWith(sectorName)) {
+                    continue;
+                }
+
+                var fields = line.substring(sectorName.length()).trim().split("[,\\s]+");
+
+                picks.add(new double[] {
+                    Double.parseDouble(fields[0]),
+                    Double.parseDouble(fields[1])});
+            }
+        } catch (IOException ioException) {
+
+            throw new UncheckedIOException(
+                "cannot read " + PICK_FILE.toAbsolutePath(),
+                ioException);
+        }
+
+        return picks;
     }
 
     /**
@@ -89,9 +137,12 @@ public final class PickLog {
                 StandardCharsets.US_ASCII,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.APPEND);
-        } catch (IOException e) {
+
+        } catch (IOException ioException) {
+
             throw new UncheckedIOException(
-                "cannot append to " + PICK_FILE.toAbsolutePath(), e);
+                "cannot append to " + PICK_FILE.toAbsolutePath(),
+                ioException);
         }
     }
 }

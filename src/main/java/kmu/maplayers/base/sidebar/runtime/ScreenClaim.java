@@ -39,8 +39,7 @@ import java.util.function.Supplier;
  *
  * <p>Bundled rather than passed to a host one read at a time, because a host has no use for any of them
  * separately: it asks one question, and the answer is the same on every screen. That also keeps the
- * reason a panel stood down in one place, so a further claimant is added here rather than at each host.
- *
+ * reason a panel stood down in one place, so a further claimant is added here rather than at each host. *
  * <p>Every read fails open - what cannot be established is not a claim - which is theirs to guarantee
  * rather than this class's to enforce, and each documents it. The composition only has to not add a
  * failure of its own, which is why it holds no state and takes no reading of its own.

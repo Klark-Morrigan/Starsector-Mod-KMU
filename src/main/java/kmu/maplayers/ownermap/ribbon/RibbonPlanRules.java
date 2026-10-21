@@ -14,13 +14,38 @@ package kmu.maplayers.ownermap.ribbon;
  * are paired: a band laid at one pass's proportions under another pass's shortening is a cell drawn
  * to a design nobody chose.
  *
- * @param lengths         how far a market's segment and an interjection run
- * @param uncontestedRuns how far those runs reach on a cell no bloc but its own painter holds
- *                        anything in
+ * <p>A class rather than a record because it settles the uncontested lengths once, when the pair is
+ * made, rather than once per cell asking for them.
  */
-public record RibbonPlanRules(
-    RibbonSegmentLengths lengths,
-    UncontestedRibbonRuns uncontestedRuns) {
+public final class RibbonPlanRules {
+
+    private final RibbonSegmentLengths lengths;
+    private final RibbonSegmentLengths uncontestedLengths;
+    private final UncontestedRibbonRuns uncontestedRuns;
+
+    /**
+     * @param lengths         how far a stake's segment and an interjection run
+     * @param uncontestedRuns how far those runs reach on a cell no owner but its own painter holds
+     *                        anything in
+     */
+    public RibbonPlanRules(
+            RibbonSegmentLengths lengths,
+            UncontestedRibbonRuns uncontestedRuns) {
+
+        this.lengths = lengths;
+        this.uncontestedRuns = uncontestedRuns;
+        this.uncontestedLengths = uncontestedRuns.resolveRunLengths(lengths);
+    }
+
+    /** @return how far a stake's segment and an interjection run */
+    public RibbonSegmentLengths lengths() {
+        return lengths;
+    }
+
+    /** @return how far the runs reach on a cell no owner but its own painter holds anything in */
+    public UncontestedRibbonRuns uncontestedRuns() {
+        return uncontestedRuns;
+    }
 
     /**
      * The lengths a cell nobody contests lays its runs at: these rules' own authored pair, put
@@ -32,10 +57,10 @@ public record RibbonPlanRules(
      * a previous pass's lengths - and produce a band at proportions nobody set. The one pairing
      * that is ever correct is the one inside this value, so it is the only one reachable.
      *
-     * @return the market run cut to a single width where the shortening is on, and the authored
+     * @return the stake run cut to a single width where the shortening is on, and the authored
      *         lengths where it is not
      */
     public RibbonSegmentLengths resolveUncontestedLengths() {
-        return uncontestedRuns.resolveRunLengths(lengths);
+        return uncontestedLengths;
     }
 }

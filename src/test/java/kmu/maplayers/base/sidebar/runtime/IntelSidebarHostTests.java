@@ -8,11 +8,15 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.intel.IntelScreenView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
-import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+import kmlib.testfixtures.starsector.memory.StoredMemoryFake;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
+import kmu.maplayers.base.layer.MapLayerArrangements;
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreenControls;
-import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.layer.NoLayer;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.sidebar.style.SidebarLookScope;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
@@ -144,16 +148,23 @@ final class IntelSidebarHostTests {
             intelScreenFake.setIntelTabOpen(true);
             intelScreenFake.setMapVisorRect(MAP_VISOR);
 
-            try (var sectorMemoryFake = new SectorMemoryFake()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
-                sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
+                var storedMemoryFake = new StoredMemoryFake();
+
+                storedMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
 
                 // A stored hide is only acted on where a control able to reverse it stands, so the case
                 // has to put one on the screen it poses before the hide means anything at all. Recorded
                 // against the intel screen by posing that screen as the one up, this fake being open
                 // already - which is also what the host under test is being read on.
-                MapLayerScreens.registerIntelScreen(intelScreenFake);
-                MapLayerScreenControls.standAControlOnTheShownScreen();
+                var screens = MapLayerRosters.createScreensOver(
+                    MapLayerRosters.createRosterOf(NoLayer.INSTANCE),
+                    MapLayerArrangements.createUnarrangedBar(),
+                    intelScreenFake);
+
+                MapLayerScreenControls.standAControlOnTheShownScreen(screens);
+                LiveSectors.standInLiveSector(globalMock, storedMemoryFake.getMemory(), screens);
 
                 assertThat(createHostOnAnUnclaimedScreen(intelScreenFake).isOverlayShowing())
                     .isFalse();
@@ -161,11 +172,9 @@ final class IntelSidebarHostTests {
         }
 
         @AfterEach
-        void forgetTheControlThisCaseStood() {
-            // The screens are held for the process and the record never clears itself, so a case that
-            // stood a control would leave later ones acting on stored hides where a run with no control
-            // reads shown.
-            MapLayerScreenControls.forgetControlsAttached();
+        void clearEveryMachineryThisCaseMade() {
+            // The index is process-wide, so the screens a case seated would otherwise outlive it.
+            SectorMapMachineryIndex.disposeAllMachinery();
         }
     }
 

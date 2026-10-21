@@ -13,6 +13,7 @@ import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.starsector.StarsectorUiColoursMock;
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.AfterEach;
@@ -80,7 +81,7 @@ final class ListPickerBinderTests {
         new ListSortModes<>(List.of(AnomalySortMode.values()), AnomalySortMode.ALPHA);
 
     // The two items the picker lists, alpha-ordered as Drift then Storm, so a row index maps back to
-    // a known id.
+    // a known ID.
     private static final Anomaly STORM = new Anomaly("storm_1", "Storm", "crest_storm", 9, 8);
     private static final Anomaly DRIFT = new Anomaly("drift_1", "Drift", null, 2, 3);
 
@@ -122,7 +123,6 @@ final class ListPickerBinderTests {
     void clearColours() {
 
         sortBinderMock.close();
-
         uiColours.close();
     }
 
@@ -169,12 +169,14 @@ final class ListPickerBinderTests {
 
         @Test
         void writesAnItemPickIntoTheSlot() {
+
             try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 stubLabels(stringsMock);
 
                 var picker = readItemList(buildPicker());
+
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
@@ -200,6 +202,7 @@ final class ListPickerBinderTests {
                     ANOMALY_PICKER,
                     List.of(),
                     machinery));
+
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
@@ -221,6 +224,7 @@ final class ListPickerBinderTests {
                     .thenReturn("drift_1");
 
                 var picker = readItemList(buildPicker());
+
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
@@ -239,6 +243,7 @@ final class ListPickerBinderTests {
                 stubLabels(stringsMock);
 
                 var picker = readItemList(buildPicker());
+
                 picker.hoverReport().reportHoveredCell(0);
 
                 assertThat(builtHoverSlot.getHoveredIdOf(PickerScope.resolveScopeOf(SLOT)))
@@ -298,7 +303,6 @@ final class ListPickerBinderTests {
 
                 stubLabels(stringsMock);
                 stubStoredColumns(binderMock, ListColumns.ONE);
-
                 buildPicker();
 
                 binderMock.verify(
@@ -382,6 +386,7 @@ final class ListPickerBinderTests {
     // vocabulary, a single column, and nothing paired beside the sort, since none of those is what
     // this suite varies.
     private List<ControlSpec> buildPicker() {
+
         return ListPickerBinder.buildPicker(
             SLOT,
             ANOMALY_PICKER,
@@ -399,8 +404,9 @@ final class ListPickerBinderTests {
     // caption, which is the framework's own chrome. The sort rows' labels are the caller's
     // vocabulary's and arrive already drawn.
     private static void stubLabels(MockedStatic<KmuStringKeys> stringsMock) {
+
         stringsMock
-            .when(() -> KmuStringKeys.get(KmuStringKeys.MAP_LAYER_CTL_COLUMNS_CAPTION))
+            .when(() -> KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_CTL_COLUMNS_CAPTION))
             .thenReturn("Columns");
     }
 

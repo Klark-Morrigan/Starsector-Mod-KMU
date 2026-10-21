@@ -57,7 +57,7 @@ public final class MapFrameBeats {
 
     /**
      * Opens {@code step} inside whatever is already open, for a part of a beat worth a row of its
-     * own - the cache refresh inside the preparation being the one such part today.
+     * own - the cache refresh inside the preparation being the one such part.
      *
      * @param step which part of the beat is running, from {@link MapFrameSections}
      * @return the open scope, closed to record what the step cost

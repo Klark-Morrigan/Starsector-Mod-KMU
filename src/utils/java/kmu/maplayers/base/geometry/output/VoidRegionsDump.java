@@ -3,8 +3,8 @@ package kmu.maplayers.base.geometry.output;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.VoronoiCellBuilder;
+import kmlib.math.percentages.Percentages;
 
-import kmu.maplayers.base.geometry.BareVoidBoundary;
 import kmu.maplayers.base.geometry.CellEdges;
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.Chord;
@@ -15,20 +15,22 @@ import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.WallKind;
+import kmu.maplayers.base.geometry.output.v3.CoastVoidReport;
+import kmu.maplayers.base.geometry.output.v3.CoastWallReport;
+import kmu.maplayers.base.geometry.output.v3.PickedPointCheck;
+import kmu.maplayers.base.geometry.output.v3.ReportFigures;
+import kmu.maplayers.base.geometry.output.v3.VoidSectionReport;
+import kmu.maplayers.base.geometry.output.v3.WallRefusals;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.v3.BridgedContinents;
 import kmu.maplayers.base.geometry.v3.CellBoundSeams;
 import kmu.maplayers.base.geometry.v3.CoastPockets;
-import kmu.maplayers.base.geometry.v3.CoastVoidReport;
-import kmu.maplayers.base.geometry.v3.CoastWallReport;
 import kmu.maplayers.base.geometry.v3.LaidCoast;
-import kmu.maplayers.base.geometry.v3.PickedPointCheck;
-import kmu.maplayers.base.geometry.v3.ReportFigures;
 import kmu.maplayers.base.geometry.v3.ShippedMap;
 import kmu.maplayers.base.geometry.v3.VoidBridgeCache;
 import kmu.maplayers.base.geometry.v3.VoidPockets;
-import kmu.maplayers.base.geometry.v3.VoidSectionReport;
-import kmu.maplayers.base.geometry.v3.WallRefusals;
+import kmu.maplayers.base.geometry.walls.BareVoidBoundary;
+import kmu.maplayers.base.geometry.walls.ChordRefusals;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -49,19 +51,15 @@ import java.util.Locale;
  */
 public final class VoidRegionsDump {
 
-    // A share printed as a percentage rather than a fraction, which is how every share in
-    // this report reads.
-    private static final double PERCENT_SCALE = 100.0;
-
     // The knobs the map is shipped at, once for the whole report. Every measure below is
     // about the map a reader would open, so re-deriving them per measure buys nothing and
     // costs the one guarantee worth having: that no two numbers here describe different
     // geometry. The same reasoning the sites get, applied to the other half of the pair.
     private static final SectorGeometryParameters SHIPPED = ShippedMap.KNOBS;
 
-    // Area percentiles worth naming when deciding where the "leave it alone" threshold sits.
-    private static final double MEDIAN_FRACTION = 0.5;
-    private static final double[] REPORTED_PERCENTILES = {MEDIAN_FRACTION, 0.9, 1.0};
+    // Holes counted at a bare reach give nothing up to a channel, so the count is of the void
+    // that reach closes and nothing else.
+    private static final double NO_CHANNEL = 0;
 
     private VoidRegionsDump() {
     }
@@ -135,6 +133,7 @@ public final class VoidRegionsDump {
                 SHIPPED.cellRadius(),
                 SHIPPED.boundSegments()));
         }
+
         return cells;
     }
 
@@ -144,18 +143,22 @@ public final class VoidRegionsDump {
     private static void reportCells(List<VoronoiCellBuilder.LabelledCell> cells) {
 
         var touching = 0;
+
         for (var cell : cells) {
+
             if (touchesVoid(cell)) {
                 touching++;
             }
         }
 
+        // A share printed as a percentage rather than a fraction, which is how every share in
+        // this report reads.
         System.out.printf(
             Locale.ROOT,
             "cells: %d, of which %d touch void (%.1f%%)%n",
             cells.size(),
             touching,
-            PERCENT_SCALE * touching / cells.size());
+            Percentages.convertFractionToPercent((double) touching / cells.size()));
     }
 
     // How wide the gap between a cell's fill and what lies across it actually is, split by
@@ -206,6 +209,7 @@ public final class VoidRegionsDump {
                         .add(CellEdges.measureGapToEdge(source, midX, midY));
             }
         }
+
         System.out.printf(
             Locale.ROOT,
             "fill pulled back from its own cell edge: facing another cell p50 %.0f "
@@ -275,12 +279,7 @@ public final class VoidRegionsDump {
             fixture.getSites(),
             fixture.getOwnerBySite(),
             new VoidPockets.PocketRules(
-                new SectorGeometryParameters(
-                    reach,
-                    SHIPPED.boundSegments(),
-                    0,
-                    SHIPPED.weldTolerance(),
-                    SHIPPED.miterSpikeLimit()),
+                SHIPPED.withCellRadius(reach).withBorderInset(NO_CHANNEL),
                 VoidPockets.PocketShaping.WITH_CHANNEL)).size();
     }
 
@@ -294,6 +293,7 @@ public final class VoidRegionsDump {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -324,13 +324,16 @@ public final class VoidRegionsDump {
                     owners.add(owner);
                 }
             }
+
             if (hasUnowned) {
                 touchUnowned++;
             }
+
             if (owners.size() == 1) {
                 oneOwnerAmongOwned++;
             }
         }
+
         System.out.printf(
             Locale.ROOT,
             "%d pockets touch at least one unowned cell; %d ring exactly one owner "
@@ -411,6 +414,7 @@ public final class VoidRegionsDump {
             if (pocket.absorbingOwner() != null) {
                 absorbed++;
             }
+
             if (pocket.outlines().isEmpty()) {
                 closedOver++;
             } else if (pocket.outlines().size() > 1) {
@@ -448,11 +452,9 @@ public final class VoidRegionsDump {
 
         System.out.printf(
             Locale.ROOT,
-            label + ": p50 " + valueFormat + " / p90 " + valueFormat
-                + " / max " + valueFormat + "%n",
-            ReportFigures.findPercentile(values, REPORTED_PERCENTILES[0]),
-            ReportFigures.findPercentile(values, REPORTED_PERCENTILES[1]),
-            ReportFigures.findPercentile(values, REPORTED_PERCENTILES[2]));
+            "%s: %s%n",
+            label,
+            ReportFigures.describeSpread(values, valueFormat));
     }
 
     // What the four span sets did to the void, one set at a time. The same questions of each,
@@ -521,6 +523,7 @@ public final class VoidRegionsDump {
         }
 
         if (set.spans().isEmpty()) {
+
             System.out.printf(Locale.ROOT, "%ss: none%n", set.name());
             return;
         }
@@ -529,26 +532,31 @@ public final class VoidRegionsDump {
         var widths = new ArrayList<Double>(set.spans().size());
         var outsideEveryPocket = 0;
 
+        // Against the section rather than the pocket's own outline, because the section is the
+        // pocket at the reach that defines the void, while an outline is the pocket pulled in by
+        // the channel and would report a span near its rim as outside.
+        var sections = pockets.stream().map(pocket -> pocket.section().outline()).toList();
+
         for (var span : set.spans()) {
 
             widths.add(span.width());
 
-            if (!doesAnyPocketHold(pockets, findMidpoint(span))) {
+            var middle = findMidpoint(span);
+
+            if (!PolygonRegions.isPointInsideAnyRing(sections, middle[0], middle[1])) {
                 outsideEveryPocket++;
             }
         }
+
         widths.sort(Double::compare);
 
         System.out.printf(
             Locale.ROOT,
-            "%ss: %d, of which %d span void no pocket encloses; width p50 %.0f / p90 %.0f "
-                + "/ max %.0f%n",
+            "%ss: %d, of which %d span void no pocket encloses; width %s%n",
             set.name(),
             set.spans().size(),
             outsideEveryPocket,
-            ReportFigures.findPercentile(widths, REPORTED_PERCENTILES[0]),
-            ReportFigures.findPercentile(widths, REPORTED_PERCENTILES[1]),
-            ReportFigures.findPercentile(widths, REPORTED_PERCENTILES[2]));
+            ReportFigures.describeSpread(widths, "%.0f"));
 
         reportSpanRefusals(set, laid, sites);
 
@@ -585,34 +593,20 @@ public final class VoidRegionsDump {
             }
         }
 
-        var atCells = DiscUnion.buildAtCellReach(sites, SHIPPED);
-        var atDrawn = VoidPockets.buildDrawnUnion(sites, SHIPPED);
+        var refusedAtDrawn = ChordRefusals.judgeEveryRefusal(
+            VoidPockets.buildDrawnUnion(sites, SHIPPED), laid.walls());
 
         System.out.printf(
             Locale.ROOT,
             "  offered as walls %d: at the cells' own reach %s | a channel out %s%n",
             chords.size(),
-            WallRefusals.summariseRefusals(atCells, laid.walls(), chords),
-            WallRefusals.summariseRefusals(atDrawn, laid.walls(), chords));
+            WallRefusals.summariseRefusals(
+                ChordRefusals.judgeEveryRefusal(
+                    DiscUnion.buildAtCellReach(sites, SHIPPED), laid.walls()),
+                chords),
+            WallRefusals.summariseRefusals(refusedAtDrawn, chords));
 
-        WallRefusals.reportEachRefusal(atDrawn, laid.walls(), chords, set.name());
-    }
-
-    // Against the section rather than the pocket's own outline, because the section is the
-    // pocket at the reach that defines the void, while an outline is the pocket pulled in by
-    // the channel and would report a span near its rim as outside.
-    private static boolean doesAnyPocketHold(
-            List<VoidPockets.VoidPocket> pockets,
-            double[] point) {
-
-        for (var pocket : pockets) {
-
-            if (PolygonRegions.isPointInsideRing(
-                    pocket.section().outline(), point[0], point[1])) {
-                return true;
-            }
-        }
-        return false;
+        WallRefusals.reportEachRefusal(refusedAtDrawn, chords, set.name());
     }
 
     // The middle of a span, which is the point asked of the pockets when deciding whether that

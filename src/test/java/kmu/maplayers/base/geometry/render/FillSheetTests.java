@@ -1,13 +1,13 @@
 package kmu.maplayers.base.geometry.render;
 
+import kmlib.math.geometry.PolygonRegions;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -27,8 +27,10 @@ class FillSheetTests {
     // tens of them wide: shapes sized in pixels are all edge, and a sample taken anywhere in
     // one reads the opaque outline rather than the body under test.
     private static final int CANVAS = 600;
-
     private static final int TRANSLUCENT = 100;
+
+    // The squares below are built counter-clockwise, so the opposed one is wound clockwise.
+    private static final boolean IS_OPPOSED_RING_COUNTER_CLOCKWISE = false;
 
     // Two squares arranged so each has a corner the other does not reach, and a middle they
     // share. Three sample points then cover every case the union rule is about, each of them a
@@ -66,7 +68,9 @@ class FillSheetTests {
             // the fill exactly where two layers meet. So the sheet decides each ring's
             // direction rather than taking it as it came.
             var canvas = paintSheet(sheet -> sheet.addRings(
-                List.of(LOWER_SQUARE, windTheOtherWay(UPPER_SQUARE))));
+                List.of(LOWER_SQUARE, PolygonRegions.orientRing(
+                    UPPER_SQUARE,
+                    IS_OPPOSED_RING_COUNTER_CLOCKWISE))));
 
             assertThat(readPixel(canvas, IN_BOTH))
                 .as("the overlap of two opposed rings cancelled instead of filling")
@@ -111,15 +115,6 @@ class FillSheetTests {
 
     private static int readPixel(BufferedImage canvas, int[] at) {
         return canvas.getRGB(at[0], at[1]);
-    }
-
-    private static List<double[]> windTheOtherWay(List<double[]> ring) {
-
-        var reversed = new ArrayList<>(ring);
-
-        Collections.reverse(reversed);
-
-        return reversed;
     }
 
     private static List<double[]> buildSquare(

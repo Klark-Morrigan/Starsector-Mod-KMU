@@ -18,15 +18,13 @@ import java.util.Set;
 
 /**
  * Decides what a frame owes an owner map: whether the cells have to be recut, whether the
- * clusters have to be rebuilt, and whether the holding the last rebuild read can be painted
+ * clusters have to be rebuilt, and whether the owners the last rebuild read can be painted
  * over again rather than read afresh.
  *
- * <p>Apart from the cache that acts on the answer, because the two run at different cadences.
- * Nearly every frame the map is open asks this and stops: the answer comes off revisions and
- * settings alone, costs a handful of int compares, and opens no reading of the sector. A rebuild
- * is the rare frame, and it opens one. Holding the decision beside the rebuild paths put the
- * cheap question and the expensive answer behind one class, where a reader of either had to read
- * both.
+ * <p>Kept apart from the cache that acts on the answer, because the two run at different cadences:
+ * nearly every frame the map is open asks this and stops, while a rebuild is the rare frame. The
+ * answer comes off revisions, the sidebar picks and settings read again only when LunaLib reports
+ * a change, so it opens no reading of the sector.
  *
  * <p>What it holds is the baselines the question is asked against - the revisions the standing
  * map was built under and what its cells were cut from - and those advance only when the cache
@@ -42,6 +40,10 @@ final class OwnerMapRebuildDecider {
     // map, so a cache's first frame finds the draw lists stale and builds them.
     private static final int UNBUILT_REVISION = -1;
 
+    // The settings revision's seed, below any the settings can report, so the first frame reads
+    // what the cells are cut from.
+    private static final int UNREAD_SETTINGS_REVISION = -1;
+
     // The machinery installed on the sector the map draws, whose board every revision here is
     // read off.
     private final SectorMapMachinery machinery;
@@ -55,11 +57,16 @@ final class OwnerMapRebuildDecider {
     // first frame builds.
     private int lastContentRevision = UNBUILT_REVISION;
 
-    // The revision the standing holding was resolved under: the content revision's holding half,
+    // The revision the standing owners were resolved under: the content revision's owners half,
     // the inputs that reach the resolve and none of the picks that only reach the paint. A rebuild
     // that owes no new reading of the sector - a style pick moved and nothing else - paints over
-    // what the last one read rather than walking the economy for the same answer.
-    private int lastHoldingRevision = UNBUILT_REVISION;
+    // what the last one read rather than walking the sector for the same answer.
+    private int lastOwnersRevision = UNBUILT_REVISION;
+
+    // Whether a frame drained marked systems it could not fold into the standing map. Nothing else
+    // remembers them once drained, and no revision moves for them, so this is what makes the next
+    // frame rebuild rather than paint the old owner until something unrelated moves.
+    private boolean isRebuildOwed;
 
     // What the cells currently held were cut from. One value rather than a revision, the seed
     // inputs and the dev toggles side by side, because each of the three recuts every cell and
@@ -69,33 +76,41 @@ final class OwnerMapRebuildDecider {
     // first frame cut, whatever the signal happens to say.
     private CellCutInputs lastCellCut;
 
+    // The last sampling of what the cells are cut from, and the settings revision it was read
+    // under. Its seed inputs and visibility rules are all KMU LunaLib fields, and every change to
+    // one moves that revision, so while it holds they are reused rather than read again - a dozen
+    // field reads and a gate resolve saved on every frame the map is open.
+    private CellCutInputs sampledCellCut;
+    private int sampledSettingsRevision = UNREAD_SETTINGS_REVISION;
+
     OwnerMapRebuildDecider(SectorMapMachinery machinery, OwnerMapBodyPreferences bodyPreferences) {
+
         this.machinery = machinery;
         this.bodyPreferences = bodyPreferences;
     }
 
     /**
-     * Whether the holding the last rebuild read still says who holds what.
+     * Whether the owners the last rebuild read still say who owns what.
      *
-     * <p>It does unless the sector moved under it - a marked system, or a recut, which admits or
-     * drops systems - or the rule reading it did, which the holding revision folds. Never while
+     * <p>They do unless the sector moved under them - a marked system, or a recut, which admits or
+     * drops systems - or the rule reading them did, which the owners revision folds. Never while
      * nothing is standing to keep.
      *
-     * @param staleHalves        this frame's decision
-     * @param hasStandingHolding whether a holding from an earlier rebuild is held at all
-     * @param staleSystemKeys    the systems marked stale since the last drain, each a system the
-     *                           sector moved under
-     * @return whether the standing holding may be painted over rather than read afresh
+     * @param staleHalves       this frame's decision
+     * @param hasStandingOwners whether owners from an earlier rebuild are held at all
+     * @param staleSystemKeys   the systems marked stale since the last drain, each a system the
+     *                          sector moved under
+     * @return whether the standing owners may be painted over rather than read afresh
      */
-    public boolean canReuseStandingHolding(
+    public boolean canReuseStandingOwners(
             StaleHalves staleHalves,
-            boolean hasStandingHolding,
+            boolean hasStandingOwners,
             Set<SystemKey> staleSystemKeys) {
 
-        return hasStandingHolding
+        return hasStandingOwners
             && staleSystemKeys.isEmpty()
             && !staleHalves.isCellCutStale()
-            && staleHalves.holdingRevision() == lastHoldingRevision;
+            && staleHalves.ownersRevision() == lastOwnersRevision;
     }
 
     /**
@@ -115,21 +130,7 @@ final class OwnerMapRebuildDecider {
             ScreenMemoryScope memoryScope,
             boolean hasNothingBuilt) {
 
-        // What the cells would be cut from right now. The reachable-set revision alone does not
-        // answer that: the frontier resolution, the cell reach and the two visibility overrides
-        // each reseed every cell without it moving, so all four are read into one value and the
-        // staleness question is asked of that value rather than of the signal.
-        //
-        // This is also the rebuild's one sampling of the visibility rules: the cut, the fills and
-        // the bands all resolve under what it holds, so a gate flipped mid-rebuild cannot leave
-        // cells cut under one rule and painted under another.
-        var cellCut = new CellCutInputs(
-            machinery.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
-            new CellSeedInputs(
-                KmuOwnerMapGeometrySettings.getOwnerMapCellBoundSegments(),
-                KmuOwnerMapGeometrySettings.getOwnerMapCellRadius()),
-            MapVisibilityRules.readFromLunaSettings());
-
+        var cellCut = sampleCellCutInputs();
         var isCellCutStale = !cellCut.equals(lastCellCut);
 
         // The rebuild's one sampling of the sidebar preferences, taken here beside the cut's for
@@ -149,25 +150,21 @@ final class OwnerMapRebuildDecider {
         // Read once and folded into both revisions below, so the two cannot be taken over two
         // readings of the settings or the view's live inputs.
         var viewRevision = computeViewRevision(view);
-
         var contentRevision = computeContentRevision(viewRevision, contentInputs);
-        var isContentStale = isCellCutStale
-            || hasNothingBuilt
-            || contentRevision != lastContentRevision;
 
         return new StaleHalves(
             cellCut,
             isCellCutStale,
             contentInputs,
             contentRevision,
-            computeHoldingRevision(viewRevision, contentInputs),
-            isContentStale);
+            computeOwnersRevision(viewRevision, contentInputs),
+            isContentStale(isCellCutStale, hasNothingBuilt, contentRevision));
     }
 
     /**
      * The two readings a recut moved between, for the line a caller writes about it.
      *
-     * <p>Described here because this is the only holder of both: the standing reading is a baseline
+     * <p>Described here because this is the only class keeping both: the standing reading is a baseline
      * and never leaves, so a caller that wanted to name the transition itself would have to be
      * handed the very value the decision exists to keep to itself.
      *
@@ -198,17 +195,27 @@ final class OwnerMapRebuildDecider {
      * @param staleHalves the decision the rebuild was taken under
      */
     public void recordContentRebuilt(StaleHalves staleHalves) {
+
         lastContentRevision = staleHalves.contentRevision();
+        isRebuildOwed = false;
     }
 
     /**
-     * Records that the holding was read afresh under this frame's decision, so a later rebuild
-     * that owes no new reading can tell it was resolved under the rule now in force.
-     *
-     * @param staleHalves the decision the holding was resolved under
+     * Records that the systems marked since the last drain were dropped rather than folded, so the
+     * next frame owes a full rebuild that reads them for itself.
      */
-    public void recordHoldingResolved(StaleHalves staleHalves) {
-        lastHoldingRevision = staleHalves.holdingRevision();
+    public void recordRebuildOwed() {
+        isRebuildOwed = true;
+    }
+
+    /**
+     * Records that the owners were read afresh under this frame's decision, so a later rebuild
+     * that owes no new reading can tell they were resolved under the rule now in force.
+     *
+     * @param staleHalves the decision the owners were resolved under
+     */
+    public void recordOwnersResolved(StaleHalves staleHalves) {
+        lastOwnersRevision = staleHalves.ownersRevision();
     }
 
     // The clusters-staleness token, folding everything the cells are styled under: the view
@@ -223,18 +230,18 @@ final class OwnerMapRebuildDecider {
         return Objects.hash(viewRevision, contentInputs);
     }
 
-    // The content revision's holding half: the same fold over only what reaches the resolve. Of the
+    // The content revision's owners half: the same fold over only what reaches the resolve. Of the
     // sidebar picks that is the spotlight alone - the two recedes, the name format and the outline
     // reach the paint and nothing before it. The view revision stays in whole, since the rule a
-    // view resolves holding by can read LunaLib fields, and a view that groups factions into blocs
-    // moves its holding whenever those groups move. A style pick moves the content revision and
-    // leaves this one where it was, which is what lets the rebuild it owes keep the holding.
-    private static int computeHoldingRevision(int viewRevision, ContentInputs contentInputs) {
-        return Objects.hash(viewRevision, contentInputs.selectedBlocId());
+    // view resolves owners by can read LunaLib fields, and a view that groups owners together
+    // moves its owners whenever those groups move. A style pick moves the content revision and
+    // leaves this one where it was, which is what lets the rebuild it owes keep the owners.
+    private static int computeOwnersRevision(int viewRevision, ContentInputs contentInputs) {
+        return Objects.hash(viewRevision, contentInputs.selectedOwnerId());
     }
 
     // The terms both revisions share, folded once: the settings revision, since a settings change
-    // restyles every cell over the fixed geometry; the active view, since their grouping, styling
+    // restyles every cell over the fixed geometry; the active view, since their owners, styling
     // and labels differ; and the view's own fingerprint of whatever live inputs it samples, so a
     // change to one of those rebuilds without any setting moving.
     //
@@ -242,9 +249,58 @@ final class OwnerMapRebuildDecider {
     // what keeps the shared pipeline free of any one view's vocabulary: a view that samples nothing
     // contributes a constant and is never churned by a change it does not render.
     private int computeViewRevision(OwnerPaintedView view) {
+
         return Objects.hash(
             KmuLunaSettings.getSettingsRevision(),
             view.getId(),
             view.getContentRevision(machinery.resolveRefreshBoard()));
+    }
+
+    // The clusters rebuild over any recut, since every cell they group was reseeded; before the
+    // first build, whatever the revision says; on any move of the content revision; and after a
+    // frame dropped marked systems it could not fold.
+    private boolean isContentStale(
+            boolean isCellCutStale,
+            boolean hasNothingBuilt,
+            int contentRevision) {
+
+        return isCellCutStale
+            || hasNothingBuilt
+            || isRebuildOwed
+            || contentRevision != lastContentRevision;
+    }
+
+    // What the cells would be cut from right now. The reachable-set revision alone does not answer
+    // that: the frontier resolution, the cell reach and the two visibility overrides each reseed
+    // every cell without it moving, so all four are read into one value and the staleness question
+    // is asked of that value rather than of the signal.
+    //
+    // This is also the rebuild's one sampling of the visibility rules: the cut, the fills and the
+    // bands all resolve under what it holds, so a gate flipped mid-rebuild cannot leave cells cut
+    // under one rule and painted under another.
+    private CellCutInputs sampleCellCutInputs() {
+
+        var geometryRevision = machinery.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
+        var settingsRevision = KmuLunaSettings.getSettingsRevision();
+
+        if (settingsRevision != sampledSettingsRevision) {
+
+            sampledSettingsRevision = settingsRevision;
+            sampledCellCut = new CellCutInputs(
+                geometryRevision,
+                new CellSeedInputs(
+                    KmuOwnerMapGeometrySettings.getOwnerMapCellBoundSegments(),
+                    KmuOwnerMapGeometrySettings.getOwnerMapCellRadius()),
+                MapVisibilityRules.readFromLunaSettings());
+
+        } else if (geometryRevision != sampledCellCut.geometryRevision()) {
+
+            sampledCellCut = new CellCutInputs(
+                geometryRevision,
+                sampledCellCut.seedInputs(),
+                sampledCellCut.visibilityRules());
+        }
+
+        return sampledCellCut;
     }
 }

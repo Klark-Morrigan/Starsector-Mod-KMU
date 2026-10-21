@@ -1,5 +1,6 @@
 package kmu.maplayers.base.sidebar.runtime;
 
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.listeners.SectorListeners;
@@ -7,6 +8,8 @@ import kmlib.starsector.ui.coreui.ReflectiveCoreUiComponentRepainter;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
 import kmu.maplayers.base.compatibility.MapLayerGameReach;
+
+import org.apache.log4j.Logger;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 
@@ -22,6 +25,8 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  */
 public final class SidebarInstaller {
 
+    private static final Logger LOG = Global.getLogger(SidebarInstaller.class);
+
     private SidebarInstaller() {
         // utility class, no instances.
     }
@@ -35,8 +40,8 @@ public final class SidebarInstaller {
     public static void installAll(SectorAPI sector) {
 
         runGuardedStep(
-            () -> installPoliticalMapSidebar(sector),
-            "Failed to install KMU political map sidebar");
+            () -> installSidebarListeners(sector),
+            "Failed to install KMU map layer sidebar");
 
         // Open every sidebar at the fold this save was left at. Per load rather than at construction:
         // the hosts are process-lifetime singletons built before any sector exists, so this is the only
@@ -48,7 +53,7 @@ public final class SidebarInstaller {
                     host.restoreFoldFromSave();
                 }
             },
-            "Failed to restore KMU political map sidebar folds");
+            "Failed to restore KMU map layer sidebar folds");
     }
 
     /**
@@ -67,7 +72,7 @@ public final class SidebarInstaller {
                 SectorListeners.removeListener(sector, SidebarRenderer.class);
                 SectorListeners.removeListener(sector, SidebarInput.class);
             },
-            "Failed to remove KMU political map sidebar");
+            "Failed to remove KMU map layer sidebar");
     }
 
     // Registers the sidebar's render and input listeners for every screen it draws on, walking the one
@@ -82,7 +87,7 @@ public final class SidebarInstaller {
     // Written out rather than made through SectorListeners, which registers one listener of one
     // class: here two classes are cleared before either is re-added, so a host is never left with
     // one half of its pair registered while the loop is partway through the roster.
-    static void installPoliticalMapSidebar(SectorAPI sector) {
+    static void installSidebarListeners(SectorAPI sector) {
 
         if (sector == null) {
             return;
@@ -97,6 +102,7 @@ public final class SidebarInstaller {
         listenerManager.removeListenerOfClass(SidebarInput.class);
 
         for (var host : SidebarHosts.getRegisteredHosts()) {
+
             // Its own probe per renderer rather than one shared: the probe warns once per instance when
             // its read breaks, so a shared one would let the first screen to fail silence the news on
             // the other. The repaint binding is the shared singleton beside it - a stateless forwarder
@@ -107,7 +113,10 @@ public final class SidebarInstaller {
                     new VanillaMapTooltipProbe(MapLayerGameReach.MAP_TOOLTIPS.getReporter()),
                     new ReflectiveCoreUiComponentRepainter(MapLayerGameReach.MAP_TOOLTIPS.getReporter())),
                 true);
+
             listenerManager.addListener(new SidebarInput(host), true);
         }
+
+        LOG.debug("Map layer sidebar listeners installed; hosts=" + SidebarHosts.getRegisteredHosts().size());
     }
 }

@@ -2,19 +2,17 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.holding.ColonyReadRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderOwnerReading;
-import kmu.maplayers.ownermap.owners.OwnerReading;
-import kmu.maplayers.ownermap.owners.holders.HolderPaintedView;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
-import kmu.maplayers.ownermap.owners.holders.SystemHolderResolveSource;
-import kmu.maplayers.ownermap.picker.BlocPickerRead;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.maplayers.ownermap.render.style.OwnerCategories;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
+import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
+
+import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
+import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHolderResolveSource;
+import kmu.maplayers.ownermap.picker.OwnerPickerRead;
+import kmu.maplayers.ownermap.picker.RankedOwner;
 import kmu.maplayers.ownermap.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.DominanceSortModes;
@@ -24,7 +22,6 @@ import kmu.maplayers.politicalmap.dominance.ribbon.HeldOrClaimedSystemRibbonPlan
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.holders.DominanceSystemHolderResolve;
-import kmu.mods.nexerelin.NexerelinAlliances;
 
 import java.util.function.Predicate;
 
@@ -35,20 +32,34 @@ import java.util.function.Predicate;
  * that can read those numbers. What a view painted this way actually varies is one thing - which of
  * the present blocs it offers as spotlight targets - so that is the only thing it is left to declare.
  *
- * <p>This sits between the view seam and the concrete views rather than on the seam itself,
- * because the assembly it holds names the dominance aggregator and the dominance vocabulary. On
- * {@link OwnerPaintedView} those names would reach every view including the ones the contest does
- * not paint; here they reach exactly the views whose blocs carry the numbers. A view painted by
- * another mechanic implements the seam directly and pairs its own list with its own vocabulary.
+ * <p>This sits between the layer's views and the concrete ones rather than on
+ * {@link PoliticalHolderView}, because the assembly it holds names the dominance aggregator and the
+ * dominance vocabulary. There those names would reach the claims view, which the contest does not
+ * paint; here they reach exactly the views whose blocs carry the numbers. A view painted by another
+ * mechanic implements {@link PoliticalHolderView} directly and pairs its own list with its own
+ * vocabulary.
  */
-public interface DominancePaintedView extends HolderPaintedView {
+public interface DominancePaintedView
+        extends PoliticalHolderView {
+
+    /**
+     * Where these views read the claims that extend their held territory, for both the fills and
+     * the bands - so a claimed cell's band ranks the contest the cell was painted by.
+     *
+     * <p>Stated once between the two views the contest paints, which read claims alike.
+     *
+     * @return the source every claim of the view is read through
+     */
+    default ClaimBreakdownReaderSource resolveClaimReaderSource() {
+        return VanillaClaimBreakdownReader::new;
+    }
 
     /**
      * The source the contest-painted views resolve their per-system holder from: each inhabited
      * system's dominant holder, extended with each system a bloc claims but does not hold, drawn
      * as an unfilled part of that bloc's territory.
      *
-     * <p>Answered here rather than on {@link OwnerPaintedView}, for the reason the ribbon planner
+     * <p>Answered here rather than on {@link HolderPaintedView}, for the reason the ribbon planner
      * is: a default there would name this mechanic's resolver in front of every view, including
      * the ones it does not paint. Both views the contest paints resolve identically, so it is
      * stated once between them instead of twice beside them.
@@ -57,7 +68,7 @@ public interface DominancePaintedView extends HolderPaintedView {
      */
     @Override
     default HolderProvider resolveHolderProvider() {
-        return ClaimAugmentedHolderProvider.INSTANCE;
+        return ClaimAugmentedHolderProvider.createReadingThrough(resolveClaimReaderSource());
     }
 
     /**
@@ -72,48 +83,6 @@ public interface DominancePaintedView extends HolderPaintedView {
     }
 
     /**
-     * The owner reading of a view the domination contest paints: a bloc read off the faction it
-     * paints as, under the grouping handed in.
-     *
-     * <p>Answered once for both such views because they differ only by grouping, and the holder
-     * reading's group rules never fire under the identity grouping - so the faction view's plain
-     * faction holding and the alliances view's alliances-against-a-backdrop are one reading.
-     *
-     * @param sector   the sector the rebuild reads
-     * @param grouping the grouping the rebuild's holding was folded under
-     * @return the holder reading over that grouping
-     */
-    @Override
-    default OwnerReading resolveOwnerReading(SectorAPI sector, HolderGrouping grouping) {
-        return new HolderOwnerReading(sector, grouping);
-    }
-
-    /**
-     * The categories of a view the domination contest paints: the four every layer painting
-     * holders shares, read off the settings rows those four have always been read from.
-     *
-     * @return the holder layers' categories
-     */
-    @Override
-    default OwnerCategories resolveCategories() {
-        return HolderCategories.INSTANCE;
-    }
-
-    /**
-     * Who stands together in a contest on a view the domination contest paints: the live alliance
-     * set, identity wherever Nexerelin is absent.
-     *
-     * <p>The same for both such views whatever each paints as one bloc, so stated once between
-     * them: the factions view paints allies apart and still reads them as allies in a contest.
-     *
-     * @return the live alliance set
-     */
-    @Override
-    default HolderGrouping resolveContestGrouping() {
-        return NexerelinAlliances.resolveGrouping();
-    }
-
-    /**
      * The band counting for a view the contest paints: held dominance where a bloc holds something
      * in a system, and the claim contest where only a claim paints the cell.
      *
@@ -123,7 +92,7 @@ public interface DominancePaintedView extends HolderPaintedView {
      * decides which per system off the very economy read the held count makes anyway.
      *
      * <p>Answered once for every such view for the same reason {@link #resolveBlocPickerRead} is: the
-     * assembly names the dominance planner, and on {@link OwnerPaintedView} that name would reach
+     * assembly names the dominance planner, and on {@link HolderPaintedView} that name would reach
      * the views the contest does not paint.
      *
      * @param inputs everything one bake's bands are settled from, sampled once by the bake
@@ -131,7 +100,7 @@ public interface DominancePaintedView extends HolderPaintedView {
      */
     @Override
     default SystemRibbonPlanner resolveRibbonPlanner(RibbonPlanInputs inputs) {
-        return HeldOrClaimedSystemRibbonPlanner.createForPass(inputs);
+        return HeldOrClaimedSystemRibbonPlanner.createForPass(inputs, resolveClaimReaderSource());
     }
 
     /**
@@ -147,7 +116,7 @@ public interface DominancePaintedView extends HolderPaintedView {
      * @return this view's picker and presence under the live weighting rule
      */
     @Override
-    default BlocPickerRead<RankedBloc<DominanceStats>> resolveBlocPickerRead(
+    default OwnerPickerRead<RankedOwner<DominanceStats>> resolveBlocPickerRead(
             SectorAPI sector,
             ColonyReadRules colonyReadRules) {
 
@@ -164,10 +133,9 @@ public interface DominancePaintedView extends HolderPaintedView {
      * a view's blocs carry, so offering any other mechanic's vocabulary would rank rows by numbers
      * they do not hold.
      *
-     * <p>Beside the live entry above on the terms every pass in this feature is built on: a caller
-     * that has already sampled the rule states it, and one that has not reads the player's. Which
-     * is why the rule is named here and not on the shared seam - it is this mechanic's, so only
-     * the views it paints have an entry taking it.
+     * <p>Beside the live entry above: a caller that has already sampled the rule states it, and one
+     * that has not reads the player's. The rule is named here and not on the shared seam because it
+     * is this mechanic's, so only the views it paints have an entry taking it.
      *
      * @param sector          the sector whose colonies decide who is listed; null yields an empty
      *                        read
@@ -180,25 +148,18 @@ public interface DominancePaintedView extends HolderPaintedView {
      * @return this view's picker, its blocs in the order the sector walk surfaces them, beside the
      *         systems that walk found each bloc living in
      */
-    default BlocPickerRead<RankedBloc<DominanceStats>> resolveBlocPickerRead(
+    default OwnerPickerRead<RankedOwner<DominanceStats>> resolveBlocPickerRead(
             SectorAPI sector,
             DominanceRules rules,
             ColonyReadRules colonyReadRules) {
 
-        // The grouping is resolved once and handed to both halves, so the numbers, the crest, and
-        // the gate all read against the one snapshot rather than three live samples of a set that
-        // moves (the alliances view samples Nexerelin).
-        var grouping = resolveGrouping();
-        var pass = DominancePass.createOver(sector, rules, colonyReadRules, grouping);
-
         // The aggregation is handed over whole rather than opened here: the rows come off its totals
         // and the presence off the very entries counted into them, so both halves of the picker read
         // are one reading of the sector rather than two walks that could disagree.
-        return buildBlocPickerRead(
+        return readPickerUnderOneGrouping(
             sector,
-            grouping,
-            resolveOwnerReading(sector, grouping),
-            DominanceStatsAggregator.aggregateDominanceStats(pass),
+            grouping -> DominanceStatsAggregator.aggregateDominanceStats(
+                DominancePass.createOver(sector, rules, colonyReadRules, grouping)),
             DominanceSortModes.MODES);
     }
 
@@ -207,7 +168,7 @@ public interface DominancePaintedView extends HolderPaintedView {
      * differs between views the contest paints, which is why it is the only thing this interface
      * leaves abstract.
      *
-     * <p>Re-abstracted from {@link OwnerPaintedView#resolveSelectableBlocGate}, whose default offers
+     * <p>Re-abstracted from {@link HolderPaintedView#resolveSelectableBlocGate}, whose default offers
      * every present bloc. That default is right for a view whose walk surfaces only blocs it paints;
      * here the grouping can surface a lone faction beside the alliances, so a view that inherited the
      * default silently would list blocs it does not paint rather than failing to compile.

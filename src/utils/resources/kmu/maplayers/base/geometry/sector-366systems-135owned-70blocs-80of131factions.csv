@@ -17,8 +17,8 @@
 # An empty groupKey is an unowned system - uninhabited or decivilised-only - which
 # is the frontier case, and 231 of these 366 are one.
 #
-# The id is the system's name, which the sector does NOT keep unique - a repeat
-# carries a #N suffix. The real map keys cells by a unique system id; names are
+# The ID is the system's name, which the sector does NOT keep unique - a repeat
+# carries a #N suffix. The real map keys cells by the unique SystemKey; names are
 # used here only so a failure reads as "Askonia" rather than as an opaque handle.
 #
 # id,x,y,groupKey,score

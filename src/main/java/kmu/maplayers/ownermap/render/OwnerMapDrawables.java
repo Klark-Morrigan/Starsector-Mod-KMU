@@ -19,6 +19,7 @@ import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.labels.ClusterAnchorsBuilder;
 import kmu.maplayers.ownermap.render.labels.ClusterLabelStylingSnapshot;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonsBaker;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,16 +52,16 @@ final class OwnerMapDrawables {
     // either view above so they draw over whichever is live - turning border tracing on must not
     // hide them. Empty unless the names or the anchor overlay is on; they feed both. The two are
     // one value because a placement is only reusable as a pair with the rules it was sized under,
-    // and this holder is what owns them across the rebuilds that reuse them.
+    // and this class is what owns them across the rebuilds that reuse them.
     private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
 
-    // The cached faction-name labels, built from the placements above. Each owns a GL buffer, so
+    // The cached owner-name labels, built from the placements above. Each owns a GL buffer, so
     // the builder disposes the standing strings whenever it rebuilds this list. Empty unless the
-    // "show faction names" toggle is on.
-    private final List<Label> factionLabels = new ArrayList<>();
+    // names toggle is on.
+    private final List<Label> ownerLabels = new ArrayList<>();
 
     // The face the sector settled its labels on, asked when a rebuild fits names rather than when these
-    // drawables are made: settling reads every faction name, which a holder made before the first
+    // drawables are made: settling reads every owner name, which drawables made before the first
     // rebuild has no call to pay for. The fit records the face beside its placements, so everything
     // drawn after it reads the face from there.
     private final Supplier<FontAtlas> labelFaceSource;
@@ -88,9 +89,9 @@ final class OwnerMapDrawables {
         return standingAnchors.getAnchors();
     }
 
-    /** @return the cached faction-name labels */
-    public List<Label> getFactionLabels() {
-        return factionLabels;
+    /** @return the cached owner-name labels */
+    public List<Label> getOwnerLabels() {
+        return ownerLabels;
     }
 
     /**
@@ -110,12 +111,13 @@ final class OwnerMapDrawables {
     }
 
     /**
-     * @return whether a per-system holder change can be folded into the standing clusters: the
+     * @return whether a per-system owner change can be folded into the standing clusters: the
      *         production view is built - by a build that ran, not the placeholder a failed one
      *         stands behind - and not under a filter, since the incremental re-shape derives
-     *         holders through the normal holding, which would overwrite the spotlit keys
+     *         owners through the normal resolve, which would overwrite the spotlit keys
      */
-    public boolean canFoldHolderChanges() {
+    public boolean canFoldOwnerChanges() {
+
         return clusters != null
             && clusters.getBuildInputs().wasBuilt()
             && !clusters.getBuildInputs().contentInputs().isFiltering();
@@ -128,7 +130,7 @@ final class OwnerMapDrawables {
      * @return the parts the refresh reads and writes
      */
     public StandingOwnerMap toStandingMap(RevisedCellGeometry cellGeometry) {
-        return new StandingOwnerMap(clusters, standingAnchors, factionLabels, cellGeometry);
+        return new StandingOwnerMap(clusters, standingAnchors, ownerLabels, cellGeometry);
     }
 
     /**
@@ -136,6 +138,7 @@ final class OwnerMapDrawables {
      *         it built
      */
     public String describeBuiltCounts() {
+
         return borderStageOverlay != null
             ? "debugBaseLoops=" + borderStageOverlay.baseLoops().size()
             : "styledCells=" + clusters.getStyledCellByCellKey().size();
@@ -149,6 +152,7 @@ final class OwnerMapDrawables {
      * @param view the view the placeholder is built under
      */
     public void ensureClustersNonNull(OwnerPaintedView view) {
+
         if (clusters == null) {
             clusters = OwnerMapClusters.createEmpty(view);
         }
@@ -164,10 +168,11 @@ final class OwnerMapDrawables {
      */
     public void disposeAll() {
 
-        LabelsBuilder.disposeAll(factionLabels);
-        factionLabels.clear();
+        LabelsBuilder.disposeAll(ownerLabels);
 
+        ownerLabels.clear();
         standingAnchors.discardAnchors();
+
         clusters = null;
         borderStageOverlay = null;
     }
@@ -177,8 +182,9 @@ final class OwnerMapDrawables {
      *
      * <p>The owners it traces are the active view's own, resolved through its source over the
      * rebuild's walk with nothing spotlit - so the overlay traces the borders the map would draw,
-     * and asks the layer nothing the production build does not. One resolve serves the overlay and
-     * the anchors beside it, so the two cannot disagree about who owns a cell.
+     * and asks the layer nothing the production build does not. One resolve and one reading of the
+     * theme serve the overlay and the anchors beside it, so the two cannot disagree about who owns
+     * a cell or how it is styled.
      *
      * @param cellGeometry  the cells to trace, carrying the cut they stand at
      * @param walk          the rebuild's walk of the sector, which the source reads over
@@ -194,12 +200,12 @@ final class OwnerMapDrawables {
         // The overlay never spotlights, so the pick goes in as nobody: it traces the owners the
         // map has rather than one pick's footprint.
         var owners = viewReading.source().resolveOwners(walk, null);
+        var styling = readStylingOf(viewReading, contentInputs);
 
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
             cellGeometry.cells(),
             owners,
-            viewReading.view().resolveCategories(),
-            contentInputs);
+            styling);
 
         clusters = null;
 
@@ -208,7 +214,8 @@ final class OwnerMapDrawables {
             cellGeometry,
             ClusterLabelStylingSnapshot.resolveForTracing(
                 owners.ownerBySystemKey(),
-                viewReading,
+                styling,
+                viewReading.reading(),
                 contentInputs,
                 labelFaceSource.get()));
     }
@@ -241,7 +248,9 @@ final class OwnerMapDrawables {
             cellGeometry.cells(),
             viewReading,
             contentInputs,
-            owners);
+            owners,
+            readStylingOf(viewReading, contentInputs));
+
         borderStageOverlay = null;
 
         // The cells go over carrying the revision they stand at rather than the live
@@ -279,6 +288,16 @@ final class OwnerMapDrawables {
      *                      preference, so what is minted matches what was fitted
      */
     public void rebuildLabels(boolean areNamesDrawn) {
-        LabelsBuilder.rebuildLabels(factionLabels, standingAnchors, areNamesDrawn);
+        LabelsBuilder.rebuildLabels(ownerLabels, standingAnchors, areNamesDrawn);
+    }
+
+    // The paint scheme one rebuild styles everything it builds from, read once here for whichever
+    // view it builds, so the fills or outlines and the names over them share one reading.
+    private static MapStyling readStylingOf(ViewReading viewReading, ContentInputs contentInputs) {
+
+        return MapStyling.readFromLunaSettings(
+            viewReading.view().resolveCategories(),
+            viewReading.reading(),
+            contentInputs);
     }
 }

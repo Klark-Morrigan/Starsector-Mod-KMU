@@ -21,14 +21,16 @@ import org.apache.log4j.Logger;
  * resize, a market discovery, a decivilisation, and any added later) applies the
  * same seat guard and emits the same log line instead of copying them.
  *
- * <p>Holder on the map is decided per system from combined colony size, so an
- * event that changes a colony's holder or size can only shift dominance in that
+ * <p>Holder on the map is decided per system from each faction's summed colony
+ * weights, so an event that changes a colony's holder or size can only shift dominance in that
  * colony's own system. This resolves the market's seated system, ignores a
  * market not seated in one (a deep-hyperspace station seeds no cell, so its
  * change can repaint nothing), and marks just that system stale via
  * {@link MapLayerRefreshBoard#markSystemGroupingStale} - the fine-grained refresh
  * that re-derives only the named system and its neighbours rather than rescanning
- * the whole economy. Reachability changes (a system joining or leaving the map)
+ * the whole economy. Whether the change actually flips the holder is decided later, when the
+ * overlay re-derives that one system, so a change that moves no winner costs only that re-derive.
+ * Reachability changes (a system joining or leaving the map)
  * are a separate axis owned by {@link PoliticalMapStalenessSource}.
  *
  * <p>The same event also writes down what the system's inhabitants can see. That
@@ -118,6 +120,6 @@ public final class MarketPoliticsRefresh {
             sector,
             system,
             SystemColonies.readColoniesIn(sector, system),
-            ColonyKnowledge.observingUnderTheFog());
+            ColonyKnowledge.observingUnderTheFog(sector));
     }
 }

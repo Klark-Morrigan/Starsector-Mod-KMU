@@ -26,6 +26,7 @@ see the [mod README](../../../../../../../README.md) for project context.
 
 - [Cells and edges](#cells-and-edges)
 - [From edges to clusters](#from-edges-to-clusters)
+- [Which edges inset](#which-edges-inset)
 - [Clusters](#clusters)
 - [Reading a point back](#reading-a-point-back)
 - [Why the cells are cached, not rebuilt](#why-the-cells-are-cached-not-rebuilt)
@@ -52,7 +53,7 @@ an ordered list of preferences,
 declaration order being precedence order,
 the first one to separate the two settling it,
 and the sector's own listing order deciding a pair nothing separates.
-Today the list holds one,
+The list holds one,
 which keeps a system the map shows in its own right
 over one that is on the map only because hidden systems are being shown.
 
@@ -90,6 +91,25 @@ Every other edge is pulled inward,
 which is what gives a cluster its uniform border channel against whatever is outside it.
 The result is a [`ShapedCell`](ShapedCell.java):
 a fill polygon plus a parallel flag per edge saying which edges are cluster borders.
+
+## Which edges inset
+
+The channel is cosmetic.
+The true cells meet along shared edges,
+and the inset is a pass over them that pulls an edge back so two clusters leave a visible gap.
+[`EdgeInsetRule`](EdgeInsetRule.java) says which edges take it.
+`AT_EVERY_BORDER` is the map's own rule.
+`NOWHERE` and `EVERYWHERE` answer for every edge at once,
+so the true partition and the inset can be drawn apart.
+The rule also decides whether shared edges fuse:
+under `EVERYWHERE` there are no clusters to outline.
+
+[`EdgeInset`](EdgeInset.java) holds the rule and its depth as one value,
+since a depth means nothing without the rule that places it.
+`EdgeInset.asTheMapDraws()` is the pair the game ships,
+and every pass that shapes the map itself names it.
+[`BorderTraceStyle`](BorderTraceStyle.java) carries an `EdgeInset` for the trace that outlines a cluster,
+so the outline lands where the fills stop.
 
 ## Clusters
 

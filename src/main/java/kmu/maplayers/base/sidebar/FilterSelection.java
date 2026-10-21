@@ -26,7 +26,7 @@ import java.util.function.Predicate;
  * choice and it survives reload) rather than as a LunaLib field - a LunaLib field would render on a
  * settings tab and an unregistered key would not round-trip. Key absence is the no-filter state,
  * which is also the default a fresh save holds, so no off sentinel is needed: a stored ID means
- * "filtering to that id", no key means "not filtering".
+ * "filtering to that ID", no key means "not filtering".
  *
  * <p>Unlike those stores, a pick or a clear raises {@link MapLayerCommonRefreshSignal#FILTER} so
  * the reading layer repaints live, standing in for the {@code settingsRevision} bump these

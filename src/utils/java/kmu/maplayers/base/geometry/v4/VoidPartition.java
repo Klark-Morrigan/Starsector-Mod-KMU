@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.v4;
 
 import kmlib.math.geometry.Bounds;
+import kmlib.math.geometry.Lines;
 import kmlib.math.geometry.Segment;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -72,29 +73,35 @@ public final class VoidPartition {
      * earlier tier left - which is what lets the partition be checked over everything down so
      * far rather than over each tier's own reading of the map.
      *
-     * @param cellEdges  every cell, as its adjacency-tagged edges
-     * @param sites      the cells' own positions
-     * @param parameters the knobs the cells were built under
+     * @param shore      the line between cell and void, and the cells it was read off
+     * @param parameters the knobs the cells were built under, for the room the frame leaves
      * @param laidWalls  the lines the tiers so far have laid, each saying which line it is and
      *                   each ending exactly where its tier put it; none, for the void as the
      *                   cells alone leave it
      * @return the void those lines divide
      */
     public static VoidPartition readVoidPartition(
-            Map<?, List<CellEdge>> cellEdges,
-            List<double[]> sites,
+            Shore shore,
             SectorGeometryParameters parameters,
             List<LabelledWall> laidWalls) {
 
-        var frontier = collectFrontier(cellEdges);
+        var sites = shore.getSites();
         var pieces = new ArrayList<Face>();
 
         // The frontier and the frame are the base, welded at the gap the frontier's own
         // corners need; the laid lines go in after it, at rounding, so the weld cannot move
         // them off where their tier put them.
+        //
+        // That gap is the sagitta. The bound is drawn as a polygon inscribed in the circle, so
+        // a frontier edge lies up to the chord's sagitta inside the true bound. Where a corner
+        // has to be left on the chord - the near-tangent case, where placing it on the bound
+        // would hand the cell a wedge nearer a third site - two neighbours put it within that
+        // sagitta of each other rather than at one point. So the sagitta is exactly the gap the
+        // welding has to cover, and it is derived from the knobs the cells were drawn at rather
+        // than chosen.
         var faces = FaceWalk.walkFaces(
-            frameTheSector(frontier, sites, parameters),
-            measureBoundGap(parameters),
+            frameTheSector(shore.getFrontier(), sites, parameters),
+            shore.getSagitta(),
             laidWalls);
 
         for (var face : faces) {
@@ -113,15 +120,6 @@ public final class VoidPartition {
      */
     public List<Face> collectPieces() {
         return pieces;
-    }
-
-    /**
-     * How many pieces the void is divided into.
-     *
-     * @return the count
-     */
-    public int countPieces() {
-        return pieces.size();
     }
 
     // Whether a piece is cells rather than void.
@@ -153,8 +151,7 @@ public final class VoidPartition {
             var to = boundary.get((edge + 1) % boundary.size());
             var site = sites.get(labels[edge]);
 
-            return (to[0] - from[0]) * (site[1] - from[1])
-                - (to[1] - from[1]) * (site[0] - from[0]) > 0;
+            return Lines.computeOrientation(from, to, site) > 0;
         }
 
         // No cell on its outline at all: the piece bounded only by the frame and whatever was
@@ -218,17 +215,5 @@ public final class VoidPartition {
         lines.add(new LabelledWall(new Segment(minX, maxY, minX, minY), THE_FRAME));
 
         return lines;
-    }
-
-    // How far two reports of one frontier corner may stand apart and still be welded.
-    //
-    // The bound is drawn as a polygon inscribed in the circle, so a frontier edge lies up to
-    // the chord's sagitta inside the true bound. Where a corner has to be left on the chord -
-    // the near-tangent case, where placing it on the bound would hand the cell a wedge nearer
-    // a third site - two neighbours put it within that sagitta of each other rather than at
-    // one point. So the sagitta is exactly the gap the welding has to cover, and it is derived
-    // from the knobs the cells were drawn at rather than chosen.
-    private static double measureBoundGap(SectorGeometryParameters parameters) {
-        return parameters.measureBoundSagitta();
     }
 }

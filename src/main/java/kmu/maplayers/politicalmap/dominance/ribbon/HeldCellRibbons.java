@@ -2,9 +2,10 @@ package kmu.maplayers.politicalmap.dominance.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmu.maplayers.ownermap.ribbon.ColonyCellRibbons;
+import kmu.maplayers.ownermap.owners.holders.base.ColonyCellRibbons;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
+import kmu.maplayers.politicalmap.dominance.standings.StandingRankOrder;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.ArrayList;
@@ -90,18 +91,16 @@ public final class HeldCellRibbons {
     // nearest the system centre, or by ID - and a band that re-ranked from the weights alone
     // would then open on a bloc the cell is not painted for.
     //
-    // Behind it, descending combined weight and then ascending ID: the same two keys, in the
-    // same order, that the standings ranking uses, so the band cannot disagree with the box
-    // about who stands second in a system.
+    // Behind it, the order the standings rank by, so the band cannot disagree with the box about who
+    // stands second in a system.
     private static Comparator<Map.Entry<String, MarketFootprint>> orderByPaintedThenWeight(
             String paintingBlocId) {
 
         return Comparator
             .comparing((Map.Entry<String, MarketFootprint> bloc) ->
                 !bloc.getKey().equals(paintingBlocId))
-            .thenComparing(
+            .thenComparing(StandingRankOrder.createRankOrder(
                 bloc -> bloc.getValue().totalWeight(),
-                Comparator.reverseOrder())
-            .thenComparing(Map.Entry::getKey);
+                Map.Entry::getKey));
     }
 }

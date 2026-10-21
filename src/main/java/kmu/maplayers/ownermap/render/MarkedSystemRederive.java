@@ -16,13 +16,13 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Brings the systems a colony event marked back into step with the sector, and reports what that
+ * Brings the systems a change marked back into step with the sector, and reports what that
  * obliges the map to redraw.
  *
  * <p>Three facts settle how a marked system's cell draws, and all three are re-derived here: who
  * owns it, whether anything stands in it, and - while an owner is spotlighted - whether the pick is
  * one of the things standing in it. They move independently, so each is read on its own account: a
- * system this layer's owners never accounted for can gain or lose its last colony with no owner
+ * system this layer's owners never accounted for can be settled or emptied with no owner
  * moving anywhere - a settled system the layer's rule gives nobody, say - and a full rebuild is
  * otherwise the only cure for that.
  *

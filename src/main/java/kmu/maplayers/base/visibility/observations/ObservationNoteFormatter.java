@@ -2,6 +2,7 @@ package kmu.maplayers.base.visibility.observations;
 
 import com.fs.starfarer.api.campaign.CampaignClockAPI;
 
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 /**
@@ -59,11 +60,13 @@ public final class ObservationNoteFormatter {
     private static String formatElapsedSpan(float elapsedDays) {
 
         if (elapsedDays < A_DAY) {
-            return KmuStringKeys.get(KmuStringKeys.OBSERVATION_SPAN_TODAY);
+            return KmuStringKeys.get(KmuMapStringKeys.OBSERVATION_SPAN_TODAY);
         }
+
         if (elapsedDays < TWO_DAYS) {
-            return KmuStringKeys.get(KmuStringKeys.OBSERVATION_SPAN_A_DAY_AGO);
+            return KmuStringKeys.get(KmuMapStringKeys.OBSERVATION_SPAN_A_DAY_AGO);
         }
-        return KmuStringKeys.format(KmuStringKeys.OBSERVATION_SPAN_DAYS_AGO, (int) elapsedDays);
+
+        return KmuStringKeys.format(KmuMapStringKeys.OBSERVATION_SPAN_DAYS_AGO, (int) elapsedDays);
     }
 }

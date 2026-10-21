@@ -1,6 +1,5 @@
 package kmu.maplayers.base.layer;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -23,12 +22,6 @@ import static org.mockito.Mockito.when;
  */
 final class LiveMapLayerArrangementTests {
 
-    @AfterEach
-    void unbindTheStoreThisCaseBound() {
-        // The holder is static, so a store bound here would otherwise answer every later read in the JVM.
-        MapLayerArrangements.forgetTheArrangement();
-    }
-
     @Nested
     class ResolveArrangement {
 
@@ -36,16 +29,16 @@ final class LiveMapLayerArrangementTests {
         void answersUnarrangedWithNoStoreBound() {
             // The reading before any composition root has run, and the one an install that names no
             // store keeps: the row is exactly what registration built.
-            assertThat(LiveMapLayerArrangement.resolveArrangement())
+            assertThat(MapLayerArrangements.createUnarrangedBar().resolveArrangement())
                 .isEqualTo(MapLayerArrangement.UNARRANGED);
         }
 
         @Test
         void answersWhatTheBoundStoreReads() {
 
-            MapLayerArrangements.arrangeBarWith(List.of("gamma"), List.of("beta"));
+            var layerArrangement = MapLayerArrangements.createArrangedBar(List.of("gamma"), List.of("beta"));
 
-            assertThat(LiveMapLayerArrangement.resolveArrangement())
+            assertThat(layerArrangement.resolveArrangement())
                 .isEqualTo(new MapLayerArrangement(List.of("gamma"), List.of("beta")));
         }
 
@@ -59,13 +52,34 @@ final class LiveMapLayerArrangementTests {
             when(arrangementSelectionMock.readArrangement())
                 .thenReturn(MapLayerArrangement.UNARRANGED);
 
-            LiveMapLayerArrangement.registerArrangementSelection(arrangementSelectionMock);
+            var layerArrangement = new LiveMapLayerArrangement(arrangementSelectionMock);
 
-            LiveMapLayerArrangement.resolveArrangement();
-            LiveMapLayerArrangement.resolveArrangement();
+            layerArrangement.resolveArrangement();
+            layerArrangement.resolveArrangement();
 
             verify(arrangementSelectionMock, times(2))
                 .readArrangement();
+        }
+    }
+
+    @Nested
+    class ResolveArrangementSelection {
+
+        @Test
+        void answersTheBoundStore() {
+            // The one caller that writes back has to be handed the store the bar reads from, or what
+            // it records would never reach the bar.
+            var arrangementSelectionMock = mock(MapLayerArrangementSelection.class);
+
+            assertThat(new LiveMapLayerArrangement(arrangementSelectionMock).resolveArrangementSelection())
+                .isSameAs(arrangementSelectionMock);
+        }
+
+        @Test
+        void isNullWithNoStoreBound() {
+            // A control with nowhere to record to should not open and pretend.
+            assertThat(MapLayerArrangements.createUnarrangedBar().resolveArrangementSelection())
+                .isNull();
         }
     }
 }

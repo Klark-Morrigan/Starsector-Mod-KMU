@@ -2,7 +2,7 @@ package kmu.maplayers.base.faces;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.factions.FactionNames;
+import kmlib.starsector.factions.SectorFactions;
 import kmlib.starsector.markets.SectorMarkets;
 import kmlib.starsector.strings.StarsectorStrings;
 import kmlib.starsector.systems.SectorStarSystems;
@@ -85,7 +85,7 @@ public final class SettledFaces implements InstalledMachinery {
     // strings is what the faces are settled against.
     static List<String> readTexts(SectorAPI sector, ProbedText probe) {
         return switch (probe) {
-            case FACTION_NAMES -> FactionNames.listEveryName(sector);
+            case FACTION_NAMES -> SectorFactions.listFactionNames(sector);
             case PLACE_NAMES -> readPlaceNames(sector);
             case MOD_STRINGS -> StarsectorStrings.listCategoryStrings(KmuStringKeys.CATEGORY);
         };

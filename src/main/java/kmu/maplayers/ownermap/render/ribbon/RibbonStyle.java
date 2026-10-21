@@ -14,24 +14,24 @@ import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
  * outline at every zoom, and a frame measures nothing about it at all.
  *
  * <p>The two lengths ride here with the two sizes because they are the same authored decision:
- * how long a market's run is relative to the parting between two of them is what makes a bloc's
- * run read as several colonies, and reading it apart from the width those lengths are multiples
+ * how long a stake's run is relative to the parting between two of them is what makes an owner's
+ * run read as several stakes, and reading it apart from the width those lengths are multiples
  * of would let one be tuned against a stale reading of the other.
  *
- * @param widthWorld      how thick the band is, half of it either side of the path it is drawn
- *                        along
- * @param insetPadWorld   how far clear of the cell's own ring the band's near edge runs, so the
- *                        band reads as sitting inside the border rather than as part of it
- * @param miterSpikeLimit how far past a corner a mitre may reach, as a multiple of the half
- *                        width, before the corner is bevelled instead. Shared by the inset that
- *                        finds the path and the stroke that gives it girth, so a corner sharp
- *                        enough to spike is given up on at one angle rather than at two
- * @param lengths         how far a market's segment and an interjection run, in widths
+ * @param widthWorld        how thick the band is, half of it either side of the path it is drawn
+ *                          along
+ * @param insetPadWorld     how far clear of the cell's own ring the band's near edge runs, so the
+ *                          band reads as sitting inside the border rather than as part of it
+ * @param miterSpikeLimit   how far past a corner a mitre may reach, as a multiple of the half
+ *                          width, before the corner is bevelled instead. Shared by the inset that
+ *                          finds the path and the stroke that gives it girth, so a corner sharp
+ *                          enough to spike is given up on at one angle rather than at two
+ * @param lengths           how far a stake's segment and an interjection run, in widths
  * @param isBandAlwaysDrawn whether a cell that planned a band gets one even where its ring has no
- *                        room to hold it - the names covering the whole of it, or the cell being
- *                        too narrow for the band and its pad together. The player's, and here
- *                        rather than beside the plan because both cases are the ring refusing a
- *                        band rather than the system having nothing to report
+ *                          room to hold it - the names covering the whole of it, or the cell being
+ *                          too narrow for the band and its pad together. The player's, and here
+ *                          rather than beside the plan because both cases are the ring refusing a
+ *                          band rather than the system having nothing to report
  */
 public record RibbonStyle(
     double widthWorld,

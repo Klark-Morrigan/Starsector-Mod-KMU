@@ -43,12 +43,12 @@ final class SystemClusterBordersTests {
     // The trace tuning every case shares, being the trace's own tuning rather than anything a
     // case is about; the cases that vary the channel or the rule build their own.
     private static final BorderTraceStyle STYLE = new BorderTraceStyle(
-        EdgeInsetRule.AT_EVERY_BORDER, BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
+        new EdgeInset(EdgeInsetRule.AT_EVERY_BORDER, BORDER_INSET), WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
     // The same trace with nothing inset, for the case about where a ring lands rather than
     // about which edges bound it.
     private static final BorderTraceStyle UNINSET_STYLE = new BorderTraceStyle(
-        EdgeInsetRule.NOWHERE, BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
+        new EdgeInset(EdgeInsetRule.NOWHERE, BORDER_INSET), WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
     private static final Set<SystemKey> NO_COINCIDENT_NEIGHBOURS = Set.of();
 
@@ -181,8 +181,7 @@ final class SystemClusterBordersTests {
             var rings = traceBorderRings(
                     List.of("A"), edges, buildIdentityGroupingByName(edges.keySet(), owners), NO_COINCIDENT_NEIGHBOURS,
                     new BorderTraceStyle(
-                        EdgeInsetRule.AT_EVERY_BORDER,
-                        20.0,
+                        new EdgeInset(EdgeInsetRule.AT_EVERY_BORDER, 20.0),
                         WELD_TOLERANCE,
                         MITER_SPIKE_LIMIT));
 

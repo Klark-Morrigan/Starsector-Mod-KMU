@@ -4,7 +4,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.picker.BlocPresenceIndexBuilder;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndexBuilder;
+import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.LinkedHashMap;
@@ -31,7 +32,7 @@ public final class DominanceStatsAggregator {
     // The four metrics and the system index accumulate over every system in the sector, so passing
     // them along made each step's parameter list longer than the step itself and put the pass - the
     // one thing every step reads - last among them.
-    private final BlocPresenceIndexBuilder inhabitedSystems = new BlocPresenceIndexBuilder();
+    private final OwnerPresenceIndexBuilder inhabitedSystems = new OwnerPresenceIndexBuilder();
     private final DominancePass pass;
     private final Map<String, DominanceStats> statsByBlocId = new LinkedHashMap<>();
 
@@ -59,19 +60,19 @@ public final class DominanceStatsAggregator {
      * @return each present bloc's stats and the systems it lives in, keyed by bloc ID in walk
      *         order; empty when nobody lives anywhere the player can see
      */
-    public static DominanceStatsRead aggregateDominanceStats(DominancePass pass) {
+    public static OwnerStatsRead<DominanceStats> aggregateDominanceStats(DominancePass pass) {
         if (!pass.canReadEconomy()) {
-            return DominanceStatsRead.EMPTY;
+            return OwnerStatsRead.createEmptyRead();
         }
         return new DominanceStatsAggregator(pass).aggregateWholeSector();
     }
 
     // Walks every system the pass offers, folding each into the running state, and seals the result.
-    private DominanceStatsRead aggregateWholeSector() {
+    private OwnerStatsRead<DominanceStats> aggregateWholeSector() {
         for (var system : pass.readSystems()) {
             accumulateSystemStats(system);
         }
-        return new DominanceStatsRead(statsByBlocId, inhabitedSystems.buildIndex());
+        return new OwnerStatsRead<>(statsByBlocId, inhabitedSystems.buildIndex());
     }
 
     // Folds one system into the running per-bloc stats and presence sets: resolves the one dominant
@@ -96,7 +97,7 @@ public final class DominanceStatsAggregator {
         // winner is settled and never into the map above: a nought-weight footprint entering the
         // ranking would take a system nobody dominates, the first entry being the leader before
         // anything is compared.
-        for (var entry : pass.readHabitationIn(system).colonySizeByBlocId().entrySet()) {
+        for (var entry : pass.readHabitationIn(system).habitationByBlocId().entrySet()) {
             var blocId = entry.getKey();
             var footprint = footprintByBlocId.getOrDefault(blocId, MarketFootprint.EMPTY);
 
@@ -106,7 +107,7 @@ public final class DominanceStatsAggregator {
                     .addSystem(
                         blocId.equals(dominantBlocId),
                         footprint.totalWeight(),
-                        entry.getValue()));
+                        entry.getValue().colonySize()));
 
             inhabitedSystems.recordPresence(blocId, SystemKey.readKeyOf(system));
         }

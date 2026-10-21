@@ -88,20 +88,20 @@ public final class MapHoverGates {
      * <p>Both live reads arrive as suppliers so neither is taken on a frame whose answer does not
      * turn on it: a player who has permitted the hover globally pays for no screen read at all.
      *
-     * @param isAnyMapShowing whether either vanilla map host is showing, from
-     *                        {@code MapPresence#isAnyMapShowing}
-     * @param isInGameSpace   whether the player is looking at the campaign world with no screen over
-     *                        it, from {@code CampaignScreenView#isShowingGameSpace}
+     * @param isAnyVanillaMapShowing whether either vanilla map host is showing, from
+     *                               {@code MapPresence#isAnyVanillaMapShowing}
+     * @param isInGameSpace          whether the player is looking at the campaign world with no screen over
+     *                               it, from {@code CampaignScreenView#isShowingGameSpace}
      * @return whether the hover may be resolved on this pass
      */
     public static boolean isCursorLocatableOn(
-            BooleanSupplier isAnyMapShowing,
+            BooleanSupplier isAnyVanillaMapShowing,
             BooleanSupplier isInGameSpace) {
 
         if (KmuMapHoverSettings.isMapLayerMouseoverGlobal()) {
             return true;
         }
-        if (isAnyMapShowing.getAsBoolean()) {
+        if (isAnyVanillaMapShowing.getAsBoolean()) {
             return true;
         }
         return KmuMapHoverSettings.isMapLayerMouseoverEnabledInGameSpace()

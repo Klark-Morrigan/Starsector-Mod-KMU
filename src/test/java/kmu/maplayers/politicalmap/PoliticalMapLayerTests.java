@@ -5,6 +5,7 @@ import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.ui.controls.specs.CheckboxSpec;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.controls.specs.LabelSpec;
@@ -14,8 +15,6 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
-import kmu.KmuMod;
-import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -24,17 +23,18 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.render.SequencedMapLayerRenderer;
 import kmu.maplayers.base.sidebar.ListPickerBinder;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.picker.BlocPickerRead;
-import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.picker.SelectableBloc;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.picker.OwnerPickerRead;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.RankedOwner;
+import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.sidebar.OwnerMapBodyControls;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.dominance.DominanceSortModes;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.settings.KmuMapKeybindSettings;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.Nested;
@@ -103,20 +103,20 @@ final class PoliticalMapLayerTests {
     // The stored value meaning no view paints - the tab showing with the map dark.
     private static final String VIEW_OFF_SENTINEL = "";
 
-    // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
-    // order without depending on the real shared controls or selector contents. Their tone is
-    // arbitrary - composition order is what is under test, not what colour a control draws in.
     // The ID the one bloc-offering view registers under, and the scope the picker must therefore be
     // built for - shared between the registration helper and the assertion so the two cannot drift.
     private static final String PICKER_VIEW_ID = "picker-view";
 
+    // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
+    // order without depending on the real shared controls or selector contents. Their tone is
+    // arbitrary - composition order is what is under test, not what colour a control draws in.
     private static final Color MARKER_COLOUR = Color.WHITE;
     private static final ControlSpec SHARED_MARKER = buildMarker("shared");
     private static final ControlSpec SELECTOR_MARKER = buildMarker("selector");
     private static final ControlSpec VIEW_MARKER = buildMarker("view");
     private static final ControlSpec PICKER_MARKER = buildMarker("picker");
 
-    // Two sectors' installed machinery, since what this tab now answers turns on which of them it
+    // Two sectors' installed machinery, since what this tab answers turns on which of them it
     // is asked about. The body cases below use neither: a tab's controls are the same wherever it
     // is drawn.
     private final SectorMapMachinery machinery = new SectorMapMachinery(null);
@@ -126,73 +126,9 @@ final class PoliticalMapLayerTests {
     private final OwnerPaintedView viewWithoutControlsMock = mock(OwnerPaintedView.class);
 
     // The layer under test, over whichever roster a case registers. Built per case rather than
-    // shared, since the roster is the layer's own - which is what this step made it.
+    // shared, since the roster is the layer's own.
     private PoliticalMapLayer layer =
-        new PoliticalMapLayer(List.of(viewWithoutControlsMock), viewWithoutControlsMock);
-
-    @Nested
-    class GetBodyControlsPreferences {
-
-        // Each choice's slot under the asking panel's screen, pinned as literals: every one is a key a
-        // save already holds, so a rename must break this test rather than ship and quietly return
-        // every save's choice to its default.
-        private static final String NAME_FORMAT_KEY = "$kmu_political_name_format_test";
-        private static final String UNINHABITED_OUTLINE_KEY = "$kmu_political_uninhabited_outline_test";
-        private static final String FILTER_RECEDE_MUTE_KEY = "$kmu_political_filter_recede_mute_test";
-        private static final String FILTER_RECEDE_DESATURATE_KEY =
-            "$kmu_political_filter_recede_desaturate_test";
-
-        @Test
-        void getBodyControlsStoresTheNameFormatUnderThePoliticalMapsFrozenKey() {
-
-            var preferences = captureBodyPreferences();
-
-            try (var sectorMemoryFake = new SectorMemoryFake()) {
-
-                preferences.nameFormat().selectNameFormat(
-                    BODY_SCREEN,
-                    FactionNameFormatChoice.SHORT,
-                    new MapLayerRefreshBoard());
-
-                assertThat(sectorMemoryFake.readStoredValue(NAME_FORMAT_KEY))
-                    .isEqualTo(FactionNameFormatChoice.SHORT.persistenceKey());
-            }
-        }
-
-        @Test
-        void getBodyControlsStoresTheOutlineUnderThePoliticalMapsFrozenKey() {
-
-            var preferences = captureBodyPreferences();
-
-            try (var sectorMemoryFake = new SectorMemoryFake()) {
-
-                preferences.uninhabitedOutline().setOutlineDrawn(
-                    BODY_SCREEN,
-                    true,
-                    new MapLayerRefreshBoard());
-
-                assertThat(sectorMemoryFake.readStoredValue(UNINHABITED_OUTLINE_KEY))
-                    .isEqualTo(true);
-            }
-        }
-
-        @Test
-        void getBodyControlsStoresTheFilterRecedeUnderThePoliticalMapsFrozenKeys() {
-
-            var filterRecede = captureBodyPreferences().filterRecede();
-
-            try (var sectorMemoryFake = new SectorMemoryFake()) {
-
-                filterRecede.setMuted(BODY_SCREEN, true, new MapLayerRefreshBoard());
-                filterRecede.setDesaturated(BODY_SCREEN, false, new MapLayerRefreshBoard());
-
-                assertThat(sectorMemoryFake.readStoredValue(FILTER_RECEDE_MUTE_KEY))
-                    .isEqualTo(true);
-                assertThat(sectorMemoryFake.readStoredValue(FILTER_RECEDE_DESATURATE_KEY))
-                    .isEqualTo(false);
-            }
-        }
-    }
+        new PoliticalMapLayer(List.of(viewWithoutControlsMock), viewWithoutControlsMock, AllianceSource.NO_ALLIANCES);
 
     @Nested
     class ResolveStanding {
@@ -248,6 +184,78 @@ final class PoliticalMapLayerTests {
     @Nested
     class GetBodyControls {
 
+        // Each choice's slot under the asking panel's screen, pinned as literals: every one is a key a
+        // save already holds, so a rename must break this test rather than ship and quietly return
+        // every save's choice to its default.
+        private static final String NAME_FORMAT_KEY = "$kmu_political_name_format_test";
+        private static final String UNINHABITED_OUTLINE_KEY = "$kmu_political_uninhabited_outline_test";
+        private static final String FILTER_RECEDE_MUTE_KEY = "$kmu_political_filter_recede_mute_test";
+        private static final String FILTER_RECEDE_DESATURATE_KEY =
+            "$kmu_political_filter_recede_desaturate_test";
+
+        // The value the short name format is stored as. A literal for the same reason as the keys:
+        // a save holds this spelling, so a rename must fail here.
+        private static final String SHORT_NAME_FORMAT_VALUE = "short";
+
+        // The prefix every key this mod's picker stores leads with. Frozen, since each existing save's
+        // spotlight, sort and column picks sit under it.
+        private static final String MAP_STORE_KEY_PREFIX = "$kmu_map_";
+
+        // The rows of the political map's sort selector: name, domination, presence, score and market
+        // size.
+        private static final int SORT_MODE_ROW_COUNT = 5;
+
+        @Test
+        void storesTheNameFormatUnderThePoliticalMapsFrozenKey() {
+
+            var preferences = captureBodyPreferences();
+
+            try (var sectorMemoryFake = new SectorMemoryFake()) {
+
+                preferences.nameFormat().selectNameFormat(
+                    BODY_SCREEN,
+                    OwnerNameFormatChoice.SHORT,
+                    new MapLayerRefreshBoard());
+
+                assertThat(sectorMemoryFake.readStoredValue(NAME_FORMAT_KEY))
+                    .isEqualTo(SHORT_NAME_FORMAT_VALUE);
+            }
+        }
+
+        @Test
+        void storesTheOutlineUnderThePoliticalMapsFrozenKey() {
+
+            var preferences = captureBodyPreferences();
+
+            try (var sectorMemoryFake = new SectorMemoryFake()) {
+
+                preferences.uninhabitedOutline().setOutlineDrawn(
+                    BODY_SCREEN,
+                    true,
+                    new MapLayerRefreshBoard());
+
+                assertThat(sectorMemoryFake.readStoredValue(UNINHABITED_OUTLINE_KEY))
+                    .isEqualTo(true);
+            }
+        }
+
+        @Test
+        void storesTheFilterRecedeUnderThePoliticalMapsFrozenKeys() {
+
+            var filterRecede = captureBodyPreferences().filterRecede();
+
+            try (var sectorMemoryFake = new SectorMemoryFake()) {
+
+                filterRecede.setMuted(BODY_SCREEN, true, new MapLayerRefreshBoard());
+                filterRecede.setDesaturated(BODY_SCREEN, false, new MapLayerRefreshBoard());
+
+                assertThat(sectorMemoryFake.readStoredValue(FILTER_RECEDE_MUTE_KEY))
+                    .isEqualTo(true);
+                assertThat(sectorMemoryFake.readStoredValue(FILTER_RECEDE_DESATURATE_KEY))
+                    .isEqualTo(false);
+            }
+        }
+
         @Test
         void appendsTheSelectedViewsControlsAfterTheSelector() {
 
@@ -269,6 +277,7 @@ final class PoliticalMapLayerTests {
                 // that answers a colour. Stubbed before the static stubbing opens, since its own
                 // stubbing would otherwise land inside that one.
                 var settingsMock = buildSettingsAnsweringColours();
+
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -303,11 +312,13 @@ final class PoliticalMapLayerTests {
                 // that answers a colour. Stubbed before the static stubbing opens, since its own
                 // stubbing would otherwise land inside that one.
                 var settingsMock = buildSettingsAnsweringColours();
+
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
 
                 stubSharedControlsAndSelector(controlsMock);
+
                 pickerMock
                     .when(() -> ListPickerBinder.buildPicker(
                         any(),
@@ -345,6 +356,7 @@ final class PoliticalMapLayerTests {
                 // that answers a colour. Stubbed before the static stubbing opens, since its own
                 // stubbing would otherwise land inside that one.
                 var settingsMock = buildSettingsAnsweringColours();
+
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -411,6 +423,7 @@ final class PoliticalMapLayerTests {
                 // Stubbed before the static stubbing opens, since its own stubbing would otherwise
                 // land inside that one.
                 var settingsMock = buildSettingsAnsweringColours();
+
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -424,7 +437,7 @@ final class PoliticalMapLayerTests {
                 assertThat(sortRow.leftColumn())
                     .hasSize(1);
                 assertThat(sortRow.leftColumn().get(0).labels())
-                    .hasSize(DominanceSortModes.MODES.modes().size());
+                    .hasSize(SORT_MODE_ROW_COUNT);
 
                 // The right half is the recede: its caption, then the two toggles.
                 assertThat(sortRow.rightColumn().get(0))
@@ -444,6 +457,7 @@ final class PoliticalMapLayerTests {
             // green while all three views shared one slot. Pinned here because this is the only place
             // the ID is chosen.
             registerViewWithOneBloc(viewWithoutControlsMock);
+
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var controlsMock = mockStatic(OwnerMapBodyControls.class);
                     var pickerMock = mockStatic(ListPickerBinder.class)) {
@@ -455,6 +469,7 @@ final class PoliticalMapLayerTests {
                 // The recede paired with the sort selector reads the engine's text tone off the live
                 // settings, so even a stubbed picker needs a settings proxy that answers a colour.
                 var settingsMock = buildSettingsAnsweringColours();
+
                 globalMock
                     .when(Global::getSettings)
                     .thenReturn(settingsMock);
@@ -483,7 +498,7 @@ final class PoliticalMapLayerTests {
                 // The walk ran against the installed sector, which it can only have done through
                 // that sector's own memo - the machinery of no sector reads no economy at all.
                 verify(viewWithoutControlsMock)
-                    .resolveBlocPickerRead(sector));
+                    .resolveOwnerPickerRead(sector));
         }
 
         @Test
@@ -504,17 +519,20 @@ final class PoliticalMapLayerTests {
                     () -> OwnerMapBodyControls.buildSharedControls(
                         any(),
                         argThat(target -> installedBoard.equals(target.board()))));
+
                 recedeMock.verify(
                     () -> RecedeControl.buildControls(
                         any(),
                         any(),
                         argThat(target -> installedBoard.equals(target.board()))));
+
                 pickerMock.verify(
                     () -> ListPickerBinder.buildPicker(
                         any(),
                         any(),
                         any(),
                         eq(machinery)));
+
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(argThat(target -> installedBoard.equals(target.board())));
             });
@@ -537,6 +555,7 @@ final class PoliticalMapLayerTests {
                     () -> OwnerMapBodyControls.buildSharedControls(
                         any(),
                         argThat(target -> BODY_SCREEN.equals(target.memoryScope()))));
+
                 // And the selector is handed this layer's own views, so its radio lists and writes
                 // this layer's picks rather than another layer's.
                 controlsMock.verify(
@@ -544,17 +563,20 @@ final class PoliticalMapLayerTests {
                         same(layer.resolveViewRegistry()),
                         any(),
                         eq(BODY_SCREEN)));
+
                 recedeMock.verify(
                     () -> RecedeControl.buildControls(
                         any(),
                         any(),
                         argThat(target -> BODY_SCREEN.equals(target.memoryScope()))));
+
                 pickerMock.verify(
                     () -> ListPickerBinder.buildPicker(
                         argThat(slot -> BODY_SCREEN.equals(slot.screenSlot().memoryScope())),
                         any(),
                         any(),
                         any()));
+
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(argThat(target -> BODY_SCREEN.equals(target.memoryScope())));
             });
@@ -569,7 +591,7 @@ final class PoliticalMapLayerTests {
                 pickerMock.verify(
                     () -> ListPickerBinder.buildPicker(
                         argThat(slot ->
-                            KmuMod.MAP_STORE_NAMESPACE.equals(slot.screenSlot().namespace())),
+                            MAP_STORE_KEY_PREFIX.equals(slot.screenSlot().namespace().keyPrefix())),
                         any(),
                         any(),
                         any())));
@@ -585,7 +607,7 @@ final class PoliticalMapLayerTests {
             try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
                 stringsMock
-                    .when(() -> KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TAB_POLITICAL_MAP))
+                    .when(() -> KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TAB_POLITICAL_MAP))
                     .thenReturn("Political Map");
 
                 assertThat(layer.resolveTabLabelText())
@@ -599,7 +621,7 @@ final class PoliticalMapLayerTests {
 
         @Test
         void readsThePoliticalMapsOwnRebindingField() {
-            // Which row the rebind lands in is this tab's own fact now, so a wrong ID here silently
+            // Which row the rebind lands in is this tab's own fact, so a wrong ID here silently
             // ignores the player's rebind while every framework test stays green.
             try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
 
@@ -675,12 +697,12 @@ final class PoliticalMapLayerTests {
             globalMock
                 .when(Global::getSector)
                 .thenReturn(sectorMock);
-
             globalMock
                 .when(Global::getSettings)
                 .thenReturn(settingsMock);
 
             stubSharedControlsAndSelector(controlsMock);
+
             pickerMock
                 .when(() -> ListPickerBinder.buildPicker(
                     any(),
@@ -722,15 +744,15 @@ final class PoliticalMapLayerTests {
         // Stubbed through doReturn because the seam answers a wildcarded read, whose captured item
         // type a when() stub would have to name. The presence beside the rows stands in: what these
         // assertions are about is where the picker sits in the body, which lights nothing.
-        doReturn(new BlocPickerRead<>(
+        doReturn(new OwnerPickerRead<>(
                 new ListPicker<>(
-                    List.of(new RankedBloc<>(
-                        new SelectableBloc("hegemony", "Hegemony", null),
+                    List.of(new RankedOwner<>(
+                        new SelectableOwner("hegemony", "Hegemony", null),
                         DominanceStats.EMPTY)),
                     DominanceSortModes.MODES),
-                BlocPresenceIndex.EMPTY))
+                OwnerPresenceIndex.EMPTY))
             .when(view)
-            .resolveBlocPickerRead(any());
+            .resolveOwnerPickerRead(any());
 
         standLayerOver(view);
     }
@@ -765,8 +787,6 @@ final class PoliticalMapLayerTests {
             .orElseThrow();
     }
 
-    // Stubs the two view-agnostic pieces to their sentinels so a test asserts only the composition
-    // order the layer imposes, not the pieces' own contents.
     // The preferences this layer hands its shared controls when a body is built - the ones every
     // choice on the panel is written through. Captured off the build rather than asked of the layer,
     // since what is pinned is what the panel writes to.
@@ -784,6 +804,7 @@ final class PoliticalMapLayerTests {
             // The recede paired with the picker's sort selector reads the engine's text tone off
             // the live settings, so a body built here needs a settings proxy that answers a colour.
             var settingsMock = buildSettingsAnsweringColours();
+
             globalMock
                 .when(Global::getSettings)
                 .thenReturn(settingsMock);
@@ -801,6 +822,8 @@ final class PoliticalMapLayerTests {
         }
     }
 
+    // Stubs the two view-agnostic pieces to their sentinels so a test asserts only the composition
+    // order the layer imposes, not the pieces' own contents.
     private static void stubSharedControlsAndSelector(
             MockedStatic<OwnerMapBodyControls> controlsMock) {
 
@@ -813,9 +836,9 @@ final class PoliticalMapLayerTests {
             .thenReturn(SELECTOR_MARKER);
     }
 
-    // Registers the one view as both the sole registered view and the default, with a host tab the
-    // layer registry treats as active, so a sector-less read resolves this view as selected. Also
-    // stubs the view's identity and empty picker, since the body build now reads its picker options
+    // Registers the one view as both the sole registered view and the default, so a sector-less read
+    // resolves this view as selected. Also
+    // stubs the view's identity and empty picker, since the body build reads its picker options
     // through the memo (keyed on the view ID and its content revision) rather than off the view
     // directly - an empty picker contributes no controls, keeping these composition assertions about
     // where the picker sits, not what it holds.
@@ -826,19 +849,17 @@ final class PoliticalMapLayerTests {
         when(view.getContentRevision(any()))
             .thenReturn(0);
 
-        doReturn(BlocPickerRead.empty())
+        doReturn(OwnerPickerRead.empty())
             .when(view)
-            .resolveBlocPickerRead(any());
+            .resolveOwnerPickerRead(any());
 
         standLayerOver(view);
     }
 
-    // The layer over one view, as both its roster and its default, put on the roster alone so the
-    // layer registry treats its tab as the active pick and a sector-less read resolves that view.
+    // The layer over one view, as both its roster and its default, so a sector-less read resolves
+    // that view.
     private void standLayerOver(OwnerPaintedView view) {
-
-        layer = new PoliticalMapLayer(List.of(view), view);
-        MapLayerRosters.replaceRosterWith(layer);
+        layer = new PoliticalMapLayer(List.of(view), view, AllianceSource.NO_ALLIANCES);
     }
 
     // What a case makes of a body built over a really installed sector. It takes the sector and its

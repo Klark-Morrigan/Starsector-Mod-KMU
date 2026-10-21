@@ -77,19 +77,21 @@ which is how one same-owner body is carved into clusters that meet without a gap
   so a lone cell's outline and the cluster border beside it round to one profile and cannot drift apart,
   and neither pass has the other's numbers in scope to be handed by mistake.
   Each pass also always does what its name says:
-  `smoothBorderLoops` applies each half's own gate in the order the passes must run,
-  while a caller capturing every stage gates them itself,
-  and both smooth identically.
+  `smoothBorderLoops` alone applies each half's own gate,
+  in the order the passes must run.
+  A caller showing every stage hands it a `SmoothingStageSink`,
+  which it tells of each pass that ran,
+  so the stages shown are ordered and gated as the finished loops are.
 - `debug/` -
-  the diagnostic view of those two passes,
-  for the caller that gates them itself.
+  the diagnostic view of those two passes.
   `ClusterBorderStageOverlay` holds each stage's loops apart -
   traced,
   despiked,
   rounded -
-  `ClusterBorderStageCollector` gathers them as the producer runs the passes,
+  `ClusterBorderStageCollector` gathers them,
+  the traced base from the producer and the two passes as the smoothing's sink,
   and `ClusterBorderStageRenderer` strokes them base under despiked under rounded,
-  in the three grades of the [`DiagnosticPalette`](../../labels/README.md) and at tapering widths,
+  in the three grades of the [`DiagnosticPalette`](../README.md) and at tapering widths,
   so an earlier stage haloes out from under the one drawn over it.
   A stage is filled only when its gate was on,
   so an empty one reads as "that pass did not run" rather than "it ran and changed nothing" -
@@ -169,6 +171,8 @@ the [`HatchStyle`](../../theme/README.md)'s baked half alone,
 never the stroke a frame reads),
 and answered per owner rather than per body,
 since the split's rings are the owner's and are traced once.
+An owner whose fill is "No color" never asks it;
+the layer takes `TracedFill.UNPAINTED` instead.
 
 Each body's cut is measured under `HatchBuildDiagnostics.CUT_HATCH_SECTION`,
 and what the cut found is recorded on that scope:
@@ -194,6 +198,8 @@ whole bodies,
 or per fill state -
 so only the third carries rings,
 and `buildFillFor(RingRegion)` cuts one body's share of them on demand.
+That share is a `TracedFill.ClusterFill`:
+the solid triangles and the hatch segments the body paints.
 Splitting it this way is what keeps a body's fill tied to the body it was cut for;
 handing back a list of fills to be walked alongside a list of bodies would leave them paired by position,
 and a body painted with its neighbour's fill draws perfectly happily.
@@ -231,7 +237,7 @@ It hands that out as two entry points -
 `renderFillsOnMap` and `renderBordersOnMap` -
 because a caller may need to put its own drawing between the two halves,
 as the sector map does when it lays its nebulae over the overlay mid-frame.
-Called back to back they are the single pass they used to be;
+Called back to back they are a single pass;
 nothing here orders them,
 so keeping fills under borders is the caller's.
 Each carries the same guard -
@@ -248,34 +254,38 @@ because they are long continuous runs a player follows.
 The fills go down in two sweeps,
 all the solid triangle soups and then every hatch run,
 rather than both runs per owner.
-Hoisting the hatch above every solid fill covers nothing that was visible before -
+Drawing the hatch above every solid fill covers nothing -
 cells are disjoint,
 so no owner's triangles can land on another's hatched fill -
 and it buys the hatch a pass of its own,
 so the line state it strokes under is set
 once for the whole map instead of being pushed and popped around each owner.
-That pass is where `HatchStroke` is dispatched on:
-the theme decides which substrate the hatch reaches the screen through,
-and the renderer reads only the numbers that substrate carries.
+That pass is where the theme's `GlLineHatchStroke` is read.
 The pattern's spacing goes down with the stroke,
-since the GL-line substrate scales its pixel width off it -
-the renderer hands over the frame's scale and the substrate says what width that comes to.
+since the stroke scales its pixel width off it -
+the renderer hands over the frame's scale and the stroke says what width that comes to.
 
 What it paints arrives through `ClusterDrawLists`,
-which is four reads and no more -
+which is five reads and no more -
 is there anything to paint,
 the sector-wide style tier,
-the cell records,
+the fused cells,
+the lone cells,
 and the cluster groups keyed by owner.
-A layer's own built state satisfies it directly wherever its draw lists already are those two maps,
-so nothing is copied or adapted per frame.
+The cells arrive already parted by form
+because every pass over them draws one form only and the passes run every frame:
+parting them there would test every drawn cell's type per pass per frame,
+for an answer only a rebuild can change.
+A layer parts them once per rebuild and hands the same lists over until the next,
+so nothing is copied or adapted per frame,
+and the emission walks each list with no lambda per cell.
 
 The seam exists because the emission is the framework's and the built state is not.
 Typed on one layer's model,
 the only cluster painter there is would have to live in that layer's package,
 and a second layer would reach it by importing the first or by copying the emission wholesale.
-Four reads is what it actually uses,
-so four reads is what a layer has to answer.
+Five reads is what it actually uses,
+so five reads is what a layer has to answer.
 
 `debug/`'s `ClusterBorderStageRenderer` is the diagnostic analogue,
 over its own overlay record rather than these lists.

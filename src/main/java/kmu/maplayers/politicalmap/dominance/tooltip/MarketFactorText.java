@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
+import kmlib.math.percentages.Percentages;
 import kmlib.text.KmlibNumbers;
 
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
@@ -7,6 +8,7 @@ import kmu.maplayers.politicalmap.dominance.weighting.MarketWeights;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolTierFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.StationFactor;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 /**
@@ -40,10 +42,6 @@ import kmu.util.KmuStringKeys;
  */
 public final class MarketFactorText {
 
-    // A fraction as a whole-number percentage, which is how every cut in the box is stated: a
-    // penalty is a player-set fraction, and the digits past a percent of it are float noise.
-    private static final int PERCENT_SCALE = 100;
-
     // The reading at which a cut has taken nothing and so is left unsaid.
     private static final int NO_PENALTY_PERCENT = 0;
 
@@ -71,11 +69,13 @@ public final class MarketFactorText {
      * @return the factor as the line states it
      */
     public static String formatBaseSize(BaseSizeFactor factor, boolean isFixedRating) {
+
         var ratingText = KmlibNumbers.formatCompactDecimal(factor.sizeRating());
 
         if (isFixedRating) {
-            ratingText = KmuStringKeys.format(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_FIXED, ratingText);
+            ratingText = KmuStringKeys.format(KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_FIXED, ratingText);
         }
+
         return appendPenalty(
             formatWeighed(ratingText, factor.contribution()),
             factor.stabilityPenaltyFraction());
@@ -105,6 +105,7 @@ public final class MarketFactorText {
      * @return the factor as the line states it
      */
     public static String formatStation(StationFactor factor) {
+
         var weighedText = formatWeighed(
             KmlibNumbers.formatCompactDecimal(factor.weight()),
             factor.contribution());
@@ -126,8 +127,9 @@ public final class MarketFactorText {
      * @return that name with the clarifier the station line states it under
      */
     public static String formatMilitaryStationName(String stationName) {
+
         return KmuStringKeys.format(
-            KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_STATION_MILITARY,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_STATION_MILITARY,
             stationName);
     }
 
@@ -145,6 +147,7 @@ public final class MarketFactorText {
      * @return the factor as the line states it
      */
     public static String formatPatrols(PatrolFactor factor) {
+
         return appendPenalty(
             formatWeight(factor.computeContribution()),
             factor.stabilityPenaltyFraction());
@@ -179,14 +182,20 @@ public final class MarketFactorText {
     // stating the separator itself, so a line drawn in one shade and a line that opens on the same
     // half in grey read one separator: two spellings of it would eventually part company.
     private static String formatWeighed(String ratingText, double contribution) {
-        return joinToWeight(formatRatedWorking(ratingText), contribution);
+
+        return joinToWeight(
+            formatRatedWorking(ratingText),
+            contribution);
     }
 
     // The left half of a rated value: what the colony is or the player set, run on into the
     // separator saying the number past it is that same quantity on the dominance grid. The one home
     // of that separator, whether the value is drawn as one run or as the two a line colours apart.
     private static String formatRatedWorking(String ratingText) {
-        return KmuStringKeys.format(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_RATED, ratingText);
+
+        return KmuStringKeys.format(
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_RATED,
+            ratingText);
     }
 
     // The left half of a counted value: how many of a thing there are, run on into the separator
@@ -194,15 +203,19 @@ public final class MarketFactorText {
     // are different quantities here - so many patrols, so much weight - and a reader tracing one
     // into the other would otherwise expect the units to match.
     private static String formatCountedWorking(String countText) {
-        return KmuStringKeys.format(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED, countText);
+
+        return KmuStringKeys.format(
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED,
+            countText);
     }
 
     // A working half and the weight it resolves to, set side by side. The one place a value's two
     // halves are run together, so however a half was worded the whole reads at the same spacing the
     // lines that colour their halves apart are drawn at.
     private static String joinToWeight(String workingText, double contribution) {
+
         return KmuStringKeys.format(
-            KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
             workingText,
             formatWeight(contribution));
     }
@@ -215,15 +228,17 @@ public final class MarketFactorText {
 
     // Runs a value on into a cut taken off it, and leaves it alone where nothing was taken. Applied
     // once per cut rather than per factor, so a factor that takes two states them the same way a
-    // factor that takes one states its single cut.
+    // factor that takes one states its single cut. Every cut is stated as a whole percent: a penalty
+    // is a player-set fraction, and the digits past a percent of it are float noise.
     private static String appendPenalty(String valueText, double penaltyFraction) {
-        var penaltyPercent = (int) Math.round(penaltyFraction * PERCENT_SCALE);
 
+        var penaltyPercent = Percentages.convertFractionToWholePercent(penaltyFraction);
         if (penaltyPercent <= NO_PENALTY_PERCENT) {
             return valueText;
         }
+
         return KmuStringKeys.format(
-            KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_PENALTY,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_PENALTY,
             valueText,
             penaltyPercent);
     }

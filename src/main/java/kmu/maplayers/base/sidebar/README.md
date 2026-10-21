@@ -188,11 +188,6 @@ A dev row rather than a visuals one for the same reason as the filter-row hatch 
 nothing here is set to taste,
 it is a hatch onto something otherwise correctly out of the way.
 
-Its words are the framework's own chrome rather than a layer's,
-so `KmuStringKeys` is read here -
-the same distinction the settings already make,
-and why this is not the bundle leak the tab label was.
-
 ## Fold persistence
 
 `SidebarFoldSelection` is where a fold is read from and recorded to;
@@ -329,9 +324,9 @@ not a statement about what the list holds,
 so it means the same thing under every scope -
 but a panel is a fixed width the list was laid out inside,
 and the two panels are two widths.
-Dropping the scope is what made the namespace load-bearing here first:
-with nothing else parting two mods' counts,
-a foreign picker's column pick re-wrapped this one's list.
+With the scope dropped,
+the namespace is the only thing parting two mods' counts:
+without it a foreign picker's column pick would re-wrap this one's list.
 
 The screen is an axis no picker is handed.
 A pick is reported by a widget that knows only that it was clicked,
@@ -450,11 +445,11 @@ which only arrives inside the bundle.
 An offers-nothing picker is answered before that resolution,
 since it carries no fallback mode to land on.
 
-`SelectableBlocCache` is where an owner-painted layer holds its resolved picker between frames,
+`SelectableOwnerCache` is where an owner-painted layer holds its resolved picker between frames,
 over KMLib's `RevisionMemo`;
 what invalidates it is the layer's own judgement.
 It is held the way the hover slot above is,
-by the sector's `SectorMapMachinery` through `SelectableBlocCache.resolveBlocCacheIn` -
+by the sector's `SectorMapMachinery` through `SelectableOwnerCache.resolveOwnerCacheIn` -
 under the layer's own ID,
 since the memo holds one entry and two layers sharing it would evict each other every frame.
 [The caching notes](../../../../../../../docs/dev/caching.md) own that model in full.
@@ -510,13 +505,17 @@ and the list memo behind it
 (`.widgets.lists`, see [Picker state](#picker-state));
 this package supplies only the wiring KMLib cannot know.
 The *layer roster and each screen's active pick*,
-including the stale-id fallback behind them,
+including the stale-ID fallback behind them,
 are [`base/layer`](../layer/README.md)'s
 (`MapLayerRegistry` and `MapLayerScreens`).
 The *body composition* the panel lays out belongs to whichever layer is active -
 for a layer painted by owner,
 to the body controls of [the owner-map tier](../../ownermap/README.md) -
 though it is here that KMLib's picker is bound to the save (see [Picker state](#picker-state)).
+Every body is built against a `BodyControlTarget`:
+the refresh board and the screen of the panel it opened on.
+It sits here rather than with any one layer,
+since every layer's body takes one.
 What the tier above keeps of its own there is what the picker refuses to know:
 which items are on offer,
 what invalidates that list,

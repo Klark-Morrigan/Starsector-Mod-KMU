@@ -3,14 +3,19 @@ package kmu.maplayers;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.mods.nexerelin.NexerelinAllianceSource;
+import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
+import kmlib.starsector.factions.alliances.AllianceRecord;
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
-import kmu.maplayers.base.layer.MapLayerArrangements;
-import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.layer.MapLayerRosters;
+import kmu.maplayers.base.chrome.VanillaMapLayerToggleAttacher;
+import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.layer.NoLayer;
+import kmu.maplayers.base.layer.SessionHeldMapLayerArrangement;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceFixture;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry;
@@ -21,19 +26,24 @@ import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltip;
 import kmu.maplayers.politicalmap.views.AlliancesView;
 import kmu.maplayers.politicalmap.views.ClaimsView;
 import kmu.maplayers.politicalmap.views.FactionsView;
+import kmu.mods.rat.RandomAssortmentOfThingsMinimapCover;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 
 import static kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyFixture.ACADEMY_ENTITY_ID;
 import static kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyFixture.buildEntity;
 import static kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyFixture.clearRegistrations;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -68,17 +78,120 @@ final class MapLayersTests {
     }
 
     @AfterEach
-    void unbindTheArrangementStoreTheWiringLeft() {
-        // The wiring binds a store reading the player's own common-data file, and the holder is static,
-        // so a case that ran it would otherwise leave every later row in the run reading that file.
-        MapLayerArrangements.forgetTheArrangement();
+    void forgetWhatTheWiringHandedTheFramework() {
+        // Process state too: a case that ran the wiring would otherwise leave its covers and its
+        // alliance answer in every reader and attacher a later suite builds.
+        MapCoverReader.registerOptionalModCovers(List.of());
+        VanillaMapLayerToggleAttacher.registerAllianceViewAvailability(() -> false);
     }
 
-    @AfterEach
-    void restoreTheRosterTheWiringLeft() {
-        // The wiring registers KMU's real layers into a static roster, so a case that ran it would
-        // otherwise leave the political map standing in every later roster read in the same run.
-        MapLayerRosters.restoreNonEmptyRoster();
+    @Nested
+    class RegisterOptionalModCovers {
+
+        @Test
+        void registersNoCoverWhereNoOptionalModIsInstalled() {
+            // A cover from a mod that is not installed could only ever answer no, every frame.
+            try (var minimapModMock = mockStatic(RandomAssortmentOfThingsPresence.class);
+                    var coverReaderMock = mockStatic(MapCoverReader.class)) {
+
+                minimapModMock
+                    .when(RandomAssortmentOfThingsPresence::isModEnabled)
+                    .thenReturn(false);
+
+                MapLayers.registerOptionalModCovers();
+
+                coverReaderMock.verify(() -> MapCoverReader.registerOptionalModCovers(List.of()));
+            }
+        }
+
+        @Test
+        void registersTheMinimapCoverWhereThatModIsInstalled() {
+
+            try (var minimapModMock = mockStatic(RandomAssortmentOfThingsPresence.class);
+                    var coverReaderMock = mockStatic(MapCoverReader.class)) {
+
+                minimapModMock
+                    .when(RandomAssortmentOfThingsPresence::isModEnabled)
+                    .thenReturn(true);
+
+                MapLayers.registerOptionalModCovers();
+
+                coverReaderMock.verify(() -> MapCoverReader.registerOptionalModCovers(
+                    argThat(covers -> covers.size() == 1
+                        && covers.get(0) instanceof RandomAssortmentOfThingsMinimapCover)));
+            }
+        }
+    }
+
+    @Nested
+    class RegisterAllianceViewAvailability {
+
+        @Test
+        void answersWhetherTheModThatKeepsAlliancesIsInstalled() {
+            // Read through on every hover, so the answer registered is the live presence check
+            // rather than a value taken once.
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
+                    var attacherMock = mockStatic(VanillaMapLayerToggleAttacher.class)) {
+
+                MapLayers.registerAllianceViewAvailability();
+
+                var availability = ArgumentCaptor.forClass(BooleanSupplier.class);
+
+                attacherMock.verify(() -> VanillaMapLayerToggleAttacher.registerAllianceViewAvailability(
+                    availability.capture()));
+
+                stubNexEnabled(globalMock, true);
+
+                assertThat(availability.getValue().getAsBoolean())
+                    .isTrue();
+
+                stubNexEnabled(globalMock, false);
+
+                assertThat(availability.getValue().getAsBoolean())
+                    .isFalse();
+            }
+        }
+    }
+
+    @Nested
+    class SelectAllianceSource {
+
+        @Test
+        void answersNoAlliancesWhenNexIsAbsent() {
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                stubNexEnabled(globalMock, false);
+
+                assertThat(MapLayers.selectAllianceSource())
+                    .isSameAs(AllianceSource.NO_ALLIANCES);
+            }
+        }
+
+        @Test
+        void readsNexerelinsAlliancesWhenNexIsPresent() {
+
+            var alliedPowers = new AllianceRecord(
+                "alliance-1",
+                "Allied Powers",
+                List.of("hegemony", "astral_armada"));
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
+                    var allianceSourceMock = mockStatic(NexerelinAllianceSource.class)) {
+
+                // Stood in on the source itself: the whole class is a static mock here, so its
+                // presence gate answers off this stubbing rather than off the mod manager.
+                allianceSourceMock
+                    .when(NexerelinAllianceSource::isModEnabled)
+                    .thenReturn(true);
+                allianceSourceMock
+                    .when(NexerelinAllianceSource::readAllianceRecords)
+                    .thenReturn(List.of(alliedPowers));
+
+                assertThat(MapLayers.selectAllianceSource().readAlliances())
+                    .containsExactly(alliedPowers);
+            }
+        }
     }
 
     @Nested
@@ -158,9 +271,8 @@ final class MapLayersTests {
 
                 stubNexEnabled(globalMock, false);
 
-                MapLayers.registerAll();
-
-                var politicalMap = (PoliticalMapLayer) MapLayerRegistry.getLayers().get(1);
+                var layers = MapLayers.registerAll().getLayerRegistry().getLayers();
+                var politicalMap = (PoliticalMapLayer) layers.get(1);
 
                 healMock.verify(() -> FilterSelectionHeal.installHealOnSettingsChange(
                     politicalMap.resolveViewRegistry()));
@@ -190,17 +302,16 @@ final class MapLayersTests {
 
         @Test
         void leavesTheEmptyViewLeadingTheStripAndThePoliticalMapAsThePick() {
-            // The row and the pick used to be one call's two arguments and are now spread over three
-            // files - two registrations here, and each layer's own answer to whether it offers itself.
+            // The row and the pick are spread over three files - two registrations here, and each
+            // layer's own answer to whether it offers itself.
             // So nothing but this fails if the calls are reordered or either answer is flipped, and
             // both are facts a player meets on the first sector map they open.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 stubNexEnabled(globalMock, false);
 
-                MapLayers.registerAll();
-
-                var layers = MapLayerRegistry.getLayers();
+                var layerRegistry = MapLayers.registerAll().getLayerRegistry();
+                var layers = layerRegistry.getLayers();
 
                 assertThat(layers)
                     .hasSize(2);
@@ -208,7 +319,7 @@ final class MapLayersTests {
                     .isSameAs(NoLayer.INSTANCE);
                 assertThat(layers.get(1))
                     .isInstanceOf(PoliticalMapLayer.class);
-                assertThat(MapLayerRegistry.getDefaultLayer())
+                assertThat(layerRegistry.getDefaultLayer())
                     .isSameAs(layers.get(1));
             }
         }
@@ -230,9 +341,21 @@ final class MapLayersTests {
 
                 MapLayers.registerAll();
 
-                assertThat(FactionAllianceRegistry.readAlliances())
+                assertThat(FactionAllianceRegistry.readAlliances(mock(SectorAPI.class)))
                     .isEqualTo(FactionAlliances.NONE);
             }
+        }
+    }
+
+    @Nested
+    class CreateBarArrangement {
+
+        @Test
+        void holdsWhatItReadsForTheSession() {
+            // The bar asks for its arrangement on every frame it draws and every key it routes, so the
+            // store behind it has to be the one that keeps a read rather than reopening the file.
+            assertThat(MapLayers.createBarArrangement().resolveArrangementSelection())
+                .isInstanceOf(SessionHeldMapLayerArrangement.class);
         }
     }
 

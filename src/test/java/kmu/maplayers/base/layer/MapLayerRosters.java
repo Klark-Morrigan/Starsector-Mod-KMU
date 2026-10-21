@@ -1,23 +1,15 @@
 package kmu.maplayers.base.layer;
 
+import kmlib.starsector.ui.intel.IntelScreenView;
+
 /**
- * States the whole roster {@link MapLayerRegistry} holds, and puts it back to a usable one.
+ * Builds the roster, the bar arrangement and the screens a case poses, each a fresh instance so nothing
+ * one case registers or stands is seen by the next.
  *
- * <p>The registry accumulates - which is what lets each mod register its own layers as it loads -
- * and it is static, so a caller that registered would otherwise leave its layers standing in every
- * roster read afterwards in the same JVM, and one that deliberately emptied it would leave every
- * later read resolving to no layer at all. Both are stated here rather than at each caller: a roster
- * named as the whole of what stands is a different thing from a layer registering beside whatever
- * else is there, and only the first is answerable.
- *
- * <p>Sits in the registry's own package so the emptying it composes stays package-private there,
- * that being an act the running game has no use for - a bar with no tabs has no way back to one.
- * The same arrangement {@link MapLayerScreenControls} uses for the record beside it.
- *
- * <p>The roster restored is {@link NoLayer} alone: a real layer rather than a stand-in, and the one
- * whose whole contract is to draw nothing, so nothing downstream is dragged in by the restore. It
- * declines to be the default pick, and with nothing else registered the fallback answers it anyway,
- * so the restored roster resolves to a pick as the shipped one does.
+ * <p>The default roster is {@link NoLayer} alone: a real layer rather than a stand-in, and the one whose
+ * whole contract is to draw nothing, so nothing downstream is dragged in by it. It declines to be the
+ * default pick, and with nothing else registered the fallback answers it anyway, so it resolves to a
+ * pick as the shipped roster does.
  */
 public final class MapLayerRosters {
 
@@ -25,26 +17,46 @@ public final class MapLayerRosters {
     }
 
     /**
-     * Makes the roster exactly these layers, in this order, whatever stood in it before.
-     *
      * @param layers the layers to register, left to right
+     * @return a roster holding exactly those layers, in that order
      */
-    public static void replaceRosterWith(MapLayer... layers) {
+    public static MapLayerRegistry createRosterOf(MapLayer... layers) {
 
-        MapLayerRegistry.forgetLayers();
+        var layerRegistry = new MapLayerRegistry();
 
         for (var layer : layers) {
-            MapLayerRegistry.registerLayer(layer);
+            layerRegistry.registerLayer(layer);
         }
+        return layerRegistry;
     }
 
-    /** Empties the roster, posing the reading a process that has registered nothing gives. */
-    public static void forgetEveryLayer() {
-        MapLayerRegistry.forgetLayers();
+    /**
+     * @param layers the layers to register, left to right
+     * @return screens over exactly those layers, unarranged, always answering for the sector map
+     */
+    public static MapLayerScreens createScreensOver(MapLayer... layers) {
+        return createScreensOver(createRosterOf(layers), MapLayerArrangements.createUnarrangedBar(), null);
     }
 
-    /** Registers a minimal non-empty roster, so a following caller finds the registry populated. */
-    public static void restoreNonEmptyRoster() {
-        replaceRosterWith(NoLayer.INSTANCE);
+    /**
+     * @param layerRegistry    the roster both screens pick from
+     * @param layerArrangement the player's arrangement of that roster
+     * @param intelScreen      whether the intel screen is up, or null for screens answering for the map
+     * @return screens over that roster and arrangement
+     */
+    public static MapLayerScreens createScreensOver(
+            MapLayerRegistry layerRegistry,
+            LiveMapLayerArrangement layerArrangement,
+            IntelScreenView intelScreen) {
+
+        return new MapLayerScreens(layerRegistry, layerArrangement, intelScreen);
+    }
+
+    /**
+     * @return screens over the minimal non-empty roster, for a case that needs some bar but none in
+     *         particular
+     */
+    public static MapLayerScreens createScreensOverNoLayer() {
+        return createScreensOver(NoLayer.INSTANCE);
     }
 }

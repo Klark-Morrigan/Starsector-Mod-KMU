@@ -10,7 +10,7 @@ import kmlib.starsector.markets.MarketVisibility;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,8 +21,8 @@ import java.util.Map;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.buildKnowledgeUnderTheFog;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.buildKnowledgeUnderTheReveal;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOrbitingEntity;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildStarAt;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOrbitingEntity;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildStarAt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -129,7 +129,7 @@ class MarketProximityTieBreakTests {
 
                 // The same two physical markets - hegemony's nearer the centre than
                 // blackrock's - decide the tie, so the hegemony side wins whether hegemony
-                // stands alone or folds into an alliance. No id-ordering flip between views.
+                // stands alone or folds into an alliance. No ID-ordering flip between views.
                 var colonies = listColonies(
                     buildListedColonyOwnedBy("hegemony", buildOrbitingEntity(ORBIT_CLOSE, starMock)),
                     buildListedColonyOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));

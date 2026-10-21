@@ -133,12 +133,13 @@ The survey level asked for is put to the player's own sighting of such a world a
 a neighbour's word is no reading anybody's instruments took,
 so it travels at every bar.
 
-`ColonyKindLookup` folds those kinds by colony ID for a reader that meets a colony as a row rather than as a colony,
-and `ColonyDiscoveryLookup` folds the entity's own found-or-not flag the same way for the same reader.
-`OpenlyKnownColonyLookup` folds a third such answer -
-whether a concealed colony is one the sector openly points at,
+`ColonyFactsLookup` answers by colony ID for a reader that meets a colony as a row rather than as a colony,
+folded in one walk:
+those kinds,
+the entity's own found-or-not flag,
+and whether a concealed colony is one the sector openly points at,
 off the entity IDs and tag `OpenlyKnownColonyRegistry` is seeded with at start-up.
-That one excuses a word a hover box would otherwise say and reaches no gate:
+That last one excuses a word a hover box would otherwise say and reaches no gate:
 a landmark is concealed to every rule here,
 exactly as the base beside it is.
 
@@ -146,25 +147,29 @@ Who would speak about what stands beside them is owner-aware and then some.
 `PlaceWitnesses` folds a place's settling owners and answers it,
 over the `FactionAlliances` that say which factions stand together -
 read through the `FactionAllianceSource` port a composition root registers with `FactionAllianceRegistry`,
+asked about the sector the pass reads,
 so a partner keeps a concealed base quiet exactly as its own faction does.
 It is a world fact rather than a rule,
 so it is folded per pass beside the observations rather than carried on `ColonyVisibility` -
 and read through a port so the rule never names the mod that maintains an alliance,
 nor changes with which map layer the player is looking at.
 
-The register behind the observations is `ColonySightings` over `SectorColonySightings`,
+The register behind the observations is KMLib's `RecordedObservations`,
+opened by `SectorColonySightings`,
 written by `ColonySightingRecorder` as the player travels
-and by the substrate's own poll (`base/refresh`) for what a place's own inhabitants can see;
+and by `ColonySightingsPoll`,
+which [the substrate's own poll](../refresh/README.md#the-substrates-poll) drives,
+for what a place's own inhabitants can see;
 `ColonySightingInstaller` stands the travelling half up on load.
 The player's arrival writes the gated shapes alone;
 the inhabitants' sweep also writes the collapsed worlds their word is the only thing showing,
 so one outlives the last neighbour that could report it -
 up to the survey bar, that written record being read under it as the player's own sightings are.
-Its entries sit in the shared `ObservationStore` under a key of its own,
+Its entries sit in KMLib's shared `ObservationStore` under a key of its own,
 each spelt by `ColonyObservationCodec` -
 the moment,
 then the place -
-and `PresentColonies` is what a load asks which colonies the sector still holds,
+and KMLib's `SectorMarkets.readMarketIds` is what a load asks which colonies the sector still holds,
 read off the raw market listings
 so a superseded market that may yet win its place is not shed as gone.
 
@@ -188,9 +193,9 @@ and the two go stale independently -
 a relay visited once and watched since has a current state beside a four-cycle-old holder.
 A running hack is deliberately not among its fields,
 for the reason stated there.
-`StructureObservations` is the port a rule reads the register through,
-over `SectorStructureObservations`,
-whose entries sit in the shared `ObservationStore` under a key of its own and are spelt by `StructureObservationCodec` -
+A rule reads the register through KMLib's `RecordedObservations`,
+opened by `SectorStructureObservations`,
+whose entries sit in KMLib's shared `ObservationStore` under a key of its own and are spelt by `StructureObservationCodec` -
 the two moments,
 the state letters,
 then the holder ID to the end of the entry.
@@ -229,12 +234,12 @@ something is revealing it now,
 the record recalls it from a moment,
 or nothing ever established it -
 sealed so a fourth state cannot be added without every reader being asked about it,
-and folded rather than switched over since the mod targets Java
-17. `ObservationRecency.resolveRecency` is the one place a live reading is ranked above a record and a record above nothing.
-    `RevealedFact` pairs that state with the value an axis conceals,
-    where it conceals one;
-    a fact nobody ever established cannot be built holding a value,
-    so the words for an unknown are the reader's to supply.
+and folded rather than switched over since the mod targets Java 17.
+`ObservationRecency.resolveRecency` is the one place a live reading is ranked above a record and a record above nothing.
+`RevealedFact` pairs that state with the value an axis conceals,
+where it conceals one;
+a fact nobody ever established cannot be built holding a value,
+so the words for an unknown are the reader's to supply.
 
 `ObservationNoteFormatter` puts an age into words -
 how long ago,
@@ -251,14 +256,14 @@ and a row nothing contributes to carries no date.
 A current axis and an unknown one both contribute nothing,
 so a row is dated by what it recalls and by nothing else.
 
-What an axis recalls is kept by `ObservationStore`,
+What an axis recalls is kept by KMLib's `ObservationStore` (`kmlib.starsector.memory.observations`),
 the register every family writes its observations into:
 sector memory under a key of its own,
-held as text so no class name of ours is baked into a save,
+held as text so no class name is baked into a save,
 and never opened at all where there was nothing to record.
-`RecordedObservations` is what a pass reads it back through.
+KMLib's `RecordedObservations` is what a pass reads it back through.
 What one entry means stays with the family,
-as an `ObservationCodec` the store is handed -
+as a KMLib `ObservationCodec` the store is handed -
 which is also where the fixed-fields-first convention lives,
 the free-form field running to the end of an entry
 so an ID spelt with the separator reads back whole,
@@ -286,8 +291,11 @@ rather than failing the pass that consulted it.
 
 `colonies` may not import `systems`,
 and `observations` may not import `colonies`,
+`installations`,
 `structures` or `systems` -
 the register is the shared half
 and would stop being shareable the moment it named one of its families.
+Nothing here may import `base/refresh`,
+which drives the sightings sweep and reads what is drawn.
 Declared in [`gradle/package-layering.gradle`](../../../../../../../gradle/package-layering.gradle)
 and enforced by the build.

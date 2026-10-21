@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap;
 
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.KmuMod;
@@ -10,6 +11,7 @@ import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.render.MapLayerRenderer;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.base.sidebar.ListPickerBinder;
 import kmu.maplayers.base.sidebar.ScreenSelectionSlot;
 import kmu.maplayers.base.sidebar.SelectionSlot;
@@ -22,12 +24,12 @@ import kmu.maplayers.ownermap.preferences.UninhabitedOutlinePreference;
 import kmu.maplayers.ownermap.render.OwnerMapLayerRenderer;
 import kmu.maplayers.ownermap.render.hover.SharedOwnerMapHoverGates;
 import kmu.maplayers.ownermap.render.hover.SpotlightPreviewHighlightRenderer;
-import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.sidebar.OwnerMapBodyControls;
 import kmu.maplayers.ownermap.sidebar.RecedeControl;
-import kmu.maplayers.ownermap.sidebar.SelectableBlocCache;
+import kmu.maplayers.ownermap.sidebar.SelectableOwnerCache;
 import kmu.maplayers.politicalmap.render.PoliticalMapBandLayoutReader;
 import kmu.settings.KmuMapKeybindSettings;
+import kmu.util.KmuPoliticalMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -44,7 +46,8 @@ import java.util.List;
  * under its own ID: a second owner-painted layer standing beside it has a roster, a pick and a
  * renderer of its own, and nothing this layer holds is reachable from that one.
  */
-public final class PoliticalMapLayer implements MapLayer {
+public final class PoliticalMapLayer
+        implements MapLayer {
 
     // The tab's save-serialised layer ID: the political map, not a specific view. The value stored
     // in the active-tab memory key, and the key this layer's per-sector machinery is held under.
@@ -60,7 +63,9 @@ public final class PoliticalMapLayer implements MapLayer {
     // This layer's body preferences, each under the sector-memory key its choice has always been
     // saved under - frozen, since renaming one silently resets every save's choice to the default.
     private static final OwnerMapBodyPreferences BODY_PREFERENCES = new OwnerMapBodyPreferences(
-        new NameFormatPreference("$kmu_political_name_format"),
+        new NameFormatPreference(
+            "$kmu_political_name_format",
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_FACTION_NAMES),
         new UninhabitedOutlinePreference("$kmu_political_uninhabited_outline"),
         new RecedePreferences(
             "$kmu_political_filter_recede_mute",
@@ -81,12 +86,17 @@ public final class PoliticalMapLayer implements MapLayer {
      * cannot come to name different tabs. It only holds the tab, and asks it nothing until a frame
      * does.
      *
-     * @param views       the views the radio offers, in segment order
-     * @param defaultView the view a save that has never picked one paints
+     * @param views          the views the radio offers, in segment order
+     * @param defaultView    the view a save that has never picked one paints
+     * @param allianceSource the alliances standing, whose changes the poll repaints the views on
      */
-    public PoliticalMapLayer(List<OwnerPaintedView> views, OwnerPaintedView defaultView) {
+    public PoliticalMapLayer(
+            List<OwnerPaintedView> views,
+            OwnerPaintedView defaultView,
+            AllianceSource allianceSource) {
+
         this.viewRegistry = new MapLayerViewRegistry(ACTIVE_VIEW_KEY, views, defaultView, this);
-        this.standing = new PoliticalMapStanding(viewRegistry);
+        this.standing = new PoliticalMapStanding(viewRegistry, allianceSource);
     }
 
     /**
@@ -104,7 +114,7 @@ public final class PoliticalMapLayer implements MapLayer {
 
     @Override
     public String resolveTabLabelText() {
-        return KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TAB_POLITICAL_MAP);
+        return KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_TAB_POLITICAL_MAP);
     }
 
     @Override
@@ -134,6 +144,7 @@ public final class PoliticalMapLayer implements MapLayer {
         // selector takes the screen and this body's sector rather than the target, since a view switch
         // raises nothing on the board - the sector is what its spotlight heal judges against.
         var controls = new ArrayList<>(OwnerMapBodyControls.buildSharedControls(BODY_PREFERENCES, target));
+
         controls.add(OwnerMapBodyControls.buildViewSelector(viewRegistry, machinery.resolveSector(), memoryScope));
 
         // Then the spotlight picker and the selected view's own controls, so the body shows the
@@ -144,11 +155,12 @@ public final class PoliticalMapLayer implements MapLayer {
         // that asked rather than to whichever is showing. No view selected means the map is off, so
         // there is nothing to append.
         var selectedView = viewRegistry.getSelectedView(memoryScope);
-
         if (selectedView != null) {
+
             controls.addAll(buildSpotlightControls(selectedView, machinery, target));
             controls.addAll(selectedView.getViewBodyControls(target));
         }
+
         return List.copyOf(controls);
     }
 
@@ -162,7 +174,7 @@ public final class PoliticalMapLayer implements MapLayer {
 
     @Override
     public MapLayerStanding resolveStanding() {
-        // The save heal, the five refresh listeners and the staleness poll, as the pair the
+        // The save heal, the refresh listeners and the staleness poll, as the pair the
         // framework stands up and takes back. One instance for the tab: which sector each half acts
         // on arrives with the call.
         return standing;
@@ -218,7 +230,7 @@ public final class PoliticalMapLayer implements MapLayer {
         // the map is open. The machinery goes over whole for the same reason the target does: the
         // memo, the picker's own writers and the recede control below must not end up naming two
         // different sectors, which passing a board beside it would allow.
-        var blocCache = SelectableBlocCache.resolveBlocCacheIn(machinery, LAYER_ID);
+        var blocCache = SelectableOwnerCache.resolveOwnerCacheIn(machinery, LAYER_ID);
 
         // The asking panel's screen goes to the picker's stores as well as to the controls above it,
         // so a spotlight, a sort or a column count picked here is that panel's own. It travels under
@@ -230,10 +242,10 @@ public final class PoliticalMapLayer implements MapLayer {
             new SelectionSlot(
                 new ScreenSelectionSlot(KmuMod.MAP_STORE_NAMESPACE, target.memoryScope()),
                 selectedView.getId()),
-            blocCache.resolveBlocPickerRead(selectedView).picker(),
+            blocCache.resolveOwnerPickerRead(selectedView).picker(),
             RecedeControl.buildControls(
                 BODY_PREFERENCES.filterRecede(),
-                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
+                KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
                 target),
             machinery);
     }

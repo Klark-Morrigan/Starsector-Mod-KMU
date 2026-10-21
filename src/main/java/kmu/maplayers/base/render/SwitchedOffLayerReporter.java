@@ -8,7 +8,7 @@ import kmlib.starsector.ui.compatibility.ScreenCompatibilityNotices;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.util.KmuCompatibilityConsumers;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuMapStringKeys;
 
 import org.apache.log4j.Logger;
 
@@ -87,8 +87,8 @@ final class SwitchedOffLayerReporter {
 
         return KmuCompatibilityConsumers.describeConsumer(
             FEATURE_KEY_PREFIX + switchedOffLayer.getId(),
-            KmuStringKeys.COMPATIBILITY_LOST_MAP_LAYER,
-            KmuStringKeys.COMPATIBILITY_UNAFFECTED_MAP_LAYER,
+            KmuMapStringKeys.COMPATIBILITY_LOST_MAP_LAYER,
+            KmuMapStringKeys.COMPATIBILITY_UNAFFECTED_MAP_LAYER,
             switchedOffLayer.resolveTabLabelText());
     }
 }

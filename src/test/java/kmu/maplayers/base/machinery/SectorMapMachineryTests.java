@@ -7,6 +7,7 @@ import kmlib.profiling.ProfileOrigin;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MovableSystemSectorFake;
 
@@ -98,7 +99,7 @@ class SectorMapMachineryTests {
             // carries that key on the other's - and name that system in the other's box.
             machinery
                 .resolveHoverState()
-                .publishHover(new MapHover(
+                .publishHover(MapHoverFixture.buildHoverOn(
                     buildCellKey(SHARED_SYSTEM_ID),
                     List.of(buildCellKey(SHARED_SYSTEM_ID))));
 
@@ -128,6 +129,17 @@ class SectorMapMachineryTests {
             // overwrite them.
             assertThat(resolveCountingMachineryIn(machinery))
                 .isNotSameAs(resolveCountingMachineryIn(otherMachinery));
+        }
+
+        @Test
+        void yieldsWhatTheInstallerSeatedUnderItsClass() {
+            // A seated holder is what a pass the engine builds reads and nothing on the sector can
+            // make, so a resolution must hand back the installer's own rather than make a stand-in.
+            var seatedFake = new CountingMachineryFake();
+            var seatedMachinery = new SectorMapMachinery(null, seatedFake);
+
+            assertThat(resolveCountingMachineryIn(seatedMachinery))
+                .isSameAs(seatedFake);
         }
 
         @Test
@@ -330,6 +342,18 @@ class SectorMapMachineryTests {
             machinery.disposeMachinery();
 
             assertThat(machineryFake.getDisposeCount())
+                .isEqualTo(1);
+        }
+
+        @Test
+        void releasesWhatTheInstallerSeated() {
+            // Seated is still held: the machinery owns its lifetime the same way as one it made.
+            var seatedFake = new CountingMachineryFake();
+            var seatedMachinery = new SectorMapMachinery(null, seatedFake);
+
+            seatedMachinery.disposeMachinery();
+
+            assertThat(seatedFake.getDisposeCount())
                 .isEqualTo(1);
         }
 

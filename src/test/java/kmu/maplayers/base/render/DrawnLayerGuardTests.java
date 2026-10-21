@@ -2,16 +2,14 @@ package kmu.maplayers.base.render;
 
 import kmlib.testfixtures.logging.LogAppenderFake;
 
-import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.util.List;
 import java.util.function.Function;
@@ -22,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,8 +30,9 @@ import static org.mockito.Mockito.when;
  * answers where nothing draws, and what becomes of a layer that throws behind it - switched off on
  * that sector alone, its hover parked, and said once in the log.
  *
- * <p>Which layer is drawn is the registry's answer and is stood in for here, so a case poses the
- * layer it is about directly rather than through a screen's stored pick.
+ * <p>Which layer is drawn is the screens' answer, read off the screens seated on the machinery, and
+ * is stood in for here, so a case poses the layer it is about directly rather than through a screen's
+ * stored pick.
  */
 final class DrawnLayerGuardTests {
 
@@ -44,7 +42,8 @@ final class DrawnLayerGuardTests {
     // What the stand-in work answers where it ran.
     private static final String DRAWN = "drawn";
 
-    private final SectorMapMachinery machinery = new SectorMapMachinery(null);
+    private final MapLayerScreens screensMock = mock(MapLayerScreens.class);
+    private final SectorMapMachinery machinery = new SectorMapMachinery(null, screensMock);
 
     private final MapLayer drawingLayerMock = mock(MapLayer.class);
     private final MapLayer siblingLayerMock = mock(MapLayer.class);
@@ -53,8 +52,6 @@ final class DrawnLayerGuardTests {
     private final SwitchedOffLayerReporter switchOffReporterMock = mock(SwitchedOffLayerReporter.class);
 
     private final DrawnLayerGuard guard = new DrawnLayerGuard(machinery, switchOffReporterMock);
-
-    private MockedStatic<MapLayerRegistry> layerRegistryMock;
 
     @BeforeEach
     void standInForTheDrawnLayer() {
@@ -66,13 +63,7 @@ final class DrawnLayerGuardTests {
         when(siblingLayerMock.resolveRenderer(machinery))
             .thenReturn(siblingRendererMock);
 
-        layerRegistryMock = mockStatic(MapLayerRegistry.class);
         drawTheLayer(drawingLayerMock);
-    }
-
-    @AfterEach
-    void releaseTheDrawnLayer() {
-        layerRegistryMock.close();
     }
 
     @Nested
@@ -161,7 +152,7 @@ final class DrawnLayerGuardTests {
 
             machinery
                 .resolveHoverState()
-                .publishHover(new MapHover(hoveredKey, List.of(hoveredKey)));
+                .publishHover(MapHoverFixture.buildHoverOn(hoveredKey, List.of(hoveredKey)));
 
             failTheDrawnLayer();
 
@@ -244,7 +235,7 @@ final class DrawnLayerGuardTests {
         void startsASectorWithNothingSwitchedOff() {
             // Clearing with the machinery is what makes a load, or the layers switched off and back
             // on, a retry: the sector after it is guarded afresh.
-            var nextMachinery = new SectorMapMachinery(null);
+            var nextMachinery = new SectorMapMachinery(null, screensMock);
 
             when(drawingLayerMock.resolveRenderer(nextMachinery))
                 .thenReturn(layerRendererMock);
@@ -263,8 +254,7 @@ final class DrawnLayerGuardTests {
     // Poses which layer the showing screen is drawing, or none.
     private void drawTheLayer(MapLayer drawnLayer) {
 
-        layerRegistryMock
-            .when(MapLayerRegistry::getDrawnLayer)
+        when(screensMock.resolveDrawnLayer())
             .thenReturn(drawnLayer);
     }
 

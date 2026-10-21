@@ -1,9 +1,11 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
-import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.LoadedSectors;
+import kmu.maplayers.base.geometry.walls.WallLaying;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,8 +14,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.ArrayList;
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.LoadedSectors.loadFixture;
 import static kmu.maplayers.base.geometry.v3.SectorPipeline.PARAMETERS;
-import static kmu.maplayers.base.geometry.v3.SectorPipeline.loadFixture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class CoastPocketsIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     // The floor the coast is traced at everywhere else, and one coarser setting to raise it
     // to. A pair is enough to pin the property: the fault is that raising the floor at all
@@ -157,6 +159,7 @@ class CoastPocketsIntegrationTests {
             // so that match would pair unrelated water and call a lost pocket a kept one.
             for (var shaping : VoidPockets.PocketShaping.values()) {
                 for (var walled : findPocketsAt(sector, SHIPPED_FRONTAGE_FLOOR, shaping)) {
+
                     assertThat(walled.pocket().section().cells())
                         .as("%s, %s: a pocket with no cells around it", sector, shaping)
                         .isNotEmpty();
@@ -172,17 +175,19 @@ class CoastPocketsIntegrationTests {
     private static List<CoastPocketFaults.Spill> findSpillsAt(
             String sector,
             VoidPockets.PocketShaping shaping) {
+
         var laying = SectorPipeline.layContinentsIn(sector);
         var rules = new VoidPockets.PocketRules(PARAMETERS, shaping);
+        var judgedAgainst = shaping.isAtTrueExtent()
+            ? laying.traceCoasts()
+            : laying.traceCoastsAtDrawnReach();
 
         return CoastPocketFaults.findSpills(
             CoastPockets.findCoastPockets(
                 laying.traceCoasts(),
                 CoastPockets.markEverySiteUnowned(loadFixture(sector).getSites()),
                 rules),
-            Coastlines.collectCoastOutlines(shaping.isAtTrueExtent()
-                ? laying.traceCoasts()
-                : laying.traceCoastsAtDrawnReach()),
+            judgedAgainst.collectCoastOutlines(),
             rules);
     }
 
@@ -195,24 +200,28 @@ class CoastPocketsIntegrationTests {
     private static List<String> findUnfilledWater(
             String sector,
             VoidPockets.PocketShaping shaping) {
+
         var fixture = loadFixture(sector);
         var traced = traceCoastAt(sector, SHIPPED_FRONTAGE_FLOOR);
         var union = VoidPockets.buildUnionFor(fixture.getSites(), PARAMETERS, shaping);
 
-        var walls = DiscUnionBoundary.findAttachableChords(
+        var walls = WallLaying.findAttachableChords(
             union,
             CoastPockets.layCoastWalls(
-                traced, CoastPockets.buildCoastWalls(traced), PARAMETERS.borderInset()));
+                traced,
+                CoastPockets.buildCoastWalls(traced),
+                PARAMETERS.borderInset()));
 
         var coastFill = collectFill(findPocketsAt(sector, SHIPPED_FRONTAGE_FLOOR, shaping));
         var otherFill = collectOtherFill(sector, shaping);
-        var coast = measureBounds(Coastlines.collectCoastOutlines(traced));
-
+        var coast = measureBounds(traced.collectCoastOutlines());
         var unfilled = new ArrayList<String>();
 
         for (var water : ShutInVoidSweep.findShutInVoid(union, walls, FLOOD_STRIDE)) {
+
             if (water.measureArea() < measureLeastNoticeableArea()
                     || !isMostlyInsideCoast(water, coast)) {
+
                 continue;
             }
 
@@ -245,6 +254,7 @@ class CoastPocketsIntegrationTests {
                 middle[1],
                 water.nameRingingCells(union, fixture.getSystemIds())));
         }
+
         return unfilled;
     }
 
@@ -252,12 +262,16 @@ class CoastPocketsIntegrationTests {
     // notices is unfilled. As a share of a cell rather than in units, so it still means the
     // same thing if the cell radius moves.
     private static double measureLeastNoticeableArea() {
+
         return NOTICEABLE_SHARE_OF_A_CELL
-            * Math.PI * PARAMETERS.cellRadius() * PARAMETERS.cellRadius();
+            * Math.PI
+            * PARAMETERS.cellRadius()
+            * PARAMETERS.cellRadius();
     }
 
     // A construction's pockets as outlines with their bounds measured once.
     private static List<BoundedOutline> collectFill(List<WalledPocket> pockets) {
+
         var fill = new ArrayList<BoundedOutline>(pockets.size());
 
         for (var walled : pockets) {
@@ -278,6 +292,7 @@ class CoastPocketsIntegrationTests {
     private static List<BoundedOutline> collectOtherFill(
             String sector,
             VoidPockets.PocketShaping shaping) {
+
         var water = SectorPipeline.fillWater(sector, shaping);
         var rings = new ArrayList<List<double[]>>();
 
@@ -292,7 +307,9 @@ class CoastPocketsIntegrationTests {
     }
 
     private static List<BoundedOutline> concatenate(
-            List<BoundedOutline> first, List<BoundedOutline> second) {
+            List<BoundedOutline> first,
+            List<BoundedOutline> second) {
+
         var both = new ArrayList<BoundedOutline>(first.size() + second.size());
 
         both.addAll(first);
@@ -311,6 +328,7 @@ class CoastPocketsIntegrationTests {
     private static boolean isMostlyInsideCoast(
             ShutInVoidSweep.ShutInVoid water,
             List<BoundedOutline> coast) {
+
         var counted = water.points().size();
         var majority = counted / 2;
 
@@ -318,6 +336,7 @@ class CoastPocketsIntegrationTests {
         var outside = 0;
 
         for (var point : water.points()) {
+
             if (isPointCovered(point, coast)) {
                 inside++;
             } else {
@@ -327,21 +346,25 @@ class CoastPocketsIntegrationTests {
             if (inside > majority) {
                 return true;
             }
+
             if (outside >= counted - majority) {
                 return false;
             }
         }
+
         return inside > majority;
     }
 
     // Rings with their bounds measured once, so the point tests below reject the far-away ones
     // on four comparisons instead of walking them.
     private static List<BoundedOutline> measureBounds(List<List<double[]>> rings) {
+
         var bounded = new ArrayList<BoundedOutline>(rings.size());
 
         for (var ring : rings) {
             bounded.add(BoundedOutline.measure(ring));
         }
+
         return bounded;
     }
 
@@ -352,21 +375,27 @@ class CoastPocketsIntegrationTests {
     private static boolean isAnyPointCovered(
             List<double[]> points,
             List<BoundedOutline> fill) {
+
         for (var point : points) {
+
             if (isPointCovered(point, fill)) {
                 return true;
             }
         }
+
         return false;
     }
 
     // Whether any one of a set of outlines holds a point.
     private static boolean isPointCovered(double[] point, List<BoundedOutline> outlines) {
+
         for (var outline : outlines) {
+
             if (outline.holds(point)) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -377,28 +406,15 @@ class CoastPocketsIntegrationTests {
     // bounds inside that loop is no cheaper than the test it was meant to avoid.
     private record BoundedOutline(
         List<double[]> outline,
-        double leastX,
-        double leastY,
-        double mostX,
-        double mostY) {
-        static BoundedOutline measure(List<double[]> outline) {
-            var leastX = Double.MAX_VALUE;
-            var leastY = Double.MAX_VALUE;
-            var mostX = -Double.MAX_VALUE;
-            var mostY = -Double.MAX_VALUE;
+        Bounds bounds) {
 
-            for (var corner : outline) {
-                leastX = Math.min(leastX, corner[0]);
-                leastY = Math.min(leastY, corner[1]);
-                mostX = Math.max(mostX, corner[0]);
-                mostY = Math.max(mostY, corner[1]);
-            }
-            return new BoundedOutline(outline, leastX, leastY, mostX, mostY);
+        static BoundedOutline measure(List<double[]> outline) {
+            return new BoundedOutline(outline, Bounds.computeEnclosingBounds(outline));
         }
 
         boolean holds(double[] point) {
-            return point[0] >= leastX && point[0] <= mostX
-                && point[1] >= leastY && point[1] <= mostY
+
+            return bounds.overlaps(new Bounds(point[0], point[1], point[0], point[1]))
                 && PolygonRegions.isPointInsideRing(outline, point[0], point[1]);
         }
     }
@@ -408,12 +424,12 @@ class CoastPocketsIntegrationTests {
     private static List<String> findStrandedPockets(
             String sector,
             VoidPockets.PocketShaping shaping) {
+
         var atShipped = findPocketsAt(sector, SHIPPED_FRONTAGE_FLOOR, shaping);
         var atCoarser = findPocketsAt(sector, COARSER_FRONTAGE_FLOOR, shaping);
         var coarserFill = collectFill(atCoarser);
 
-        var coarserCoast = Coastlines.collectCoastOutlines(
-            traceCoastAt(sector, COARSER_FRONTAGE_FLOOR));
+        var coarserCoast = traceCoastAt(sector, COARSER_FRONTAGE_FLOOR).collectCoastOutlines();
 
         var stranded = new ArrayList<String>();
 
@@ -426,12 +442,14 @@ class CoastPocketsIntegrationTests {
             // distance tells a moved pocket from a different one.
             if (hasSameRing(walled, atCoarser)
                     || isAnyPointCovered(collectNudgedCorners(walled), coarserFill)) {
+
                 continue;
             }
 
             var centre = walled.pocket().centre();
 
-            if (Coastlines.isInsideCoast(coarserCoast, centre)) {
+            if (PolygonRegions.isPointInsideAnyRing(coarserCoast, centre[0], centre[1])) {
+
                 stranded.add(String.format(
                     "%.0f, %.0f (ringed by %s)",
                     centre[0],
@@ -439,17 +457,21 @@ class CoastPocketsIntegrationTests {
                     walled.pocket().section().cells()));
             }
         }
+
         return stranded;
     }
 
     // Whether some pocket in the list runs on exactly the same cells - which is the pocket
     // the coarser floor left alone, outline and all.
     private static boolean hasSameRing(WalledPocket pocket, List<WalledPocket> among) {
+
         for (var other : among) {
+
             if (pocket.pocket().section().cells().equals(other.pocket().section().cells())) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -459,17 +481,21 @@ class CoastPocketsIntegrationTests {
     // wall or rim answers false for a point lying exactly on its boundary. A step inward
     // puts the question where the answer is not a coin toss.
     private static List<double[]> collectNudgedCorners(WalledPocket walled) {
+
         var nudged = new ArrayList<double[]>();
 
         for (var outline : walled.pocket().outlines()) {
+
             var mean = Points.computeMean(outline);
 
             for (var corner : outline) {
+
                 nudged.add(new double[] {
                     corner[0] + CORNER_NUDGE_SHARE * (mean[0] - corner[0]),
                     corner[1] + CORNER_NUDGE_SHARE * (mean[1] - corner[1])});
             }
         }
+
         return nudged;
     }
 
@@ -477,17 +503,19 @@ class CoastPocketsIntegrationTests {
             String sector,
             double frontageFloor,
             VoidPockets.PocketShaping shaping) {
+
         return CoastPockets.findCoastPockets(
             traceCoastAt(sector, frontageFloor),
             loadFixture(sector).getOwnerBySite(),
             new VoidPockets.PocketRules(PARAMETERS, shaping));
     }
 
-    private static Coastlines.TracedCoasts traceCoastAt(String sector, double frontageFloor) {
+    private static TracedCoasts traceCoastAt(String sector, double frontageFloor) {
+
         return Coastlines.traceContinentCoasts(
             loadFixture(sector).getSites(),
             PARAMETERS,
-            new Coastlines.CoastRules(
+            new CoastRules(
                 Coastlines.DEFAULT_RULES.bridgeReachMultiple(),
                 frontageFloor,
                 Coastlines.DEFAULT_RULES.minLakeShare(),

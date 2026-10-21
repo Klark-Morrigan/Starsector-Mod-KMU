@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -10,19 +11,15 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.settings.KmuMapLabelSettings;
+import kmu.maplayers.ownermap.render.style.MapStyling;
+import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
+import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -38,18 +35,17 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what a bloc's baked cluster group is: one frontier around everything it holds contiguously,
+ * Pins what an owner's baked cluster group is: one frontier around everything it holds contiguously,
  * a separate ring per disjoint cluster, and the two paints its fill and border draw under - plus
  * the two cases that bake nothing at all rather than a record the draw pass would skip.
  *
- * <p>How the rings fall into bodies is the rule worth guarding. A bloc is traced from its member
+ * <p>How the rings fall into bodies is the rule worth guarding. An owner is traced from its member
  * cells in one pass, so two systems that touch must come back as one body under a single
  * continuous border rather than two squares drawn over each other; two that do not touch must
- * stay two bodies; and a rival a bloc has surrounded must come back as an enclave of the one body
+ * stay two bodies; and a rival an owner has surrounded must come back as an enclave of the one body
  * around it. Each of those goes wrong silently - every ring still strokes, in the right colour,
  * with only the filled cells wrong.
  *
@@ -65,7 +61,7 @@ final class ClusterGroupBuilderTests {
     private static final String HEGEMONY = "hegemony";
     private static final String TRITACHYON = "tritachyon";
 
-    // Two cells of one bloc meeting along x = 2000, so the pair can be asked for a fused
+    // Two cells of one owner meeting along x = 2000, so the pair can be asked for a fused
     // frontier. The three that follow share no edge with anything: each is enclosed by the reach
     // bound alone, so a case naming one of them traces a closed ring whoever else is on the map.
     private static final String HELD_SYSTEM = "held";
@@ -74,7 +70,7 @@ final class ClusterGroupBuilderTests {
     private static final String EXCLAVE_SYSTEM = "exclave";
     private static final String RIVAL_SYSTEM = "rival";
 
-    // The 3x3 block of cells the enclave case is traced over: eight cells of one bloc ringing a
+    // The 3x3 block of cells the enclave case is traced over: eight cells of one owner ringing a
     // rival in the middle. Kept apart from the cells above because it is the only case whose
     // shape is a topology rather than a handful of squares, and generating it is what keeps that
     // topology readable.
@@ -82,23 +78,20 @@ final class ClusterGroupBuilderTests {
     private static final int GRID_CELL_SIDE = 2000;
     private static final int GRID_CENTRE = 1;
 
-    // The holder's two shades, kept distinct so an observed paint names which slot it came from.
+    // The owner's two shades, kept distinct so an observed paint names which slot it came from.
     private static final Color OWNER_PRIMARY = Color.RED;
     private static final Color OWNER_SECONDARY = Color.BLUE;
+
     private static final SystemOwner HEGEMONY_OWNER =
-        new SystemOwner(HEGEMONY, new OwnerPalette(OWNER_PRIMARY, OWNER_SECONDARY));
+        new SystemOwner(HEGEMONY, new ColourPair(OWNER_PRIMARY, OWNER_SECONDARY));
 
     private static final SystemOwner TRITACHYON_OWNER =
-        new SystemOwner(TRITACHYON, new OwnerPalette(OWNER_PRIMARY, OWNER_SECONDARY));
+        new SystemOwner(TRITACHYON, new ColourPair(OWNER_PRIMARY, OWNER_SECONDARY));
 
     private static final double FILL_OPACITY = 0.5;
     private static final double BORDER_OPACITY = 0.25;
     private static final double BORDER_WIDTH = 3.0;
 
-    // The live Dev-tab trace parameters, stubbed at their read: a weld tolerance loose enough to
-    // chain the hand-built corners, and the miter limit the shipped border uses.
-    private static final double WELD_TOLERANCE = 1e-3;
-    private static final double MITER_SPIKE_LIMIT = 4.0;
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
         HELD_SYSTEM, List.of(
             buildEdgeFacing(0, 0, 2000, 0, null),
@@ -126,49 +119,28 @@ final class ClusterGroupBuilderTests {
             buildEdgeFacing(22000, 2000, 20000, 2000, null),
             buildEdgeFacing(20000, 2000, 20000, 0, null)));
 
-    // The trace reads its parameters off the live settings, so the seam stands for every case
-    // here; without it the two Dev-tab reads would fault outside the game.
-    private MockedStatic<KmuMapLabelSettings> settingsMock;
-
-    @BeforeEach
-    void openTheBorderTraceSeam() {
-
-        settingsMock = mockStatic(KmuMapLabelSettings.class);
-        settingsMock
-            .when(KmuMapLabelSettings::getMapBorderWeldTolerance)
-            .thenReturn(WELD_TOLERANCE);
-        settingsMock
-            .when(KmuMapLabelSettings::getMapBorderMiterLimit)
-            .thenReturn(MITER_SPIKE_LIMIT);
-    }
-
-    @AfterEach
-    void closeTheBorderTraceSeam() {
-        settingsMock.close();
-    }
-
     @Nested
     class BuildClusterGroup {
 
         @Test
         void readsItsFirstMembersPaletteUnderThatMembersOwnKey() {
             // The members and the holding share one address, so a body whose member shares a
-            // vanilla ID with another system paints from its own holder - where a lookup by ID
+            // vanilla ID with another system paints from its own owner - where a lookup by ID
             // alone could only have named whichever of the pair the map happened to hold.
             var anchoredCell = new SystemKey(ISLAND_SYSTEM, null, "8b3");
             var twin = new SystemKey(ISLAND_SYSTEM, null, "38d53");
-            var holders = new LinkedHashMap<SystemKey, SystemOwner>();
+            var owners = new LinkedHashMap<SystemKey, SystemOwner>();
 
-            holders.put(anchoredCell, HEGEMONY_OWNER);
-            holders.put(twin, TRITACHYON_OWNER);
+            owners.put(anchoredCell, HEGEMONY_OWNER);
+            owners.put(twin, TRITACHYON_OWNER);
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersHeldBy(buildDrawnStyle(), holders),
+                buildClustersHeldBy(buildDrawnStyle(), owners),
                 listAnchoredCellFor(ISLAND_SYSTEM, anchoredCell),
                 HEGEMONY,
                 List.of(anchoredCell));
 
-            // The holder resolved, so the body paints; an unresolved one would leave the bloc
+            // The owner resolved, so the body paints; an unresolved one would leave the owner
             // with no palette to fill from and the whole record dropped.
             assertThat(clusterGroup)
                 .isNotNull();
@@ -183,7 +155,7 @@ final class ClusterGroupBuilderTests {
                 HEGEMONY,
                 buildCellKeys(HELD_SYSTEM, NEIGHBOUR_SYSTEM));
 
-            // The shared edge is a same-bloc seam, so it is never a border: the pair reads as one
+            // The shared edge is a same-owner seam, so it is never a border: the pair reads as one
             // body rather than two squares stroked along the line between them. Held as one
             // cluster carrying one loop rather than as one loop: a welded pair and a pair that
             // stayed apart differ in the cluster count, and only in the loop count by accident.
@@ -206,16 +178,20 @@ final class ClusterGroupBuilderTests {
                 HEGEMONY,
                 buildCellKeys(ISLAND_SYSTEM, EXCLAVE_SYSTEM));
 
-            // Rebuilding a bloc from its current members re-splits it: an exclave keeps its own
+            // Rebuilding an owner from its current members re-splits it: an exclave keeps its own
             // frontier instead of being welded to the homeland by the trace. Two clusters, each
             // with its own outer loop and nothing cut out of it - not one cluster carrying two
             // loops, which is what an enclave inside a single body would look like.
             assertThat(clusterGroup.clusters())
                 .hasSize(2);
+
             assertThat(clusterGroup.clusters())
                 .allSatisfy(cluster -> {
-                    assertThat(cluster.outerLoop()).isNotEmpty();
-                    assertThat(cluster.enclaveLoops()).isEmpty();
+
+                    assertThat(cluster.outerLoop())
+                        .isNotEmpty();
+                    assertThat(cluster.enclaveLoops())
+                        .isEmpty();
             });
         }
 
@@ -223,7 +199,7 @@ final class ClusterGroupBuilderTests {
         void tracesAnEnclosedRivalAsAnEnclaveOfTheOneBody() {
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersStyledBy(buildDrawnStyle(), listGridHolders()),
+                buildClustersStyledBy(buildDrawnStyle(), listGridOwners()),
                 listGridCells(),
                 HEGEMONY,
                 buildCellKeys(listGridRingCellIds().toArray(String[]::new)));
@@ -232,7 +208,7 @@ final class ClusterGroupBuilderTests {
             // hole in that body rather than area outside it. The three ways this goes wrong all
             // still draw: two clusters (the ring read as split), one cluster with no enclave (the
             // hole lost, so the fill covers the rival), or the enclave promoted to a body of its
-            // own (the rival painted in the bloc's own colour).
+            // own (the rival painted in the owner's own colour).
             assertThat(clusterGroup.clusters())
                 .hasSize(1);
             assertThat(clusterGroup.clusters().get(0).enclaveLoops())
@@ -252,7 +228,7 @@ final class ClusterGroupBuilderTests {
                 HEGEMONY,
                 buildCellKeys(ISLAND_SYSTEM));
 
-            // Read off the group, since a bloc's paints are its own wherever its bodies sit.
+            // Read off the group, since an owner's paints are its own wherever its bodies sit.
             assertThat(clusterGroup.fill().colour())
                 .isEqualTo(OWNER_PRIMARY);
             assertThat(clusterGroup.fill().alpha())
@@ -288,6 +264,27 @@ final class ClusterGroupBuilderTests {
         }
 
         @Test
+        void bakesNoFillForANoColourFill() {
+
+            var clusterGroup = buildClusterGroupOf(
+                buildClustersStyledBy(buildBorderOnlyStyle()),
+                listCellsFor(ISLAND_SYSTEM),
+                HEGEMONY,
+                buildCellKeys(ISLAND_SYSTEM));
+
+            // A fill switched off tessellates nothing rather than triangles the draw pass skips,
+            // while the body still strokes its border.
+            assertThat(clusterGroup.clusters())
+                .hasSize(1);
+            assertThat(clusterGroup.clusters().get(0).fillTriangles())
+                .isEmpty();
+            assertThat(clusterGroup.clusters().get(0).hatchSegments())
+                .isEmpty();
+            assertThat(clusterGroup.clusters().get(0).outerLoop())
+                .isNotEmpty();
+        }
+
+        @Test
         void bakesNothingWhenNeitherFillNorBorderDrawsAColour() {
 
             var clusterGroup = buildClusterGroupOf(
@@ -296,7 +293,7 @@ final class ClusterGroupBuilderTests {
                 HEGEMONY,
                 buildCellKeys(ISLAND_SYSTEM));
 
-            // Short-circuited before the trace: a bloc that paints nothing must not pay for the
+            // Short-circuited before the trace: an owner that paints nothing must not pay for the
             // ring walk that only its paints would have used.
             assertThat(clusterGroup)
                 .isNull();
@@ -321,7 +318,7 @@ final class ClusterGroupBuilderTests {
                 HEGEMONY,
                 buildCellKeys(HELD_SYSTEM));
 
-            // A member whose cell carries no edges traces no ring, and a bloc with no frontier
+            // A member whose cell carries no edges traces no ring, and an owner with no frontier
             // has nothing to clip its fill against, so the whole record is dropped.
             assertThat(clusterGroup)
                 .isNull();
@@ -332,7 +329,7 @@ final class ClusterGroupBuilderTests {
     class BuildAllClusterGroups {
 
         @Test
-        void keysEachBlocsClusterGroupByItsGroupingKey() {
+        void keysEachOwnersClusterGroupByItsGroupingKey() {
 
             var clusters = buildClustersStyledBy(buildDrawnStyle(), Map.of(
                 HELD_SYSTEM,
@@ -346,7 +343,7 @@ final class ClusterGroupBuilderTests {
                 clusters,
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM, RIVAL_SYSTEM));
 
-            // One entry per bloc rather than per system: the two Hegemony systems fuse into the
+            // One entry per owner rather than per system: the two Hegemony systems fuse into the
             // single cluster group their shared key groups them into.
             assertThat(clusters.getStyledClusterGroupByOwnerId())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
@@ -356,7 +353,7 @@ final class ClusterGroupBuilderTests {
         }
 
         @Test
-        void skipsABlocThatBakesNothing() {
+        void skipsAnOwnerThatBakesNothing() {
 
             var clusters = buildClustersStyledBy(buildDrawnStyle(), Map.of(
                 HELD_SYSTEM,
@@ -364,7 +361,7 @@ final class ClusterGroupBuilderTests {
                 RIVAL_SYSTEM,
                 TRITACHYON_OWNER));
 
-            // The rival's cell is grouped but carries no edges, so its bloc bakes nothing.
+            // The rival's cell is grouped but carries no edges, so its owner bakes nothing.
             var geometryCacheMock = mock(CellGeometryCache.class);
 
             when(geometryCacheMock.getCellEdgesByCellKey())
@@ -386,7 +383,7 @@ final class ClusterGroupBuilderTests {
     }
 
     // A geometry cache holding just the named cells, each drawing as its own star - the raw
-    // partition a bloc's border is traced from.
+    // partition an owner's border is traced from.
     // The 3x3 block as a geometry cache, every cell drawing as its own system.
     private static CellGeometryCache listGridCells() {
 
@@ -412,7 +409,7 @@ final class ClusterGroupBuilderTests {
 
     // The ring to the Hegemony and the middle to its rival - the holding that makes the middle an
     // enclave rather than a gap in the trace.
-    private static Map<String, SystemOwner> listGridHolders() {
+    private static Map<String, SystemOwner> listGridOwners() {
 
         var ownerBySystemId = new LinkedHashMap<String, SystemOwner>();
 
@@ -424,6 +421,7 @@ final class ClusterGroupBuilderTests {
                     isGridCentre(column, row) ? TRITACHYON_OWNER : HEGEMONY_OWNER);
             }
         }
+
         return ownerBySystemId;
     }
 
@@ -431,6 +429,7 @@ final class ClusterGroupBuilderTests {
     private static List<String> listGridRingCellIds() {
 
         var cellIds = new ArrayList<String>();
+
         for (var column = 0; column < GRID_SPAN; column++) {
             for (var row = 0; row < GRID_SPAN; row++) {
 
@@ -439,6 +438,7 @@ final class ClusterGroupBuilderTests {
                 }
             }
         }
+
         return cellIds;
     }
 
@@ -460,7 +460,12 @@ final class ClusterGroupBuilderTests {
 
     // The cell across one edge, or null where the edge is on the block's rim and faces nothing.
     private static String findGridNeighbourId(int column, int row) {
-        var isOffTheGrid = column < 0 || column >= GRID_SPAN || row < 0 || row >= GRID_SPAN;
+
+        var isOffTheGrid = column < 0
+            || column >= GRID_SPAN
+            || row < 0
+            || row >= GRID_SPAN;
+
         return isOffTheGrid
             ? null
             : readGridCellId(column, row);
@@ -471,7 +476,9 @@ final class ClusterGroupBuilderTests {
     }
 
     private static boolean isGridCentre(int column, int row) {
-        return column == GRID_CENTRE && row == GRID_CENTRE;
+
+        return column == GRID_CENTRE
+            && row == GRID_CENTRE;
     }
 
     // The same cut with one cell keyed as the sector states its system rather than by the ID
@@ -496,6 +503,7 @@ final class ClusterGroupBuilderTests {
         var systemIdByCellId = new LinkedHashMap<String, String>();
 
         for (var systemId : systemIds) {
+
             edgesByCellId.put(systemId, EDGES.get(systemId));
             systemIdByCellId.put(systemId, systemId);
         }
@@ -511,6 +519,7 @@ final class ClusterGroupBuilderTests {
     // An unfiltered pass over the four fixture systems, every category drawing under the one
     // style a test names - so which category the resolver picks cannot account for an outcome.
     private static OwnerMapClusters buildClustersStyledBy(CategoryStyle style) {
+
         return buildClustersStyledBy(style, Map.of(
             HELD_SYSTEM,
             HEGEMONY_OWNER,
@@ -524,24 +533,24 @@ final class ClusterGroupBuilderTests {
             TRITACHYON_OWNER));
     }
 
-    // One bloc's cluster group, traced against the pass's own grouping. The builder takes that
+    // One owner's cluster group, traced against the pass's own grouping. The builder takes that
     // grouping rather than resolving it, since production resolves it once for the whole map; a
     // case states the holding and the cells and this composes the two the way a rebuild does.
     private static StyledClusterGroup buildClusterGroupOf(
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache,
-            String blocId,
+            String ownerId,
             List<SystemKey> memberCellKeys) {
 
         return ClusterGroupBuilder.buildClusterGroup(
             clusters,
             geometryCache,
             clusters.resolveCellGroupingOver(geometryCache.getSystemKeyByCellKey()),
-            blocId,
+            ownerId,
             memberCellKeys);
     }
 
-    // Every bloc's cluster group, under that same one grouping.
+    // Every owner's cluster group, under that same one grouping.
     private static void buildAllClustersOf(
             OwnerMapClusters clusters,
             CellGeometryCache geometryCache) {
@@ -559,8 +568,8 @@ final class ClusterGroupBuilderTests {
         return buildClustersHeldBy(style, buildKeyedValues(ownerBySystemId));
     }
 
-    // The same clusters with its holders stated by key, for the one case a name cannot pose:
-    // two systems sharing a vanilla ID, held by different blocs.
+    // The same clusters with its owners stated by key, for the one case a name cannot pose:
+    // two systems sharing a vanilla ID, held by different owners.
     private static OwnerMapClusters buildClustersHeldBy(
             CategoryStyle style,
             Map<SystemKey, SystemOwner> ownerBySystemKey) {
@@ -570,9 +579,10 @@ final class ClusterGroupBuilderTests {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     OwnerMapClusterFixtures.createRenderStyleForEveryCategory(style),
-                    HolderCategories.INSTANCE,
+                    OwnerMapClusterFixtures.BORDER_TRACE,
+                    OwnerCategoriesFake.SHARED_FAKE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                    new OwnerPalette(Color.GREEN, Color.YELLOW),
+                    new ColourPair(Color.GREEN, Color.YELLOW),
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE),
                 // A reading placing every owner at full strength and receding none of them, so the
                 // paints below come from the category style and the owner's palette alone.
@@ -588,12 +598,13 @@ final class ClusterGroupBuilderTests {
     // Fill and cluster border both drawn, each from a different palette slot so the two paints
     // are told apart by colour; the interior seam is a per-cell record and never read here.
     private static CategoryStyle buildDrawnStyle() {
+
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteSlot.PRIMARY,
+                OwnerPaletteSlot.PRIMARY,
                 FILL_OPACITY),
             new ElementStyle(
-                FactionPaletteSlot.SECONDARY,
+                OwnerPaletteSlot.SECONDARY,
                 BORDER_OPACITY),
                 BORDER_WIDTH,
             new ElementStyle(
@@ -602,11 +613,29 @@ final class ClusterGroupBuilderTests {
                 1.0);
     }
 
-    // The fill on and the border switched off - the one slot combination that still draws.
-    private static CategoryStyle buildFillOnlyStyle() {
+    // The border on and the fill switched off.
+    private static CategoryStyle buildBorderOnlyStyle() {
+
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteSlot.PRIMARY,
+                null,
+                FILL_OPACITY),
+            new ElementStyle(
+                OwnerPaletteSlot.SECONDARY,
+                BORDER_OPACITY),
+                BORDER_WIDTH,
+            new ElementStyle(
+                null,
+                1.0),
+                1.0);
+    }
+
+    // The fill on and the border switched off.
+    private static CategoryStyle buildFillOnlyStyle() {
+
+        return new CategoryStyle(
+            new ElementStyle(
+                OwnerPaletteSlot.PRIMARY,
                 FILL_OPACITY),
             new ElementStyle(
                 null,
@@ -616,8 +645,9 @@ final class ClusterGroupBuilderTests {
                 1.0), 1.0);
     }
 
-    // Every slot "No color" - a bloc the player has switched off entirely.
+    // Every slot "No color" - an owner the player has switched off entirely.
     private static CategoryStyle buildNoColourStyle() {
+
         return new CategoryStyle(
             new ElementStyle(
                 null,

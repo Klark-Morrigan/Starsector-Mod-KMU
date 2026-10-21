@@ -26,8 +26,8 @@ final class ArrangementBoxLayout {
     // first thing added to an element an x-align offset of five and lays every later one flush with it
     // (com.fs.starfarer.ui.impl.StandardTooltipV2Expandable.addCustom), so an element placed at the
     // box's pad draws its contents that much further in again. Not ours to choose, only to account for: an
-    // edge measured without this term comes out narrower than one measured with it, which is the whole
-    // of why the box used to stand closer to the buttons than to the words.
+    // edge measured without this term comes out narrower than one measured with it, which stands the
+    // box closer to the buttons than to the words.
     static final float VANILLA_ELEMENT_CONTENT_INSET = 5f;
 
     // A row's parts, left to right, in UI units.
@@ -145,7 +145,7 @@ final class ArrangementBoxLayout {
      *
      * <p>Wider than what it holds by the inset the engine draws that at, so the element's stated size
      * is the room its contents actually occupy. One asked for the bare width holds them with their
-     * last five units hanging outside itself - which nothing clips today, and anything given a
+     * last five units hanging outside itself - which nothing in this box clips, and anything given a
      * scroller would.
      *
      * <p><b>Not for an element holding text.</b> There the width is the wrap width the engine measures

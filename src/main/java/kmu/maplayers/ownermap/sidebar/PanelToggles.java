@@ -2,6 +2,7 @@ package kmu.maplayers.ownermap.sidebar;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 
 import java.util.function.Predicate;
 
@@ -9,13 +10,10 @@ import java.util.function.Predicate;
  * The one flip every sidebar checkbox makes: read its preference on the panel it was placed on, and
  * write the opposite back there. Shared so each checkbox states only which preference it drives, and
  * the step where the carried panel becomes the address of the slot written is spelled once.
- *
- * <p>Final class with a private constructor: pure-function utility, no instance state.
  */
 final class PanelToggles {
 
     private PanelToggles() {
-        // utility class, no instances.
     }
 
     /**

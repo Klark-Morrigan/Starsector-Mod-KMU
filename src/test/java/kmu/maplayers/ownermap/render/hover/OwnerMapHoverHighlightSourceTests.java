@@ -1,13 +1,13 @@
 package kmu.maplayers.ownermap.render.hover;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
+import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,22 +31,23 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class OwnerMapHoverHighlightSourceTests {
 
-    private static final String FACTION_ID = "hegemony";
+    private static final String OWNER_ID = "hegemony";
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
     private static final SystemOwner OWNER =
-        new SystemOwner(FACTION_ID, new OwnerPalette(PRIMARY, SECONDARY));
+        new SystemOwner(OWNER_ID, new ColourPair(PRIMARY, SECONDARY));
 
     @Nested
     class ResolveCandidateFrontierLoopsOf {
 
         @Test
-        void returnsTheHoldersOwnBorderLoops() {
-            // Every loop the holder traced is a candidate; which of them encloses this cell is
+        void returnsTheOwnersOwnBorderLoops() {
+            // Every loop the owner traced is a candidate; which of them encloses this cell is
             // the highlight's own geometric question, not one answered here.
             var loops = List.of(
                 buildSquareRun(0, 0, 100),
                 buildSquareRun(500, 0, 100));
+
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
@@ -59,7 +60,7 @@ final class OwnerMapHoverHighlightSourceTests {
         @Test
         void answersTheHoveredSystemOfAPairSharingAnId() {
             // The cursor and the holding share one address, so hovering one of two systems that
-            // answer to "A" haloes that system's own holder - where a lookup by ID alone would
+            // answer to "A" haloes that system's own owner - where a lookup by ID alone would
             // have handed back the other's frontier.
             var hovered = new SystemKey("A", "", "8b3");
             var loops = List.of(buildSquareRun(0, 0, 100));
@@ -76,7 +77,7 @@ final class OwnerMapHoverHighlightSourceTests {
         }
 
         @Test
-        void returnsNothingForAFactionlessCell() {
+        void returnsNothingForAnUnownedCell() {
             // A decivilised or uninhabited cell fuses into no cluster group, so it has no frontier
             // to offer at all.
             var source = readSourceOf(buildClustersWith(
@@ -89,8 +90,8 @@ final class OwnerMapHoverHighlightSourceTests {
         }
 
         @Test
-        void returnsNothingWhenTheHolderBakedNoBorder() {
-            // The holder's border is "No color", so its cluster group carries no loops - an owned cell
+        void returnsNothingWhenTheOwnerBakedNoBorder() {
+            // The owner's border is "No color", so its cluster group carries no loops - an owned cell
             // that still has nothing to halo.
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
@@ -119,18 +120,19 @@ final class OwnerMapHoverHighlightSourceTests {
     class ResolveHighlightColourOf {
 
         @Test
-        void paintsAnOwnedCellInItsHoldersShade() {
+        void paintsAnOwnedCellInItsOwnersShade() {
+
             var source = readSourceOf(buildClustersWith(
                 Map.of("A", OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildClusterGroupWithLoops(List.of())));
 
-            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), FactionPaletteSlot.SECONDARY))
+            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), OwnerPaletteSlot.SECONDARY))
                 .isEqualTo(SECONDARY);
         }
 
         @Test
-        void paintsAFactionlessCellInTheNeutralShade() {
+        void paintsAnUnownedCellInTheNeutralShade() {
             // An unowned cell has no palette of its own, so the highlight says so in the same
             // neutral the cell's own outline draws in.
             var source = readSourceOf(buildClustersWith(
@@ -138,7 +140,7 @@ final class OwnerMapHoverHighlightSourceTests {
                 Map.of("A", buildSquare(10, 10, 80)),
                 null));
 
-            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), FactionPaletteSlot.PRIMARY))
+            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), OwnerPaletteSlot.PRIMARY))
                 .isEqualTo(OwnerMapClusterFixtures.NEUTRAL_COLOUR);
         }
 
@@ -178,12 +180,13 @@ final class OwnerMapHoverHighlightSourceTests {
 
     private static OwnerMapHoverHighlightSource readSourceOf(
             OwnerMapClusters clusters) {
+
         return new OwnerMapHoverHighlightSource(clusters);
     }
 
     // Clusters carrying just what the source reads: who owns each system, each cell's shape,
-    // and the holder's traced loops. A null cluster group stands for a faction with none - the state
-    // a factionless cell's holder lookup lands in.
+    // and the owner's traced loops. A null cluster group stands for an owner with none - the state
+    // an unowned cell's owner lookup lands in.
     private static OwnerMapClusters buildClustersWith(
             Map<String, SystemOwner> ownerBySystemId,
             Map<String, List<double[]>> fillPolygonBySystemId,
@@ -195,7 +198,7 @@ final class OwnerMapHoverHighlightSourceTests {
             clusterGroup);
     }
 
-    // The same clusters with its holders stated by key, for the one case a name cannot pose:
+    // The same clusters with its owners stated by key, for the one case a name cannot pose:
     // two systems sharing a vanilla ID, only one of which the cursor is over.
     private static OwnerMapClusters buildClustersHeldByKey(
             Map<SystemKey, SystemOwner> ownerBySystemKey,
@@ -208,7 +211,7 @@ final class OwnerMapHoverHighlightSourceTests {
             clusterGroup);
     }
 
-    // Writes the cells and the holder's cluster group onto a built map, which is all the source reads
+    // Writes the cells and the owner's cluster group onto a built map, which is all the source reads
     // beyond the holding the two builders above differ in how they state.
     private static OwnerMapClusters fillClusters(
             OwnerMapClusters clusters,
@@ -216,13 +219,16 @@ final class OwnerMapHoverHighlightSourceTests {
             StyledClusterGroup clusterGroup) {
 
         for (var cell : fillPolygonBySystemId.entrySet()) {
+
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(cell.getKey()),
                 OwnerMapClusterFixtures.createPlaceholderPaintedCellOn(cell.getValue()));
         }
+
         if (clusterGroup != null) {
-            clusters.getStyledClusterGroupByOwnerId().put(FACTION_ID, clusterGroup);
+            clusters.getStyledClusterGroupByOwnerId().put(OWNER_ID, clusterGroup);
         }
+
         return clusters;
     }
 
@@ -236,6 +242,7 @@ final class OwnerMapHoverHighlightSourceTests {
     // An axis-aligned square, counter-clockwise, standing in for a cell's painted extent; the
     // source hands it back untouched, so only its identity matters.
     private static List<double[]> buildSquare(double minX, double minY, double side) {
+
         return List.of(
             new double[] {minX, minY},
             new double[] {minX + side, minY},
@@ -245,6 +252,7 @@ final class OwnerMapHoverHighlightSourceTests {
 
     // The same square as the baked [x, y, x, y, ...] run a border loop is kept in.
     private static float[] buildSquareRun(float minX, float minY, float side) {
+
         return new float[] {
             minX, minY,
             minX + side, minY,

@@ -13,12 +13,12 @@ import java.util.List;
  * against.
  *
  * <p>What an incremental refresh edits, gathered because they are edited together. The placements
- * and the labels are the plugin's own overlays rather than part of the clusters, yet a batch
+ * and the labels are the drawables' own overlays rather than part of the clusters, yet a batch
  * that moves a border has to move them with it - so a redraw that reached only three of the four
- * would leave a name standing over a bloc that no longer holds the cell beneath it. Carrying them
+ * would leave a name standing over an owner that no longer holds the cell beneath it. Carrying them
  * as one value is what stops a step of that redraw being handed a different three.
  *
- * <p>Assembled by the holder of these four once its drained batch has something in it, which is the
+ * <p>Assembled by the cache keeping these four once its drained batch has something in it, which is the
  * only caller in a position to know: it holds the board the batch came off. A frame that drained
  * nothing - nearly every frame - returns without building one.
  *
@@ -26,13 +26,13 @@ import java.util.List;
  *                        redrawn cell is resolved against
  * @param standingAnchors the cluster-name placements, paired with what they were fitted under so a
  *                        re-fit can carry over the clusters a batch did not move
- * @param factionLabels   the drawn name labels, minted from those placements
+ * @param ownerLabels     the drawn name labels, minted from those placements
  * @param cellGeometry    the cells, paired with the revision they stand at; a refresh re-shapes
  *                        within this partition and never recuts it
  */
 public record StandingOwnerMap(
     OwnerMapClusters clusters,
     StandingClusterAnchors standingAnchors,
-    List<Label> factionLabels,
+    List<Label> ownerLabels,
     RevisedCellGeometry cellGeometry) {
 }

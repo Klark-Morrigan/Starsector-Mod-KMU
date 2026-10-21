@@ -36,8 +36,8 @@ import java.util.Map;
  * likely to be at fault while needing a GPU to do it.
  *
  * <p>An SVG needs no context, no driver, and no game: it is deterministic, diffable, and
- * opens in a browser. It answers "what shape did we build", which assertions cannot,
- * because an assertion only catches what someone thought to assert.
+ * opens in a browser. It answers "what shape was built", which a measurement cannot, because
+ * a measurement only catches what someone thought to measure.
  *
  * <p>Everything here is a decision about WHICH of the map's shapes are worth drawing and what
  * each should look like. How a shape becomes SVG text is {@link SvgDrawing}'s, which knows
@@ -61,9 +61,9 @@ public final class SectorSvgWriter {
     // Near-black rather than black, so a shape drawn in true black still reads against it.
     private static final String BACKDROP = "#111";
 
-    private static final String SITE_COLOUR = "#888";
+    // Fainter than anything the window draws, because only the file draws the raw partition
+    // under everything else as a reference.
     private static final String CELL_COLOUR = "#2a2a2a";
-    private static final String NEUTRAL_COLOUR = "#555";
 
     // Spreads owner colours around the hue circle by ID hash, so neighbouring owners are
     // very unlikely to share one and the eye can separate clusters at a glance.
@@ -82,11 +82,10 @@ public final class SectorSvgWriter {
      * Writes the sector as it is being drawn: every raw cell, each unowned cell's shaped
      * outline, and every owner's smoothed cluster rings, over the sites they were built from.
      *
-     * <p>Takes what was drawn rather than the geometry alone. Given only the geometry this
-     * traced its own coast at the shipped defaults and stroked the cluster rings unsmoothed,
-     * so a file saved from a window whose knobs had been moved was a picture of a different
-     * map - and a picture that disagrees silently with the thing it is evidence about is
-     * worse than none.
+     * <p>Takes what was drawn rather than the geometry alone. Given only the geometry it would
+     * have to trace its own coast and choose its own smoothing, so a file saved from a window
+     * whose knobs had been moved would be a picture of a different map - and a picture that
+     * disagrees silently with the thing it is evidence about is worse than none.
      *
      * @param target  file to write; parent directories are created
      * @param fixture the sector the geometry was built from
@@ -110,8 +109,11 @@ public final class SectorSvgWriter {
             Files.createDirectories(target.getParent());
             Files.writeString(target, drawing.finishDrawing(), StandardCharsets.UTF_8);
 
-        } catch (IOException e) {
-            throw new UncheckedIOException("cannot write " + target, e);
+        } catch (IOException ioException) {
+
+            throw new UncheckedIOException(
+                "cannot write " + target,
+                ioException);
         }
     }
 
@@ -139,7 +141,7 @@ public final class SectorSvgWriter {
         }
     }
 
-    // Only unowned cells draw their own fill and outline on the real map; a owned cell
+    // Only unowned cells draw their own fill and outline on the real map; an owned cell
     // contributes its fill through its owner's traced cluster instead, so drawing it here
     // too would show a border the game never paints. The key comes off the geometry rather
     // than the fixture, so a cell the build itself grouped - or unowned - is drawn as the
@@ -154,7 +156,9 @@ public final class SectorSvgWriter {
 
             drawing.drawPolygon(
                 entry.getValue().fillPolygon(),
-                SvgPaint.outlineOnly(NEUTRAL_COLOUR, MapLook.RING_STROKE));
+                SvgPaint.outlineOnly(
+                    SvgDrawing.formatColour(MapLook.UNOWNED_CELL),
+                    MapLook.RING_STROKE));
         }
     }
 
@@ -200,7 +204,8 @@ public final class SectorSvgWriter {
         // colour, as the window draws them: a lake shore IS a coast of this construction, seen
         // from the water's side.
         var coastPaint = SvgPaint.outlineOnly(
-            SvgDrawing.formatColour(MapLook.CONTINENT_COAST), MapLook.RING_STROKE);
+            SvgDrawing.formatColour(MapLook.CONTINENT_COAST),
+            MapLook.RING_STROKE);
 
         for (var ring : laid.roundCoasts().coasts()) {
             drawing.drawPolygon(ring, coastPaint);
@@ -230,7 +235,8 @@ public final class SectorSvgWriter {
             DrawnSector drawn) {
 
         var water = drawn.laid().fillWater(
-            CoastPockets.markEverySiteUnowned(sites), drawn.shaping());
+            CoastPockets.markEverySiteUnowned(sites),
+            drawn.shaping());
 
         var bodies = new ArrayList<List<double[]>>();
 
@@ -248,7 +254,10 @@ public final class SectorSvgWriter {
             bodies,
             List.of(),
             SvgPaint.filledOutline(
-                colour, FILL_OPACITY, colour, MapLook.RING_STROKE / TRAPPED_EDGE_STROKES));
+                colour,
+                FILL_OPACITY,
+                colour,
+                MapLook.RING_STROKE / TRAPPED_EDGE_STROKES));
     }
 
     // Every span the construction lays, end to end at its true extent, under the coast that
@@ -258,7 +267,8 @@ public final class SectorSvgWriter {
     private static void drawSpans(SvgDrawing drawing, BridgedContinents laid) {
 
         var spanPaint = SvgPaint.outlineOnly(
-            SvgDrawing.formatColour(MapLook.CONTINENT_BRIDGE), MapLook.SPAN_STROKE);
+            SvgDrawing.formatColour(MapLook.CONTINENT_BRIDGE),
+            MapLook.SPAN_STROKE);
 
         drawSpanSet(drawing, laid.layInletSpans(), spanPaint);
         drawSpanSet(drawing, laid.layLakeSpans(), spanPaint);
@@ -268,7 +278,8 @@ public final class SectorSvgWriter {
             drawing,
             laid.layLinks(),
             SvgPaint.outlineOnly(
-                SvgDrawing.formatColour(MapLook.INTERCONTINENTAL_BRIDGE), MapLook.SPAN_STROKE));
+                SvgDrawing.formatColour(MapLook.INTERCONTINENTAL_BRIDGE),
+                MapLook.SPAN_STROKE));
     }
 
     private static void drawSpanSet(SvgDrawing drawing, List<CellGap> spans, SvgPaint paint) {
@@ -288,7 +299,8 @@ public final class SectorSvgWriter {
             List<CoastCrossings.Penetration> penetrations) {
 
         var cellPaint = SvgPaint.outlineOnly(
-            SvgDrawing.formatColour(MapLook.PIERCED_CELL), MapLook.RING_STROKE);
+            SvgDrawing.formatColour(MapLook.PIERCED_CELL),
+            MapLook.RING_STROKE);
 
         for (var penetration : penetrations) {
             for (var circle : penetration.circles()) {
@@ -298,7 +310,8 @@ public final class SectorSvgWriter {
         }
 
         var crossingPaint = SvgPaint.outlineOnly(
-            SvgDrawing.formatColour(MapLook.COAST_CROSSING), MapLook.CROSSING_STROKE);
+            SvgDrawing.formatColour(MapLook.COAST_CROSSING),
+            MapLook.CROSSING_STROKE);
 
         for (var penetration : penetrations) {
 
@@ -310,7 +323,7 @@ public final class SectorSvgWriter {
 
     private static void drawSites(SvgDrawing drawing, List<double[]> sites) {
 
-        var paint = SvgPaint.fillOnly(SITE_COLOUR);
+        var paint = SvgPaint.fillOnly(SvgDrawing.formatColour(MapLook.SITE));
 
         for (var site : sites) {
             drawing.drawCircle(site, MapLook.SITE_RADIUS, paint);

@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
-import kmu.maplayers.politicalmap.dominance.standings.StandingFraction;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 
 import org.junit.jupiter.api.Nested;

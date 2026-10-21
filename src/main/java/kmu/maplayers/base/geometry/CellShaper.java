@@ -40,9 +40,9 @@ public final class CellShaper {
      * here, on the shaping that applies it, so that agreement is a named dependency rather
      * than two call sites happening to pass the same number.
      *
-     * <p>The border's rounding shape - corner radius, segments, chamfer angle, and vertex weld
-     * tolerance - is player-tunable under the LunaLib "Map - Dev" tab instead, read from
-     * {@link kmu.settings.KmuMapLabelSettings} and the drawing layer's own settings.
+     * <p>The tunable parts of a border are not shaping. Corner rounding is a look the drawing layer
+     * applies to a traced ring, and the weld tolerance and miter limit belong to the trace, carried
+     * by {@link BorderTraceStyle}.
      */
     public static final double BORDER_INSET_DISTANCE = 150.0;
 

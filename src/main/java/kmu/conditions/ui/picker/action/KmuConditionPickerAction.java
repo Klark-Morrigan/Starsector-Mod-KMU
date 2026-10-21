@@ -4,19 +4,23 @@ import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 
 import java.util.Objects;
 
-import static kmu.util.KmuValues.requireNonBlankText;
+import static kmlib.text.KmlibStrings.requireFieldText;
 
 public final class KmuConditionPickerAction {
+
     private final String conditionId;
     private final boolean presentAtRender;
 
     private KmuConditionPickerAction(String conditionId, boolean presentAtRender) {
-        this.conditionId = requireNonBlankText(conditionId, "conditionId");
+
+        this.conditionId = requireFieldText(conditionId, "conditionId");
         this.presentAtRender = presentAtRender;
     }
 
     public static KmuConditionPickerAction fromEntry(KmuConditionPickerEntry entry) {
+
         Objects.requireNonNull(entry, "entry");
+
         return new KmuConditionPickerAction(entry.getConditionId(), entry.isPresent());
     }
 

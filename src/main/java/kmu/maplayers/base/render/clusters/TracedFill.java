@@ -8,8 +8,6 @@ import kmlib.opengl.hatch.HatchRun;
 import kmlib.opengl.hatch.Hatching;
 import kmlib.profiling.ActiveProfiler;
 
-import kmu.maplayers.base.render.clusters.SplitFillBuilder.ClusterFill;
-
 import java.util.List;
 
 /**
@@ -135,5 +133,19 @@ public sealed interface TracedFill {
             }
             return PolygonTessellator.tessellateIntersectionToTriangles(stateRings, clusterRings);
         }
+    }
+
+    /**
+     * One cluster's fill as the two runs it paints: the solid triangle soup for the solid-state
+     * cells and the hatch GL_LINES for the hatched ones. Named for the cluster rather than for
+     * what holds it, since the pair is the same two runs whatever a layer groups its cells by.
+     *
+     * <p>The unfilled state carries no geometry - it paints nothing - so a cluster with no
+     * hatched members leaves the hatch empty and one that fills solid throughout carries only
+     * its solid triangles.
+     */
+    record ClusterFill(
+        float[] solidTriangles,
+        float[] hatchSegments) {
     }
 }

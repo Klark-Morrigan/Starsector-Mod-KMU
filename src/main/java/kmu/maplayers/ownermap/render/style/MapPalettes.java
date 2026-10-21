@@ -1,10 +1,10 @@
 package kmu.maplayers.ownermap.render.style;
 
+import kmlib.colour.ColourPair;
 import kmlib.colour.Colours;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.awt.Color;
@@ -29,10 +29,10 @@ public final class MapPalettes {
      * owner's fill and border, and the owner's name all recolour off one decision rather than
      * three copies of it.
      */
-    public static OwnerPalette resolveEffectivePalette(
+    public static ColourPair resolveEffectivePalette(
             ElementStyleAdjustment adjustment,
             SystemOwner owner,
-            OwnerPalette desaturationPalette) {
+            ColourPair desaturationPalette) {
         return resolveEffectivePalette(
             adjustment,
             owner.palette(),
@@ -49,10 +49,10 @@ public final class MapPalettes {
      * owner-keyed form above resolves to this one. That keeps "desaturate swaps the palette" a
      * single rule no matter what the un-desaturated shades came from.
      */
-    public static OwnerPalette resolveEffectivePalette(
+    public static ColourPair resolveEffectivePalette(
             ElementStyleAdjustment adjustment,
-            OwnerPalette ownPalette,
-            OwnerPalette desaturationPalette) {
+            ColourPair ownPalette,
+            ColourPair desaturationPalette) {
         return adjustment.shouldDesaturate()
             ? desaturationPalette
             : ownPalette;
@@ -64,8 +64,8 @@ public final class MapPalettes {
      * "an unowned cell has no palette of its own" is one rule, and a caller spelling the
      * colour twice is stating it again rather than reading it.
      */
-    public static OwnerPalette resolveNeutralPalette(Color neutralColour) {
-        return new OwnerPalette(neutralColour, neutralColour);
+    public static ColourPair resolveNeutralPalette(Color neutralColour) {
+        return new ColourPair(neutralColour, neutralColour);
     }
 
     /**
@@ -85,9 +85,9 @@ public final class MapPalettes {
      */
     public static Color pickPaletteColour(
             ElementPaintSelection paintSelection,
-            OwnerPalette palette) {
+            ColourPair palette) {
 
-        if (!(paintSelection instanceof FactionPaletteSlot slot)) {
+        if (!(paintSelection instanceof OwnerPaletteSlot slot)) {
             return null;
         }
         return switch (slot) {
@@ -98,7 +98,7 @@ public final class MapPalettes {
 
     /**
      * Picks the palette shade of a cell itself: its owner's, or the shared neutral
-     * colour when nothing owns it - an unowned system (decivilised, or uninhabited) has no
+     * colour when nothing owns it - an unowned system (settled, or uninhabited) has no
      * palette of its own, so both shades resolve neutral, exactly as its cell's own outline
      * draws. Null for a NONE ("No color") choice, so the caller skips the element.
      *
@@ -107,7 +107,7 @@ public final class MapPalettes {
      * now". The two diverge under a recede: a cell the map has sunk to grey still belongs to
      * its owner, and an element whose whole job is to name that owner should say so.
      */
-    public static Color pickHolderPaletteColour(
+    public static Color pickOwnerPaletteColour(
             ElementPaintSelection paintSelection,
             SystemOwner owner,
             Color neutralColour) {
@@ -120,12 +120,11 @@ public final class MapPalettes {
 
     /**
      * Resolves the one uniform palette every desaturated owner recolours to: the painting layer's
-     * recede shades, each scaled toward black by {@code darkeningStrength}. On the layers painting
-     * holders those shades are Independent's, and Independent's authored colour and the mid-grey
-     * genuine independent space paints in are the same grey, so painting a desaturated faction in
-     * them unchanged would make it read as independent-held space; darkening sinks the receded fills
-     * to a distinctly darker grey that sits behind it, separated by value rather than a hue neither
-     * grey has. The strength is the fraction of brightness removed - 0 leaves the shades untouched,
+     * recede shades, each scaled toward black by {@code darkeningStrength}. Those shades can be the
+     * very grey some owner at full strength paints in, so painting a desaturated owner in them
+     * unchanged would make it read as that owner's space; darkening sinks the receded fills to a
+     * distinctly darker grey that sits behind it, separated by value rather than a hue neither grey
+     * has. The strength is the fraction of brightness removed - 0 leaves the shades untouched,
      * 0.3 draws them 30% darker, 1 goes to black. Takes the shades and strength as parameters
      * (rather than reading either itself) so the mapping is a pure lookup; the caller reads both once
      * per pass and hands them in.
@@ -134,13 +133,13 @@ public final class MapPalettes {
      * @param darkeningStrength the fraction of brightness removed
      * @return the palette every desaturated owner recolours to
      */
-    public static OwnerPalette resolveDesaturationPalette(
-            OwnerPalette recedePalette,
+    public static ColourPair resolveDesaturationPalette(
+            ColourPair recedePalette,
             double darkeningStrength) {
 
         var keepFactor = (float) (1.0 - darkeningStrength);
 
-        return new OwnerPalette(
+        return new ColourPair(
             Colours.darken(recedePalette.primaryColour(), keepFactor),
             Colours.darken(recedePalette.secondaryColour(), keepFactor));
     }
@@ -166,7 +165,7 @@ public final class MapPalettes {
      *                           palette, 1 yields white
      * @return the two shades a spared cell paints in
      */
-    public static OwnerPalette resolvePresencePalette(
+    public static ColourPair resolvePresencePalette(
             Color neutralColour,
             double lighteningStrength) {
 

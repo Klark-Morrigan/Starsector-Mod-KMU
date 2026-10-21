@@ -1,9 +1,9 @@
 # Cluster fills and borders (`render.clusters`)
 
 What the production draw of an owner map is made of:
-each faction's coloured cluster,
+each owner's coloured cluster,
 its cluster border,
-and the per-cell province seams and factionless outlines,
+and the per-cell province seams and unowned outlines,
 baked into the framework's draw packets.
 This is the base layer the labels overlay sits over -
 what the player reads as "who holds what".
@@ -30,19 +30,29 @@ see the [mod README](../../../../../../../../README.md) for project context.
 
 `OwnerMapBuilder` is the orchestration only:
 it resolves who holds each system,
-reads the theme,
 shapes the cached cells into merged clusters,
 and drives the per-item builders.
-Its job is to sample every input exactly once so the whole pass keys off one snapshot -
+Every input arrives sampled once,
+so the whole pass keys off one snapshot -
 which is what lets an incremental re-shape reuse those same builders on a handful of cells
 and land on a result identical to a full rebuild.
+The paint scheme is one of them:
+the rebuild reads one `MapStyling`
+(in [`render.style`](../style/README.md))
+and hands it to the build,
+or to the border-tracing overlay that replaces it,
+and the names fitted afterwards style from the same one.
+It carries the border trace as well as the theme,
+so every cluster group a build draws,
+and every one the incremental refresh redraws,
+is traced under one reading of the trace's knobs.
 
 - `PaintedCellBuilder` bakes one cell,
   choosing which form of `StyledCell` it takes.
   An **owned** cell becomes a `FusedCell` and contributes only its interior seams,
   because its fill and cluster border belong to the cluster it fuses into -
   the form has no slot for either.
-  A **factionless** cell (settled but unheld, or uninhabited) does not fuse,
+  An **unowned** cell (settled, or uninhabited) does not fuse,
   so it becomes a `LoneCell` carrying its own fill and outline,
   and resolves both palette slots to the shared neutral colour.
   Of the two,
@@ -54,7 +64,7 @@ and land on a result identical to a full rebuild.
   its cluster's border being what bounds the ink;
   a lone cell rounds its own corners here and reports the rounded ring,
   which is not the cell it was shaped from.
-- `ClusterGroupBuilder` bakes one bloc into a `StyledClusterGroup`:
+- `ClusterGroupBuilder` bakes one owner into a `StyledClusterGroup`:
   every body it holds,
   each with its cluster border traced across the systems in it,
   and each body's fill -
@@ -82,18 +92,18 @@ and `StyledCell`,
 `StyledCluster` and `StyledClusterGroup` are the packets they bake into.
 Element colours,
 opacities,
-and widths come from cascading the `base.theme` records with each bloc's recede adjustment,
-asked for through `OwnerMapBuildInputs.resolveBlocPaintOf` so every part of a bloc resolves from one read.
+and widths come from cascading the `base.theme` records with each owner's recede adjustment,
+asked for through `OwnerMapBuildInputs.resolveOwnerPaintOf` so every part of an owner resolves from one read.
 
 ## What recedes
 
-The Mute and Desaturate toggles sink the background behind a spotlighted bloc.
-Every non-spotlit **bloc** recedes through `resolveBlocPaintOf`,
-and so does a **settled** factionless cell:
+The Mute and Desaturate toggles sink the background behind a spotlighted owner.
+Every non-spotlit **owner** recedes through `resolveOwnerPaintOf`,
+and so does a **settled** unowned cell:
 it carries a fill of its own,
-so leaving it at full strength lets it out-read the bloc the spotlight is meant to isolate.
+so leaving it at full strength lets it out-read the owner the spotlight is meant to isolate.
 Muting dims it;
-desaturating recolours it off the same desaturation palette a receded bloc uses,
+desaturating recolours it off the same desaturation palette a receded owner uses,
 rather than the neutral colour it paints in normally.
 
 An **uninhabited** cell is the exception.
@@ -102,21 +112,21 @@ rather than something the spotlight competes with,
 and its faint outline is what gives the sector its shape,
 so it stays at full strength under every recede.
 
-A settled cell **the spotlit bloc lives in** is the second exception.
+A settled cell **the spotlit owner lives in** is the second exception.
 The recede clears away what the pick is not,
-and a system the pick has a colony in is not that -
-sinking it would hide the pick's own presence for the sole reason that this layer's holding rule could not attribute it to them.
-Under a holding rule that admits only some factions that is routine:
-the other factions' colonies always land in a holderless cell.
+and a system the pick lives in is not that -
+sinking it would hide the pick's own presence for the sole reason that the layer's rule could not attribute it to them.
+Under a rule that admits only some owners that is routine:
+what the others hold always lands in an unowned cell.
 
 Such a cell paints the neutral **lifted toward white** by `presenceLightening`,
-not the bloc's colours -
-nobody holds the system on this layer,
-and its shades would state exactly the holding the view reports it does not have.
-The lift is what makes sparing the recede visible at all:
-on the layers painting holders the neutral a factionless cell paints in
-and the Independent grey the background sinks from are the same grey,
-so a merely-unreceded cell sits at the value the background started at and reads as part of it.
+not the owner's colours -
+nobody owns the system on this layer,
+and its shades would state exactly the ownership the view reports it does not have.
+The lift is what makes sparing the recede visible at all
+wherever the neutral an unowned cell paints in
+and the shades the background sinks from are the same grey,
+since a merely-unreceded cell then sits at the value the background started at and reads as part of it.
 Both shades are the owner reading's answers,
 so a layer painting other owners brings its own pair.
 `desaturationDarkening` sinks the backdrop,
@@ -125,18 +135,18 @@ and the pair is what separates them -
 by value only,
 so a grey stays the same grey.
 
-Only the *filter* recede reaches a settled factionless cell -
+Only the *filter* recede reaches a settled unowned cell -
 it is the one whose backdrop is "the rest of the sector".
 A recede the view applies of its own accord
-(`OwnerPaintedView.resolveViewRecedeAdjustment`) describes blocs,
+(`OwnerPaintedView.resolveViewRecedeAdjustment`) describes owners,
 which such a cell is not,
 so it leaves it alone.
 Off filter the pass's recede is the identity,
-so an unfiltered map draws its unheld systems untouched.
+so an unfiltered map draws its unowned systems untouched.
 
 The rule itself is not here:
-`PaintedCellBuilder` asks [`FactionlessStyleResolver`](../style/README.md),
-which also decides which of the two factionless categories a cell falls in.
+`PaintedCellBuilder` asks [`UnownedStyleResolver`](../style/README.md),
+which also decides which of the two unowned categories a cell falls in.
 One classification drives both,
 so a cell cannot take the settled style yet miss the recede that style draws under.
 
@@ -155,18 +165,16 @@ which the same source answers in the same call:
 the settled systems the spotlit owner lives in that nobody owns.
 One source answering both is what lets presence be a partition of the set emptiness is asked of,
 so a cell cannot be called empty space while the spotlight keeps an owner's fill over it.
-How a layer painting holders reads the two -
-off one habitation reading per system,
-asked only of the settled systems its holding left out -
-is that source's business,
-described with [`HolderOwnerSource`](../../owners/holders/README.md).
+How a source reads the two is its own business;
+KMU's own layers describe theirs beside their answers,
+which [the owner seams](../../owners/README.md) link to.
 
 Both sets sit with the owner map in **`SystemOccupancy`** -
 who is in each system -
 rather than beside the `ContentInputs` the build was baked under or the contested set it derived,
 both of which are fixed once the build ends,
 because all three of these move between rebuilds:
-a colony founded or lost changes what stands in a system,
+a settlement founded or lost changes what stands in a system,
 and the pick founding one changes where the pick lives,
 in neither case moving an owner the map would notice.
 The incremental refresh folds each marked system's answer into that one type,
@@ -180,25 +188,25 @@ That report is what the refresh redraws a cell on.
 Held as three loose collections instead,
 they would have had to be mutable by the caller's good manners,
 which a build answering with an immutable empty set keeps perfectly
-until the first colony is founded.
+until the first settlement is founded.
 
 ## Borders against empty space
 
 Every border edge is shaped the same way,
 whatever sits across it.
-Against another organised entity (a rival faction or group) and against *empty* space alike -
+Against another organised entity (a rival owner) and against *empty* space alike -
 an uncontrolled star with no owner,
-whether never-settled or settled-but-unheld -
+whether never-settled or settled-but-unowned -
 the edge keeps the mutual midline plus its inward border channel.
-So a faction cuts off halfway to a dead star exactly as it does halfway to a rival,
+So an owner cuts off halfway to a dead star exactly as it does halfway to a rival,
 and the dead star's own cell draws its inset outline -
 and,
 for a settled system,
 its neutral fill -
 in the neutral style on the far side of that channel.
 
-Those factionless fills are per cell rather than per cluster:
-a factionless cell never fuses into a cluster,
+Those unowned fills are per cell rather than per cluster:
+an unowned cell never fuses into a cluster,
 so it has no traced cluster to fill from and each cell tessellates its own outline instead.
 Which is why a `LoneCell` carries fill triangles at all,
 where an owned cell has no fill of its own to carry
@@ -209,40 +217,40 @@ and takes it from the `StyledCluster` it fused into.
 `OwnerMapClusters` is the built state a rebuild produces
 and an incremental refresh edits in place:
 the two draw lists
-(`StyledClusterGroup` per bloc, `StyledCell` per cell),
+(`StyledClusterGroup` per owner, `StyledCell` per cell),
 the cluster index and the occupancy -
 all live -
 beside the `OwnerMapBuildInputs` the build was baked under,
 which a re-shape reads and never moves.
 Both packets are the framework's,
 described in [`base.render.clusters`](../../../base/render/clusters/README.md) -
-a bloc's bodies with the paints they share,
+an owner's bodies with the paints they share,
 each body carrying its own fill triangles,
 contested-hatch segments,
 outer loop and enclaves;
 and one cell's seam,
 or its own fill and outline.
 
-A bloc in two places is two bodies under one group,
+An owner in two places is two bodies under one group,
 not one record holding both.
 That is what lets a fill stop at the frontier of the body it is in:
 each body's fill is clipped to its own loops,
-where a single soup over the whole bloc could only be clipped to all of them at once.
+where a single soup over the whole owner could only be clipped to all of them at once.
 
 Holding the framework's packets is what lets it satisfy `ClusterDrawLists` outright,
 so the framework's emission paints this layer without either side naming the other:
-the two maps it hands over are the two it already keeps,
-and the bloc keys stay opaque across the seam.
+the cells and cluster groups it hands over are the ones it already keeps,
+and the owner keys stay opaque across the seam.
 What is the layer's is entirely upstream of it -
 which is why `ClusterGroupBuilder` keeps its name
-while producing a record that says nothing about factions.
+while producing a record that says nothing about what an owner is.
 
 It also answers the cursor's candidate-loop read,
-flattening a bloc's bodies into the one list the highlight hit-tests against -
+flattening an owner's bodies into the one list the highlight hit-tests against -
 and retaining it,
 because the highlight memoises its resolved halo on that list's identity
 and a fresh list per frame would re-clip the wash sixty times a second.
-The retained answer is keyed on the bloc's cluster group by identity,
+The retained answer is keyed on the owner's cluster group by identity,
 so a refresh that replaces the group recomputes once and a refresh that does not costs nothing.
 
 ### `PaintedCellStore`: what one cell carries
@@ -266,6 +274,14 @@ Everything after the ring is cut to one particular ring,
 so a cell re-shaped while keeping any of it would draw the last shape's work inside this shape's cell.
 Owning the five in one place is what makes a re-shape clear them by construction,
 rather than by each caller on a larger model remembering the same five fields.
+
+The draw records are also kept parted by form,
+fused cells apart from lone ones,
+which is how the emission walks them.
+They are parted on the first read after a write rather than on every read,
+since the emission reads them several times a frame and only a rebuild or a refresh writes.
+The map of records it hands out is read-only for that reason:
+a record put straight into it would leave the parted lists drawing the cells as they stood before.
 
 The ring and the `StyledCell` arrive as one `PaintedCell` from the builder,
 and that pairing is what lets the clusters answer `base.hover`'s `PaintedCellShapes` -
@@ -294,32 +310,35 @@ where a keyed one is a rule somebody has to keep true.
 
 ### `OwnerMapBuildInputs`: what the build was baked under
 
-Everything a rebuild retained to build under lives in its own record,
+Everything a rebuild retained to build under lives in one value of its own,
 reached through `getBuildInputs`:
-the `MapStyling` (the theme, the layer's categories and the three factionless palettes),
+the `MapStyling` (the theme, the border trace, the layer's categories and the three unowned palettes),
 the `ViewReading` (the view, the owner reading it was styled and named by,
-and the grouping its holding was folded under),
+and the owner source it was resolved under),
 the `ContentInputs` it sampled,
-and the two sets the holding resolve derived about the fill -
+and the two sets the source derived about the fill -
 the unfilled systems and the contested ones.
-The grouping rides there for the incremental refresh alone,
-which reopens a per-system resolve under the fold it patches;
+The source rides there for the incremental refresh alone,
+which reopens a per-system resolve under the sampling it patches;
 nothing styles or names by it.
 
-They are one record because they are fixed together:
+They are one value because they are fixed together:
 set once when the build ends and read until the next one,
 where the occupancy beside them is folded per marked system.
-A reader takes the record and names which snapshot it reads -
+A reader takes the value and names which snapshot it reads -
 `styling()`,
 `viewReading()`,
 `contentInputs()` -
 rather than reaching one field of it through a flat getter on the built map,
 which would let a pass compose a cell out of one snapshot's theme and another's reading without the type saying so.
-`resolveBlocPaintOf` sits on the record for the same reason:
+`resolveOwnerPaintOf` sits on it for the same reason:
 it cascades the reading, the categories, the picks and the theme's shades into the one thing an element is painted from
-(`ResolvedBlocPaint`, in [`render.style`](../style/README.md)),
+(`ResolvedOwnerPaint`, in [`render.style`](../style/README.md)),
 so it belongs to the type that holds all four.
-`wasBuilt` is the record's answer to whether a build ran under it at all:
+It answers once per owner and remembers the paint,
+every input to it being fixed with the build -
+which is why the type is a class rather than a record.
+`wasBuilt` is its answer to whether a build ran under it at all:
 the placeholder a failed first build stands behind resolved no reading,
 so the incremental refresh and the picker preview ask it before reaching for one.
 The bundle-and-adjustment step behind it stays private:
@@ -328,17 +347,17 @@ and resolving the shades separately is how a fill comes to be muted while the bo
 
 ## The split fill: solid, hatched, unfilled
 
-A bloc's footprint is traced as one border whatever its members' fills;
-the fill is what varies per system inside it,
-across three states.
+This section is the one statement of the three fill states.
+An owner's footprint is traced as one border whatever its members' fills;
+the fill is what varies per system inside it.
 **Solid** is the default -
-a bloc with no exception among its systems fills its whole cluster from that one border
+an owner with no exception among its systems fills its whole cluster from that one border
 and pays nothing for the split,
 the common case.
 The two exceptions each carve a sub-cluster out of the solid,
-hatched and unfilled,
-and both are decided upstream by the view's holder source;
-this section is how the draw honours them.
+hatched (`contestedSystemKeys`) and unfilled (`unfilledSystemKeys`),
+and both are decided upstream by the layer's owner source;
+what follows is how the draw honours them.
 
 The machinery is the framework's -
 `FillSplit` partitions the members and `SplitFillBuilder` tessellates each state as its own cluster inside the one border;
@@ -347,21 +366,21 @@ and why a state fills from its own traced rings rather than from its members' ce
 What is the layer's is which systems land in the two non-solid sets,
 and what that reads as on the map.
 
-**Hatched.** When the filter spotlights one bloc,
+**Hatched.** When the filter spotlights one owner,
 its whole footprint -
 the systems it wins plus the ones it is merely present in -
-clusters under one bloc,
+clusters under one owner,
 and each body's fill splits inside its own frontier:
-solid where the bloc wins,
+solid where the owner wins,
 a pre-clipped diagonal hatch where it is only present ("mine, but contested").
-The states are traced once for the bloc and clipped per body,
-so a bloc contested in two places pays one trace and reads correctly in both.
+The states are traced once for the owner and clipped per body,
+so an owner contested in two places pays one trace and reads correctly in both.
 
 The footprint's interior divisions carry no geometry of their own:
 the whole footprint shares one owner,
 so a solid/hatch transition is an interior seam like any other
 and its two cells already stroke it in the province style.
-Giving those divisions the frontier's own border style instead would put a heavy line under the faction's name label,
+Giving those divisions the frontier's own border style instead would put a heavy line under the owner's name label,
 which the label has to stay legible over,
 and would need raw cell edges to draw -
 untrimmed,
@@ -370,14 +389,14 @@ The province seam has neither problem:
 it is faint,
 and the cell shaper truncates it where it runs into a pulled-in border.
 
-**Unfilled.** A system the view's holder source extends a bloc's holdings with,
-though the bloc does not hold it,
-sits inside its bloc's one border for outline and label but paints no fill at all,
+**Unfilled.** A system the owner source extends an owner's footprint with,
+though the owner does not hold it,
+sits inside its owner's one border for outline and label but paints no fill at all,
 so the split simply skips it.
 Same shape as the hatch sub-cluster
 (one border, a sub-cluster drawn differently) but the sub-cluster is empty rather than hatched,
-so the boundary between what a bloc holds and what its view extends it with reads as the seam where the fill stops inside a continuous frontier.
-Which systems are unfilled is the holder source's to say;
+so the boundary between what an owner holds and what its view extends it with reads as the seam where the fill stops inside a continuous frontier.
+Which systems are unfilled is the source's to say;
 this package only honours the set.
 
 ## Rendering
@@ -390,7 +409,7 @@ see [`base.render.clusters`](../../../base/render/clusters/README.md) for what i
 ## What is not here
 
 The *styling resolvers*
-(what colour/width each category and bloc draws in) live in [`render.style`](../style/README.md),
+(what colour/width each category and owner draws in) live in [`render.style`](../style/README.md),
 over the framework's [`base.theme`](../../../base/theme/README.md) records they read the player's choices out of;
 this package consumes both,
 it does not decide either.
@@ -406,12 +425,12 @@ and the GL emission itself -
 is the framework's [`base.render.clusters`](../../../base/render/clusters/README.md),
 which knows nothing of who holds what;
 the low-level GL run emission is a generic helper in KMLib (`kmlib.opengl.GlRuns`).
-The *incremental refresh* that redraws what a colony event moved -
-over the marked systems' holder,
+The *incremental refresh* that redraws what a marked change moved -
+over the marked systems' owner,
 inhabitation and spotlit presence,
 which `render.MarkedSystemRederive` reads back first -
 is `render.IncrementalOwnerRefresh`,
-at the render root alongside the plugin and the per-frame cache that drives it -
+at the render root alongside the layer renderer (`OwnerMapLayerRenderer`) and the per-frame cache that drives it -
 the composition root that wires these feature packages together.
 *Which* change triggers a full rebuild here and
 which one only re-shapes a handful of cells is [the caching notes](../../../../../../../../docs/dev/caching.md).

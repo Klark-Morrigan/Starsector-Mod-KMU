@@ -1,8 +1,9 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
+import kmlib.starsector.factions.relation.FactionSetFriendliness;
+
 import kmu.maplayers.politicalmap.dominance.standings.FactionStanding;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
-import kmu.maplayers.politicalmap.dominance.standings.StandingFraction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,8 +37,7 @@ import java.util.Set;
  * system it holds - so the rows and the fraction above them do not add up wherever a member holds
  * nothing here, and are not meant to.
  *
- * <p>Every disposition is read through {@link kmu.maplayers.ownermap.holding.BlocFriendliness}
- * from the faction being sorted, at both tiers, so which side a faction takes and what its row counts
+ * <p>Every disposition is read through {@link FactionSetFriendliness} from the faction being sorted, at both tiers, so which side a faction takes and what its row counts
  * cannot be answered out of pairs read in opposite directions.
  *
  * <p>Built in one walk and held, the sides being wanted one after another by a box laying its blocks
@@ -79,6 +79,7 @@ final class RivalDispositionSplit {
         for (var rival : rivals) {
             split.appendRival(rival);
         }
+
         return split;
     }
 
@@ -109,22 +110,28 @@ final class RivalDispositionSplit {
 
         for (var member : rival.members()) {
 
-            var members = isMemberFriendly(member) ? friendlyMembers : sourMembers;
+            var members = isMemberFriendly(member)
+                ? friendlyMembers
+                : sourMembers;
+
             members.add(member);
         }
+
         var blocMemberFactionIds = rules.readMemberFactionIds(rival.blocId());
 
         if (friendlyMembers.isEmpty() || sourMembers.isEmpty()) {
 
-            var isBlocFriendly = rules
-                .friendliness()
-                .areBlocsFriendly(blocMemberFactionIds, holderMemberFactionIds);
+            var isBlocFriendly = readFactionSetFriendliness()
+                .areSetsFriendly(blocMemberFactionIds, holderMemberFactionIds);
 
-            var side = isBlocFriendly ? friendlyRivals : contestedRivals;
+            var side = isBlocFriendly
+                ? friendlyRivals
+                : contestedRivals;
 
             side.add(routeRivalSide(rival, rival.members(), isBlocFriendly, blocMemberFactionIds));
             return;
         }
+
         friendlyRivals.add(routeRivalSide(rival, friendlyMembers, true, blocMemberFactionIds));
         contestedRivals.add(routeRivalSide(rival, sourMembers, false, blocMemberFactionIds));
     }
@@ -155,12 +162,13 @@ final class RivalDispositionSplit {
             boolean isFriendlySide,
             Set<String> blocMemberFactionIds) {
 
-        var atOddsCount = rules
-            .friendliness()
+        var atOddsCount = readFactionSetFriendliness()
             .countMembersAtOddsWith(blocMemberFactionIds, holderMemberFactionIds);
 
         return new StandingFraction(
-            isFriendlySide ? blocMemberFactionIds.size() - atOddsCount : atOddsCount,
+            isFriendlySide
+                ? blocMemberFactionIds.size() - atOddsCount
+                : atOddsCount,
             blocMemberFactionIds.size());
     }
 
@@ -178,7 +186,7 @@ final class RivalDispositionSplit {
             fractionsByFactionId.put(
                 member.factionId(),
                 new StandingFraction(
-                    rules.friendliness().countFactionsAtOddsWith(
+                    readFactionSetFriendliness().countFactionsAtOddsWith(
                         member.factionId(),
                         holderMemberFactionIds),
                     holderMemberFactionIds.size()));
@@ -186,14 +194,17 @@ final class RivalDispositionSplit {
         return fractionsByFactionId;
     }
 
-    // Whether one member of a bloc is on good terms with the holder, asked as the bloc of one it would
-    // be listed as. Through the same rule the whole bloc is judged by rather than by reaching for the
-    // faction-level answer underneath it, so a member deciding a split is measured by exactly the test
-    // its bloc is - the empty-bloc reading included.
+    // Whether one member of a bloc is on good terms with the holder, so a member deciding a split is
+    // measured by exactly the test its bloc is.
     private boolean isMemberFriendly(FactionStanding member) {
 
         return rules
-            .friendliness()
-            .areBlocsFriendly(Set.of(member.factionId()), holderMemberFactionIds);
+            .blocRelations()
+            .isFactionFriendlyWith(member.factionId(), holderMemberFactionIds);
+    }
+
+    // How warm two sets of factions are, off the relations the routing was handed.
+    private FactionSetFriendliness readFactionSetFriendliness() {
+        return rules.blocRelations().factionSetFriendliness();
     }
 }

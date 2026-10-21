@@ -1,7 +1,9 @@
 package kmu.maplayers.base.geometry.v3;
 
 import kmlib.math.geometry.PolygonRegions;
-import kmlib.math.geometry.Segments;
+
+import kmu.maplayers.base.geometry.LineCrossings;
+import kmu.maplayers.base.geometry.LoadedSectors;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class LinkedSectorPocketsIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     @Nested
     class CollectLinkedSectorWater {
@@ -116,9 +118,10 @@ class LinkedSectorPocketsIntegrationTests {
         for (var here = 1; here < one.size(); here++) {
             for (var there = 1; there < other.size(); there++) {
 
-                if (Segments.intersectSegments(
+                if (LineCrossings.isCrossing(
                         one.get(here - 1), one.get(here),
-                        other.get(there - 1), other.get(there)) != null) {
+                        other.get(there - 1), other.get(there),
+                        LineCrossings.SharedAnchor.IS_CROSSING)) {
 
                     return true;
                 }

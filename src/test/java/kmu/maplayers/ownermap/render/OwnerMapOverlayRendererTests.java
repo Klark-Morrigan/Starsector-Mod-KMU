@@ -1,7 +1,9 @@
 package kmu.maplayers.ownermap.render;
 
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
+import kmu.maplayers.base.hover.HoverHighlightSource;
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.MapLayerHoverGatesFake;
 import kmu.maplayers.base.labels.LabelRenderer;
@@ -20,6 +22,7 @@ import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 import java.util.List;
@@ -35,6 +38,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -60,14 +64,14 @@ final class OwnerMapOverlayRendererTests {
     // which renderer each band reaches rather than what it emits.
     private static final MapFrame PAINTING_FRAME = new MapFrame(1f, 1f);
 
-    // What the cursor was resolved to on this sector's map, for the case about which holder the
+    // What the cursor was resolved to on this sector's map, for the case about which owner the
     // highlight traces.
-    private static final MapHover HOVERED_CELL = new MapHover(
+    private static final MapHover HOVERED_CELL = MapHoverFixture.buildHoverOn(
         buildCellKey("system_id"),
         List.of(buildCellKey("system_id")));
 
-    // The hover holder of the sector this compositor's draw lists belong to. Made per case, since a
-    // compositor is built with the holder of its own installed machinery.
+    // The hover state of the sector this compositor's draw lists belong to. Made per case, since a
+    // compositor is built with the hover state of its own installed machinery.
     private final MapHoverState hoverState = new MapHoverState();
 
     // The picker preview, stood in for. It is the one sub-layer the compositor is handed rather
@@ -89,6 +93,7 @@ final class OwnerMapOverlayRendererTests {
 
         @Test
         void emitsTheClustersForTheBandBeneathTheNebulae() {
+
             try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
                     var labelRendererMock = mockStatic(LabelRenderer.class);
                     var ribbonRendererMock = mockStatic(CellPresenceRibbonRenderer.class);
@@ -96,8 +101,8 @@ final class OwnerMapOverlayRendererTests {
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
@@ -128,8 +133,8 @@ final class OwnerMapOverlayRendererTests {
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
@@ -147,7 +152,7 @@ final class OwnerMapOverlayRendererTests {
         }
 
         @Test
-        void emitsThePresenceBandsAndTheFactionNamesForTheBandAboveTheNebulae() {
+        void emitsThePresenceBandsAndTheOwnerNamesForTheBandAboveTheNebulae() {
             // The two sub-layers that are read rather than merely seen, and the reason the band
             // exists: text stops being readable under the fog well before a fill stops reading as
             // cluster group, and a band that says how a system is split fails the same way.
@@ -158,8 +163,8 @@ final class OwnerMapOverlayRendererTests {
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
@@ -190,6 +195,7 @@ final class OwnerMapOverlayRendererTests {
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
+
                 openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
                 // Built inside the construction mock, since the cursor's highlight renderer is a
@@ -208,11 +214,11 @@ final class OwnerMapOverlayRendererTests {
         }
 
         @Test
-        void lightsTheCellItsOwnHoverHolderNames() {
+        void lightsTheCellItsOwnHoverStateNames() {
             // The highlight brightens a cell the cache's draw lists cut, so the hover it traces has
             // to be the one the pass over those very lists published. Read off whichever sector was
             // running instead, this would wash a cell the sector it is compositing never drew -
-            // nothing forbidding two sectors from holding a system under the same id.
+            // nothing forbidding two sectors from holding a system under the same ID.
             hoverState.publishHover(HOVERED_CELL);
 
             try (var hoverRendererConstructionMock = mockConstruction(HoverHighlightRenderer.class);
@@ -221,8 +227,8 @@ final class OwnerMapOverlayRendererTests {
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
-                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
@@ -237,6 +243,34 @@ final class OwnerMapOverlayRendererTests {
         }
 
         @Test
+        void handsTheHighlightOneSourceWhileTheClustersStand() {
+            // Painted every frame the cursor is on the map, so the source over unchanged clusters is
+            // kept rather than built again per frame.
+            try (var hoverRendererConstructionMock = mockConstruction(HoverHighlightRenderer.class);
+                    var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
+                    var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
+
+                bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
+
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
+
+                var overlayRenderer = buildOverlayRendererOver(buildCacheMock());
+
+                overlayRenderer.renderBand(PAINTING_FRAME, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+                overlayRenderer.renderBand(PAINTING_FRAME, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                var sourceCaptor = ArgumentCaptor.forClass(HoverHighlightSource.class);
+
+                verify(hoverRendererConstructionMock.constructed().get(0), times(2))
+                    .renderCursorHighlightOnMap(sourceCaptor.capture(), any(), any(), any());
+
+                assertThat(sourceCaptor.getAllValues().get(1))
+                    .isSameAs(sourceCaptor.getAllValues().get(0));
+            }
+        }
+
+        @Test
         void leavesTheHoverHighlightAndTheAnchorsOutOfTheBandAboveTheNebulae() {
             // The half of the pinning that catches a sub-layer promoted by accident: both switches
             // are on, so anything reached here is reached because of the band it was asked for.
@@ -246,8 +280,8 @@ final class OwnerMapOverlayRendererTests {
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
-                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
@@ -267,7 +301,7 @@ final class OwnerMapOverlayRendererTests {
 
         @Test
         void emitsThePickerPreviewForTheBandBeneathTheNebulae() {
-            // The preview brightens the fills for a whole bloc, so it rides with them for the
+            // The preview brightens the fills for a whole owner, so it rides with them for the
             // reason the cursor's highlight does: left beneath while the fills went above, it
             // would be painted over and light nothing.
             //
@@ -279,8 +313,8 @@ final class OwnerMapOverlayRendererTests {
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
@@ -298,8 +332,8 @@ final class OwnerMapOverlayRendererTests {
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
-                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
@@ -318,8 +352,8 @@ final class OwnerMapOverlayRendererTests {
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildDebugCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
@@ -350,8 +384,8 @@ final class OwnerMapOverlayRendererTests {
                     var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
 
                 bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildDebugCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
@@ -378,8 +412,8 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
@@ -404,8 +438,8 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
@@ -428,8 +462,8 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
@@ -444,7 +478,7 @@ final class OwnerMapOverlayRendererTests {
         }
 
         @Test
-        void emitsThePresenceBandsAndTheFactionNamesBeneathTheNebulaeWhereLowered() {
+        void emitsThePresenceBandsAndTheOwnerNamesBeneathTheNebulaeWhereLowered() {
             // The two readouts moved the other way. They are the sub-layers a player is most likely
             // to move - the fog is the reason they were placed above in the first place - so a
             // routing fault here is one the shipped split would never show.
@@ -458,8 +492,8 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
@@ -488,8 +522,8 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
-                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
@@ -518,8 +552,8 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildDebugCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
@@ -547,8 +581,8 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
-                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
@@ -565,7 +599,7 @@ final class OwnerMapOverlayRendererTests {
         }
 
         @Test
-        void leavesThePresenceBandsAndTheFactionNamesOutOfTheBandTheyWereLoweredFrom() {
+        void leavesThePresenceBandsAndTheOwnerNamesOutOfTheBandTheyWereLoweredFrom() {
             // The same absence for the two readouts, which the shipped split pins only the other way
             // round. A band left emitting on its old side as well as its new one is drawn twice over
             // the same cell, and the presence bands are translucent.
@@ -579,8 +613,8 @@ final class OwnerMapOverlayRendererTests {
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
-                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
 
+                silenceTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
                 buildOverlayRendererOver(buildCacheMock()).renderBand(
                     PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
@@ -593,11 +627,93 @@ final class OwnerMapOverlayRendererTests {
                     .verifyNoInteractions();
             }
         }
+
+        @Test
+        void leavesOutTheAnchorsWhileTheirToggleIsOff() {
+            // The anchors are built for the names whether or not they are shown, so the toggle is
+            // the only thing keeping a full list off the map.
+            try (var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
+                    var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
+
+                bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
+
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
+
+                diagnosticsSettingsMock
+                    .when(KmuOwnerMapDiagnosticsSettings::getOwnerMapShowClusterAnchors)
+                    .thenReturn(false);
+
+                buildOverlayRendererOver(buildCacheMock()).renderBand(
+                    PAINTING_FRAME,
+                    MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                anchorRendererMock
+                    .verifyNoInteractions();
+
+                clusterRendererMock.verify(() ->
+                    ClusterRenderer.renderFillsOnMap(any(), any()));
+            }
+        }
+
+        @Test
+        void leavesOutTheHoverHighlightWhileTheEffectsAreOff() {
+            // The hover may still be resolved every frame for the box's sake, so the effects switch
+            // is what keeps a resolved hover from being painted.
+            hoverState.publishHover(HOVERED_CELL);
+
+            try (var hoverRendererConstructionMock = mockConstruction(HoverHighlightRenderer.class);
+                    var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
+                    var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
+
+                bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
+
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
+
+                hoverGatesFake.setHoverEffectsOn(false);
+
+                buildOverlayRendererOver(buildCacheMock()).renderBand(
+                    PAINTING_FRAME,
+                    MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                assertThat(hoverRendererConstructionMock.constructed())
+                    .singleElement()
+                    .satisfies(hoverRenderer -> verifyNoInteractions(hoverRenderer));
+
+                anchorRendererMock.verify(() ->
+                    ClusterAnchorRenderer.renderOnMap(any(), any()));
+            }
+        }
+
+        @Test
+        void laysTheAnchorsOverTheDebugBorderStage() {
+            // The two debug overlays compose: the anchors annotate whichever base view drew, so the
+            // tracing overlay replacing the clusters does not take the anchors with it.
+            try (var borderStageRendererMock = mockStatic(ClusterBorderStageRenderer.class);
+                    var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class)) {
+
+                bandLayout = BandLayoutFixtures.buildGeometryBelowAndReadoutsAbove();
+
+                openTheTogglesTheBandsDoNotDecide(diagnosticsSettingsMock);
+                buildOverlayRendererOver(buildDebugCacheMock()).renderBand(
+                    PAINTING_FRAME,
+                    MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                var debugCallOrder = inOrder(ClusterBorderStageRenderer.class, ClusterAnchorRenderer.class);
+
+                debugCallOrder.verify(borderStageRendererMock, () ->
+                    ClusterBorderStageRenderer.renderOnMap(any(), any()));
+                debugCallOrder.verify(anchorRendererMock, () ->
+                    ClusterAnchorRenderer.renderOnMap(any(), any()));
+            }
+        }
     }
 
     // The two switches that gate sub-layers within a band rather than deciding which band they are
-    // in, both open. What each switch decides is its own gate's to cover; what they allow here is a
-    // sub-layer to be observed in the band that asked for it.
+    // in, both open, so a sub-layer can be observed in the band that asked for it. What each switch
+    // decides on its own is pinned by the cases that turn one of them off.
     private void openTheTogglesTheBandsDoNotDecide(
             MockedStatic<KmuOwnerMapDiagnosticsSettings> diagnosticsSettingsMock) {
 
@@ -609,8 +725,7 @@ final class OwnerMapOverlayRendererTests {
     }
 
     // The two switches that gate sub-layers within a band rather than deciding which band they are
-    // in. Held off so each test observes the band split alone; what each switch does is its own
-    // gate's to cover.
+    // in, held off so each test observes the band split alone.
     private void silenceTheTogglesTheBandsDoNotDecide(
             MockedStatic<KmuOwnerMapDiagnosticsSettings> diagnosticsSettingsMock) {
 
@@ -621,10 +736,11 @@ final class OwnerMapOverlayRendererTests {
             .thenReturn(false);
     }
 
-    // The compositor under test, over the case's own cache, hover holder and preview seam. Built
+    // The compositor under test, over the case's own cache, hover state and preview seam. Built
     // inside a case rather than once per suite, so a case standing in for the highlight's
     // construction reaches the one this compositor makes for itself.
     private OwnerMapOverlayRenderer buildOverlayRendererOver(OwnerMapCache cache) {
+
         return new OwnerMapOverlayRenderer(
             cache,
             hoverState,
@@ -672,7 +788,7 @@ final class OwnerMapOverlayRendererTests {
             .thenReturn(false);
         when(cacheMock.getClusters())
             .thenReturn(clustersMock);
-        when(cacheMock.getFactionLabels())
+        when(cacheMock.getOwnerLabels())
             .thenReturn(List.of());
 
         return cacheMock;

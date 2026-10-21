@@ -12,8 +12,8 @@ and through it of [the map layers framework](../../../README.md).
 ## Index
 
 - [The role and the reader](#the-role-and-the-reader)
-- [The seven always in the set](#the-seven-always-in-the-set)
-- [Two from optional mods](#two-from-optional-mods)
+- [The five always in the set](#the-five-always-in-the-set)
+- [Covers from optional mods](#covers-from-optional-mods)
 - [Order, and failing open](#order-and-failing-open)
 - [The minimap exception](#the-minimap-exception)
 
@@ -23,60 +23,47 @@ and through it of [the map layers framework](../../../README.md).
 one thing that can be over the cursor -
 and `MapCoverReader` holds the set and stops at the first that answers.
 
-## The seven always in the set
+## The five always in the set
 
-Seven are always in the set and live here:
+Five are always in the set and live here:
 `HeldPointerMapCover`
 (a held left button, on which the pointer is pressing rather than pointing - it stands in for vanilla's own marker menu, which no geometry here can see; the class states why),
 `PauseMenuMapCover`
 (the campaign's pause menu, raised over the screen without taking it down, so the map keeps drawing behind it),
-`ArrangementDialogMapCover`
-(this mod's own bar-arranging dialog, read off its own state),
-`CodexMapCover`
-(the codex - a panel over the middle of the screen, with a screen-spanning backdrop taking the events over the rest of it, so the cover reads no geometry either),
-`ModalDialogMapCover`
-(a confirmation prompt or picker a core screen raises in front of itself, which nothing the campaign publishes reports),
+`ScreenClaimMapCover`
+(anything that claims the screen from the sidebar too: a console, the codex, this mod's own bar-arranging dialog, or a modal a core screen raises in front of itself),
 `SidebarMapCover`
 (any host's panel, through `SidebarHosts`),
 and `VanillaChromeMapCover`
 (the map's own tab strip and control bar, stated as "outside the map surface" since the chrome widgets are a fact about one game build).
 
-The codex is its own cover rather than a case of the modal beside it,
-because it is raised outside the core UI entirely -
-so the modal's walk answers no on exactly the frames the codex answers yes.
-`CodexMapCover` states that,
-over KMLib's `CodexView`.
-The arranging dialog is its own for the mirror-image reason:
-it is raised *inside* the core UI but descends from nothing of the game's,
-so the marker that walk recognises a modal by is not on it.
+The claim cover reads the sidebar's own [`ScreenClaim`](../../sidebar/runtime/README.md),
+since every claimant stands the panel down for the same reason it covers the map.
+So a claimant is named,
+read and gated in one place:
+which walk cannot see the codex,
+why the arranging dialog needs a reading of its own,
+and why the console is asked only where its mod is installed,
+are all the claim's to state.
+It sits ahead of the sidebar's cover deliberately:
+the panel's own cover cannot answer for a claimant that stood it down.
 
-Both sit ahead of the sidebar's deliberately:
-either stands the sidebar down,
-so the panel's own cover cannot answer for them.
-`ModalDialogMapCover` and `CodexMapCover` state what follows for their existence
-and `MapCoverReader` what follows for the order.
-
-Those two,
-the pause menu's and the arranging dialog's are four names over one shape:
+The pause menu's cover and the claim cover are two names over one shape:
 each is a flag read somewhere else,
 with no geometry and no cursor test,
-so `FlagMapCover` holds the delegation and each of the four is a body of reasoning plus the reading it binds.
-They stay four classes because what makes one of them its own is exactly the argument in its Javadoc -
-which walk cannot see it,
-what silences it and what does not -
-and none of that is expressible as an entry in a list.
-What is not four times over is the delegation itself,
-nor the test of it.
+so `FlagMapCover` holds the delegation and each is a body of reasoning plus the reading it binds.
 
-## Two from optional mods
+## Covers from optional mods
 
-Two more belong to optional mods,
-live with those mods' own integrations,
-and join the set only where the mod is installed -
+A cover that belongs to an optional mod lives with that mod's own integration.
+The composition root registers it with `MapCoverReader.registerOptionalModCovers` only where the mod is installed,
+so this framework never names an adapter -
 presence being the one condition that cannot move within a run,
-so the factory settles it once instead of asking a cover that could only ever answer no. `ConsoleMapCover` (`kmu.mods.console`) is a text-entry console,
-which takes the whole screen and so reads no geometry at all.
-`RandomAssortmentOfThingsMinimapCover` (`kmu.mods.rat`) is everywhere that is *not* a docked minimap,
+it is settled once instead of asking a cover that could only ever answer no.
+They are asked after every cover of the framework's own.
+
+`RandomAssortmentOfThingsMinimapCover` (`kmu.mods.rat`) is the one today.
+It covers everywhere that is *not* a docked minimap,
 on the frames the mode from `RandomAssortmentOfThingsCompatibilityMode` is engaged
 and no vanilla map is showing;
 which surface that minimap is comes from `SingleEmbeddedMapReader`,
@@ -86,21 +73,38 @@ so the three cannot act on different answers.
 
 ## Order, and failing open
 
-They are held in ascending cost -
-a polled mouse flag,
-then a published one-call read,
-then a settled flag,
-then arithmetic over a box this mod laid out,
-then the two that walk the live widget tree -
-so the order is the composition's and each cover states only its own reading.
+They are held in ascending cost,
+stated once on `MapCoverReader`'s list:
+
+1. `HeldPointerMapCover` -
+   a polled mouse flag;
+2. `PauseMenuMapCover` -
+   a published one-call read;
+3. `ScreenClaimMapCover` -
+   the console's settled flag,
+   one hop off the app state for the codex,
+   this mod's own dialog state,
+   then a walk of the core UI's own children for a modal;
+4. `SidebarMapCover` -
+   arithmetic over a box this mod laid out;
+5. `VanillaChromeMapCover` -
+   a walk into the map tab's own layout;
+6. the optional mods' covers,
+   in the order they were registered -
+   `RandomAssortmentOfThingsMinimapCover` walks the surfaces another mod put on screen,
+   the dearest because it is rooted above every tab.
+
+The claim cover sits ahead of the sidebar for a reason beyond cost,
+given [above](#the-five-always-in-the-set).
+So the order is the composition's and each cover states only its own reading.
 All but the last fail open:
 what cannot be established is not covering,
 since a read taken to refine the hover must not be able to switch it off.
 One set for every layer,
 not one per layer,
 because nothing about a cover is a layer's own -
-a layer holding its own could be given a cover its neighbour was not,
-which is how a console came to hide the sidebar while the map went on lighting cells behind it.
+a layer holding its own could be given a cover its neighbour was not -
+a console hiding the sidebar while the map went on lighting cells behind it.
 
 ## The minimap exception
 

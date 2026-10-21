@@ -1,28 +1,21 @@
 package kmu.util;
 
+import kmlib.text.KmlibStrings;
+
 import java.util.Optional;
 
 public final class KmuTextFormats {
+
     private KmuTextFormats() {
     }
 
-    /**
-     * Combines two optional strings into "main (parenthetical)" form.
-     * Returns whichever is present when only one is, or empty when neither is.
-     */
+    /** See {@link KmlibStrings#joinWithParenthetical}. */
     public static Optional<String> joinWithParenthetical(
             Optional<String> main,
             Optional<String> parenthetical) {
 
-        if (!main.isPresent() && !parenthetical.isPresent()) {
-            return Optional.empty();
-        }
-        if (!main.isPresent()) {
-            return parenthetical;
-        }
-        if (!parenthetical.isPresent()) {
-            return main;
-        }
-        return Optional.of(main.get() + " (" + parenthetical.get() + ")");
+        return KmlibStrings.joinWithParenthetical(
+            main.orElse(null),
+            parenthetical.orElse(null));
     }
 }

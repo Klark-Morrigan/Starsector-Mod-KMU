@@ -9,10 +9,10 @@ import kmlib.testfixtures.statics.StaticSeams;
 import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.NameFormatPreference;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuOwnerMapGeometrySettings;
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>Four seams are handed back, because they are what those suites legitimately disagree on: which
  * sector the game is running, whether the bands are on, what the player is allowed to see, and which
- * bloc is spotlighted. Everything else answers the same way for any rebuild, so a caller states only
+ * owner is spotlighted. Everything else answers the same way for any rebuild, so a caller states only
  * what it varies.
  */
 public final class OwnerMapRebuildSeams {
@@ -54,9 +54,13 @@ public final class OwnerMapRebuildSeams {
     private final StaticSeams seams = new StaticSeams();
 
     private final MockedStatic<Global> globalSeam;
+    private final MockedStatic<KmuLunaSettings> lunaSettingsSeam;
     private final MockedStatic<KmuOwnerMapRibbonSettings> ribbonSettingsSeam;
     private final MockedStatic<MapVisibilityRules> visibilityRulesSeam;
     private final MockedStatic<FilterSelection> filterSelectionSeam;
+
+    // What the settings revision reads as, moved by each flip of a setting this arrangement poses.
+    private int settingsRevision;
 
     private OwnerMapRebuildSeams() {
 
@@ -65,7 +69,8 @@ public final class OwnerMapRebuildSeams {
         // The dev reveal and the settings behind the knob reads, both LunaLib-backed: no rebuild
         // case turns on either, so the seam's own answers stand for them.
         seams.openSeam(KmuMapVisibilitySettings.class);
-        seams.openSeam(KmuLunaSettings.class);
+
+        lunaSettingsSeam = seams.openSeam(KmuLunaSettings.class);
 
         // The label face is settled against the installed atlases, which no test JVM has, so it
         // settles as the face labels ask for. Whether that face then loads is the caller's to say,
@@ -75,7 +80,7 @@ public final class OwnerMapRebuildSeams {
             .when(() -> LabelFonts.settleMapLabelFace(any()))
             .thenReturn(StarsectorFont.VANILLA_INSIGNIA_42);
 
-        // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory state
+        // No owner spotlighted, which the seam's own null answers - the pick is sector-memory state
         // no test JVM has.
         filterSelectionSeam = seams.openSeam(FilterSelection.class);
 
@@ -109,7 +114,7 @@ public final class OwnerMapRebuildSeams {
         var nameFormatMock = mock(NameFormatPreference.class);
 
         when(nameFormatMock.getSelectedNameFormat(any()))
-            .thenReturn(FactionNameFormatChoice.NONE);
+            .thenReturn(OwnerNameFormatChoice.NONE);
 
         var preferences = OwnerMapBodyPreferencesFixtures.createUnderTestKeys();
 
@@ -123,7 +128,7 @@ public final class OwnerMapRebuildSeams {
      * Stands in for every class any layer's rebuild reaches, answering each the one way a rebuild
      * wants unless it is one of the four handed back below.
      *
-     * @return the open arrangement, which its holder closes on the way out
+     * @return the open arrangement, which its caller closes on the way out
      */
     public static OwnerMapRebuildSeams openEverySeamARebuildNeeds() {
         return new OwnerMapRebuildSeams();
@@ -164,15 +169,37 @@ public final class OwnerMapRebuildSeams {
     }
 
     /**
-     * @return the seam standing in for the player's visibility settings, for a caller posing a gate
-     *         flipped between two rebuilds
+     * Flips the player's visibility settings to the given rules, as a LunaLib save does: the rules
+     * the next read answers, and a settings revision moved past the last, which is what tells a
+     * rebuild the settings it read are stale.
+     *
+     * @param rules the rules the visibility read answers from here on
+     */
+    public void flipVisibilitySettings(MapVisibilityRules rules) {
+
+        visibilityRulesSeam
+            .when(MapVisibilityRules::readFromLunaSettings)
+            .thenReturn(rules);
+
+        settingsRevision++;
+
+        var announcedRevision = settingsRevision;
+
+        lunaSettingsSeam
+            .when(KmuLunaSettings::getSettingsRevision)
+            .thenReturn(announcedRevision);
+    }
+
+    /**
+     * @return the seam standing in for the player's visibility settings, for a caller counting how
+     *         often a rebuild reads them; a caller flipping them takes {@link #flipVisibilitySettings}
      */
     public MockedStatic<MapVisibilityRules> resolveVisibilityRulesSeam() {
         return visibilityRulesSeam;
     }
 
     /**
-     * @return the seam standing in for the spotlight pick, for a caller posing a bloc picked or
+     * @return the seam standing in for the spotlight pick, for a caller posing an owner picked or
      *         cleared between two frames
      */
     public MockedStatic<FilterSelection> resolveFilterSelectionSeam() {

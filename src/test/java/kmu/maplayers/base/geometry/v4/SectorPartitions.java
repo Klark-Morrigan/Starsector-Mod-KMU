@@ -38,7 +38,7 @@ public final class SectorPartitions {
 
     private static final Map<String, Map<?, List<CellEdge>>> CELL_EDGES = new ConcurrentHashMap<>();
 
-    private static final Map<String, List<LabelledWall>> FRONTIERS = new ConcurrentHashMap<>();
+    private static final Map<String, Shore> SHORES = new ConcurrentHashMap<>();
 
     private static final Map<String, VoidPartition> BARE_PARTITIONS = new ConcurrentHashMap<>();
 
@@ -82,15 +82,16 @@ public final class SectorPartitions {
     }
 
     /**
-     * Every edge of a sector's cells facing void, which a tier's lines end on.
+     * The line between a sector's cells and its void, which a tier's lines end on.
      *
      * @param sector the fixture's name
-     * @return the frontier, labelled by cell
+     * @return the shore, read once
      */
-    public static List<LabelledWall> readFrontier(String sector) {
+    public static Shore readShore(String sector) {
 
-        return FRONTIERS.computeIfAbsent(
-            sector, name -> VoidPartition.collectFrontier(readCellEdges(name)));
+        return SHORES.computeIfAbsent(
+            sector,
+            name -> Shore.readShore(readCellEdges(name), loadFixture(name).getSites(), KNOBS));
     }
 
     /**
@@ -128,7 +129,6 @@ public final class SectorPartitions {
 
     private static VoidPartition walk(String sector, List<LabelledWall> laidWalls) {
 
-        return VoidPartition.readVoidPartition(
-            readCellEdges(sector), loadFixture(sector).getSites(), KNOBS, laidWalls);
+        return VoidPartition.readVoidPartition(readShore(sector), KNOBS, laidWalls);
     }
 }

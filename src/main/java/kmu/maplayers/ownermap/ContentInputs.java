@@ -6,12 +6,12 @@ import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.sidebar.ScreenSelectionSlot;
 import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 
 /**
  * Every sidebar preference a rebuild bakes into the map rather than applies while drawing it:
- * which bloc is spotlighted, how the sector recedes behind that spotlight, how the painting view's
+ * which owner is spotlighted, how the sector recedes behind that spotlight, how the painting view's
  * own backdrop recedes, how a cluster name is spelled, and whether an uninhabited system is outlined.
  *
  * <p>The five are one value because they are one sampling, exactly as {@link CellCutInputs} is for
@@ -25,22 +25,22 @@ import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
  * revision in place of the refresh counters their flips raise, so two readings holding the same
  * picks are the same bake however many counters have moved between them.
  *
- * @param selectedBlocId            the spotlighted bloc, or null off filter
+ * @param selectedOwnerId           the spotlighted owner, or null off filter
  * @param filterRecedeAdjustment    how the rest of the sector recedes behind that spotlight;
  *                                  {@link ElementStyleAdjustment#NONE} off filter, so the pick and
  *                                  the recede it implies cannot be read from two samplings
- * @param viewRecedeAdjustment      how a bloc the painting view recedes of its own accord draws;
- *                                  which blocs those are is the view's per-bloc call, not this
+ * @param viewRecedeAdjustment      how an owner the painting view recedes of its own accord draws;
+ *                                  which owners those are is the view's per-owner call, not this
  *                                  record's
- * @param nameFormat                how a cluster label spells its holder's name, including whether
+ * @param nameFormat                how a cluster label spells its owner's name, including whether
  *                                  it draws at all
  * @param isUninhabitedOutlineDrawn whether never-settled space strokes its outline
  */
 public record ContentInputs(
-    String selectedBlocId,
+    String selectedOwnerId,
     ElementStyleAdjustment filterRecedeAdjustment,
     ElementStyleAdjustment viewRecedeAdjustment,
-    FactionNameFormatChoice nameFormat,
+    OwnerNameFormatChoice nameFormat,
     boolean isUninhabitedOutlineDrawn) {
 
     /**
@@ -67,14 +67,14 @@ public record ContentInputs(
             OwnerMapBodyPreferences preferences,
             ScreenMemoryScope memoryScope) {
 
-        var selectedBlocId = FilterSelection.getSelectedIdOf(
+        var selectedOwnerId = FilterSelection.getSelectedIdOf(
             new SelectionSlot(
                 new ScreenSelectionSlot(KmuMod.MAP_STORE_NAMESPACE, memoryScope),
                 view.getId()));
 
         return new ContentInputs(
-            selectedBlocId,
-            selectedBlocId == null
+            selectedOwnerId,
+            selectedOwnerId == null
                 ? ElementStyleAdjustment.NONE
                 : preferences.filterRecede().resolveRecedeAdjustment(memoryScope),
             view.resolveViewRecedeAdjustment(memoryScope),
@@ -98,20 +98,20 @@ public record ContentInputs(
             null,
             ElementStyleAdjustment.NONE,
             ElementStyleAdjustment.NONE,
-            FactionNameFormatChoice.FULL,
+            OwnerNameFormatChoice.FULL,
             false);
     }
 
     /**
      * This same reading with the spotlight dropped, for a pass that paints the whole sector
-     * whatever the picker holds - resolving real holders and receding nothing behind a
+     * whatever the picker holds - resolving real owners and receding nothing behind a
      * spotlight.
      *
      * <p>Dropped rather than replaced with {@link #createEmpty()}, because such a pass is still
      * subject to every other pick: it draws the names the player asked for, in the format they
      * asked for.
      *
-     * @return this reading with no bloc spotlighted and no filter recede
+     * @return this reading with no owner spotlighted and no filter recede
      */
     public ContentInputs clearFilterPick() {
         return new ContentInputs(
@@ -123,10 +123,11 @@ public record ContentInputs(
     }
 
     /**
-     * @return whether a bloc is spotlighted, which is exactly when one was picked - the gate the
-     *         shared cell and faction builders bypass the view's per-bloc styling for the filter's
+     * @return whether an owner is spotlighted, which is exactly when one was picked - the gate on
+     *         which the shared cell and owner builders set the view's per-owner styling aside for
+     *         the filter's own
      */
     public boolean isFiltering() {
-        return selectedBlocId != null;
+        return selectedOwnerId != null;
     }
 }

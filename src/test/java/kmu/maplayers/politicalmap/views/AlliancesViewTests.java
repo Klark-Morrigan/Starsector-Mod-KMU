@@ -6,35 +6,33 @@ import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.ui.controls.specs.ControlSpec;
-import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
-import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderOwnerReading;
-import kmu.maplayers.ownermap.owners.holders.HolderOwnerSource;
-import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.picker.SelectableBloc;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.maplayers.ownermap.sidebar.BodyControlTarget;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.OwnerStatsRead;
+import kmu.maplayers.ownermap.picker.RankedOwner;
+import kmu.maplayers.ownermap.picker.SelectableOwner;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.dominance.DominanceStats;
 import kmu.maplayers.politicalmap.dominance.DominanceStatsAggregator;
-import kmu.maplayers.politicalmap.dominance.DominanceStatsRead;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
-import kmu.maplayers.politicalmap.holders.ClaimAugmentedHolderProvider;
-import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuOwnerMapStyleSettings;
+import kmu.util.KmuPoliticalMapStringKeys;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -43,9 +41,7 @@ import org.mockito.MockedStatic;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.picker.BlocPresenceIndexFixtures.buildIndexOf;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -56,20 +52,21 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the alliances view's render rules: an alliance bloc paints in full colour and reads its
- * alliance name, while a non-allied faction keeps its own faction style until Desaturate makes it
- * adopt the independent style bundle; Mute only dims the active style via the opacity modifier. A
- * non-allied faction is named exactly as the faction view would name that lone faction. The grouping
- * is sampled from Nexerelin,
- * so its resolution is pinned only for the Nex-absent fallback here; a live alliance set is the
- * in-game test's concern.
+ * Pins what the alliances view decides: its frozen ID and label, the alliance reading over the
+ * grouping it is handed, its own backdrop toggles, and its body controls. The grouping is sampled
+ * from Nexerelin, so its resolution is pinned only for the Nex-absent fallback here; a live alliance
+ * set is the in-game test's concern.
  *
- * <p>Its two seams that take a refresh board are pinned on the board they are handed rather than on
- * one resolved for them: the revision it folds, and the body controls it contributes.
+ * <p>Its body controls are pinned on the refresh board they are handed rather than on one resolved
+ * for them.
  *
  * <p>Beside them, what the view offers the player around the fills: only an alliance as a
  * spotlight target, matching its role of grouping holders by alliance, and a domination box of its
  * own on hover, so the box ranks under the grouping this view painted with.
+ *
+ * <p>What every view the domination contest paints answers alike is {@link DominancePaintedView}'s,
+ * and what every view of the layer answers alike is {@link PoliticalHolderView}'s, each pinned once
+ * by its own suite.
  */
 final class AlliancesViewTests {
 
@@ -94,59 +91,13 @@ final class AlliancesViewTests {
     }
 
     @Nested
-    class GetContentRevision {
+    class GetSegmentLabelKey {
 
         @Test
-        void shiftsWhenTheAllianceRevisionMoves() {
-            // The alliance set is one of the view's live inputs, so a membership change must shift
-            // the revision - that is what folds it into the content token and repaints the view
-            // without a reload.
-            var board = new MapLayerRefreshBoard();
-            var before = AlliancesView.INSTANCE.getContentRevision(board);
+        void isTheAlliancesRadioLabel() {
 
-            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
-
-            assertThat(AlliancesView.INSTANCE.getContentRevision(board))
-                .isNotEqualTo(before);
-        }
-
-        @Test
-        void standsStillWhenTheRecedeStyleRevisionMoves() {
-            // A Mute/Desaturate flip is not folded here. The bake samples this view's non-allied
-            // recede with every other preference and folds the values in, so a flip that leaves the
-            // recede where it was must cost nothing - and one that moves it rebuilds through the
-            // sampled value rather than through a counter that only says somebody clicked.
-            var board = new MapLayerRefreshBoard();
-            var before = AlliancesView.INSTANCE.getContentRevision(board);
-
-            board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
-
-            assertThat(AlliancesView.INSTANCE.getContentRevision(board))
-                .isEqualTo(before);
-        }
-
-        @Test
-        void foldsTheBoardItIsHandedRatherThanAnother() {
-            // One stateless view answers for every sector, so the board handed in is the only thing
-            // telling two sectors' asks apart. An alliance formed under one sector must move that
-            // sector's number and leave the other's exactly where it was - a view folding an
-            // ambient board instead would repaint whichever sector happened to be running.
-            //
-            // Made once, here, for the seam rather than per view: every view's cases above build a
-            // board of their own, so a view resolving one instead of folding the argument already
-            // fails them - a raise on a board nothing else reads would move no number at all. What
-            // this adds is the second board those cases have no way to disagree with.
-            var board = new MapLayerRefreshBoard();
-            var otherBoard = new MapLayerRefreshBoard();
-            var before = AlliancesView.INSTANCE.getContentRevision(board);
-            var otherBefore = AlliancesView.INSTANCE.getContentRevision(otherBoard);
-
-            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
-
-            assertThat(AlliancesView.INSTANCE.getContentRevision(board))
-                .isNotEqualTo(before);
-            assertThat(AlliancesView.INSTANCE.getContentRevision(otherBoard))
-                .isEqualTo(otherBefore);
+            assertThat(AlliancesView.INSTANCE.getSegmentLabelKey())
+                .isEqualTo(KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_ALLIANCES);
         }
     }
 
@@ -171,22 +122,29 @@ final class AlliancesViewTests {
     class GetViewBodyControls {
 
         @Test
-        void handsThePanelItWasGivenToTheRecedeAdapter() {
-            // This view's Mute/Desaturate checkboxes repaint by raising a signal and store under the
-            // panel they were placed on, so the panel has to reach them from the tab that placed them.
-            // Dropped here - a delegation short enough to look incapable of losing anything - the
-            // checkboxes would fall back to the running sector's board and whichever screen was up, and
-            // a flip would repaint a map the player is not looking at, or land on the other panel.
+        void handsTheNonAlliedSetCaptionAndPanelToTheSharedRecedeControl() {
+            // The checkboxes repaint by raising a signal and store under the panel they were placed
+            // on, so the panel has to reach them from the tab that placed them. Dropped here, a flip
+            // would repaint a map the player is not looking at, or land on the other panel. The
+            // caption is pinned by its key, not its live text.
             var passedTarget = new BodyControlTarget(
                 new MapLayerRefreshBoard(),
                 ScreenMemoryScopes.createStandInScreen());
 
-            try (var controlsMock = mockStatic(AllianceBodyControls.class)) {
+            var builtControls = List.<ControlSpec>of();
 
-                var builtControls = List.<ControlSpec>of();
+            try (var controlMock = mockStatic(RecedeControl.class);
+                    var stringsMock = mockStatic(KmuStringKeys.class)) {
 
-                controlsMock
-                    .when(() -> AllianceBodyControls.buildControls(passedTarget))
+                stringsMock
+                    .when(() -> KmuStringKeys.get(KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))
+                    .thenReturn("Non-allied factions are");
+
+                controlMock
+                    .when(() -> RecedeControl.buildControls(
+                        AlliancesView.NON_ALLIED_RECEDE,
+                        "Non-allied factions are",
+                        passedTarget))
                     .thenReturn(builtControls);
 
                 assertThat(AlliancesView.INSTANCE.getViewBodyControls(passedTarget))
@@ -196,28 +154,17 @@ final class AlliancesViewTests {
     }
 
     @Nested
-    class ResolveHolderProvider {
-
-        @Test
-        void returnsTheDefaultProvider() {
-            // The alliances view rolls factions into alliance blocs through its grouping, but the
-            // holding source underneath is the same dominant-holder resolution the faction view
-            // uses - extended with claimed systems - so it inherits the shared claim-augmented
-            // default rather than supplying one of its own.
-            assertThat(AlliancesView.INSTANCE.resolveHolderProvider())
-                .isSameAs(ClaimAugmentedHolderProvider.INSTANCE);
-        }
-    }
-
-    @Nested
     class ResolveOwnerReading {
 
         @Test
-        void readsEachBlocOffTheFactionItPaintsAs() {
-            // The holder reading every layer painting holders shares, taken over the grouping the
-            // rebuild handed in - what it answers is pinned by that reading's own suite.
-            assertThat(AlliancesView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING))
-                .isInstanceOf(HolderOwnerReading.class);
+        void namesAnAllianceByItsGroupingsName() {
+            // One answer read back, enough to show the reading is over the handed grouping and names
+            // an alliance as that grouping does. The rest of what it answers is pinned by that
+            // reading's own suite.
+            assertThat(AlliancesView.INSTANCE
+                    .resolveOwnerReading(mock(SectorAPI.class), ALLIANCE_GROUPING)
+                    .resolveName("rebel_pact", OwnerNameFormatChoice.FULL))
+                .isEqualTo("Rebel Pact");
         }
     }
 
@@ -225,34 +172,27 @@ final class AlliancesViewTests {
     class ResolveViewReading {
 
         @Test
-        void readsBlocsOffTheirFactionsAndFoldsHoldingByTheLiveAllianceSet() {
-            // The view paints by the live alliance set, so the source folds factions into the very
-            // alliance blocs that set names.
+        void namesTheAlliancesOfTheLiveAllianceSet() {
+            // The view paints by the live alliance set, so the reading names the alliances that set
+            // holds. That the source folds under that same set is the shared assembly's, pinned once.
             try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+
                 alliancesMock
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(ALLIANCE_GROUPING);
 
-                var viewReading = AlliancesView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
+                // The contest affiliation reads the alliance set as well; who stands together there
+                // is no part of what the reading names.
+                alliancesMock
+                    .when(NexerelinAlliances::resolveFactionAlliances)
+                    .thenReturn(FactionAlliances.NONE);
 
-                assertThat(viewReading.reading())
-                    .isInstanceOf(HolderOwnerReading.class);
-                assertThat(viewReading.source())
-                    .isInstanceOfSatisfying(
-                        HolderOwnerSource.class,
-                        source -> assertThat(source.grouping()).isSameAs(ALLIANCE_GROUPING));
+                assertThat(AlliancesView.INSTANCE
+                        .resolveViewReading(mock(SectorAPI.class))
+                        .reading()
+                        .resolveName("rebel_pact", OwnerNameFormatChoice.FULL))
+                    .isEqualTo("Rebel Pact");
             }
-        }
-    }
-
-    @Nested
-    class ResolveCategories {
-
-        @Test
-        void declaresTheHolderCategories() {
-
-            assertThat(AlliancesView.INSTANCE.resolveCategories())
-                .isSameAs(HolderCategories.INSTANCE);
         }
     }
 
@@ -262,6 +202,7 @@ final class AlliancesViewTests {
         // The non-allied backdrop's slots under the stand-in screen, pinned as literals: each is a key
         // a save already holds, so a rename must break this test rather than reset every save's choice.
         private static final String NON_ALLIED_MUTE_KEY = "$kmu_political_alliance_recede_mute_test";
+
         private static final String NON_ALLIED_DESATURATE_KEY =
             "$kmu_political_alliance_recede_desaturate_test";
 
@@ -314,7 +255,9 @@ final class AlliancesViewTests {
         @Test
         void admitsAnAllianceBloc() {
 
-            assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(ALLIANCE_GROUPING)
+            assertThat(AlliancesView
+                    .INSTANCE
+                    .resolveSelectableBlocGate(ALLIANCE_GROUPING)
                     .test("rebel_pact"))
                 .isTrue();
         }
@@ -323,7 +266,9 @@ final class AlliancesViewTests {
         void turnsAwayALoneFaction() {
             // Only an alliance is a spotlight target here; a faction outside every alliance is
             // present on the map but not offered in this view's picker.
-            assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(ALLIANCE_GROUPING)
+            assertThat(AlliancesView
+                    .INSTANCE
+                    .resolveSelectableBlocGate(ALLIANCE_GROUPING)
                     .test("hegemony"))
                 .isFalse();
         }
@@ -331,7 +276,9 @@ final class AlliancesViewTests {
         @Test
         void turnsAwayEveryBlocWhenNoAllianceExists() {
             // With no alliance formed every bloc is a lone faction, so the picker offers nothing.
-            assertThat(AlliancesView.INSTANCE.resolveSelectableBlocGate(HolderGrouping.identity())
+            assertThat(AlliancesView
+                    .INSTANCE
+                    .resolveSelectableBlocGate(HolderGrouping.identity())
                     .test("hegemony"))
                 .isFalse();
         }
@@ -360,10 +307,10 @@ final class AlliancesViewTests {
             // resolveGrouping samples Nex live, so it is stubbed to the alliance grouping the (mocked)
             // stats read is keyed against; the presence gate is the shared read's job, so both blocs
             // arrive already present.
-            var view = spy(AlliancesView.INSTANCE);
+            var viewMock = spy(AlliancesView.INSTANCE);
 
             doReturn(ALLIANCE_GROUPING)
-                .when(view)
+                .when(viewMock)
                 .resolveGrouping();
 
             var sectorMock = mock(SectorAPI.class);
@@ -382,13 +329,13 @@ final class AlliancesViewTests {
 
                 aggregatorMock
                     .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(new DominanceStatsRead(
+                    .thenReturn(new OwnerStatsRead<>(
                         Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
-                        BlocPresenceIndex.EMPTY));
+                        OwnerPresenceIndex.EMPTY));
 
-                assertThat(view.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG).picker().items())
-                    .containsExactly(new RankedBloc<>(
-                        new SelectableBloc(
+                assertThat(viewMock.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG).picker().items())
+                    .containsExactly(new RankedOwner<>(
+                        new SelectableOwner(
                             "rebel_pact",
                             "Rebel Pact",
                             "graphics/rebels_crest.png"),
@@ -396,71 +343,6 @@ final class AlliancesViewTests {
             }
         }
 
-        @Test
-        void ranksItsBlocsByTheDominanceVocabularyThenTheirStanding() {
-            // This view's blocs are folded sets of factions, but they carry the same metrics a lone
-            // faction's do, so it ranks by the same vocabulary the factions view offers. Asserted
-            // per view rather than once on the shared assembly, since which vocabulary a view's rows
-            // can be read by is the view's own choice of what paints it. The standing ranking behind
-            // them is not a choice - it reads one fact off the sector that holds under every view.
-            var view = spy(AlliancesView.INSTANCE);
-
-            doReturn(ALLIANCE_GROUPING)
-                .when(view)
-                .resolveGrouping();
-
-            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
-
-                aggregatorMock
-                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(DominanceStatsRead.EMPTY);
-
-                assertThat(view.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES, UNDER_THE_FOG)
-                        .picker()
-                        .sortModes()
-                        .modes())
-                    .extracting(ListSortMode::persistenceKey)
-                    .containsExactly(
-                        "name", "domination", "presence", "score", "market_size", "player_standing");
-            }
-        }
-
-        @Test
-        void carriesThePresenceOfBlocsItsGateDropped() {
-            // The index is the whole walk's, not the offered rows'. This is the view where the two
-            // differ - a lone faction is present but never listed - and trimming it to match would
-            // cost a pass to remove entries no lookup can reach, only a listed bloc being hoverable.
-            var view = spy(AlliancesView.INSTANCE);
-
-            doReturn(ALLIANCE_GROUPING)
-                .when(view)
-                .resolveGrouping();
-
-            var sectorMock = mock(SectorAPI.class);
-
-            when(sectorMock.getFaction("rebels"))
-                .thenReturn(mock(FactionAPI.class));
-
-            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
-
-                aggregatorMock
-                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
-                    .thenReturn(new DominanceStatsRead(
-                        Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
-                        buildIndexOf(Map.of(
-                            "rebel_pact", List.of("corvus"),
-                            "hegemony", List.of("askonia")))));
-
-                var read = view.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG);
-
-                assertThat(read.picker().items())
-                    .extracting(RankedBloc::itemId)
-                    .containsExactly("rebel_pact");
-
-                assertThat(read.presenceIndex().readPresentSystemKeys("hegemony"))
-                    .containsExactlyElementsOf(buildCellKeys("askonia"));
-            }
-        }
     }
 
     private static void stubNexEnabled(MockedStatic<Global> globalMock, boolean isEnabled) {

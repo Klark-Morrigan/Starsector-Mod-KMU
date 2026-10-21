@@ -8,8 +8,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
  *
  * <p>A view paints its cells by one mechanic, and a band has to be ordered around that same
  * mechanic or it contradicts the fill it sits inside: a band ranked by any other mechanic could
- * open on a bloc the cell is not painted for. So the choice of mechanic belongs to the view,
- * exactly as its holder source and its hover box do, and
+ * open on an owner the cell is not painted for. So the choice of mechanic belongs to the view,
+ * exactly as its owner source and its hover box do, and
  * this is the seam it supplies one through. The counts themselves are one shared rule's, since
  * how a system splits is a fact about the system rather than about the mechanic reading it.
  *

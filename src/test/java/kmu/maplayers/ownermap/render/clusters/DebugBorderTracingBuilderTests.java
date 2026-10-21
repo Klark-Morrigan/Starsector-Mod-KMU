@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.math.geometry.CornerRounding;
 import kmlib.starsector.systems.SystemKey;
 
@@ -14,22 +15,16 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
-import kmu.settings.KmuMapLabelSettings;
+import kmu.maplayers.ownermap.render.style.MapStyling;
+import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
+import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;
@@ -44,10 +39,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -58,7 +50,7 @@ import static org.mockito.Mockito.when;
  * ran" whatever the gates say, which is exactly the question it exists to answer.
  *
  * <p>The two visibility rules are pinned beside it: an owned cell is traced once, as part of its
- * cluster rather than again as a lone outline, and a factionless cell draws only where its
+ * cluster rather than again as a lone outline, and an unowned cell draws only where its
  * category's outline is switched on - without which the overlay floods with every uninhabited
  * system in the sector and shows nothing.
  *
@@ -66,21 +58,14 @@ import static org.mockito.Mockito.when;
  * {@link kmu.maplayers.base.render.clusters.ClusterBorderTraceIntegrationTests}, the smoothing
  * passes by their own suites - so it runs for real here and is only ever counted, never measured.
  * Cells are hand-built 2000-unit squares, comfortably clear of the fixed border channel, so which
- * cells touch is plain to read. The owners and the settled systems arrive stated, as the source's
- * answer the overlay is handed; the two settings reads are stubbed, none of them answering outside
- * the game.
+ * cells touch is plain to read. The owners, the settled systems and the styling arrive stated, as
+ * the rebuild hands them over.
  */
 final class DebugBorderTracingBuilderTests {
+
     private static final String HEGEMONY = "hegemony";
 
-    // The picks the overlay is handed. Only the uninhabited outline in them reaches this builder,
-    // and every case but one stubs the theme whole - so which category actually outlines is stated
-    // by the stubbed bundles, and the pick stands for "the rebuild sampled one". The case that the
-    // pick is what the theme is read under is the exception.
-    private static final ContentInputs OUTLINE_DRAWN =
-        ContentInputsFixtures.createInputsOutlining(true);
-
-    // Two cells of one bloc meeting along x = 2000, so the pair proves the trace fuses them; the
+    // Two cells of one owner meeting along x = 2000, so the pair proves the trace fuses them; the
     // other two share no edge with anything, each enclosed by the reach bound alone.
     private static final String HELD_SYSTEM = "held";
     private static final String NEIGHBOUR_SYSTEM = "neighbour";
@@ -91,12 +76,7 @@ final class DebugBorderTracingBuilderTests {
     // nothing to outline.
     private static final String TINY_SYSTEM = "tiny";
     private static final SystemOwner HEGEMONY_OWNER =
-        new SystemOwner(HEGEMONY, new OwnerPalette(Color.RED, Color.BLUE));
-
-    // The live Dev-tab trace parameters, stubbed at their read: a weld tolerance loose enough to
-    // chain the hand-built corners, and the miter limit the shipped border uses.
-    private static final double WELD_TOLERANCE = 1e-3;
-    private static final double MITER_SPIKE_LIMIT = 4.0;
+        new SystemOwner(HEGEMONY, new ColourPair(Color.RED, Color.BLUE));
 
     // A smoothing profile whose shape is well inside a 2000-unit square, so whether a pass ran is
     // never confused with a pass that ran and degenerated the loop away.
@@ -108,7 +88,7 @@ final class DebugBorderTracingBuilderTests {
 
     private static final ElementStyle DRAWN_OUTLINE =
         new ElementStyle(
-            FactionPaletteSlot.PRIMARY,
+            OwnerPaletteSlot.PRIMARY,
             1.0);
 
     private static final Map<String, List<CellEdge>> EDGES_BY_SYSTEM_ID = Map.of(
@@ -143,30 +123,13 @@ final class DebugBorderTracingBuilderTests {
     private Map<String, SystemOwner> ownerBySystemId = Map.of();
     private Set<SystemKey> inhabitedSystemKeys = Set.of();
 
-    private MockedStatic<KmuMapLabelSettings> settingsMock;
-    private MockedStatic<RenderStyleReader> styleReaderMock;
+    // The scheme the rebuild hands the overlay, stated per case through stubTheme.
+    private MapStyling styling;
 
     @BeforeEach
-    void openTheSettingsSeams() {
-        settingsMock = mockStatic(KmuMapLabelSettings.class);
-
-        settingsMock
-            .when(KmuMapLabelSettings::getMapBorderWeldTolerance)
-            .thenReturn(WELD_TOLERANCE);
-        settingsMock
-            .when(KmuMapLabelSettings::getMapBorderMiterLimit)
-            .thenReturn(MITER_SPIKE_LIMIT);
-
-        styleReaderMock = mockStatic(RenderStyleReader.class);
-
+    void stubTheInertTheme() {
         // An empty sector by default, so a case names only the cells it is about.
         stubTheme(buildNoSmoothing(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
-    }
-
-    @AfterEach
-    void closeTheSettingsSeams() {
-        styleReaderMock.close();
-        settingsMock.close();
     }
 
     @Nested
@@ -174,7 +137,8 @@ final class DebugBorderTracingBuilderTests {
 
         @Test
         void capturesOneFusedBaseLoopWithBothSmoothingGatesOff() {
-            stubHolders(Map.of(
+
+            stubOwners(Map.of(
                 HELD_SYSTEM,
                 HEGEMONY_OWNER,
                 NEIGHBOUR_SYSTEM,
@@ -183,89 +147,113 @@ final class DebugBorderTracingBuilderTests {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
                 stateOwners(),
-                HolderCategories.INSTANCE,
-                OUTLINE_DRAWN);
+                styling);
 
-            // One loop rather than two: the shared edge is a same-bloc seam, exactly as in the
+            // One loop rather than two: the shared edge is a same-owner seam, exactly as in the
             // production trace this stage is supposed to be showing.
-            assertThat(drawables.baseLoops()).hasSize(1);
+            assertThat(drawables.baseLoops())
+                .hasSize(1);
 
             // Both gates off, so the two smoothed stages are empty rather than echoing the base -
             // an echo would read as "the passes ran and changed nothing".
-            assertThat(drawables.despikedLoops()).isEmpty();
-            assertThat(drawables.roundedLoops()).isEmpty();
+            assertThat(drawables.despikedLoops())
+                .isEmpty();
+            assertThat(drawables.roundedLoops())
+                .isEmpty();
         }
 
         @Test
         void capturesTheDespikedStageOnlyWhenSandingIsGatedOn() {
-            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+
+            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(buildSandingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM),
                 stateOwners(),
-                HolderCategories.INSTANCE,
-                OUTLINE_DRAWN);
+                styling);
 
-            assertThat(drawables.baseLoops()).hasSize(1);
-            assertThat(drawables.despikedLoops()).hasSize(1);
-            assertThat(drawables.roundedLoops()).isEmpty();
+            assertThat(drawables.baseLoops())
+                .hasSize(1);
+            assertThat(drawables.despikedLoops())
+                .hasSize(1);
+            assertThat(drawables.roundedLoops())
+                .isEmpty();
         }
 
         @Test
         void roundsTheBaseDirectlyWhenSandingIsGatedOff() {
-            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+
+            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(buildRoundingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(HELD_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
+                listCellsFor(HELD_SYSTEM),
+                stateOwners(),
+                styling);
 
             // Rounding feeds off whatever the previous stage left, so with sanding off it rounds
             // the base - and the skipped stage stays empty rather than standing in for it.
-            assertThat(drawables.roundedLoops()).hasSize(1);
-            assertThat(drawables.despikedLoops()).isEmpty();
+            assertThat(drawables.roundedLoops())
+                .hasSize(1);
+            assertThat(drawables.despikedLoops())
+                .isEmpty();
         }
 
         @Test
-        void outlinesOnlyTheFactionlessCategoryWhoseOutlineIsSwitchedOn() {
+        void outlinesOnlyTheUnownedCategoryWhoseOutlineIsSwitchedOn() {
+
             stubInhabitedSystems(DECIVILISED_SYSTEM);
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
+                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM),
+                stateOwners(),
+                styling);
 
             // The decivilised world's cell resolves to the decivilised bundle and draws; the
             // uninhabited one resolves to the bundle the player switched off and is skipped,
             // which is what keeps the overlay off every empty corner of the sector.
-            assertThat(drawables.baseLoops()).hasSize(1);
+            assertThat(drawables.baseLoops())
+                .hasSize(1);
         }
 
         @Test
-        void outlinesNoFactionlessCellWhenNeitherCategoryDraws() {
+        void outlinesNoUnownedCellWhenNeitherCategoryDraws() {
+
             stubInhabitedSystems(DECIVILISED_SYSTEM);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
+                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM),
+                stateOwners(),
+                styling);
 
-            assertThat(drawables.isEmpty()).isTrue();
+            assertThat(drawables.isEmpty())
+                .isTrue();
         }
 
         @Test
         void leavesAnOwnedCellToTheClusterPassRatherThanOutliningItTwice() {
-            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+
+            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(HELD_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
+                listCellsFor(HELD_SYSTEM),
+                stateOwners(),
+                styling);
 
-            // One loop with both factionless outlines on: the cell is grouped, so the factionless
+            // One loop with both unowned outlines on: the cell is grouped, so the unowned
             // pass steps over it instead of stroking a second ring inside its cluster border.
-            assertThat(drawables.baseLoops()).hasSize(1);
+            assertThat(drawables.baseLoops())
+                .hasSize(1);
         }
 
         @Test
         void capturesNothingForAClusterThatTracesNoRing() {
-            stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+
+            stubOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
+
             var geometryCacheMock = mock(CellGeometryCache.class);
 
             when(geometryCacheMock.getCellEdgesByCellKey())
@@ -274,77 +262,74 @@ final class DebugBorderTracingBuilderTests {
                 .thenReturn(buildDrawnSystemKeys(Map.of(HELD_SYSTEM, HELD_SYSTEM)));
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    geometryCacheMock, stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
+                geometryCacheMock,
+                stateOwners(),
+                styling);
 
-            // A bloc whose cells carry no edges traces nothing, and the overlay drops it rather
+            // An owner whose cells carry no edges traces nothing, and the overlay drops it rather
             // than capturing an empty stage entry the renderer would walk.
-            assertThat(drawables.isEmpty()).isTrue();
+            assertThat(drawables.isEmpty())
+                .isTrue();
         }
 
         @Test
-        void outlinesNoFactionlessCellThatTheBorderChannelSwallows() {
+        void outlinesNoUnownedCellThatTheBorderChannelSwallows() {
+
             stubInhabitedSystems(TINY_SYSTEM);
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(TINY_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
+                listCellsFor(TINY_SYSTEM),
+                stateOwners(),
+                styling);
 
             // The cell is narrower than twice the border inset, so insetting leaves no polygon
             // at all - dropped rather than flattened into a degenerate run.
-            assertThat(drawables.isEmpty()).isTrue();
+            assertThat(drawables.isEmpty())
+                .isTrue();
         }
 
         @Test
-        void readsTheThemeUnderTheOutlinePickItWasHanded() {
-            // The one pick from the rebuild's sampling that reaches this builder. The overlay
-            // exists to show the cells the production draw would show, so the theme it indexes
-            // categories into has to be read under the same outline answer the fills were - read
-            // here off the preference instead, a flip between the two would have the diagnostic
-            // showing uninhabited cells the map is not drawing, or hiding ones it is.
-            stubInhabitedSystems(DECIVILISED_SYSTEM);
-            stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
+        void givesAnUnownedOutlineNoDespikedStageEvenWithSandingOn() {
 
-            var contentInputs = ContentInputsFixtures.createInputsOutlining(false);
-
-            DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM),
-                stateOwners(),
-                HolderCategories.INSTANCE,
-                contentInputs);
-
-            styleReaderMock.verify(() -> RenderStyleReader.readRenderStyle(
-                same(HolderCategories.INSTANCE),
-                same(contentInputs)));
-        }
-
-        @Test
-        void givesAFactionlessOutlineNoDespikedStageEvenWithSandingOn() {
             stubInhabitedSystems(DECIVILISED_SYSTEM);
             stubTheme(buildBothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DECIVILISED_SYSTEM), stateOwners(), HolderCategories.INSTANCE, OUTLINE_DRAWN);
+                listCellsFor(DECIVILISED_SYSTEM),
+                stateOwners(),
+                styling);
 
             // A lone convex cell has no needle protrusions to sand, so its two stages are the raw
             // inset and its rounded corners - the sanding gate being on does not invent a third.
-            assertThat(drawables.baseLoops()).hasSize(1);
-            assertThat(drawables.roundedLoops()).hasSize(1);
-            assertThat(drawables.despikedLoops()).isEmpty();
+            assertThat(drawables.baseLoops())
+                .hasSize(1);
+            assertThat(drawables.roundedLoops())
+                .hasSize(1);
+            assertThat(drawables.despikedLoops())
+                .isEmpty();
         }
     }
 
     // A geometry cache holding just the named cells, each drawing as its own star - the raw
-    // partition both the cluster trace and the factionless outline pass walk.
+    // partition both the cluster trace and the unowned outline pass walk.
     private static CellGeometryCache listCellsFor(String... systemIds) {
+
         var geometryCacheMock = mock(CellGeometryCache.class);
         var edgesByCellKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
         var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
+
         for (var systemId : systemIds) {
+
             edgesByCellKey.put(buildCellKey(systemId), EDGES_BY_SYSTEM_ID.get(systemId));
             systemKeyByCellKey.put(buildCellKey(systemId), buildCellKey(systemId));
         }
-        when(geometryCacheMock.getCellEdgesByCellKey()).thenReturn(edgesByCellKey);
-        when(geometryCacheMock.getSystemKeyByCellKey()).thenReturn(systemKeyByCellKey);
+
+        when(geometryCacheMock.getCellEdgesByCellKey())
+            .thenReturn(edgesByCellKey);
+        when(geometryCacheMock.getSystemKeyByCellKey())
+            .thenReturn(systemKeyByCellKey);
+
         return geometryCacheMock;
     }
 
@@ -369,6 +354,7 @@ final class DebugBorderTracingBuilderTests {
     private static BorderSmoothingStyle buildSmoothing(
             boolean shouldSandSpikes,
             boolean shouldRoundCorners) {
+
         return new BorderSmoothingStyle(
             new SpikeSandingStyle(shouldSandSpikes, SPIKE_HEIGHT, SPIKE_ANGLE_RADIANS),
             new CornerRoundingStyle(
@@ -379,19 +365,21 @@ final class DebugBorderTracingBuilderTests {
                 CornerRounding.ROUND_EVERY_CORNER));
     }
 
-    // The theme as the builder reads it: the smoothing profile it stages the passes by, and the
-    // two factionless bundles whose outlines decide which unowned cells are drawn at all. The
-    // owned bundles never gate anything here, so they take the drawn outline throughout.
+    // The theme the builder is handed: the smoothing profile it stages the passes by, and the
+    // two unowned bundles whose outlines decide which unowned cells are drawn at all. The
+    // owned bundles never gate anything here, so they take the drawn outline throughout. The
+    // palettes never reach the tracing, so they are the inert neutral.
     private void stubTheme(
             BorderSmoothingStyle smoothing,
             ElementStyle decivilisedOutline,
             ElementStyle uninhabitedOutline) {
 
         Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
-        categories.put(OwnerMapCategory.FACTION, buildOutlinedBy(DRAWN_OUTLINE));
-        categories.put(OwnerMapCategory.INDEPENDENT, buildOutlinedBy(DRAWN_OUTLINE));
-        categories.put(OwnerMapCategory.DECIVILISED, buildOutlinedBy(decivilisedOutline));
-        categories.put(OwnerMapCategory.UNINHABITED, buildOutlinedBy(uninhabitedOutline));
+
+        categories.put(StandInCategoryFake.OWNED, buildOutlinedBy(DRAWN_OUTLINE));
+        categories.put(StandInCategoryFake.RECEDED, buildOutlinedBy(DRAWN_OUTLINE));
+        categories.put(StandInCategoryFake.SETTLED, buildOutlinedBy(decivilisedOutline));
+        categories.put(StandInCategoryFake.EMPTY, buildOutlinedBy(uninhabitedOutline));
 
         // The smoothing profile is the one sector-wide value these cases vary, so the rest of the
         // tier is the shared inert one.
@@ -405,26 +393,31 @@ final class DebugBorderTracingBuilderTests {
                 0.2),
             categories);
 
-        styleReaderMock
-            .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
-            .thenReturn(renderStyle);
+        styling = new MapStyling(
+            renderStyle,
+            OwnerMapClusterFixtures.BORDER_TRACE,
+            OwnerCategoriesFake.SHARED_FAKE,
+            OwnerMapClusterFixtures.NEUTRAL_PALETTE,
+            OwnerMapClusterFixtures.NEUTRAL_PALETTE,
+            OwnerMapClusterFixtures.NEUTRAL_PALETTE);
     }
 
     // The owners the overlay is to trace. Stated rather than resolved: what owns a system is the
     // layer's source's answer, so a case states the answer instead of naming whatever mechanic would
     // have worked it out.
-    private void stubHolders(Map<String, SystemOwner> statedOwnerBySystemId) {
+    private void stubOwners(Map<String, SystemOwner> statedOwnerBySystemId) {
         ownerBySystemId = statedOwnerBySystemId;
     }
 
     // The systems the overlay is to treat as settled, which arrive on the same answer the owners
-    // do - so the overlay classifies its factionless cells off the very resolve it traced.
+    // do - so the overlay classifies its unowned cells off the very resolve it traced.
     private void stubInhabitedSystems(String... systemIds) {
         inhabitedSystemKeys = buildKeyedSystemKeys(List.of(systemIds));
     }
 
     // The source's whole answer as this case stated it, nothing contested, unfilled or spotlit.
     private ResolvedOwners stateOwners() {
+
         return new ResolvedOwners(
             buildKeyedValues(ownerBySystemId),
             Set.of(),
@@ -436,6 +429,7 @@ final class DebugBorderTracingBuilderTests {
     // A bundle the overlay reads only for its outer element: fill and seam never reach the
     // border tracing, so they are inert.
     private static CategoryStyle buildOutlinedBy(ElementStyle outer) {
+
         return new CategoryStyle(
             ElementStyle.NOT_DRAWN,
             outer,

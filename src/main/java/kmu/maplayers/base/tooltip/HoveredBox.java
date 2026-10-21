@@ -3,8 +3,6 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.SectorStarSystems;
-
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -72,11 +70,11 @@ record HoveredBox(
         if (tooltip.isEmpty()) {
             return Optional.empty();
         }
-        // The hover carries a system key; resolve it to the live system, tolerating a key that no
-        // longer resolves (a system dropped between the publish and this frame). By key rather than
-        // by ID, so a hovered cell whose system shares its ID with another names the system whose
-        // cell the cursor is actually on.
-        var system = SectorStarSystems.findSystemByKey(sector, hover.hoveredSystemKey());
+        // The live system the hover was published with, found by key where the cursor reached the
+        // cell - so a hovered cell whose system shares its ID with another names the system whose
+        // cell the cursor is actually on, and the frames it rests there walk nothing. Absent where
+        // the key named no system by then, a system dropped since the cells were cut.
+        var system = hover.hoveredSystem();
         if (system == null) {
             return Optional.empty();
         }
@@ -115,7 +113,7 @@ record HoveredBox(
         // The crisp pick rather than the dissolve the overlay rides out. A box reporting what the cursor
         // is over has nothing left to report the moment the player switches the layers off, and it reads
         // the pick rather than painting through the pass that carries the fade.
-        if (!MapLayerScreens.areLayersShownOnLiveScreen()) {
+        if (!MapLayerScreens.resolveScreensIn(machinery).areLayersShownOnLiveScreen()) {
             return Optional.empty();
         }
         return DrawnLayerGuard

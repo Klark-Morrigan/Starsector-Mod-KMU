@@ -174,23 +174,6 @@ final class ScreenDrawnLayerTests {
         }
     }
 
-    @Nested
-    class ForgetDrawnLayer {
-
-        @Test
-        void leavesTheReadingAScreenThatHasNeverDrawnGives() {
-
-            showTheScreenOn(drawingLayerMock);
-            drawnLayer.resolveDrawnLayer();
-
-            drawnLayer.forgetDrawnLayer();
-            startDissolvingTheScreen();
-
-            assertThat(drawnLayer.resolveDrawnLayer())
-                .isNull();
-        }
-    }
-
     // Poses a screen with its layers on it, set to the given tab.
     private void showTheScreenOn(MapLayer layer) {
 

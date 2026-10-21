@@ -128,14 +128,17 @@ so each half is a package of its own -
 the gate closes a package root,
 and a parent root closes its own children with it.
 
-A fourth sits beside the first:
+Two more families sit beside `colonies`,
+each concealing a different fact for a different reason:
 `structures` keeps what was observed of the built things in orbit that are not colonies,
-which conceal a different fact for a different reason.
+and `installations` admits the stations that carry no market.
 
 Under all of them is `observations`,
 which states how old the news about a concealed fact is,
 in the same words whatever the fact is about.
-It is gated against importing any of the families above,
+It is gated against importing `colonies`,
+`installations`,
+`structures` and `systems`,
 which is what keeps it from learning what a colony is -
 a shared rule that named one family would be that family's rule with extra callers.
 
@@ -151,15 +154,15 @@ Read this table left to right as "what the substrate calls it" -> "what the owne
 
 | `base` says | `ownermap` says | `politicalmap` says | Means |
 | --- | --- | --- | --- |
-| **owner** | **owner** (`SystemOwner`), grouped into a **bloc** | **holder** | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` and to the tier - whatever key a layer paints a system by. The political map's owner is a holder: a faction ID under the factions view, an alliance ID under alliances, a claimant under claims |
-| **unowned** | factionless, uninhabited, decivilised | the same | a cell no owner is attributed to. It never fuses, and draws its own lone outline. Unowned is not the same as empty: a view whose owner rule admits only some markets (claims, for the reasons its own package sets out) leaves settled systems unowned, so the factionless split is read from the pass's inhabited-system set, not from the absent owner |
+| **owner** | **owner** (`SystemOwner`); a **bloc** in `owners/holders` | **holder** | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` and to the tier - whatever key a layer paints a system by. The political map's owner is a holder: a faction ID under the factions view, an alliance ID under alliances, a claimant under claims |
+| **unowned** | unowned, settled or empty | factionless, uninhabited, decivilised | a cell no owner is attributed to. It never fuses, and draws its own lone outline. Unowned is not the same as empty: a view whose owner rule admits only some markets (claims, for the reasons its own package sets out) leaves settled systems unowned, so the settled split is read from the source's inhabited-system set, not from the absent owner |
 | **cluster** (`StyledCluster`) | cluster | one body of a **territory** | the merged shape connected same-owner cells form, inside one traced border. A lone cell is a cluster of one |
-| **cluster group** (`StyledClusterGroup`) | cluster group | **territory** | everything one owner paints: its clusters, plus the paints they all share. "Territory" is the political word for *all* of a bloc's cells, which may be several disjoint clusters - so a territory is a cluster group, never a cluster |
+| **cluster group** (`StyledClusterGroup`) | cluster group | **territory** | everything one owner paints: its clusters, plus the paints they all share. "Territory" is the political word for *all* of an owner's cells, which may be several disjoint clusters - so a territory is a cluster group, never a cluster |
 | **cluster border** | border | national border, frontier | the inset ring around a cluster. Neither `base` nor the tier calls it national - nothing about a border is political |
 | **interior seam** | seam | province line | the fused edge between two same-owner cells, drawn faint or not at all |
 | **fill state** | fill state | held / contested / drawn-empty | how a cell inside one cluster paints: `SOLID`, `HATCHED`, `UNFILLED`. The layer decides which system is which; `base` only paints it |
-| **`ElementPaintSelection`** | `FactionPaletteSlot` | the same | the player's colour pick, held opaquely by the theme and *unresolved*: it names where to look, not a colour, since one theme serves every bloc. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `FactionPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaintSelection` - its "No color" would otherwise read as drawable |
-| **shade** | **shade** | **shade** | the concrete `Color` a selection resolves to once a bloc's palette is in hand. Never a synonym for the selection: `MapPalettes` is where the one becomes the other |
+| **`ElementPaintSelection`** | `OwnerPaletteSlot` | the same | the player's colour pick, held opaquely by the theme and *unresolved*: it names where to look, not a colour, since one theme serves every owner. `base` asks only "is it absent" (paints nothing); how many options exist is the layer's business. `OwnerPaletteChoice` is the settings-side wire format behind it, and is deliberately not an `ElementPaintSelection` - its "No color" would otherwise read as drawable |
+| **shade** | **shade** | **shade** | the concrete `Color` a selection resolves to once an owner's palette is in hand. Never a synonym for the selection: `MapPalettes` is where the one becomes the other |
 
 Keeping the other columns' words out of `base` is a build gate too,
 for the reason the arrow above is one.
@@ -186,12 +189,21 @@ plus the words that name one layer -
 and the mechanics a layer decides its owners by,
 with the mod one of them comes from:
 *claim*,
-*claims*,
-*alliance*,
-*alliances* and *nexerelin*.
+*claims* and *nexerelin*.
 A tier named after one of its layers is that layer with extra callers,
 which is exactly what a second painting layer could not build on.
-Why *bloc* stays open there,
+
+The tier's core is closed one step further,
+to the words that say what a holder is and what it is counted by:
+*holder*,
+*faction*,
+*colony*,
+*market*,
+*bloc*
+and *alliance*.
+Its holder answers under `owners/holders` keep them,
+and among those only `alliances` says *alliance*.
+Why,
 and how the tier's save keys,
 knobs and labels keep clear of a layer's spelling,
 are [the tier's own register](ownermap/README.md#the-words-it-keeps).
@@ -234,7 +246,7 @@ despite looking alike:
   A **holder** is the political map's kind of owner,
   a computed political fact
   (dominant faction by market weight, or claimant, or alliance).
-  The tier's `holding` package and its `Holder*` types read owners that way -
+  The tier's [`owners/holders`](ownermap/owners/holders/README.md) subtree reads owners that way -
   off colonies,
   as factions folded into blocs -
   which is one kind of owner rather than the tier's definition of one.
@@ -246,7 +258,7 @@ so "which layer is active" cannot be one shared value:
 it would paint the sector map's pick onto the intel screen
 and ignore the tab the player is looking at.
 Each screen holds its own `PersistedActiveLayerSelection` under its own key in `MapLayerScreens`,
-and `MapLayerRegistry.isDrawnLayer` resolves which is live per frame from which screen is up.
+and `MapLayerScreens.resolveDrawnLayer` resolves which is live per frame from which screen is up.
 
 A screen's key is composed rather than spelled:
 `ScreenMemoryScope` appends that screen's segment to a preference's own base key (`$kmu_political_active_layer` + `map`),
@@ -356,40 +368,10 @@ and a player who ordered their bar once does not order it again per save.
   and otherwise the first face down KMLib's fallback walk that does.
 - **[Installed machinery](base/machinery/README.md)** -
   one sector's map machinery as a thing a caller can hold,
-  since everything the layers draw is derived from one sector
-  and everything under that drawing is keyed by bare system id.
-  `SectorMapMachinery` holds the refresh board,
-  the motion tracker,
-  the hover holder and the sector itself;
-  what a *layer* derives from the sector goes in through `InstalledMachinery`,
-  so machinery owns those lifetimes without naming the packages downstream of it.
-  `SectorMapMachineryIndex` indexes one per sector and settles the lifetime -
-  replace on reinstall,
-  release on removal,
-  discard every one on load.
+  indexed per sector with its lifetime settled there.
 - **[The render surface](base/render/README.md)** -
-  `MapLayerRenderer`,
-  the seam a layer draws through -
-  its overlay and the hover box over one cell of it -
-  and the terrain that owns the map's render pass.
-  It asks the drawn layer for a renderer and hands it the frame,
-  so it names no layer;
-  a layer that only switches (No Layer) supplies none,
-  which is read as nothing to draw.
-  A layer painting from a cache need not take the frame raw:
-  `SequencedMapLayerRenderer` runs the frame every such layer runs,
-  over the parts the layer supplies.
-  Which sector it draws it finds through its own terrain entity,
-  that being the one handle a plugin rebuilt from the save has.
-  More than one terrain surface can paint one frame,
-  so the per-frame work behind a layer is claimed rather than assumed:
-  `MapFramePreparationClaim` grants it to the first surface of that sector to reach each frame,
-  one claim per machinery so two maps drawing in one frame each get their own.
-  The cursor read is the exception,
-  being taken per pass so the surface that drew last owns the answer.
-  Where a second surface is a minimap its owner has parked off screen,
-  the compatibility mode stops it rendering
-  rather than arbitrating between the two passes it would otherwise contribute.
+  the terrain that owns the map's render pass,
+  and the seam a layer draws its overlay and hover box through.
 - **[Clusters](base/render/clusters/README.md)** -
   the shape work under that surface:
   turning shaped cells and opaque owner IDs into borders,
@@ -500,3 +482,5 @@ and a player who ordered their bar once does not order it again per save.
   The live alliance set is one such fact:
   it is wired past the same mod-enabled gate the alliances view is chosen behind,
   so an install without that mod reads a rule with nothing registered.
+  So are the optional mods' map covers and whether the filter row's hover lists an alliances view,
+  which is what lets the build close the framework to `kmu.mods` outright.

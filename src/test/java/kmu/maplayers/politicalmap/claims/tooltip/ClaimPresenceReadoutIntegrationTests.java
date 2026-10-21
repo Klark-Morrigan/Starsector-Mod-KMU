@@ -6,13 +6,14 @@ import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.maplayers.ownermap.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
+import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
-import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeamsFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,15 +27,15 @@ import java.util.List;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildHiddenMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON;
-import static kmu.maplayers.ownermap.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.HEGEMONY_DARK;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON;
+import static kmu.maplayers.ownermap.owners.holders.base.RibbonPlanFixtures.TRITACHYON_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildHiddenMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -118,17 +119,16 @@ final class ClaimPresenceReadoutIntegrationTests {
 
             // One reader for both surfaces, over the one walk of the system, exactly as a live bake
             // and the hover above it read a claim.
-            var claimBreakdownReader = new VanillaClaimBreakdownReader(
-                inputs.pass().colonyKnowledge(),
-                inputs.pass().sectorIndex());
+            var claimBreakdownReader = PassClaimReaders.openBreakdownReaderOver(
+                inputs.pass(),
+                VanillaClaimBreakdownReader::new);
 
             var band = new ClaimedSystemRibbonPlanner(claimBreakdownReader, inputs)
                 .planSystemRibbon(system);
 
             var sections = new SystemClaimTooltip(
                     claimBreakdownReader,
-                    HolderGrouping::identity,
-                    ContestWordingFixtures.CONTESTED_WORDING)
+                    PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReader))
                 .composeBody(sector, system, FACTIONS).blocks().readSections();
 
             assertThat(band.segments())
@@ -161,9 +161,9 @@ final class ClaimPresenceReadoutIntegrationTests {
                 HolderGrouping.identity(),
                 BASE_FOG);
 
-            var claimBreakdownReader = new VanillaClaimBreakdownReader(
-                inputs.pass().colonyKnowledge(),
-                inputs.pass().sectorIndex());
+            var claimBreakdownReader = PassClaimReaders.openBreakdownReaderOver(
+                inputs.pass(),
+                VanillaClaimBreakdownReader::new);
 
             var band = new ClaimedSystemRibbonPlanner(claimBreakdownReader, inputs)
                 .planSystemRibbon(buildOnlySystem(sector));
@@ -175,7 +175,7 @@ final class ClaimPresenceReadoutIntegrationTests {
                     new RibbonSegment(TRITACHYON_BRIGHT, COLONY_RUN));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(inputs.pass(), claimBreakdownReader)
-                    .statsByBlocId())
+                    .statsByOwnerId())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
         }
     }

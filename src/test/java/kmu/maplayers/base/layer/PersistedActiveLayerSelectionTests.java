@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the per-screen persisted pick: the slot it composes for the screen it was built for, that it
  * resolves the stored ID against the registry, and that it falls back to the default for a missing or
- * stale id. The independence case is the property the whole per-screen split rests on - a selection built
+ * stale ID. The independence case is the property the whole per-screen split rests on - a selection built
  * for one screen never touches another screen's slot, so a switch on one screen leaves the other's pick
  * where it was.
  */
@@ -31,7 +31,8 @@ final class PersistedActiveLayerSelectionTests {
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
-    private final PersistedActiveLayerSelection selection = new PersistedActiveLayerSelection(SCREEN_SCOPE);
+
+    private PersistedActiveLayerSelection selection;
 
     private SectorMemoryFake sectorMemoryFake;
 
@@ -48,7 +49,9 @@ final class PersistedActiveLayerSelectionTests {
         when(secondLayerMock.isOfferedAsDefaultPick())
             .thenReturn(true);
 
-        MapLayerRosters.replaceRosterWith(firstLayerMock, secondLayerMock);
+        selection = new PersistedActiveLayerSelection(
+            SCREEN_SCOPE,
+            MapLayerRosters.createRosterOf(firstLayerMock, secondLayerMock));
 
         sectorMemoryFake = new SectorMemoryFake();
     }

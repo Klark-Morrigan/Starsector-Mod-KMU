@@ -4,10 +4,14 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.startup.ToggledFeature;
+
+import kmu.conditions.ui.context.MarketUiContextInstaller;
 import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerStandings;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
@@ -15,13 +19,11 @@ import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.base.visibility.colonies.ColonySightingInstaller;
-import kmu.mods.nexerelin.NexerelinInvasionListenerInstaller;
 import kmu.mods.rat.RandomAssortmentOfThingsCompatibilityInstaller;
 import kmu.mods.rat.RandomAssortmentOfThingsCompatibilityMode;
 import kmu.mods.rat.RandomAssortmentOfThingsSettings;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuLunaSettings;
-import kmu.ui.context.MarketUiContextInstaller;
 
 import java.util.List;
 
@@ -45,15 +47,16 @@ import java.util.List;
  * layout - and every enabled mod contributes one of these to the same running game, where a bare
  * {@code ModPlugin} would say nothing. No other class in KMU is named this way, and none should be.
  */
-public class KMU_ModPlugin extends BaseModPlugin {
+public class KMU_ModPlugin
+        extends BaseModPlugin {
 
     // The switches this mod answers, each holding what it was last applied as so a settings change
     // can tell which of them moved. Listed here because deciding what runs is the entry point's
     // whole subject; what each half does is its installers'.
     //
-    // This one is every layer's - a layer another mod registers with KMU draws through the same
-    // installers, and this switch takes it down with KMU's own.
-    private static final KmuToggledFeature mapLayers = new KmuToggledFeature(
+    // This one is every layer's - every registered layer draws through the same installers, and this
+    // switch takes all of them down together.
+    private static final ToggledFeature mapLayers = new ToggledFeature(
         KmuFeatureSettings::areMapLayersEnabled,
         KMU_ModPlugin::installMapLayers,
         KMU_ModPlugin::uninstallMapLayers);
@@ -63,7 +66,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // remembers which market a UI is open on, which nothing else reads - so a player who has not
     // asked for the editor runs none of it. The console command that opens the editor is registered
     // by data file rather than from here and so cannot be withheld; it reads the same switch itself.
-    private static final KmuToggledFeature marketConditionManager = new KmuToggledFeature(
+    private static final ToggledFeature marketConditionManager = new ToggledFeature(
         KmuFeatureSettings::isMarketConditionManagerEnabled,
         MarketUiContextInstaller::installAll,
         MarketUiContextInstaller::uninstallAll);
@@ -77,8 +80,8 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // through our settings listener, the mod's own switch through the listener on its settings, and
     // presence through the load that first applies this, presence being the one that cannot move
     // within a run.
-    private static final KmuToggledFeature randomAssortmentOfThingsCompatibility =
-        new KmuToggledFeature(
+    private static final ToggledFeature randomAssortmentOfThingsCompatibility =
+        new ToggledFeature(
             RandomAssortmentOfThingsCompatibilityMode.createForLiveGame()::isEngaged,
             RandomAssortmentOfThingsCompatibilityInstaller::installAll,
             RandomAssortmentOfThingsCompatibilityInstaller::uninstallAll);
@@ -87,10 +90,15 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // asked twice - once against a freshly loaded sector and again wherever the player flips it -
     // and naming them per ask would mean two lists to keep the same. A feature in one and not the
     // other is a feature the player can switch and see nothing happen until they reload.
-    private static final List<KmuToggledFeature> switchedFeatures = List.of(
+    private static final List<ToggledFeature> switchedFeatures = List.of(
         mapLayers,
         marketConditionManager,
         randomAssortmentOfThingsCompatibility);
+
+    // The screens the map layers draw on, over the roster this launch registered, seated on every sector
+    // the layers are installed on. Unwired until the registration below replaces them, so a launch whose
+    // registration failed installs layers that draw nothing rather than ones that throw.
+    private static MapLayerScreens mapLayerScreens = MapLayerScreens.createUnwiredScreens();
 
     @Override
     public void onApplicationLoad() {
@@ -132,7 +140,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // KMU's own layers, and a fault in one of those reported under LunaLib would name the
         // wrong mod.
         KmuWiringSteps.runGuardedStep(
-            MapLayers::registerAll,
+            () -> mapLayerScreens = MapLayers.registerAll(),
             "Failed to register KMU map layers");
 
         // Answer every switch where the player flips it, rather than at the next load. One
@@ -200,19 +208,14 @@ public class KMU_ModPlugin extends BaseModPlugin {
     static void installMapLayers(SectorAPI sector) {
 
         // First, and taken back last: everything below derives what it draws from this sector, and
-        // this is where that sector's share of it is held.
-        SectorMapMachineryIndex.installMachineryOn(sector);
+        // this is where that sector's share of it is held. The screens go in with it, so every pass
+        // reaching this sector's machinery - the engine's own among them - reads the same ones.
+        SectorMapMachineryIndex.installMachineryOn(sector, mapLayerScreens);
 
         // Beside that machinery and above every layer: the sweep it drives keeps a record several
         // map families read, so it accrues for as long as the layers are standing at all rather
         // than for as long as one particular layer is on the bar.
         MapSubstrateRefreshInstaller.installAll(sector);
-
-        // Also above every layer: the one relay that carries Nexerelin's colony transfers to
-        // whichever layers' listeners are registered on this sector, so no layer names that mod.
-        // Before the layers, so a layer stood up below is reached from its first transfer; a no-op
-        // without Nexerelin, which is the only source of such transfers.
-        NexerelinInvasionListenerInstaller.installIfPresent(sector);
 
         // Every layer the player has on their bar, stood up on this sector; every tab they took off
         // it left unwired, so a layer nobody can reach costs nothing. Named as the framework's walk
@@ -223,9 +226,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // walk runs - repairs what the terrain then reads.
         MapLayerStandings.applyArrangementTo(sector);
 
-        // Before the hover box, which asks the frame preparation claim this stands up for a frame.
         MapSurfaceInstaller.installAll(sector);
-
         SidebarInstaller.installAll(sector);
         MapHoverInstaller.installAll(sector);
 
@@ -237,7 +238,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         MapChromeInstaller.installAll(sector);
     }
 
-    // Everything those seven stand up, taken back. All of them and not only the surfaces: across a
+    // Everything installMapLayers stands up, taken back. All of them and not only the surfaces: across a
     // load their listeners and scripts would be gone by themselves, being transient, but a player
     // switching the overlay off mid-campaign is still running every one of them.
     static void uninstallMapLayers(SectorAPI sector) {
@@ -247,10 +248,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         SidebarInstaller.uninstallAll(sector);
         MapSurfaceInstaller.uninstallAll(sector);
         MapLayerStandings.standEveryLayerDownFrom(sector);
-        NexerelinInvasionListenerInstaller.uninstallIfPresent(sector);
         MapSubstrateRefreshInstaller.uninstallAll(sector);
 
-        // Last, mirroring the install: the seven above are taken back through the state this holds,
+        // Last, mirroring the install: the six above are taken back through the state this holds,
         // so releasing it first would leave them undoing their work against nothing. Reached with a
         // sector nothing was ever installed on too, since a load with the overlay switched off
         // takes it back rather than declining to stand it up.

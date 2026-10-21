@@ -52,7 +52,7 @@ public final class KmuMapSoundSettings {
     /**
      * @return how loudly the sidebar's own furniture - a header tab, the collapse handle - sounds
      *         as the cursor reaches it, as a multiple of the level the engine holds for the sample;
-     *         0.5 by default, which is vanilla's mouseover halved, and 0 to reach it silently
+     *         1 is vanilla's own mouseover level, and 0 reaches it silently
      */
     public static float getMapSidebarPanelChromeArrivalVolume() {
         return KmuLunaSettings.readFloat(
@@ -62,7 +62,7 @@ public final class KmuMapSoundSettings {
 
     /**
      * @return how loudly a sidebar control with one answer to give - a tick box, a switch - sounds
-     *         as the cursor reaches it, on the same scale; 0.5 by default, level with the panel's
+     *         as the cursor reaches it, on the same scale, level with the panel's
      *         own furniture because both are aimed at rather than crossed
      */
     public static float getMapSidebarSingleOptionControlArrivalVolume() {
@@ -73,7 +73,7 @@ public final class KmuMapSoundSettings {
 
     /**
      * @return how loudly one of many alike - one option of a row of them, one row of a list -
-     *         sounds as the cursor reaches it, on the same scale; 0.25 by default, under the two
+     *         sounds as the cursor reaches it, on the same scale, under the two
      *         levels above because a sweep crosses several of these on the way to the one thing
      *         aimed at
      */
@@ -84,8 +84,8 @@ public final class KmuMapSoundSettings {
     }
 
     /**
-     * @return how loudly the sidebar's list sounds as the wheel moves it, on the same scale; 0.5 by
-     *         default. One answer for the whole movement rather than one per row that passed
+     * @return how loudly the sidebar's list sounds as the wheel moves it, on the same scale.
+     *         One answer for the whole movement rather than one per row that passed
      */
     public static float getMapSidebarListScrollVolume() {
         return KmuLunaSettings.readFloat(
@@ -95,7 +95,7 @@ public final class KmuMapSoundSettings {
 
     /**
      * @return how loudly the map ticks as the cursor reaches a new system's cell, on the same
-     *         scale; 0.5 by default. Silenced by 0 here and, with every other answer the map makes
+     *         scale. Silenced by 0 here and, with every other answer the map makes
      *         to the cursor, by the hovering switches above
      */
     public static float getMapCellArrivalVolume() {

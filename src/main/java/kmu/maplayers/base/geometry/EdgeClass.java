@@ -5,10 +5,10 @@ package kmu.maplayers.base.geometry;
  *
  * <p>An interior seam runs between two systems sharing an owner; a boundary
  * runs against a different owner, between two unowned sides, or along the map
- * frontier; an open frontier runs between a owned system and an unowned
+ * frontier; an open frontier runs between an owned system and an unowned
  * neighbour it can reach toward. The seam-vs-boundary split drives whether the edge
  * draws as a faint interior line or a bold cell-cluster border; the
- * boundary-vs-open-frontier split lets a consumer push a owned edge out into
+ * boundary-vs-open-frontier split lets a consumer push an owned edge out into
  * unowned space while a plain boundary keeps its inward inset.
  *
  * <p>Drawing that only cares seam-or-border reads {@link #isBoundary()}, which folds

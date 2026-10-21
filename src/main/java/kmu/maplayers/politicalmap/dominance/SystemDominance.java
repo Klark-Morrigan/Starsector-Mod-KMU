@@ -7,11 +7,11 @@ import java.util.Comparator;
 import java.util.Map;
 
 /**
- * Picks the faction that dominates a star system from its market footprint.
+ * Picks the bloc that dominates a star system from its market footprint.
  *
- * <p>Pure rule, no Starsector types: the caller hands in each faction's
+ * <p>Pure rule, no Starsector types: the caller hands in each bloc's
  * {@link MarketFootprint} in one system, and this returns the ID of the
- * faction that holds the most. Keeping it free of {@code MarketAPI} / economy
+ * bloc that holds the most. Keeping it free of {@code MarketAPI} / economy
  * access keeps the dominance rule independent of how the live markets are read
  * (that is {@link KnownMarketFootprints}'s job).
  *
@@ -19,7 +19,7 @@ import java.util.Map;
  * (each market's stability-scaled worth, not its raw size), each level breaking
  * a tie in the one above so the ordering is total and the winner deterministic:
  * <ol>
- *   <li>combined weight across all of the faction's markets;</li>
+ *   <li>combined weight across all of the bloc's markets;</li>
  *   <li>heaviest single market;</li>
  *   <li>planet-only weight, ranking planets above stations;</li>
  *   <li>a caller-supplied tie-break over the tied IDs - by default the lowest
@@ -47,46 +47,46 @@ public final class SystemDominance {
     }
 
     /**
-     * Resolves the dominant faction for one system under the rules its ranking
+     * Resolves the dominant bloc for one system under the rules its ranking
      * is settled by.
      *
      * <p>The three weight levels settle almost every system; the tie-break is
      * consulted only when two blocs tie on all three, so a caller that resolves
      * ties by system geometry pays that cost only on a genuine tie.
      *
-     * @param footprintByFactionId each faction's footprint in the system; an
-     *                             empty map means no owned markets
-     * @param rankingRules         who may win the system, and who wins a dead
-     *                             heat
-     * @return the dominant faction's ID, or {@code null} when the map is empty
+     * @param footprintByBlocId each bloc's footprint in the system; an empty
+     *                          map means no owned markets
+     * @param rankingRules      who may win the system, and who wins a dead
+     *                          heat
+     * @return the dominant bloc's ID, or {@code null} when the map is empty
      *         (an uninhabited system has no holder)
      */
-    public static String resolveDominantFactionId(
-            Map<String, MarketFootprint> footprintByFactionId,
+    public static String resolveDominantBlocId(
+            Map<String, MarketFootprint> footprintByBlocId,
             HolderRankingRules rankingRules) {
 
-        var dominantId = resolveLeaderAmong(footprintByFactionId, rankingRules);
+        var dominantId = resolveLeaderAmong(footprintByBlocId, rankingRules);
 
         // Nobody in the running means nobody to keep out: the contest reopens to every footprint,
         // so a system whose only presence is barred keeps exactly the holder it has always had.
         return dominantId != null
             ? dominantId
-            : resolveLeaderAmong(footprintByFactionId, rankingRules.reopenToEveryBloc());
+            : resolveLeaderAmong(footprintByBlocId, rankingRules.reopenToEveryBloc());
     }
 
     // The top of one pass over the footprints, counting only the IDs the rules admit. Answers null
     // where they admitted none, which is what the reopened second pass is taken on.
     private static String resolveLeaderAmong(
-            Map<String, MarketFootprint> footprintByFactionId,
+            Map<String, MarketFootprint> footprintByBlocId,
             HolderRankingRules rankingRules) {
 
         String dominantId = null;
         MarketFootprint dominant = null;
 
-        for (var entry : footprintByFactionId.entrySet()) {
-            var factionId = entry.getKey();
+        for (var entry : footprintByBlocId.entrySet()) {
+            var blocId = entry.getKey();
 
-            if (!rankingRules.candidacy().test(factionId)) {
+            if (!rankingRules.candidacy().test(blocId)) {
                 continue;
             }
             var footprint = entry.getValue();
@@ -94,11 +94,11 @@ public final class SystemDominance {
             if (dominantId == null
                     || isMoreDominant(
                         footprint,
-                        factionId,
+                        blocId,
                         dominant,
                         dominantId,
                         rankingRules.tieBreak())) {
-                dominantId = factionId;
+                dominantId = blocId;
                 dominant = footprint;
             }
         }

@@ -1,6 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
 import com.fs.starfarer.api.campaign.LocationAPI;
+import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
@@ -46,6 +47,9 @@ import static org.mockito.Mockito.when;
  * that.
  */
 final class ColonyKnowledgeTests {
+
+    // No sector to hand the alliance read: the alliances these cases pose answer alike for any.
+    private static final SectorAPI NO_SECTOR = null;
 
     // Every gate this rule can hold, which is how a case poses the shipped state - both leaking
     // shapes held back until somebody has seen them.
@@ -1675,12 +1679,33 @@ final class ColonyKnowledgeTests {
                     buildColoniesOf(buildColony(base), buildColony(neighbourColony))))
                 .containsExactly(buildColony(base), buildColony(neighbourColony));
         }
+
+        @Test
+        void readsTheAlliancesOfTheSectorItIsOpenedOver() {
+            // A pass over one sector folds that sector's alliances, never whichever set another
+            // sector holds.
+            var sectorMock = mock(SectorAPI.class);
+            var alliance = buildAllianceOf("pirates", "hegemony");
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var base = fixture.buildFoundConcealedColony("pirates");
+            var neighbourColony = fixture.buildVisibleColony("hegemony");
+
+            fixture.placeColoniesInSystem(base, neighbourColony);
+
+            FactionAllianceRegistry.registerAllianceSource(
+                sector -> sector == sectorMock ? alliance : FactionAlliances.NONE);
+
+            assertThat(ColonyKnowledge.over(sectorMock, BOTH_GATES_ON).readKnownColonies(
+                    buildColoniesOf(buildColony(base), buildColony(neighbourColony))))
+                .containsExactly(buildColony(neighbourColony));
+        }
     }
 
     // Every setting of the two gates, the reveal left off throughout. What a case poses when it
     // is claiming the answer does not depend on the gates at all - which is the shape of the
     // conjunction, where the fog refuses before a gate is ever consulted.
     static Stream<ColonyVisibility> buildEveryGateCombination() {
+
         return Stream.of(
             BOTH_GATES_ON,
             ONLY_STATIONS_GATED,
@@ -1733,7 +1758,7 @@ final class ColonyKnowledgeTests {
     // The knowledge the observation reads are taken under - the fog alone, and no register. Being
     // somewhere is seeing what is in it, so neither read consults a rule or an observation.
     private static ColonyKnowledge observing() {
-        return ColonyKnowledge.observingUnderTheFog();
+        return ColonyKnowledge.observingUnderTheFog(NO_SECTOR);
     }
 
     // The market stood on the entity a composition root vouches for, which is the only thing that

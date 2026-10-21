@@ -8,23 +8,23 @@ import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.controls.specs.HorizontalRadioSpec;
 import kmlib.starsector.ui.controls.specs.InteractiveSpec;
 import kmlib.starsector.ui.controls.specs.ReselectBehaviour;
-import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.ownermap.FilterSelectionHeal;
 import kmu.maplayers.ownermap.MapLayerViewRegistry;
 import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.NameFormatPreference;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
 import kmu.maplayers.ownermap.preferences.UninhabitedOutlinePreference;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuOwnerMapStringKeys;
 import kmu.util.KmuStringKeys;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the view selector's switch rule: each view remembers its own spotlight, so switching selects the
  * clicked view on the panel the radio sits on and heals the switched-in view's slot against its current
- * blocs - never clearing another view's stored selection. The registry, the strings, the filter
+ * owners - never clearing another view's stored selection. The registry, the strings, the filter
  * selection, and the selection heal are stubbed so this drives the selector's click action and pins only
  * what it does, not how the view or the filter persist.
  *
@@ -58,8 +58,8 @@ import static org.mockito.Mockito.when;
  * screen the controls were built with, which is what fails if either writer were handed one resolved
  * when the click landed: the repaint would then reach whichever sector was running rather than the one
  * whose sidebar is up, and the write would land on whichever panel was showing rather than the one the
- * control sits on. The intel screen is posed open throughout, so the built screen is never the live
- * one and a writer resolving its own could not pass by luck.
+ * control sits on. The built screen is a stand-in neither of the mod's screens is saved under, so a
+ * writer resolving a screen of its own could not pass by luck.
  */
 final class OwnerMapBodyControlsTests {
 
@@ -97,7 +97,7 @@ final class OwnerMapBodyControlsTests {
         outlineMock,
         mock(RecedePreferences.class));
 
-    private final OwnerPaintedView factionsViewMock = mock(OwnerPaintedView.class);
+    private final OwnerPaintedView ownersViewMock = mock(OwnerPaintedView.class);
     private final OwnerPaintedView groupedViewMock = mock(OwnerPaintedView.class);
 
     private MockedStatic<Misc> miscMock;
@@ -106,32 +106,24 @@ final class OwnerMapBodyControlsTests {
     void installColours() {
         // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
         // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
 
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock
             .when(Misc::getTextColor)
             .thenReturn(TEXT);
 
-        // The intel screen posed open, so the live screen is a screen these controls were not built
-        // on. The holder is static, so a fresh fake per test also keeps a neighbour's wiring out.
-        var intelScreenFake = new IntelScreenViewFake();
-
-        intelScreenFake.setIntelTabOpen(true);
-        MapLayerScreens.registerIntelScreen(intelScreenFake);
-
         // Full names unless a case says otherwise - the radio lights off the stored choice, and a
         // choice nobody made reads as full names.
         when(nameFormatMock.getSelectedNameFormat(any()))
-            .thenReturn(FactionNameFormatChoice.FULL);
+            .thenReturn(OwnerNameFormatChoice.FULL);
     }
 
     @AfterEach
     void clearColours() {
 
-        MapLayerScreens.registerIntelScreen(null);
         miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested
@@ -140,7 +132,7 @@ final class OwnerMapBodyControlsTests {
         @Test
         void switchingToAViewSelectsItThenHealsTheSwitchedInViewsSlot() {
             // The click selects the clicked view on the panel the radio sits on, then heals that view's
-            // own slot so a bloc it stored but that has since lapsed does not spotlight an empty
+            // own slot so an owner it stored but that has since lapsed does not spotlight an empty
             // footprint, judged against the sector the body was built for. It does not clear - each view
             // keeps its own selection across the switch. The
             // screen is asserted here rather than in a case of its own: the intel screen is posed open
@@ -202,7 +194,7 @@ final class OwnerMapBodyControlsTests {
 
         @Test
         void buildsAHorizontalRadioWithOneSegmentPerView() {
-            // The views lay side by side on one row (Factions | Groups), so the selector is a
+            // The views lay side by side on one row (Owners | Groups), so the selector is a
             // horizontal radio carrying a segment per registered view in registry order.
             try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
@@ -213,7 +205,7 @@ final class OwnerMapBodyControlsTests {
                 assertThat(selector)
                     .isInstanceOf(HorizontalRadioSpec.class);
                 assertThat(((HorizontalRadioSpec) selector).labels())
-                    .containsExactly("Factions", "Groups");
+                    .containsExactly("Owners", "Groups");
             }
         }
 
@@ -277,7 +269,7 @@ final class OwnerMapBodyControlsTests {
                 stubControlLabels(stringsMock);
 
                 when(nameFormatMock.getSelectedNameFormat(BUILT_SCREEN))
-                    .thenReturn(FactionNameFormatChoice.SHORT);
+                    .thenReturn(OwnerNameFormatChoice.SHORT);
 
                 var radio = (HorizontalRadioSpec) OwnerMapBodyControls
                     .buildSharedControls(bodyPreferences, BUILT_TARGET)
@@ -293,7 +285,7 @@ final class OwnerMapBodyControlsTests {
                 verify(nameFormatMock)
                     .selectNameFormat(
                         BUILT_SCREEN,
-                        FactionNameFormatChoice.FULL,
+                        OwnerNameFormatChoice.FULL,
                         BUILT_BOARD);
             }
         }
@@ -308,7 +300,7 @@ final class OwnerMapBodyControlsTests {
                 stubControlLabels(stringsMock);
 
                 when(nameFormatMock.getSelectedNameFormat(BUILT_SCREEN))
-                    .thenReturn(FactionNameFormatChoice.NONE);
+                    .thenReturn(OwnerNameFormatChoice.NONE);
 
                 var radio = (HorizontalRadioSpec) OwnerMapBodyControls
                     .buildSharedControls(bodyPreferences, BUILT_TARGET)
@@ -324,8 +316,25 @@ final class OwnerMapBodyControlsTests {
                 verify(nameFormatMock)
                     .selectNameFormat(
                         BUILT_SCREEN,
-                        FactionNameFormatChoice.NONE,
+                        OwnerNameFormatChoice.NONE,
                         BUILT_BOARD);
+            }
+        }
+
+        @Test
+        void swallowsARepickOfTheLitNameSoNothingIsRefitted() {
+            // The preference raises a refresh on every write once a save exists, and a refresh re-fits
+            // every label. So it is the radio that keeps a re-click of the lit segment from reaching it.
+            try (var stringsMock = mockStatic(KmuStringKeys.class)) {
+
+                stubControlLabels(stringsMock);
+
+                var radio = (HorizontalRadioSpec) OwnerMapBodyControls
+                    .buildSharedControls(bodyPreferences, BUILT_TARGET)
+                    .get(1);
+
+                assertThat(radio.reselect())
+                    .isEqualTo(ReselectBehaviour.INERT);
             }
         }
 
@@ -338,13 +347,13 @@ final class OwnerMapBodyControlsTests {
                 stubControlLabels(stringsMock);
 
                 stringsMock
-                    .when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_FULL))
+                    .when(() -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_FULL))
                     .thenReturn("Full");
                 stringsMock
-                    .when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_SHORT))
+                    .when(() -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_SHORT))
                     .thenReturn("Short");
                 stringsMock
-                    .when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_NAME_NONE))
+                    .when(() -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_NAME_NONE))
                     .thenReturn("No");
 
                 var radio = (HorizontalRadioSpec) OwnerMapBodyControls
@@ -353,6 +362,29 @@ final class OwnerMapBodyControlsTests {
 
                 assertThat(radio.labels())
                     .containsExactly("Full", "Short", "No");
+            }
+        }
+
+        @Test
+        void captionsTheNameRadioWithTheLayersOwnWord() {
+            // What a layer's owners are called is the layer's word, so the caption comes from the
+            // key the layer handed over rather than one the shared body picks.
+            try (var stringsMock = mockStatic(KmuStringKeys.class)) {
+
+                stubControlLabels(stringsMock);
+
+                when(nameFormatMock.getCaptionKey())
+                    .thenReturn("layer_names");
+                stringsMock
+                    .when(() -> KmuStringKeys.get("layer_names"))
+                    .thenReturn("relay names");
+
+                var radio = (HorizontalRadioSpec) OwnerMapBodyControls
+                    .buildSharedControls(bodyPreferences, BUILT_TARGET)
+                    .get(1);
+
+                assertThat(radio.trailingLabel())
+                    .isEqualTo("relay names");
             }
         }
 
@@ -387,7 +419,7 @@ final class OwnerMapBodyControlsTests {
                 stubControlLabels(stringsMock);
 
                 when(nameFormatMock.getSelectedNameFormat(BUILT_SCREEN))
-                    .thenReturn(FactionNameFormatChoice.FULL);
+                    .thenReturn(OwnerNameFormatChoice.FULL);
 
                 var controls = OwnerMapBodyControls.buildSharedControls(bodyPreferences, BUILT_TARGET);
 
@@ -404,7 +436,7 @@ final class OwnerMapBodyControlsTests {
                 verify(nameFormatMock)
                     .selectNameFormat(
                         BUILT_SCREEN,
-                        FactionNameFormatChoice.SHORT,
+                        OwnerNameFormatChoice.SHORT,
                         BUILT_BOARD);
             }
         }
@@ -436,23 +468,23 @@ final class OwnerMapBodyControlsTests {
     }
 
     // Stubs the two registered views and their radio labels, so building the selector and resolving a
-    // clicked segment both read the same [Factions, Groups] order without the live strings table.
+    // clicked segment both read the same [Owners, Groups] order without the live strings table.
     private void stubSelectorViews(MockedStatic<KmuStringKeys> stringsMock) {
 
-        when(factionsViewMock.getSegmentLabelKey())
-            .thenReturn("factions_label");
+        when(ownersViewMock.getSegmentLabelKey())
+            .thenReturn("owners_label");
 
         when(groupedViewMock.getSegmentLabelKey())
             .thenReturn("groups_label");
 
         when(viewRegistryMock.getViews())
-            .thenReturn(List.of(factionsViewMock, groupedViewMock));
+            .thenReturn(List.of(ownersViewMock, groupedViewMock));
         when(viewRegistryMock.getSelectedViewIndex(BUILT_SCREEN))
             .thenReturn(ControlSpec.NO_SELECTION);
 
         stringsMock
-            .when(() -> KmuStringKeys.get("factions_label"))
-            .thenReturn("Factions");
+            .when(() -> KmuStringKeys.get("owners_label"))
+            .thenReturn("Owners");
         stringsMock
             .when(() -> KmuStringKeys.get("groups_label"))
             .thenReturn("Groups");

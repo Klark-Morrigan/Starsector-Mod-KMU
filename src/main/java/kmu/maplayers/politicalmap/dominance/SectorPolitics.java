@@ -4,9 +4,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.style.SectorBlocPalettes;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
@@ -17,12 +16,13 @@ import java.util.Map;
  * Resolves which faction owns each star system and in which colours that holder
  * paints.
  *
- * <p>The dominance-and-palette half of the holder pipeline: it takes the footprints
+ * <p>The dominance half of the holder pipeline: it takes the footprints
  * {@link KnownMarketFootprints} weighs out of the pass's colony set, asks
- * {@link SystemDominance} which faction holds the system, and resolves that
- * winner's authored UI shades into a {@link SystemOwner} the render layer draws.
- * Confining the winning holder's {@code FactionAPI} palette lookup here keeps the
- * render layer clear of Starsector economy and faction types.
+ * {@link SystemDominance} which faction holds the system, and hands that winner to
+ * the pass's own palettes ({@code SectorBlocPalettes}), which resolve it into the
+ * {@link SystemOwner} the render layer draws. Colouring through the pass rather than
+ * looking the faction up here colours every system a bloc holds off the one snapshot
+ * its fills were resolved from.
  *
  * <p>Resolves one render holder per system; the picker's whole-sector bloc totals are
  * {@link DominanceStatsAggregator}'s job, walking the same economy through the same
@@ -113,6 +113,6 @@ public final class SectorPolitics {
         if (dominantBlocId == null) {
             return null;
         }
-        return new SectorBlocPalettes(pass.sector(), pass.grouping()).resolveOwnerOf(dominantBlocId);
+        return pass.palettes().resolveOwnerOf(dominantBlocId);
     }
 }

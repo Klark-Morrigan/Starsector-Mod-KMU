@@ -42,8 +42,8 @@ public final class SectorMapMachineryIndex {
 
     // What a resolution falls back on when the sector it was asked about has none: a real
     // machinery that nothing indexes and nothing releases. Shared, so every caller that reaches
-    // it meets one holder rather than one each - which is the arrangement a sector-less caller has
-    // always had, back when each holder was a static of its own.
+    // it meets one holder rather than one each.
+    //
     // Made over no sector, a caller that reached it having named none - so a stage reading the
     // sector finds nothing rather than falling through to whichever sector is loaded.
     private static final SectorMapMachinery DETACHED_MACHINERY =
@@ -66,12 +66,16 @@ public final class SectorMapMachineryIndex {
      * one's cached drawing: the two are separated by the install, not by whatever each holder
      * happens to notice has changed.
      *
-     * @param sector the sector the map layers are being installed on; null installs nothing and
-     *               yields the detached machinery, since the switch can be flipped with no game
-     *               loaded
+     * @param sector          the sector the map layers are being installed on; null installs nothing
+     *                        and yields the detached machinery, since the switch can be flipped with
+     *                        no game loaded
+     * @param seatedMachinery what the new machinery holds from its first moment rather than making on
+     *                        first ask; see {@link SectorMapMachinery#SectorMapMachinery}
      * @return the machinery that sector's machinery is now held in
      */
-    public static SectorMapMachinery installMachineryOn(SectorAPI sector) {
+    public static SectorMapMachinery installMachineryOn(
+            SectorAPI sector,
+            InstalledMachinery... seatedMachinery) {
 
         if (sector == null) {
             return DETACHED_MACHINERY;
@@ -85,7 +89,7 @@ public final class SectorMapMachineryIndex {
             if (replaced != null) {
                 replaced.disposeMachinery();
             }
-            return new SectorMapMachinery(sector);
+            return new SectorMapMachinery(sector, seatedMachinery);
         });
 
         LOG.debug("Map layer machinery installed; machinery=" + machineryBySector.size());

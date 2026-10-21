@@ -102,6 +102,17 @@ public final class VoidEnclosure {
         int countSquares() {
             return across * up;
         }
+
+        // Whether a column and row fall on the grid at all.
+        boolean isOnGrid(int column, int row) {
+            return column >= 0 && row >= 0 && column < across && row < up;
+        }
+
+        // Where a square sits in the flat arrays, row by row. The one place the layout is
+        // written, so every reader and writer of a square agrees on which entry it is.
+        int indexSquare(int column, int row) {
+            return row * across + column;
+        }
     }
 
     /**
@@ -132,7 +143,7 @@ public final class VoidEnclosure {
 
         stampLand(squares, union, grid);
         stampBarriers(squares, barriers, grid);
-        floodFromTheBorder(squares, grid.across(), grid.up());
+        floodFromTheBorder(squares, grid);
 
         return labelHeldWater(grid, squares);
     }
@@ -150,11 +161,11 @@ public final class VoidEnclosure {
         var atX = (int) Math.round((x - grid.walked().minX()) / grid.stride());
         var atY = (int) Math.round((y - grid.walked().minY()) / grid.stride());
 
-        if (atX < 0 || atY < 0 || atX >= grid.across() || atY >= grid.up()) {
+        if (!grid.isOnGrid(atX, atY)) {
             return OPEN_VOID;
         }
 
-        var at = atY * grid.across() + atX;
+        var at = grid.indexSquare(atX, atY);
 
         return squares[at] == BLOCKED_SQUARE ? INSIDE_WALL : regionAt[at];
     }
@@ -177,15 +188,6 @@ public final class VoidEnclosure {
      */
     public double getStride() {
         return grid.stride();
-    }
-
-    /**
-     * How many held pieces there are, which is what a caller sizes its own bookkeeping by.
-     *
-     * @return the count
-     */
-    public int countRegions() {
-        return areas.length;
     }
 
     // Every square whose centre a cell covers, disc by disc rather than square by square:
@@ -212,7 +214,7 @@ public final class VoidEnclosure {
                     var atY = walked.minY() + y * stride;
 
                     if (Points.computeDistance(new double[] {atX, atY}, site) < union.reach()) {
-                        squares[y * grid.across() + x] = BLOCKED_SQUARE;
+                        squares[grid.indexSquare(x, y)] = BLOCKED_SQUARE;
                     }
                 }
             }
@@ -242,27 +244,29 @@ public final class VoidEnclosure {
                 var atY = (int) Math.round(
                     (barrier[0][1] + alongY * step / steps - walked.minY()) / stride);
 
-                if (atX >= 0 && atY >= 0 && atX < grid.across() && atY < grid.up()) {
-                    squares[atY * grid.across() + atX] = BLOCKED_SQUARE;
+                if (grid.isOnGrid(atX, atY)) {
+                    squares[grid.indexSquare(atX, atY)] = BLOCKED_SQUARE;
                 }
             }
         }
     }
 
     // Open sea, taken from the border inward. Whatever it fails to reach is held.
-    private static void floodFromTheBorder(byte[] squares, int across, int up) {
+    private static void floodFromTheBorder(byte[] squares, WalkedGrid grid) {
 
+        var across = grid.across();
+        var up = grid.up();
         var pending = new ArrayDeque<Integer>();
 
         for (var x = 0; x < across; x++) {
 
-            offer(squares, pending, x, 0, across);
-            offer(squares, pending, x, up - 1, across);
+            offer(squares, pending, x, 0, grid);
+            offer(squares, pending, x, up - 1, grid);
         }
         for (var y = 0; y < up; y++) {
 
-            offer(squares, pending, 0, y, across);
-            offer(squares, pending, across - 1, y, across);
+            offer(squares, pending, 0, y, grid);
+            offer(squares, pending, across - 1, y, grid);
         }
 
         while (!pending.isEmpty()) {
@@ -271,7 +275,7 @@ public final class VoidEnclosure {
 
             for (var step : STEPS) {
 
-                offer(squares, pending, at % across + step[0], at / across + step[1], across);
+                offer(squares, pending, at % across + step[0], at / across + step[1], grid);
             }
         }
     }
@@ -281,13 +285,13 @@ public final class VoidEnclosure {
             ArrayDeque<Integer> pending,
             int x,
             int y,
-            int across) {
+            WalkedGrid grid) {
 
-        if (x < 0 || y < 0 || x >= across || y * across + x >= squares.length) {
+        if (!grid.isOnGrid(x, y)) {
             return;
         }
 
-        var at = y * across + x;
+        var at = grid.indexSquare(x, y);
 
         if (squares[at] != OPEN_SQUARE) {
             return;
@@ -300,7 +304,6 @@ public final class VoidEnclosure {
     private static VoidEnclosure labelHeldWater(WalkedGrid grid, byte[] squares) {
 
         var across = grid.across();
-        var up = grid.up();
         var regionAt = new int[grid.countSquares()];
         var counts = new ArrayList<Integer>();
 
@@ -330,11 +333,11 @@ public final class VoidEnclosure {
                     var x = at % across + step[0];
                     var y = at / across + step[1];
 
-                    if (x < 0 || y < 0 || x >= across || y >= up) {
+                    if (!grid.isOnGrid(x, y)) {
                         continue;
                     }
 
-                    var next = y * across + x;
+                    var next = grid.indexSquare(x, y);
 
                     if (squares[next] == OPEN_SQUARE && regionAt[next] == OPEN_VOID) {
 

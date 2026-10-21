@@ -1,12 +1,14 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.BlocFriendliness;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
+import kmlib.starsector.factions.alliances.FactionAlliances;
+import kmlib.starsector.factions.relation.FactionSetFriendliness;
+
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocRelations;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
 import kmu.maplayers.politicalmap.dominance.standings.FactionStanding;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
-import kmu.maplayers.politicalmap.dominance.standings.StandingFraction;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 
 import org.junit.jupiter.api.Nested;
@@ -17,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static kmu.maplayers.base.visibility.colonies.FactionAllianceFixture.buildAllianceOf;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -25,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * by alliance, and what alliance left standing against it sorted again by disposition.
  *
  * <p>Posed over hand-built standings under a bar and a disposition table stated here, since which
- * blocs a live box bars is {@link kmu.maplayers.ownermap.holding.BlocCandidacy}'s answer
+ * blocs a live box bars is {@link kmu.maplayers.politicalmap.dominance.BlocCandidacy}'s answer
  * and how warm two factions are is the sector's - what is pinned here is the order the axes are
  * applied in and what each of them takes.
  */
@@ -61,7 +65,7 @@ class StandingBlockRoutingTests {
     private static final String HOLDER_ALLIANCE_BLOC = "holder-alliance";
     private static final String RIVAL_ALLIANCE_BLOC = "rival-alliance";
 
-    // What bars a bloc, in the shape the routing takes it: a predicate over bloc ids.
+    // What bars a bloc, in the shape the routing takes it: a predicate over bloc IDs.
     private static final Predicate<String> IS_POLITICAL_BLOC = blocId ->
         !PLACEHOLDER_BLOC.equals(blocId) && !OTHER_PLACEHOLDER_BLOC.equals(blocId);
 
@@ -96,7 +100,7 @@ class StandingBlockRoutingTests {
             var routing = StandingBlockRouting.routeRankedStandings(
                 createRankedStandings(HOLDER_BLOC, ALLY_BLOC, RIVAL_BLOC),
                 buildRules(
-                    HolderGroupingFixture.buildGroupOf(HOLDER_BLOC, ALLY_BLOC),
+                    buildAllianceOf(HOLDER_BLOC, ALLY_BLOC),
                     HolderGrouping.identity(),
                     List.of()));
 
@@ -147,7 +151,7 @@ class StandingBlockRoutingTests {
             var routing = StandingBlockRouting.routeRankedStandings(
                 createRankedStandings(HOLDER_BLOC, PLACEHOLDER_BLOC),
                 buildRules(
-                    HolderGroupingFixture.buildGroupOf(HOLDER_BLOC, PLACEHOLDER_BLOC),
+                    buildAllianceOf(HOLDER_BLOC, PLACEHOLDER_BLOC),
                     HolderGrouping.identity(),
                     List.of()));
 
@@ -169,7 +173,7 @@ class StandingBlockRoutingTests {
             var routing = StandingBlockRouting.routeRankedStandings(
                 createRankedStandings(HOLDER_BLOC, ALLY_BLOC, RIVAL_BLOC, PLACEHOLDER_BLOC),
                 buildRules(
-                    HolderGroupingFixture.buildGroupOf(HOLDER_BLOC, ALLY_BLOC),
+                    buildAllianceOf(HOLDER_BLOC, ALLY_BLOC),
                     HolderGrouping.identity(),
                     List.of()));
 
@@ -189,9 +193,9 @@ class StandingBlockRoutingTests {
             // The groups arrive strongest first and a block reads in that order rather than in one
             // the partition invented, so the box lists them exactly as the fills rank them.
             assertThat(routeWithoutAlliances(
-                    HOLDER_BLOC,
-                    PLACEHOLDER_BLOC,
-                    OTHER_PLACEHOLDER_BLOC)
+                        HOLDER_BLOC,
+                        PLACEHOLDER_BLOC,
+                        OTHER_PLACEHOLDER_BLOC)
                     .selectStandingsIn(StandingBlock.NON_POLITICAL))
                 .containsExactly(
                     routeWhole(PLACEHOLDER_BLOC),
@@ -232,7 +236,7 @@ class StandingBlockRoutingTests {
             var routing = StandingBlockRouting.routeRankedStandings(
                 createRankedStandings(HOLDER_BLOC, ALLY_BLOC),
                 buildRules(
-                    HolderGroupingFixture.buildGroupOf(HOLDER_BLOC, ALLY_BLOC),
+                    buildAllianceOf(HOLDER_BLOC, ALLY_BLOC),
                     HolderGrouping.identity(),
                     List.of(ALLY_BLOC + ":" + HOLDER_BLOC)));
 
@@ -247,7 +251,7 @@ class StandingBlockRoutingTests {
         void liftsABlocOnGoodTermsWithEveryMemberOfAnAllianceHolder() {
             // The alliances view's own shape, which no other case here poses: the holder is the
             // alliance bloc the fills were painted for, so the membership the rival is measured
-            // against is read out of the fold rather than being the holder's own id.
+            // against is read out of the fold rather than being the holder's own ID.
             var routing = StandingBlockRouting.routeRankedStandings(
                 List.of(
                     new GroupStanding(
@@ -256,7 +260,7 @@ class StandingBlockRoutingTests {
                         List.of(new WeighedFactionStanding(WARM_MEMBER, ANY_SCORE))),
                     createGroupStanding(RIVAL_BLOC)),
                 buildRules(
-                    HolderGroupingFixture.buildGroupOf(WARM_MEMBER, ABSENT_MEMBER),
+                    buildAllianceOf(WARM_MEMBER, ABSENT_MEMBER),
                     HolderGroupingFixture.buildGroupOf(WARM_MEMBER, ABSENT_MEMBER),
                     List.of(
                         RIVAL_BLOC + ":" + WARM_MEMBER,
@@ -283,7 +287,7 @@ class StandingBlockRoutingTests {
                         ANY_SCORE,
                         List.of(new WeighedFactionStanding(WARM_MEMBER, ANY_SCORE)))),
                 buildRules(
-                    HolderGrouping.identity(),
+                    FactionAlliances.NONE,
                     HolderGroupingFixture.buildGroupOf(WARM_MEMBER, SOUR_MEMBER),
                     List.of(WARM_MEMBER + ":" + HOLDER_BLOC)));
 
@@ -326,14 +330,15 @@ class StandingBlockRoutingTests {
         void listsOnlyThePresentMembersOfABlocThatIsNotOfOneMind() {
             // The two readings part exactly here: the fraction is over the whole membership, while
             // what is listed is who stands in the hovered system - the box having never listed
-            // anybody else. So the rows and the fraction do not add up, and are not meant to.
+            // anybody else. So the rows and the fraction do not add up, and are not meant to. The
+            // holder is listed too, standing through its one member.
             var routing = routeMixedBlocAgainstTheHolder();
 
             assertThat(Arrays
                     .stream(StandingBlock.values())
                     .flatMap(block -> readListedMembers(routing, block).stream())
                     .toList())
-                .containsExactlyInAnyOrder(WARM_MEMBER, SOUR_MEMBER);
+                .containsExactlyInAnyOrder(HOLDER_BLOC, WARM_MEMBER, SOUR_MEMBER);
         }
 
         @Test
@@ -351,7 +356,7 @@ class StandingBlockRoutingTests {
             var routing = StandingBlockRouting.routeRankedStandings(
                 List.of(holdingBloc, createGroupStanding(ALLY_BLOC), createGroupStanding(RIVAL_BLOC)),
                 buildRules(
-                    HolderGroupingFixture.buildGroupOf(
+                    buildAllianceOf(
                         HolderGroupingFixture.GROUP_BLOC_ID,
                         ALLY_BLOC),
                     HolderGroupingFixture.buildGroupOf(WARM_MEMBER, SOUR_MEMBER),
@@ -416,7 +421,7 @@ class StandingBlockRoutingTests {
                         ANY_SCORE,
                         List.of(new WeighedFactionStanding(RIVAL_BLOC, ANY_SCORE)))),
                 buildRules(
-                    buildTwoAlliances(),
+                    buildTwoAllianceMemberships(),
                     buildTwoAlliances(),
                     List.of(
                         RIVAL_BLOC + ":" + HOLDER_MEMBER_B,
@@ -450,7 +455,7 @@ class StandingBlockRoutingTests {
                             new WeighedFactionStanding(RIVAL_MEMBER_D, ANY_SCORE),
                             new WeighedFactionStanding(RIVAL_MEMBER_E, ANY_SCORE)))),
                 buildRules(
-                    alliances,
+                    buildTwoAllianceMemberships(),
                     alliances,
                     List.of(
                         RIVAL_MEMBER_D + ":" + HOLDER_MEMBER_B,
@@ -561,7 +566,7 @@ class StandingBlockRoutingTests {
                         new WeighedFactionStanding(RIVAL_MEMBER_E, ANY_SCORE),
                         new WeighedFactionStanding(RIVAL_MEMBER_F, ANY_SCORE)))),
             buildRules(
-                alliances,
+                buildTwoAllianceMemberships(),
                 alliances,
                 List.of(
                     RIVAL_MEMBER_D + ":" + HOLDER_MEMBER_A,
@@ -593,6 +598,18 @@ class StandingBlockRoutingTests {
                 RIVAL_ALLIANCE_BLOC, "Second Alliance"));
     }
 
+    // The same two alliances as who stands with whom, which is what the allied block is lifted by.
+    private static FactionAlliances buildTwoAllianceMemberships() {
+
+        return new FactionAlliances(Map.of(
+            HOLDER_MEMBER_A, HOLDER_ALLIANCE_BLOC,
+            HOLDER_MEMBER_B, HOLDER_ALLIANCE_BLOC,
+            HOLDER_MEMBER_C, HOLDER_ALLIANCE_BLOC,
+            RIVAL_MEMBER_D, RIVAL_ALLIANCE_BLOC,
+            RIVAL_MEMBER_E, RIVAL_ALLIANCE_BLOC,
+            RIVAL_MEMBER_F, RIVAL_ALLIANCE_BLOC));
+    }
+
     // A bloc of two standing against the holder, one member warm toward it and the other not, with
     // both present in the system. The case both halves of the split rule are read off, so the two of
     // them are posed once rather than twice over inputs free to drift apart.
@@ -608,7 +625,7 @@ class StandingBlockRoutingTests {
                         new WeighedFactionStanding(WARM_MEMBER, ANY_SCORE),
                         new WeighedFactionStanding(SOUR_MEMBER, ANY_SCORE)))),
             buildRules(
-                HolderGrouping.identity(),
+                FactionAlliances.NONE,
                 HolderGroupingFixture.buildGroupOf(WARM_MEMBER, SOUR_MEMBER, ABSENT_MEMBER),
                 List.of(WARM_MEMBER + ":" + HOLDER_BLOC)));
     }
@@ -617,9 +634,10 @@ class StandingBlockRoutingTests {
     // no two blocs stand together and none is warm toward another, which is the state every case not
     // about those two axes is posed in.
     private static StandingBlockRouting routeWithoutAlliances(String... rankedBlocIds) {
+
         return StandingBlockRouting.routeRankedStandings(
             createRankedStandings(rankedBlocIds),
-            buildRules(HolderGrouping.identity(), HolderGrouping.identity(), List.of()));
+            buildRules(FactionAlliances.NONE, HolderGrouping.identity(), List.of()));
     }
 
     // The same with a disposition table, for a case about who is warm toward whom rather than about
@@ -630,40 +648,42 @@ class StandingBlockRoutingTests {
 
         return StandingBlockRouting.routeRankedStandings(
             createRankedStandings(rankedBlocIds),
-            buildRules(HolderGrouping.identity(), HolderGrouping.identity(), aboveNeutralPairs));
+            buildRules(FactionAlliances.NONE, HolderGrouping.identity(), aboveNeutralPairs));
     }
 
     // The four rules a case poses: the bar, which every case here shares, and the three it varies -
     // the alliance set the allied block is lifted by, the fold a bloc's membership is read out of,
     // and which factions are above neutral with which, each pair written "<faction>:<other>".
     private static StandingBlockRules buildRules(
-            HolderGrouping allianceSet,
+            FactionAlliances allianceSet,
             HolderGrouping membershipFold,
             List<String> aboveNeutralPairs) {
 
+        // Read one way round, every rule here asking its pairs from the faction being sorted - so a
+        // table stating what a rival thinks of the holder settles which side that rival takes and
+        // both the counts stated on its row alike.
+        var friendliness = new FactionSetFriendliness((factionId, otherFactionId) ->
+            aboveNeutralPairs.contains(factionId + ":" + otherFactionId));
+
         return new StandingBlockRules(
             IS_POLITICAL_BLOC,
-            new BlocAffiliation(allianceSet),
-            // Read one way round, every rule here asking its pairs from the faction being sorted -
-            // so a table stating what a rival thinks of the holder settles which side that rival
-            // takes and both the counts stated on its row alike.
-            new BlocFriendliness((factionId, otherFactionId) ->
-                aboveNeutralPairs.contains(factionId + ":" + otherFactionId)),
+            new BlocRelations(new BlocAffiliation(allianceSet), friendliness),
             membershipFold::resolveMemberFactionIds);
     }
 
     private static List<GroupStanding> createRankedStandings(String... rankedBlocIds) {
+
         return Arrays
             .stream(rankedBlocIds)
             .map(StandingBlockRoutingTests::createGroupStanding)
             .toList();
     }
 
-    // One ranked group as the routing places it: the bloc it is. What it is weighed at and made up
-    // of are the naming's business, so which block it falls in turns on the bloc alone wherever the
-    // case is not about a bloc's members disagreeing.
+    // One ranked group as the routing places it: the bloc it is, standing through a lone member of
+    // the same ID. What it is weighed at and made up of are the naming's business, so which block it
+    // falls in turns on the bloc alone wherever the case is not about a bloc's members disagreeing.
     private static GroupStanding createGroupStanding(String blocId) {
-        return new GroupStanding(blocId, ANY_SCORE, List.<FactionStanding>of());
+        return new GroupStanding(blocId, ANY_SCORE, List.of(new WeighedFactionStanding(blocId, ANY_SCORE)));
     }
 
     // That same group as a block placed by membership lists it: nothing qualifies the heading over
@@ -671,5 +691,4 @@ class StandingBlockRoutingTests {
     private static RoutedStanding routeWhole(String blocId) {
         return RoutedStanding.routeWhole(createGroupStanding(blocId));
     }
-
 }

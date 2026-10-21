@@ -48,7 +48,7 @@ final class HoverHighlightColourTests {
 
             var colour = HoverHighlightColour.resolveColourFor(
                 sourceMock,
-                new MapHover(HOVERED_CELL_KEY, List.of(HOVERED_CELL_KEY, CLUSTER_MEMBER_CELL_KEY)),
+                MapHoverFixture.buildHoverOn(HOVERED_CELL_KEY, List.of(HOVERED_CELL_KEY, CLUSTER_MEMBER_CELL_KEY)),
                 buildStyleSelecting(selectionMock));
 
             assertThat(colour)
@@ -82,7 +82,7 @@ final class HoverHighlightColourTests {
 
             var colour = HoverHighlightColour.resolveColourFor(
                 sourceMock,
-                new MapHover(HOVERED_CELL_KEY, List.of(HOVERED_CELL_KEY)),
+                MapHoverFixture.buildHoverOn(HOVERED_CELL_KEY, List.of(HOVERED_CELL_KEY)),
                 buildStyleSelecting(null));
 
             assertThat(colour)

@@ -13,16 +13,11 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
+import kmu.maplayers.base.tooltip.content.CellTooltipLineName;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
-import kmu.maplayers.base.visibility.colonies.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.maplayers.base.visibility.colonies.ColonyKindLookup;
-import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyLookup;
-import kmu.maplayers.ownermap.tooltip.ColonyObservationNotes;
-import kmu.maplayers.ownermap.tooltip.ColonyObservationNotesTests;
-import kmu.maplayers.ownermap.tooltip.ColonyQualifierTests;
-import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +26,6 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture.nameMarketId;
@@ -40,10 +34,11 @@ import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.NO_NAME_S
 import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.LAST_SEEN;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
-import static kmu.maplayers.ownermap.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.LAST_SEEN;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingWithKind;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
+import static kmu.maplayers.politicalmap.tooltip.SystemColonyReadingFixture.buildReadingWithUndiscovered;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -68,7 +63,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Where a remark about how old the box's news of a market is may appear is pinned the same way -
  * on a market's own line whatever the contest made of it, and on nothing beneath one. When such a
- * remark is due at all is the notes' own question and is pinned by {@link ColonyObservationNotesTests}.
+ * remark is due at all is the notes' own question and is pinned by ColonyObservationNotesTests.
  *
  * <p>What a row the box may not name looks like is {@link RedactedMarketLinesTests}'s. What is pinned
  * here is what the account does with such a row: which markets get one, the listing place and the tie
@@ -79,7 +74,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>What a market's line calls out about the place is pinned here only as far as this resolver
  * decides it: which facts it hands over - the claim it took, the admission the contest met it
  * through, and what the box's walk of the system says about it. Which words those come to, in which
- * order, is the shared read's own question and is pinned by {@link ColonyQualifierTests}.
+ * order, is the shared read's own question and is pinned by ColonyQualifierTests.
  *
  * <p>The mechanic behind the numbers is KMLib's and has its own suite there, so what is left is what
  * this resolver alone decides - which market leads, when it is called out, and which terms are stated
@@ -143,15 +138,12 @@ final class ClaimScoreRowResolverTests {
     // Every market an ordinary colony somebody is looking at, so no line is qualified and none
     // carries a date. Both halves of what the box's walk of the system adds to a row, stated once
     // for every case about the arithmetic rather than varied: which kinds resolve is
-    // ColonyKindLookupTests's question and what makes a remark due is ColonyObservationNotesTests's.
+    // ColonyFactsLookupTests's question and what makes a remark due is ColonyObservationNotesTests's.
     private static final SystemColonyReading NOTHING_BEYOND_THE_SCORE = SystemColonyReading.NONE;
 
     // The world people left, as the box's own walk of the system classified it.
-    private static final SystemColonyReading TIBICENA_IS_A_DECIVILISED_WORLD = new SystemColonyReading(
-        new ColonyKindLookup(Map.of("tibicena", ColonyKind.UNGOVERNED_COLONY)),
-        ColonyDiscoveryLookup.NONE,
-        OpenlyKnownColonyLookup.NONE,
-        ColonyObservationNotes.NONE);
+    private static final SystemColonyReading TIBICENA_IS_A_DECIVILISED_WORLD =
+        buildReadingWithKind("tibicena", ColonyKind.UNGOVERNED_COLONY);
 
     // A market the sector map marks with a glyph, and one it marks with none - the two readings a
     // market line's opening run turns on. The authored colour is carried because the read hands one
@@ -166,12 +158,12 @@ final class ClaimScoreRowResolverTests {
 
     @BeforeEach
     void installStrings() {
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested
@@ -234,7 +226,7 @@ final class ClaimScoreRowResolverTests {
                     .setSiblingMarketCount(ONE_SIBLING_MARKET)
                     .buildMarket())));
 
-            assertThat(rows.get(1).line().valueText())
+            assertThat(rows.get(1).line().value().valueText())
                 .isEqualTo("0");
             assertThat(rows.get(1).line().mark().spritePath())
                 .isEqualTo("graphics/warroom/icon_planet.png");
@@ -429,14 +421,14 @@ final class ClaimScoreRowResolverTests {
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Tigra City", PRESENCE_LINE);
-            assertThat(rows.get(1).line().valueText())
+            assertThat(rows.get(1).line().value().valueText())
                 .isEqualTo("0");
 
             // The nought is the contest's statement about the market rather than anything it scored,
             // so it reads quiet: in the list's own colour it would pass for a score competed with.
-            assertThat(rows.get(1).line().isValueUncounted())
+            assertThat(rows.get(1).line().value().isValueUncounted())
                 .isTrue();
-            assertThat(rows.get(0).line().isValueUncounted())
+            assertThat(rows.get(0).line().value().isValueUncounted())
                 .isFalse();
         }
 
@@ -500,12 +492,12 @@ final class ClaimScoreRowResolverTests {
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Kirov Reserve");
-            assertThat(rows.get(1).line().valueText())
+            assertThat(rows.get(1).line().value().valueText())
                 .isEqualTo("0");
 
             // Quiet for the same reason a hidden market's nought is: it is what the contest made of
             // the market rather than a score it competed with and lost on.
-            assertThat(rows.get(1).line().isValueUncounted())
+            assertThat(rows.get(1).line().value().isValueUncounted())
                 .isTrue();
         }
 
@@ -552,9 +544,9 @@ final class ClaimScoreRowResolverTests {
 
             assertThat(bonusLine.isAside())
                 .isTrue();
-            assertThat(bonusLine.valueWorkingText())
+            assertThat(bonusLine.value().valueWorkingText())
                 .isEqualTo("(3 markets) - 1 =");
-            assertThat(bonusLine.valueText())
+            assertThat(bonusLine.value().valueText())
                 .isEqualTo("+2");
         }
 
@@ -604,8 +596,8 @@ final class ClaimScoreRowResolverTests {
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", NO_NAME_STATED, PRESENCE_LINE);
-            assertThat(rows.get(2).line().hasRedactedName())
-                .isTrue();
+            assertThat(rows.get(2).line().name())
+                .isInstanceOf(CellTooltipLineName.Withheld.class);
 
             // And says why it was passed over, as loudly as any other line says it. The word is the
             // one thing separating this row from the weighed kind's, both being blocked out - so a row
@@ -632,8 +624,8 @@ final class ClaimScoreRowResolverTests {
                     WITHHOLDING_UNDISCOVERED_MARKETS,
                     PATROL_DETAILS));
 
-            assertThat(rows.get(1).line().hasRedactedName())
-                .isTrue();
+            assertThat(rows.get(1).line().name())
+                .isInstanceOf(CellTooltipLineName.Withheld.class);
             assertThat(rows.get(1).line().qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
         }
@@ -648,9 +640,9 @@ final class ClaimScoreRowResolverTests {
                 List.of(buildUnknownHiddenMarket("Kanta's Den", 3, ONE_SIBLING_MARKET,
                     SECOND_LISTED))));
 
-            assertThat(rows.get(1).line().valueText())
+            assertThat(rows.get(1).line().value().valueText())
                 .isEqualTo("0");
-            assertThat(rows.get(1).line().isValueUncounted())
+            assertThat(rows.get(1).line().value().isValueUncounted())
                 .isTrue();
         }
 
@@ -663,8 +655,8 @@ final class ClaimScoreRowResolverTests {
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, NO_NAME_STATED, PRESENCE_LINE);
-            assertThat(rows.get(1).line().hasRedactedName())
-                .isTrue();
+            assertThat(rows.get(1).line().name())
+                .isInstanceOf(CellTooltipLineName.Withheld.class);
         }
 
         @Test
@@ -674,8 +666,8 @@ final class ClaimScoreRowResolverTests {
             // that the box could not find it - so the finding is stated as loudly as on any other line.
             var rows = resolveRowsOverAnUndiscoveredMarket();
 
-            assertThat(rows.get(1).line().hasRedactedName())
-                .isTrue();
+            assertThat(rows.get(1).line().name())
+                .isInstanceOf(CellTooltipLineName.Withheld.class);
             assertThat(rows.get(1).line().qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
         }
@@ -729,7 +721,7 @@ final class ClaimScoreRowResolverTests {
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, NO_NAME_STATED, "Eventide", PRESENCE_LINE);
-            assertThat(rows.get(1).line().valueText())
+            assertThat(rows.get(1).line().value().valueText())
                 .isEqualTo(CellTooltipEntryLine.NO_SCORE);
         }
 
@@ -751,9 +743,9 @@ final class ClaimScoreRowResolverTests {
             // unaccountable.
             var rows = resolveRowsOverAnUndiscoveredStandingMarket();
 
-            assertThat(rows.get(0).line().valueText())
+            assertThat(rows.get(0).line().value().valueText())
                 .isEqualTo("8");
-            assertThat(rows.get(0).line().isValueUncounted())
+            assertThat(rows.get(0).line().value().isValueUncounted())
                 .isFalse();
         }
 
@@ -765,8 +757,8 @@ final class ClaimScoreRowResolverTests {
             // that declines to name the place, rather than the box dropping one to withhold the other.
             var rows = resolveRowsOverAnUndiscoveredStandingMarket();
 
-            assertThat(rows.get(0).line().hasRedactedName())
-                .isTrue();
+            assertThat(rows.get(0).line().name())
+                .isInstanceOf(CellTooltipLineName.Withheld.class);
             assertThat(rows.get(0).line().qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("claim holder, undiscovered"));
         }
@@ -784,7 +776,7 @@ final class ClaimScoreRowResolverTests {
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, PRESENCE_LINE);
-            assertThat(rows.get(1).line().valueWorkingText())
+            assertThat(rows.get(1).line().value().valueWorkingText())
                 .isEqualTo("(2 markets) - 1 =");
         }
 
@@ -801,8 +793,8 @@ final class ClaimScoreRowResolverTests {
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(NO_NAME_STATED, "Culann", PRESENCE_LINE);
-            assertThat(rows.get(0).line().hasRedactedName())
-                .isTrue();
+            assertThat(rows.get(0).line().name())
+                .isInstanceOf(CellTooltipLineName.Withheld.class);
         }
 
         @Test
@@ -990,7 +982,7 @@ final class ClaimScoreRowResolverTests {
                 buildFullyScoredMarket(),
                 List.of()));
 
-            assertThat(rows.get(0).line().valueText())
+            assertThat(rows.get(0).line().value().valueText())
                 .isEqualTo("19");
         }
 
@@ -1005,7 +997,7 @@ final class ClaimScoreRowResolverTests {
 
             assertThat(readLabelTexts(rows.get(0).children()))
                 .containsExactly("Size");
-            assertThat(rows.get(0).children().get(0).line().valueText())
+            assertThat(rows.get(0).children().get(0).line().value().valueText())
                 .isEqualTo("7");
         }
 
@@ -1095,7 +1087,7 @@ final class ClaimScoreRowResolverTests {
 
             assertThat(readLabelTexts(garrisoned.get(0).children()))
                 .containsExactly("Size", "Military");
-            assertThat(garrisoned.get(0).children().get(1).line().valueText())
+            assertThat(garrisoned.get(0).children().get(1).line().value().valueText())
                 .isEqualTo("+10");
 
             var civilian = resolveContestedRows(buildStanding(
@@ -1118,7 +1110,7 @@ final class ClaimScoreRowResolverTests {
             assertThat(readLabelTexts(rows))
                 .containsExactly("Kanta's Den", "Kirov Reserve");
             assertThat(rows)
-                .allSatisfy(row -> assertThat(row.line().valueText()).isEqualTo("0"));
+                .allSatisfy(row -> assertThat(row.line().value().valueText()).isEqualTo("0"));
         }
 
         @Test

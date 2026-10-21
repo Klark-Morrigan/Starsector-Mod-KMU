@@ -12,7 +12,7 @@ import java.awt.Color;
  * the other could conclude that something is drawn when nothing is.
  *
  * @param highlight the loops to bloom off and the extents to wash
- * @param colour    the shade both burn in, or null when the previewed bloc resolved none
+ * @param colour    the shade both burn in, or null when the previewed owner resolved none
  */
 public record PreviewHighlightPaint(HoverHighlight highlight, Color colour) {
 

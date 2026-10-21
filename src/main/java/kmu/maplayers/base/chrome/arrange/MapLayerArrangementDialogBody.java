@@ -9,10 +9,12 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmlib.starsector.ui.layout.VanillaPositions;
+import kmlib.starsector.ui.modal.ModalPanelBody;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmlib.starsector.ui.render.gl.UiFill;
 import kmlib.starsector.ui.screen.VanillaScreen;
 
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
@@ -23,10 +25,10 @@ import java.util.function.BiConsumer;
  * around them - with the dim over the screen and the box's own surface painted beneath, since the
  * game publishes a rectangle component that strokes and none that fills.
  *
- * <p>Apart from the dialog because the two change for different reasons. What the dialog is - when
+ * <p>Kept apart from the dialog, because the two change for different reasons. What the dialog is - when
  * it stands up, what it claims, when it comes down - is a question about a screen; what stands in
- * the box is a question about a layout. Together they were one class carrying a lifecycle and a
- * dozen measurements, and neither half could be read without the other.
+ * the box is a question about a layout. One class carrying a lifecycle and a dozen measurements could
+ * not be read a half at a time.
  *
  * <p>What a row is made of is {@link ArrangementRowWidgets}'s and where everything sits is
  * {@link ArrangementBoxLayout}'s, so this is left with the furniture around the column and the two
@@ -40,7 +42,8 @@ import java.util.function.BiConsumer;
  * <p>The surface every element stands on is one painted rectangle rather than a fill per element,
  * which would leave the gaps between them showing the map through.
  */
-final class MapLayerArrangementDialogBody {
+final class MapLayerArrangementDialogBody
+        implements ModalPanelBody {
 
     // How dark the backdrop stands the screen down to.
     private static final float BACKDROP_ALPHA = 0.7f;
@@ -61,10 +64,10 @@ final class MapLayerArrangementDialogBody {
     /**
      * Builds the body and stands it in {@code dialogPanel}.
      *
-     * @param dialogPanel   the screen-sized panel the dialog stands in
-     * @param editor        the rows to draw and what each of them may do
-     * @param onRowAction   where a press on a row's controls goes, as the row's layer ID and what was
-     *                      pressed
+     * @param dialogPanel    the screen-sized panel the dialog stands in
+     * @param editor         the rows to draw and what each of them may do
+     * @param onRowAction    where a press on a row's controls goes, as the row's layer ID and what was
+     *                       pressed
      * @param onClosePressed what a press on the way out does
      */
     MapLayerArrangementDialogBody(
@@ -93,7 +96,8 @@ final class MapLayerArrangementDialogBody {
      *
      * @param dialogPanel the panel it was built into
      */
-    void removeFromPanel(CustomPanelAPI dialogPanel) {
+    @Override
+    public void removeFromPanel(CustomPanelAPI dialogPanel) {
 
         dialogPanel.removeComponent(boxPanel);
     }
@@ -110,7 +114,8 @@ final class MapLayerArrangementDialogBody {
      * @param alphaMult how far through its own fade the panel stands, which both fills honour so the
      *                  dialog arrives and leaves as one piece
      */
-    void renderFills(float alphaMult) {
+    @Override
+    public void renderFills(float alphaMult) {
 
         UiFill.renderQuad(
             VanillaScreen.resolveScreenBox(),
@@ -118,8 +123,8 @@ final class MapLayerArrangementDialogBody {
                 StarsectorUiColour.BLACK.resolve(),
                 BACKDROP_ALPHA * alphaMult));
 
-        // Read off the placement the layout settled rather than the numbers it was laid out from, exactly
-        // as the input claim is, so a resized window moves the fill with the box.
+        // Read off the placement the layout settled rather than the numbers it was laid out from, so a
+        // resized window moves the fill with the box.
         UiFill.renderQuad(
             VanillaPositions.toRectangle(boxPlacement),
             new UiElementPaint(
@@ -139,7 +144,7 @@ final class MapLayerArrangementDialogBody {
         // the body text under it, which leaves the two reading as one paragraph rather than as a head
         // and the line it heads.
         header.setTitleOrbitronLarge();
-        header.addTitle(KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_TITLE));
+        header.addTitle(KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_TITLE));
 
         composeHint().addTo(header, ArrangementBoxLayout.TITLE_GAP);
     }
@@ -157,8 +162,8 @@ final class MapLayerArrangementDialogBody {
     static void fillFooter(TooltipMakerAPI footer) {
 
         footer.addButton(
-            KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_APPLY),
-            KmuStringKeys.MAP_LAYER_ARRANGE_APPLY,
+            KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_APPLY),
+            KmuMapStringKeys.MAP_LAYER_ARRANGE_APPLY,
             ArrangementBoxLayout.APPLY_BUTTON_WIDTH,
             ArrangementBoxLayout.CONTROL_HEIGHT,
             ArrangementBoxLayout.NO_PAD);
@@ -176,10 +181,10 @@ final class MapLayerArrangementDialogBody {
         var highlight = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
 
         return new HighlightedParagraph(
-            KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_HINT),
-            Highlight.of(KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_MOVE_UP), highlight),
-            Highlight.of(KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_MOVE_DOWN), highlight),
-            Highlight.of(KmuStringKeys.get(KmuStringKeys.MAP_LAYER_ARRANGE_HINT_UNCHECK), highlight));
+            KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_HINT),
+            Highlight.of(KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_MOVE_UP), highlight),
+            Highlight.of(KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_MOVE_DOWN), highlight),
+            Highlight.of(KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_ARRANGE_HINT_UNCHECK), highlight));
     }
 
     // The rule around the box, as the game's own rectangle component rather than as anything drawn: a

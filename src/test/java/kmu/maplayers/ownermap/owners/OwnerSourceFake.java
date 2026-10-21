@@ -65,7 +65,7 @@ public final class OwnerSourceFake implements OwnerSource {
     /**
      * States who owns one system, for every per-system resolve this source opens.
      *
-     * @param systemId the system's own id
+     * @param systemId the system's own ID
      * @param owner    the owner to answer with, or null for a system nobody owns
      */
     public void recordOwnerOf(String systemId, SystemOwner owner) {
@@ -75,7 +75,7 @@ public final class OwnerSourceFake implements OwnerSource {
     /**
      * States whether anything stands in one system, ahead of the default.
      *
-     * @param systemId    the system's own id
+     * @param systemId    the system's own ID
      * @param isInhabited the answer for that system
      */
     public void recordInhabitationOf(String systemId, boolean isInhabited) {
@@ -90,7 +90,7 @@ public final class OwnerSourceFake implements OwnerSource {
     /**
      * States that the spotlit owner lives in one system.
      *
-     * @param systemId the system's own id
+     * @param systemId the system's own ID
      */
     public void recordSpotlitPresenceIn(String systemId) {
         spotlitPresenceSystemIds.add(systemId);

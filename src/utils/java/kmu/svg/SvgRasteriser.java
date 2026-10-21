@@ -24,14 +24,13 @@ import javax.imageio.ImageIO;
  * <p>An SVG is the right thing to keep: diffable, deterministic, and it opens in a browser.
  * What it is not is viewable by anything that only understands raster images, and the answer
  * reached for every time somebody needs one is a second, bespoke drawing routine - two drawers
- * that can disagree about the very shape under test.
+ * that can disagree about the very shape being looked at.
  *
- * <p>So this converts rather than redraws. It reads back exactly what {@link SvgDrawing} emits
- * - the root, one backdrop rectangle, one flipping group, polygons, polylines, paths of
- * straight segments under either fill rule, and circles - and that narrowness is the point: a
- * general SVG renderer
- * would be a dependency and a surface, where a reader of these two files together can check in
- * a minute that the picture shows what was drawn.
+ * <p>So this converts rather than redraws. It reads back exactly what {@link SvgDrawing} emits:
+ * the root, one backdrop rectangle, one flipping group, polygons, polylines, paths of straight
+ * segments under either fill rule, and circles. That narrowness is the point. A general SVG
+ * renderer would be a dependency and a surface, where a reader of these two files together can
+ * check in a minute that the picture shows what was drawn.
  *
  * <p>Anything outside that subset is ignored rather than guessed at, so a drawing that grows a
  * feature this cannot render comes out visibly missing it instead of subtly wrong.
@@ -78,14 +77,29 @@ public final class SvgRasteriser {
     private static final int HEX_RADIX = 16;
     private static final double PERCENT = 100.0;
 
-    // Hue is a turn in degrees where the SVG writes it and a fraction of a turn where Java
-    // reads it, so the one converts to the other.
-    private static final double DEGREES_PER_TURN = 360.0;
+    // The hue circle in the six sectors the HSL model walks: in each, one primary takes the full
+    // chroma, one rises or falls across the sector, and one takes nothing. Listed red, green,
+    // blue per sector, from red round through green and blue back to red.
+    private static final double DEGREES_PER_SECTOR = 60.0;
+
+    private static final int CHROMA_SHARE = 0;
+    private static final int RISING_SHARE = 1;
+    private static final int NO_SHARE = 2;
+
+    private static final int[][] SHARES_BY_SECTOR = {
+        {CHROMA_SHARE, RISING_SHARE, NO_SHARE},
+        {RISING_SHARE, CHROMA_SHARE, NO_SHARE},
+        {NO_SHARE, CHROMA_SHARE, RISING_SHARE},
+        {NO_SHARE, RISING_SHARE, CHROMA_SHARE},
+        {RISING_SHARE, NO_SHARE, CHROMA_SHARE},
+        {CHROMA_SHARE, NO_SHARE, RISING_SHARE}};
 
     private static final int BYTE_MASK = 0xff;
     private static final int RED_SHIFT = 16;
     private static final int GREEN_SHIFT = 8;
-    private static final int PAIRED_HEX_DIGITS = 2;
+
+    // A point in a path's data is two tokens, its x after the command letter and then its y.
+    private static final int TOKENS_PER_POINT = 2;
 
     // A radius either side of the centre makes the box a circle is drawn in.
     private static final int DIAMETERS = 2;
@@ -104,7 +118,7 @@ public final class SvgRasteriser {
 
     private static final int HUE = 1;
     private static final int SATURATION = 2;
-    private static final int BRIGHTNESS = 3;
+    private static final int LIGHTNESS = 3;
 
     private SvgRasteriser() {
     }
@@ -297,7 +311,7 @@ public final class SvgRasteriser {
             } else {
                 path.lineTo(x, y);
             }
-            index += PAIRED_HEX_DIGITS;
+            index += TOKENS_PER_POINT;
         }
         return path;
     }
@@ -324,12 +338,11 @@ public final class SvgRasteriser {
 
         if (hsl.matches()) {
 
-            var colour = Color.getHSBColor(
-                (float) (Integer.parseInt(hsl.group(HUE)) / DEGREES_PER_TURN),
-                (float) (Integer.parseInt(hsl.group(SATURATION)) / PERCENT),
-                (float) (Integer.parseInt(hsl.group(BRIGHTNESS)) / PERCENT));
-
-            return new Color(colour.getRed(), colour.getGreen(), colour.getBlue(), alpha);
+            return convertHslToColour(
+                Integer.parseInt(hsl.group(HUE)),
+                Integer.parseInt(hsl.group(SATURATION)) / PERCENT,
+                Integer.parseInt(hsl.group(LIGHTNESS)) / PERCENT,
+                alpha);
         }
 
         if (!notation.startsWith("#")) {
@@ -347,6 +360,35 @@ public final class SvgRasteriser {
             packed >> GREEN_SHIFT & BYTE_MASK,
             packed & BYTE_MASK,
             alpha);
+    }
+
+    // CSS's HSL, which AWT does not carry: AWT's own hue model is HSB, whose third number is
+    // brightness rather than lightness - so read through it, hsl(120 100% 50%) comes out a dark
+    // green where a browser shows a pure one.
+    private static Color convertHslToColour(
+            int hueDegrees,
+            double saturation,
+            double lightness,
+            int alpha) {
+
+        var chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+        var degreesPerTurn = (int) (DEGREES_PER_SECTOR * SHARES_BY_SECTOR.length);
+        var sectorPosition = Math.floorMod(hueDegrees, degreesPerTurn) / DEGREES_PER_SECTOR;
+        var secondary = chroma * (1 - Math.abs(sectorPosition % 2 - 1));
+        var lift = lightness - chroma / 2;
+
+        var shares = new double[] {chroma, secondary, 0};
+        var sector = SHARES_BY_SECTOR[(int) sectorPosition];
+
+        return new Color(
+            convertToByte(shares[sector[0]] + lift),
+            convertToByte(shares[sector[1]] + lift),
+            convertToByte(shares[sector[2]] + lift),
+            alpha);
+    }
+
+    private static int convertToByte(double share) {
+        return (int) Math.round(share * BYTE_MASK);
     }
 
     private static String expandShortHex(String notation) {

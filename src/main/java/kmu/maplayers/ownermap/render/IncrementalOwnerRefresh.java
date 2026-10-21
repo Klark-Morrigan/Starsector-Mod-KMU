@@ -29,14 +29,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Redraws what a colony event moved, over the standing map rather than by rebuilding it:
+ * Redraws what a marked change moved, over the standing map rather than by rebuilding it:
  * {@link MarkedSystemRederive} brings the marked systems back into step with the sector, and this
  * turns what that disturbed into fresh cells, clusters, names and bands.
  *
  * <p>What a change costs depends on which fact moved. A flip re-shapes the ring of cells around
- * the system (each neighbour's shared edge flips between a same-faction seam and a cluster
- * border) and rebuilds the two factions' clusters (the old holder's and the new one's); a
- * system that merely became settled, or that the spotlit bloc just colonised, redraws its own cell
+ * the system (each neighbour's shared edge flips between a same-owner seam and a cluster
+ * border) and rebuilds the two owners' clusters (the old owner's and the new one's); a
+ * system that merely became settled, or that the spotlit owner just settled, redraws its own cell
  * and nothing else, neither fact moving a seam. Both go through the same {@link PaintedCellBuilder}
  * and {@link ClusterGroupBuilder} primitives a full rebuild uses, so the incremental result
  * matches a full rebuild.
@@ -69,7 +69,7 @@ public final class IncrementalOwnerRefresh {
     // The batch's one walk of the sector. Every question asked about a marked system - its owner,
     // whether anybody lives there, the spotlit owner's presence in it, and the counts its band
     // reports - is answered off this single walk of it, through the source the standing build was
-    // resolved by; a reading opened per system would pay a settings read and a colony walk for each.
+    // resolved by; a reading opened per system would pay a settings read and a walk for each.
     private final SectorWalk walk;
 
     private IncrementalOwnerRefresh(StandingOwnerMap standingMap, SectorWalk walk) {
@@ -80,7 +80,7 @@ public final class IncrementalOwnerRefresh {
         this.walk = walk;
     }
 
-    // Folds the changes of the systems a colony resize marked stale into the standing clusters,
+    // Folds the changes of the systems marked stale into the standing clusters,
     // the placements, and the name labels: re-derive what was marked over one walk of the sector,
     // then redraw whatever that disturbed.
     //
@@ -118,7 +118,7 @@ public final class IncrementalOwnerRefresh {
         var buildInputs = clusters.getBuildInputs();
         var ownerResolve = buildInputs.viewReading().source().openSystemResolve(
             walk,
-            buildInputs.contentInputs().selectedBlocId());
+            buildInputs.contentInputs().selectedOwnerId());
 
         var disturbance = MarkedSystemRederive.rederiveMarkedSystems(
             clusters,
@@ -144,6 +144,7 @@ public final class IncrementalOwnerRefresh {
         var cellEdgesByCellKey = geometryCache.getCellEdgesByCellKey();
 
         for (var systemKey : staleSystemKeys) {
+
             if (cellEdgesByCellKey.containsKey(systemKey)) {
                 drawnSystemKeys.add(systemKey);
             }
@@ -151,14 +152,14 @@ public final class IncrementalOwnerRefresh {
         return drawnSystemKeys;
     }
 
-    // Redraws what the batch disturbed: every cell it named re-shaped against the updated holders,
+    // Redraws what the batch disturbed: every cell it named re-shaped against the updated owners,
     // and - only where holding actually moved - the clustering, the two sides' clusters and the
     // names that follow from it. The bands are laid last, around wherever those names ended up.
     //
     // The cell redraw runs off the cells the batch named rather than off there having been a flip,
-    // because the two are not the same question: a system whose last colony went, or one the
-    // spotlit bloc just settled, draws differently with its holder exactly where it was. What the
-    // flips still decide is everything below the cells, all of which is a consequence of holding
+    // because the two are not the same question: a system whose last settlement went, or one the
+    // spotlit owner just settled, draws differently with its owner exactly where it was. What the
+    // flips still decide is everything below the cells, all of which is a consequence of an owner
     // having moved.
     private void redrawDisturbedCells(
             Set<SystemKey> markedSystemKeys,
@@ -167,12 +168,13 @@ public final class IncrementalOwnerRefresh {
         for (var cellKey : disturbance.getCellKeysToRedraw()) {
             reshapeCellInPlace(cellKey);
         }
+
         var nameDisturbance = disturbance.hasFlips()
-            ? rebuildFlippedHolding(disturbance)
+            ? rebuildFlippedOwners(disturbance)
             : ClusterNameDisturbance.NONE;
 
         // A marked system's band counts what is in it, and the events that mark a system are
-        // exactly the ones that add or remove a colony - so its band is re-baked whether or not
+        // exactly the ones that change what stands there - so its band is re-baked whether or not
         // anything about its cell moved.
         var cellKeysToBake = collectCellKeysToBake(
             markedSystemKeys,
@@ -181,21 +183,21 @@ public final class IncrementalOwnerRefresh {
 
         bakeBandsOf(cellKeysToBake);
 
-        LOG.debug("Owner map holding updated incrementally; marked="
+        LOG.debug("Owner map owners updated incrementally; marked="
             + markedSystemKeys.size()
             + " redrawnCells=" + disturbance.getCellKeysToRedraw().size()
-            + " rebuiltFactions=" + disturbance.getAffectedFactionIds().size()
+            + " rebuiltOwners=" + disturbance.getAffectedOwnerIds().size()
             + " rebakedBands=" + cellKeysToBake.size());
     }
 
     // What a flip owes beyond the cells themselves: the cluster index and the two sides'
-    // clusters rebuilt off the updated holders, and the names re-fitted over them. Reports what
+    // clusters rebuilt off the updated owners, and the names re-fitted over them. Reports what
     // that re-fit moved, since the bands below have to be re-laid wherever a name did.
-    private ClusterNameDisturbance rebuildFlippedHolding(StaleOwnerMapDisturbance disturbance) {
+    private ClusterNameDisturbance rebuildFlippedOwners(StaleOwnerMapDisturbance disturbance) {
 
         // A flip changes which systems are contiguous - it can sever one cluster group in two or
         // bridge two into one - so the cursor read's cluster index is re-derived off the
-        // updated holders here, in step with the cells that just re-shaped.
+        // updated owners here, in step with the cells that just re-shaped.
         clusters.reindexClusters(
             geometryCache.getCellEdgesByCellKey(),
             geometryCache.getSystemKeyByCellKey());
@@ -204,11 +206,11 @@ public final class IncrementalOwnerRefresh {
 
         // A flip can split or merge clusters (a lost system severs one, a gained
         // one bridges two), so the whole placement list is re-derived off the updated
-        // holders rather than the touched factions' anchors being patched alone. What that
+        // owners rather than the touched owners' anchors being patched alone. What that
         // costs is settled by the matching inside the rebuild, not here: a cluster the flip
         // re-partitioned no longer matches any standing placement and is searched again,
         // while every cluster it left alone is carried over - which is why naming the
-        // affected factions would buy nothing this does not already get. A no-op while both
+        // affected owners would buy nothing this does not already get. A no-op while both
         // consumers are off. The name labels then rebuild from the placements so a renamed or
         // relocated cluster's name follows.
         //
@@ -226,29 +228,30 @@ public final class IncrementalOwnerRefresh {
         // live read here would mint or drop labels for a pick no cell of the standing map was
         // shaped for, without the rebuild that pick is owed.
         LabelsBuilder.rebuildLabels(
-            standingMap.factionLabels(),
+            standingMap.ownerLabels(),
             standingAnchors,
             clusters.getBuildInputs().contentInputs().nameFormat().areNamesDrawn());
 
         return nameDisturbance;
     }
 
-    // Rebuilds the cluster group of each faction the batch's flips moved. Only the old and new
-    // holders' clusters can have changed shape; every other faction's rings trace unchanged
-    // cells, so they are left as-is. A faction's members are the cells it draws, so they are
+    // Rebuilds the cluster group of each owner the batch's flips moved. Only the old and new
+    // owners' clusters can have changed shape; every other owner's rings trace unchanged
+    // cells, so they are left as-is. An owner's members are the cells it draws, so they are
     // grouped from the cells here to match what buildClusterGroup traces.
     private void rebuildAffectedClusterGroups(StaleOwnerMapDisturbance disturbance) {
 
         var cellGrouping = clusters.resolveCellGroupingOver(
             geometryCache.getSystemKeyByCellKey());
 
-        var cellsByFaction = cellGrouping.groupCellKeysByOwner();
+        var cellsByOwner = cellGrouping.groupCellKeysByOwner();
 
-        for (var factionId : disturbance.getAffectedFactionIds()) {
+        for (var ownerId : disturbance.getAffectedOwnerIds()) {
+
             rebuildClusterGroupInPlace(
                 cellGrouping,
-                factionId,
-                cellsByFaction.get(factionId));
+                ownerId,
+                cellsByOwner.get(ownerId));
         }
     }
 
@@ -274,7 +277,7 @@ public final class IncrementalOwnerRefresh {
     // Which cells owe a fresh band, from the three separate reasons one can.
     //
     // A marked system's own count may have moved, whether or not anything about its cell did -
-    // what marks a system is a colony appearing, growing or changing hands, which is exactly what
+    // what marks a system is what stands there appearing, growing or changing hands, which is what
     // a band counts. A redrawn cell has a new ring and lost the band that was laid in the old one,
     // so it owes a band even where nothing it holds changed. And a cell a moved name reaches has
     // the same ring and the same holdings but different room to lay them in: the name may have
@@ -298,8 +301,8 @@ public final class IncrementalOwnerRefresh {
         return cellKeysToBake;
     }
 
-    // Re-shapes one cell against the now-updated holders and replaces its draw record, or
-    // drops it when the cell contributes nothing (inset-collapsed, or factionless with
+    // Re-shapes one cell against the now-updated owners and replaces its draw record, or
+    // drops it when the cell contributes nothing (inset-collapsed, or unowned with
     // neither its fill nor its outline drawn). Every disturbance goes through here, including the
     // cell-local ones that re-shape to the shape the cell already has: what the batch has to end
     // with is the cell a full rebuild would have built, and building it through the rebuild's own
@@ -315,19 +318,20 @@ public final class IncrementalOwnerRefresh {
             clusters.getPaintedCells().removePaintedCell(cellKey);
             return;
         }
-        // The system the cell draws as, whose holder colours and keys it. Every cell here is a
+
+        // The system the cell draws as, whose owner colours and keys it. Every cell here is a
         // star's own, so it resolves to that star, but the resolve is explicit so an
-        // absorbed cell would key by its holder rather than its own missing star.
+        // absorbed cell would key by its owner rather than its own missing star.
         var drawnSystemKey = geometryCache.getSystemKeyByCellKey().get(cellKey);
         var occupancy = clusters.getOccupancy();
-        var holder = drawnSystemKey == null
+        var owner = drawnSystemKey == null
             ? null
             : occupancy.readOwnerOf(drawnSystemKey);
 
-        // This cell's own holder narrowly, and the whole holding beside it: the shaper compares
-        // every neighbour's holder against this one to tell a same-bloc seam from a border, so that
+        // This cell's own owner narrowly, and the whole holding beside it: the shaper compares
+        // every neighbour's owner against this one to tell a same-owner seam from a border, so that
         // half is one of the few reads the map itself answers.
-        var ownerId = holder == null ? null : holder.ownerId();
+        var ownerId = owner == null ? null : owner.ownerId();
         var shaped = CellShaper.shapeCell(
             edges,
             ownerId,
@@ -341,17 +345,18 @@ public final class IncrementalOwnerRefresh {
 
         if (painted == null) {
             clusters.getPaintedCells().removePaintedCell(cellKey);
+
         } else {
             clusters.getPaintedCells().putPaintedCell(cellKey, painted);
         }
     }
 
-    // Rebuilds (or drops) one faction's cluster group entry from its current members. A
-    // faction that lost its last member, or whose cluster no longer yields drawable
+    // Rebuilds (or drops) one owner's cluster group entry from its current members. An
+    // owner that lost its last member, or whose cluster no longer yields drawable
     // geometry, is removed so its fill and border stop drawing.
     private void rebuildClusterGroupInPlace(
             CellGrouping cellGrouping,
-            String factionId,
+            String ownerId,
             List<SystemKey> memberCellKeys) {
 
         var clusterGroup = memberCellKeys == null || memberCellKeys.isEmpty()
@@ -360,9 +365,9 @@ public final class IncrementalOwnerRefresh {
                 clusters,
                 geometryCache,
                 cellGrouping,
-                factionId,
+                ownerId,
                 memberCellKeys);
 
-        clusters.putStyledClusterGroup(factionId, clusterGroup);
+        clusters.putStyledClusterGroup(ownerId, clusterGroup);
     }
 }

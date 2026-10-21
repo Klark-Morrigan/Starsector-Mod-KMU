@@ -9,6 +9,8 @@ import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.hover.MapHoverTargets;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
 import kmu.maplayers.base.render.clusters.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
+import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.ownermap.OwnerPaintedView;
@@ -27,14 +29,14 @@ import java.util.Map;
  *
  * <p>Two things live here, and the type keeps them apart. The built map is live: the
  * {@link PaintedCellStore} and the styled-cluster-group map are written through by the refresh,
- * which replaces just the cells and factions a holder change touched; the {@link SystemOccupancy}
- * is folded by the same refresh as colonies come and go, its three facts mutable together behind
- * one type's folds so no pass can bring one up to date and leave a cell drawn from two readings
- * of the sector; and the cluster index is re-derived whenever the holding moves. The
- * {@link OwnerMapBuildInputs} beside them are fixed once the build ends and only read after, so
- * an incremental pass re-shapes against exactly what the full build baked in - and a reader takes
- * that record and names the snapshot it reads, rather than reaching one field of it through a
- * getter here that says nothing about which sampling it came from.
+ * which replaces just the cells and owners an owner change touched; the {@link SystemOccupancy}
+ * is folded by the same refresh as what stands in a system comes and goes, its three facts
+ * mutable together behind one type's folds so no pass can bring one up to date and leave a cell
+ * drawn from two readings of the sector; and the cluster index is re-derived whenever the
+ * holding moves. The {@link OwnerMapBuildInputs} beside them are fixed once the build ends and
+ * only read after, so an incremental pass re-shapes against exactly what the full build baked
+ * in - and a reader takes that record and names the snapshot it reads, rather than reaching one
+ * field of it through a getter here that says nothing about which sampling it came from.
  *
  * <p>A plain class rather than a record because the built map is state, not a value: the draw
  * lists start empty and the build fills them, so they are created here rather than passed in.
@@ -50,20 +52,20 @@ import java.util.Map;
  * verbatim, the adapter is the right shape and the layer supplies one; see
  * {@code OwnerMapHoverHighlightSource}.
  */
-public final class OwnerMapClusters implements
-    ClusterDrawLists,
-    MapHoverTargets {
+public final class OwnerMapClusters
+        implements ClusterDrawLists, MapHoverTargets {
 
     // The two halves of the render output, both mutated in place by the incremental refresh and
     // created empty here since a fresh build fills them and no caller ever supplies them
-    // pre-populated. What one cell draws is the store's; what a whole bloc draws is the map's,
-    // keyed by its holder - a faction or group ID from the view's grouping, or one of the filter's
+    // pre-populated. What one cell draws is the store's; what a whole owner draws is the map's,
+    // keyed by its ID - one the owner source resolved, or one of the filter's
     // synthetic spotlight keys - which the emission never interprets.
     private final PaintedCellStore paintedCells = new PaintedCellStore();
+
     private final Map<String, StyledClusterGroup> styledClusterGroupByOwnerId =
         new LinkedHashMap<>();
 
-    // Who is in each system: the holder, what stands there, and where a spotlit pick lives in a
+    // Who is in each system: the owner, what stands there, and where a spotlit pick lives in a
     // system nobody holds. The one live input, folded per marked system by the incremental
     // refresh.
     private final SystemOccupancy occupancy;
@@ -72,18 +74,19 @@ public final class OwnerMapClusters implements
     private final OwnerMapBuildInputs buildInputs;
 
     // Which contiguous cluster each system sits in, re-derived by reindexClusters whenever the
-    // holder map changes. Seeded empty so a build that never indexes (and the empty placeholder)
+    // owner map changes. Seeded empty so a build that never indexes (and the empty placeholder)
     // still answers a lookup rather than tripping over a null.
     private SystemClusterIndex clusterIndex = SystemClusterIndex.indexClusters(List.of());
 
-    // The last bloc whose loops were flattened for a cursor read, and what came out. One entry
+    // The last owner whose loops were flattened for a cursor read, and what came out. One entry
     // because the cursor is over one cell at a time; see listCandidateBorderLoopsOf for why the
     // result has to be retained at all rather than rebuilt per ask.
-    private String candidateLoopsBlocId;
+    private String candidateLoopsOwnerId;
     private StyledClusterGroup candidateLoopsClusterGroup;
     private List<float[]> candidateLoops = List.of();
 
     public OwnerMapClusters(SystemOccupancy occupancy, OwnerMapBuildInputs buildInputs) {
+
         this.occupancy = occupancy;
         this.buildInputs = buildInputs;
     }
@@ -107,21 +110,38 @@ public final class OwnerMapClusters implements
      *         build and the incremental refresh alike
      */
     public PaintedCellStore getPaintedCells() {
+
         return paintedCells;
     }
 
-    // The two cell reads the framework seams oblige, answered off the store above. Delegated rather
-    // than left to each caller to reach through getPaintedCells, because these two are what
-    // ClusterDrawLists and PaintedCellShapes ask for by name - a seam cannot be satisfied by a
-    // getter that hands back something holding the answer.
+    // The cell reads the framework seams oblige, answered off the store above. Delegated rather than
+    // left to each caller to reach through getPaintedCells, because these are what ClusterDrawLists
+    // and PaintedCellShapes ask for by name - a seam cannot be satisfied by a getter that hands back
+    // something holding the answer.
 
     @Override
+    public List<FusedCell> getFusedCells() {
+
+        return paintedCells.getFusedCells();
+    }
+
+    @Override
+    public List<LoneCell> getLoneCells() {
+
+        return paintedCells.getLoneCells();
+    }
+
+    /**
+     * @return each drawn cell's draw record, keyed by cell key, read-only
+     */
     public Map<SystemKey, StyledCell> getStyledCellByCellKey() {
+
         return paintedCells.getStyledCellByCellKey();
     }
 
     @Override
     public Map<SystemKey, List<double[]>> getFillPolygonByCellKey() {
+
         return paintedCells.getFillPolygonByCellKey();
     }
 
@@ -131,20 +151,21 @@ public final class OwnerMapClusters implements
      */
     @Override
     public SystemClusterIndex getClusterIndex() {
+
         return clusterIndex;
     }
 
     /**
      * How the drawn cells group under this build's holding: which system each cell draws as,
-     * paired with the bloc holding that system.
+     * paired with the owner holding that system.
      *
      * <p>The one composition of the cut's draws-as map with this build's holding. Every stage that
      * shapes, traces, clusters or names a cell groups by it, and each composing it for itself is
      * how two stages of one pass come to disagree about which cells fuse - so it is asked of the
-     * build that owns the holding half rather than assembled at each of them.
+     * build that owns the owner half rather than assembled at each of them.
      *
      * @param systemKeyByCellKey the system each cell draws as, off the geometry cache
-     * @return the cells grouped by the bloc holding the system each draws as
+     * @return the cells grouped by the owner holding the system each draws as
      */
     public CellGrouping resolveCellGroupingOver(Map<SystemKey, SystemKey> systemKeyByCellKey) {
 
@@ -154,14 +175,14 @@ public final class OwnerMapClusters implements
     }
 
     /**
-     * Re-derives the cluster index from the current holders.
+     * Re-derives the cluster index from the current owners.
      *
-     * <p>Clusters are a function of holding, so any pass that edits the holder map re-runs this:
+     * <p>Clusters are a function of ownership, so any pass that edits the owner map re-runs this:
      * a single system flipping can sever one cluster group in two or bridge two into one, which no
      * amount of patching the standing index would catch.
      *
      * @param cellEdgesByCellKey the adjacency the clusters are walked over
-     * @param systemKeyByCellKey  the system each cell draws as, since a cluster is walked over
+     * @param systemKeyByCellKey the system each cell draws as, since a cluster is walked over
      *                           cells but indexed by the systems in it
      */
     public void reindexClusters(
@@ -173,38 +194,40 @@ public final class OwnerMapClusters implements
             resolveCellGroupingOver(systemKeyByCellKey)));
     }
 
-    // Each bloc's bodies with the fill, hatch, and cluster border they share, keyed by its
-    // holder. Named for the framework record it hands over rather than for a layer's word
+    // Each owner's bodies with the fill, hatch, and cluster border they share, keyed by its
+    // ID. Named for the framework record it hands over rather than for a layer's word
     // for it: the same map answers the emission's cluster read and this layer's own lookups, so
     // it carries one name.
     @Override
     public Map<String, StyledClusterGroup> getStyledClusterGroupByOwnerId() {
+
         return styledClusterGroupByOwnerId;
     }
 
     /**
-     * Records one bloc's cluster group, or drops the bloc where it bakes none.
+     * Records one owner's cluster group, or drops the owner where it bakes none.
      *
-     * <p>The write path for the map, rather than each caller choosing between a put and a remove: a
-     * bloc whose group came back empty-handed draws nothing, and an entry left standing for it
+     * <p>The write path for the map, rather than each caller choosing between a put and a remove: an
+     * owner whose group came back empty-handed draws nothing, and an entry left standing for it
      * would go on painting the fill and border it lost.
      *
-     * @param ownerId      the bloc's holder - a faction or group ID from the view's grouping, or
+     * @param ownerId      the owner's ID - one the owner source resolved, or
      *                     one of the filter's synthetic spotlight keys
-     * @param clusterGroup the bloc's baked bodies, or null where it paints nothing or its cells
+     * @param clusterGroup the owner's baked bodies, or null where it paints nothing or its cells
      *                     yield no borderable geometry
      */
     public void putStyledClusterGroup(String ownerId, StyledClusterGroup clusterGroup) {
 
         if (clusterGroup == null) {
             styledClusterGroupByOwnerId.remove(ownerId);
+
         } else {
             styledClusterGroupByOwnerId.put(ownerId, clusterGroup);
         }
     }
 
     /**
-     * Every loop one bloc strokes, across all of its bodies, as the flat candidate list a cursor
+     * Every loop one owner strokes, across all of its bodies, as the flat candidate list a cursor
      * read is answered from.
      *
      * <p>Retained rather than rebuilt per ask, and that is the whole reason this is a method here
@@ -213,28 +236,30 @@ public final class OwnerMapClusters implements
      * re-clip and re-tessellate the wash sixty times a second while the cursor sits still. One
      * entry is enough, because the cursor is over one cell at a time.
      *
-     * <p>The retained answer is keyed on the bloc's own cluster group by identity: a rebuild or
+     * <p>The retained answer is keyed on the owner's own cluster group by identity: a rebuild or
      * an incremental refresh replaces that group wholesale rather than editing it, so a group
      * that still matches is geometry that has not moved.
      *
-     * @param blocId the bloc to answer for
-     * @return its loops, outer ring and enclaves alike, in cluster order; empty when the bloc
+     * @param ownerId the owner to answer for
+     * @return its loops, outer ring and enclaves alike, in cluster order; empty when the owner
      *         drew none or is not on the map
      */
-    public List<float[]> listCandidateBorderLoopsOf(String blocId) {
+    public List<float[]> listCandidateBorderLoopsOf(String ownerId) {
 
-        var clusterGroup = styledClusterGroupByOwnerId.get(blocId);
+        var clusterGroup = styledClusterGroupByOwnerId.get(ownerId);
         if (clusterGroup == null) {
             return List.of();
         }
-        if (!blocId.equals(candidateLoopsBlocId) || clusterGroup != candidateLoopsClusterGroup) {
+
+        if (!ownerId.equals(candidateLoopsOwnerId) || clusterGroup != candidateLoopsClusterGroup) {
 
             var loops = new ArrayList<float[]>();
 
             for (var cluster : clusterGroup.clusters()) {
                 loops.addAll(cluster.listLoops());
             }
-            candidateLoopsBlocId = blocId;
+
+            candidateLoopsOwnerId = ownerId;
             candidateLoopsClusterGroup = clusterGroup;
             candidateLoops = loops;
         }
@@ -243,21 +268,23 @@ public final class OwnerMapClusters implements
 
     /**
      * @return who is in each system, as the one live record: what a pass folding a marked system's
-     *         holder, its inhabitation or the pick's presence in it writes through, and what every
+     *         owner, its inhabitation or the pick's presence in it writes through, and what every
      *         reader of any of the three reads
      */
     public SystemOccupancy getOccupancy() {
+
         return occupancy;
     }
 
     /**
-     * @return what this build was baked under - the paint scheme, the view and grouping, the
+     * @return what this build was baked under - the paint scheme, the view and its reading, the
      *         sampled picks and the two fill sets - as the one reading every stage of it sampled.
-     *         What a pass that runs after the build reads rather than asking the holders again: a
+     *         What a pass that runs after the build reads rather than asking the source again: a
      *         label re-fit or a band re-bake taken off a second reading would spell the names one
      *         way and have been sized for another
      */
     public OwnerMapBuildInputs getBuildInputs() {
+
         return buildInputs;
     }
 
@@ -266,13 +293,19 @@ public final class OwnerMapClusters implements
     // resolves once off the theme this build was styled from.
     @Override
     public GlobalStyle getGlobalStyle() {
-        return buildInputs.styling().renderStyle().global();
+
+        return buildInputs
+            .styling()
+            .renderStyle()
+            .global();
     }
 
     // True when there is nothing to paint, so the renderer can skip the GL state push
     // entirely.
     @Override
     public boolean isEmpty() {
-        return paintedCells.isEmpty() && styledClusterGroupByOwnerId.isEmpty();
+
+        return paintedCells.isEmpty()
+            && styledClusterGroupByOwnerId.isEmpty();
     }
 }

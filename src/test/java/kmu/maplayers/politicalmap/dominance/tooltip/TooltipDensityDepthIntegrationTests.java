@@ -6,8 +6,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
@@ -18,8 +17,9 @@ import kmu.maplayers.politicalmap.dominance.weighting.PatrolFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolTierFactor;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 import kmu.settings.HiddenMarketScalingChoice;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,9 +30,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.FULL_STABILITY;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.buildEmptySector;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.FULL_STABILITY;
+import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -96,12 +96,12 @@ final class TooltipDensityDepthIntegrationTests {
     @BeforeEach
     void installColoursAndStrings() {
         CellTooltipPaletteFake.installPalette();
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearColoursAndStrings() {
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
         CellTooltipPaletteFake.clearPalette();
     }
 
@@ -163,17 +163,18 @@ final class TooltipDensityDepthIntegrationTests {
 
         stubFaction(sectorMock, FACTION_ID, "The Hegemony", "graphics/hegemony_crest.png");
 
-        var entries = StandingRowResolver.resolveRows(
-            sectorMock,
-            List.of(RoutedStanding.routeWhole(new GroupStanding(
-                FACTION_ID,
-                7,
-                List.of(new WeighedFactionStanding(FACTION_ID, 7))))),
-            HolderGrouping.identity(),
-            standing -> MarketWeightRowResolver.resolveMarketRows(
-                List.of(buildPatrolledColony()),
-                List.of(),
-                new WeightAccountReading(WEIGHING_RULES, SystemColonyReading.NONE, PATROL_DETAILS)));
+        FactionAccountResolver accountResolver = standing -> MarketWeightRowResolver.resolveMarketRows(
+            List.of(buildPatrolledColony()),
+            List.of(),
+            new WeightAccountReading(WEIGHING_RULES, SystemColonyReading.NONE, PATROL_DETAILS));
+
+        var entries = StandingRowResolver
+            .createForBox(sectorMock, HolderGrouping.identity(), accountResolver)
+            .resolveRows(
+                List.of(RoutedStanding.routeWhole(new GroupStanding(
+                    FACTION_ID,
+                    7,
+                    List.of(new WeighedFactionStanding(FACTION_ID, 7))))));
 
         var body = CellTooltipBody.openBody(PATROL_DETAILS);
 

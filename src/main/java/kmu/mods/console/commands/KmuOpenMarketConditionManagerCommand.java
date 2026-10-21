@@ -1,5 +1,8 @@
 package kmu.mods.console.commands;
 
+import com.fs.starfarer.api.Global;
+
+import kmlib.mods.console.ConsoleStrings;
 import kmlib.mods.console.commands.BaseKmlibCommand;
 import kmlib.mods.console.commands.output.CommandOutput;
 import kmlib.mods.console.commands.output.ConsoleCommandOutput;
@@ -9,40 +12,41 @@ import kmu.KmuErrorReporter;
 import kmu.conditions.domain.KmuConditionService;
 import kmu.conditions.domain.StarsectorConditionOfferPolicy;
 import kmu.conditions.domain.StarsectorConditionRepository;
+import kmu.conditions.ui.context.StarsectorMarketUiContextResolver;
 import kmu.conditions.ui.editor.KmuConditionEditorEntryPoint;
 import kmu.conditions.ui.editor.KmuConditionEditorOpenResult;
 import kmu.conditions.ui.editor.KmuConditionEditorOpenStatus;
 import kmu.conditions.ui.picker.KmuConditionPickerEditor;
+import kmu.conditions.ui.picker.action.StarsectorConditionPickerFeedbackSink;
 import kmu.conditions.ui.picker.dialog.StarsectorInteractionDialogPickerOpener;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuMarketConditionSettings;
-import kmu.ui.context.StarsectorMarketUiContextResolver;
 
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import static kmu.util.KmuValues.normaliseText;
+import static kmlib.text.KmlibStrings.normaliseText;
 
-public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand {
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILED_TO_OPEN;
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILURE;
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_FAILURE_WITH_CAUSE;
+import static kmu.util.KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_SWITCHED_OFF;
+import static kmu.util.KmuStringKeys.CATEGORY;
+
+public final class KmuOpenMarketConditionManagerCommand
+        extends BaseKmlibCommand {
 
     // No parameters; declaring the spec still makes the parser reject a stray
     // argument as bad syntax rather than silently ignoring it.
     private static final ParameterSpec SPEC =
-        ParameterSpec.takingNoArguments("Usage: kmu_mcm_open.");
-
-    // What a player typing the command while the feature is off is told. It names where the switch
-    // is, because the command is registered by data file whatever the switch says: Console Commands
-    // reads commands.csv at load, so the command exists to be typed even when nothing will open,
-    // and a bare refusal would read as the command being broken.
-    private static final String FEATURE_SWITCHED_OFF_MESSAGE =
-        "The Market Condition Manager is unfinished and switched off."
-            + " Switch it on under LunaLib's mod settings, on KMU's Features tab, to try it anyway.";
+        ParameterSpec.takingNoArguments("kmu_mcm_open");
 
     private final BooleanSupplier isFeatureSwitchedOn;
     private final Supplier<KmuConditionEditorOpenResult> openEditor;
 
     public KmuOpenMarketConditionManagerCommand() {
+
         this(
             KmuFeatureSettings::isMarketConditionManagerEnabled,
             () -> createDefaultEntryPoint().openForCurrentMarketDetailed(),
@@ -55,6 +59,7 @@ public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand
             CommandOutput output) {
 
         super(output);
+
         this.isFeatureSwitchedOn = Objects.requireNonNull(isFeatureSwitchedOn, "isFeatureSwitchedOn");
         this.openEditor = Objects.requireNonNull(openEditor, "openEditor");
     }
@@ -67,9 +72,13 @@ public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand
         // Ahead of the context and syntax guards, because it is the more fundamental answer: a
         // player told they are in the wrong place would go and type the command somewhere else,
         // where a feature that is switched off still opens nothing.
+        //
+        // The refusal names where the switch is, because the command is registered by data file whatever the
+        // switch says: Console Commands reads commands.csv at load, so the command exists to be typed even when
+        // nothing will open, and a bare refusal would read as the command being broken.
         if (!isFeatureSwitchedOn.getAsBoolean()) {
 
-            output.showMessage(FEATURE_SWITCHED_OFF_MESSAGE);
+            output.showMessage(ConsoleStrings.get(CATEGORY, CONSOLE_CONDITION_MANAGER_SWITCHED_OFF));
             return CommandResult.ERROR;
         }
 
@@ -89,18 +98,20 @@ public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand
         try {
             result = openEditor.get();
 
-        } catch (RuntimeException exception) {
+        } catch (RuntimeException runtimeException) {
 
-            output.showMessage("Failed to open Market Condition Manager: " + exception.getMessage());
+            output.showMessage(describeFailure(
+                ConsoleStrings.get(CATEGORY, CONSOLE_CONDITION_MANAGER_FAILED_TO_OPEN),
+                runtimeException));
             return CommandResult.ERROR;
         }
 
         output.showMessage(messageFor(result));
 
         if (result.getStatus() == KmuConditionEditorOpenStatus.OPENED) {
-
             return CommandResult.SUCCESS;
         }
+
         if (result.getStatus() == KmuConditionEditorOpenStatus.NO_MARKET_CONTEXT
                 || result.getStatus() == KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET) {
 
@@ -111,35 +122,40 @@ public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand
 
     private String messageFor(KmuConditionEditorOpenResult result) {
 
-        var causeMessage = result.getCause()
-            .map(RuntimeException::getMessage)
-            .map(message -> normaliseText(message))
-            .orElse(null);
-
-        if (result.getStatus() == KmuConditionEditorOpenStatus.FAILED
-                && causeMessage != null) {
-
-            var message = result.getMessage();
-
-            if (message.endsWith(".")) {
-                message = message.substring(0, message.length() - 1);
-            }
-            return message + ": " + causeMessage;
+        if (result.getStatus() != KmuConditionEditorOpenStatus.FAILED) {
+            return result.getMessage();
         }
-        return result.getMessage();
+        return describeFailure(result.getMessage(), result.getCause().orElse(null));
     }
 
+    // A failure, with what threw where it says anything. The two templates carry the closing punctuation, so a
+    // translation places it as its language does rather than this code trimming an English full stop.
+    private static String describeFailure(String failure, RuntimeException cause) {
+
+        var causeMessage = cause == null
+            ? null
+            : normaliseText(cause.getMessage());
+
+        return causeMessage == null
+            ? ConsoleStrings.format(CATEGORY, CONSOLE_CONDITION_MANAGER_FAILURE, failure)
+            : ConsoleStrings.format(CATEGORY, CONSOLE_CONDITION_MANAGER_FAILURE_WITH_CAUSE, failure, causeMessage);
+    }
+
+    // The one read of the running game the editor makes. The parts below take it as handed, so the
+    // market they resolve, the dialog they open and the message they post all belong to one sector.
     private static KmuConditionEditorEntryPoint createDefaultEntryPoint() {
 
+        var sector = Global.getSector();
         var conditionService = new KmuConditionService(
             new StarsectorConditionRepository(),
-            KmuErrorReporter.noop(),
+            KmuErrorReporter.createLoggingReporter(KmuConditionService.class),
             new StarsectorConditionOfferPolicy(KmuMarketConditionSettings::shouldOfferAllConditions));
 
         return new KmuConditionEditorEntryPoint(
-            new StarsectorMarketUiContextResolver(),
+            new StarsectorMarketUiContextResolver(sector),
             new KmuConditionPickerEditor(
                 conditionService,
-                new StarsectorInteractionDialogPickerOpener()));
+                new StarsectorInteractionDialogPickerOpener(sector),
+                new StarsectorConditionPickerFeedbackSink(sector)));
     }
 }

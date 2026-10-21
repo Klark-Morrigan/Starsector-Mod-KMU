@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.listeners.ColonyDecivListener;
 
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.refresh.MarketPoliticsRefresh;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
 
@@ -13,38 +12,23 @@ import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
  * play drops its faction colour and repaints neutral at once rather than only on
  * reload.
  *
- * <p>Decivilisation strips the owning faction - the engine turns the market
- * neutral and removes it from the economy - so the system's dominant holder
- * vanishes, the same per-system holder change a colony resize or a discovery
- * makes. It therefore routes through the same targeted refresh
- * ({@link MapLayerRefreshBoard#markSystemGroupingStale}): only that system and its
- * neighbours are re-derived and re-shaped, the re-derivation reading the
- * ownerless economy and dropping the faction fill.
+ * <p>Decivilisation strips the owning faction - the engine turns the market neutral and removes it
+ * from the economy - so the system's dominant holder vanishes, which {@link MarketPoliticsRefresh}
+ * turns into a targeted mark.
  *
- * <p>Decivilisation can also change whether the system stays on the map at all,
- * a visibility-set change owned by {@link PoliticalMapStalenessSource} rather than
- * this listener. A deciv that leaves a revealed decivilised world on a planet keeps
- * the system on the map as a neutral one; one that leaves none drops a system
- * nothing else keeps on the map. A partial deciv (fullyDestroyed false) leaves that
- * world, a full destroy does not, and a station never leaves one (the
- * revealed-decivilised rule scans planets only) - so a full destroy, or any station
- * deciv, can drop a hidden single-colony system.
- * The watcher is the single authority on map membership: its
- * fingerprint moves on both a draw-class flip and a set-membership change, so it
- * reconciles the geometry on its next poll. This listener stays on the holding
- * axis alone, mirroring {@link PoliticalMapDiscoveryListener}.
+ * <p>What the event adds is its two phases. The mark waits for {@code reportColonyDecivilized},
+ * fired once the market is neutral and out of the economy, so the re-derive reads the post-deciv
+ * state. The {@code aboutToBe} phase still sees the colony faction-owned, so it marks nothing; it
+ * only records the system's sightings while the dying colony can still vouch for them.
  *
- * <p>Marks the system stale on {@code reportColonyDecivilized} (fired after the
- * engine has turned the market neutral and pulled it from the economy) so the
- * re-derivation reads the post-deciv state. The {@code aboutToBe} phase would
- * still see the colony faction-owned, so it marks nothing - it only records the
- * system's sightings while the dying colony can still vouch for them.
- *
- * <p>Holds the sector it was installed on, so a decivilisation is reported against that sector's
- * overlay and recorded in that sector's register rather than against whichever sector is currently
- * loaded.
+ * <p>Decivilisation can also drop the system off the map. A partial deciv leaves a revealed
+ * decivilised world on its planet and keeps the system drawn; a full destroy, or any station deciv
+ * (the revealed-decivilised rule scans planets only), can drop a hidden single-colony system.
+ * Map membership is {@link PoliticalMapStalenessSource}'s alone, so this listener stays on the
+ * holding axis.
  */
-public class PoliticalMapDecivListener implements ColonyDecivListener {
+public final class PoliticalMapDecivListener
+        implements ColonyDecivListener {
 
     private final SectorAPI sector;
 
@@ -84,7 +68,7 @@ public class PoliticalMapDecivListener implements ColonyDecivListener {
         MarketPoliticsRefresh.reportMarketChange(
             sector,
             market,
-            "decivilised colony", // Event.
-            "fullyDestroyed=" + fullyDestroyed); // Context.
+            "decivilised colony",
+            "fullyDestroyed=" + fullyDestroyed);
     }
 }

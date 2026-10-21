@@ -155,12 +155,12 @@ final class RandomAssortmentOfThingsMinimapCoverTests {
     // their own.
     private static RandomAssortmentOfThingsMinimapCover buildCover(
             CursorPositionFake cursorFake,
-            BooleanSupplier isAnyMapShowing,
+            BooleanSupplier isAnyVanillaMapShowing,
             EmbeddedMap minimap) {
 
         return new RandomAssortmentOfThingsMinimapCover(
             createEngagedMode(),
-            isAnyMapShowing,
+            isAnyVanillaMapShowing,
             () -> minimap,
             cursorFake);
     }

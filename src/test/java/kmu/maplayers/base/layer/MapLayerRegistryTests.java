@@ -1,69 +1,35 @@
 package kmu.maplayers.base.layer;
 
 import kmlib.testfixtures.logging.LogAppenderFake;
-import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
-import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.settings.KmuMapSidebarSettings;
-
-import org.junit.jupiter.api.AfterEach;
+import org.apache.log4j.Level;
+import org.apache.log4j.spi.LoggingEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the framework registry's contract with fake layers: the tab order it hands back, the pick an
- * untouched save resolves to, and the one answer everything that paints hangs off - which layer is in
- * play on the screen showing this frame, and the show-or-hide state folded into it so a hidden screen
- * resolves to nothing to draw.
+ * Pins the roster's contract with stand-in layers: the tab order it hands back, how a second
+ * registration under one ID is arbitrated, and the pick an untouched save resolves to.
  *
- * <p>Where those picks live, and the keys they ride in the save under, are {@link MapLayerScreensTests}'s;
- * the generic persisted-pick logic is {@link PersistedActiveLayerSelectionTests}'s and
- * {@link PersistedMapLayerVisibilityTests}'s. What is left here is the composition: the roster, the fold,
- * and that both follow the screen the player is looking at.
- *
- * <p>A hide is acted on only for a screen that has a control able to reverse it, so every case posing
- * hidden layers poses that control too. The rule behind it is
- * {@link ControlBackedMapLayerVisibilityTests}'s.
+ * <p>Which layer is on the screen showing this frame is not the roster's question but the screens';
+ * it is {@link MapLayerScreensTests}'s.
  */
 final class MapLayerRegistryTests {
-
-    // The frozen sector-memory keys the cases pose picks through. Pinned as literals in
-    // MapLayerScreensTests, which is what a rename fails against; named here to seed a state, not to
-    // assert one.
-    private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
-    private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
-    private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
-    private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
-
-    // A hide pace long enough that a reading taken straight after the flip is unmistakably part-way down
-    // the ramp rather than past its end, which is the state the registry must still answer the layer in.
-    private static final float LONG_HIDE_FADE_SECONDS = 1_000f;
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
 
-    private final IntelScreenViewFake intelScreenFake = new IntelScreenViewFake();
-
-    // The hide ramp is paced by a shipped knob, and that read reaches LunaLib, which no test has. Stood
-    // in for the class so every case names a pace: Mockito's own default answers a pace of nothing, which
-    // makes each fade a cut and leaves these cases describing the settled answers they are about. The
-    // ramp between them is PersistedMapLayerVisibilityTests's subject, and the one case here that wants a
-    // reading from part-way down winds the pace up for itself.
-    private MockedStatic<KmuMapSidebarSettings> mapLayerSettingsMock;
-
-    private SectorMemoryFake sectorMemoryFake;
+    private MapLayerRegistry layerRegistry;
 
     @BeforeEach
-    void registerTwoFakeLayers() {
+    void registerTwoLayers() {
 
         when(firstLayerMock.getId())
             .thenReturn("first");
@@ -75,52 +41,7 @@ final class MapLayerRegistryTests {
         when(secondLayerMock.isOfferedAsDefaultPick())
             .thenReturn(true);
 
-        MapLayerRosters.replaceRosterWith(firstLayerMock, secondLayerMock);
-
-        // The screens are static, so one left wired would outlive its test. Handing a fresh fake per
-        // test starts each from the intel screen closed rather than wherever a neighbour left it - and
-        // keeps the live binding, which reaches into a running game, out of the suite.
-        MapLayerScreens.registerIntelScreen(intelScreenFake);
-
-        sectorMemoryFake = new SectorMemoryFake();
-    }
-
-    @BeforeEach
-    void stubTheHidePace() {
-        mapLayerSettingsMock = mockStatic(KmuMapSidebarSettings.class);
-    }
-
-    @AfterEach
-    void releaseTheHidePace() {
-        mapLayerSettingsMock.close();
-    }
-
-    @AfterEach
-    void restoreARegisteredRoster() {
-        MapLayerRosters.restoreNonEmptyRoster();
-    }
-
-    @AfterEach
-    void forgetTheControlsThisCaseStood() {
-        // The screens are process-wide and the latch saying one of them has a control never clears
-        // itself, so a case that stood one would leave every later case acting on stored hides where a
-        // run with no control reads shown - a difference that shows up as whichever case happened to
-        // run next.
-        MapLayerScreenControls.forgetControlsAttached();
-    }
-
-    @AfterEach
-    void forgetThePictureThisCaseDrew() {
-        // The other half of the same problem. A screen holds what was last on it so a dissolve has a
-        // picture to finish, and these cases pose switched-off screens directly - so a case that drew a
-        // stand-in layer would leave the next one's dissolve showing a layer from a roster that no
-        // longer exists.
-        MapLayerScreenControls.forgetDrawnLayers();
-    }
-
-    @AfterEach
-    void closeTheSectorMemory() {
-        sectorMemoryFake.close();
+        layerRegistry = MapLayerRosters.createRosterOf(firstLayerMock, secondLayerMock);
     }
 
     @Nested
@@ -129,8 +50,16 @@ final class MapLayerRegistryTests {
         @Test
         void returnsTheRegisteredLayersInOrder() {
 
-            assertThat(MapLayerRegistry.getLayers())
+            assertThat(layerRegistry.getLayers())
                 .containsExactly(firstLayerMock, secondLayerMock);
+        }
+
+        @Test
+        void isEmptyBeforeAnyLayerIsRegistered() {
+            // A fresh roster starts from nothing, which is what lets each holder of one be built
+            // without anything having to empty a roster another left behind.
+            assertThat(new MapLayerRegistry().getLayers())
+                .isEmpty();
         }
     }
 
@@ -144,9 +73,9 @@ final class MapLayerRegistryTests {
             // already there.
             var thirdLayerMock = createLayerMockWithId("third");
 
-            MapLayerRegistry.registerLayer(thirdLayerMock);
+            layerRegistry.registerLayer(thirdLayerMock);
 
-            assertThat(MapLayerRegistry.getLayers())
+            assertThat(layerRegistry.getLayers())
                 .containsExactly(firstLayerMock, secondLayerMock, thirdLayerMock);
         }
 
@@ -158,13 +87,25 @@ final class MapLayerRegistryTests {
             // off until the next load.
             var lateLayerMock = createLayerMockWithId("late");
 
-            assertThat(MapLayerRegistry.getLayers())
+            assertThat(layerRegistry.getLayers())
                 .containsExactly(firstLayerMock, secondLayerMock);
 
-            MapLayerRegistry.registerLayer(lateLayerMock);
+            layerRegistry.registerLayer(lateLayerMock);
 
-            assertThat(MapLayerRegistry.getLayers())
+            assertThat(layerRegistry.getLayers())
                 .containsExactly(firstLayerMock, secondLayerMock, lateLayerMock);
+        }
+
+        @Test
+        void leavesARowAlreadyHandedOutAsItWas() {
+            // The row is replaced on registration rather than added to in place, so a caller midway
+            // through walking the row it was handed is not walking one that grows beneath it.
+            var handedRow = layerRegistry.getLayers();
+
+            layerRegistry.registerLayer(createLayerMockWithId("late"));
+
+            assertThat(handedRow)
+                .containsExactly(firstLayerMock, secondLayerMock);
         }
 
         @Test
@@ -174,9 +115,9 @@ final class MapLayerRegistryTests {
             // alone, it would hold two the save cannot tell apart.
             var replacementLayerMock = createLayerMockWithId("first");
 
-            MapLayerRegistry.registerLayer(replacementLayerMock);
+            layerRegistry.registerLayer(replacementLayerMock);
 
-            assertThat(MapLayerRegistry.getLayers())
+            assertThat(layerRegistry.getLayers())
                 .containsExactly(replacementLayerMock, secondLayerMock);
         }
 
@@ -185,9 +126,9 @@ final class MapLayerRegistryTests {
             // Not every second registration is a clash: a mod wiring from two lifecycle hooks, or a
             // composition root run again, re-registers what is already standing. The row it was
             // already in is the row it stays in.
-            MapLayerRegistry.registerLayer(firstLayerMock);
+            layerRegistry.registerLayer(firstLayerMock);
 
-            assertThat(MapLayerRegistry.getLayers())
+            assertThat(layerRegistry.getLayers())
                 .containsExactly(firstLayerMock, secondLayerMock);
         }
 
@@ -206,11 +147,11 @@ final class MapLayerRegistryTests {
             // finds out why their tab is not the one on the bar - which makes the line naming both
             // sides the whole of what the outcome is worth.
             var replacementLayerMock = createLayerMockWithId("first");
-            var writtenLines = recordLinesWrittenWhileRegistering(replacementLayerMock);
+            var writtenWarnings = recordWarningsWrittenWhileRegistering(replacementLayerMock);
 
-            assertThat(writtenLines)
+            assertThat(writtenWarnings)
                 .hasSize(1);
-            assertThat(writtenLines.get(0))
+            assertThat(writtenWarnings.get(0))
                 .contains("first")
                 .contains(firstLayerMock.getClass().getName())
                 .contains(replacementLayerMock.getClass().getName());
@@ -223,7 +164,7 @@ final class MapLayerRegistryTests {
         @Test
         void answersTheLayerRegisteredUnderIt() {
 
-            assertThat(MapLayerRegistry.resolveLayerById("first"))
+            assertThat(layerRegistry.resolveLayerById("first"))
                 .isSameAs(firstLayerMock);
         }
 
@@ -231,7 +172,7 @@ final class MapLayerRegistryTests {
         void isNullForAnIdNothingRegistered() {
             // What a save holds after the mod that shipped that layer is uninstalled, which is why
             // the answer is an absence to fall back from rather than a fault.
-            assertThat(MapLayerRegistry.resolveLayerById("removed_long_ago"))
+            assertThat(layerRegistry.resolveLayerById("removed_long_ago"))
                 .isNull();
         }
     }
@@ -241,9 +182,8 @@ final class MapLayerRegistryTests {
 
         @Test
         void answersTheOfferingLayerRatherThanTheLeadingOne() {
-            // The two facts the old single call spelled separately, now one: the row leads with a
-            // layer that declines, and the pick is the one that offered.
-            assertThat(MapLayerRegistry.getDefaultLayer())
+            // The row leads with a layer that declines, and the pick is the one that offered.
+            assertThat(layerRegistry.getDefaultLayer())
                 .isSameAs(secondLayerMock);
         }
 
@@ -254,7 +194,7 @@ final class MapLayerRegistryTests {
             when(firstLayerMock.isOfferedAsDefaultPick())
                 .thenReturn(true);
 
-            assertThat(MapLayerRegistry.getDefaultLayer())
+            assertThat(layerRegistry.getDefaultLayer())
                 .isSameAs(firstLayerMock);
         }
 
@@ -263,224 +203,16 @@ final class MapLayerRegistryTests {
             // A roster of layers that all decline is a roster nobody arranged - foreign layers alone,
             // say. Answering nothing there would leave a bar of tabs with none of them lit and a map
             // that paints nothing to explain it.
-            MapLayerRosters.replaceRosterWith(firstLayerMock);
-
-            assertThat(MapLayerRegistry.getDefaultLayer())
+            assertThat(MapLayerRosters.createRosterOf(firstLayerMock).getDefaultLayer())
                 .isSameAs(firstLayerMock);
         }
 
         @Test
         void isNullBeforeAnyLayerIsRegistered() {
 
-            MapLayerRosters.forgetEveryLayer();
-
-            assertThat(MapLayerRegistry.getDefaultLayer())
+            assertThat(new MapLayerRegistry().getDefaultLayer())
                 .isNull();
         }
-    }
-
-    @Nested
-    class GetDrawnLayer {
-
-        @Test
-        void answersFromTheShowingScreensPick() {
-
-            storeADifferentPickOnEachScreen();
-            intelScreenFake.setIntelTabOpen(true);
-
-            assertThat(MapLayerRegistry.getDrawnLayer())
-                .isSameAs(firstLayerMock);
-        }
-
-        @Test
-        void isNullOnceTheShowingScreensLayersHaveFadedOff() {
-            // The one read hiding hangs off: every pass driven by the drawn layer already draws nothing
-            // for a null, so this takes the overlay, the labels and the hover box off together.
-            hideTheMapScreensLayers();
-
-            assertThat(MapLayerRegistry.getDrawnLayer())
-                .isNull();
-        }
-
-        @Test
-        void answersThePickWhileOnlyTheOtherScreensLayersAreHidden() {
-            // The per-screen half of the same gate: the intel screen hidden must leave the sector map
-            // painting its own pick, which is the whole reason the two picks are kept apart.
-            storeADifferentPickOnEachScreen();
-            hideTheIntelScreensLayers();
-            intelScreenFake.setIntelTabOpen(false);
-
-            assertThat(MapLayerRegistry.getDrawnLayer())
-                .isSameAs(secondLayerMock);
-        }
-
-        @Test
-        void answersAShownScreenWithoutReadingTheHidePace() {
-            // A screen with its layers on is answered off the stored pick alone. Worth pinning rather
-            // than left as an accident of the order two conditions are written in: the fade is derived
-            // from a clock and a settings read, and asking for it on every frame the layers are simply
-            // on would put both on the map's hottest path to say what the pick has already said.
-            assertThat(MapLayerRegistry.getDrawnLayer())
-                .isSameAs(secondLayerMock);
-
-            mapLayerSettingsMock
-                .verifyNoInteractions();
-        }
-
-        @Test
-        void isNullBeforeAnyLayerIsRegistered() {
-            // The map surface can be asked for a frame before the composition root has run, so the
-            // registry has to answer "no pick" rather than leave a caller to find out by throwing.
-            MapLayerRosters.forgetEveryLayer();
-            sectorMemoryFake.removeSector();
-
-            assertThat(MapLayerRegistry.getDrawnLayer())
-                .isNull();
-        }
-
-        @Test
-        void stillAnswersTheLayerPartWayThroughTheHide() {
-            // What the fade is for: the pick already reads hidden, and the overlay must go on being
-            // drawn until the dissolve is over, or the picture would blink out from under the sidebar
-            // that is still thinning beside it.
-            startHidingTheMapScreensLayers();
-
-            assertThat(MapLayerRegistry.getDrawnLayer())
-                .isSameAs(secondLayerMock);
-        }
-    }
-
-    @Nested
-    class IsDrawnLayer {
-
-        @Test
-        void isTrueOnlyForTheResolvedDrawnLayer() {
-
-            sectorMemoryFake.removeSector();
-
-            assertThat(MapLayerRegistry.isDrawnLayer(secondLayerMock))
-                .isTrue();
-            assertThat(MapLayerRegistry.isDrawnLayer(firstLayerMock))
-                .isFalse();
-        }
-
-        @Test
-        void answersFromTheIntelPickWhileTheIntelScreenIsUp() {
-            // The bug this guards: each screen keeps its own tab, so an overlay reading one fixed
-            // screen's pick painted the sector map's choice onto the intel screen - No Layer on the
-            // intel tab could not turn it off there.
-            storeADifferentPickOnEachScreen();
-            intelScreenFake.setIntelTabOpen(true);
-
-            assertThat(MapLayerRegistry.isDrawnLayer(firstLayerMock))
-                .isTrue();
-            assertThat(MapLayerRegistry.isDrawnLayer(secondLayerMock))
-                .isFalse();
-        }
-
-        @Test
-        void answersFromTheMapPickWhileTheIntelScreenIsNotUp() {
-
-            storeADifferentPickOnEachScreen();
-            intelScreenFake.setIntelTabOpen(false);
-
-            assertThat(MapLayerRegistry.isDrawnLayer(secondLayerMock))
-                .isTrue();
-            assertThat(MapLayerRegistry.isDrawnLayer(firstLayerMock))
-                .isFalse();
-        }
-
-        @Test
-        void isFalseForEveryLayerOnceTheScreensLayersHaveFadedOff() {
-            // A hidden screen has no layer in play at all, which is what stands each layer's own state
-            // down without a read of its own - the default pick included, since it is the one a layer
-            // would otherwise go on thinking it held.
-            hideTheMapScreensLayers();
-
-            assertThat(MapLayerRegistry.isDrawnLayer(secondLayerMock))
-                .isFalse();
-            assertThat(MapLayerRegistry.isDrawnLayer(firstLayerMock))
-                .isFalse();
-        }
-    }
-
-    @Nested
-    class IsDrawnLayerOn {
-
-        @Test
-        void answersTheScreenHandedInRatherThanTheShowingOne() {
-            // The gate a layer's own state reads, for a caller that already knows which panel it is
-            // answering for - posed the same way as the read beneath it, with the visor up.
-            storeADifferentPickOnEachScreen();
-            intelScreenFake.setIntelTabOpen(true);
-
-            assertThat(MapLayerRegistry.isDrawnLayerOn(MapLayerScreens.getMapPicks(), secondLayerMock))
-                .isTrue();
-            assertThat(MapLayerRegistry.isDrawnLayerOn(MapLayerScreens.getMapPicks(), firstLayerMock))
-                .isFalse();
-        }
-    }
-
-    // Puts the two screens on different tabs, which is what lets a case tell which key an answer came
-    // off: with one pick on both keys, a registry reading the wrong one would still answer correctly.
-    private void storeADifferentPickOnEachScreen() {
-
-        sectorMemoryFake.storeValue(MAP_ACTIVE_LAYER_KEY, "second");
-        sectorMemoryFake.storeValue(INTEL_ACTIVE_LAYER_KEY, "first");
-    }
-
-    // Poses a save in which one screen's layers were switched off and their ramp has long since run out.
-    // Seeded rather than flipped, so the reading is the settled one whatever the pace reads.
-    //
-    // The control that switched them off is posed with it, since a stored hide is acted on only for a
-    // screen that has one - a case seeding the hide alone would be posing a screen whose layers are
-    // still shown, and would pass for saying so.
-    private void hideTheMapScreensLayers() {
-
-        sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
-        recordAControlOnTheShowingScreen(false);
-    }
-
-    private void hideTheIntelScreensLayers() {
-
-        sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
-        recordAControlOnTheShowingScreen(true);
-    }
-
-    // Says a control stands on one of the two screens. It is recorded against the screen that is up,
-    // which is all a control on a screen's own chrome could ever mean, so the tab is put there for the
-    // recording; every case that cares which screen is up sets it for itself afterwards.
-    private void recordAControlOnTheShowingScreen(boolean isIntelTabOpen) {
-
-        intelScreenFake.setIntelTabOpen(isIntelTabOpen);
-
-        MapLayerScreens
-            .resolveLivePicks()
-            .layerVisibility()
-            .recordControlAttached();
-    }
-
-    // Puts the map screen part-way down its hide ramp. The flip is made while the pace still reads as
-    // nothing, so the ramp is recorded as setting off from the settled shown end whatever an earlier case
-    // left on the process-wide visibility; the pace is only then wound long, which leaves a reading taken
-    // straight afterwards a long way short of the end.
-    private void startHidingTheMapScreensLayers() {
-
-        recordAControlOnTheShowingScreen(false);
-
-        // A drawn frame before the switch-off, which is what a session always has: every control able to
-        // switch a screen off stands on that screen, so the screen is being drawn when one is used. It is
-        // that frame the screen catches its picture on, and what it dissolves afterwards.
-        MapLayerRegistry.getDrawnLayer();
-
-        MapLayerScreens
-            .getMapPicks()
-            .layerVisibility()
-            .showLayers(false);
-
-        mapLayerSettingsMock
-            .when(KmuMapSidebarSettings::getMapLayerHideFadeSeconds)
-            .thenReturn(LONG_HIDE_FADE_SECONDS);
     }
 
     // Registers one layer with the registry's own log captured, and hands back what it wrote.
@@ -489,11 +221,24 @@ final class MapLayerRegistryTests {
     // of the call: the arbitration line is written at a level the running game decides, so a capture
     // reading it off whatever level happened to be in force would report silence for a line the
     // registry did write.
-    private static List<String> recordLinesWrittenWhileRegistering(MapLayer layer) {
+    private List<String> recordLinesWrittenWhileRegistering(MapLayer layer) {
+        return captureLogWhileRegistering(layer).getMessages();
+    }
 
-        return LogAppenderFake
-            .captureLogOf(MapLayerRegistry.class, () -> MapLayerRegistry.registerLayer(layer))
-            .getMessages();
+    // The same, kept to the warnings: every registration that lands also leaves a trace of the row it
+    // made, and that line is no part of what the arbitration reports.
+    private List<String> recordWarningsWrittenWhileRegistering(MapLayer layer) {
+
+        return captureLogWhileRegistering(layer)
+            .getEvents()
+            .stream()
+            .filter(event -> Level.WARN.equals(event.getLevel()))
+            .map(LoggingEvent::getRenderedMessage)
+            .toList();
+    }
+
+    private LogAppenderFake captureLogWhileRegistering(MapLayer layer) {
+        return LogAppenderFake.captureLogOf(MapLayerRegistry.class, () -> layerRegistry.registerLayer(layer));
     }
 
     // A layer answering nothing but the ID it registers under, which is all the registration cases
@@ -507,5 +252,4 @@ final class MapLayerRegistryTests {
 
         return layerMock;
     }
-
 }

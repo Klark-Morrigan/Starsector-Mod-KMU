@@ -22,10 +22,10 @@ import java.util.function.BooleanSupplier;
  * frame of lag in whatever the layer put above, and no double preparation.
  *
  * <p>Being drawn above the nebulae is not something this class arranges. Its icon is seeded with
- * every other hyperspace entity, ahead of the nebulae the widget appends per map open, and it is
- * lifted past them by being taken out of the location for one advance - see the reseat wired at the
- * mod's entry point. Without that lift this surface paints exactly where the lower one does, which
- * is the pre-split picture and the graceful direction for it to fail in.
+ * every other hyperspace entity, ahead of the nebulae the widget appends per map open.
+ * {@link StarscapeTerrainReseat} lifts it past them, taking the entity out of its location until the
+ * widget has dropped its icon. Without that lift this surface paints exactly where the lower one does,
+ * under the fog, which is the graceful direction for it to fail in.
  */
 public class SectorMapLayerAboveStarscapeNebulaeTerrainPlugin
         extends SectorMapLayerStarscapeTerrainPlugin {
@@ -39,8 +39,8 @@ public class SectorMapLayerAboveStarscapeNebulaeTerrainPlugin
     }
 
     /** Binds the Starscape read explicitly instead of letting the first render resolve it. */
-    SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(BooleanSupplier isStarscapeMapShowing) {
-        super(isStarscapeMapShowing);
+    SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(BooleanSupplier isStarscapeVanillaMapShowing) {
+        super(isStarscapeVanillaMapShowing);
     }
 
     @Override

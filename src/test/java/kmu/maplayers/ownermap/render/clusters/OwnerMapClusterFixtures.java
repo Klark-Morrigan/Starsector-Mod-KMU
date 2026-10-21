@@ -1,8 +1,10 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
+import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
@@ -16,16 +18,16 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.MapStyling;
+import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
+import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -40,7 +42,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static org.mockito.Mockito.mock;
 
 /**
- * Shared fixtures for the tests that build or read a {@link OwnerMapClusters}: an inert
+ * Shared fixtures for the tests that build or read an {@link OwnerMapClusters}: an inert
  * one to hang a test's own state on, the uniform theme a build runs against when the styling is
  * not what is under test, and the two placeholder draw records that stand in wherever a cell or
  * a cluster group only has to exist rather than draw.
@@ -59,31 +61,37 @@ public final class OwnerMapClusterFixtures {
     public static final Color NEUTRAL_COLOUR = Color.GRAY;
 
     /**
-     * That shade as the pair a factionless cell paints in - the neutral in both slots, since such a
+     * That shade as the pair an unowned cell paints in - the neutral in both slots, since such a
      * cell names no owner to take two shades from. Shared so a case that only needs an inert
      * palette says so by naming this rather than by spelling out a grey pair whose two equal slots
      * read as a choice somebody made.
      */
-    public static final OwnerPalette NEUTRAL_PALETTE =
-        new OwnerPalette(NEUTRAL_COLOUR, NEUTRAL_COLOUR);
+    public static final ColourPair NEUTRAL_PALETTE =
+        new ColourPair(NEUTRAL_COLOUR, NEUTRAL_COLOUR);
+
+    /**
+     * The trace a build's cluster borders are drawn by, wherever a case does not vary it: a weld
+     * tolerance tight enough for hand-built corners, and the miter limit the shipped border uses.
+     */
+    public static final ClusterBorderTrace BORDER_TRACE = new ClusterBorderTrace(1e-3, 4.0);
 
     // Fixtures only; never instantiated.
     private OwnerMapClusterFixtures() {
     }
 
     /**
-     * A clusters carrying the given holders and nothing else: empty draw lists, an inert theme,
-     * the holder layers' categories, a reading placing every owner at full strength, and no
+     * A clusters carrying the given owners and nothing else: empty draw lists, an inert theme,
+     * KMU's own layers' categories, a reading placing every owner at full strength, and no
      * filter.
      *
      * <p>The view is a Mockito mock rather than a concrete one so a test naming no view stays
      * agnostic about which exist - the model only carries it for an incremental re-shape to read
      * back, and nothing here re-shapes.
      *
-     * <p>Every held system counts as inhabited, since a bloc holds one only by having a colony in
-     * it: a fixture where the two disagreed would pose a map production cannot build, and the
-     * readers that gate on inhabitation - the factionless classifier, the band pass - would answer
-     * a held cell as empty space.
+     * <p>Every held system counts as inhabited, since an owner holds one only by having something
+     * standing in it: a fixture where the two disagreed would pose a map production cannot build,
+     * and the readers that gate on inhabitation - the unowned classifier, the band pass -
+     * would answer a held cell as empty space.
      *
      * <p>That makes the two sets identical here, so a case telling them apart - one that must
      * fail if a reader gates on the holding where it should gate on inhabitation - has to state
@@ -94,11 +102,12 @@ public final class OwnerMapClusterFixtures {
      */
     public static OwnerMapClusters createClustersOwnedBy(
             Map<String, SystemOwner> ownerBySystemId) {
+
         return createClustersOwnedByKeys(buildKeyedValues(ownerBySystemId));
     }
 
     /**
-     * The same clusters with its holders stated by key rather than by name, for the one case a
+     * The same clusters with its owners stated by key rather than by name, for the one case a
      * name cannot pose: two systems sharing a vanilla ID, which differ only in the entity arms.
      *
      * @param ownerBySystemKey who holds each system, addressed as the build addresses it
@@ -106,6 +115,7 @@ public final class OwnerMapClusterFixtures {
      */
     public static OwnerMapClusters createClustersOwnedByKeys(
             Map<SystemKey, SystemOwner> ownerBySystemKey) {
+
         return createClustersOwnedByKeys(ownerBySystemKey, new OwnerSourceFake());
     }
 
@@ -121,6 +131,7 @@ public final class OwnerMapClusterFixtures {
     public static OwnerMapClusters createClustersOwnedBy(
             Map<String, SystemOwner> ownerBySystemId,
             OwnerSource ownerSource) {
+
         return createClustersOwnedByKeys(buildKeyedValues(ownerBySystemId), ownerSource);
     }
 
@@ -137,7 +148,7 @@ public final class OwnerMapClusterFixtures {
             OwnerSource ownerSource) {
 
         return createClustersUnder(
-            ContentInputsFixtures.createInputsSpotlighting(null), // No bloc spotlighted.
+            ContentInputsFixtures.createInputsSpotlighting(null), // No owner spotlighted.
             ownerBySystemKey,
             ownerBySystemKey.keySet(),
             Set.of(),
@@ -150,7 +161,7 @@ public final class OwnerMapClusterFixtures {
      *
      * <p>The distinction is invisible under {@link #createClustersOwnedBy}, where the two sets
      * are equal by construction, so a reader that confused them would answer every case there
-     * correctly. Stating a settled system no bloc holds is the only arrangement that tells the
+     * correctly. Stating a settled system no owner holds is the only arrangement that tells the
      * two reads apart.
      *
      * @param ownerBySystemId    who holds each system
@@ -161,6 +172,7 @@ public final class OwnerMapClusterFixtures {
     public static OwnerMapClusters createClustersSettledIn(
             Map<String, SystemOwner> ownerBySystemId,
             Set<String> inhabitedSystemIds) {
+
         return createClustersSettledIn(ownerBySystemId, inhabitedSystemIds, new OwnerSourceFake());
     }
 
@@ -178,7 +190,7 @@ public final class OwnerMapClusterFixtures {
             OwnerSource ownerSource) {
 
         return createClustersUnder(
-            ContentInputsFixtures.createInputsSpotlighting(null), // No bloc spotlighted.
+            ContentInputsFixtures.createInputsSpotlighting(null), // No owner spotlighted.
             buildKeyedValues(ownerBySystemId),
             buildKeyedSystemKeys(inhabitedSystemIds),
             Set.of(),
@@ -186,27 +198,27 @@ public final class OwnerMapClusterFixtures {
     }
 
     /**
-     * The same clusters with a bloc spotlighted, for a case about the recede a spotlight sinks
+     * The same clusters with an owner spotlighted, for a case about the recede a spotlight sinks
      * the rest of the sector under - or about the settled systems the pick lives in that spare it.
      *
      * <p>The spotlight state is a value on the built model rather than something a caller can
      * write on top afterwards, so a case that needs one states it here rather than editing a
      * clusters built without.
      *
-     * @param selectedBlocId           the spotlighted bloc's ID
+     * @param selectedOwnerId          the spotlighted owner's ID
      * @param ownerBySystemId          who holds each system
      * @param inhabitedSystemIds       every system something stands in
      * @param spotlitPresenceSystemIds the settled systems the pick lives in that nobody holds
      * @return a live clusters, ready to have draw records written into it
      */
     public static OwnerMapClusters createClustersSpotlighting(
-            String selectedBlocId,
+            String selectedOwnerId,
             Map<String, SystemOwner> ownerBySystemId,
             Set<String> inhabitedSystemIds,
             Set<String> spotlitPresenceSystemIds) {
 
         return createClustersUnder(
-            ContentInputsFixtures.createInputsSpotlighting(selectedBlocId),
+            ContentInputsFixtures.createInputsSpotlighting(selectedOwnerId),
             buildKeyedValues(ownerBySystemId),
             buildKeyedSystemKeys(inhabitedSystemIds),
             buildKeyedSystemKeys(spotlitPresenceSystemIds),
@@ -223,12 +235,13 @@ public final class OwnerMapClusterFixtures {
      * currently holds.
      *
      * @param ownerBySystemId who holds each system
-     * @param nameFormat      how this build's cluster labels spell their holders' names
+     * @param nameFormat      how this build's cluster labels spell their owners' names
      * @return a live clusters, ready to have draw records written into it
      */
     public static OwnerMapClusters createClustersSpellingNames(
             Map<String, SystemOwner> ownerBySystemId,
-            FactionNameFormatChoice nameFormat) {
+            OwnerNameFormatChoice nameFormat) {
+
         return createClustersSpellingNames(ownerBySystemId, nameFormat, new OwnerSourceFake());
     }
 
@@ -236,13 +249,13 @@ public final class OwnerMapClusterFixtures {
      * The same clusters retaining a stated owner source.
      *
      * @param ownerBySystemId who holds each system
-     * @param nameFormat      how this build's cluster labels spell their holders' names
+     * @param nameFormat      how this build's cluster labels spell their owners' names
      * @param ownerSource     the source the build retains
      * @return a live clusters, ready to have draw records written into it
      */
     public static OwnerMapClusters createClustersSpellingNames(
             Map<String, SystemOwner> ownerBySystemId,
-            FactionNameFormatChoice nameFormat,
+            OwnerNameFormatChoice nameFormat,
             OwnerSource ownerSource) {
 
         var ownerBySystemKey = buildKeyedValues(ownerBySystemId);
@@ -274,7 +287,8 @@ public final class OwnerMapClusterFixtures {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     null, // No render style.
-                    HolderCategories.INSTANCE,
+                    BORDER_TRACE,
+                    OwnerCategoriesFake.SHARED_FAKE,
                     NEUTRAL_PALETTE, // Neutral palette.
                     NEUTRAL_PALETTE, // Desaturation palette.
                     NEUTRAL_PALETTE), // Presence palette.
@@ -289,10 +303,10 @@ public final class OwnerMapClusterFixtures {
 
     /**
      * A clusters under a stated view and theme rather than the inert pair the builders above
-     * carry, for a suite whose subject is what the theme says about a bloc that view surfaced.
+     * carry, for a suite whose subject is what the theme says about an owner that view surfaced.
      *
      * <p>Those two are the only inputs the builders above leave unreachable: a caller can write
-     * holders, cells and a spotlight on top through the model's own accessors, but the view and
+     * owners, cells and a spotlight on top through the model's own accessors, but the view and
      * the theme are read-only once built - and a theme left null answers a global-tier read with
      * nothing at all rather than with a tier that paints nothing.
      *
@@ -326,7 +340,8 @@ public final class OwnerMapClusterFixtures {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     renderStyle,
-                    HolderCategories.INSTANCE,
+                    BORDER_TRACE,
+                    OwnerCategoriesFake.SHARED_FAKE,
                     NEUTRAL_PALETTE, // Neutral palette.
                     NEUTRAL_PALETTE, // Desaturation palette.
                     NEUTRAL_PALETTE), // Presence palette.
@@ -346,14 +361,32 @@ public final class OwnerMapClusterFixtures {
      * differently.
      *
      * @param style the bundle every category paints from
-     * @return a live theme, keyed by the four owner-map categories
+     * @return a live theme, keyed by the four stand-in categories
      */
     public static RenderStyle createRenderStyleForEveryCategory(CategoryStyle style) {
-        var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
-        for (var category : OwnerMapCategory.values()) {
-            categories.put(category, style);
+
+        return createRenderStyleForEveryCategoryOf(StandInCategoryFake.values(), style);
+    }
+
+    /**
+     * The same theme over a layer's own categories, for a suite driving a real layer through the
+     * build: the theme has to be keyed by whatever categories that layer's reading answers.
+     *
+     * @param categories the layer's categories
+     * @param style      the bundle every category paints from
+     * @return a live theme, keyed by the given categories
+     */
+    public static RenderStyle createRenderStyleForEveryCategoryOf(
+            MapStyleCategory[] categories,
+            CategoryStyle style) {
+
+        var styleByCategory = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
+
+        for (var category : categories) {
+            styleByCategory.put(category, style);
         }
-        return new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);
+
+        return new RenderStyle(ThemeFixtures.createInertGlobalStyle(), styleByCategory);
     }
 
     /**
@@ -368,7 +401,8 @@ public final class OwnerMapClusterFixtures {
      */
     public static CategoryStyle createInertCategoryStyle() {
 
-        var element = new ElementStyle(FactionPaletteSlot.PRIMARY, 1.0);
+        var element = new ElementStyle(OwnerPaletteSlot.PRIMARY, 1.0);
+
         return new CategoryStyle(element, element, 1.0, element, 1.0);
     }
 
@@ -383,6 +417,7 @@ public final class OwnerMapClusterFixtures {
      * @return a placeholder painted cell carrying that ring
      */
     public static PaintedCell createPlaceholderPaintedCellOn(List<double[]> paintedExtent) {
+
         return new PaintedCell(createPlaceholderStyledCell(), paintedExtent);
     }
 
@@ -394,32 +429,36 @@ public final class OwnerMapClusterFixtures {
      * @return a placeholder styled cell
      */
     public static StyledCell createPlaceholderStyledCell() {
+
         return new StyledCell.FusedCell(new float[0], createHiddenPaint(), 0f);
     }
 
     /**
-     * A bloc's bodies carrying only their traced loops, which is all a cursor read looks at; the
+     * An owner's bodies carrying only their traced loops, which is all a cursor read looks at; the
      * fills and paints are inert.
      *
      * <p>Takes one loop list per body rather than one flat list, since which body a loop belongs
      * to is what a caller telling an exclave from an enclave has to be able to say. Within a
      * body the first loop is its outer ring and the rest are cut out of it.
      *
-     * @param loopsPerCluster each body's loops, outer ring first; empty for a bloc that baked no
+     * @param loopsPerCluster each body's loops, outer ring first; empty for an owner that baked no
      *                        border at all
-     * @return a placeholder cluster group standing in for one bloc's cluster group
+     * @return a placeholder cluster group standing in for one owner's cluster group
      */
     public static StyledClusterGroup createClusterGroupWithLoops(
             List<List<float[]>> loopsPerCluster) {
 
         var clusters = new ArrayList<StyledCluster>(loopsPerCluster.size());
+
         for (var loops : loopsPerCluster) {
+
             clusters.add(new StyledCluster(
                 new float[0],
                 new float[0],
                 loops.isEmpty() ? new float[0] : loops.get(0),
                 loops.isEmpty() ? List.of() : loops.subList(1, loops.size())));
         }
+
         return new StyledClusterGroup(
             clusters,
             createHiddenPaint(),
@@ -430,6 +469,7 @@ public final class OwnerMapClusterFixtures {
     // A hidden element paint (null colour) - enough to stand in wherever a draw record only
     // needs to exist, since the draw pass skips it on sight.
     private static UiElementPaint createHiddenPaint() {
+
         return new UiElementPaint(null, 0f);
     }
 }

@@ -1,21 +1,18 @@
 package kmu.conditions.ui.picker.render.paragraph;
 
-import com.fs.starfarer.api.util.Misc;
-
 import kmlib.testfixtures.localisation.ShippedLocales;
-import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
 import kmlib.testfixtures.starsector.ui.label.LabelHighlightRule;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
+import kmu.starsector.StarsectorUiColoursMock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
 
 import java.util.List;
 
@@ -28,34 +25,34 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class KmuConditionPickerLocationParagraphFactoryIntegrationTests {
 
-    private MockedStatic<Misc> miscMock;
+    private StarsectorUiColoursMock coloursMock;
 
     // Every field set, so every separator and every run the lines can carry is drawn.
     private static KmuConditionPickerModel buildModelHoldingEveryField() {
 
         var faction = new KmuPickerFaction("Hegemony", null, null, "Vengeful (-100 / 100)", null);
-        var location = new KmuConditionPickerLocation(
-            "Valis",
-            "terran world",
-            faction,
-            "Corvus Star System",
-            "yellow star",
-            "Corvus",
-            "Orion Constellation");
+        var location = new KmuConditionPickerLocation.Builder()
+            .withPlanetName("Valis")
+            .withPlanetType("terran world")
+            .withFaction(faction)
+            .withStarSystemName("Corvus Star System")
+            .withGravityWellTypeName("yellow star")
+            .withGravityWellName("Corvus")
+            .withConstellationName("Orion Constellation")
+            .build();
 
         return new KmuConditionPickerModel(List.of(), location);
     }
 
     @BeforeEach
     void mockThemeColours() {
-        miscMock = PickerThemeColours.mockThemeColours();
+        coloursMock = StarsectorUiColoursMock.install();
     }
 
     @AfterEach
     void closeThemeColours() {
 
-        miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        coloursMock.close();
     }
 
     @Nested

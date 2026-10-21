@@ -6,10 +6,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.markets.colonies.Colonies;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.maplayers.ownermap.holding.ColonyReadRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.holding.SystemHabitation;
+import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRules;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes;
+import kmu.maplayers.ownermap.owners.holders.base.SystemHabitation;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
@@ -89,7 +90,7 @@ public record DominancePass(
             HolderGrouping grouping) {
 
         return createOver(
-            HolderPass.over(sector, colonyReadRules, grouping),
+            HolderPass.createOver(sector, colonyReadRules, grouping),
             rules);
     }
 
@@ -137,6 +138,16 @@ public record DominancePass(
     }
 
     /**
+     * Where a bloc's two shades are read, over this pass's sector and grouping.
+     *
+     * @return the holder pass's own palette read, so a holder this pass resolves is coloured as
+     *         every band over the same rebuild is
+     */
+    public SectorBlocPalettes palettes() {
+        return holding.palettes();
+    }
+
+    /**
      * What the player may be told about the colonies this pass walks - the rule above read against
      * the sector's own record of what has been seen, which is what every projection through this
      * pass is taken under.
@@ -179,12 +190,11 @@ public record DominancePass(
     }
 
     /**
-     * This system's per-faction footprints under the pass's weighting and colony rules,
-     * before any grouping: each faction's known markets folded into its own footprint. The
-     * unowned read the per-bloc
-     * read below builds on, and the one a two-tier standings breakdown needs whole so it can rank a
-     * bloc's members individually - both taking the read from the pass rather than re-deriving it
-     * from the loose knobs.
+     * This system's per-faction footprints under the pass's weighting and colony rules, before any
+     * grouping: each faction's known markets folded into its own footprint. The ungrouped read the
+     * per-bloc read below builds on, and the one a two-tier standings breakdown needs whole so it can
+     * rank a bloc's members individually - both taking the read from the pass rather than re-deriving
+     * it from the loose knobs.
      *
      * @param system the system whose markets are folded
      * @return each present faction's footprint in the system; empty when the system holds no known
@@ -202,9 +212,10 @@ public record DominancePass(
      * the same fold {@link #readFootprintsByFaction} sums away, kept whole so a caller can state
      * the parts a score was made of.
      *
-     * <p>Beside the footprints rather than derived from them, because a footprint is the total
-     * and a total cannot be taken apart again. Both come off the one walk under the one rule, so
-     * the parts a box lists always add up to the number the map painted with.
+     * <p>The footprints are folded out of these, a total being unable to be taken apart again, so
+     * the parts a box lists always add up to the number the map painted with. A caller needing both
+     * reads these and folds them ({@code KnownMarketFootprints.foldFootprintsByFaction}) rather than
+     * reading the footprints as well, which would weigh every market twice.
      *
      * @param system the system whose markets are folded
      * @return each faction's weighed colonies with the breakdown of each colony's weight, keyed by
@@ -246,9 +257,10 @@ public record DominancePass(
      * colony the player may be shown, whether or not this mechanic could weigh it.
      *
      * <p>Beside the footprints rather than derived from them, and that is the whole of the
-     * separation: every term of a dominance weight is economy-fed, so a faction holding nothing the
-     * economy lists raises no footprint at all, and reading presence off the weights would leave it
-     * out of every listing while the band beneath the cell went on counting it. The wider set is
+     * separation: a faction holding nothing the economy lists raises no footprint at all
+     * (<a href="README.md#only-the-economys-colonies-are-weighed">the market contest</a> says why),
+     * and reading presence off the weights would leave it out of every listing while the band
+     * beneath the cell went on counting it. The wider set is
      * the one to read: it can only ever be a superset of what was weighed, so a caller ranking a
      * system cannot lose a faction to a filter applied on the weighed side.
      *
@@ -305,20 +317,15 @@ public record DominancePass(
      * both are settled among the colonies <em>this</em> mechanic weighs, which no other layer's
      * pass has any use for.
      *
-     * <p>The tie-break inside is lazy: it reads no geometry unless a tie forces it, so a system
-     * with a clear winner - nearly every system - pays nothing for carrying one.
-     *
      * @param system the system whose ranking these rules settle
      * @return the rules a ranking of this system's footprints is taken under
      */
     public HolderRankingRules resolveRankingRulesFor(StarSystemAPI system) {
-        return new HolderRankingRules(
-            MarketProximityTieBreak.createForSystem(
-                system,
-                readColoniesIn(system),
-                colonyKnowledge(),
-                grouping()),
-            BlocCandidacy.createForGrouping(grouping()));
+        return HolderRankingRules.createByMarketProximity(
+            system,
+            readColoniesIn(system),
+            colonyKnowledge(),
+            grouping());
     }
 
     /**
@@ -339,7 +346,7 @@ public record DominancePass(
             StarSystemAPI system,
             Map<String, MarketFootprint> footprintByBlocId) {
 
-        return SystemDominance.resolveDominantFactionId(
+        return SystemDominance.resolveDominantBlocId(
             footprintByBlocId,
             resolveRankingRulesFor(system));
     }

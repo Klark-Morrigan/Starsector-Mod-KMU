@@ -7,7 +7,6 @@ import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.maplayers.politicalmap.dominance.SystemDominance;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,15 +21,18 @@ import java.util.Map;
  * handed the system's {@link Colonies} and takes the known projection over it - the same
  * projection the ribbon counts and the cell classifies on - so a colony this weighs and a colony
  * another surface names are the one set read once rather than two walks that can part company. The
- * pure comparison of the footprints it produces is {@link SystemDominance}'s job; turning the
- * winner into draw colours is
- * {@link kmu.maplayers.ownermap.render.style.SectorBlocPalettes#resolveOwnerOf}'s.
+ * pure comparison of the footprints it produces is
+ * {@link kmu.maplayers.politicalmap.dominance.SystemDominance}'s job; turning the winner into draw
+ * colours is
+ * {@link kmu.maplayers.ownermap.owners.holders.base.SectorBlocPalettes#resolveOwnerOf}'s.
  *
  * <p>Every weight is worked out once, as a {@link MarketWeightBreakdown} the scalar
  * weight is then summed over. A caller that wants the number reads the footprint;
  * one that has to explain the number reads {@link #readBreakdownByFaction} for the
- * same markets' parts. Neither can show a total the other's arithmetic disagrees
- * with, because there is only the one arithmetic.
+ * same markets' parts, and one that needs both folds the footprints out of those parts
+ * ({@link #foldFootprintsByFaction}) rather than weighing every market a second time.
+ * Neither can show a total the other's arithmetic disagrees with, because there is only
+ * the one arithmetic.
  *
  * <p>Beside those two sits a third read that weighs nothing:
  * {@link #readUnweighedColoniesByFaction}, the colonies present in the system that the economy
@@ -49,24 +51,23 @@ public final class KnownMarketFootprints {
      * Folds each faction's markets in one system into the footprint the dominance
      * rule compares.
      *
-     * <p>Only the colonies the sector's economy lists are weighed. Every term of a dominance
-     * weight is economy-fed - industries, conditions, computed stability - so an unlisted colony
-     * has nothing for the arithmetic to read, and admitting one would hand its owner weight
-     * nobody worked out. It is named instead, by {@link #readUnweighedColoniesByFaction}.
+     * <p>Only the colonies the sector's economy lists are weighed, for the reason
+     * <a href="../README.md#only-the-economys-colonies-are-weighed">the market contest</a> states.
+     * The rest are named instead, by {@link #readUnweighedColoniesByFaction}.
      *
      * <p>Condition-only markets (the placeholder market every uninhabited planet
      * carries for hazard and atmosphere conditions) never reach here: the colony set is
      * already selected on ownership, which is the rule that rejects them.
      *
-     * @param colonies         the system's colony set, as one walk of it reported; empty yields
-     *                         an empty map
-     * @param rules            the dominance-weighting rules for this pass - whether stability
-     *                         scales each rating and whether an attached station lifts it. The
-     *                         player's LunaLib toggles, read once per pass by the caller so a
-     *                         whole pass resolves under one rule
+     * @param colonies        the system's colony set, as one walk of it reported; empty yields
+     *                        an empty map
+     * @param rules           the dominance-weighting rules for this pass - whether stability
+     *                        scales each rating and whether an attached station lifts it. The
+     *                        player's LunaLib toggles, read once per pass by the caller so a
+     *                        whole pass resolves under one rule
      * @param colonyKnowledge what the player may be shown of a colony, read once per pass by
-     *                         the caller; the fold runs over the known projection, so a colony
-     *                         the rule withholds hands its owner no weight
+     *                        the caller; the fold runs over the known projection, so a colony
+     *                        the rule withholds hands its owner no weight
      * @return each faction's footprint in the system, keyed by faction ID; empty
      *         when the system holds no folded market
      */
@@ -75,22 +76,44 @@ public final class KnownMarketFootprints {
             DominanceRules rules,
             ColonyKnowledge colonyKnowledge) {
 
+        return foldFootprintsByFaction(readBreakdownByFaction(colonies, rules, colonyKnowledge));
+    }
+
+    /**
+     * Folds each faction's weighed markets into the footprint the dominance rule compares, off
+     * breakdowns already read.
+     *
+     * <p>What {@link #readByFaction} sums, offered on its own for a caller that holds the
+     * breakdowns anyway: a box that ranks a system and then explains each score would otherwise
+     * weigh every market twice for one hover.
+     *
+     * @param breakdownsByFactionId each faction's weighed markets, as {@link #readBreakdownByFaction}
+     *                              reads them
+     * @return each faction's footprint, keyed by faction ID in the order the breakdowns were keyed;
+     *         empty when no faction holds a weighed market
+     */
+    public static Map<String, MarketFootprint> foldFootprintsByFaction(
+            Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
+
         var footprintByFactionId = new LinkedHashMap<String, MarketFootprint>();
-        for (var market : readWeighedColonies(colonies, colonyKnowledge)) {
-            var factionId = market.getFaction().getId();
-            var breakdown = MarketWeights.readBreakdown(market, rules);
+
+        for (var entry : breakdownsByFactionId.entrySet()) {
+
+            var footprint = MarketFootprint.EMPTY;
 
             // Whether the colony is on a planet is read off the breakdown rather than from the
             // market again: the tie-break here and the box that names a station colony's station
             // must not be able to disagree about what kind of place a colony is.
-            footprintByFactionId.put(
-                factionId,
-                footprintByFactionId
-                    .getOrDefault(factionId, MarketFootprint.EMPTY)
-                    .addMarket(
-                        breakdown.computeTotalWeight(),
-                        !breakdown.isStationMarket()));
+            for (var breakdown : entry.getValue()) {
+
+                footprint = footprint.addMarket(
+                    breakdown.computeTotalWeight(),
+                    !breakdown.isStationMarket());
+            }
+
+            footprintByFactionId.put(entry.getKey(), footprint);
         }
+
         return footprintByFactionId;
     }
 
@@ -103,12 +126,12 @@ public final class KnownMarketFootprints {
      * summed away. What paints the map reads the totals; what has to justify a painted system to
      * the player reads the parts those totals are made of.
      *
-     * @param colonies         the system's colony set, as one walk of it reported; empty yields
-     *                         an empty map
-     * @param rules            the dominance-weighting rules for this pass, read once per pass by
-     *                         the caller so a whole pass resolves under one rule
+     * @param colonies        the system's colony set, as one walk of it reported; empty yields
+     *                        an empty map
+     * @param rules           the dominance-weighting rules for this pass, read once per pass by
+     *                        the caller so a whole pass resolves under one rule
      * @param colonyKnowledge what the player may be shown of a colony, the same rule the totals
-     *                         this explains were folded under
+     *                        this explains were folded under
      * @return each faction's counted markets in the system with the breakdown of each market's
      *         weight, keyed by faction ID and in the economy's own market order; empty when the
      *         system holds no counted market
@@ -119,11 +142,14 @@ public final class KnownMarketFootprints {
             ColonyKnowledge colonyKnowledge) {
 
         var breakdownsByFactionId = new LinkedHashMap<String, List<MarketWeightBreakdown>>();
+
         for (var market : readWeighedColonies(colonies, colonyKnowledge)) {
+
             breakdownsByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
                 .add(MarketWeights.readBreakdown(market, rules));
         }
+
         return breakdownsByFactionId;
     }
 
@@ -133,10 +159,7 @@ public final class KnownMarketFootprints {
      *
      * <p>Vanilla builds a colony that way on purpose, so a player can be looking at a station in a
      * faction's colours that {@link #readBreakdownByFaction} cannot see. A box accounting for the
-     * system has to name it; the pass must not, every term of a dominance weight being economy-fed
-     * - an unlisted market has no industries, no conditions and no computed stability, so admitting
-     * one would hand its owner weight nobody worked out and could change which faction the map
-     * paints the system for.
+     * system has to name it; the pass must not weigh it.
      *
      * <p>A separate read rather than a widening of the weighed one, so a caller that must not see
      * these colonies cannot be handed them by accident. Both are selected out of the one colony
@@ -150,10 +173,10 @@ public final class KnownMarketFootprints {
      * forgotten branch away from painting a system for a faction the mechanic never counted. An
      * identity and a nameplate cannot be summed into anything.
      *
-     * @param colonies         the system's colony set, as one walk of it reported; empty yields
-     *                         an empty map
+     * @param colonies        the system's colony set, as one walk of it reported; empty yields
+     *                        an empty map
      * @param colonyKnowledge what the player may be shown of a colony, the same rule the weighed
-     *                         half is selected under so the two stay exact complements
+     *                        half is selected under so the two stay exact complements
      * @return each faction's unlisted colonies in the system, identified and nothing more, keyed by
      *         faction ID and in the system's own entity order; empty when every colony present is
      *         one the economy lists
@@ -163,8 +186,11 @@ public final class KnownMarketFootprints {
             ColonyKnowledge colonyKnowledge) {
 
         var coloniesByFactionId = new LinkedHashMap<String, List<UnweighedColony>>();
+
         for (var colony : readUnweighedColonies(colonies, colonyKnowledge)) {
+
             var market = colony.market();
+
             coloniesByFactionId
                 .computeIfAbsent(market.getFaction().getId(), factionId -> new ArrayList<>())
                 .add(new UnweighedColony(
@@ -173,6 +199,7 @@ public final class KnownMarketFootprints {
                     colony.isHidden(),
                     Markets.readNameplate(market)));
         }
+
         return coloniesByFactionId;
     }
 
@@ -185,10 +212,10 @@ public final class KnownMarketFootprints {
      * reader ordering the blocs this class ranked has to be ranking them over the same colonies,
      * or it can settle a contest among markets the weights were never folded from.
      *
-     * @param colonies         the system's colony set, as one walk of it reported; empty yields
-     *                         an empty list
+     * @param colonies        the system's colony set, as one walk of it reported; empty yields
+     *                        an empty list
      * @param colonyKnowledge what the player may be shown of a colony, so a reader ordering the
-     *                         blocs this class ranked reads the very colonies they were ranked on
+     *                        blocs this class ranked reads the very colonies they were ranked on
      * @return the weighed colonies' markets, in the economy's own order
      */
     public static List<MarketAPI> readWeighedColonies(
@@ -200,6 +227,7 @@ public final class KnownMarketFootprints {
         for (var colony : selectColonies(colonies, colonyKnowledge, true)) {
             markets.add(colony.market());
         }
+
         return markets;
     }
 
@@ -232,10 +260,12 @@ public final class KnownMarketFootprints {
         var selectedColonies = new ArrayList<Colony>();
 
         for (var colony : colonyKnowledge.readKnownColonies(colonies)) {
+
             if (colony.isListedByEconomy() == shouldSelectListedByEconomy) {
                 selectedColonies.add(colony);
             }
         }
+
         return selectedColonies;
     }
 }

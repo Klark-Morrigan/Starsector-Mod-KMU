@@ -7,6 +7,7 @@ import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
+import kmu.util.KmuMarketConditionStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.awt.Color;
@@ -33,6 +34,7 @@ import static kmu.util.KmuTextFormats.joinWithParenthetical;
  * <p>Returns an empty list when the location has no displayable fields.
  */
 public final class KmuConditionPickerLocationParagraphFactory {
+
     private KmuConditionPickerLocationParagraphFactory() {
     }
 
@@ -43,6 +45,7 @@ public final class KmuConditionPickerLocationParagraphFactory {
      * @return the header, then each line the location has something to show for
      */
     public static List<HighlightedParagraph> createParagraphs(KmuConditionPickerModel model) {
+
         Objects.requireNonNull(model, "model");
 
         var location = model.getLocation();
@@ -54,9 +57,11 @@ public final class KmuConditionPickerLocationParagraphFactory {
         var constellationLine = buildConstellationLine(location, highlightColour);
 
         var result = new ArrayList<HighlightedParagraph>();
+
         result.add(buildHeaderLine());
 
         if (!planetLine.isPresent() && !systemLine.isPresent() && !constellationLine.isPresent()) {
+
             result.add(buildUnknownLine(highlightColour));
             return result;
         }
@@ -69,13 +74,16 @@ public final class KmuConditionPickerLocationParagraphFactory {
     }
 
     private static HighlightedParagraph buildHeaderLine() {
+
         return new HighlightedParagraph(
-            KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_LOCATION),
+            KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_LOCATION),
             StarsectorUiColour.VANILLA_GRAY.resolve());
     }
 
     private static HighlightedParagraph buildUnknownLine(Color highlightColour) {
-        var unknown = KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_LOCATION_UNKNOWN);
+
+        var unknown = KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_LOCATION_UNKNOWN);
+
         return new HighlightedParagraph(
             unknown,
             new Highlight(unknown, highlightColour));
@@ -116,8 +124,9 @@ public final class KmuConditionPickerLocationParagraphFactory {
         if (segments.isEmpty()) {
             return Optional.empty();
         }
+
         return Optional.of(new HighlightedParagraph(
-            String.join(KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_GROUP_SEPARATOR), segments),
+            String.join(KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_GROUP_SEPARATOR), segments),
             highlights.toArray(new Highlight[0])));
     }
 
@@ -159,7 +168,9 @@ public final class KmuConditionPickerLocationParagraphFactory {
     // The relationship rides in ASCII brackets, which every language's line keeps: the game highlights it only
     // where the characters beside it are whitespace or ASCII punctuation.
     private static String buildOwnershipSegment(KmuPickerFaction faction) {
-        var text = KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_LOCATION_OWNED_BY, faction.getName());
+
+        var text = KmuStringKeys.format(KmuMarketConditionStringKeys.CONDITION_MANAGER_LOCATION_OWNED_BY, faction.getName());
+
         return faction.getRelationshipDescription()
             .map(rel -> text + " (" + rel + ")")
             .orElse(text);
@@ -176,7 +187,7 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
         return parts.isEmpty()
             ? Optional.empty()
-            : Optional.of(String.join(KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_ITEM_SEPARATOR), parts));
+            : Optional.of(String.join(KmuStringKeys.get(KmuMarketConditionStringKeys.CONDITION_MANAGER_ITEM_SEPARATOR), parts));
     }
 
     // Suppress entity name when it duplicates the type label (e.g. barycenter

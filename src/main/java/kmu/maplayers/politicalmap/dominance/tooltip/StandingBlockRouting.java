@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.dominance.tooltip;
 
-import kmu.maplayers.ownermap.holding.ContestSide;
-import kmu.maplayers.ownermap.holding.ContestSides;
+import kmu.maplayers.ownermap.owners.holders.alliances.ContestSide;
+import kmu.maplayers.ownermap.owners.holders.alliances.ContestSides;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 
 import java.util.ArrayList;
@@ -20,10 +20,8 @@ import java.util.Map;
  * side of that holder by {@link ContestSides} - the one placement every surface reporting a contest
  * routes through - rather than by comparing blocs again here.
  *
- * <p>Disposition sorts inside that split and never across it. What stands with the holder by
- * alliance is already out, so a bloc on good terms with it is taken from what alliance left standing
- * against it and from nowhere else: an ally who is merely favourable is still an ally, and one gone
- * sour is still an ally too.
+ * <p>Disposition sorts inside that split and never across it, for the reason {@link ContestSides}
+ * states.
  *
  * <p>How that side then divides - which blocs are on good terms with the holder, which are not, and
  * which are of two minds and are listed under both headings - is {@link RivalDispositionSplit}'s, so
@@ -80,7 +78,7 @@ public final class StandingBlockRouting {
             .toList();
 
         var holderBlocId = resolveHolderBlocId(holder);
-        var sides = new ContestSides(holderBlocId, rules.affiliation());
+        var blocRelations = rules.blocRelations();
 
         // Resolved once, after the holder is picked and before anybody is measured against it: every
         // disposition read in one system is against this one membership, and resolving it per
@@ -88,13 +86,13 @@ public final class StandingBlockRouting {
         var holderMemberFactionIds = rules.readMemberFactionIds(holderBlocId);
 
         var rivals = RivalDispositionSplit.splitByDisposition(
-            sides.selectSide(ContestSide.RIVAL, contestants, GroupStanding::blocId),
+            blocRelations.selectSide(ContestSide.RIVAL, holderBlocId, contestants, GroupStanding::blocId),
             holderMemberFactionIds,
             rules);
 
         return new StandingBlockRouting(fillBlocks(
             holder,
-            sides.selectSide(ContestSide.ALLIED, contestants, GroupStanding::blocId),
+            blocRelations.selectSide(ContestSide.ALLIED, holderBlocId, contestants, GroupStanding::blocId),
             rivals,
             candidacy.barred()));
     }

@@ -1,6 +1,5 @@
 package kmu.starsector;
 
-import com.fs.starfarer.api.campaign.OrbitAPI;
 import com.fs.starfarer.api.campaign.PlanetAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
@@ -22,11 +21,13 @@ class StarsectorGravityWellResolverTests {
 
         @Test
         void returnsSystemCenterWhenEntityHasNoOrbitChain() {
+
             var center = buildEntity("Corvus");
             var planet = buildEntity("Valis");
             var market = buildMarket(null, planet, buildSystem(center, null));
 
-            assertThat(resolver.resolve(market)).isSameAs(center);
+            assertThat(resolver.resolve(market))
+                .isSameAs(center);
         }
 
         @Test
@@ -36,87 +37,85 @@ class StarsectorGravityWellResolverTests {
             var station = buildEntity("Station Alpha");
             var market = buildMarket(null, station, null);
 
-            assertThat(resolver.resolve(market)).isSameAs(station);
+            assertThat(resolver.resolve(market))
+                .isSameAs(station);
         }
 
         @Test
         void returnsStarWhenSystemHasNoCenterButHasStar() {
+
             var planet = buildEntity("Valis");
+
             // getStar() returns PlanetAPI, so the mock must implement PlanetAPI.
             var starMock = mock(PlanetAPI.class);
-            when(starMock.getName()).thenReturn("Corvus");
+
+            when(starMock.getName())
+                .thenReturn("Corvus");
+
             var market = buildMarket(null, planet, buildSystem(null, starMock));
 
-            assertThat(resolver.resolve(market)).isSameAs(starMock);
+            assertThat(resolver.resolve(market))
+                .isSameAs(starMock);
         }
 
         @Test
-        void resolvesViaOrbitApiWhenDirectOrbitFocusIsUnavailable() {
-            // getOrbitFocus() returns null; getOrbit().getFocus() provides the focus.
-            var star = buildEntity("Corvus");
-            var orbitMock = mock(OrbitAPI.class);
-            when(orbitMock.getFocus()).thenReturn(star);
-            var moonMock = mock(SectorEntityToken.class);
-            when(moonMock.getName()).thenReturn("Valis");
-            when(moonMock.getOrbit()).thenReturn(orbitMock);
-            // getOrbitFocus defaults to null on a Mockito mock.
-            var market = buildMarket(null, moonMock, null);
+        void returnsOutermostFocusOverSystemCenterWhenEntityHasOrbitChain() {
 
-            assertThat(resolver.resolve(market)).isSameAs(star);
-        }
+            var center = buildEntity("Corvus");
+            var star = buildEntity("Corvus Secondary");
+            var planet = buildEntity("Valis");
+            var station = buildEntity("Valis Orbital");
 
-        @Test
-        void detectsOrbitCycleAndReturnsLastValidFocus() {
-            // A->B->A: the cycle is caught when B's focus (A) is already in visited set.
-            // The resolver returns B, the last focus reached before the cycle.
-            var node0Mock = mock(SectorEntityToken.class);
-            var node1Mock = mock(SectorEntityToken.class);
-            when(node0Mock.getOrbitFocus()).thenReturn(node1Mock);
-            when(node1Mock.getOrbitFocus()).thenReturn(node0Mock);
-            var market = buildMarket(null, node0Mock, null);
+            when(planet.getOrbitFocus())
+                .thenReturn(star);
+            when(station.getOrbitFocus())
+                .thenReturn(planet);
 
-            assertThat(resolver.resolve(market)).isSameAs(node1Mock);
-        }
+            var market = buildMarket(null, station, buildSystem(center, null));
 
-        @Test
-        void haltAtMaxChainDepthAndReturnsLastFocusWithinLimit() {
-            // Chain of 34 nodes (node0..node33). MAX_ORBIT_FOCUS_CHAIN_DEPTH=32 means
-            // the resolver takes 32 steps from node0, reaching node32, and stops before node33.
-            var chainLength = 34;
-            var nodes = new SectorEntityToken[chainLength];
-            for (var i = 0; i < chainLength; i++) {
-                nodes[i] = mock(SectorEntityToken.class);
-            }
-            for (var i = 0; i < chainLength - 1; i++) {
-                when(nodes[i].getOrbitFocus()).thenReturn(nodes[i + 1]);
-            }
-            var market = buildMarket(null, nodes[0], null);
-
-            assertThat(resolver.resolve(market)).isSameAs(nodes[32]);
+            assertThat(resolver.resolve(market))
+                .isSameAs(star);
         }
     }
 
     // --- mock helpers ---
 
     private static SectorEntityToken buildEntity(String name) {
+
         var entityMock = mock(SectorEntityToken.class);
-        when(entityMock.getName()).thenReturn(name);
+
+        when(entityMock.getName())
+            .thenReturn(name);
+
         return entityMock;
     }
 
     private static StarSystemAPI buildSystem(SectorEntityToken center, PlanetAPI star) {
+
         var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getCenter()).thenReturn(center);
-        when(systemMock.getStar()).thenReturn(star);
+
+        when(systemMock.getCenter())
+            .thenReturn(center);
+        when(systemMock.getStar())
+            .thenReturn(star);
+
         return systemMock;
     }
 
     private static MarketAPI buildMarket(
-            PlanetAPI planet, SectorEntityToken primaryEntity, StarSystemAPI system) {
+            PlanetAPI planet,
+            SectorEntityToken primaryEntity,
+            StarSystemAPI system) {
+
         var marketMock = mock(MarketAPI.class);
-        when(marketMock.getPlanetEntity()).thenReturn(planet);
-        when(marketMock.getPrimaryEntity()).thenReturn(primaryEntity);
-        when(marketMock.getStarSystem()).thenReturn(system);
+
+        when(marketMock.getPlanetEntity())
+            .thenReturn(planet);
+        when(marketMock.getPrimaryEntity())
+            .thenReturn(primaryEntity);
+        when(marketMock.getStarSystem())
+            .thenReturn(system);
+
         return marketMock;
     }
 }

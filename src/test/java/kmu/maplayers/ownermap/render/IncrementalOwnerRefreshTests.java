@@ -27,7 +27,7 @@ import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SectorWalk;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.ClusterGroupBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
@@ -81,11 +81,11 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the redraw {@link IncrementalOwnerRefresh} performs over what a drained batch
- * disturbed: which cells are re-shaped, which factions' clusters are rebuilt, and which cells
+ * disturbed: which cells are re-shaped, which owners' clusters are rebuilt, and which cells
  * owe a fresh band. The promise under test is the one the incremental path exists to make - that it
  * touches the cells whose drawing actually moved and their neighbours, and nothing else - since
  * anything wider costs the frame it was written to save, and anything narrower leaves the map
- * drawing a stale holder.
+ * drawing a stale owner.
  *
  * <p>What the batch reads back out of the sector before any of that, and what it records as
  * having been disturbed, is {@link MarkedSystemRederiveTests}'s. The seams for those reads are
@@ -93,7 +93,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>A unit test, so what the redraw delegates to is stood in for: the owner source the standing
  * build retains, whose resolve answers who owns a marked system and whether anything stands in it;
- * and, at their static seams, the two builders that turn a re-shaped cell and a faction's members
+ * and, at their static seams, the two builders that turn a re-shaped cell and an owner's members
  * into draw records, and the anchor and label rebuilds that ride along. Each is pinned by its own
  * suite; what belongs here is only the decision about which of them to call and with what.
  *
@@ -266,7 +266,7 @@ public final class IncrementalOwnerRefreshTests {
 
         @Test
         void redrawsNothingWhenNoFactMoved() {
-            // The common resize: a colony grows, its faction still wins, and what stands there is
+            // The common resize: a settlement grows, its owner still wins, and what stands there is
             // what stood there - so the batch disturbed nothing and no cell or cluster group is built
             // again. The marked system's band is re-baked all the same, which the case below
             // states; here the cell carries none, so the re-bake finds nothing to write.
@@ -283,10 +283,10 @@ public final class IncrementalOwnerRefreshTests {
 
         @Test
         void rebakesTheBandOfAMarkedSystemThatDidNotFlip() {
-            // What marks a system is a colony appearing, growing, or changing hands - which is
-            // exactly what changes how many colonies a band counts. So a marked system owes a
+            // What marks a system is a settlement appearing, growing, or changing hands - which is
+            // exactly what changes how many settlements a band counts. So a marked system owes a
             // re-baked band even on the frame where nothing about its fill moved, and waiting for
-            // a flip would leave the band reporting a colony that is no longer there.
+            // a flip would leave the band reporting a settlement that is no longer there.
             var clusters = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY), ownerSourceFake);
 
             clusters.getPaintedCells().putPaintedCell(
@@ -324,7 +324,7 @@ public final class IncrementalOwnerRefreshTests {
             // fold edits rather than on the save behind it.
             var clusters = buildOwnedBySpelling(
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
-                FactionNameFormatChoice.SHORT,
+                OwnerNameFormatChoice.SHORT,
                 ownerSourceFake);
 
             clusters.getPaintedCells().putPaintedCell(
@@ -356,7 +356,7 @@ public final class IncrementalOwnerRefreshTests {
             // asked for at all.
             var clusters = buildOwnedBySpelling(
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
-                FactionNameFormatChoice.SHORT,
+                OwnerNameFormatChoice.SHORT,
                 ownerSourceFake);
 
             clusters.getPaintedCells().putPaintedCell(
@@ -433,7 +433,7 @@ public final class IncrementalOwnerRefreshTests {
             // there is no name on the map and one because the player would rather have the band.
             var clusters = buildOwnedBySpelling(
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
-                FactionNameFormatChoice.SHORT,
+                OwnerNameFormatChoice.SHORT,
                 ownerSourceFake);
 
             clusters.getPaintedCells().putPaintedCell(
@@ -462,10 +462,10 @@ public final class IncrementalOwnerRefreshTests {
 
         @Test
         void redrawsOnlyItsOwnCellWhenOnlyInhabitationMoved() {
-            // A restyled system - one that just became settled, or that the pick just colonised -
+            // A restyled system - one that just became settled, or that the pick just settled -
             // is redrawn through the same primitive a flip's cells are, and nothing beyond it: a
             // cell's shape is settled by which of its edges are same-owner seams, and neither fact
-            // is one of them. That is what makes this cheap enough to run on a colony event.
+            // is one of them. That is what makes this cheap enough to run on every marked change.
             var clusters = OwnerMapClusterFixtures.createClustersSettledIn(
                 Map.of(),
                 Set.of(),
@@ -518,7 +518,7 @@ public final class IncrementalOwnerRefreshTests {
         @Test
         void opensOneResolveHoweverManySystemsAreMarked() {
             // The whole batch is answered off one reading of the sector: a resolve per marked
-            // system would pay a settings read and a walk of that system's colonies for each of the
+            // system would pay a settings read and a walk of that system for each of the
             // questions asked about it, which is what this path exists to avoid.
             var clusters = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
@@ -584,13 +584,13 @@ public final class IncrementalOwnerRefreshTests {
             var firstCell = new SystemKey(FLIPPED_SYSTEM, null, "8b3");
             var twinCell = new SystemKey(FLIPPED_SYSTEM, null, "38d53");
 
-            var holderBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
+            var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
 
-            holderBySystemKey.put(firstCell, buildOwnerOf(HEGEMONY));
-            holderBySystemKey.put(twinCell, buildOwnerOf(HEGEMONY));
+            ownerBySystemKey.put(firstCell, buildOwnerOf(HEGEMONY));
+            ownerBySystemKey.put(twinCell, buildOwnerOf(HEGEMONY));
 
             var clusters = OwnerMapClusterFixtures.createClustersOwnedByKeys(
-                holderBySystemKey,
+                ownerBySystemKey,
                 ownerSourceFake);
 
             var cellEdgesByCellKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
@@ -630,8 +630,8 @@ public final class IncrementalOwnerRefreshTests {
 
         @Test
         void reshapesTheFlippedSystemAndItsNeighbour() {
-            // The neighbour's own holder did not move, but the edge it shares with the
-            // flipped system just turned from a same-faction seam into a cluster border,
+            // The neighbour's own owner did not move, but the edge it shares with the
+            // flipped system just turned from a same-owner seam into a cluster border,
             // so it has to be re-shaped too or the border draws down one side only.
             var clusters = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
@@ -658,9 +658,9 @@ public final class IncrementalOwnerRefreshTests {
         }
 
         @Test
-        void rebuildsTheLosingAndGainingFactionsClusters() {
+        void rebuildsTheLosingAndGainingOwnersClusters() {
             // Both sides of the transfer change shape - one loses the cell, the other gains
-            // it - and no third faction's rings trace a cell that moved, so exactly these
+            // it - and no third owner's rings trace a cell that moved, so exactly these
             // two rebuild.
             var clusters = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
@@ -747,10 +747,10 @@ public final class IncrementalOwnerRefreshTests {
 
         @Test
         void rebakesTheBandOfAMarkedSystemWhileAnotherFlips() {
-            // The third reason a cell owes a band, and the one the other two hide: a colony
+            // The third reason a cell owes a band, and the one the other two hide: a settlement
             // appeared somewhere that did not change hands, in the same batch as a flip
             // elsewhere. That system is neither re-shaped nor reached by a name, so a bake taking
-            // only those two would leave its band counting a colony that is no longer there -
+            // only those two would leave its band counting a settlement that is no longer there -
             // exactly what the no-flip path re-bakes the marked systems for.
             var clusters = buildOwnedBy(Map.of(
                 FLIPPED_SYSTEM,
@@ -897,7 +897,7 @@ public final class IncrementalOwnerRefreshTests {
         }
 
         @Test
-        void leavesTheStandingPairAloneWhenTheHolderDidNotChange() {
+        void leavesTheStandingPairAloneWhenTheOwnerDidNotChange() {
             // A resize that leaves the winner alone leaves the placements alone: nothing was
             // re-fitted, so the standing placements and the rules recorded for them still describe
             // each other and neither half may move.
@@ -915,9 +915,9 @@ public final class IncrementalOwnerRefreshTests {
 
         // What the re-derive answers for one system this pass. Every case stubs the systems
         // it marks; an unstubbed one comes back null, which reads as a system that lost its
-        // holder rather than as a missing stub.
-        private void assertResolvesTo(String systemId, SystemOwner holder) {
-            ownerSourceFake.recordOwnerOf(systemId, holder);
+        // owner rather than as a missing stub.
+        private void assertResolvesTo(String systemId, SystemOwner owner) {
+            ownerSourceFake.recordOwnerOf(systemId, owner);
         }
 
         // What the inhabitation read answers for one system this pass, against the source's
@@ -1049,14 +1049,14 @@ public final class IncrementalOwnerRefreshTests {
     }
 
     // A clusters holding the given systems, every one of which it also counts settled - the only
-    // arrangement production builds, a bloc holding a system by having a colony in it - retaining
-    // the source a batch over it re-derives through.
+    // arrangement production builds, an owner holding a system by having something standing in it -
+    // retaining the source a batch over it re-derives through.
     private static OwnerMapClusters buildOwnedBy(
-            Map<String, String> factionIdBySystemId,
+            Map<String, String> ownerIdBySystemId,
             OwnerSource ownerSource) {
 
         return OwnerMapClusterFixtures.createClustersOwnedBy(
-            buildOwnersOf(factionIdBySystemId),
+            buildOwnersOf(ownerIdBySystemId),
             ownerSource);
     }
 
@@ -1064,12 +1064,12 @@ public final class IncrementalOwnerRefreshTests {
     // name leaves a band. Off the map rather than off the save, because the fold reads what the
     // build it is editing was made under.
     private static OwnerMapClusters buildOwnedBySpelling(
-            Map<String, String> factionIdBySystemId,
-            FactionNameFormatChoice nameFormat,
+            Map<String, String> ownerIdBySystemId,
+            OwnerNameFormatChoice nameFormat,
             OwnerSource ownerSource) {
 
         return OwnerMapClusterFixtures.createClustersSpellingNames(
-            buildOwnersOf(factionIdBySystemId),
+            buildOwnersOf(ownerIdBySystemId),
             nameFormat,
             ownerSource);
     }

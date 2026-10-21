@@ -1,7 +1,11 @@
 package kmu.conditions.ui.editor;
 
-import kmu.ui.context.KmuMarketUiContext;
-import kmu.ui.context.KmuMarketUiContextSource;
+import kmlib.mods.console.ConsoleStrings;
+
+import kmu.conditions.ui.context.KmuMarketUiContext;
+import kmu.conditions.ui.context.KmuMarketUiContextSource;
+import kmu.util.KmuMarketConditionStringKeys;
+import kmu.util.KmuStringKeys;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -20,6 +24,9 @@ public final class StarsectorConditionEditorTargetValidator implements KmuCondit
             return Optional.empty();
         }
 
-        return Optional.of("Current market does not support market condition editing.");
+        // Printed by the console, which is the one place a refusal reaches the player.
+        return Optional.of(ConsoleStrings.get(
+            KmuStringKeys.CATEGORY,
+            KmuMarketConditionStringKeys.CONSOLE_CONDITION_MANAGER_UNSUPPORTED_TARGET));
     }
 }

@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.labels;
 
+import kmlib.colour.ColourPair;
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
@@ -24,17 +25,15 @@ import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
-import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategories;
-import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
+import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 import kmu.settings.KmuOwnerMapDiagnosticsSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -71,8 +70,8 @@ import static org.mockito.Mockito.when;
  * anchors already fitted rather than leaving the last pass's overlay frozen on the map.
  *
  * <p>The styling half is pinned through the colour a fitted anchor carries, since that is where a
- * label drifting from the cluster group beneath it would first show: a bloc's own shade off filter, and
- * the pass's shared desaturation palette for a bloc a filter recedes.
+ * label drifting from the cluster group beneath it would first show: an owner's own shade off filter, and
+ * the pass's shared desaturation palette for an owner a filter recedes.
  *
  * <p>What each path leaves labelling its list is pinned alongside, on every path rather than only
  * the fitting one: the rebuild is the only place the live tuning is read, so a list left behind
@@ -84,7 +83,7 @@ import static org.mockito.Mockito.when;
  * {@link kmu.maplayers.base.labels.anchor.ClusterAnchorPlacementTests} and the colour rules by
  * {@link ClusterLabelStylingTests}, so both run for real here and are only ever counted or read back
  * off the anchor. Cells are hand-built 2000-unit squares, comfortably clear of the fixed border
- * channel, so which cells fuse into one cluster is plain to read. The settings, holder, theme, and
+ * channel, so which cells fuse into one cluster is plain to read. The settings, owner, theme, and
  * font reads this class makes for itself are stubbed at their seams: none of them answers outside
  * the game, and the font in particular decides only whether a name is measured or a stand-in
  * band is, which the placements are counted independently of.
@@ -97,7 +96,7 @@ final class ClusterAnchorsBuilderTests {
     // The row a fit lands on.
     private static final String FIT_ANCHORS_SECTION = "ownerMap.fitClusterAnchors";
 
-    // Two cells of one bloc meeting along x = 2000, so the pair proves the rebuild fits them one
+    // Two cells of one owner meeting along x = 2000, so the pair proves the rebuild fits them one
     // shared label; the rival's cell shares no edge with anything, so it stays its own cluster.
     private static final String HELD_SYSTEM = "held";
     private static final String NEIGHBOUR_SYSTEM = "neighbour";
@@ -107,23 +106,24 @@ final class ClusterAnchorsBuilderTests {
     // fingerprint - so one value serves every case, and a case that varies it says so.
     private static final int GEOMETRY_REVISION = 7;
 
-    // Each bloc's two shades, kept distinct between blocs so a label drawn in the wrong bloc's
+    // Each owner's two shades, kept distinct between owners so a label drawn in the wrong owner's
     // colour names which lookup went astray.
     private static final Color HEGEMONY_PRIMARY = Color.RED;
     private static final Color TRITACHYON_PRIMARY = Color.CYAN;
-    private static final SystemOwner HEGEMONY_HOLDER =
-        new SystemOwner(HEGEMONY, new OwnerPalette(HEGEMONY_PRIMARY, Color.BLUE));
-    private static final SystemOwner TRITACHYON_HOLDER =
-        new SystemOwner(TRITACHYON, new OwnerPalette(TRITACHYON_PRIMARY, Color.DARK_GRAY));
+    private static final SystemOwner HEGEMONY_OWNER =
+        new SystemOwner(HEGEMONY, new ColourPair(HEGEMONY_PRIMARY, Color.BLUE));
 
-    // The shades a receded bloc recolours to, garish so a label that kept its own colour through a
+    private static final SystemOwner TRITACHYON_OWNER =
+        new SystemOwner(TRITACHYON, new ColourPair(TRITACHYON_PRIMARY, Color.DARK_GRAY));
+
+    // The shades a receded owner recolours to, garish so a label that kept its own colour through a
     // recede is unmistakable.
-    private static final OwnerPalette DESATURATION_PALETTE =
-        new OwnerPalette(Color.GREEN, Color.YELLOW);
+    private static final ColourPair DESATURATION_PALETTE =
+        new ColourPair(Color.GREEN, Color.YELLOW);
 
     // A palette no unfiltered case should ever reach for, for the same reason.
-    private static final OwnerPalette UNUSED_PALETTE =
-        new OwnerPalette(Color.MAGENTA, Color.MAGENTA);
+    private static final ColourPair UNUSED_PALETTE =
+        new ColourPair(Color.MAGENTA, Color.MAGENTA);
 
     // Full opacity throughout, so an asserted colour is the resolved shade itself rather than a
     // faded version of it; how a name fades is pinned by the styling's own suite.
@@ -155,10 +155,10 @@ final class ClusterAnchorsBuilderTests {
     // Both owned categories' names pointed at the bright primary shade at full opacity, so a
     // label's colour reads back as the palette shade its owner resolved to.
     private static final Map<MapStyleCategory, ElementStyle> NAME_STYLE_BY_CATEGORY = Map.of(
-        OwnerMapCategory.FACTION,
-        new ElementStyle(FactionPaletteSlot.PRIMARY, FULL_OPACITY),
-        OwnerMapCategory.INDEPENDENT,
-        new ElementStyle(FactionPaletteSlot.PRIMARY, FULL_OPACITY));
+        StandInCategoryFake.OWNED,
+        new ElementStyle(OwnerPaletteSlot.PRIMARY, FULL_OPACITY),
+        StandInCategoryFake.RECEDED,
+        new ElementStyle(OwnerPaletteSlot.PRIMARY, FULL_OPACITY));
 
     // The face the snapshot says the sector settled its labels on: a settled one rather than the face
     // labels ask for, so a fit measuring in the asked-for face, or recording it, cannot pass.
@@ -211,17 +211,16 @@ final class ClusterAnchorsBuilderTests {
     private MockedStatic<KmuOwnerMapDiagnosticsSettings> settingsMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
     private MockedStatic<LazyFontCache> fontsMock;
-    private MockedStatic<RenderStyleReader> styleReaderMock;
+
     // The owners the debug path is handed; nobody's unless a case says otherwise.
     private Map<SystemKey, SystemOwner> ownerBySystemKey = Map.of();
 
     @BeforeEach
-    void openTheSettingsHolderAndFontSeams() {
+    void openTheSettingsAndFontSeams() {
 
         settingsMock = mockStatic(KmuOwnerMapDiagnosticsSettings.class);
         specificationMock = mockStatic(LabelAnchorSpecification.class);
         fontsMock = mockStatic(LazyFontCache.class);
-        styleReaderMock = mockStatic(RenderStyleReader.class);
 
         // The live tuning and name styling arrive as the data the rebuild reads them into, so a
         // case states its gate and its styling and nothing about the dozens of knobs behind them.
@@ -231,10 +230,7 @@ final class ClusterAnchorsBuilderTests {
         when(categoriesMock.readNameStyles())
             .thenReturn(NAME_STYLE_BY_CATEGORY);
         when(categoriesMock.resolveFullStrengthCategory())
-            .thenReturn(OwnerMapCategory.FACTION);
-        styleReaderMock
-            .when(RenderStyleReader::readGlobalStyle)
-            .thenReturn(ThemeFixtures.createInertGlobalStyle());
+            .thenReturn(StandInCategoryFake.OWNED);
 
         // No label font resolves outside the game, which is the fallback the fit is designed to
         // take: the aspect stand-in sizes a band and no name is drawn from it. The placements are
@@ -246,7 +242,7 @@ final class ClusterAnchorsBuilderTests {
         // Names drawn and the debug overlay off by default, so a case names only the half of the
         // gate it is about. The format arrives on the picks the rebuild was baked under rather than
         // through a stubbed preference, since that is where the builder reads it.
-        useNameFormat(FactionNameFormatChoice.FULL);
+        useNameFormat(OwnerNameFormatChoice.FULL);
         stubAnchorOverlay(false);
 
         when(geometryCacheMock.getCellEdgesByCellKey())
@@ -258,9 +254,8 @@ final class ClusterAnchorsBuilderTests {
     }
 
     @AfterEach
-    void closeTheSettingsHolderAndFontSeams() {
+    void closeTheSettingsAndFontSeams() {
 
-        styleReaderMock.close();
         fontsMock.close();
         specificationMock.close();
         settingsMock.close();
@@ -271,18 +266,19 @@ final class ClusterAnchorsBuilderTests {
 
         @Test
         void fitsOneLabelPerContiguousCluster() {
+
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
                 buildUnfilteredStyling(Map.of(
                     HELD_SYSTEM,
-                    HEGEMONY_HOLDER,
+                    HEGEMONY_OWNER,
                     NEIGHBOUR_SYSTEM,
-                    HEGEMONY_HOLDER,
+                    HEGEMONY_OWNER,
                     RIVAL_SYSTEM,
-                    TRITACHYON_HOLDER)));
+                    TRITACHYON_OWNER)));
 
-            // Two labels, not three: the two touching cells of one bloc are named once between
+            // Two labels, not three: the two touching cells of one owner are named once between
             // them, which is what makes a label read as naming a cluster group rather than a system.
             assertThat(standingAnchors.getAnchors())
                 .hasSize(2);
@@ -299,11 +295,11 @@ final class ClusterAnchorsBuilderTests {
                     cellGeometry,
                     buildUnfilteredStyling(Map.of(
                         HELD_SYSTEM,
-                        HEGEMONY_HOLDER,
+                        HEGEMONY_OWNER,
                         NEIGHBOUR_SYSTEM,
-                        HEGEMONY_HOLDER,
+                        HEGEMONY_OWNER,
                         RIVAL_SYSTEM,
-                        TRITACHYON_HOLDER))))
+                        TRITACHYON_OWNER))))
                 .findNode(FIT_ANCHORS_SECTION);
 
             assertThat(fitRow.findCount(MapBuildCounters.LABELS).getTotals().getTotal())
@@ -314,21 +310,22 @@ final class ClusterAnchorsBuilderTests {
         }
 
         @Test
-        void drawsEachClusterInItsOwnBlocsShade() {
+        void drawsEachClusterInItsOwnOwnersShade() {
+
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
                 buildUnfilteredStyling(Map.of(
                     HELD_SYSTEM,
-                    HEGEMONY_HOLDER,
+                    HEGEMONY_OWNER,
                     NEIGHBOUR_SYSTEM,
-                    HEGEMONY_HOLDER,
+                    HEGEMONY_OWNER,
                     RIVAL_SYSTEM,
-                    TRITACHYON_HOLDER)));
+                    TRITACHYON_OWNER)));
 
             // The clusters come back in first-seen cell order, so the fused pair leads and the
-            // rival follows - each carrying the shade its own holder resolved to rather than one
-            // shared pick, which is the whole point of resolving colour per bloc.
+            // rival follows - each carrying the shade its own owner resolved to rather than one
+            // shared pick, which is the whole point of resolving colour per owner.
             assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(HEGEMONY_PRIMARY);
             assertThat(standingAnchors.getAnchors().get(1).colour())
@@ -336,17 +333,16 @@ final class ClusterAnchorsBuilderTests {
         }
 
         @Test
-        void recedesANonSpotlitBlocToThePassDesaturationPalette() {
-            // Under a filter every bloc but the spotlit one recedes, and its label has to recede
+        void recedesANonSpotlitOwnerToThePassDesaturationPalette() {
+            // Under a filter every owner but the spotlit one recedes, and its label has to recede
             // with its fill: the shared palette this pass recoloured that fill to is the one the
             // name draws in, so the two cannot drift apart while a spotlight is up.
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
                 new ClusterLabelStylingSnapshot(
-                    Map.of(buildCellKey(RIVAL_SYSTEM), TRITACHYON_HOLDER),
-                    DESATURATION_PALETTE,
-                    categoriesMock,
+                    Map.of(buildCellKey(RIVAL_SYSTEM), TRITACHYON_OWNER),
+                    buildMapStylingDesaturatingTo(DESATURATION_PALETTE),
                     OwnerReadingFake.createAnsweringNothing(),
                     buildSpotlitPicksDrawingNames(
                         HEGEMONY,
@@ -362,13 +358,13 @@ final class ClusterAnchorsBuilderTests {
             // The debug anchor overlay draws the same placements the names hang off, so it has to
             // be able to hold the search open on its own - otherwise the diagnostic shows nothing
             // exactly when the player turned the names off to look at it.
-            useNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(OwnerNameFormatChoice.NONE);
             stubAnchorOverlay(true);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_OWNER)));
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -378,12 +374,12 @@ final class ClusterAnchorsBuilderTests {
         void fitsNothingWhenNamesAndTheOverlayAreBothOff() {
             // Neither consumer is looking, so the sector's whole cluster search is skipped rather
             // than run for placements nothing will draw.
-            useNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(OwnerNameFormatChoice.NONE);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_OWNER)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -394,13 +390,13 @@ final class ClusterAnchorsBuilderTests {
             // The list is the overlay's own, so the gate has to empty it rather than leave it
             // alone: switching the names off has to take the fitted labels off the map, not
             // freeze the last pass's on it.
-            useNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(OwnerNameFormatChoice.NONE);
             standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_OWNER)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -415,7 +411,7 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_OWNER)));
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -428,7 +424,7 @@ final class ClusterAnchorsBuilderTests {
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_OWNER)));
 
             fontsMock.verify(() -> LazyFontCache.loadByFace(SETTLED_LABEL_FACE));
         }
@@ -443,9 +439,9 @@ final class ClusterAnchorsBuilderTests {
             // produced is what says so.
             var styling = buildUnfilteredStyling(Map.of(
                 HELD_SYSTEM,
-                HEGEMONY_HOLDER,
+                HEGEMONY_OWNER,
                 NEIGHBOUR_SYSTEM,
-                HEGEMONY_HOLDER));
+                HEGEMONY_OWNER));
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
@@ -477,9 +473,9 @@ final class ClusterAnchorsBuilderTests {
             // as total as it was before reuse existed.
             var styling = buildUnfilteredStyling(Map.of(
                 HELD_SYSTEM,
-                HEGEMONY_HOLDER,
+                HEGEMONY_OWNER,
                 NEIGHBOUR_SYSTEM,
-                HEGEMONY_HOLDER));
+                HEGEMONY_OWNER));
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
@@ -504,13 +500,13 @@ final class ClusterAnchorsBuilderTests {
             // indistinguishable from one made under rules that still hold. The two move
             // together, so a gate that emptied the list and left the previous pass's rules
             // standing beside it would offer those placements to a later rebuild that has none.
-            useNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(OwnerNameFormatChoice.NONE);
             standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
                 cellGeometry,
-                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)));
+                buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_OWNER)));
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -526,9 +522,9 @@ final class ClusterAnchorsBuilderTests {
             // cannot disagree about which names moved.
             var styling = buildUnfilteredStyling(Map.of(
                 HELD_SYSTEM,
-                HEGEMONY_HOLDER,
+                HEGEMONY_OWNER,
                 NEIGHBOUR_SYSTEM,
-                HEGEMONY_HOLDER));
+                HEGEMONY_OWNER));
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
@@ -551,7 +547,7 @@ final class ClusterAnchorsBuilderTests {
             // Switching the names off empties the standing list, which is as much a change to
             // what a map has room for as a re-fit is: the ring those words covered is free now,
             // and whatever kept clear of them has to be told.
-            useNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(OwnerNameFormatChoice.NONE);
             standingAnchors.replaceAnchors(
                 List.of(buildStandingAnchorOccupyingRoom()),
                 FITTED_UNDER_MOVED_RULES);
@@ -560,7 +556,7 @@ final class ClusterAnchorsBuilderTests {
                     .rebuildClusterAnchors(
                         standingAnchors,
                         cellGeometry,
-                        buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER)))
+                        buildUnfilteredStyling(Map.of(HELD_SYSTEM, HEGEMONY_OWNER)))
                     .isDisturbingNothing())
                 .isFalse();
         }
@@ -575,13 +571,13 @@ final class ClusterAnchorsBuilderTests {
             // this path is handed styling over the owners that diagnostic traced - the labels key off the
             // same answer the traced borders were drawn from.
             stubAnchorOverlay(true);
-            stubSectorHolders(Map.of(
+            stubSectorOwners(Map.of(
                 HELD_SYSTEM,
-                HEGEMONY_HOLDER,
+                HEGEMONY_OWNER,
                 NEIGHBOUR_SYSTEM,
-                HEGEMONY_HOLDER,
+                HEGEMONY_OWNER,
                 RIVAL_SYSTEM,
-                TRITACHYON_HOLDER));
+                TRITACHYON_OWNER));
 
             ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
@@ -598,9 +594,9 @@ final class ClusterAnchorsBuilderTests {
         void fitsLabelsThoughTheNameFormatDrawsNone() {
             // This path exists for the overlay, so the name format has no say over it: the
             // diagnostic still draws its dots for a player reading the map by colour alone.
-            useNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(OwnerNameFormatChoice.NONE);
             stubAnchorOverlay(true);
-            stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
+            stubSectorOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
 
             ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
@@ -617,7 +613,7 @@ final class ClusterAnchorsBuilderTests {
             // than fitting into something of its own: the caller of the debug view is left
             // holding the same labelled placements the production caller is.
             stubAnchorOverlay(true);
-            stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
+            stubSectorOwners(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
 
             ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
@@ -635,11 +631,11 @@ final class ClusterAnchorsBuilderTests {
             // every cluster on every rebuild while the production view reuses - a difference
             // nothing but the frame time would show.
             stubAnchorOverlay(true);
-            stubSectorHolders(Map.of(
+            stubSectorOwners(Map.of(
                 HELD_SYSTEM,
-                HEGEMONY_HOLDER,
+                HEGEMONY_OWNER,
                 NEIGHBOUR_SYSTEM,
-                HEGEMONY_HOLDER));
+                HEGEMONY_OWNER));
 
             ClusterAnchorsBuilder.rebuildDiagnosticClusterAnchors(
                 standingAnchors,
@@ -687,11 +683,11 @@ final class ClusterAnchorsBuilderTests {
     // The styling one unfiltered pass resolves: the given owners under a reading placing all of them
     // at full strength, with a palette nothing should recolour to since no owner recedes off filter.
     private ClusterLabelStylingSnapshot buildUnfilteredStyling(
-            Map<String, SystemOwner> holderBySystemId) {
+            Map<String, SystemOwner> ownerBySystemId) {
+
         return new ClusterLabelStylingSnapshot(
-            buildKeyedValues(holderBySystemId),
-            UNUSED_PALETTE,
-            categoriesMock,
+            buildKeyedValues(ownerBySystemId),
+            buildMapStylingDesaturatingTo(UNUSED_PALETTE),
             OwnerReadingFake.createAnsweringNothing(),
             contentInputs,
             SETTLED_LABEL_FACE);
@@ -700,13 +696,26 @@ final class ClusterAnchorsBuilderTests {
     // The styling the border-tracing diagnostic hands over: the owners it traced, under a reading
     // placing all of them at full strength.
     private ClusterLabelStylingSnapshot buildTracedStyling() {
+
         return new ClusterLabelStylingSnapshot(
             ownerBySystemKey,
-            UNUSED_PALETTE,
-            categoriesMock,
+            buildMapStylingDesaturatingTo(UNUSED_PALETTE),
             OwnerReadingFake.createAnsweringNothing(),
             contentInputs,
             SETTLED_LABEL_FACE);
+    }
+
+    // The scheme a label pass reads two things off: the categories its name styles come from, and
+    // the shades a desaturated owner's name recolours to. Nothing else in it reaches a label.
+    private MapStyling buildMapStylingDesaturatingTo(ColourPair desaturationPalette) {
+
+        return new MapStyling(
+            null,
+            null,
+            categoriesMock,
+            UNUSED_PALETTE,
+            desaturationPalette,
+            UNUSED_PALETTE);
     }
 
     // The one reading this suite needs that no other does: a spotlight up AND the names drawn. The
@@ -714,38 +723,40 @@ final class ClusterAnchorsBuilderTests {
     // from paying for it - but this suite stubs that font, and a fit that draws nothing leaves no
     // placement for a case about a label's colour to read.
     private static ContentInputs buildSpotlitPicksDrawingNames(
-            String selectedBlocId,
+            String selectedOwnerId,
             ElementStyleAdjustment filterRecede) {
 
         return new ContentInputs(
-            selectedBlocId,
+            selectedOwnerId,
             filterRecede,
             ElementStyleAdjustment.NONE, // No view recede.
-            FactionNameFormatChoice.FULL,
+            OwnerNameFormatChoice.FULL,
             false); // No uninhabited outline.
     }
 
     // Restates the picks every path in this suite goes in under, varying the one they gate on:
-    // whether the names draw at all. Nothing here spotlights a bloc, so the cases about a filter
+    // whether the names draw at all. Nothing here spotlights an owner, so the cases about a filter
     // state their own reading instead.
-    private void useNameFormat(FactionNameFormatChoice nameFormat) {
+    private void useNameFormat(OwnerNameFormatChoice nameFormat) {
         contentInputs = ContentInputsFixtures.createInputsSpellingNames(nameFormat);
     }
 
     private void stubAnchorOverlay(boolean isOverlayShown) {
+
         settingsMock
             .when(KmuOwnerMapDiagnosticsSettings::getOwnerMapShowClusterAnchors)
             .thenReturn(isOverlayShown);
     }
 
     // The owners this path is to fit labels to, handed over as the debug overlay hands its own.
-    private void stubSectorHolders(Map<String, SystemOwner> holderBySystemId) {
-        ownerBySystemKey = buildKeyedValues(holderBySystemId);
+    private void stubSectorOwners(Map<String, SystemOwner> ownerBySystemId) {
+        ownerBySystemKey = buildKeyedValues(ownerBySystemId);
     }
 
     // A placement left over from an earlier pass, for the cases that ask whether the standing list
     // is cleared. Only its presence is read, so every field is inert.
     private static ClusterAnchor buildStaleAnchor() {
+
         return new ClusterAnchor(
             new ClusterIdentity("stale", Set.of(buildCellKey("stale"))),
             0f,
@@ -764,6 +775,7 @@ final class ClusterAnchorsBuilderTests {
     // asking what a rebuild reports having disturbed - the stale placement above accepted no line,
     // so it takes up nothing and its going disturbs nobody.
     private static ClusterAnchor buildStandingAnchorOccupyingRoom() {
+
         return new ClusterAnchor(
             new ClusterIdentity("stale", Set.of(buildCellKey("stale"))),
             0f,
@@ -781,6 +793,7 @@ final class ClusterAnchorsBuilderTests {
     // The three fixture cells in first-seen order, so which cluster a case reads back at index 0 is
     // fixed by the map rather than by a hash.
     private static Map<String, List<CellEdge>> listOrderedEdges() {
+
         var edgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
 
         edgesByCellId.put(HELD_SYSTEM, List.of(
@@ -807,10 +820,13 @@ final class ClusterAnchorsBuilderTests {
     // Every cell drawing as its own star - the partition the cluster walk runs over when no system
     // holds cells beyond its own.
     private static Map<SystemKey, SystemKey> listIdentityCellsFor(Iterable<SystemKey> cellKeys) {
+
         var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
+
         for (var cellKey : cellKeys) {
             systemKeyByCellKey.put(cellKey, cellKey);
         }
+
         return systemKeyByCellKey;
     }
 

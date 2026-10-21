@@ -58,7 +58,7 @@ class MapVisibilityFingerprintTests {
         @Test
         void contributionsDifferForAPairWhoseArmsShiftEachOtherBack() {
             // The pair a linear fold cannot tell apart, in the shape a live sector holds it: one
-            // ID, procgen centre names one character apart, and short engine-minted anchor ids.
+            // ID, procgen centre names one character apart, and short engine-minted anchor IDs.
             // String hashes are linear in their characters, so the centres' hashes differ by 1 and
             // the anchors' by exactly 31 the other way - a fold weighting the centre arm by 31
             // would move one arm by what the other moves back, and hand both systems one value.

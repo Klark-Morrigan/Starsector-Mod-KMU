@@ -8,7 +8,7 @@ import java.util.List;
  * room lets a band do with the ring as a whole.
  *
  * <p>Held for the overlay alone, and only while the player has it on. A cell that draws no band -
- * because nothing but its own bloc is present in it, or because its ring had no room - shows
+ * because nothing the layer counts is present in it, or because its ring had no room - shows
  * nothing at all on the map, and the two look identical to a reader and to whoever is tuning the
  * sizes. This is the path underneath that silence: it says where a band would have gone and, in
  * its verdict's colour, which of the two kinds of nothing the cell is.

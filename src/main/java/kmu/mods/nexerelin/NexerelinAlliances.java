@@ -1,18 +1,19 @@
 package kmu.mods.nexerelin;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmlib.mods.nexerelin.NexerelinAllianceSource;
 import kmlib.starsector.factions.alliances.FactionAlliances;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.mods.nexerelin.alliances.AllianceFingerprint;
-import kmu.mods.nexerelin.alliances.AllianceGroupingFactory;
+import kmu.maplayers.ownermap.owners.holders.alliances.AllianceGroupingFactory;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 
 /**
- * KMU's readings of the live alliance set: a {@link HolderGrouping} for the political map, a
- * {@link FactionAlliances} for the rule that decides who would keep a partner's secret, and a
- * fingerprint for the watcher that notices either changing.
+ * KMU's readings of the live alliance set: a {@link HolderGrouping} for the political map, and a
+ * {@link FactionAlliances} for who stands together - the rule that decides who would keep a
+ * partner's secret, and a contest's sides.
  *
- * <p>Three folds over one source and nothing else. Whether the mod that maintains alliances is
+ * <p>Two folds over one source and nothing else. Whether the mod that maintains alliances is
  * installed, and what its alliances are, is the library's to answer - so nothing here names that
  * mod's types, defers a class reference or knows an install without it is possible. Each fold
  * reads the source afresh, alliances forming and dissolving while a campaign runs.
@@ -35,27 +36,27 @@ public final class NexerelinAlliances {
     }
 
     /**
-     * A membership token for the live alliance set, which the sector watcher polls to notice
-     * alliances forming, dissolving or changing members between passes.
-     *
-     * <p>No alliances fingerprint to a fixed value of their own, so an install without the mod
-     * polls a steady token and never bumps the alliance revision - which needs no case of its own
-     * here, the empty fold being that value.
-     *
-     * @return the fingerprint of the alliances standing
-     */
-    public static int computeAllianceFingerprint() {
-        return AllianceFingerprint.compute(NexerelinAllianceSource.readAllianceRecords());
-    }
-
-    /**
-     * The memberships the visibility rule reads.
+     * Which factions stand together.
      *
      * @return which factions stand together, or nobody standing with anybody where there are no
      *         alliances
      */
     public static FactionAlliances resolveFactionAlliances() {
         return FactionAlliances.buildFrom(NexerelinAllianceSource.readAllianceRecords());
+    }
+
+    /**
+     * {@link #resolveFactionAlliances()} for a reader asking about one sector.
+     *
+     * <p>The sector is not consulted. Nexerelin keeps its alliances for the running game alone and
+     * offers no read over another sector, so the running game's set is the only answer there is.
+     *
+     * @param sector the sector a reader asks about
+     * @return which factions stand together, or nobody standing with anybody where there are no
+     *         alliances
+     */
+    public static FactionAlliances resolveFactionAlliancesIn(SectorAPI sector) {
+        return resolveFactionAlliances();
     }
 
     /**

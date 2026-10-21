@@ -1,14 +1,16 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Points;
-import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.DiscUnion;
+import kmu.maplayers.base.geometry.LineCrossings;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiPredicate;
 
 /**
@@ -18,8 +20,9 @@ import java.util.function.BiPredicate;
  * <p>Shared because two searches ask it of the same map. One lays spans between cells of ONE
  * continent, tidying that continent's outline; the other lays them BETWEEN continents, joining
  * two outlines that the trace left apart. What differs is which pairs are offered - that is the
- * whole of the difference - and what follows the offer is one construction: the same closest
- * pairing between two frontages, and the same judgement against the walls.
+ * whole of the difference - and what follows the offer is one construction: the same walk over
+ * the pairs, the same closest pairing between two frontages, and the same judgement against the
+ * walls.
  *
  * <p>Which matters more than the lines it saves. Two copies of the judgement would let one
  * search come to accept a doubled span the other refuses, and the two sets are drawn on one map
@@ -60,66 +63,62 @@ public final class AnchoredSpans {
      * @param traced the coasts
      * @return every segment of every ring of it
      */
-    static List<double[][]> collectCoastWalls(Coastlines.TracedCoasts traced) {
-
-        var rings = new ArrayList<>(Coastlines.collectCoastOutlines(traced));
-
-        rings.addAll(Coastlines.collectLakeOutlines(traced));
-
-        return WallCoverage.collectRingWalls(rings);
+    static List<double[][]> collectCoastWalls(TracedCoasts traced) {
+        return WallCoverage.collectRingWalls(traced.collectShoreOutlines());
     }
 
     /**
-     * Where two frontages come closest to each other with nothing lying across the line.
+     * The closest clear span between every pair of cells the caller admits, each pair offered
+     * once.
      *
-     * <p>Frontage against frontage rather than each end against the other cell's centre. A coast
-     * runs along a median quarter of a cell's turn, so a frontage is an arc off to one side
-     * rather than a whole rim: aiming at the far cell's centre then points at a part of it the
-     * coast never reaches, and both ends settle away from where the two actually face each
-     * other. It is the same answer for most pairs and a materially shorter span for about one
-     * in eight.
+     * <p>Nothing is refused here for crossing anything: what the offer is depends only on the
+     * cells, and which of the offers survive is settled afterwards, in one place, against one
+     * rule. So the order the pairs are walked in is free, and they are walked as a sorted index
+     * from each cell to every later one.
      *
-     * <p>Found in two passes, and the second is usually not run. The first asks only which
-     * pairing is closest, which costs a subtraction each; if nothing lies across that one, it
-     * is the answer. Only where something does is the search run again with clearance
-     * disqualifying a pairing - and clearance is the expensive question, since it weighs the
-     * line against every site in the sector.
-     *
-     * <p>Merging the two into a single loop that tests clearance on each improvement costs about
-     * a third of the pass: a scan improves on its best many times over a few hundred pairings,
-     * and all but the last of those improvements is thrown away.
-     *
-     * @param fromCell     the cell the span leaves
-     * @param toCell       the cell it meets
-     * @param fromFrontage where it may leave from
-     * @param toFrontage   where it may land
-     * @param union        the cells, to weigh the line against
-     * @return the shortest span with a clear line, or null where no pairing has one
+     * @param frontages      each cell's frontage points, by cell
+     * @param union          the cells, whose sites set the distance and which a span must clear
+     * @param offerDistance  how far apart two cells' sites may sit and still be offered a span
+     * @param isPairAdmitted which pairs of cells, the lower first, the search will join at all
+     * @return the spans offered, in no order a reader should rely on
      */
-    static CellGap findClosestSpan(
-            int fromCell,
-            int toCell,
-            List<double[]> fromFrontage,
-            List<double[]> toFrontage,
-            DiscUnion union) {
+    static List<CellGap> offerSpans(
+            Map<Integer, List<double[]>> frontages,
+            DiscUnion union,
+            double offerDistance,
+            BiPredicate<Integer, Integer> isPairAdmitted) {
 
-        var closest = findClosestPairing(
-            fromCell, toCell, fromFrontage, toFrontage, ACCEPTS_ANY_PAIRING);
+        var sites = union.sites();
+        var cells = frontages.keySet().stream().sorted().toList();
+        var clearance = CellGaps.createOverSites(sites, union.reach());
+        var offered = new ArrayList<CellGap>();
 
-        if (closest == null
-                || CellGaps.isLineClearOfCells(
-                    closest.start(), closest.end(), union.sites(), union.reach())) {
+        for (var one = 0; one < cells.size(); one++) {
+            for (var other = one + 1; other < cells.size(); other++) {
 
-            return closest;
+                var from = cells.get(one);
+                var to = cells.get(other);
+
+                if (!isPairAdmitted.test(from, to)
+                        || Points.computeDistance(sites.get(from), sites.get(to)) > offerDistance) {
+
+                    continue;
+                }
+
+                var span = findClosestSpan(
+                    from,
+                    to,
+                    frontages.get(from),
+                    frontages.get(to),
+                    clearance);
+
+                if (span != null) {
+                    offered.add(span);
+                }
+            }
         }
 
-        return findClosestPairing(
-            fromCell,
-            toCell,
-            fromFrontage,
-            toFrontage,
-            (start, end) ->
-                CellGaps.isLineClearOfCells(start, end, union.sites(), union.reach()));
+        return offered;
     }
 
     /**
@@ -167,6 +166,10 @@ public final class AnchoredSpans {
             List<CellGap> standing,
             double coastSlack) {
 
+        if (offered.isEmpty()) {
+            return List.of();
+        }
+
         var narrowestFirst = new ArrayList<>(offered);
 
         narrowestFirst.sort(NARROWEST_FIRST);
@@ -174,26 +177,36 @@ public final class AnchoredSpans {
         // Opened with the coastline and with whatever is already laid, so a span is judged
         // against every wall on the map at once. Held apart, a span covered half by the coast
         // and half by another span passes both tests and fails the only one that matters.
-        var walls = new ArrayList<>(coastWalls);
+        var walls = WallCoverage.createWithin(
+            measureExtent(coastWalls, standing, offered),
+            coastWalls.size() + standing.size() + offered.size(),
+            coastSlack);
+
         var laid = new ArrayList<>(standing);
 
+        for (var wall : coastWalls) {
+            walls.fileWall(wall[0], wall[1]);
+        }
+
         for (var span : standing) {
-            walls.add(new double[][] {span.start(), span.end()});
+            walls.fileWall(span.start(), span.end());
         }
 
         var kept = new ArrayList<CellGap>(narrowestFirst.size());
 
         for (var span : narrowestFirst) {
 
-            if (WallCoverage.isAlreadyWalled(span.start(), span.end(), walls, coastSlack)
+            if (walls.isAlreadyWalled(span.start(), span.end())
                     || doesCrossAnySpan(span.start(), span.end(), laid)) {
 
                 continue;
             }
+
             kept.add(span);
             laid.add(span);
-            walls.add(new double[][] {span.start(), span.end()});
+            walls.fileWall(span.start(), span.end());
         }
+
         return kept;
     }
 
@@ -204,8 +217,8 @@ public final class AnchoredSpans {
      * a touch rather than a crossing, and counting it would knock out every span but one of any
      * set leaving one place - which is not what refusing crossings is for.
      *
-     * <p>Rare now that a span anchors at whichever point of a frontage faces the other cell,
-     * since two cells in different directions are faced from different points. What still
+     * <p>Rare, because a span anchors at whichever point of a frontage faces the other cell,
+     * and two cells in different directions are faced from different points. What still
      * produces it is a frontage the drawn coast crosses in a single point: everything leaving
      * that cell has only the one place to leave from.
      *
@@ -222,14 +235,58 @@ public final class AnchoredSpans {
 
         for (var held : laid) {
 
-            if (!isSharingAnAnchor(start, end, held)
-                    && Segments.intersectSegments(
-                        start, end, held.start(), held.end()) != null) {
+            if (LineCrossings.isCrossing(
+                    start, end, held.start(), held.end(), LineCrossings.SharedAnchor.IS_TOUCH)) {
 
                 return true;
             }
         }
+
         return false;
+    }
+
+    // Where two frontages come closest to each other with nothing lying across the line.
+    //
+    // Frontage against frontage rather than each end against the other cell's centre. A coast
+    // runs along a median quarter of a cell's turn, so a frontage is an arc off to one side
+    // rather than a whole rim: aiming at the far cell's centre then points at a part of it the
+    // coast never reaches, and both ends settle away from where the two actually face each
+    // other. It is the same answer for most pairs and a materially shorter span for about one
+    // in eight.
+    //
+    // Found in two passes, and the second is usually not run. The first asks only which pairing
+    // is closest, which costs a subtraction each; if nothing lies across that one, it is the
+    // answer. Only where something does is the search run again with clearance disqualifying a
+    // pairing - and clearance is the expensive question, since it weighs the line against the
+    // sites near it.
+    //
+    // Merging the two into a single loop that tests clearance on each improvement costs about a
+    // third of the pass: a scan improves on its best many times over a few hundred pairings,
+    // and all but the last of those improvements is thrown away.
+    private static CellGap findClosestSpan(
+            int fromCell,
+            int toCell,
+            List<double[]> fromFrontage,
+            List<double[]> toFrontage,
+            CellGaps clearance) {
+
+        var closest = findClosestPairing(
+            fromCell,
+            toCell,
+            fromFrontage,
+            toFrontage,
+            ACCEPTS_ANY_PAIRING);
+
+        if (closest == null || clearance.isLineClearOfCells(closest.start(), closest.end())) {
+            return closest;
+        }
+
+        return findClosestPairing(
+            fromCell,
+            toCell,
+            fromFrontage,
+            toFrontage,
+            clearance::isLineClearOfCells);
     }
 
     // The closest pairing of two frontages that the caller will accept.
@@ -254,24 +311,45 @@ public final class AnchoredSpans {
                 if (closest != null && squared >= closest.width() * closest.width()) {
                     continue;
                 }
+
                 if (!isAcceptable.test(start, end)) {
                     continue;
                 }
+
                 closest = new CellGap(fromCell, toCell, start, end, Math.sqrt(squared));
             }
         }
+
         return closest;
     }
 
-    private static boolean isSharingAnAnchor(double[] start, double[] end, CellGap held) {
+    // The box every wall the laying will ever file fits inside, which sizes the grid they are
+    // filed on: the coast, what already stands, and every span on offer.
+    private static Bounds measureExtent(
+            List<double[][]> coastWalls,
+            List<CellGap> standing,
+            List<CellGap> offered) {
 
-        return isSamePlace(start, held.start())
-            || isSamePlace(start, held.end())
-            || isSamePlace(end, held.start())
-            || isSamePlace(end, held.end());
-    }
+        var ends = new ArrayList<double[]>();
 
-    private static boolean isSamePlace(double[] one, double[] other) {
-        return Points.computeDistance(one, other) <= DiscUnion.TOUCHING_TOLERANCE;
+        for (var wall : coastWalls) {
+
+            ends.add(wall[0]);
+            ends.add(wall[1]);
+        }
+
+        for (var span : standing) {
+
+            ends.add(span.start());
+            ends.add(span.end());
+        }
+
+        for (var span : offered) {
+
+            ends.add(span.start());
+            ends.add(span.end());
+        }
+
+        return Bounds.computeEnclosingBounds(ends);
     }
 }

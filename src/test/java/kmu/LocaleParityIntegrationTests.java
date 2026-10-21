@@ -28,8 +28,9 @@ final class LocaleParityIntegrationTests {
     // and the column-header line in each bundle's settings table.
     private static final String FIELD_ID_PREFIX = KmuMod.MOD_ID + "_";
 
-    private static final LocaleParity LOCALE_PARITY =
-        new LocaleParity(new LocalisationDirectory(LOCALISATION_DIRECTORY), FIELD_ID_PREFIX);
+    private static final LocalisationDirectory DIRECTORY = new LocalisationDirectory(LOCALISATION_DIRECTORY);
+
+    private static final LocaleParity LOCALE_PARITY = new LocaleParity(DIRECTORY, FIELD_ID_PREFIX);
 
     @Nested
     class FindAllMismatches {
@@ -54,6 +55,7 @@ final class LocaleParityIntegrationTests {
             LOCALE_PARITY
                 .listModInfoFallbackFieldNames()
                 .forEach((localeTag, fallbackFieldNames) ->
+
                     testReporter.publishEntry(
                         localeTag + " launcher fields left to the base",
                         String.join(", ", fallbackFieldNames)));

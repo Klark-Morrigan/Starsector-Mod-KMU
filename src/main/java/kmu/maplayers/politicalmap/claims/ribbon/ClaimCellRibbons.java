@@ -4,10 +4,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.ribbon.ColonyCellRibbons;
+import kmu.maplayers.ownermap.owners.holders.base.ColonyCellRibbons;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
 import kmu.maplayers.ownermap.ribbon.RibbonPlan;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -79,9 +79,10 @@ public final class ClaimCellRibbons {
 
         var rankedBlocIds = new LinkedHashSet<String>();
 
-        for (var standing : contest.scores()) {
+        for (var standing : contest.standings()) {
             rankedBlocIds.add(grouping.resolveBlocId(standing.factionId()));
         }
+
         return new ArrayList<>(rankedBlocIds);
     }
 }

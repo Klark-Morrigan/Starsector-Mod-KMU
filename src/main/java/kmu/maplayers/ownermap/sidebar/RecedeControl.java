@@ -6,7 +6,9 @@ import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.controls.specs.LabelSpec;
 import kmlib.starsector.ui.text.TextSpan;
 
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
+import kmu.util.KmuOwnerMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
@@ -52,14 +54,14 @@ public final class RecedeControl {
         return List.of(
             LabelSpec.createLabel(new TextSpan(captionLabel, textColour)),
             CheckboxSpec.lit(
-                new TextSpan(KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_MUTED), textColour),
+                new TextSpan(KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_MUTED), textColour),
                 preferences.isMuted(target.memoryScope()),
                 cellIndex -> PanelToggles.flipToggle(
                     target,
                     preferences::isMuted,
                     preferences::setMuted)),
             CheckboxSpec.lit(
-                new TextSpan(KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_DESATURATED), textColour),
+                new TextSpan(KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_DESATURATED), textColour),
                 preferences.isDesaturated(target.memoryScope()),
                 cellIndex -> PanelToggles.flipToggle(
                     target,

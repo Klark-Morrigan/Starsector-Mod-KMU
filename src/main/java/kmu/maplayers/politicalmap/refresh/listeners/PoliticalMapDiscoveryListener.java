@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.listeners.DiscoverEntityListener;
 
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.refresh.MarketPoliticsRefresh;
 import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
 
@@ -13,20 +12,13 @@ import kmu.maplayers.politicalmap.refresh.PoliticalMapStalenessSource;
  * station (e.g. Knights of Ludd's Battlestar Libra) paints its system the moment
  * it is found, not only on reload.
  *
- * <p>Discovering a market reveals a new dominant holder over a cell that already
- * exists - the same per-system holder change a colony resize makes - so it
- * routes through the same targeted refresh
- * ({@link MapLayerRefreshBoard#markSystemGroupingStale}): only that system and its
- * neighbours are re-derived and re-shaped, not the whole economy. Discoveries
- * that could change which systems are reachable (a jump point, a gate) are not
- * handled here - gate activation in particular is a separate, later step from
- * discovery - so that accessibility is left to {@link PoliticalMapStalenessSource},
- * the single place that judges it.
- *
- * <p>Holds the sector it was installed on, so a discovery is reported against that sector's overlay
- * rather than against whichever sector is currently loaded.
+ * <p>Discovering a market can reveal a new dominant holder over a cell that already exists, which
+ * {@link MarketPoliticsRefresh} turns into a targeted mark. A discovery that could change which
+ * systems are reachable - a jump point, a gate - is not handled here: gate activation is a separate,
+ * later step from discovery, so reachability is left to {@link PoliticalMapStalenessSource}.
  */
-public class PoliticalMapDiscoveryListener implements DiscoverEntityListener {
+public final class PoliticalMapDiscoveryListener
+        implements DiscoverEntityListener {
 
     private final SectorAPI sector;
 
@@ -51,7 +43,7 @@ public class PoliticalMapDiscoveryListener implements DiscoverEntityListener {
         MarketPoliticsRefresh.reportMarketChange(
             sector,
             entity.getMarket(),
-            "discovered market", // Event.
-            "entity=" + entity.getId()); // Context.
+            "discovered market",
+            "entity=" + entity.getId());
     }
 }

@@ -21,9 +21,9 @@ public interface OwnerMapPreviewHighlight {
      * pointer.
      *
      * @param clusters the draw lists the frame painted, which is the only geometry the preview
-     *                    traces and the theme it draws to
-     * @param mapFrame    the scale every coordinate is multiplied by, and the map's own fade
-     *                    applied on top of every element's opacity
+     *                 traces and the theme it draws to
+     * @param mapFrame the scale every coordinate is multiplied by, and the map's own fade
+     *                 applied on top of every element's opacity
      */
     void renderPreviewOnMap(OwnerMapClusters clusters, MapFrame mapFrame);
 }

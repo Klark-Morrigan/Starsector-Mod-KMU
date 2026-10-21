@@ -3,20 +3,21 @@ package kmu.maplayers.politicalmap.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.politicalmap.claims.PassClaimReaders;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.tooltip.SystemDominationTooltip;
 
 import java.util.List;
 
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures.CONTESTED_WORDING;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 /**
  * How an integration suite stands one of the two hover families up over a stubbed sector and reads
@@ -72,10 +73,11 @@ public final class PoliticalMapBoxReads {
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
 
+        var claimBreakdownReader = buildClaimBreakdownReaderOver(sector);
+
         return new SystemClaimTooltip(
-                buildClaimBreakdownReaderOver(sector),
-                HolderGrouping::identity,
-                CONTESTED_WORDING)
+                claimBreakdownReader,
+                PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReader))
             .composeBody(sector, system, detailLevel).blocks().readSections();
     }
 
@@ -87,9 +89,7 @@ public final class PoliticalMapBoxReads {
     public static SystemDominationTooltip buildDominanceBox() {
         return new SystemDominationTooltip(
             HolderGrouping::identity,
-            new ClaimBreakdownReaderFake(),
-            HolderGrouping::identity,
-            CONTESTED_WORDING);
+            PoliticalBoxSeamsFixture.buildPlainSeamsOver(new ClaimBreakdownReaderFake()));
     }
 
     /**
@@ -102,10 +102,10 @@ public final class PoliticalMapBoxReads {
      * @param sector the stubbed sector to read
      * @return the reader, over that sector's own colony walk
      */
-    public static VanillaClaimBreakdownReader buildClaimBreakdownReaderOver(SectorAPI sector) {
+    public static ClaimBreakdownReader buildClaimBreakdownReaderOver(SectorAPI sector) {
 
-        var pass = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
-
-        return new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.sectorIndex());
+        return PassClaimReaders.openBreakdownReaderOver(
+            HolderPass.createOver(sector, UNDER_THE_FOG, HolderGrouping.identity()),
+            VanillaClaimBreakdownReader::new);
     }
 }

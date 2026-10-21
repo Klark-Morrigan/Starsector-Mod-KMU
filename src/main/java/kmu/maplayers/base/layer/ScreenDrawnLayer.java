@@ -84,15 +84,4 @@ public final class ScreenDrawnLayer {
 
         return null;
     }
-
-    /**
-     * Forgets what this screen was showing, leaving the reading a screen that has never drawn gives.
-     *
-     * <p>Package-private, and the running game asks it of nothing: a campaign load takes every screen's
-     * control back, which reads both screens as shown until a box stands again, so the first frame of a
-     * new campaign catches its own pick before any dissolve could ask for one.
-     */
-    void forgetDrawnLayer() {
-        layerLastShown = null;
-    }
 }

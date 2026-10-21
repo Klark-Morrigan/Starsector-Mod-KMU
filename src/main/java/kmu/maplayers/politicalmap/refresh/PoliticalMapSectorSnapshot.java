@@ -6,7 +6,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.visibility.systems.MapVisibilityFingerprint;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
-import kmu.maplayers.politicalmap.dominance.BlocCandidacy;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.dominance.HolderRankingRules;
 import kmu.maplayers.politicalmap.dominance.SystemDominance;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
@@ -38,9 +38,9 @@ import java.util.Map;
  * selection answers the poll's other passengers - and that one set answers both outputs here:
  * whether anybody lives there, which the pass composes membership from, and the footprints the
  * dominance rule weighs. Membership is asked of the pass rather than derived from those
- * footprints, since a footprint is weighed only for a colony the
- * economy lists - a system settled by an unregistered one alone lives, and would go
- * missing from the fingerprint that notices it appear. The concerns stay separated: the
+ * footprints, since a footprint is weighed only for a colony the economy lists. A system settled by
+ * an unregistered colony alone is drawn, and derived from the footprints it would be missing from
+ * the fingerprint, which would then never move for it. The concerns stay separated: the
  * visibility contribution is {@link MapVisibilityFingerprint}'s and the dominant holder is
  * {@link SystemDominance}'s; this coordinator only sequences the shared walk.
  *
@@ -114,15 +114,10 @@ public record PoliticalMapSectorSnapshot(
 
         for (var system : sector.getStarSystems()) {
 
-            // Asked of the pass rather than derived from the footprints below, which is the
-            // narrower question: a footprint is only ever weighed for an economy-listed colony,
-            // so a system settled by an unregistered one alone would read as empty here while the
-            // drawn set - which asks the pass - draws it. The fingerprint would then never move
-            // for it, and the map would go on showing whatever it last built there.
-            //
-            // Asked first so that an undrawn system costs nothing beyond it: everything below is
-            // spent per drawn system, and the colony read it makes is the one the pass has already
-            // memoised answering this.
+            // Asked of the pass rather than derived from the footprints below, for the reason the
+            // class states. Asked first so that an undrawn system costs nothing beyond it:
+            // everything below is spent per drawn system, and the colony read it makes is the one
+            // the pass has already memoised answering this.
             if (!pass.isDrawn(system)) {
                 continue;
             }
@@ -172,22 +167,28 @@ public record PoliticalMapSectorSnapshot(
     // too: membership asks it whether anybody lives here, the dominance rule ranks the footprints it
     // weighs out of it. A null economy (early load) reads as no colonies rather than faulting.
     //
-    // Barred under the same candidacy the fills are resolved under, though this walk only
-    // fingerprints them: a colony founded under a heavier neutral station moves the fill to that
-    // faction, and a holder read here without the bar would still say neutral both before and
-    // after, leaving the map showing whatever it last built there.
+    // Ranked under the same rules the faction view's fills are resolved under, though this walk only
+    // fingerprints them. Under a different bar, a colony founded under a heavier neutral station
+    // moves the fill while the holder read here says neutral both before and after. Under a different
+    // tie-break, a dead heat the fill settles by proximity is settled here by ID, so a flip between
+    // the two tied factions moves one and not the other. Either way the map keeps what it last built.
     private static String resolveDominantFactionId(
             MapVisibilityPass pass,
             StarSystemAPI system,
             DominanceRules rules) {
 
+        var colonies = pass.sectorIndex().readColoniesIn(system);
         var footprintByFactionId = KnownMarketFootprints.readByFaction(
-            pass.sectorIndex().readColoniesIn(system),
+            colonies,
             rules,
             pass.colonyKnowledge());
 
-        return SystemDominance.resolveDominantFactionId(
+        return SystemDominance.resolveDominantBlocId(
             footprintByFactionId,
-            HolderRankingRules.createByLowestId(BlocCandidacy::isCandidateFaction));
+            HolderRankingRules.createByMarketProximity(
+                system,
+                colonies,
+                pass.colonyKnowledge(),
+                HolderGrouping.identity()));
     }
 }

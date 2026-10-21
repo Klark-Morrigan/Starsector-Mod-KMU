@@ -11,7 +11,7 @@ import org.lwjgl.util.vector.Vector2f;
 
 import java.util.List;
 
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.FORCED_UNDER_THE_FOG;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,8 +36,7 @@ public final class MovableSystemSectorFake {
      * rule admits a system nothing else would put on the map. The shortest route to a tracked
      * system without also staging an economy that owns it.
      */
-    public static final MapVisibilityRules FORCED_ONTO_MAP =
-        new MapVisibilityRules(BASE_FOG, true);
+    public static final MapVisibilityRules FORCED_ONTO_MAP = FORCED_UNDER_THE_FOG;
 
     // Comfortably past the tracker's one-unit noise floor, so each move is unambiguous motion
     // rather than something that could read as float jitter.

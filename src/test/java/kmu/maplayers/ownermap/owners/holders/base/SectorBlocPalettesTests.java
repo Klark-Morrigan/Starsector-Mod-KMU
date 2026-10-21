@@ -1,0 +1,202 @@
+package kmu.maplayers.ownermap.owners.holders.base;
+
+import com.fs.starfarer.api.campaign.SectorAPI;
+
+import kmlib.colour.ColourPair;
+
+import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.starsector.SectorFactionFixtures;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.awt.Color;
+
+import static kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture.GROUP_BLOC_ID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * Pins how a bloc's two shades are found: through the grouping's colour faction rather than
+ * through the bloc ID, and as nothing at all when that faction is gone - and the owner built from
+ * them, which carries the bloc's own ID beside the shades and is resolved once per pass.
+ *
+ * <p>Both matter because a bloc is not always a faction. A group carries a synthetic bloc ID no
+ * {@code FactionAPI} answers to, so asking the sector for it directly would leave every group
+ * colourless on a view where the fills are perfectly well coloured; and a bloc the sector
+ * cannot name at all has to come back null, since that null is what has a caller drop the bloc
+ * rather than paint it in a stand-in shade.
+ */
+final class SectorBlocPalettesTests {
+
+    private static final String LEAD_MEMBER = "hegemony";
+
+    private static final Color BRIGHT = new Color(140, 160, 220);
+    private static final Color DARK = new Color(40, 60, 120);
+
+    @Nested
+    class ReadBlocPalette {
+
+        @Test
+        void readsTheShadesOfTheFactionTheGroupingColoursTheBlocBy() {
+            // The group case: the bloc's own ID names no faction, and its lead member's authored
+            // pair is what the map paints it in.
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(
+                LEAD_MEMBER,
+                BRIGHT,
+                DARK);
+
+            assertThat(readPaletteFrom(sectorMock, GROUP_BLOC_ID))
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
+        }
+
+        @Test
+        void readsNoPaletteForABlocWhoseColourFactionIsGone() {
+
+            var sectorMock = mock(SectorAPI.class);
+
+            when(sectorMock.getFaction(LEAD_MEMBER))
+                .thenReturn(null);
+
+            assertThat(readPaletteFrom(sectorMock, GROUP_BLOC_ID))
+                .isNull();
+        }
+
+        @Test
+        void readsNoPaletteWithoutASector() {
+            // The sector is absent outside a running game, and a band asked for one then answers
+            // with no colour rather than throwing on the way to a map nobody is looking at.
+            assertThat(readPaletteFrom(null, GROUP_BLOC_ID))
+                .isNull();
+        }
+
+        @Test
+        void answersASecondAskWithTheShadesTheFirstRead() {
+
+            var palettes = new SectorBlocPalettes(
+                SectorFactionFixtures.buildSectorShadingFaction(LEAD_MEMBER, BRIGHT, DARK),
+                buildGroupLedByTheLeadMember());
+
+            palettes.readBlocPalette(GROUP_BLOC_ID);
+
+            assertThat(palettes.readBlocPalette(GROUP_BLOC_ID))
+                .isEqualTo(new ColourPair(BRIGHT, DARK));
+        }
+
+        @Test
+        void asksTheSectorForABlocsColourFactionOnce() {
+            // Every system's holder and every cell's band asks per bloc, so a pass that went back to
+            // the sector each time would look the same faction up once per cell.
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(LEAD_MEMBER, BRIGHT, DARK);
+            var palettes = new SectorBlocPalettes(sectorMock, buildGroupLedByTheLeadMember());
+
+            palettes.readBlocPalette(GROUP_BLOC_ID);
+            palettes.readBlocPalette(GROUP_BLOC_ID);
+
+            verify(sectorMock, times(1))
+                .getFaction(LEAD_MEMBER);
+        }
+
+        @Test
+        void remembersABlocWhoseColourFactionIsGone() {
+            // The absence is remembered as well as a palette is: a bloc the sector cannot name is
+            // asked about as often as one it can.
+            var sectorMock = mock(SectorAPI.class);
+            var palettes = new SectorBlocPalettes(sectorMock, buildGroupLedByTheLeadMember());
+
+            palettes.readBlocPalette(GROUP_BLOC_ID);
+
+            assertThat(palettes.readBlocPalette(GROUP_BLOC_ID))
+                .isNull();
+
+            verify(sectorMock, times(1))
+                .getFaction(LEAD_MEMBER);
+        }
+    }
+
+    @Nested
+    class ResolveOwnerOf {
+
+        @Test
+        void pairsAFactionBlocWithItsOwnAuthoredShades() {
+
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(
+                LEAD_MEMBER,
+                BRIGHT,
+                DARK);
+
+            assertThat(new SectorBlocPalettes(sectorMock, HolderGrouping.identity())
+                    .resolveOwnerOf(LEAD_MEMBER))
+                .isEqualTo(new SystemOwner(LEAD_MEMBER, new ColourPair(BRIGHT, DARK)));
+        }
+
+        @Test
+        void coloursAGroupByItsLeadingMemberWhileKeepingTheGroupsId() {
+            // The group's ID is no faction, so the palette is looked up through the leading member;
+            // the owner still carries the group's ID, which is what the cells cluster by.
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(
+                LEAD_MEMBER,
+                BRIGHT,
+                DARK);
+
+            assertThat(new SectorBlocPalettes(sectorMock, buildGroupLedByTheLeadMember())
+                    .resolveOwnerOf(GROUP_BLOC_ID))
+                .isEqualTo(new SystemOwner(GROUP_BLOC_ID, new ColourPair(BRIGHT, DARK)));
+        }
+
+        @Test
+        void returnsNullWhenNoColourFactionIsPresent() {
+            // A faction a mod removed mid-save leaves a bloc with no palette to paint in, so the
+            // system drops as unowned rather than drawing in colours nobody authored.
+            var sectorMock = mock(SectorAPI.class);
+
+            assertThat(new SectorBlocPalettes(sectorMock, HolderGrouping.identity())
+                    .resolveOwnerOf("vanished"))
+                .isNull();
+        }
+
+        @Test
+        void answersEveryAskWithTheOneOwner() {
+            // Every system a bloc holds asks for its owner, so the pass hands each of them the one
+            // value rather than a new owner per system.
+            var palettes = new SectorBlocPalettes(
+                SectorFactionFixtures.buildSectorShadingFaction(LEAD_MEMBER, BRIGHT, DARK),
+                HolderGrouping.identity());
+
+            assertThat(palettes.resolveOwnerOf(LEAD_MEMBER))
+                .isSameAs(palettes.resolveOwnerOf(LEAD_MEMBER));
+        }
+
+        @Test
+        void sharesItsLookupWithThePaletteRead() {
+            // One memo answers both reads, so a holder resolve and a band over the same bloc look
+            // its colour faction up once between them.
+            var sectorMock = SectorFactionFixtures.buildSectorShadingFaction(LEAD_MEMBER, BRIGHT, DARK);
+            var palettes = new SectorBlocPalettes(sectorMock, HolderGrouping.identity());
+
+            palettes.resolveOwnerOf(LEAD_MEMBER);
+            palettes.readBlocPalette(LEAD_MEMBER);
+
+            verify(sectorMock, times(1))
+                .getFaction(LEAD_MEMBER);
+        }
+    }
+
+    // The palettes as one group's bloc reads them: the bloc folds to its lead member, which is
+    // the faction the sector is asked for.
+    private static ColourPair readPaletteFrom(SectorAPI sector, String blocId) {
+
+        return new SectorBlocPalettes(sector, buildGroupLedByTheLeadMember())
+            .readBlocPalette(blocId);
+    }
+
+    // One group whose lead member is the faction every sector here shades, so the group's ID is no
+    // faction ID and its colour can only come through that member.
+    private static HolderGrouping buildGroupLedByTheLeadMember() {
+        return HolderGroupingFixture.buildGroupOf(LEAD_MEMBER);
+    }
+}

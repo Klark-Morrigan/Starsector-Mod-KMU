@@ -41,7 +41,7 @@ public final class CoastMeasures {
      * @return one pair per crossing - how deep it goes, and how many stretches were skipped
      *         across it, where zero means the two were neighbours - deepest first
      */
-    static List<double[]> measureCrossingGaps(Coastlines.TracedCoasts traced) {
+    public static List<double[]> measureCrossingGaps(TracedCoasts traced) {
 
         var places = mapWalkPlaces(traced);
 
@@ -60,7 +60,7 @@ public final class CoastMeasures {
      * @return one pair per crossing - how deep it goes, and how long the crossed cell's
      *         frontage is - deepest first
      */
-    static List<double[]> measureCrossingFrontages(Coastlines.TracedCoasts traced) {
+    public static List<double[]> measureCrossingFrontages(TracedCoasts traced) {
 
         var marks = mapMarksByCircle(traced);
 
@@ -77,7 +77,7 @@ public final class CoastMeasures {
      * @param traced the coast, as it was traced
      * @return every stretch of coast, as the length of border it offers
      */
-    static List<Double> measureFrontages(Coastlines.TracedCoasts traced) {
+    public static List<Double> measureFrontages(TracedCoasts traced) {
 
         var frontages = new ArrayList<Double>();
 
@@ -93,7 +93,7 @@ public final class CoastMeasures {
     // other number and read the deepest first - so the shape is written once and each measure
     // supplies only its own second column.
     private static List<double[]> measureAgainstDepth(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             ToDoubleFunction<CoastCrossings.Penetration> measure) {
 
         var rows = new ArrayList<double[]>();
@@ -109,7 +109,7 @@ public final class CoastMeasures {
     // The stretch each cell offers most border on. The most rather than any, because a cell
     // facing the void on two stretches is only badly served if BOTH are slivers.
     private static java.util.Map<Integer, CoastMark> mapMarksByCircle(
-            Coastlines.TracedCoasts traced) {
+            TracedCoasts traced) {
 
         var marks = new HashMap<Integer, CoastMark>();
 
@@ -128,7 +128,7 @@ public final class CoastMeasures {
 
     // Where each cell sits along its own silhouette: which one, how far round it, and how
     // long that silhouette is.
-    private static java.util.Map<Integer, int[]> mapWalkPlaces(Coastlines.TracedCoasts traced) {
+    private static java.util.Map<Integer, int[]> mapWalkPlaces(TracedCoasts traced) {
 
         var places = new HashMap<Integer, int[]>();
 
@@ -173,7 +173,7 @@ public final class CoastMeasures {
      * @param traced the coast, as it was traced
      * @return how many stretches there are in total, across every run
      */
-    static int countCoastMarks(Coastlines.TracedCoasts traced) {
+    public static int countCoastMarks(TracedCoasts traced) {
 
         var marks = 0;
 

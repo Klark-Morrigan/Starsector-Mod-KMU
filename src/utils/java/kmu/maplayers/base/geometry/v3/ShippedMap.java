@@ -24,7 +24,7 @@ public final class ShippedMap {
     public static final SectorGeometryParameters KNOBS = SectorGeometryParameters.createDefaults();
 
     /** How the coasts are traced, taken from the one place that declares it. */
-    public static final Coastlines.CoastRules COAST_RULES = Coastlines.DEFAULT_RULES;
+    public static final CoastRules COAST_RULES = Coastlines.DEFAULT_RULES;
 
     // Whether spans sharing an anchor are thinned, which is how the map lays them: the thinned
     // set is what the map lays, and an unthinned one is a different laying.

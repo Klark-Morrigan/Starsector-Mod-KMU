@@ -3,23 +3,19 @@ package kmu.maplayers.politicalmap.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.factions.relation.StarsectorFactionRelations;
-import kmlib.starsector.markets.colonies.KnownColonyReader;
-import kmlib.starsector.systems.claims.ClaimBreakdownReader;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
+import kmlib.starsector.factions.relation.FactionSetFriendliness;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.SystemCellTooltip;
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.BlocFriendliness;
-import kmu.maplayers.ownermap.holding.HolderGroupingSource;
-import kmu.maplayers.ownermap.tooltip.BlocRelations;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocRelations;
 import kmu.util.KmuStringKeys;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -40,49 +36,20 @@ import java.util.function.Function;
  * body makes the same statement says so and goes without the banner, so the one decree is met once
  * either way.
  */
-public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
+public abstract class PoliticalMapCellTooltip
+        extends SystemCellTooltip {
 
-    /**
-     * The decree read every political-map tooltip runs on in game. Stateless, so the boxes share one
-     * rather than each minting its own, and named in a single place so a change of binding cannot
-     * reach one view and miss the other.
-     *
-     * <p>Opened knowing no colony at all: the decree answers off the system's own memory flag and
-     * reaches no colony for a rule to apply to, and the port undertakes that it stays a single memory
-     * read - so nothing, not even a settings lookup, is put in front of it. A box that reads the whole
-     * scored contest opens a reader of its own per hover, under the colony rule that hover sampled.
-     */
-    protected static final ClaimBreakdownReader VANILLA_CLAIM_BREAKDOWN_READER =
-        new VanillaClaimBreakdownReader(KnownColonyReader.NOTHING_KNOWN);
+    // The live reads the box is built around. Held rather than reached for statically, so a box draws
+    // on the reads it is handed rather than on whichever ones a running game happens to have.
+    private final PoliticalBoxSeams seams;
 
-    /**
-     * The claim read the box heads itself with. Held rather than reached for statically, so a box
-     * draws on the read it is handed rather than on whichever one a running game happens to have.
-     */
-    protected final ClaimBreakdownReader claimBreakdownReader;
-
-    // Where the alliance set behind an allied block is taken from. A source rather than a grouping,
-    // because a box lives for the whole session while alliances form and dissolve inside it - one
-    // captured at construction would go on filing a group under the alliance it left an hour ago.
-    private final HolderGroupingSource holderGroupingSource;
-
-    // Where the wording of the block beneath the friendly one is taken from. A source rather than a
-    // wording for the reason that port sets out: these boxes stand in static fields, so construction
-    // can fall before the game has a mod set to read.
-    private final ContestWordingSource contestWordingSource;
-
-    protected PoliticalMapCellTooltip(
-            ClaimBreakdownReader claimBreakdownReader,
-            HolderGroupingSource holderGroupingSource,
-            ContestWordingSource contestWordingSource) {
-
-        this.claimBreakdownReader = claimBreakdownReader;
-        this.holderGroupingSource = holderGroupingSource;
-        this.contestWordingSource = contestWordingSource;
+    protected PoliticalMapCellTooltip(PoliticalBoxSeams seams) {
+        this.seams = Objects.requireNonNull(seams, "seams");
     }
 
     @Override
     protected final List<TooltipRow> buildTitleRows(SectorAPI sector, StarSystemAPI system) {
+
         // Whose space this is heads the box rather than sitting in it: a decree settles the system
         // outright, so it is read straight off the system name above it instead of being found among
         // the findings below. Being a title line is also what parts it from the body - the box's break
@@ -93,7 +60,7 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
         // would charge the whole claim computation to every faction and alliance hover.
         return CoreTerritoryHeading.resolveHeadingRows(
             sector,
-            claimBreakdownReader.readCoreFactionId(system),
+            seams.claimDecreeReader().readDecreedFactionId(system),
             isStatingCoreClaimInBody());
     }
 
@@ -106,18 +73,18 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
      * a rival on the next, a keystroke apart, with nothing on screen to say which was right.
      *
      * <p>The alliance set is read through the session-long source at the moment of sampling, which is
-     * where a grouping stops being a fold and becomes the one question the blocks ask. Disposition is
-     * read against the hovered sector rather than through the game's own current one, so a box drawn
-     * over a second sector reports that sector's relations.
+     * where the memberships become the one question the blocks ask. Both are read against the
+     * hovered sector rather than through the game's own current one, so a box drawn over a second
+     * sector reports that sector's alliances and relations.
      *
-     * @param sector the sector the hovered system stands in, whose relations are read
+     * @param sector the sector the hovered system stands in, whose alliances and relations are read
      * @return the two relations, sampled together
      */
     protected final BlocRelations sampleBlocRelations(SectorAPI sector) {
 
         return new BlocRelations(
-            new BlocAffiliation(holderGroupingSource.resolveGrouping()),
-            new BlocFriendliness(StarsectorFactionRelations.createDispositionReader(sector)));
+            new BlocAffiliation(seams.factionAllianceSource().readAlliances(sector)),
+            FactionSetFriendliness.createForSector(sector));
     }
 
     /**
@@ -140,40 +107,15 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
             B[] blocks,
             Function<B, List<CellTooltipEntry>> entriesSource) {
 
-        var contestWording = contestWordingSource.resolveWording();
+        var contestWording = seams.contestWordingSource().resolveWording();
 
         for (var block : blocks) {
+
             body.appendSection(
                 KmuStringKeys.get(block.resolveHeadingKey(contestWording)),
                 entriesSource.apply(block));
         }
     }
-
-    /**
-     * The deepest level this box holds anything at for the hovered system.
-     *
-     * <p>Asked per hovered system rather than once per box: the deeper tiers account for the colonies
-     * behind what this box lists, so a system it lists nothing for holds nothing below the shallowest
-     * level, and every level would draw the same thing. The hint is dropped there rather than offering
-     * a key that changes nothing on screen.
-     *
-     * <p>Answered through the very read the body is built from, so a box cannot offer to expand a
-     * listing it is about to draw as empty - which the fog alone can produce, a faction present only
-     * through colonies the player has not found leaving nothing this box may state.
-     *
-     * <p>Re-declared abstract rather than left at the inherited shallowest, because there is no honest
-     * default here: a box of this layer inheriting that answer would silently withhold the hint over a
-     * system it has plenty more to say about, and nothing on screen would say the key was worth
-     * pressing.
-     *
-     * @param sector the live sector, whose economy the answer may read
-     * @param system the star system under the cursor
-     * @return the deepest level with something to show for this system
-     */
-    @Override
-    protected abstract HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
-        SectorAPI sector,
-        StarSystemAPI system);
 
     /**
      * The deepest level this box's account of one listed faction reaches, over a system it names
@@ -192,15 +134,18 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
      * behind it named somebody to account for, and no deeper than the box's own voice where it did
      * not.
      *
-     * <p>The one place the two halves are joined, so a shape cannot combine them one way for the
-     * paint and another for the press - the drift that would put the hint and the key at odds over
-     * one system. Taken by the shape from the read it already holds rather than reading the system
-     * again, which is why the halves arrive here separately.
+     * <p>Judged per hovered system: the deeper tiers account for the colonies behind what the box
+     * lists, so a system it lists nobody for holds nothing below the shallowest level - which the fog
+     * alone can produce, a faction present only through colonies the player has not found. The one
+     * place the two halves are joined, so no shape of this layer combines them its own way. Taken by
+     * the shape from the read its body was built from rather than reading the system again, which is
+     * why the halves arrive here separately.
      *
      * @param isNamingAnybody whether the read behind the box left it a faction to account for
      * @return the level the cycle wraps at for this box over this system
      */
     protected final HoverTooltipDetailLevel resolveDeepestHeldLevel(boolean isNamingAnybody) {
+
         return isNamingAnybody
             ? resolveDeepestAccountLevel()
             : HoverTooltipDetailLevel.FACTIONS;

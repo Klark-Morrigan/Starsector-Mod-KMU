@@ -6,12 +6,12 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import kmu.conditions.domain.KmuConditionRepository;
 import kmu.conditions.domain.KmuConditionService;
 import kmu.conditions.domain.KmuConditionSpec;
+import kmu.conditions.ui.context.KmuMarketUiContext;
+import kmu.conditions.ui.context.KmuMarketUiContextSource;
 import kmu.conditions.ui.picker.dialog.KmuConditionPickerDialogDelegate;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModelFactory;
-import kmu.ui.context.KmuMarketUiContext;
-import kmu.ui.context.KmuMarketUiContextSource;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,28 +34,33 @@ class KmuConditionPickerEditorTests {
 
         @Test
         void opensDialogBuiltFromResolvedMarketContext() {
+
             var service = new KmuConditionService(new ConditionRepositoryFake(
-                    buildSpec("hot", "Hot", true),
-                    buildSpec("cold", "Cold", true)));
+                buildSpec("hot", "Hot", true),
+                buildSpec("cold", "Cold", true)));
+
             var openedDialog = new AtomicReference<KmuConditionPickerDialogDelegate>();
             var editor = new KmuConditionPickerEditor(
-                    service,
-                    new KmuConditionPickerModelFactory(service),
-                    openedDialog::set);
+                service,
+                new KmuConditionPickerModelFactory(service),
+                openedDialog::set,
+                feedback -> { });
+
             var market = buildMarketWithConditions("hot");
             var context = KmuMarketUiContext.withoutPanel(
-                    market,
-                    KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
+                market,
+                KmuMarketUiContextSource.CURRENTLY_OPEN_MARKET);
 
             editor.open(context);
 
-            assertThat(openedDialog.get()).isNotNull();
+            assertThat(openedDialog.get())
+                .isNotNull();
             assertThat(openedDialog.get().getModel().getEntries())
-                    .extracting(KmuConditionPickerEntry::getConditionId)
-                    .containsExactly("hot", "cold");
+                .extracting(KmuConditionPickerEntry::getConditionId)
+                .containsExactly("hot", "cold");
             assertThat(openedDialog.get().getModel().getEntries())
-                    .extracting(KmuConditionPickerEntry::getState)
-                    .containsExactly(KmuConditionPickerEntryState.PRESENT, KmuConditionPickerEntryState.ABSENT);
+                .extracting(KmuConditionPickerEntry::getState)
+                .containsExactly(KmuConditionPickerEntryState.PRESENT, KmuConditionPickerEntryState.ABSENT);
         }
     }
 
@@ -64,12 +69,15 @@ class KmuConditionPickerEditorTests {
     }
 
     private static MarketAPI buildMarketWithConditions(String... conditionIds) {
+
         var conditions = new ArrayList<MarketConditionAPI>();
+
         for (var conditionId : conditionIds) {
             conditions.add(buildCondition(conditionId));
         }
 
         return proxy(MarketAPI.class, (proxy, method, args) -> {
+
             if (method.getName().equals("getConditions")) {
                 return conditions;
             }
@@ -78,7 +86,9 @@ class KmuConditionPickerEditorTests {
     }
 
     private static MarketConditionAPI buildCondition(String conditionId) {
+
         return proxy(MarketConditionAPI.class, (proxy, method, args) -> {
+
             if (method.getName().equals("getId")) {
                 return conditionId;
             }
@@ -87,7 +97,9 @@ class KmuConditionPickerEditorTests {
     }
 
     private static Object handleObjectMethodOrThrow(Object proxy, Method method, Object[] args) {
+
         if (method.getDeclaringClass().equals(Object.class)) {
+
             switch (method.getName()) {
                 case "toString":
                     return proxy.getClass().getInterfaces()[0].getSimpleName() + "Proxy";
@@ -99,32 +111,49 @@ class KmuConditionPickerEditorTests {
                     break;
             }
         }
+
         // Default to Mockito-style defaults (null for objects, 0/false for
         // primitives) for unstubbed Starsector API methods so the now-bare
         // production reads do not crash. Tests that need a specific method
         // to throw still stub it explicitly in their switch case.
-        Class<?> r = method.getReturnType();
-        if (!r.isPrimitive()) return null;
-        if (r == boolean.class) return false;
-        if (r == void.class) return null;
-        if (r == long.class) return 0L;
-        if (r == float.class) return 0f;
-        if (r == double.class) return 0.0;
+        var r = method.getReturnType();
+
+        if (!r.isPrimitive())
+            return null;
+
+        if (r == boolean.class)
+            return false;
+
+        if (r == void.class)
+            return null;
+
+        if (r == long.class)
+            return 0L;
+
+        if (r == float.class)
+            return 0f;
+
+        if (r == double.class)
+            return 0.0;
+
         return 0;
     }
 
     @SuppressWarnings("unchecked")
     private static <T> T proxy(Class<T> type, InvocationHandler handler) {
+
         return (T) Proxy.newProxyInstance(
-                type.getClassLoader(),
-                new Class<?>[]{type},
-                handler);
+            type.getClassLoader(),
+            new Class<?>[]{type},
+            handler);
     }
 
     private static final class ConditionRepositoryFake implements KmuConditionRepository {
+
         private final LinkedHashMap<String, KmuConditionSpec> specsById = new LinkedHashMap<>();
 
         private ConditionRepositoryFake(KmuConditionSpec... specs) {
+
             for (var spec : specs) {
                 specsById.put(spec.getId(), spec);
             }

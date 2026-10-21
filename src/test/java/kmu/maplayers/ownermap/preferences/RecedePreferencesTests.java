@@ -262,7 +262,7 @@ final class RecedePreferencesTests {
 
         @Test
         void mutesOnlyWhenOnlyMuteIsSet() {
-            // Mute alone dims by the modifier and keeps the colour, so a receded bloc recedes
+            // Mute alone dims by the modifier and keeps the colour, so a receded owner recedes
             // without a palette change.
             try (var settingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
@@ -287,7 +287,7 @@ final class RecedePreferencesTests {
 
         @Test
         void bothMutesAndDesaturatesWhenBothAreSet() {
-            // The two knobs combine: a receded bloc dims and recolours at once.
+            // The two knobs combine: a receded owner dims and recolours at once.
             try (var settingsMock = mockStatic(KmuOwnerMapStyleSettings.class)) {
 
                 storeToggles(settingsMock, true, MUTED_MODIFIER, true);

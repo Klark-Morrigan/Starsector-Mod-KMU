@@ -41,7 +41,7 @@ public final class VoidSections {
         NamedRegion region) {
 
         /** @return what the section is called, which is the region's name */
-        String id() {
+        public String id() {
             return region.name();
         }
     }

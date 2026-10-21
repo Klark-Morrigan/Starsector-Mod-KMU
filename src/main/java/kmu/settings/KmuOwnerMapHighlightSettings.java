@@ -25,7 +25,7 @@ public final class KmuOwnerMapHighlightSettings {
     private static final String LAYER_HOVER_TOOLTIP_ENABLED_FIELD =
         "kmu_map_politics_visuals_hoverTooltip_isEnabled";
 
-    private static final String HOVER_HIGHLIGHT_COLOR_FIELD =
+    private static final String HOVER_HIGHLIGHT_COLOUR_FIELD =
         "kmu_map_politics_visuals_hoverHighlight_colour";
     private static final String HOVER_GLOW_OPACITY_FIELD =
         "kmu_map_politics_visuals_hoverHighlight_glow_opacity";
@@ -53,8 +53,8 @@ public final class KmuOwnerMapHighlightSettings {
     private static final boolean DEFAULT_LAYER_HOVER_TOOLTIP_ENABLED = true;
 
     // Tuned to sit over the fills without swamping them, the fills themselves painting at 0.4.
-    private static final FactionPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOUR =
-        FactionPaletteChoice.SECONDARY;
+    private static final OwnerPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOUR =
+        OwnerPaletteChoice.SECONDARY;
     private static final double DEFAULT_HOVER_GLOW_OPACITY = 0.5;
     private static final double DEFAULT_HOVER_GLOW_WIDTH = 14.0;
     private static final int DEFAULT_HOVER_GLOW_LAYERS = 4;
@@ -65,15 +65,15 @@ public final class KmuOwnerMapHighlightSettings {
     private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
 
     // The shade the cursor's own highlight burns, so the two tiers light the same map alike.
-    private static final FactionPaletteChoice DEFAULT_PREVIEW_HIGHLIGHT_COLOUR =
-        FactionPaletteChoice.SECONDARY;
+    private static final OwnerPaletteChoice DEFAULT_PREVIEW_HIGHLIGHT_COLOUR =
+        OwnerPaletteChoice.SECONDARY;
     private static final double DEFAULT_PREVIEW_WASH_OPACITY = 0.6;
 
     private KmuOwnerMapHighlightSettings() {
     }
 
     /**
-     * @return whether the owner-painted layers paint their hover halo and cell wash; on by default.
+     * @return whether the owner-painted layers paint their hover halo and cell wash.
      *         The bottom tier, so it can only withhold effects the two global tiers already allow
      */
     public static boolean getOwnerMapHoverEffectsEnabled() {
@@ -83,7 +83,7 @@ public final class KmuOwnerMapHighlightSettings {
     }
 
     /**
-     * @return whether the owner-painted layers show their hover box; on by default. The bottom
+     * @return whether the owner-painted layers show their hover box. The bottom
      *         tier, so it can only withhold the box the two global tiers already allow, and it
      *         leaves a layer that paints by no owner alone
      */
@@ -95,16 +95,16 @@ public final class KmuOwnerMapHighlightSettings {
 
     /**
      * @return which palette colour of the cell under the cursor the hover halo and cell wash both
-     *         draw in; the secondary (dark) colour by default
+     *         draw in
      */
-    public static FactionPaletteChoice getOwnerMapHoverHighlightColour() {
+    public static OwnerPaletteChoice getOwnerMapHoverHighlightColour() {
         return KmuLunaSettings.readChoice(
-            HOVER_HIGHLIGHT_COLOR_FIELD,
+            HOVER_HIGHLIGHT_COLOUR_FIELD,
             DEFAULT_HOVER_HIGHLIGHT_COLOUR);
     }
 
     /**
-     * @return the alpha of the hover halo's innermost stroke, 0..1; 0.5 by default. Its brightest
+     * @return the alpha of the hover halo's innermost stroke, 0..1. Its brightest
      *         layer, which the outer layers fade away from
      */
     public static double getOwnerMapHoverGlowOpacity() {
@@ -112,7 +112,7 @@ public final class KmuOwnerMapHighlightSettings {
     }
 
     /**
-     * @return how far the hover halo reaches off the hovered frontier, in pixels; 14.0 by default.
+     * @return how far the hover halo reaches off the hovered frontier, in pixels.
      *         The width of its widest, faintest stroke
      */
     public static double getOwnerMapHoverGlowWidth() {
@@ -120,7 +120,7 @@ public final class KmuOwnerMapHighlightSettings {
     }
 
     /**
-     * @return how many strokes the hover halo accumulates from; 4 by default. More buys a smoother
+     * @return how many strokes the hover halo accumulates from. More buys a smoother
      *         falloff at a stroke of the whole frontier apiece
      */
     public static int getOwnerMapHoverGlowLayers() {
@@ -128,8 +128,8 @@ public final class KmuOwnerMapHighlightSettings {
     }
 
     /**
-     * @return how much of its alpha the hover halo gives up at the bottom of a breath, 0..1; 0 by
-     *         default, holding it steady
+     * @return how much of its alpha the hover halo gives up at the bottom of a breath, 0..1; 0 holds
+     *         it steady
      */
     public static double getOwnerMapHoverGlowPulseStrength() {
         return KmuLunaSettings.readDouble(
@@ -138,7 +138,7 @@ public final class KmuOwnerMapHighlightSettings {
     }
 
     /**
-     * @return how long one breath of the hover halo's pulse takes, in seconds; 0.2 by default.
+     * @return how long one breath of the hover halo's pulse takes, in seconds.
      *         Ignored while the pulse strength is 0
      */
     public static double getOwnerMapHoverGlowPulsePeriod() {
@@ -148,15 +148,14 @@ public final class KmuOwnerMapHighlightSettings {
     }
 
     /**
-     * @return the alpha the hovered cell's wash brightens its painted extent by, 0..1; 0.35 by
-     *         default
+     * @return the alpha the hovered cell's wash brightens its painted extent by, 0..1
      */
     public static double getOwnerMapHoverWashOpacity() {
         return KmuLunaSettings.readDouble(HOVER_WASH_OPACITY_FIELD, DEFAULT_HOVER_WASH_OPACITY);
     }
 
     /**
-     * @return the alpha the hovered cell's own outline traces at, 0..1; 0.8 by default. The only
+     * @return the alpha the hovered cell's own outline traces at, 0..1. The only
      *         cue a cell surrounded by its own faction has, so it reads apart from the wash
      */
     public static double getOwnerMapHoverWashOutlineOpacity() {
@@ -166,7 +165,7 @@ public final class KmuOwnerMapHighlightSettings {
     }
 
     /**
-     * @return the line width the hovered cell's outline traces at, in pixels; 2.0 by default
+     * @return the line width the hovered cell's outline traces at, in pixels
      */
     public static double getOwnerMapHoverWashOutlineWidth() {
         return KmuLunaSettings.readDouble(
@@ -176,17 +175,17 @@ public final class KmuOwnerMapHighlightSettings {
 
     /**
      * @return which palette colour of the previewed bloc the preview's cell wash and its trace both
-     *         draw in; the secondary (dark) colour by default. Keyed on the bloc rather than on
+     *         draw in. Keyed on the bloc rather than on
      *         each lit cell, so one shade covers the whole set
      */
-    public static FactionPaletteChoice getOwnerMapPreviewHighlightColour() {
+    public static OwnerPaletteChoice getOwnerMapPreviewHighlightColour() {
         return KmuLunaSettings.readChoice(
             PREVIEW_HIGHLIGHT_COLOUR_FIELD,
             DEFAULT_PREVIEW_HIGHLIGHT_COLOUR);
     }
 
     /**
-     * @return the alpha a lit cell's wash brightens its painted extent by, 0..1; 0.6 by default
+     * @return the alpha a lit cell's wash brightens its painted extent by, 0..1
      */
     public static double getOwnerMapPreviewWashOpacity() {
         return KmuLunaSettings.readDouble(PREVIEW_WASH_OPACITY_FIELD, DEFAULT_PREVIEW_WASH_OPACITY);

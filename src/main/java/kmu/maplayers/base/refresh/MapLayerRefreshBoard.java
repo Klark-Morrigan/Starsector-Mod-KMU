@@ -57,9 +57,22 @@ public final class MapLayerRefreshBoard {
 
     private static final Logger LOG = Global.getLogger(MapLayerRefreshBoard.class);
 
+    // How many times a system has been marked. Kept beside the stale set because the overlay drains
+    // that set and a second reader cannot share it: a list built off the same groupings keys on this
+    // instead. A counter of its own rather than a signal, so it moves exactly when a system is marked
+    // and nothing can raise it with no system behind it.
+    private final AtomicInteger groupingRevision = new AtomicInteger();
     private final Set<SystemKey> groupingStaleSystemKeys = ConcurrentHashMap.newKeySet();
     private final Map<MapLayerRefreshSignal, AtomicInteger> revisionsBySignal =
         new ConcurrentHashMap<>();
+
+    /**
+     * @return how many times a system has been marked grouping-stale on this board, which no drain
+     *         moves back
+     */
+    public int getGroupingRevision() {
+        return groupingRevision.get();
+    }
 
     /**
      * @param signal the coarse change to read
@@ -103,9 +116,14 @@ public final class MapLayerRefreshBoard {
         }
         groupingStaleSystemKeys.add(systemKey);
 
+        // Bumped on every mark, a repeat included: the second mark is a second change, and a list
+        // built after the first has not seen it.
+        var revision = groupingRevision.incrementAndGet();
+
         // Named by the vanilla ID, which is what a reader of the log calls the system.
         LOG.debug("Map layer system grouping marked stale; systemId="
-            + systemKey.systemId());
+            + systemKey.systemId()
+            + " groupingRevision=" + revision);
     }
 
     /**

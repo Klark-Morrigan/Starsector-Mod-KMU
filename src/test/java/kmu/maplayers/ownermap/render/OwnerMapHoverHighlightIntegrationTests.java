@@ -6,7 +6,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.hover.HoverHighlight;
 import kmu.maplayers.base.hover.HoverHighlightGeometry;
-import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -18,16 +18,16 @@ import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
-import kmu.maplayers.ownermap.render.clusters.MapStyling;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellBuilder;
 import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
+import kmu.maplayers.ownermap.render.style.MapStyling;
+import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
+import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -57,7 +57,7 @@ import static org.mockito.Mockito.mock;
  * in before the ring was reported at all.
  *
  * <p>An unpopulated cell is the case that matters because it is the one with nothing else to fall
- * back on: a cell inside a bloc is clamped to its cluster's frontier, which is rounded when it is
+ * back on: a cell inside an owner is clamped to its cluster's frontier, which is rounded when it is
  * traced, so the clip hides a raw ring. A cell that fuses into nothing is clamped to nothing, and
  * the ring it reports is the whole of what lights up.
  */
@@ -133,7 +133,6 @@ final class OwnerMapHoverHighlightIntegrationTests {
             CornerRoundingStyle cornerRounding) {
 
         var clusters = buildUnpopulatedClustersUnder(cornerRounding);
-
         var painted = PaintedCellBuilder.buildPaintedCellForSystem(
             clusters,
             UNPOPULATED_CELL,
@@ -147,7 +146,7 @@ final class OwnerMapHoverHighlightIntegrationTests {
 
         return new HoverHighlightGeometry().resolveHighlightFor(
             new OwnerMapHoverHighlightSource(clusters),
-            new MapHover(UNPOPULATED_CELL, List.of(UNPOPULATED_CELL)));
+            MapHoverFixture.buildHoverOn(UNPOPULATED_CELL, List.of(UNPOPULATED_CELL)));
     }
 
     // A build holding nobody and settling nowhere, so the cell routes to the uninhabited category,
@@ -160,11 +159,15 @@ final class OwnerMapHoverHighlightIntegrationTests {
             new OwnerMapBuildInputs(
                 new MapStyling(
                     buildThemeRoundingBy(cornerRounding),
-                    HolderCategories.INSTANCE,
+                    OwnerMapClusterFixtures.BORDER_TRACE,
+                    OwnerCategoriesFake.SHARED_FAKE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE,
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE),
-                new ViewReading(mock(OwnerPaintedView.class), OwnerReadingFake.createAnsweringNothing(), new OwnerSourceFake()),
+                new ViewReading(
+                    mock(OwnerPaintedView.class),
+                    OwnerReadingFake.createAnsweringNothing(),
+                    new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
                 Set.of(),
                 Set.of()));
@@ -177,15 +180,17 @@ final class OwnerMapHoverHighlightIntegrationTests {
 
         var outlineOnly = new CategoryStyle(
             new ElementStyle(null, 1.0),
-            new ElementStyle(FactionPaletteSlot.PRIMARY, 1.0),
+            new ElementStyle(OwnerPaletteSlot.PRIMARY, 1.0),
             3.0,
             new ElementStyle(null, 1.0),
             1.0);
 
         var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
-        for (var category : OwnerMapCategory.values()) {
+
+        for (var category : StandInCategoryFake.values()) {
             categories.put(category, outlineOnly);
         }
+
         return new RenderStyle(
             ThemeFixtures.createGlobalStyleRoundingBy(cornerRounding),
             categories);
@@ -194,6 +199,7 @@ final class OwnerMapHoverHighlightIntegrationTests {
     // A 10-unit square cell with a corner on the origin, so a case can name one vertex the rounding
     // is expected to remove. Every edge is cluster border, which is what a lone cell's are.
     private static ShapedCell buildSquareCell() {
+
         return new ShapedCell(
             List.of(
                 new double[] {0, 0},
@@ -207,13 +213,16 @@ final class OwnerMapHoverHighlightIntegrationTests {
     // [x, y, x, y, ...] run of vertices, and the clip can bite an extent into more than one loop,
     // so every one of them is asked.
     private static boolean hasPoint(List<float[]> loops, float x, float y) {
+
         for (var loop : loops) {
             for (var index = 0; index < loop.length; index += 2) {
+
                 if (loop[index] == x && loop[index + 1] == y) {
                     return true;
                 }
             }
         }
+
         return false;
     }
 }

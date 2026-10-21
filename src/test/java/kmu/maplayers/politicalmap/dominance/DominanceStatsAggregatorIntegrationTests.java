@@ -4,8 +4,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.picker.OwnerStatsRead;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 import kmu.settings.KmuMapVisibilitySettings;
@@ -19,23 +20,23 @@ import java.util.Map;
 import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
 import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.buildRulesUnder;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.HEGEMONY_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.NEUTRAL_BASE;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.TRITACHYON_BRIGHT;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildAbandonedStationMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildConditionOnlyMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildEconomylessSectorWithSystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWith;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildSectorWithSystems;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.findSystemIn;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.listSystemMarkets;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.markSystemAsVisitedByPlayer;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.buildRulesUnder;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.HEGEMONY_FACTION_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.NEUTRAL_BASE;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.TRITACHYON_FACTION_BRIGHT;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildAbandonedStationMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildConditionOnlyMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildEconomylessSectorWithSystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWith;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildSectorWithSystems;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.findSystemIn;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.listSystemMarkets;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.markSystemAsVisitedByPlayer;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.placeMarketsOnSystemEntities;
 import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildPassOver;
 import static kmu.maplayers.politicalmap.dominance.DominancePassFixtures.buildStabilityWeightedRules;
 
@@ -85,7 +86,7 @@ class DominanceStatsAggregatorIntegrationTests {
             // A bloc's metrics accumulate across systems rather than overwriting: a faction present in
             // two systems it dominates counts two dominations, two presences, and sums both its
             // dominance weight and its raw colony size - one option, whole-sector totals.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("system-a", buildVisibleMarket(hegemony, 5)),
@@ -93,7 +94,7 @@ class DominanceStatsAggregatorIntegrationTests {
 
             // At full stability each size point is worth DOMINANCE_WEIGHT_SCALE (1000), so score sums
             // to (5 + 3) * 1000 and market size to the raw 5 + 3.
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(entry("hegemony", new DominanceStats(2, 2, 8000, 8)));
         }
 
@@ -101,14 +102,14 @@ class DominanceStatsAggregatorIntegrationTests {
         void countsDominationOnlyForTheSystemWinner() {
             // Two factions share a system: the heavier is its one dominant holder, so it alone takes a
             // domination count while both take a presence - the metric that tells "wins" from "holds".
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWith(
                 "owned-system",
                 buildVisibleMarket(hegemony, 5),
                 buildVisibleMarket(tritachyon, 3));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(1, 1, 5000, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 3000, 3)));
@@ -120,14 +121,14 @@ class DominanceStatsAggregatorIntegrationTests {
             // faction whose cell actually paints. Its presence and its totals stand: the bar is on
             // the candidacy, never on the arithmetic, so the placeholder is still offered and still
             // shown what it scored.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var neutral = buildFaction(Factions.NEUTRAL, NEUTRAL_BASE);
             var sector = buildSectorWith(
                 "salvage-system",
                 buildVisibleMarket(neutral, 6),
                 buildVisibleMarket(hegemony, 3));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .contains(
                     entry(Factions.NEUTRAL, new DominanceStats(0, 1, 6000, 6)),
                     entry("hegemony", new DominanceStats(1, 1, 3000, 3)));
@@ -138,8 +139,8 @@ class DominanceStatsAggregatorIntegrationTests {
             // The alliance grouping folds allied members into one bloc, so the alliance's metrics are
             // its members' summed - one unit's domination, presence, score, and size, never its
             // members surfacing apart.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets("system-a", buildVisibleMarket(hegemony, 2)),
@@ -152,7 +153,7 @@ class DominanceStatsAggregatorIntegrationTests {
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(
                     DominancePass.createOver(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping))
-                .statsByBlocId())
+                .statsByOwnerId())
                 .containsExactly(entry("alliance-1", new DominanceStats(2, 2, 5000, 5)));
         }
 
@@ -161,7 +162,7 @@ class DominanceStatsAggregatorIntegrationTests {
             // The other half of a presence count: which systems it was taken in. A bloc spread over
             // three systems names all three, in the order the sector walk surfaced them, so a
             // surface lighting a picker row's systems lights every one the row counted.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("system-a", buildVisibleMarket(hegemony, 5)),
@@ -179,8 +180,8 @@ class DominanceStatsAggregatorIntegrationTests {
             // Presence and not domination, which is the whole point of a separate index: the
             // outweighed bloc lives in both systems and wins neither, and both are still its to be
             // lit. Indexing what a bloc dominates instead would light the fills it already paints.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets(
@@ -204,8 +205,8 @@ class DominanceStatsAggregatorIntegrationTests {
             // presences against three named systems, two against two. Counting and naming come off
             // the one habitation entry, so a reading where they disagree is a reading where the
             // spotlight and the row beneath the pointer stopped meaning the same thing.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets("system-a", buildVisibleMarket(hegemony, 5)),
@@ -220,7 +221,7 @@ class DominanceStatsAggregatorIntegrationTests {
 
             var read = DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector));
 
-            assertThat(read.statsByBlocId())
+            assertThat(read.statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(1, 3, 10000, 10)),
                     entry("tritachyon", new DominanceStats(2, 2, 8000, 8)));
@@ -238,12 +239,12 @@ class DominanceStatsAggregatorIntegrationTests {
             // weight - so the bloc appears with a domination and a presence but a zero score. Presence,
             // not weight, is the selectable gate: a bloc holding paintable territory is offered even
             // when spotlighting it highlights cells worth nothing.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("weightless-system", buildVisibleMarket(hegemony, 0)));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(entry("hegemony", new DominanceStats(1, 1, 0, 0)));
         }
 
@@ -251,12 +252,12 @@ class DominanceStatsAggregatorIntegrationTests {
         void skipsConditionOnlyMarkets() {
             // A bare rock's condition-only market is no colony, so it never marks a bloc's presence -
             // matching the holding pass, so a bloc is offered exactly when it could paint.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("bare-system", buildConditionOnlyMarket(hegemony, 6)));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .isEmpty();
         }
 
@@ -266,7 +267,7 @@ class DominanceStatsAggregatorIntegrationTests {
             // economy-fed, so a faction whose one station the economy never registered weighs
             // nothing - and reading presence off the weights left it out of the list while the band
             // beneath its cell drew its run.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony),
                 listSystemMarkets("unregistered-system"));
@@ -275,7 +276,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 findSystemIn(sector, "unregistered-system"),
                 buildVisibleMarket(hegemony, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(entry("hegemony", new DominanceStats(0, 1, 0, 4)));
         }
 
@@ -283,8 +284,8 @@ class DominanceStatsAggregatorIntegrationTests {
         void leavesTheDominationWithTheBlocTheContestWeighed() {
             // The unweighed bloc joins the listing and takes no part in the contest: the system is
             // still won by the one colony the economy lists, at the weight it always had.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets("shared-system", buildVisibleMarket(hegemony, 5)));
@@ -293,7 +294,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 findSystemIn(sector, "shared-system"),
                 buildVisibleMarket(tritachyon, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(1, 1, 5000, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 0, 4)));
@@ -305,8 +306,8 @@ class DominanceStatsAggregatorIntegrationTests {
             // not list, so nothing was weighed and the map paints no fill - and folding them into
             // the ranking would hand one of them a domination anyway, the first entry being the
             // leader before anything is compared and the tie-break settling which by proximity.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
-            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_FACTION_BRIGHT);
             var sector = buildSectorWithSystems(
                 List.of(hegemony, tritachyon),
                 listSystemMarkets("unregistered-system"));
@@ -316,7 +317,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 buildVisibleMarket(hegemony, 5),
                 buildVisibleMarket(tritachyon, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(
                     entry("hegemony", new DominanceStats(0, 1, 0, 5)),
                     entry("tritachyon", new DominanceStats(0, 1, 0, 4)));
@@ -328,7 +329,7 @@ class DominanceStatsAggregatorIntegrationTests {
             // half alone: the two halves of these stats are scoped differently on purpose, one
             // answering what the contest made of the bloc and the other how much of the sector it
             // lives in.
-            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var hegemony = buildFaction("hegemony", HEGEMONY_FACTION_BRIGHT);
             var listedColony = buildVisibleMarket(hegemony, 5);
             var sector = buildSectorWithSystems(
                 List.of(hegemony),
@@ -339,7 +340,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 listedColony,
                 buildVisibleMarket(hegemony, 4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .containsExactly(entry("hegemony", new DominanceStats(1, 1, 5000, 9)));
         }
 
@@ -356,7 +357,7 @@ class DominanceStatsAggregatorIntegrationTests {
                 findSystemIn(sector, "derelict-system"),
                 buildAbandonedStationMarket(4));
 
-            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByBlocId())
+            assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)).statsByOwnerId())
                 .isEmpty();
         }
 
@@ -369,13 +370,13 @@ class DominanceStatsAggregatorIntegrationTests {
             var sector = buildEconomylessSectorWithSystem("system-a");
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector)))
-                .isEqualTo(DominanceStatsRead.EMPTY);
+                .isEqualTo(OwnerStatsRead.createEmptyRead());
         }
 
         @Test
         void isEmptyForNullSector() {
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(null)))
-                .isEqualTo(DominanceStatsRead.EMPTY);
+                .isEqualTo(OwnerStatsRead.createEmptyRead());
         }
 
         @Test
@@ -429,13 +430,13 @@ class DominanceStatsAggregatorIntegrationTests {
     private static List<String> readOfferedHolderIds(SectorAPI sector) {
 
         var pass = DominancePass.createOver(
-            HolderPass.over(
+            HolderPass.createOver(
                 sector,
                 buildRulesUnder(MapVisibilityRules.readFromLunaSettings().colonyVisibility()),
                 HolderGrouping.identity()),
             STABILITY_WEIGHTED);
 
         return List.copyOf(
-            DominanceStatsAggregator.aggregateDominanceStats(pass).statsByBlocId().keySet());
+            DominanceStatsAggregator.aggregateDominanceStats(pass).statsByOwnerId().keySet());
     }
 }

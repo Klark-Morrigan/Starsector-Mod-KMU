@@ -1,13 +1,13 @@
 package kmu.maplayers.base.render.clusters;
 
 import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.hatch.GlLineHatchStroke;
 import kmlib.opengl.hatch.HatchJoinTally;
 import kmlib.opengl.hatch.HatchPattern;
 import kmlib.opengl.hatch.HatchRun;
 import kmlib.profiling.recording.RecordingProfiler;
 
 import kmu.maplayers.base.profiling.MapBuildCounters;
-import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.HatchStyle;
 
 import org.junit.jupiter.api.Nested;

@@ -65,7 +65,7 @@ public final class CoastFrontages {
         EXTERIOR {
             @Override
             public Map<Integer, List<List<double[]>>> collectFrontages(
-                    Coastlines.TracedCoasts traced) {
+                    TracedCoasts traced) {
 
                 return collectBridgeFrontages(traced);
             }
@@ -75,7 +75,7 @@ public final class CoastFrontages {
         INTERIOR {
             @Override
             public Map<Integer, List<List<double[]>>> collectFrontages(
-                    Coastlines.TracedCoasts traced) {
+                    TracedCoasts traced) {
 
                 return collectLakeFrontages(traced);
             }
@@ -89,7 +89,7 @@ public final class CoastFrontages {
          *         along is absent
          */
         public abstract Map<Integer, List<List<double[]>>> collectFrontages(
-                Coastlines.TracedCoasts traced);
+                TracedCoasts traced);
     }
 
     /**
@@ -119,7 +119,7 @@ public final class CoastFrontages {
      *         nowhere to anchor at all
      */
     public static Map<Integer, List<List<double[]>>> collectBridgeFrontages(
-            Coastlines.TracedCoasts traced) {
+            TracedCoasts traced) {
 
         return collectFrontagesAlong(traced.coasts());
     }
@@ -136,7 +136,7 @@ public final class CoastFrontages {
      * @param traced the coast
      * @return the cells, empty where every eligible cell offers a stretch
      */
-    public static Set<Integer> collectPinchedCells(Coastlines.TracedCoasts traced) {
+    public static Set<Integer> collectPinchedCells(TracedCoasts traced) {
 
         var pinched = new LinkedHashSet<Integer>();
 
@@ -178,7 +178,7 @@ public final class CoastFrontages {
      * @return each island's rim, by cell; empty where the sector has no islands
      */
     public static Map<Integer, List<List<double[]>>> collectIslandFrontages(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             int arcSegments) {
 
         var frontages = new LinkedHashMap<Integer, List<List<double[]>>>();
@@ -212,17 +212,17 @@ public final class CoastFrontages {
      *         runs along is absent
      */
     public static Map<Integer, List<List<double[]>>> collectLakeFrontages(
-            Coastlines.TracedCoasts traced) {
+            TracedCoasts traced) {
 
         return collectFrontagesAlong(
-            traced.lakes().stream().map(Coastlines.Lake::shore).toList());
+            traced.lakes().stream().map(Lake::shore).toList());
     }
 
     // The walk itself, over whichever rings were offered - both entries above are one
     // question about two sets of lines, and a second copy of the walk is how the two come to
     // cut frontages differently.
     private static Map<Integer, List<List<double[]>>> collectFrontagesAlong(
-            List<Coastlines.Coast> coasts) {
+            List<Coast> coasts) {
 
         var frontages = new LinkedHashMap<Integer, List<List<double[]>>>();
 
@@ -261,7 +261,7 @@ public final class CoastFrontages {
     // Where to start walking a ring so that no frontage is split across the ends of the list.
     // A ring the coast runs round without ever changing cell has no such place, and starting
     // anywhere is as good as anywhere else.
-    private static int findFrontageStart(List<Coastlines.CoastVertex> coast) {
+    private static int findFrontageStart(List<CoastVertex> coast) {
 
         for (var index = 0; index < coast.size(); index++) {
 

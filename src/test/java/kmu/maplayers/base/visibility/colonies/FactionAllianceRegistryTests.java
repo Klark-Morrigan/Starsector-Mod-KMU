@@ -1,5 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmlib.starsector.factions.alliances.FactionAlliances;
 
 import org.junit.jupiter.api.AfterEach;
@@ -13,6 +15,8 @@ import static kmu.maplayers.base.visibility.colonies.FactionAllianceFixture.clea
 import static kmu.maplayers.base.visibility.colonies.FactionAllianceFixture.registerAllianceOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Pins what the seam between the revelation rule and whatever maintains an alliance answers: the
@@ -28,6 +32,8 @@ final class FactionAllianceRegistryTests {
     private static final String HEGEMONY = "hegemony";
     private static final String PERSEAN_LEAGUE = "persean_league";
 
+    private final SectorAPI sectorMock = mock(SectorAPI.class);
+
     @AfterEach
     void clearRegisteredAllianceSource() {
         clearRegistrations();
@@ -37,11 +43,24 @@ final class FactionAllianceRegistryTests {
     class ReadAlliances {
 
         @Test
+        void asksTheSourceAboutTheSectorItWasHanded() {
+
+            var sourceMock = mock(FactionAllianceSource.class);
+
+            FactionAllianceRegistry.registerAllianceSource(sourceMock);
+            FactionAllianceRegistry.readAlliances(sectorMock);
+
+            verify(sourceMock)
+                .readAlliances(sectorMock);
+        }
+
+        @Test
         void readsTheRegisteredSource() {
 
             registerAllianceOf(HEGEMONY, PERSEAN_LEAGUE);
 
-            assertThat(FactionAllianceRegistry.readAlliances()
+            assertThat(FactionAllianceRegistry
+                    .readAlliances(sectorMock)
                     .areFactionsAllied(HEGEMONY, PERSEAN_LEAGUE))
                 .isTrue();
         }
@@ -54,16 +73,18 @@ final class FactionAllianceRegistryTests {
             var memberships = new HashMap<String, String>();
 
             FactionAllianceRegistry.registerAllianceSource(
-                () -> new FactionAlliances(memberships));
+                sector -> new FactionAlliances(memberships));
 
-            assertThat(FactionAllianceRegistry.readAlliances()
+            assertThat(FactionAllianceRegistry
+                    .readAlliances(sectorMock)
                     .areFactionsAllied(HEGEMONY, PERSEAN_LEAGUE))
                 .isFalse();
 
             memberships.put(HEGEMONY, "alliance_formed_since");
             memberships.put(PERSEAN_LEAGUE, "alliance_formed_since");
 
-            assertThat(FactionAllianceRegistry.readAlliances()
+            assertThat(FactionAllianceRegistry
+                    .readAlliances(sectorMock)
                     .areFactionsAllied(HEGEMONY, PERSEAN_LEAGUE))
                 .isTrue();
         }
@@ -73,7 +94,8 @@ final class FactionAllianceRegistryTests {
 
             FactionAllianceRegistry.registerAllianceSource(null);
 
-            assertThat(FactionAllianceRegistry.readAlliances()
+            assertThat(FactionAllianceRegistry
+                    .readAlliances(sectorMock)
                     .areFactionsAllied(HEGEMONY, PERSEAN_LEAGUE))
                 .isFalse();
         }
@@ -83,9 +105,9 @@ final class FactionAllianceRegistryTests {
             // A supplier may be reached before whatever it reads exists. That is no reason to fail
             // a render pass, and every faction present speaking is the reading the rule shipped
             // with.
-            FactionAllianceRegistry.registerAllianceSource(() -> null);
+            FactionAllianceRegistry.registerAllianceSource(sector -> null);
 
-            assertThat(FactionAllianceRegistry.readAlliances())
+            assertThat(FactionAllianceRegistry.readAlliances(sectorMock))
                 .isEqualTo(new FactionAlliances(Map.of()));
         }
     }

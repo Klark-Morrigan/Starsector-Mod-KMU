@@ -22,44 +22,18 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Holds a map layer's cell outlines, keyed by {@link SystemKey}, and updates them
- * incrementally as systems gain or lose access.
+ * Holds a map layer's raw cell partition, keyed by {@link SystemKey}, and keeps it in step with the
+ * drawn systems without recutting the whole of it.
  *
- * <p>The cells are a Voronoi partition of the on-map systems. Recomputing the
- * whole partition is O(n^3), but a Voronoi cell is local: adding or removing one
- * site only changes that site's cell and the cells within twice the cell radius of
- * it - every farther cell is provably untouched (their shared bisector lies beyond
- * the cell's bounding radius). So
- * {@link #updateFromSector} diffs the reachable set against the cache and rebuilds
- * only the affected cells, leaving distant ones in place. The first update (empty
- * cache) rebuilds everything, since every system is "added". The
- * {@link CellSeedInputs} passed in also force a full rebuild when they change, since
- * each reseeds every cell, invalidating them all regardless of the access diff.
+ * <p>A full partition is O(n^3) and the map repaints every frame, but a Voronoi cell is local: a
+ * site joining or leaving disturbs only the cells near it. So the cache diffs the drawn set and
+ * recuts that neighbourhood alone, and rebuilds everything only when what every cell is seeded with
+ * changes.
  *
- * <p>Which systems seed a site at all is {@link PartitionSites}', the moving systems passed in
- * among them. Because a system left out is simply absent from the site set, its entering or
- * leaving reads as an ordinary add or remove in the diff below - a mover comes to rest and rejoins
- * with no special case here.
- *
- * <p>Each cell is kept as a list of {@link CellEdge}s - the raw convex
- * cell and, at once, the cell-adjacency graph. Every edge is tagged with what lies
- * across it, which the render layer classifies into interior seams and cluster
- * boundaries once it knows each cell's owner, then shapes into merged cell clusters.
- * The cells are keyed by cell key and paired with the system each draws as: here every
- * cell is one star's own, so the two coincide, but the cells are a partition of
- * space rather than a list of stars and a consumer must not assume a cell's key names a
- * system. The cache holds the
- * raw cells rather than any shaped outline: the inset that leaves a cluster its
- * border channel is ownership-dependent - two same-owner cells fuse along their
- * shared edge - so it belongs to the render pass, not to this ownership-agnostic
- * geometry that rebuilds only on an access change.
- *
- * <p>Every address here is a {@link SystemKey} rather than a system ID, because an ID is not
- * unique: a sector holding several systems under one would cut a single cell for them, leaving
- * every system after the first with no cell on a map that cells its neighbours.
- *
- * <p>Geometry only, no GL: the partition can be reasoned about from the sector
- * alone, independent of how the cells are drawn.
+ * <p>The cells are raw, never shaped: the inset that gives a cluster its border channel depends on
+ * who owns each cell, so it belongs to the render pass, and an owner change costs a re-shape rather
+ * than a re-partition. Geometry only, no GL. The diff, the seeding and why the keys are not system
+ * IDs are <a href="README.md#why-the-cells-are-cached-not-rebuilt">the cell geometry register</a>'s.
  */
 public final class CellGeometryCache {
 
@@ -174,6 +148,38 @@ public final class CellGeometryCache {
      */
     public Map<SystemKey, double[]> getSiteBySystemKey() {
         return Collections.unmodifiableMap(siteBySystemKey);
+    }
+
+    // Turns one labelled cell into its adjacency edges: each edge as a world-space
+    // segment tagged with what lies across it - the neighbouring system, or the cell's
+    // own outer reach bound. The builder reports each edge's neighbour as a site index,
+    // resolved to a system key here through the parallel key list.
+    //
+    // Package-private, because the desktop geometry tooling cuts a fixture's cells through this
+    // same translation rather than a copy of it.
+    static List<CellEdge> buildCellEdges(
+            VoronoiCellBuilder.LabelledCell cell,
+            List<SystemKey> allSiteKeys) {
+
+        var vertices = cell.vertices();
+        var neighbourIndices = cell.edgeNeighbourSiteIndices();
+        var count = vertices.size();
+        var edges = new ArrayList<CellEdge>(count);
+
+        for (var i = 0; i < count; i++) {
+
+            var start = vertices.get(i);
+            var end = vertices.get((i + 1) % count);
+            var neighbourIndex = neighbourIndices[i];
+
+            var target = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
+                ? EdgeTarget.REACH_BOUND
+                : new EdgeTarget.AcrossSystem(allSiteKeys.get(neighbourIndex));
+
+            edges.add(new CellEdge(start[0], start[1], end[0], end[1], target));
+        }
+
+        return edges;
     }
 
     // The update itself, reporting what it did onto the scope the entry point opened: the cells
@@ -336,31 +342,6 @@ public final class CellGeometryCache {
             }
         }
         return near;
-    }
-
-    // Turns one labelled cell into its adjacency edges: each edge as a world-space
-    // segment tagged with what lies across it - the neighbouring system, or the cell's
-    // own outer reach bound. The builder reports each edge's neighbour as a site index,
-    // resolved to a system key here through the parallel key list.
-    private static List<CellEdge> buildCellEdges(
-            VoronoiCellBuilder.LabelledCell cell,
-            List<SystemKey> allSiteKeys) {
-
-        var vertices = cell.vertices();
-        var neighbourIndices = cell.edgeNeighbourSiteIndices();
-        var count = vertices.size();
-        var edges = new ArrayList<CellEdge>(count);
-
-        for (var i = 0; i < count; i++) {
-            var start = vertices.get(i);
-            var end = vertices.get((i + 1) % count);
-            var neighbourIndex = neighbourIndices[i];
-            var target = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
-                ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(allSiteKeys.get(neighbourIndex));
-            edges.add(new CellEdge(start[0], start[1], end[0], end[1], target));
-        }
-        return edges;
     }
 
     /**

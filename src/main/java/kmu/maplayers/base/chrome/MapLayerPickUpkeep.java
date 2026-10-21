@@ -80,7 +80,7 @@ public final class MapLayerPickUpkeep implements EveryFrameScript {
 
     /** Reads the live screens - the pairing a running game gets. */
     public MapLayerPickUpkeep() {
-        this(MapLayerScreens::getAllScreenPicks);
+        this(() -> MapLayerScreens.resolveScreensForLiveSector().getAllScreenPicks());
     }
 
     MapLayerPickUpkeep(Supplier<List<ScreenLayerPicks>> resolveEveryScreenPicks) {

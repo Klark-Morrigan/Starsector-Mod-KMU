@@ -89,13 +89,23 @@ public final class SectorMapMachinery {
     private final Map<MachineryKey, InstalledMachinery> machineryByKey = new ConcurrentHashMap<>();
 
     /**
-     * @param sector the sector this machinery is being installed on; null makes a detached
-     *               machinery, which is what a caller with no sector - the switch flipped with no
-     *               game loaded, or a suite driving a seam directly - is answered with
+     * @param sector           the sector this machinery is being installed on; null makes a detached
+     *                         machinery, which is what a caller with no sector - the switch flipped
+     *                         with no game loaded - is answered with
+     * @param seatedMachinery  what the installer hands this sector rather than leaving it to be made
+     *                         on first ask, each held under its own class. For what a pass the engine
+     *                         builds has to read and nothing on the sector can make - the screens the
+     *                         layers were installed under. Seated here rather than after, so no frame
+     *                         can resolve this machinery between its making and its seating
      */
-    public SectorMapMachinery(SectorAPI sector) {
+    public SectorMapMachinery(SectorAPI sector, InstalledMachinery... seatedMachinery) {
+
         this.sector = sector;
         this.profilingOrigin = resolveOriginOf(sector);
+
+        for (var seated : seatedMachinery) {
+            machineryByKey.put(new MachineryKey(seated.getClass(), SECTOR_WIDE), seated);
+        }
     }
 
     /**

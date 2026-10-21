@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.dominance;
 
-import kmu.maplayers.ownermap.owners.SpotlitBlocs;
 import kmu.maplayers.politicalmap.dominance.FilteredPolitics.SelectedBlocPresence;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
@@ -16,19 +15,18 @@ import static kmu.maplayers.politicalmap.dominance.weighting.MarketFootprintFixt
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins {@link FilteredPolitics}'s pure rules on hand-built footprints and presence sets: the
+ * Pins {@link FilteredPolitics}'s pure rule on hand-built footprints and presence sets: the
  * three-way classification that decides how a spotlighted bloc draws in each system - including
- * that a bloc living in a system nothing weighed for it still draws - and the group-key helper the
- * render layer reads to tell a spotlit cell from a receding one. The presence-aware
- * holder assembly - the synthetic key, palette reuse, the contested set, and the real-holder
- * fallback - reads the live economy, so it is covered in {@link FilteredPoliticsIntegrationTests}.
+ * that a bloc living in a system nothing weighed for it still draws. The presence-aware holder
+ * assembly - the synthetic key, palette reuse, the contested set, and the real-holder fallback -
+ * reads the live economy, so it is covered in {@link FilteredPoliticsIntegrationTests}.
  */
 class FilteredPoliticsTests {
 
     // Nobody barred: every case here poses ordinary factions, so the bar has nothing to say
     // about them and stating it would only obscure what each case is actually about.
     private static final HolderRankingRules OPEN_CONTEST =
-        HolderRankingRules.createOpenContestByLowestId();
+        HolderRankingRulesFixtures.OPEN_CONTEST_BY_LOWEST_ID;
 
     @Nested
     class ClassifySelectedBlocPresence {
@@ -134,18 +132,6 @@ class FilteredPoliticsTests {
                     "pirates",
                     OPEN_CONTEST))
                 .isEqualTo(SelectedBlocPresence.PRESENT_BUT_DOMINATED);
-        }
-    }
-
-    @Nested
-    class IsSpotlitBloc {
-
-        @Test
-        void returnsFalseForARealFactionId() {
-            // The synthetic key uses a sentinel a real ID cannot carry, so no faction is ever
-            // mistaken for the spotlighted bloc and wrongly kept at full strength.
-            assertThat(SpotlitBlocs.isSpotlitBloc("hegemony"))
-                .isFalse();
         }
     }
 

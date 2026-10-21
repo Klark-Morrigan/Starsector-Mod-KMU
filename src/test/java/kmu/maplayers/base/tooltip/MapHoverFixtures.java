@@ -2,7 +2,10 @@ package kmu.maplayers.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.systems.SectorStarSystems;
+
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
@@ -34,14 +37,16 @@ public final class MapHoverFixtures {
      * is how a frame with something to draw a box about is posed.
      *
      * @param sector   the sector whose map the cursor is over
+     * @param screens  the screens seated on that sector's machinery, which say what draws there
      * @param systemId the ID of the system under it
      * @return that sector's machinery, which is what the box resolves as it draws
      */
     public static SectorMapMachinery hoverASystemOnAnInstalledSector(
             SectorAPI sector,
+            MapLayerScreens screens,
             String systemId) {
 
-        var machinery = SectorMapMachineryIndex.installMachineryOn(sector);
+        var machinery = SectorMapMachineryIndex.installMachineryOn(sector, screens);
 
         hoverASystemIn(machinery, systemId);
 
@@ -53,17 +58,20 @@ public final class MapHoverFixtures {
      * belonging to some sector other than the one being drawn is posed.
      *
      * @param machinery the machinery the hover is published on
-     * @param systemId     the ID of the system under the cursor, alone in its cluster since what a
-     *                     hover lights beside it turns nothing about whether a box draws
+     * @param systemId  the ID of the system under the cursor, alone in its cluster since what a
+     *                  hover lights beside it turns nothing about whether a box draws
      */
     public static void hoverASystemIn(SectorMapMachinery machinery, String systemId) {
 
         // Keyed by the ID alone, which is the key a system posed with no centre and no anchor is
-        // read off - so the box resolves the posed system back out of the sector.
+        // read off - so the posed system is found back out of the sector, as the cursor read finds
+        // it where the cursor arrives. A sector posing no such system leaves the hover over a key
+        // that names none, which is a hover no box draws for.
         var systemKey = buildCellKey(systemId);
+        var system = SectorStarSystems.findSystemByKey(machinery.resolveSector(), systemKey);
 
         machinery
             .resolveHoverState()
-            .publishHover(new MapHover(systemKey, List.of(systemKey)));
+            .publishHover(new MapHover(systemKey, system, List.of(systemKey)));
     }
 }

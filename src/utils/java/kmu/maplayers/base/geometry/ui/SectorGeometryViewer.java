@@ -1,6 +1,5 @@
 package kmu.maplayers.base.geometry.ui;
 
-import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
 
 import kmu.desktop.ui.SavedValues;
@@ -34,25 +33,16 @@ import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.RenderingHints;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -100,8 +90,8 @@ import javax.swing.SwingUtilities;
  * <ul>
  *   <li><i>Deciding what exists</i> - {@code MapVisibility.shouldAppearOnMap},
  *       {@code CellGeometryCache.updateFromSector} and
- *       {@code getCellEdgesByCellId}. {@link SectorFixture} rebuilds the cache's private
- *       cell-to-edge translation, so every fixture row is drawn and nothing exercises the
+ *       {@code getCellEdgesByCellId}. {@link SectorFixture} cuts its cells through the cache's
+ *       own cell-to-edge translation, but every fixture row is drawn and nothing runs the
  *       cache, its diffing, or the incremental refresh.</li>
  *   <li><i>Deciding who owns it</i> - {@code SectorPolitics.resolveDominantHolderBySystemKey},
  *       {@code SystemDominance}, {@code SystemOwner.mapOwnerIdBySystemKey},
@@ -134,7 +124,8 @@ import javax.swing.SwingUtilities;
  * pocket closes over, and this map's history is of exactly those being found late, from a
  * screenshot, after a feature had been built on them.
  */
-public final class SectorGeometryViewer implements ViewerRefreshes {
+public final class SectorGeometryViewer
+        implements ViewerRefreshes {
 
     private static final Path SVG_DIRECTORY = Path.of("build", "reports", "political-map");
 
@@ -146,24 +137,42 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     // the divider is still findable.
     private static final int CONTROL_MINIMUM_WIDTH = 80;
 
-    private static final double ZOOM_PER_NOTCH = 1.15;
-    private static final double INITIAL_MARGIN = 1.05;
-
-    // The margin round the line of text along the bottom of the window.
-    private static final int STATUS_BAR_PADDING = 4;
-
     private static final long NANOS_PER_MILLI = 1_000_000L;
 
-    private static final Color BACKGROUND = new Color(0x11, 0x11, 0x11);
+    private final ViewerSettings settings = new ViewerSettings();
+
+    // Opened with the window and emptied there, so a session's picks are its own.
+    private final PickLog picks = PickLog.startPickLog();
+
+    // The one search asked of the cells alone, kept for the whole window rather than made per
+    // laying: it answers about the sites and the reach and nothing else, so it outlives any one
+    // frame, and a copy per frame would be the repeated search it exists to prevent.
+    private final VoidBridgeCache sectorBridges = new VoidBridgeCache();
+
+    private final CellsOverlay cells = new CellsOverlay(settings);
+
+    private final ContinentCoastOverlay continentCoasts = new ContinentCoastOverlay(settings);
+
+    private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
+    private final VoidPartitionOverlay voidPartition = new VoidPartitionOverlay(settings);
+
+    private final MapCanvas canvas = new MapCanvas(new MapCanvas.CanvasContent(
+        this::paintGeometry,
+        this::paintNames,
+        this::readSites,
+        this::recordPick));
+
+    private final JLabel statusLabel = new JLabel();
 
     // Not final: the fixture is picked from a dropdown, so a session can move between
     // sectors without restarting - a shape only worth judging is one that holds on more
     // than one sector, and reopening the tool to find out is enough friction to skip it.
     private String sectorName;
+
     private SectorFixture fixture;
-    private final MapCanvas canvas = new MapCanvas();
 
     private List<List<double[]>> unboundedCells = List.of();
+
     private SectorGeometry geometry;
 
     // Each owner's cluster rings as the LINE the map draws: rounded where they turn sharply,
@@ -175,22 +184,8 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     // with one name. Rounded once here rather than in the paint, because the paint runs per
     // frame and this changes only when the geometry or the knobs do.
     private Map<String, List<List<double[]>>> smoothedRingsByOwner = Map.of();
+
     private long lastBuildMillis;
-    private final ViewerSettings settings = new ViewerSettings();
-
-    // Opened with the window and emptied there, so a session's picks are its own.
-    private final PickLog picks = PickLog.startPickLog();
-    // The one search asked of the cells alone, kept for the whole window rather than made per
-    // laying: it answers about the sites and the reach and nothing else, so it outlives any one
-    // frame, and a copy per frame would be the repeated search it exists to prevent.
-    private final VoidBridgeCache sectorBridges = new VoidBridgeCache();
-
-    private final CellsOverlay cells = new CellsOverlay(settings);
-    private final ContinentCoastOverlay continentCoasts =
-        new ContinentCoastOverlay(settings);
-
-    private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
-    private final VoidPartitionOverlay voidPartition = new VoidPartitionOverlay(settings);
 
     // The laying the last refresh drew the continent construction from, kept so that a file
     // saved from the window is a picture of that frame rather than of a laying opened again
@@ -201,9 +196,6 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     // can be written on each. Built with the geometry rather than on a toggle of their own,
     // because the readout names a cell whether or not the names are being drawn.
     private List<NamedRegion> cellNames = List.of();
-
-    private final CursorReadout readout =
-        new CursorReadout(point -> canvas.findWorldPoint(point));
 
     private SectorGeometryViewer() {
     }
@@ -223,131 +215,28 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         SwingUtilities.invokeLater(() -> new SectorGeometryViewer().showWindow());
     }
 
-    // Loading only. The geometry is not rebuilt here because the knobs have not applied their
-    // remembered values yet, and rebuilding against the defaults would only be thrown away.
-    private void loadSector(String name) {
-
-        sectorName = name;
-        fixture = SectorFixture.loadSector(name);
-    }
-
-    // Run once the pick has been applied, never alongside it: the loading is the apply, and
-    // doing it here as well would parse the fixture twice on every change of sector.
-    //
-    // Refits as well as rebuilding, because two sectors do not occupy the same coordinates
-    // and keeping the old pan would open the new one off screen.
-    private void refitToLoadedSector() {
-
-        canvas.markForRefit();
-        rebuildGeometry();
-    }
-
-    private void showWindow() {
-
-        var frame = new JFrame(WINDOW_TITLE);
-
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-
-        // A split rather than a fixed east panel, so the knob column can be widened when a
-        // long label needs reading and narrowed when the map does. The canvas takes the
-        // slack on resize, since the controls have a natural width and the map does not.
-        var split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, canvas, buildControlColumn());
-
-        split.setResizeWeight(1.0);
-        split.setContinuousLayout(true);
-
-        frame.add(split, BorderLayout.CENTER);
-        frame.add(canvas.cursorBar, BorderLayout.SOUTH);
-
-        WindowLayout.restoreLayout(frame, split);
-
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent event) {
-                WindowLayout.saveLayout(frame, split);
-            }
-        });
-
-        frame.setVisible(true);
-    }
-
-    // Writing the SVG is an action the operator asks for, not something that happens to them.
-    // It captures whatever the sliders are currently showing, which is the point: the file is
-    // for keeping an interesting shape - to attach to a plan, or to diff against a later run -
-    // and only the person looking at it knows when it has become interesting.
-    // The sector picker and the SVG button bracket the knob rows rather than sitting among
-    // them: one decides which sector is loaded and the other writes a file, and neither is a
-    // setting the map is drawn with.
-    private JScrollPane buildControlColumn() {
-
-        var controls = new JPanel();
-
-        controls.setLayout(new BoxLayout(controls, BoxLayout.Y_AXIS));
-
-        controls.add(ControlRows.buildChoice(
-            "sectorFixture",
-            "Sector",
-            SectorFixture.listSectorNames(),
-            this::loadSector,
-            this::refitToLoadedSector));
-
-        controls.add(new ViewerSettingsPanel(settings, this).buildRows());
-        controls.add(buildSaveSvgButton());
-        controls.add(canvas.statusLabel);
-
-        // Scrolled down and never sideways, and fitted to whatever width the divider leaves.
-        // The knob count exceeds a window height, so a control that has fallen off the bottom
-        // of a fixed panel is a control nobody knows exists - while a control that has fallen
-        // off the SIDE is one whose name is still on screen and whose value is not.
-        var scroller = WindowLayout.buildControlScroller(controls);
-
-        // A minimum rather than a fixed size now that the split decides the width: without
-        // one the divider can be dragged past the knobs and they vanish with no way back.
-        scroller.setMinimumSize(new Dimension(CONTROL_MINIMUM_WIDTH, 0));
-
-        // Every knob applies its remembered value as it is built, and until they all have,
-        // nothing has the settings the session was left on - the reach, the miter limit, the
-        // sector. So the one build of the geometry happens here, after the last of them,
-        // rather than in the constructor where it would run against the defaults and then sit
-        // there looking authoritative until something was touched.
-        rebuildGeometry();
-
-        return scroller;
-    }
-
-    private JButton buildSaveSvgButton() {
-
-        var button = new JButton("Save SVG of current shape");
-
-        button.addActionListener(event -> {
-
-            var target = SVG_DIRECTORY.resolve(
-                sectorName.replace(CSV_EXTENSION, SVG_EXTENSION));
-
-            // Handed what the window is drawing rather than the geometry alone, which is what
-            // "of current shape" means: given only the geometry the writer traced its own
-            // coast at the shipped defaults, and the file was a picture of a map nobody was
-            // looking at.
-            SectorSvgWriter.writeSectorSvg(target, fixture, buildDrawnSector());
-
-            canvas.statusLabel.setText("<html>wrote<br>" + target.toAbsolutePath() + "</html>");
-        });
-        return button;
-    }
-
-    // Built only while they are on screen: the partition is over every site at once, so it
-    // costs about what the clipped build costs, and nothing else in the window needs it.
     @Override
-    public void refreshUnboundedCells() {
+    public void rebuildGeometry() {
 
-        unboundedCells = settings.showUnboundedCells
-            ? UnboundedCells.buildUnboundedCells(
-                fixture.getSites(),
-                settings.parameters.boundSegments())
-            : List.of();
+        var start = System.nanoTime();
 
-        canvas.repaint();
+        geometry = SectorGeometry.buildSectorGeometry(
+            fixture,
+            settings.cellInsetRule,
+            settings.parameters);
+
+        smoothedRingsByOwner = smoothClusterRings(geometry);
+        cellNames = buildCellNames();
+
+        refreshUnboundedCells();
+
+        // Both constructions, through the one refresh: the coast is re-traced here, v4 rides
+        // its refresh because its lake coast is that trace, and the regions are named there
+        // once the sections they name are known.
+        refreshCoastlines();
+
+        lastBuildMillis = (System.nanoTime() - start) / NANOS_PER_MILLI;
+        refreshStatus();
     }
 
     // The sections follow the coast rather than having a schedule of their own: a section is a
@@ -374,17 +263,22 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         refreshVoidSections(continents);
 
         // And so does v4, whose lake coast is this trace: a coast knob that re-traced the lakes
-        // and left v4 laying the old reaches would show two constructions drawn from different
-        // coasts, which is exactly the comparison the window exists to rule out.
+        // and left v4 laying the previous reaches would show two constructions drawn from
+        // different coasts, which is exactly the comparison the window exists to rule out.
         refreshVoidV4();
     }
 
-    // Not on the refresh contract: the panel has no knob that moves the sections without
-    // moving the walls first, so this is reached through the coast rather than asked for.
-    private void refreshVoidSections(BridgedContinents laid) {
+    // Built only while they are on screen: the partition is over every site at once, so it
+    // costs about what the clipped build costs, and nothing else in the window needs it.
+    @Override
+    public void refreshUnboundedCells() {
 
-        voidSections.refresh(fixture, laid);
-        readout.nameRegionsFrom(cellNames, voidSections.collectShownSections());
+        unboundedCells = settings.showUnboundedCells
+            ? UnboundedCells.buildUnboundedCells(
+                fixture.getSites(),
+                settings.parameters.boundSegments())
+            : List.of();
+
         repaintMap();
     }
 
@@ -394,13 +288,6 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     // stays a walk that knows nothing of who found its lines.
     @Override
     public void refreshVoidV4() {
-
-        // Nothing to divide before the first build. The knobs apply their remembered values as
-        // the control column is built, and any of them may fire a refresh that lands here - but
-        // the cells are built once, after the last knob, and that build refreshes v4 itself.
-        if (geometry == null) {
-            return;
-        }
 
         // The cells' own edges, which is where the line between cell and void already stands.
         // Read off the geometry the rebuild just built rather than built again: the two would
@@ -424,6 +311,125 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         canvas.repaint();
     }
 
+    // Loading only. The geometry is not rebuilt here because the knobs have not applied their
+    // remembered values yet, and rebuilding against the defaults would only be thrown away.
+    private void loadSector(String name) {
+
+        sectorName = name;
+        fixture = SectorFixture.loadSector(name);
+    }
+
+    // Run once a new sector has been picked, never alongside the pick: the loading is the
+    // apply, and doing it here as well would parse the fixture twice on every change of sector.
+    private void refitToLoadedSector() {
+
+        canvas.markForRefit();
+        rebuildGeometry();
+    }
+
+    private void showWindow() {
+
+        var frame = new JFrame(WINDOW_TITLE);
+
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+
+        // A split rather than a fixed east panel, so the knob column can be widened when a
+        // long label needs reading and narrowed when the map does. The canvas takes the
+        // slack on resize, since the controls have a natural width and the map does not.
+        var split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, canvas, buildControlColumn());
+
+        split.setResizeWeight(1.0);
+        split.setContinuousLayout(true);
+
+        frame.add(split, BorderLayout.CENTER);
+        frame.add(canvas.getCursorBar(), BorderLayout.SOUTH);
+
+        WindowLayout.restoreLayout(frame, split);
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                WindowLayout.saveLayout(frame, split);
+            }
+        });
+
+        frame.setVisible(true);
+    }
+
+    // The sector picker and the SVG button bracket the knob rows rather than sitting among
+    // them: one decides which sector is loaded and the other writes a file, and neither is a
+    // setting the map is drawn with.
+    private JScrollPane buildControlColumn() {
+
+        var controls = new JPanel();
+
+        controls.setLayout(new BoxLayout(controls, BoxLayout.Y_AXIS));
+
+        controls.add(ControlRows.buildChoice(
+            "sectorFixture",
+            "Sector",
+            SectorFixture.listSectorNames(),
+            this::loadSector,
+            this::refitToLoadedSector));
+
+        controls.add(new ViewerSettingsPanel(settings, this).buildRows());
+        controls.add(buildSaveSvgButton());
+        controls.add(statusLabel);
+
+        // Scrolled down and never sideways, and fitted to whatever width the divider leaves.
+        // The knob count exceeds a window height, so a control that has fallen off the bottom
+        // of a fixed panel is a control nobody knows exists - while a control that has fallen
+        // off the SIDE is one whose name is still on screen and whose value is not.
+        var scroller = WindowLayout.buildControlScroller(controls);
+
+        // A minimum rather than a fixed size, since the split decides the width: without one
+        // the divider can be dragged past the knobs and they vanish with no way back.
+        scroller.setMinimumSize(new Dimension(CONTROL_MINIMUM_WIDTH, 0));
+
+        // Every knob applies its remembered value as it is built, and until they all have,
+        // nothing has the settings the session was left on - the reach, the miter limit, the
+        // sector. So the one build of the geometry happens here, after the last of them,
+        // rather than in the constructor where it would run against the defaults and then sit
+        // there looking authoritative until something was touched.
+        rebuildGeometry();
+
+        return scroller;
+    }
+
+    // Writing the SVG is an action the operator asks for, not something that happens to them.
+    // It captures whatever the sliders are currently showing, which is the point: the file is
+    // for keeping an interesting shape - to attach to a plan, or to diff against a later run -
+    // and only the person looking at it knows when it has become interesting.
+    private JButton buildSaveSvgButton() {
+
+        var button = new JButton("Save SVG of current shape");
+
+        button.addActionListener(event -> {
+
+            var target = SVG_DIRECTORY.resolve(
+                sectorName.replace(CSV_EXTENSION, SVG_EXTENSION));
+
+            // Handed what the window is drawing rather than the geometry alone, which is what
+            // "of current shape" means: a writer given only the geometry would trace its own
+            // coast, and the file would be a picture of a map nobody was looking at.
+            SectorSvgWriter.writeSectorSvg(target, fixture, buildDrawnSector());
+
+            statusLabel.setText("<html>wrote<br>" + target.toAbsolutePath() + "</html>");
+        });
+
+        return button;
+    }
+
+    // Not on the refresh contract: the panel has no knob that moves the sections without
+    // moving the walls first, so this is reached through the coast rather than asked for.
+    private void refreshVoidSections(BridgedContinents laid) {
+
+        voidSections.refresh(fixture, laid);
+        canvas.nameRegionsFrom(cellNames, voidSections.collectShownSections());
+        repaintMap();
+    }
+
     /**
      * The sector as the window is currently drawing it, for anything that draws it a second
      * way.
@@ -439,7 +445,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             geometry,
             settings.resolveBorderSmoothing(),
             continents,
-            settings.resolvePocketShaping());
+            ViewerSettings.POCKET_SHAPING);
     }
 
     /**
@@ -463,36 +469,13 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         var smoothed = new LinkedHashMap<String, List<List<double[]>>>();
 
         for (var byOwner : built.ringsByOwner().entrySet()) {
+
             smoothed.put(
                 byOwner.getKey(),
                 BorderSmoothing.smoothBorderLoops(byOwner.getValue(), profile));
         }
+
         return smoothed;
-    }
-
-    @Override
-    public void rebuildGeometry() {
-
-        var start = System.nanoTime();
-        geometry = SectorGeometry.buildSectorGeometry(
-            fixture, settings.cellInsetRule, settings.parameters);
-        smoothedRingsByOwner = smoothClusterRings(geometry);
-        cellNames = buildCellNames();
-
-        readout.nameRegionsFrom(cellNames, voidSections.collectShownSections());
-
-        if (settings.showUnboundedCells) {
-
-            unboundedCells = UnboundedCells.buildUnboundedCells(
-                fixture.getSites(),
-                settings.parameters.boundSegments());
-        }
-        // Both constructions, through the one refresh: the coast is re-traced here, and v4
-        // rides its refresh because its lake coast is that trace.
-        refreshCoastlines();
-
-        lastBuildMillis = (System.nanoTime() - start) / NANOS_PER_MILLI;
-        refreshStatus();
     }
 
     // Each cell as a named region, taken from its TRUE border rather than from its inset fill.
@@ -505,20 +488,21 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         for (var entry : geometry.cellEdgesByCellKey().entrySet()) {
 
             var ring = CellEdges.convertEdgesToRing(entry.getValue());
-
             if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                 continue;
             }
+
             // Named by the cell's own ID: the region's name is read by a person off the status
             // line, and the ID is the arm of a key a person calls a system by.
             named.add(NamedRegion.nameRegion(entry.getKey().systemId(), ring));
         }
+
         return List.copyOf(named);
     }
 
     private void refreshStatus() {
 
-        canvas.statusLabel.setText(String.format(
+        statusLabel.setText(String.format(
             "<html>%d systems, %d owners<br>rebuilt in %d ms<br><br>"
                 + "drag to pan, wheel to zoom<br>right click to note a colour<br>%s</html>",
             fixture.getSystemIds().size(),
@@ -527,268 +511,68 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             PickLog.getPickFile()));
     }
 
-    private final class MapCanvas extends JPanel {
+    private List<double[]> readSites() {
+        return fixture.getSites();
+    }
 
-        private final JLabel statusLabel = new JLabel();
-        private final JLabel cursorBar = new JLabel(" ");
-        private Point cursorPoint;
-        private double scale;
-        private double offsetX;
-        private double offsetY;
-        private Point2D dragAnchor;
+    private void recordPick(double[] world, Color colour) {
+        picks.appendPick(sectorName, world[0], world[1], colour);
+    }
 
-        private MapCanvas() {
+    // What the map is drawn from, bottom to top, under the canvas's world transform.
+    private void paintGeometry(Graphics2D g2) {
 
-            setBackground(BACKGROUND);
-            cursorBar.setBorder(BorderFactory.createEmptyBorder(
-                    STATUS_BAR_PADDING,
-                    STATUS_BAR_PADDING,
-                    STATUS_BAR_PADDING,
-                    STATUS_BAR_PADDING));
-            addMouseWheelListener(event -> {
+        // Below the clipped cells on purpose: the unclipped partition is the thing the clip
+        // cut down, so it reads as what is underneath rather than as another layer laid over
+        // the top.
+        cells.paintBeneath(g2, unboundedCells);
 
-                var factor = Math.pow(ZOOM_PER_NOTCH, -event.getWheelRotation());
+        // Under v3's fills, so that with both constructions down the newer one reads as what
+        // the older is drawn over rather than as a layer covering it. It is also the widest
+        // thing on the map - every piece of void, undivided - so painted last it would hide
+        // whatever it is meant to be compared with.
+        voidPartition.paintPieces(g2);
 
-                // Zoom about the cursor rather than the origin, so the feature being
-                // inspected stays under the pointer instead of sliding off.
-                offsetX = event.getX() - (event.getX() - offsetX) * factor;
-                offsetY = event.getY() - (event.getY() - offsetY) * factor;
-                scale *= factor;
+        // Over the pieces they are a reading of, and under v3's fills for the pieces' reason:
+        // the tier's water is the same pieces in the tier's colour.
+        voidPartition.paintLakeFills(g2);
 
-                repaint();
-            });
-            addMouseListener(new MouseAdapter() {
+        continentCoasts.paintPocketFills(g2);
 
-                @Override
-                public void mousePressed(MouseEvent event) {
+        cells.paintFills(g2, geometry, smoothedRingsByOwner);
 
-                    dragAnchor = event.getPoint();
+        // After the fills, not before. A cluster fuses its cells into one fill, so a line
+        // drawn first is painted over by the very shape it divides.
+        cells.paintLines(g2, geometry);
 
-                    if (SwingUtilities.isRightMouseButton(event)) {
-                        writePick(event.getPoint());
-                    }
-                }
+        // Topmost of the lines, so a coast reads unbroken against the cells it was traced
+        // from - which is the one thing looking at it is for.
+        continentCoasts.paintCoasts(g2);
 
-                @Override
-                public void mouseExited(MouseEvent event) {
-                    trackCursor(null);
-                }
-            });
-            addMouseMotionListener(new MouseMotionAdapter() {
+        // v4's lines in the same pass as v3's coast, for the same reason: a run of border is
+        // read against the cells it runs along, so it goes over everything filled. The walls
+        // first, the frontage over them: the frontage is a diagnostic of what the walls left
+        // open, and reads against the lines as much as against the fills.
+        voidPartition.paintLakeCoast(g2);
+        voidPartition.paintLakeBridges(g2);
+        voidPartition.paintLandableFrontage(g2);
+        cells.paintSites(g2, fixture.getSites());
+    }
 
-                @Override
-                public void mouseDragged(MouseEvent event) {
+    // The cells' names first, so that where a name of each kind would land on the same place
+    // the void's name is the one left readable. A piece of void is the smaller and rarer thing
+    // and is what anyone with the void names switched on is looking for.
+    private void paintNames(Graphics2D g2, AffineTransform worldToScreen) {
 
-                    offsetX += event.getX() - dragAnchor.getX();
-                    offsetY += event.getY() - dragAnchor.getY();
-                    dragAnchor = event.getPoint();
-                    cursorPoint = event.getPoint();
-                    cursorBar.setText(readout.describeOnOneLine(cursorPoint));
-
-                    repaint();
-                }
-
-                @Override
-                public void mouseMoved(MouseEvent event) {
-                    trackCursor(event.getPoint());
-                }
-            });
+        if (settings.showCellNames) {
+            NamedRegions.paintNames(g2, worldToScreen, cellNames, settings.regionNameColour);
         }
 
-        @Override
-        protected void paintComponent(Graphics g) {
+        voidSections.paintNames(g2, worldToScreen);
 
-            super.paintComponent(g);
-            paintMap((Graphics2D) g);
-
-            if (scale != 0) {
-                paintNames((Graphics2D) g);
-            }
-            if (cursorPoint != null && scale != 0) {
-                readout.paintAt((Graphics2D) g, cursorPoint, getSize());
-            }
-        }
-
-        // The cells first, so that where a name of each kind would land on the same place the
-        // void's name is the one left readable. A piece of void is the smaller and rarer thing
-        // and is what anyone with the void names switched on is looking for.
-        private void paintNames(Graphics2D g2) {
-
-            var worldToScreen = buildWorldToScreen();
-
-            if (settings.showCellNames) {
-                NamedRegions.paintNames(
-                    g2, worldToScreen, cellNames, settings.regionNameColour);
-            }
-            voidSections.paintNames(g2, worldToScreen);
-
-            // v4's after v3's, in the same colour: the two constructions' names are compared
-            // the way their fills are, and with both on the newer is the one left readable.
-            NamedRegions.paintNames(
-                g2, worldToScreen, voidPartition.collectLakeNames(), settings.regionNameColour);
-        }
-
-        // The one statement of where the sector sits on the canvas. The map is drawn through
-        // it and the section names are placed by it, so a name landing somewhere other than on
-        // its own section is impossible rather than merely unlikely.
-        private AffineTransform buildWorldToScreen() {
-
-            var transform = new AffineTransform();
-
-            transform.translate(offsetX, offsetY);
-
-            // World y grows upward and screen y downward, so the drawing is flipped once here
-            // rather than at every vertex - a sector drawn upside down would read as a bug.
-            transform.scale(scale, -scale);
-
-            return transform;
-        }
-
-        // The map itself, without the readout drawn over it. Apart from the readout because a
-        // pick has to be able to paint the map alone: a label following the pointer around is
-        // the one thing certain to be near wherever a colour is being read.
-        private void paintMap(Graphics2D g) {
-
-            var g2 = (Graphics2D) g.create();
-
-            g2.setRenderingHint(
-                RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-
-            if (scale == 0) {
-                fitToSector();
-            }
-
-            g2.transform(buildWorldToScreen());
-
-            paintGeometry(g2);
-
-            g2.dispose();
-        }
-
-        // What was under the pointer, written down. Painted afresh into an image rather than
-        // grabbed off the screen, so what is read is this canvas at this moment - a screen
-        // grab reads whatever window happens to be over it, and a cached frame reads whatever
-        // the knobs were before the last move.
-        private void writePick(Point point) {
-
-            if (scale == 0 || getWidth() <= 0 || getHeight() <= 0) {
-                return;
-            }
-
-            var image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
-            var g2 = image.createGraphics();
-
-            g2.setColor(getBackground());
-            g2.fillRect(0, 0, getWidth(), getHeight());
-
-            paintMap(g2);
-            g2.dispose();
-
-            var world = findWorldPoint(point);
-
-            picks.appendPick(
-                sectorName, world[0], world[1], new Color(image.getRGB(point.x, point.y)));
-        }
-
-        private void trackCursor(Point point) {
-
-            var previous = cursorPoint;
-
-            cursorPoint = point;
-            cursorBar.setText(readout.describeOnOneLine(point));
-
-            if (previous != null) {
-                repaintAround(previous);
-            }
-            if (point != null) {
-                repaintAround(point);
-            }
-        }
-
-        private void repaintAround(Point point) {
-
-            if (scale == 0) {
-                return;
-            }
-
-            var box = readout.findEraseBox(point, getFontMetrics(getFont()), getSize());
-
-            repaint(box.x, box.y, box.width, box.height);
-        }
-
-        // Where a point on the canvas is in the sector's own coordinates - the inverse of the
-        // transform the map is drawn under, in one place, so what a pick writes down and what
-        // the readout says cannot come to disagree.
-        private double[] findWorldPoint(Point point) {
-
-            return new double[] {
-                (point.x - offsetX) / scale,
-                (offsetY - point.y) / scale};
-        }
-
-        private void paintGeometry(Graphics2D g2) {
-
-            // First, so the cells and rings draw over it. The corridors occupy the space the
-            // cells do not, so nothing is actually hidden - but a stray pixel of raster
-            // straying over a cell rim should read as the mistake it is rather than paint
-            // over the shape it got wrong.
-            // Below the clipped cells on purpose: the unclipped partition is the thing the
-            // clip cut down, so it reads as what is underneath rather than as another layer
-            // laid over the top.
-            cells.paintBeneath(g2, unboundedCells);
-
-            // Under v3's fills, so that with both constructions down the newer one reads as
-            // what the older is drawn over rather than as a layer covering it. It is also the
-            // widest thing on the map - every piece of void, undivided - so painted last it
-            // would hide whatever it is meant to be compared with.
-            voidPartition.paintPieces(g2);
-
-            // Over the pieces they are a reading of, and under v3's fills for the pieces'
-            // reason: the tier's water is the same pieces in the tier's colour.
-            voidPartition.paintLakeFills(g2);
-
-            continentCoasts.paintPocketFills(g2);
-
-            cells.paintFills(g2, geometry, smoothedRingsByOwner);
-
-            // After the fills, not before. A cluster fuses its cells into one fill, so a line
-            // drawn first is painted over by the very shape it divides.
-            cells.paintLines(g2, geometry);
-
-            // Topmost of the lines, so a coast reads unbroken against the cells it was traced
-            // from - which is the one thing looking at it is for.
-            continentCoasts.paintCoasts(g2);
-
-            // v4's frontage in the same pass as v3's, for the same reason: a run of border is
-            // read against the cells it runs along, so it goes over everything filled.
-            // The walls first, the frontage over them: the frontage is a diagnostic of what the
-            // walls left open, and reads against the lines as much as against the fills.
-            voidPartition.paintLakeCoast(g2);
-            voidPartition.paintLakeBridges(g2);
-            voidPartition.paintLandableFrontage(g2);
-            cells.paintSites(g2, fixture.getSites());
-        }
-
-        // Puts the view back to "not yet fitted", which is what a zero scale means to the
-        // paint pass. Named rather than having callers assign zero, because "scale = 0" reads
-        // as breaking the transform rather than as asking for it to be worked out again.
-        private void markForRefit() {
-            scale = 0;
-        }
-
-        private void fitToSector() {
-
-            var bounds = Bounds.computeEnclosingBounds(fixture.getSites());
-
-            var span = Math.max(
-                bounds.maxX() - bounds.minX(),
-                bounds.maxY() - bounds.minY()) * INITIAL_MARGIN;
-
-            scale = Math.min(getWidth(), getHeight()) / span;
-            offsetX = getWidth() / 2.0 - (bounds.minX() + bounds.maxX()) / 2 * scale;
-            offsetY = getHeight() / 2.0 + (bounds.minY() + bounds.maxY()) / 2 * scale;
-        }
-
+        // v4's after v3's, in the same colour: the two constructions' names are compared the
+        // way their fills are, and with both on the newer is the one left readable.
+        NamedRegions.paintNames(
+            g2, worldToScreen, voidPartition.collectLakeNames(), settings.regionNameColour);
     }
 }

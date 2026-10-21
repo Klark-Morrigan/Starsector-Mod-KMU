@@ -4,11 +4,12 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.markets.SectorMarkets;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.markets.colonies.SystemColonies;
-
-import kmu.maplayers.base.visibility.observations.ObservationStore;
+import kmlib.starsector.memory.observations.ObservationStore;
+import kmlib.starsector.memory.observations.RecordedObservations;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,9 +44,9 @@ import java.util.Map;
  * and hyperspace holds by far the largest entity list in the sector to walk for it.
  *
  * <p>The bytes and the load lifecycle underneath are an {@link ObservationStore}'s, which every map
- * family that keeps observations shares, and which colonies the sector still holds is
- * {@link PresentColonies}'. What one entry means stays here, in {@link ColonyObservationCodec}:
- * everything above this class is handed a {@link ColonyObservation} carrying both the place and the
+ * family that keeps observations shares, and which colonies the sector still holds is read by
+ * {@link SectorMarkets#readMarketIds}. What one entry means stays here, in
+ * {@link ColonyObservationCodec}: everything above this class is handed a {@link ColonyObservation} carrying both the place and the
  * moment, so a reader cannot pair one entry's place with another's time - and the two cannot be
  * stored apart and drift.
  *
@@ -70,14 +71,21 @@ public final class SectorColonySightings {
     /**
      * Opens the sector's sighting register for reading.
      *
+     * <p>What is kept is the place a colony was seen standing in, and a reader compares that against
+     * where it stands now. Vanilla records only that a system has been entered, which answers a
+     * different question: a colony founded after the visit, or moved in since, was never seen there
+     * however many times the player has crossed the place.
+     *
+     * <p>Says nothing about who did the observing. The player standing in a place and the place's own
+     * inhabitants are both observations, and one register holds them alike - which is what keeps a
+     * colony known once the neighbours who could see it are gone.
+     *
      * @param sector the sector whose memory holds the register; null - or one holding no
      *               register yet - reads as nothing having been seen anywhere
      * @return what was last observed of each colony, by colony ID; never null
      */
-    public static ColonySightings readSightings(SectorAPI sector) {
-
-        return SIGHTINGS_REGISTER
-            .readObservations(sector)::readObservationOrNull;
+    public static RecordedObservations<ColonyObservation> readSightings(SectorAPI sector) {
+        return SIGHTINGS_REGISTER.readObservations(sector);
     }
 
     /**
@@ -108,7 +116,7 @@ public final class SectorColonySightings {
             sector,
             system.getId(),
             ColonyKnowledge
-                .observingUnderTheFog()
+                .observingUnderTheFog(sector)
                 .readGatedColonies(SystemColonies.readColoniesIn(sector, system)));
     }
 
@@ -161,7 +169,7 @@ public final class SectorColonySightings {
             return;
         }
         var knowledge = observing == null
-            ? ColonyKnowledge.observingUnderTheFog()
+            ? ColonyKnowledge.observingUnderTheFog(sector)
             : observing;
 
         recordObservedColonies(
@@ -182,7 +190,7 @@ public final class SectorColonySightings {
 
         SIGHTINGS_REGISTER.dropObservationsOfAbsentSubjects(
             sector,
-            PresentColonies::readColonyIds);
+            SectorMarkets::readMarketIds);
     }
 
     /**
@@ -204,7 +212,7 @@ public final class SectorColonySightings {
 
         SIGHTINGS_REGISTER.reconcileWithLoadedSave(
             sector,
-            PresentColonies::readColonyIds,
+            SectorMarkets::readMarketIds,
             loadedSector -> recordSightingsIn(loadedSector, loadedSector.getCurrentLocation()));
     }
 

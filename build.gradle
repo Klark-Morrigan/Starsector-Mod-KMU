@@ -66,24 +66,48 @@ enforcePackageVocabulary {
     // the substrate's political nouns, plus the words that name one layer and the
     // mechanics a layer decides its owners by, since a tier named after one of its
     // layers is that layer with extra callers.
-    //
-    // *Bloc* stays open here where it is closed below. The substrate paints an
-    // opaque owner and has no notion of a group; this tier is where owners are
-    // grouped, ranked and picked, and *bloc* is its word for the group whatever
-    // decides membership.
     forbidWords under: 'kmu.maplayers.ownermap',
                 words: ['territory', 'territories', 'national border',
                         'contested fill', 'political', 'politics',
                         'dominance', 'dominant', 'claim', 'claims',
-                        'alliance', 'alliances', 'nexerelin']
+                        'nexerelin']
+
+    // The tier's core says *owner*. What a holder is, and the markets one is
+    // counted by, are the holder subtree's words.
+    forbidWords under: 'kmu.maplayers.ownermap',
+                except: 'kmu.maplayers.ownermap.owners.holders',
+                words: ['faction', 'factions', 'colony', 'colonies',
+                        'bloc', 'blocs', 'alliance', 'alliances',
+                        'holder', 'holders', 'market', 'markets']
+
+    allowWords words: ['faction', 'factions', 'colony', 'bloc', 'alliance', 'alliances',
+                       'holder', 'holders', 'market', 'markets'],
+            inFile: 'src/main/java/kmu/maplayers/ownermap/README.md'
+
+    // Two files that name the holder subtree's package: the owner seams'
+    // README, its parent, links it, and the static-state suite walks it.
+    allowWord word: 'holders',
+            inFile: 'src/main/java/kmu/maplayers/ownermap/owners/README.md'
+    allowWord word: 'holders',
+            inFile: 'src/test/java/kmu/maplayers/ownermap/OwnerMapStaticStateIntegrationTests.java'
+
+    allowWord word: 'faction',
+            inFile: 'src/test/java/kmu/maplayers/ownermap/RelayOwnerLayerIntegrationTests.java'
+
+    forbidWords under: 'kmu.maplayers.ownermap.owners.holders',
+                except: 'kmu.maplayers.ownermap.owners.holders.alliances',
+                words: ['alliance', 'alliances']
+
+    allowWords words: ['alliance', 'alliances'],
+            inFile: 'src/main/java/kmu/maplayers/ownermap/owners/holders/README.md'
 
     // *Cell* means a system's polygon everywhere else under this root - the
     // geometry that shapes one, the edges it is classified by, the hit test
-    // that finds one under the pointer. The arranging modal borrowed it for the
-    // vanilla elements its box is laid out from, which is a table's word for a
-    // thing that is not one: the modal's head and foot are cells of no row. The
-    // engine already names them - a `createUIElement` returns an element - so
-    // the modal says *element*, and the map keeps the word.
+    // that finds one under the pointer. For the vanilla elements the arranging
+    // modal's box is laid out from, it would be a table's word for a thing that
+    // is not one: the modal's head and foot are cells of no row. The engine
+    // already names them - a `createUIElement` returns an element - so the modal
+    // says *element*, and the map keeps the word.
     forbidWords under: 'kmu.maplayers.base.chrome.arrange',
                 words: ['cell', 'cells']
 
@@ -95,11 +119,11 @@ enforcePackageVocabulary {
     allowWord word: 'cell',
             inFile: 'src/main/java/kmu/maplayers/base/chrome/arrange/README.md'
 
-    // *Ground* is simply unclear. It stood for a cell, a cluster's fill,
-    // a whole territory and the receded backdrop in different sentences of the
-    // same file, so a reader had to guess which each time - and the words it
-    // stood for were all available. Declared here beside the layering words so
-    // both halves of "what this tree may not say" read as one block.
+    // *Ground* is simply unclear. It can stand for a cell, a cluster's fill,
+    // a whole territory or the receded backdrop, so a reader has to guess which
+    // each time - and each of those has a word of its own. Declared here beside
+    // the layering words so both halves of "what this tree may not say" read as
+    // one block.
     forbidWords under: 'kmu',
                 words: ['ground']
 
@@ -110,7 +134,7 @@ enforcePackageVocabulary {
     allowWord word: 'ground',
             inFile: 'src/main/java/kmu/maplayers/README.md'
 
-    // Two shapes of colony the tree kept inventing words for. *Hulk* is fluff on
+    // Two shapes of colony that already have a word each. *Hulk* is fluff on
     // top of *derelict*, which already names the thing and is what every type
     // here is called. *Dead colony* and *dead world* are worse than fluff: the
     // kind they stood for is still populated - survivors, bandits and looters -
@@ -118,28 +142,26 @@ enforcePackageVocabulary {
     // it is *decivilised*. Plurals are separate entries because the gate parts
     // words one at a time, so a phrase list closing the singular leaves the
     // plural open.
+    //
+    // The player reads one other word for a derelict, in one place: the hover
+    // box's qualifier says *abandoned*, as vanilla's Abandoned Station names
+    // say, so the box speaks the game's word beside the game's own names.
+    // Everywhere else - code, docs and every other string - says *derelict*.
     forbidWords under: 'kmu',
                 words: ['hulk', 'hulks',
                         'dead colony', 'dead colonies',
                         'dead world', 'dead worlds']
 
-    // The four files that may say it, each for a reason no rewording reaches.
-    // Three name the sector-memory keys the picker's selection is stored under:
-    // those are save-serialised identities, frozen for the reason the terrain
-    // plugin's class name is, so the word is part of a key rather than a claim
-    // about the framework.
+    // The three files that may say it, each naming the sector-memory keys the
+    // picker's selection is stored under. Those are save-serialised identities,
+    // frozen for the reason the terrain plugin's class name is, so the word is
+    // part of a key rather than a claim about the framework.
     allowWord word: 'bloc',
             inFile: 'src/main/java/kmu/maplayers/base/sidebar/FilterSelection.java'
     allowWord word: 'bloc',
             inFile: 'src/main/java/kmu/maplayers/base/sidebar/README.md'
     allowWord word: 'bloc',
             inFile: 'src/test/java/kmu/maplayers/base/sidebar/FilterSelectionTests.java'
-
-    // The fourth names a rule rather than a key: the theme's README explains why
-    // `MapPalettes` stays with the owner-painted tier, and it cannot make that
-    // argument without naming what that tier resolves.
-    allowWord word: 'bloc',
-            inFile: 'src/main/java/kmu/maplayers/base/theme/README.md'
 }
 
 // Two ambient reads the map layers contain, each at the seams named below.
@@ -153,9 +175,9 @@ enforcePackageVocabulary {
 // So the reads are contained at the seams vanilla drives with no sector named,
 // and those seams are named here. Two of the three resolve a *sector* for a
 // screen that hands them none - the pause cover and the filter self-heal; the
-// third is the installation index, which is where a sector-less caller resolves
-// the machinery it should draw through, and is the one read the whole
-// arrangement rests on.
+// third is SectorMapMachineryIndex, the index from a sector to its installed map
+// machinery, which is where a sector-less caller resolves the machinery it should
+// draw through, and is the one read the whole arrangement rests on.
 enforceRestrictedCalls {
     restrictCall call: 'Global.getSector()',
         under: 'kmu.maplayers',
@@ -194,9 +216,8 @@ enforceRestrictedCalls {
 }
 
 // On-demand source cleanup (`gradlew formatJava`). Mechanical fixes only - it
-// never re-lays code. Applied after the source sets above because the shared
-// script reads whichever ones exist when it runs; utils is KMU's own code, so it
-// is cleaned like main and test rather than exempted.
+// never re-lays code. utils is KMU's own code, so it is cleaned like main and
+// test rather than exempted.
 apply from: "${rootDir}/../Common-Java/gradle/spotless-java.gradle"
 
 // The shared conventions expose the resolved install root so KMU can locate
@@ -227,13 +248,6 @@ def lazyLibJarFile = resolveModJarFile('lw_lazylib', 'LazyLib.jar')
 // jar dies on NoClassDefFoundError. The game classloader hands it over in play;
 // nothing outside the game does.
 def lunaLibJarFile = resolveModJarFile('lunalib', 'LunaLib.jar')
-
-// Nexerelin is an optional runtime dependency. KMU compiles against its
-// InvasionListener so the map layers learn of a colony that changes hands in a
-// Nex war; the mod classloader supplies the jar at runtime when Nex is installed,
-// and NexerelinInvasionListenerInstaller gates the relay behind a mod-enabled
-// check so a Nex-free install never resolves the type.
-def nexJars = findModJars('ExerelinCore.jar')
 
 // XStream backs Starsector's save serialisation. KMU compiles against it to
 // override configureXStream and alias the map-layer terrain plugin's former
@@ -313,7 +327,6 @@ dependOnGameJars(jsonJars)
 dependOnGameJars(xstreamJars)
 
 dependOnModJars(consoleCommandsJars)
-dependOnModJars(nexJars)
 dependOnModJars(files(lazyLibJarFile))
 dependOnModJars(files(lazyLibKotlinRuntimeJarFile))
 // KMLib is a hard dependency in mod_info.json; Starsector's mod classloader provides the jar at
@@ -324,7 +337,6 @@ dependOnModJars(files(lazyLibKotlinRuntimeJarFile))
 dependOnModJars(kmlibDependency)
 
 dependOnUtilsJars(consoleCommandsJars)
-dependOnUtilsJars(nexJars)
 dependOnUtilsJars(kmlibDependency)
 dependOnUtilsJars(files(lazyLibJarFile))
 dependOnUtilsJars(files(lazyLibKotlinRuntimeJarFile))
@@ -342,6 +354,16 @@ dependencies {
     // resolve the XStream types their signatures name. Nothing utils runs touches a save, so the
     // jar is not on its runtime.
     utilsCompileOnly xstreamJars
+
+    // Runtime only, for the reason the tests take them: the tooling opens on the shipped geometry
+    // defaults by calling the mod's own settings accessors, and those reach KMLib's reader. The
+    // reader logs through log4j, asks the game's Global whether LunaLib is up, and names LunaLib's
+    // own types, so each jar has to load or the window dies on NoClassDefFoundError before it
+    // opens. Outside a game Global holds no settings, so the reader answers each accessor's
+    // fallback.
+    utilsRuntimeOnly files(lunaLibJarFile)
+    utilsRuntimeOnly files(project.ext.apiJarFile)
+    utilsRuntimeOnly findCoreJars(['log4j-*.jar'])
 
     // The fixtures KMLib publishes as a variant of their own - the fakes of its ports and the market
     // and colony shapes its reads are posed against. A variant rather than part of the jar above,
@@ -394,15 +416,6 @@ tasks.withType(JavaCompile).configureEach {
                 "Could not find LazyLib jar at ${lazyLibJarFile}. " +
                 "Install LazyLib under mods/lw_lazylib/jars/LazyLib.jar " +
                 "for compiling KMU's map labels.")
-        }
-        // Nex is optional at runtime but its InvasionListener is needed to
-        // compile NexerelinMarketTransferRelay, so the jar must be present
-        // to build even though a player can run KMU without Nex installed.
-        if (nexJars.files.isEmpty()) {
-            throw new GradleException(
-                "Could not find Nexerelin jar under " +
-                "${starsectorRoot}/mods/**/jars/ExerelinCore.jar. " +
-                "Install Nexerelin for compiling KMU's market-transfer map integration.")
         }
     }
 }

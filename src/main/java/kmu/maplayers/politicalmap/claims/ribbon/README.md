@@ -43,7 +43,7 @@ a pirate haven,
 a player colony and a decivilised world all resolve no claimant.
 Which reasons,
 and the mistake that is easy to make about them,
-are [`ownermap.owners.holders`](../../../ownermap/owners/holders/README.md)'s to state.
+are [the claim mechanic](../README.md#inhabited-does-not-imply-claimed)'s to state.
 
 What follows here is that this layer's fill *is* the claim,
 so over those systems it says nothing at all,

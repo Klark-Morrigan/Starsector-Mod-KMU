@@ -10,7 +10,7 @@ package kmu.maplayers.base.render;
  * Starscape filter changes is how: a large blended sprite over the sector rather than the ordinary
  * nebula terrain render. The names carry the mode because that sprite is what the split is for, and
  * because Starscape is the only look with a surface above the nebulae at all - the schematic map
- * owns one icon and so paints both bands in one pass, below them, exactly as it always has.
+ * owns one icon and so paints both bands in one pass, below them.
  *
  * <p>The bands are named for their positions, not their contents, and no inventory of what rides
  * where belongs here: what a fogged sub-layer costs is a question about how the picture reads, and

@@ -1,14 +1,12 @@
 package kmu.maplayers.base.geometry.v3;
 
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.LoadedSectors;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The shipped construction run over each real sector, once for the whole suite.
@@ -29,26 +27,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public final class SectorPipeline {
 
-    /**
-     * Where the parameterised tests take their sectors from.
-     *
-     * <p>A constant rather than the string at each use, because a {@code @MethodSource} names
-     * its provider by text: spelled out per suite, a provider that moves leaves every copy
-     * pointing at nothing, and the failure is a test that silently stops running.
-     */
-    public static final String SECTORS =
-        "kmu.maplayers.base.geometry.v3.SectorPipeline#provideSectorNames";
-
     /** The knobs the cells are built under. */
     static final SectorGeometryParameters PARAMETERS = ShippedMap.KNOBS;
 
     /** How the coast is traced. */
-    static final Coastlines.CoastRules COAST_RULES = ShippedMap.COAST_RULES;
+    static final CoastRules COAST_RULES = ShippedMap.COAST_RULES;
 
     /** The laying the map ships, which is the one worth reporting on. */
     static final ContinentBridges.BridgeRules SPAN_RULES = ShippedMap.SPAN_RULES;
-
-    private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
 
     // One laying per sector, which keeps each of its searches once it has run it - so the
     // trace, the spans and the links below are one answer each however many suites ask.
@@ -61,37 +47,10 @@ public final class SectorPipeline {
     }
 
     /**
-     * The sectors every parameterised test runs over.
-     *
-     * <p>Asserts they exist, because a missing fixture set makes every suite here pass without
-     * running anything - which reads as green.
-     *
-     * @return the sector names on the classpath
-     */
-    public static List<String> provideSectorNames() {
-
-        var names = SectorFixture.listSectorNames();
-
-        assertThat(names)
-            .as("no sector fixtures on the classpath")
-            .isNotEmpty();
-
-        return names;
-    }
-
-    /**
-     * @param sector which sector
-     * @return its sites and their names, loaded once
-     */
-    public static SectorFixture loadFixture(String sector) {
-        return FIXTURES.computeIfAbsent(sector, SectorFixture::loadSector);
-    }
-
-    /**
      * @param sector which sector
      * @return its continent coasts, traced once under the shipped knobs
      */
-    static Coastlines.TracedCoasts traceContinentCoast(String sector) {
+    static TracedCoasts traceContinentCoast(String sector) {
         return layContinents(sector).traceCoasts();
     }
 
@@ -139,7 +98,7 @@ public final class SectorPipeline {
 
         return WATER.computeIfAbsent(sector + shaping, whichever ->
             layContinents(sector).fillWater(
-                CoastPockets.markEverySiteUnowned(loadFixture(sector).getSites()), shaping));
+                CoastPockets.markEverySiteUnowned(LoadedSectors.loadFixture(sector).getSites()), shaping));
     }
 
     /**
@@ -148,7 +107,7 @@ public final class SectorPipeline {
      * @param sector which sector
      * @return the second trace, laid once
      */
-    static Coastlines.TracedCoasts traceLinkedCoasts(String sector) {
+    static TracedCoasts traceLinkedCoasts(String sector) {
         return layContinents(sector).traceLinkedCoasts();
     }
 
@@ -178,7 +137,7 @@ public final class SectorPipeline {
     private static BridgedContinents layContinents(String sector) {
 
         return LAYINGS.computeIfAbsent(sector, named -> BridgedContinents.layContinents(
-            loadFixture(named).getSites(),
+            LoadedSectors.loadFixture(named).getSites(),
             PARAMETERS,
             COAST_RULES,
             SPAN_RULES,

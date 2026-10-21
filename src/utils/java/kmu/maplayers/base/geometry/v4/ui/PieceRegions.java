@@ -6,6 +6,7 @@ import kmlib.math.geometry.RingRegion;
 import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.v4.Face;
+import kmu.maplayers.base.geometry.v4.FaceWalk;
 import kmu.maplayers.base.geometry.v4.PieceShaper;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
@@ -90,14 +91,12 @@ public final class PieceRegions {
             // The rounding steps a sharp corner back by more than the corner's own edges
             // where a lens ends, and the arc it lays crosses them; the resolve then hands
             // that crossing back as a loop of its own, a few units across, which paints as a
-            // speck beside the junction. The walk keeps no face under a sagitta squared, and
-            // nothing drawn from its faces should be smaller than they can be.
+            // speck beside the junction. Held to the walk's own floor, so nothing drawn from
+            // its faces is smaller than they can be.
             for (var region : PolygonRegions.groupRingsIntoRegions(
                     BorderSmoothing.resolveSmoothedBorderLoops(shaped.toRings(), smoothing))) {
 
-                if (PolygonRegions.computeSignedArea(region.outerRing())
-                        >= resolution * resolution) {
-
+                if (FaceWalk.isBiggerThanSmallestFace(region.outerRing(), resolution)) {
                     regions.add(region);
                 }
             }

@@ -1,8 +1,8 @@
 package kmu.maplayers.ownermap.render;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import org.junit.jupiter.api.Nested;
@@ -19,16 +19,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins what a batch of stale systems is taken to have disturbed, which is what decides how much of
  * the map redraws. Both halves are silent when wrong: too few cells leaves a border drawn down one
- * side only, too few factions leaves a cluster group holding the shape it lost, and a batch wrongly
+ * side only, too few owners leaves a cluster group holding the shape it lost, and a batch wrongly
  * read as having flipped nothing skips the clustering and cluster group work entirely.
  *
  * <p>The one-sided transfers are the cases worth guarding hardest. A system taking its first
- * colony has no old holder and a decivilised one has no new holder, so a reading that took "both
+ * settlement has no old owner and an emptied one has no new owner, so a reading that took "both
  * sides present" for the definition of a flip would skip exactly the two changes a player is most
  * likely to be watching for.
  *
  * <p>The restyle cases guard the other direction: a cell that draws differently owes a redraw and
- * nothing beyond it, so a restyle recorded as a flip would send two factions through a cluster group
+ * nothing beyond it, so a restyle recorded as a flip would send two owners through a cluster group
  * rebuild for a change that moved no border.
  */
 final class StaleOwnerMapDisturbanceTests {
@@ -52,8 +52,8 @@ final class StaleOwnerMapDisturbanceTests {
         }
 
         @Test
-        void isTrueForASystemThatOnlyGainedAHolder() {
-            // A first colony has no losing side. Reading a flip off both sides being present
+        void isTrueForASystemThatOnlyGainedAnOwner() {
+            // A first settlement has no losing side. Reading a flip off both sides being present
             // would leave the new cluster group undrawn until some later full rebuild.
             var disturbance = new StaleOwnerMapDisturbance();
 
@@ -64,8 +64,8 @@ final class StaleOwnerMapDisturbanceTests {
         }
 
         @Test
-        void isTrueForASystemThatOnlyLostItsHolder() {
-            // The mirror: a decivilised system has no gaining side, and its old holder's
+        void isTrueForASystemThatOnlyLostItsOwner() {
+            // The mirror: an emptied system has no gaining side, and its old owner's
             // cluster group is exactly the one that has to stop drawing the cell.
             var disturbance = new StaleOwnerMapDisturbance();
 
@@ -77,8 +77,8 @@ final class StaleOwnerMapDisturbanceTests {
 
         @Test
         void isFalseForARestyleAlone() {
-            // A system whose last colony went, or one the spotlit bloc just settled, draws
-            // differently with its holder exactly where it was - so nothing above the cell is
+            // A system whose last settlement went, or one the spotlit owner just settled, draws
+            // differently with its owner exactly where it was - so nothing above the cell is
             // owed, and a batch of these must not re-fit every name on the map.
             var disturbance = new StaleOwnerMapDisturbance();
 
@@ -94,8 +94,8 @@ final class StaleOwnerMapDisturbanceTests {
 
         @Test
         void redrawsTheFlippedSystemAndItsNeighbours() {
-            // The neighbour's own holder did not move, but the edge it shares with the flipped
-            // system just turned from a same-faction seam into a cluster border, so it re-shapes
+            // The neighbour's own owner did not move, but the edge it shares with the flipped
+            // system just turned from a same-owner seam into a cluster border, so it re-shapes
             // too or the border draws down one side only.
             var disturbance = new StaleOwnerMapDisturbance();
 
@@ -112,7 +112,7 @@ final class StaleOwnerMapDisturbanceTests {
         @Test
         void namesBothSidesOfATransfer() {
             // Both outlines moved - one lost the cell, the other gained it - so both rebuild,
-            // and no third faction's rings trace a cell that moved.
+            // and no third owner's rings trace a cell that moved.
             var disturbance = new StaleOwnerMapDisturbance();
 
             disturbance.recordFlip(
@@ -121,30 +121,30 @@ final class StaleOwnerMapDisturbanceTests {
                 buildOwnerOf(HEGEMONY),
                 buildOwnerOf(TRITACHYON));
 
-            assertThat(disturbance.getAffectedFactionIds())
+            assertThat(disturbance.getAffectedOwnerIds())
                 .containsExactly(HEGEMONY, TRITACHYON);
         }
 
         @Test
-        void namesOnlyTheGainingFactionWhenNobodyHeldItBefore() {
+        void namesOnlyTheGainingOwnerWhenNobodyHeldItBefore() {
             // Nobody held it, so there is no losing cluster group to rebuild - and naming one would
-            // send a faction that never drew this cell through a rebuild for nothing.
+            // send an owner that never drew this cell through a rebuild for nothing.
             var disturbance = new StaleOwnerMapDisturbance();
 
             disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildOwnerOf(TRITACHYON));
 
-            assertThat(disturbance.getAffectedFactionIds())
+            assertThat(disturbance.getAffectedOwnerIds())
                 .containsExactly(TRITACHYON);
         }
 
         @Test
-        void namesOnlyTheLosingFactionWhenNobodyHoldsItNow() {
+        void namesOnlyTheLosingOwnerWhenNobodyHoldsItNow() {
 
             var disturbance = new StaleOwnerMapDisturbance();
 
             disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), buildOwnerOf(HEGEMONY), null);
 
-            assertThat(disturbance.getAffectedFactionIds())
+            assertThat(disturbance.getAffectedOwnerIds())
                 .containsExactly(HEGEMONY);
         }
 
@@ -169,7 +169,7 @@ final class StaleOwnerMapDisturbanceTests {
 
             assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM);
-            assertThat(disturbance.getAffectedFactionIds())
+            assertThat(disturbance.getAffectedOwnerIds())
                 .containsExactly(HEGEMONY, TRITACHYON);
         }
     }
@@ -192,20 +192,20 @@ final class StaleOwnerMapDisturbanceTests {
 
         @Test
         void rebuildsNoClusterGroup() {
-            // No bloc's outline moved - the system is drawn by whoever drew it before, or by
-            // nobody as before - so naming a faction here would rebuild a cluster group that traces
+            // No owner's outline moved - the system is drawn by whoever drew it before, or by
+            // nobody as before - so naming an owner here would rebuild a cluster group that traces
             // the same cells it already did.
             var disturbance = new StaleOwnerMapDisturbance();
 
             disturbance.recordRestyle(RESTYLED_SYSTEM);
 
-            assertThat(disturbance.getAffectedFactionIds())
+            assertThat(disturbance.getAffectedOwnerIds())
                 .isEmpty();
         }
 
         @Test
         void countsACellOnceWhenItAlsoFlipped() {
-            // Both facts can move in one batch - a system taking its first colony changes hands
+            // Both facts can move in one batch - a system taking its first settlement changes hands
             // and becomes settled at once - and the cell is worth redrawing once.
             var disturbance = new StaleOwnerMapDisturbance();
 
@@ -217,8 +217,8 @@ final class StaleOwnerMapDisturbanceTests {
         }
     }
 
-    // Only the faction ID is read here, so the shades are inert placeholders.
-    private static SystemOwner buildOwnerOf(String factionId) {
-        return new SystemOwner(factionId, new OwnerPalette(Color.GRAY, Color.GRAY));
+    // Only the owner ID is read here, so the shades are inert placeholders.
+    private static SystemOwner buildOwnerOf(String ownerId) {
+        return new SystemOwner(ownerId, new ColourPair(Color.GRAY, Color.GRAY));
     }
 }

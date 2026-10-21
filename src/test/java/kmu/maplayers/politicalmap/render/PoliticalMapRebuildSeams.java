@@ -7,6 +7,7 @@ import kmlib.testfixtures.statics.StaticSeams;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.ownermap.OwnerMapRebuildSeams;
+import kmu.maplayers.ownermap.owners.holders.base.HolderCategory;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.dominance.DominancePassFixtures;
@@ -51,7 +52,8 @@ public final class PoliticalMapRebuildSeams {
         // from the geometry or the holding.
         ownerMapSeams.openFurtherSeam(RenderStyleReader.class)
             .when(() -> RenderStyleReader.readRenderStyle(any(), any()))
-            .thenReturn(OwnerMapClusterFixtures.createRenderStyleForEveryCategory(
+            .thenReturn(OwnerMapClusterFixtures.createRenderStyleForEveryCategoryOf(
+                HolderCategory.values(),
                 OwnerMapClusterFixtures.createInertCategoryStyle()));
     }
 
@@ -82,6 +84,16 @@ public final class PoliticalMapRebuildSeams {
      */
     public MockedStatic<KmuOwnerMapRibbonSettings> resolveRibbonSettingsSeam() {
         return ownerMapSeams.resolveRibbonSettingsSeam();
+    }
+
+    /**
+     * Flips the player's visibility settings, as {@link OwnerMapRebuildSeams#flipVisibilitySettings}
+     * does.
+     *
+     * @param rules the rules the visibility read answers from here on
+     */
+    public void flipVisibilitySettings(MapVisibilityRules rules) {
+        ownerMapSeams.flipVisibilitySettings(rules);
     }
 
     /**

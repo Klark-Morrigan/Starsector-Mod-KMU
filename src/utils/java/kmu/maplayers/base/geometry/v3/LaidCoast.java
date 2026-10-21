@@ -29,7 +29,7 @@ import java.util.List;
  *                   the walk lays
  */
 public record LaidCoast(
-    Coastlines.TracedCoasts traced,
+    TracedCoasts traced,
     SectorGeometryParameters parameters,
     List<Chord> offered,
     Walls walls) {
@@ -50,7 +50,7 @@ public record LaidCoast(
      * @return the coast with its walls down
      */
     public static LaidCoast layCoast(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             List<Chord> spans,
             SectorGeometryParameters parameters) {
 
@@ -67,17 +67,17 @@ public record LaidCoast(
 
     // The sites the coast was walked against, taken off the coast rather than carried
     // beside it - a second list is a list that can belong to another construction.
-    List<double[]> sites() {
+    public List<double[]> sites() {
         return traced.union().sites();
     }
 
     // The discs at the cells' own reach, which is where the map's void is defined.
-    DiscUnion atCells() {
+    public DiscUnion atCells() {
         return new DiscUnion(sites(), parameters.cellRadius());
     }
 
     // The discs at the reach a shape is drawn at once the channel is taken out.
-    DiscUnion atDrawnReach() {
+    public DiscUnion atDrawnReach() {
         return VoidPockets.buildDrawnUnion(sites(), parameters);
     }
 }

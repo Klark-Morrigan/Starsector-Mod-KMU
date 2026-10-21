@@ -6,19 +6,17 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
-import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.MapLayerArrangements;
 import kmu.maplayers.base.layer.MapLayerRosters;
-import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -103,8 +101,7 @@ final class MapLayerViewRegistryTests {
             .thenReturn("standing");
 
         // First view is the default, so an untouched save resolves to it - the map is up the first
-        // time the sector map opens. The host tab is registered default-active in the layer
-        // registry, so the active-view read's tab gate is up unless a case switches tabs.
+        // time the sector map opens.
         registry = new MapLayerViewRegistry(
             BASE_ACTIVE_VIEW_KEY,
             List.of(firstViewMock, secondViewMock),
@@ -116,16 +113,6 @@ final class MapLayerViewRegistryTests {
             List.of(foreignDefaultViewMock, foreignOtherViewMock),
             foreignDefaultViewMock,
             otherTabMock);
-
-        MapLayerRosters.replaceRosterWith(hostTabMock, otherTabMock);
-    }
-
-    // The intel-screen binding is static, so a case that posed the visor open would otherwise leave
-    // every later read in the JVM answering off the intel screen.
-    @AfterEach
-    void closeTheIntelScreen() {
-
-        MapLayerScreens.registerIntelScreen(null);
     }
 
     @Nested
@@ -205,8 +192,8 @@ final class MapLayerViewRegistryTests {
         @Test
         void isTheGivenScreensOwnPick() {
             // The point of the screen being on the signature: a player who sets one panel to the
-            // grouped view and leaves the other on factions gets both, rather than the second panel
-            // following the first.
+            // grouped view and leaves the other on single owners gets both, rather than the second
+            // panel following the first.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -278,12 +265,8 @@ final class MapLayerViewRegistryTests {
         @Test
         void answersForTheScreenHandedInRatherThanTheShowingOne() {
             // What a frame carries its screen for: the view it paints and the preferences it bakes
-            // under come off one reading of which panel is up. The visor is posed open so a read
-            // resolving its own screen would answer the intel pick and fail here.
-            var intelScreenFake = new IntelScreenViewFake();
-            intelScreenFake.setIntelTabOpen(true);
-            MapLayerScreens.registerIntelScreen(intelScreenFake);
-
+            // under come off one reading of which panel is up. The intel screen's slot holds another
+            // pick, so a read resolving a screen of its own would answer that one and fail here.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -418,7 +401,8 @@ final class MapLayerViewRegistryTests {
     }
 
     // One screen's picks set to the given tab, its layers shown - no control has been stood on it, and
-    // a screen without one is read as showing whatever it has stored.
+    // a screen without one is read as showing whatever it has stored. Over an empty bar, which tabs the
+    // screen offers being no part of whether its tab is the one drawn.
     private static ScreenLayerPicks picksOnTab(ScreenMemoryScope memoryScope, MapLayer activeTab) {
 
         var layerSelectionMock = mock(ActiveLayerSelection.class);
@@ -429,7 +413,9 @@ final class MapLayerViewRegistryTests {
         return new ScreenLayerPicks(
             layerSelectionMock,
             new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
-            memoryScope);
+            memoryScope,
+            MapLayerRosters.createRosterOf(),
+            MapLayerArrangements.createUnarrangedBar());
     }
 
     // Stubs a fresh sector whose memory is {@code memoryMock}, so a test drives the registry's reads

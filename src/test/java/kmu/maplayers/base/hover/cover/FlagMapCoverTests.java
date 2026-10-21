@@ -8,15 +8,15 @@ import java.util.function.BooleanSupplier;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the delegation the four flag-shaped covers share: what the reading says is what the cover
+ * Pins the delegation the flag-shaped covers share: what the reading says is what the cover
  * answers, with no cursor arranged at all. That last part is the point rather than a convenience -
  * these covers read no geometry, so whatever they stand for covers the map wherever the pointer
  * happens to be.
  *
- * <p>Pinned once here rather than once per cover. Each of the four used to carry its own pair of
- * cases proving this same line, which said nothing about the cover it was written under: what makes
- * one of them its own class is the reading it binds and why that reading is not its neighbour's, and
- * a supplier handed in by a test exercises neither.
+ * <p>Pinned once here rather than once per cover. A copy of these cases under each cover would say
+ * nothing about the cover it was written under: what makes one of them its own class is the reading
+ * it binds and why that reading is not its neighbour's, and a supplier handed in by a test exercises
+ * neither.
  */
 final class FlagMapCoverTests {
 

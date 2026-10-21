@@ -5,10 +5,11 @@ import kmlib.starsector.ui.map.controls.MapFilterToggle;
 
 import kmu.maplayers.base.compatibility.MapLayerGameReach;
 import kmu.maplayers.base.layer.MapLayerVisibility;
-import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuMapKeybindSettings;
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 
 /**
@@ -26,11 +27,18 @@ import java.util.function.IntSupplier;
  * switches language is labelled in the language they switched to, and one built after they rebind
  * the key answers the key they bound - on the next screen they open rather than at the next load.
  *
- * <p>The same reasoning puts the presence check here rather than deeper: this is the concrete end
- * of the port, so it is where naming what is installed belongs, and everything under it goes on
+ * <p>Whether the political map offers an alliances view is the one thing the hover says that this
+ * framework cannot know: it turns on which mods are installed. So the composition root, which is the
+ * one place that names them, registers the answer here, and everything under this class goes on
  * knowing only that a box has words, a key and a hover.
  */
-public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttacher {
+public final class VanillaMapLayerToggleAttacher
+        implements MapLayerToggleAttacher {
+
+    // Whether the political map offers an alliances view, as the composition root registered it at
+    // application load. No alliances view until then, which is what an install without the mod
+    // that keeps alliances reads.
+    private static BooleanSupplier allianceViewAvailability = () -> false;
 
     // Which key the box answers, asked afresh at each attachment. A supplier rather than the read
     // itself so the settings substrate stays one hop away, the way the alliance check does.
@@ -42,16 +50,32 @@ public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttach
 
     /** Reads the live install - the pairing a running game gets. */
     public VanillaMapLayerToggleAttacher() {
+
         this(
             KmuMapKeybindSettings::getMapFilterRowToggleShortcut,
-            new MapLayerToggleTooltip(NexerelinAlliances::isAvailable));
+            new MapLayerToggleTooltip(() -> allianceViewAvailability.getAsBoolean()));
     }
 
     VanillaMapLayerToggleAttacher(
             IntSupplier shortcutKeycode,
             MapLayerToggleTooltip toggleTooltip) {
+
         this.shortcutKeycode = shortcutKeycode;
         this.toggleTooltip = toggleTooltip;
+    }
+
+    /**
+     * Records whether the political map offers an alliances view, so the hover lists it. Called once
+     * by the composition root at application load, before any map screen can open.
+     *
+     * <p>Read through on every hover rather than copied, so a box attached before the registration
+     * still says what was registered.
+     *
+     * @param isAllianceViewOffered whether the alliances view is among the ones the political map
+     *                              registered
+     */
+    public static void registerAllianceViewAvailability(BooleanSupplier isAllianceViewOffered) {
+        allianceViewAvailability = isAllianceViewOffered;
     }
 
     @Override
@@ -62,10 +86,9 @@ public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttach
         // rather than closes over. Nothing can click a button that is not yet on a row, so the slot
         // is filled by the time anything reads it.
         var attachedToggle = new MapFilterToggle[1];
-
         var toggle = MapFilterToggle.appendToRow(
             row,
-            KmuStringKeys.get(KmuStringKeys.MAP_LAYER_CTL_FILTER_ROW_TOGGLE),
+            KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_CTL_FILTER_ROW_TOGGLE),
             () -> layerVisibility.showLayers(attachedToggle[0].isChecked()),
             MapLayerGameReach.FILTER_ROW_TOGGLE.getReporter());
 
@@ -74,6 +97,7 @@ public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttach
         if (toggle == null) {
             return null;
         }
+
         attachedToggle[0] = toggle;
 
         // A key nothing had to arrange the scope of: it is live on the screens this box stands on

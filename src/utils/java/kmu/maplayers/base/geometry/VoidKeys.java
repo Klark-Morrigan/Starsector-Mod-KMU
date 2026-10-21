@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Lines;
 import kmlib.math.geometry.Points;
 
 import java.util.ArrayList;
@@ -152,10 +153,7 @@ public final class VoidKeys {
         var to = sites.get(pair[1]);
         var middle = Points.computeMean(outline);
 
-        var across = (to[0] - from[0]) * (middle[1] - from[1])
-            - (to[1] - from[1]) * (middle[0] - from[0]);
-
-        return across >= 0 ? LEFT : RIGHT;
+        return Lines.computeOrientation(from, to, middle) >= 0 ? LEFT : RIGHT;
     }
 
     // The two of a piece's cells whose sites sit closest together, in system-id order.

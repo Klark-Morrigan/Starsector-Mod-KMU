@@ -1,5 +1,6 @@
 package kmu.settings;
 
+import kmlib.math.percentages.Percentages;
 import kmlib.math.ranges.Ranges;
 
 /**
@@ -8,8 +9,7 @@ import kmlib.math.ranges.Ranges;
  *
  * <p>These sit on the framework's {@code Map - Dev} tab because the geometry they move is the
  * framework's, and they are filed here because the owner-painted tier is what reads them - the
- * framework takes the values as parameters and never fetches a setting. A knob is filed by who
- * reads it, not by whose geometry it moves.
+ * framework takes the values as parameters and never fetches a setting.
  *
  * <p>The cell knobs reseed the partition itself, so they feed the geometry rebuild; every border
  * and hatch knob below restyles fixed geometry through the drawables rebuild. Which of the two a
@@ -110,8 +110,8 @@ public final class KmuOwnerMapGeometrySettings {
     }
 
     /**
-     * @return the sides of the polygon that rounds each system cell's reach into empty space; 48
-     *         by default. Every segment is a vertex on each frontier cell, so this is the lever
+     * @return the sides of the polygon that rounds each system cell's reach into empty space.
+     *         Every segment is a vertex on each frontier cell, so this is the lever
      *         for trading map FPS against frontier smoothness
      */
     public static int getOwnerMapCellBoundSegments() {
@@ -120,7 +120,7 @@ public final class KmuOwnerMapGeometrySettings {
 
     /**
      * @return how far each system's territory reaches into empty space before its frontier bound
-     *         closes it off, in world units; 4000.0 by default. Higher lets distant systems'
+     *         closes it off, in world units. Higher lets distant systems'
      *         territories meet and merge
      */
     public static double getOwnerMapCellRadius() {
@@ -128,7 +128,7 @@ public final class KmuOwnerMapGeometrySettings {
     }
 
     /**
-     * @return the corner-rounding radius of the national border, in world units; 300.0 by default
+     * @return the corner-rounding radius of the national border, in world units
      */
     public static double getOwnerMapBorderCornerRadius() {
         return KmuLunaSettings.readDouble(
@@ -136,7 +136,7 @@ public final class KmuOwnerMapGeometrySettings {
             DEFAULT_BORDER_CORNER_RADIUS);
     }
 
-    /** @return the arc segments per rounded corner of the national border; 3 by default */
+    /** @return the arc segments per rounded corner of the national border */
     public static int getOwnerMapBorderCornerSegments() {
         return KmuLunaSettings.readInt(
             BORDER_CORNER_SEGMENTS_FIELD,
@@ -145,7 +145,7 @@ public final class KmuOwnerMapGeometrySettings {
 
     /**
      * @return the interior angle below which a national-border corner is chamfered flat rather
-     *         than rounded, in radians; 35 degrees by default. Authored in degrees and converted
+     *         than rounded, in radians. Authored in degrees and converted
      *         here, the rounding math working in radians
      */
     public static double getOwnerMapBorderChamferAngleRadians() {
@@ -156,7 +156,7 @@ public final class KmuOwnerMapGeometrySettings {
 
     /**
      * @return the interior angle above which a national-border corner keeps its vertex rather than
-     *         being rounded, in radians; 170 degrees by default. Authored in degrees and converted
+     *         being rounded, in radians. Authored in degrees and converted
      *         here. A border is arcs sampled at fixed angles joined by straight runs, so a setting
      *         past where those samples meet rounds them too - twice the vertices for a line in all
      *         but the same place
@@ -169,7 +169,7 @@ public final class KmuOwnerMapGeometrySettings {
 
     /**
      * @return the depth up to which a sharp corner counts as a spike to sand off the border before
-     *         rounding, in world units; 150.0 by default. A sharp corner jutting farther than this
+     *         rounding, in world units. A sharp corner jutting farther than this
      *         is real shape and is kept; zero disables the pass
      */
     public static double getOwnerMapBorderSpikeHeight() {
@@ -178,7 +178,7 @@ public final class KmuOwnerMapGeometrySettings {
 
     /**
      * @return the interior angle below which a shallow corner counts as a spike to sand off the
-     *         border before rounding, in radians; 60 degrees by default. Authored in degrees and
+     *         border before rounding, in radians. Authored in degrees and
      *         converted here; zero disables the pass
      */
     public static double getOwnerMapBorderSpikeAngleRadians() {
@@ -188,7 +188,7 @@ public final class KmuOwnerMapGeometrySettings {
     }
 
     /**
-     * @return whether the national-border corner rounding runs; on by default. Off leaves the
+     * @return whether the national-border corner rounding runs. Off leaves the
      *         radius, segments, and chamfer knobs unread, and also covers the factionless
      *         (decivilised and uninhabited) cell outlines, which reuse this same pass, so the whole
      *         map's corners round or not together
@@ -198,7 +198,7 @@ public final class KmuOwnerMapGeometrySettings {
     }
 
     /**
-     * @return whether the spike-sanding pass runs before corner rounding; off by default. Off
+     * @return whether the spike-sanding pass runs before corner rounding. Off
      *         leaves the spike height and angle knobs unread and leaves needle or cusp protrusions
      *         in the border for the rounding to meet
      */
@@ -208,15 +208,15 @@ public final class KmuOwnerMapGeometrySettings {
 
     /**
      * @return the perpendicular gap between the diagonal hatch lines filling the shared cluster,
-     *         in world units; 1000.0 by default
+     *         in world units
      */
     public static double getOwnerMapHatchSpacing() {
         return KmuLunaSettings.readDouble(HATCH_SPACING_FIELD, DEFAULT_HATCH_SPACING);
     }
 
     /**
-     * @return the direction the shared-cluster hatch lines run, in radians; 45 degrees off
-     *         horizontal by default. Authored in degrees and converted here, the hatch math working
+     * @return the direction the shared-cluster hatch lines run, in radians.
+     *         Authored in degrees and converted here, the hatch math working
      *         in radians
      */
     public static double getOwnerMapHatchAngleRadians() {
@@ -226,7 +226,7 @@ public final class KmuOwnerMapGeometrySettings {
 
     /**
      * @return the width the shared-cluster hatch strokes at, as a fraction of the hatch
-     *         spacing; 0.5 by default, held between 0.05 and 0.9. Authored as a percentage of the
+     *         spacing, held between 0.05 and 0.9. Authored as a percentage of the
      *         spacing and converted here, the stroke scaling its pixel width off the spacing per
      *         frame so the pattern holds its proportions at every zoom. Clamped here as well as
      *         bounded on the slider because LunaLib prunes nothing: this row was once read as a
@@ -238,13 +238,13 @@ public final class KmuOwnerMapGeometrySettings {
         var widthPercent =
             KmuLunaSettings.readDouble(HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH_PERCENT);
 
-        return Ranges.clampInto(widthPercent, MIN_HATCH_WIDTH_PERCENT, MAX_HATCH_WIDTH_PERCENT)
-            / KmuLunaSettings.PERCENT_PER_UNIT;
+        return Percentages.convertPercentToFraction(
+            Ranges.clampInto(widthPercent, MIN_HATCH_WIDTH_PERCENT, MAX_HATCH_WIDTH_PERCENT));
     }
 
     /**
-     * @return whether the shared-cluster hatch is antialiased rather than stroked hard-edged;
-     *         off by default. Covers the hatch alone - the fills and borders around it pick their
+     * @return whether the shared-cluster hatch is antialiased rather than stroked hard-edged.
+     *         Covers the hatch alone - the fills and borders around it pick their
      *         own line quality - and a GL bridge that ignores the smoothing hint leaves it inert
      */
     public static boolean shouldSmoothHatchLines() {
@@ -253,13 +253,12 @@ public final class KmuOwnerMapGeometrySettings {
 
     /**
      * @return how far apart two of one hatch line's crossings may sit and still merge into one
-     *         segment, as a fraction of the hatch spacing; 0.002 by default. Authored as a
+     *         segment, as a fraction of the hatch spacing. Authored as a
      *         percentage of the spacing and converted here
      */
     public static double getOwnerMapHatchJoinToleranceFraction() {
-        return KmuLunaSettings.readDouble(
+        return Percentages.convertPercentToFraction(KmuLunaSettings.readDouble(
             HATCH_JOIN_TOLERANCE_FIELD,
-            DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT)
-            / KmuLunaSettings.PERCENT_PER_UNIT;
+            DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT));
     }
 }

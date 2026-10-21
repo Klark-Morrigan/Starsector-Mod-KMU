@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.holders;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.SectorPassIndex;
@@ -10,14 +11,14 @@ import kmlib.starsector.systems.claims.ClaimReader;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderProvider;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
+import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.claims.SectorClaims;
-import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
+import kmu.maplayers.politicalmap.dominance.SectorPolitics;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,12 +29,13 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.buildRulesUnder;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.buildRulesUnder;
 
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -58,6 +60,35 @@ final class ClaimAugmentedHolderProviderTests {
     private static final Color SECONDARY = Color.BLUE;
 
     @Nested
+    class CreateReadingThrough {
+
+        @Test
+        void readsItsClaimsThroughTheSourceItIsHanded() {
+            // The view hands its one source down, so the fills read claims through the binding its
+            // bands read through.
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var openedOver = new ArrayList<SectorPassIndex>();
+
+            var provider = ClaimAugmentedHolderProvider.createReadingThrough((knownColonyReader, sectorIndex) -> {
+                openedOver.add(sectorIndex);
+                return mock(ClaimReader.class);
+            });
+
+            try (var sectorPoliticsMock = mockStatic(SectorPolitics.class)) {
+
+                sectorPoliticsMock
+                    .when(() -> SectorPolitics.resolveDominantHolderBySystemKey(pass))
+                    .thenReturn(Map.of());
+
+                provider.resolveHolder(pass, null);
+            }
+
+            assertThat(openedOver)
+                .containsExactly(pass.sectorIndex());
+        }
+    }
+
+    @Nested
     class ResolveHolder {
 
         @Test
@@ -67,9 +98,9 @@ final class ClaimAugmentedHolderProviderTests {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var heldHolder = new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
-            var claimedHolder = new SystemOwner("tritachyon", new OwnerPalette(PRIMARY, SECONDARY));
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
+            var heldHolder = new SystemOwner("hegemony", new ColourPair(PRIMARY, SECONDARY));
+            var claimedHolder = new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY));
 
             when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
@@ -110,9 +141,9 @@ final class ClaimAugmentedHolderProviderTests {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var heldHolder = new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
-            var claimOverHeld = new SystemOwner("tritachyon", new OwnerPalette(PRIMARY, SECONDARY));
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
+            var heldHolder = new SystemOwner("hegemony", new ColourPair(PRIMARY, SECONDARY));
+            var claimOverHeld = new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY));
 
             when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
@@ -148,9 +179,9 @@ final class ClaimAugmentedHolderProviderTests {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var spotlightHolder = new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY));
-            var plainClaimHolder = new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY));
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
+            var spotlightHolder = new SystemOwner("$spotlit", new ColourPair(PRIMARY, SECONDARY));
+            var plainClaimHolder = new SystemOwner("hegemony", new ColourPair(PRIMARY, SECONDARY));
 
             // The spotlit bloc holds a contested (hatched) system as well, so this pins that adding
             // its claim leaves that existing fill split untouched.
@@ -166,7 +197,7 @@ final class ClaimAugmentedHolderProviderTests {
                 (visibility, colonies) -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
-                    var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
+                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
@@ -174,9 +205,8 @@ final class ClaimAugmentedHolderProviderTests {
                         claimReaderMock))
                     .thenReturn(Map.of(buildCellKey("claimed"), plainClaimHolder));
 
-                filteredPoliticsMock
-                    .when(() -> FilteredPolitics
-                        .resolveSpotlitHolder(sectorMock, grouping, "hegemony"))
+                spotlitOwnersMock
+                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
                     .thenReturn(spotlightHolder);
 
                 var resolution = provider.resolveHolder(pass, "hegemony");
@@ -202,9 +232,9 @@ final class ClaimAugmentedHolderProviderTests {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
-            var spotlightHolder = new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY));
-            var rivalClaimHolder = new SystemOwner("tritachyon", new OwnerPalette(PRIMARY, SECONDARY));
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
+            var spotlightHolder = new SystemOwner("$spotlit", new ColourPair(PRIMARY, SECONDARY));
+            var rivalClaimHolder = new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY));
 
             when(baseProviderMock.resolveHolder(pass, "hegemony"))
                 .thenReturn(
@@ -215,7 +245,7 @@ final class ClaimAugmentedHolderProviderTests {
                 (visibility, colonies) -> claimReaderMock);
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
-                    var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
+                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
@@ -243,7 +273,7 @@ final class ClaimAugmentedHolderProviderTests {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
             var openedOver = new ArrayList<SectorPassIndex>();
 
             when(baseProviderMock.resolveHolder(pass, null))
@@ -277,7 +307,7 @@ final class ClaimAugmentedHolderProviderTests {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
-            var pass = HolderPass.over(sectorMock, buildRulesUnder(GATED_VISIBILITY), HolderGrouping.identity());
+            var pass = HolderPass.createOver(sectorMock, buildRulesUnder(GATED_VISIBILITY), HolderGrouping.identity());
             var openedUnder = new ArrayList<KnownColonyReader>();
 
             when(baseProviderMock.resolveHolder(pass, null))

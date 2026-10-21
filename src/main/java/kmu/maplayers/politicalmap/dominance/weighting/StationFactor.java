@@ -15,7 +15,7 @@ import kmlib.starsector.entities.EntityNameplate;
  * the map marks that station by: a system's stations are told apart on the map by their icon
  * as much as by their name.
  *
- * @param stationNameplate             how the market's own orbital station is identified to a
+ * @param stationNameplate            how the market's own orbital station is identified to a
  *                                    reader - its name and the glyph the sector map marks it with.
  *                                    Recorded where the station entity was found rather than looked
  *                                    up again by whatever draws the name, so the pair shown can only

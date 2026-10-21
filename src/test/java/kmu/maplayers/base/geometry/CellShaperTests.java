@@ -29,11 +29,24 @@ import static org.assertj.core.api.Assertions.within;
  * edge stays on its true line whoever owns what across it, which is the partition the
  * channel is cut into, and under {@link EdgeInsetRule#EVERYWHERE} even a same-owner seam
  * pulls in.
+ *
+ * <p>The one-cell entry the incremental path takes follows the same rule, a cell with no owner
+ * included: it fuses with nobody, not even a neighbour that has no owner either.
  */
 final class CellShaperTests {
     // Inward inset applied to cluster-border edges in the fixtures; small enough
     // that a side-10 cell survives it with room to spare.
     private static final double INSET = 2.0;
+
+    // The shipped rule at the fixture depth, for the one-cell cases: they are about what an edge
+    // faces rather than about the rule.
+    private static final EdgeInset SHIPPED_INSET = new EdgeInset(EdgeInsetRule.AT_EVERY_BORDER, INSET);
+
+    private static final String HEGEMONY_ID = "hegemony";
+    private static final String TRITACHYON_ID = "tritachyon";
+
+    // What a cell nobody holds is shaped under.
+    private static final String NO_OWNER = null;
 
     @Nested
     class ShapeCells {
@@ -232,6 +245,76 @@ final class CellShaperTests {
 
             assertThat(shaped.edgeIsBoundary())
                 .containsOnly(true);
+        }
+    }
+
+    @Nested
+    class ShapeCell {
+
+        @Test
+        void leavesAnEdgeFacingTheSameOwnerOnTheRawLine() {
+            // The cell's own owner arrives apart from the map, so a neighbour holding the same one
+            // fuses with it exactly as across the whole-map pass: the right edge stays on x = 10
+            // while the three frontiers pull in to the 2..8 band.
+            var shaped = CellShaper.shapeCell(
+                buildSquareCellSharedOnRight("b"),
+                HEGEMONY_ID,
+                buildKeyedValues(Map.of("b", HEGEMONY_ID)),
+                SHIPPED_INSET);
+
+            assertThat(countSeamEdges(shaped))
+                .isEqualTo(1);
+            assertThat(computeMinXOf(shaped))
+                .isCloseTo(2.0, within(1e-6));
+            assertThat(computeMaxXOf(shaped))
+                .isCloseTo(10.0, within(1e-6));
+        }
+
+        @Test
+        void insetsAnEdgeFacingADifferentOwner() {
+
+            var shaped = CellShaper.shapeCell(
+                buildSquareCellSharedOnRight("b"),
+                HEGEMONY_ID,
+                buildKeyedValues(Map.of("b", TRITACHYON_ID)),
+                SHIPPED_INSET);
+
+            assertThat(shaped.edgeIsBoundary())
+                .containsOnly(true);
+            assertThat(computeMaxXOf(shaped))
+                .isCloseTo(8.0, within(1e-6));
+        }
+
+        @Test
+        void insetsAnEdgeOfACellWithNoOwnerFacingAnOwnedNeighbour() {
+            // The incremental path hands over a null owner for a cell nobody holds. Such a cell
+            // fuses with no one, so the edge facing a held neighbour is a border like any other.
+            var shaped = CellShaper.shapeCell(
+                buildSquareCellSharedOnRight("b"),
+                NO_OWNER,
+                buildKeyedValues(Map.of("b", HEGEMONY_ID)),
+                SHIPPED_INSET);
+
+            assertThat(shaped.edgeIsBoundary())
+                .containsOnly(true);
+            assertThat(computeMaxXOf(shaped))
+                .isCloseTo(8.0, within(1e-6));
+        }
+
+        @Test
+        void keepsTwoCellsWithNoOwnerApart() {
+            // The trap a null owner sets: both sides having no owner is not both sides having the
+            // same one, so two unheld neighbours do not fuse into a cluster of nobody's.
+            var shaped = CellShaper.shapeCell(
+                buildSquareCellSharedOnRight("b"),
+                NO_OWNER,
+                Map.of(),
+                SHIPPED_INSET);
+
+            assertThat(shaped.edgeIsBoundary())
+                .containsOnly(true);
+            assertThat(computeMaxXOf(shaped))
+                .isCloseTo(8.0, within(1e-6));
         }
     }
 

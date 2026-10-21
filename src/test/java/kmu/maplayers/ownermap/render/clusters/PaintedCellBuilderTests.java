@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.render.clusters;
 
+import kmlib.colour.ColourPair;
 import kmlib.math.geometry.CornerRounding;
 import kmlib.starsector.systems.SystemKey;
 
@@ -17,14 +18,14 @@ import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
 import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.render.style.FactionPaletteSlot;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.maplayers.ownermap.render.style.OwnerMapCategory;
+import kmu.maplayers.ownermap.render.style.MapStyling;
+import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
+import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
+import kmu.maplayers.ownermap.render.style.StandInCategoryFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,8 +42,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
- * Pins how one shaped cell is baked into its draw record: an owned cell threading its bloc's
- * palette and adjustment into the interior seam it contributes, and a factionless cell resolving
+ * Pins how one shaped cell is baked into its draw record: an owned cell threading its owner's
+ * palette and adjustment into the interior seam it contributes, and an unowned cell resolving
  * both palette slots to the neutral colour for the fill and outline it keeps for itself - with
  * a decivilised cell alone taking the pass's recede over that neutral, and an uninhabited cell
  * never doing so.
@@ -62,7 +63,7 @@ final class PaintedCellBuilderTests {
     // A reading answering both per-owner style questions with fixed values, so a case can prove
     // whether the style resolver consulted the reading (off filter) or bypassed it (under filter).
     private static OwnerReading buildReadingDeciding(
-            OwnerMapCategory category,
+            StandInCategoryFake category,
             ElementStyleAdjustment adjustment) {
 
         return OwnerReadingFake.createAnsweringNothing().withStyle(category, adjustment);
@@ -73,9 +74,9 @@ final class PaintedCellBuilderTests {
 
         private static final String SYSTEM_ID = "hegemony-system";
 
-        // Two of the systems in the factionless fixture's inhabited set - one settled by a
-        // decivilised colony, one by a live colony no holder was resolved for - so a test can
-        // address either factionless category by which ID it builds the cell as, and can tell the
+        // Two of the systems in the unowned fixture's inhabited set - one settled by a
+        // decivilised world, one by a live settlement no owner was resolved for - so a test can
+        // address either unowned category by which ID it builds the cell as, and can tell the
         // two reasons a
         // cell counts as settled apart.
         private static final String DECIVILISED_SYSTEM_ID = "some-decivilised-system";
@@ -86,14 +87,14 @@ final class PaintedCellBuilderTests {
         private static final Color DESATURATED_SECONDARY = Color.YELLOW;
 
         // The lifted neutral a spared cell paints in. A colour of its own rather than a real wash
-        // of FACTIONLESS_NEUTRAL, so an observed shade names which palette the cell read rather
+        // of UNOWNED_NEUTRAL, so an observed shade names which palette the cell read rather
         // than how far toward white the fixture happened to move it - the wash itself is
         // MapPalettes' to pin.
         private static final Color PRESENCE_LIFTED = Color.ORANGE;
 
-        // The neutral shade a factionless cell resolves both its palette slots to, distinct from
-        // every holder/desaturation colour so an observed outline names the factionless path.
-        private static final Color FACTIONLESS_NEUTRAL = Color.PINK;
+        // The neutral shade an unowned cell resolves both its palette slots to, distinct from
+        // every owner/desaturation colour so an observed outline names the unowned path.
+        private static final Color UNOWNED_NEUTRAL = Color.PINK;
 
         // A corner shape that rounds the shared 10-unit cell without being clamped: the step-back
         // is capped at half the shorter adjacent edge, so a radius under 5 arcs at its full size.
@@ -103,19 +104,19 @@ final class PaintedCellBuilderTests {
         private static final double NO_CHAMFER = 0.0;
 
         private static final SystemOwner OWNER =
-            new SystemOwner("hegemony", new OwnerPalette(OWNER_PRIMARY, OWNER_SECONDARY));
+            new SystemOwner("hegemony", new ColourPair(OWNER_PRIMARY, OWNER_SECONDARY));
 
         // Two systems the sector answers to one ID for - vanilla's own unnamed deep space, which
         // only their anchors tell apart - and the rival holding the second of them. Its seam shade
         // is distinct from every other colour here, so an observed seam names which of the pair's
-        // holders the cell read.
+        // owners the cell read.
         private static final SystemKey FIRST_TWIN = new SystemKey("deep space", "", "8b3");
         private static final SystemKey SECOND_TWIN = new SystemKey("deep space", "", "38d53");
         private static final Color RIVAL_PRIMARY = Color.CYAN;
         private static final Color RIVAL_SECONDARY = Color.MAGENTA;
 
         private static final SystemOwner RIVAL_OWNER =
-            new SystemOwner("tritachyon", new OwnerPalette(RIVAL_PRIMARY, RIVAL_SECONDARY));
+            new SystemOwner("tritachyon", new ColourPair(RIVAL_PRIMARY, RIVAL_SECONDARY));
 
         // An owned cell's fill and cluster border are per cluster (in StyledCluster),
         // so fill and outer are "No color" here and only inner - the interior seam -
@@ -129,12 +130,12 @@ final class PaintedCellBuilderTests {
                 1.0),
                 3.0,
             new ElementStyle(
-                FactionPaletteSlot.SECONDARY,
+                OwnerPaletteSlot.SECONDARY,
                 1.0),
                 1.0);
 
         @Test
-        void appliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
+        void appliesTheOpacityMultiplierAndKeepsTheOwnerPaletteWhenNotDesaturated() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildReadingAdjusting(new ElementStyleAdjustment(0.5, false))),
@@ -148,9 +149,9 @@ final class PaintedCellBuilderTests {
         }
 
         @Test
-        void drawsTwoSystemsSharingAnIdInTheirOwnHoldersColours() {
+        void drawsTwoSystemsSharingAnIdInTheirOwnersColours() {
             // The collision the whole address exists for, at the cell that shows it: both systems
-            // answer to one vanilla ID and are held by different blocs, so the two cells paint in
+            // answer to one vanilla ID and are held by different owners, so the two cells paint in
             // two shades - where a holding keyed by ID drew the second in the first's colours.
             var clusters = buildDrawablesHeldByTwins();
 
@@ -198,7 +199,7 @@ final class PaintedCellBuilderTests {
         }
 
         @Test
-        void leavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
+        void leavesTheOwnerPaletteAndOpacityUntouchedForTheNoneAdjustment() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildReadingAdjusting(ElementStyleAdjustment.NONE)),
@@ -229,9 +230,9 @@ final class PaintedCellBuilderTests {
         }
 
         @Test
-        void recedesANonSpotlightedBlocUnderFilterAndIgnoresTheView() {
-            // Under an active filter the view's per-bloc seams are bypassed: a real (non-spotlit)
-            // holder takes the pass's shared recede, not whatever the view would have said. The view
+        void recedesANonSpotlightedOwnerUnderFilterAndIgnoresTheView() {
+            // Under an active filter the view's per-owner seams are bypassed: a real (non-spotlit)
+            // owner takes the pass's shared recede, not whatever the view would have said. The view
             // stub returns the identity adjustment, so seeing the recede applied proves the filter,
             // not the view, styled the cell.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
@@ -248,48 +249,48 @@ final class PaintedCellBuilderTests {
         @Test
         void drawsACellWithNoStarAsUninhabited() {
             // A cell that draws as no system - a shard of a dead star's leftover space the
-            // redistribution pass leaves behind - has no holder and no market to have died, so it
+            // redistribution pass leaves behind - has no owner and no settlement to have died, so it
             // paints as plain uninhabited. The null star must resolve through the draws-as
             // map without being taken for decivilised: the decivilised category is "No color"
             // here, so had the null ID been routed there the cell would have dropped to null.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFactionlessDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
+                buildUnownedDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
                 null,
                 buildOwnedCell());
 
             assertThat(painted)
                 .isNotNull();
             assertThat(requireLoneCell(painted).outlinePaint().colour())
-                .isEqualTo(FACTIONLESS_NEUTRAL);
+                .isEqualTo(UNOWNED_NEUTRAL);
         }
 
         @Test
         void fillsADecivilisedCellInTheNeutralColour() {
-            // Decivilised colonies carry a fill of their own - a factionless cell fills on its own,
+            // Decivilised worlds carry a fill of their own - an unowned cell fills on its own,
             // since
             // it never fuses into a cluster with a tessellated cluster to fill from - so both the
             // paint and the baked triangles have to come back off the cell itself.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
+                buildUnownedDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(painted).fillPaint().colour())
-                .isEqualTo(FACTIONLESS_NEUTRAL);
+                .isEqualTo(UNOWNED_NEUTRAL);
             assertThat(requireLoneCell(painted).fillTriangles())
                 .isNotEmpty();
         }
 
         @Test
         void recedesADecivilisedCellUnderTheFiltersRecede() {
-            // A decivilised colony is part of the "rest of the sector" a spotlight recedes, so its
+            // A decivilised world is part of the "rest of the sector" a spotlight recedes, so its
             // own
             // fill dims and recolours to the pass's desaturation palette exactly as a non-spotlit
-            // bloc's does - otherwise it out-reads the bloc the spotlight is meant to isolate. Its
+            // owner's does - otherwise it out-reads the owner the spotlight is meant to isolate. Its
             // outline recedes with it: the two are the whole of what the cell puts on the map, so
             // one receding without the other would leave a bright ring around a sunken fill.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFilteringFactionlessDrawablesWith(
+                buildFilteringUnownedDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true)),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
@@ -306,14 +307,14 @@ final class PaintedCellBuilderTests {
         }
 
         @Test
-        void sparesASettledCellTheSpotlitBlocLivesInTheFiltersRecede() {
-            // The pick's own colony in a system this layer's holding could not attribute to it.
+        void sparesASettledCellTheSpotlitOwnerLivesInTheFiltersRecede() {
+            // The pick's own settlement in a system this layer's holding could not attribute to it.
             // Under the same receding pass that
             // sinks the case above, this cell keeps full opacity and paints the lifted neutral:
             // presence spares it the recede and lifts it clear of the greys that sank, without
-            // ever handing it the bloc's own shades and the holding those would assert.
+            // ever handing it the owner's own shades and the holding those would assert.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFilteringFactionlessDrawablesWith(
+                buildFilteringUnownedDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true),
                     Set.of(buildCellKey(UNHELD_INHABITED_SYSTEM_ID))),
@@ -331,12 +332,12 @@ final class PaintedCellBuilderTests {
         }
 
         @Test
-        void stillRecedesASettledCellTheSpotlitBlocIsAbsentFrom() {
+        void stillRecedesASettledCellTheSpotlitOwnerIsAbsentFrom() {
             // The other half of the case above, under the identical pass: a settled system the pick
             // does not live in stays part of the receded background, so the exception turns on the
             // presence set rather than on the cell being settled at all.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFilteringFactionlessDrawablesWith(
+                buildFilteringUnownedDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true),
                     Set.of(buildCellKey(UNHELD_INHABITED_SYSTEM_ID))),
@@ -352,18 +353,18 @@ final class PaintedCellBuilderTests {
         @Test
         void dimsADecivilisedCellWithoutRecolouringItWhenOnlyMuteIsSet() {
             // Mute and Desaturate are independent toggles, and Mute alone is the commoner setting:
-            // the decivilised colony sinks in weight while staying the neutral colour it reads as
+            // the decivilised world sinks in weight while staying the neutral colour it reads as
             // when
             // nothing is spotlighted.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFilteringFactionlessDrawablesWith(
+                buildFilteringUnownedDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, false)),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(painted).fillPaint().colour())
-                .isEqualTo(FACTIONLESS_NEUTRAL);
+                .isEqualTo(UNOWNED_NEUTRAL);
             assertThat(requireLoneCell(painted).fillPaint().alpha())
                 .isEqualTo(0.5f);
         }
@@ -374,45 +375,46 @@ final class PaintedCellBuilderTests {
             // spotlight competes with, so the same receding pass leaves its outline at full
             // neutral strength - the sector keeps its shape.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFilteringFactionlessDrawablesWith(
+                buildFilteringUnownedDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true)),
                 buildCellKey("never-settled-system"),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(painted).outlinePaint().colour())
-                .isEqualTo(FACTIONLESS_NEUTRAL);
+                .isEqualTo(UNOWNED_NEUTRAL);
             assertThat(requireLoneCell(painted).outlinePaint().alpha())
                 .isEqualTo(1.0f);
         }
 
         @Test
-        void drawsAnInhabitedCellWithNoHolderAsSettledRatherThanBackdrop() {
-            // A layer whose holding rule admits only some markets leaves a system settled
-            // solely outside them with no holder, and it arrives here holderless - exactly as an
+        void drawsAnInhabitedCellWithNoOwnerAsSettledRatherThanBackdrop() {
+            // A layer whose owner rule admits only some settlements leaves a system settled
+
+            // solely outside them with no owner, and it arrives here ownerless - exactly as an
             // empty system does. It must still take the settled bundle, since the uninhabited
             // bundle is what the uninhabited-systems checkbox switches off, and a
             // populated system erased by that checkbox is the map lying about what is there.
             //
             // The two bundles are told apart by the fill: only the settled one carries one here.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
+                buildUnownedDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(UNHELD_INHABITED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(painted).fillTriangles())
                 .isNotEmpty();
             assertThat(requireLoneCell(painted).fillPaint().colour())
-                .isEqualTo(FACTIONLESS_NEUTRAL);
+                .isEqualTo(UNOWNED_NEUTRAL);
         }
 
         @Test
         void drawsAnUninhabitedCellWithNoFill() {
             // The other half of the case above: a system nothing stands in takes the outline-only
             // bundle, so the assertion there is about the classification rather than about every
-            // factionless cell happening to carry a fill.
+            // unowned cell happening to carry a fill.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
+                buildUnownedDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey("never-settled-system"),
                 buildOwnedCell());
 
@@ -422,26 +424,26 @@ final class PaintedCellBuilderTests {
 
         @Test
         void keepsADecivilisedCellAtFullStrengthWithNoRecedeInThePass() {
-            // Off filter the pass's recede is the identity, so a decivilised colony draws in the
+            // Off filter the pass's recede is the identity, so a decivilised world draws in the
             // neutral
             // colour at its style opacity - an unfiltered map is unchanged by the recede path.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
+                buildUnownedDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(painted).fillPaint().colour())
-                .isEqualTo(FACTIONLESS_NEUTRAL);
+                .isEqualTo(UNOWNED_NEUTRAL);
             assertThat(requireLoneCell(painted).fillPaint().alpha())
                 .isEqualTo(1.0f);
         }
 
         @Test
-        void keepsAFactionlessCellDrawnByItsFillAloneWhenTheOutlineIsHidden() {
+        void keepsAnUnownedCellDrawnByItsFillAloneWhenTheOutlineIsHidden() {
             // The outline's opacity is its only on/off, so zeroing it must not take the fill down
             // with it: the cell is kept for whichever of the two still puts ink on the map.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFactionlessDrawablesWith(buildFillOnlyStyle(), buildDrawnOutlineStyle()),
+                buildUnownedDrawablesWith(buildFillOnlyStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
@@ -454,11 +456,11 @@ final class PaintedCellBuilderTests {
         }
 
         @Test
-        void bakesNoFillTrianglesForAnOutlineOnlyFactionlessCell() {
+        void bakesNoFillTrianglesForAnOutlineOnlyUnownedCell() {
             // Uninhabited cells cover everything nothing else holds, so triangulating a fill they
             // never paints would be the rebuild's largest wasted cost - the geometry stays unbuilt.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
+                buildUnownedDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey("never-settled-system"),
                 buildOwnedCell());
 
@@ -472,7 +474,7 @@ final class PaintedCellBuilderTests {
         void roundsALoneCellsOutlineWhenTheSectorWideGateIsOn() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildRoundingFactionlessDrawablesWith(buildFilledOutlineStyle()),
+                buildRoundingUnownedDrawablesWith(buildFilledOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
@@ -494,7 +496,7 @@ final class PaintedCellBuilderTests {
             // has vertices": with rounding off the raw Voronoi cell is what the map draws, corner
             // at the origin included.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
+                buildUnownedDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
@@ -509,7 +511,7 @@ final class PaintedCellBuilderTests {
             // it - reads this and nothing else, so a raw ring reported here would have them both
             // working from corners the cell does not draw.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildRoundingFactionlessDrawablesWith(buildFilledOutlineStyle()),
+                buildRoundingUnownedDrawablesWith(buildFilledOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
@@ -532,7 +534,7 @@ final class PaintedCellBuilderTests {
             // With rounding off the cell strokes the shape it was handed, so that is what it
             // reports - the four corners of the fixture's square, the origin included.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
+                buildUnownedDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
@@ -560,10 +562,10 @@ final class PaintedCellBuilderTests {
         }
 
         @Test
-        void dropsAFactionlessCellThatDrawsNothing() {
+        void dropsAnUnownedCellThatDrawsNothing() {
 
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                buildFactionlessDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
+                buildUnownedDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
@@ -574,17 +576,17 @@ final class PaintedCellBuilderTests {
         // A reading that places every owner in the full-strength category and returns the given
         // adjustment for any owner, so each case names only the adjustment it exercises.
         private static OwnerReading buildReadingAdjusting(ElementStyleAdjustment adjustment) {
-            return buildReadingDeciding(OwnerMapCategory.FACTION, adjustment);
+            return buildReadingDeciding(StandInCategoryFake.OWNED, adjustment);
         }
 
-        // The unfiltered factionless backdrop under a chosen pair of factionless category styles,
+        // The unfiltered unowned backdrop under a chosen pair of unowned category styles,
         // so a test names the two styles whose interplay it is about and shares everything else.
-        private static OwnerMapClusters buildFactionlessDrawablesWith(
+        private static OwnerMapClusters buildUnownedDrawablesWith(
                 CategoryStyle decivilisedStyle,
                 CategoryStyle uninhabitedStyle) {
 
-            return buildFactionlessDrawablesWith(
-                buildFactionlessTheme(
+            return buildUnownedDrawablesWith(
+                buildUnownedTheme(
                     decivilisedStyle,
                     uninhabitedStyle,
                     ThemeFixtures.createInertGlobalStyle()),
@@ -592,44 +594,44 @@ final class PaintedCellBuilderTests {
                 ElementStyleAdjustment.NONE);
         }
 
-        // A filtered pass over the factionless backdrop, receding by the given adjustment, with one
-        // style shared by both factionless categories - so which of the two a test builds decides
+        // A filtered pass over the unowned backdrop, receding by the given adjustment, with one
+        // style shared by both unowned categories - so which of the two a test builds decides
         // the outcome and the styles themselves cannot account for it.
-        private static OwnerMapClusters buildFilteringFactionlessDrawablesWith(
-                CategoryStyle factionlessStyle,
+        private static OwnerMapClusters buildFilteringUnownedDrawablesWith(
+                CategoryStyle unownedStyle,
                 ElementStyleAdjustment recede) {
 
-            return buildFilteringFactionlessDrawablesWith(factionlessStyle, recede, Set.of());
+            return buildFilteringUnownedDrawablesWith(unownedStyle, recede, Set.of());
         }
 
-        // The same filtered pass with the spotlit bloc recorded as living in the given systems, so
+        // The same filtered pass with the spotlit owner recorded as living in the given systems, so
         // a case can put a cell inside and outside the pick's presence under one identical recede.
-        private static OwnerMapClusters buildFilteringFactionlessDrawablesWith(
-                CategoryStyle factionlessStyle,
+        private static OwnerMapClusters buildFilteringUnownedDrawablesWith(
+                CategoryStyle unownedStyle,
                 ElementStyleAdjustment recede,
                 Set<SystemKey> spotlitPresenceSystemKeys) {
 
-            return buildFactionlessDrawablesWith(
-                buildFactionlessTheme(
-                    factionlessStyle,
-                    factionlessStyle,
+            return buildUnownedDrawablesWith(
+                buildUnownedTheme(
+                    unownedStyle,
+                    unownedStyle,
                     ThemeFixtures.createInertGlobalStyle()),
-                "selected-bloc",
+                "selected-owner",
                 recede,
                 spotlitPresenceSystemKeys);
         }
 
-        // The unfiltered factionless backdrop with the sector-wide corner rounding switched on,
+        // The unfiltered unowned backdrop with the sector-wide corner rounding switched on,
         // for the cases about the shape of a lone cell's outline rather than its colour. One
-        // style for both factionless categories, since the rounding is global-tier and cannot
+        // style for both unowned categories, since the rounding is global-tier and cannot
         // differ between them.
-        private static OwnerMapClusters buildRoundingFactionlessDrawablesWith(
-                CategoryStyle factionlessStyle) {
+        private static OwnerMapClusters buildRoundingUnownedDrawablesWith(
+                CategoryStyle unownedStyle) {
 
-            return buildFactionlessDrawablesWith(
-                buildFactionlessTheme(
-                    factionlessStyle,
-                    factionlessStyle,
+            return buildUnownedDrawablesWith(
+                buildUnownedTheme(
+                    unownedStyle,
+                    unownedStyle,
                     buildRoundingGlobalStyle()),
                 null,
                 ElementStyleAdjustment.NONE);
@@ -644,17 +646,18 @@ final class PaintedCellBuilderTests {
                 SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()),
                 new OwnerMapBuildInputs(
                     new MapStyling(
-                        buildFactionlessTheme(STYLE, STYLE, buildRoundingGlobalStyle()),
-                        HolderCategories.INSTANCE,
-                        new OwnerPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
-                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                        buildUnownedTheme(STYLE, STYLE, buildRoundingGlobalStyle()),
+                        OwnerMapClusterFixtures.BORDER_TRACE,
+                        OwnerCategoriesFake.SHARED_FAKE,
+                        new ColourPair(UNOWNED_NEUTRAL, UNOWNED_NEUTRAL),
+                        new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new ColourPair(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         reading,
                         new OwnerSourceFake()),
                     ContentInputsFixtures.createInputsRecedingBehind(
-                        null, // No bloc spotlighted.
+                        null, // No owner spotlighted.
                         ElementStyleAdjustment.NONE),
                     Set.of(),
                     Set.of()));
@@ -673,43 +676,43 @@ final class PaintedCellBuilderTests {
                 CornerRounding.ROUND_EVERY_CORNER));
         }
 
-        // The theme a factionless case reads: the two factionless bundles it is about over the
+        // The theme an unowned case reads: the two unowned bundles it is about over the
         // given sector-wide tier, with the owned pair held at the shared style. Taken apart from
         // the backdrop below because the two vary independently - a case is about a category
         // bundle or about a global-tier knob, never both.
-        private static RenderStyle buildFactionlessTheme(
+        private static RenderStyle buildUnownedTheme(
                 CategoryStyle decivilisedStyle,
                 CategoryStyle uninhabitedStyle,
                 GlobalStyle globalStyle) {
 
             var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
 
-            categories.put(OwnerMapCategory.FACTION, STYLE);
-            categories.put(OwnerMapCategory.INDEPENDENT, STYLE);
-            categories.put(OwnerMapCategory.DECIVILISED, decivilisedStyle);
-            categories.put(OwnerMapCategory.UNINHABITED, uninhabitedStyle);
+            categories.put(StandInCategoryFake.OWNED, STYLE);
+            categories.put(StandInCategoryFake.RECEDED, STYLE);
+            categories.put(StandInCategoryFake.SETTLED, decivilisedStyle);
+            categories.put(StandInCategoryFake.EMPTY, uninhabitedStyle);
 
             return new RenderStyle(globalStyle, categories);
         }
 
-        // The shared factionless backdrop: the theme plus the pass's spotlight state, since a
-        // factionless cell's recede is the filter's. What the null-system cases read off it is
-        // that a cell drawing as no system resolves no holder and is not taken for settled; that
+        // The shared unowned backdrop: the theme plus the pass's spotlight state, since an
+        // unowned cell's recede is the filter's. What the null-system cases read off it is
+        // that a cell drawing as no system resolves no owner and is not taken for settled; that
         // neither read reaches its collection with a null key at all is the resolver's own rule,
-        // pinned over null-hostile collections in FactionlessStyleResolverTests.
-        private static OwnerMapClusters buildFactionlessDrawablesWith(
+        // pinned over null-hostile collections in UnownedStyleResolverTests.
+        private static OwnerMapClusters buildUnownedDrawablesWith(
                 RenderStyle theme,
-                String selectedBlocId,
+                String selectedOwnerId,
                 ElementStyleAdjustment recede) {
 
-            return buildFactionlessDrawablesWith(theme, selectedBlocId, recede, Set.of());
+            return buildUnownedDrawablesWith(theme, selectedOwnerId, recede, Set.of());
         }
 
-        // The same backdrop with the spotlit bloc recorded as living in the given systems, for the
+        // The same backdrop with the spotlit owner recorded as living in the given systems, for the
         // cases about a pick's presence sparing a settled cell the recede.
-        private static OwnerMapClusters buildFactionlessDrawablesWith(
+        private static OwnerMapClusters buildUnownedDrawablesWith(
                 RenderStyle theme,
-                String selectedBlocId,
+                String selectedOwnerId,
                 ElementStyleAdjustment recede,
                 Set<SystemKey> spotlitPresenceSystemKeys) {
 
@@ -721,54 +724,55 @@ final class PaintedCellBuilderTests {
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         theme,
-                        HolderCategories.INSTANCE,
-                        new OwnerPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
-                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                        OwnerMapClusterFixtures.BORDER_TRACE,
+                        OwnerCategoriesFake.SHARED_FAKE,
+                        new ColourPair(UNOWNED_NEUTRAL, UNOWNED_NEUTRAL),
+                        new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new ColourPair(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         buildReadingAdjusting(ElementStyleAdjustment.NONE),
                         new OwnerSourceFake()),
-                    ContentInputsFixtures.createInputsRecedingBehind(selectedBlocId, recede),
+                    ContentInputsFixtures.createInputsRecedingBehind(selectedOwnerId, recede),
                     Set.of(),
                     Set.of()));
         }
 
         // A category whose outer outline is drawn (a real palette slot, resolved to the neutral
-        // colour for a factionless cell), so a factionless cell built under it comes back drawable.
+        // colour for an unowned cell), so an unowned cell built under it comes back drawable.
         private static CategoryStyle buildDrawnOutlineStyle() {
             return new CategoryStyle(
                 new ElementStyle(
                     null,
                     1.0),
                 new ElementStyle(
-                    FactionPaletteSlot.PRIMARY,
+                    OwnerPaletteSlot.PRIMARY,
                     1.0), 3.0,
                 new ElementStyle(
                     null,
                     1.0), 1.0);
         }
 
-        // The decivilised shape: both a fill and an outline drawn, each in the neutral colour a
-        // factionless cell resolves a PRIMARY slot to.
+        // The decivilised shape: both a fill and an outline drawn, each in the neutral colour an
+        // unowned cell resolves a PRIMARY slot to.
         private static CategoryStyle buildFilledOutlineStyle() {
             return new CategoryStyle(
                 new ElementStyle(
-                    FactionPaletteSlot.PRIMARY, 1.0),
+                    OwnerPaletteSlot.PRIMARY, 1.0),
                 new ElementStyle(
-                    FactionPaletteSlot.PRIMARY, 1.0), 3.0,
+                    OwnerPaletteSlot.PRIMARY, 1.0), 3.0,
                 new ElementStyle(
                     null, 1.0), 1.0);
         }
 
-        // A fill with its outline zeroed out - the one setting combination that can hide a
-        // factionless outline, since neither element carries a colour choice.
+        // A fill with its outline zeroed out - the one setting combination that can hide an
+        // unowned outline, since neither element carries a colour choice.
         private static CategoryStyle buildFillOnlyStyle() {
             return new CategoryStyle(
                 new ElementStyle(
-                    FactionPaletteSlot.PRIMARY, 1.0),
+                    OwnerPaletteSlot.PRIMARY, 1.0),
                 new ElementStyle(
-                    FactionPaletteSlot.PRIMARY, 0.0), 3.0,
+                    OwnerPaletteSlot.PRIMARY, 0.0), 3.0,
                 new ElementStyle(
                     null, 1.0), 1.0);
         }
@@ -799,30 +803,31 @@ final class PaintedCellBuilderTests {
         }
 
         // The same backdrop holding the two systems that answer to one ID, each under its own
-        // bloc - the only arrangement that tells a cell reading its holder by key from one
+        // owner - the only arrangement that tells a cell reading its owner by key from one
         // narrowing to the ID first.
         private static OwnerMapClusters buildDrawablesHeldByTwins() {
 
-            var holders = new LinkedHashMap<SystemKey, SystemOwner>();
+            var owners = new LinkedHashMap<SystemKey, SystemOwner>();
 
-            holders.put(FIRST_TWIN, OWNER);
-            holders.put(SECOND_TWIN, RIVAL_OWNER);
+            owners.put(FIRST_TWIN, OWNER);
+            owners.put(SECOND_TWIN, RIVAL_OWNER);
 
             return new OwnerMapClusters(
-                SystemOccupancy.createCopyOf(holders, Set.of(), Set.of()),
+                SystemOccupancy.createCopyOf(owners, Set.of(), Set.of()),
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         OwnerMapClusterFixtures.createRenderStyleForEveryCategory(STYLE),
-                        HolderCategories.INSTANCE,
+                        OwnerMapClusterFixtures.BORDER_TRACE,
+                        OwnerCategoriesFake.SHARED_FAKE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                        new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new ColourPair(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         buildReadingAdjusting(ElementStyleAdjustment.NONE),
                         new OwnerSourceFake()),
                     ContentInputsFixtures.createInputsRecedingBehind(
-                        null, // No bloc spotlighted.
+                        null, // No owner spotlighted.
                         ElementStyleAdjustment.NONE),
                     Set.of(),
                     Set.of()));
@@ -835,23 +840,24 @@ final class PaintedCellBuilderTests {
                 boolean isFiltering,
                 ElementStyleAdjustment recede) {
 
-            // A filtered pass carries the selected bloc's ID; the fixture's holder is never that
-            // bloc, so it reads as non-spotlit and the recede applies. Off filter the ID is null.
+            // A filtered pass carries the selected owner's ID; the fixture's owner is never that
+            // owner, so it reads as non-spotlit and the recede applies. Off filter the ID is null.
             return new OwnerMapClusters(
                 SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()),
                 new OwnerMapBuildInputs(
                     new MapStyling(
                         OwnerMapClusterFixtures.createRenderStyleForEveryCategory(STYLE),
-                        HolderCategories.INSTANCE,
+                        OwnerMapClusterFixtures.BORDER_TRACE,
+                        OwnerCategoriesFake.SHARED_FAKE,
                         OwnerMapClusterFixtures.NEUTRAL_PALETTE,
-                        new OwnerPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                        new OwnerPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                        new ColourPair(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new ColourPair(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                     new ViewReading(
                         mock(OwnerPaintedView.class),
                         reading,
                         new OwnerSourceFake()),
                     ContentInputsFixtures.createInputsRecedingBehind(
-                        isFiltering ? "selected-bloc" : null,
+                        isFiltering ? "selected-owner" : null,
                         recede),
                     Set.of(),
                     Set.of()));
@@ -903,7 +909,7 @@ final class PaintedCellBuilderTests {
 
     // Narrows a built cell to the lone form - a cell that is its own cluster, carrying its fill and
     // outline. As above, the narrowing doubles as the assertion that the builder read the cell as
-    // a factionless cell rather than as part of a cluster.
+    // an unowned cell rather than as part of a cluster.
     private static StyledCell.LoneCell requireLoneCell(PaintedCell painted) {
         assertThat(painted.styledCell()).isInstanceOf(StyledCell.LoneCell.class);
         return (StyledCell.LoneCell) painted.styledCell();

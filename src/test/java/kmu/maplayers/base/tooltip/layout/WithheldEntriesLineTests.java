@@ -3,7 +3,7 @@ package kmu.maplayers.base.tooltip.layout;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+
+import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelText;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,12 +29,12 @@ final class WithheldEntriesLineTests {
 
     @BeforeEach
     void installStrings() {
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested
@@ -45,7 +47,7 @@ final class WithheldEntriesLineTests {
                 createCountedEntry("Chicomoztoc", 4000),
                 createCountedEntry("Kazeron", 320)));
 
-            assertThat(line.labelText())
+            assertThat(readLabelText(line))
                 .isEqualTo("+ 2 more");
         }
 
@@ -57,9 +59,9 @@ final class WithheldEntriesLineTests {
                 createCountedEntry("Chicomoztoc", 4000),
                 createCountedEntry("Kazeron", 320)));
 
-            assertThat(line.countedValue())
+            assertThat(line.value().countedValue())
                 .isEqualTo(4320);
-            assertThat(line.valueText())
+            assertThat(line.value().valueText())
                 .isEqualTo("4,320");
         }
 
@@ -71,7 +73,7 @@ final class WithheldEntriesLineTests {
                 createCountedEntry("Chicomoztoc", 4000)
                     .nesting(List.of(createCountedEntry("Size", 3000)))));
 
-            assertThat(line.countedValue())
+            assertThat(line.value().countedValue())
                 .isEqualTo(4000);
         }
 
@@ -83,9 +85,9 @@ final class WithheldEntriesLineTests {
                 createEntry("Stability"),
                 createEntry("Size")));
 
-            assertThat(line.countedValue())
+            assertThat(line.value().countedValue())
                 .isNull();
-            assertThat(line.valueText())
+            assertThat(line.value().valueText())
                 .isEqualTo(CellTooltipEntryLine.NO_SCORE);
         }
 
@@ -98,7 +100,7 @@ final class WithheldEntriesLineTests {
                 createCountedEntry("Kazeron", 320),
                 createUncountedEntry("Sentinel Gantries")));
 
-            assertThat(line.countedValue())
+            assertThat(line.value().countedValue())
                 .isEqualTo(320);
         }
 

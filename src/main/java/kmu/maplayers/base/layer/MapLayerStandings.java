@@ -89,9 +89,11 @@ public final class MapLayerStandings {
         if (installedSector == null) {
             return;
         }
+
         var standingLayers = resolveStandingLayersIn(machinery);
 
-        for (var layer : MapLayerRegistry.getLayers()) {
+        for (var layer : MapLayerScreens.resolveScreensIn(machinery).getLayerRegistry().getLayers()) {
+
             runGuardedStep(
                 () -> applyLayerStanding(layer, false, installedSector, standingLayers),
                 STANDING_UNCHANGED_WARNING);
@@ -108,14 +110,18 @@ public final class MapLayerStandings {
     private static void applyArrangementToMachinery(SectorMapMachinery machinery) {
 
         var sector = machinery.resolveSector();
-
         if (sector == null) {
             return;
         }
-        var arrangement = LiveMapLayerArrangement.resolveArrangement();
+
+        // The screens the layers were installed on this sector under, which hold the roster and the
+        // arrangement they are brought into line with.
+        var screens = MapLayerScreens.resolveScreensIn(machinery);
+        var arrangement = screens.getLayerArrangement().resolveArrangement();
         var standingLayers = resolveStandingLayersIn(machinery);
 
-        for (var layer : MapLayerRegistry.getLayers()) {
+        for (var layer : screens.getLayerRegistry().getLayers()) {
+
             runGuardedStep(
                 () -> applyLayerStanding(
                     layer,
@@ -140,15 +146,15 @@ public final class MapLayerStandings {
             StandingLayers standingLayers) {
 
         var layerId = layer.getId();
-
         if (standingLayers.isLayerStanding(layerId) == isWanted) {
             return;
         }
-        var standing = layer.resolveStanding();
 
+        var standing = layer.resolveStanding();
         if (standing == null) {
             return;
         }
+
         standingLayers.recordLayerStanding(layerId, isWanted);
 
         if (isWanted) {
@@ -161,6 +167,9 @@ public final class MapLayerStandings {
     // What this sector remembers of which layers are up on it, made on the first ask and released
     // with the machinery holding it.
     private static StandingLayers resolveStandingLayersIn(SectorMapMachinery machinery) {
-        return machinery.resolveMachinery(StandingLayers.class, StandingLayers::new);
+
+        return machinery.resolveMachinery(
+            StandingLayers.class,
+            StandingLayers::new);
     }
 }

@@ -1,19 +1,9 @@
-# Surgical line-ending pins for a game mod: only the executable text
-# surfaces are normalised, leaving data and binary assets to git's own
-# detection. bash and shellcheck reject CRLF, so every shell surface
-# must be LF on disk - the run-lint / fix-permissions shims under
-# scripts/, Gradle's gradlew launcher, and any composite-action scripts
-# under .github/. A stray CR on a shebang line otherwise yields
-#   env: 'bash\r': No such file or directory
-# on a Linux CI runner.
-*.sh    text eol=lf
-gradlew text eol=lf
-
-# Git hooks carry no extension, so *.sh above does not reach them. bash
-# refuses to run a script whose shebang line ends in CR, which would break
-# every commit in a Windows checkout with autocrlf on.
-.githooks/* text eol=lf
+# Every text file is LF in the repository and on disk, whatever the operator's core.autocrlf says.
+# Left to autocrlf, git checks out CRLF while scripts, formatters and Linux CI each write their own
+# ending. A rewrite that changes only line endings then shows as a modified file with an empty diff.
+# bash also rejects a CR on a shebang line, and yamllint reports CRLF as an error.
+# Binary files are left alone: text=auto only converts what git detects as text.
+* text=auto eol=lf
 
 # cmd.exe requires CRLF in batch files.
-*.bat       text eol=crlf
-gradlew.bat text eol=crlf
+*.bat text eol=crlf

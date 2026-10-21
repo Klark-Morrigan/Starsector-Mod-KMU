@@ -25,10 +25,10 @@ import kmlib.starsector.ui.input.VanillaPointerButtonHold;
  * <p>What it covers besides is a left-drag pan, which is wanted: the pointer is still while the
  * sector slides beneath it, so every cell crossing under it would otherwise arrive as a fresh hover
  * and sound its own tick. No cursor test, for the reason the pause menu needs none - a button held
- * is held wherever the pointer is - which leaves the cheapest read in the set, a polled flag with
- * no screen, no geometry and no widget tree behind it, and that is what puts it first in the order.
- * The read arrives as a port rather than as the static behind it, so the rule this class owns can
- * be stated without a mouse to hold.
+ * is held wherever the pointer is - which leaves a polled flag with no screen, no geometry and no
+ * widget tree behind it. Where that ranks it is {@link MapCoverReader}'s to state. The read arrives
+ * as a port rather than as the static behind it, so the rule this class owns can be stated without a
+ * mouse to hold.
  */
 public final class HeldPointerMapCover implements MapCover {
 

@@ -3,7 +3,7 @@ package kmu.maplayers.base.render;
 import com.fs.starfarer.api.Global;
 
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.InstalledMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 
@@ -27,7 +27,8 @@ import java.util.function.Function;
  * <p>Read and written on the game thread alone - the render pass and the UI passes asking for the
  * hover box all run there - so the state needs no publication guarantee of its own.
  */
-public final class DrawnLayerGuard implements InstalledMachinery {
+public final class DrawnLayerGuard
+        implements InstalledMachinery {
 
     private static final Logger LOG = Global.getLogger(DrawnLayerGuard.class);
 
@@ -49,6 +50,7 @@ public final class DrawnLayerGuard implements InstalledMachinery {
 
     // The same, telling the player through the reporter given.
     DrawnLayerGuard(SectorMapMachinery machinery, SwitchedOffLayerReporter switchOffReporter) {
+
         this.machinery = machinery;
         this.switchOffReporter = switchOffReporter;
     }
@@ -104,24 +106,23 @@ public final class DrawnLayerGuard implements InstalledMachinery {
             Function<MapLayerRenderer, T> layerWork,
             T answerWhereNothingDraws) {
 
-        var drawnLayer = MapLayerRegistry.getDrawnLayer();
-
+        var drawnLayer = MapLayerScreens.resolveScreensIn(machinery).resolveDrawnLayer();
         if (drawnLayer == null || switchedOffLayers.contains(drawnLayer)) {
             return answerWhereNothingDraws;
         }
+
         try {
             // Asked of this sector's machinery rather than the running game's: the roster is the
             // process's while a renderer is one sector's, so a renderer resolved any other way would
             // hand every surface the same one however many sectors were being drawn.
             var layerRenderer = drawnLayer.resolveRenderer(machinery);
-
             return layerRenderer == null
                 ? answerWhereNothingDraws
                 : layerWork.apply(layerRenderer);
 
-        } catch (LinkageError | RuntimeException failure) {
+        } catch (LinkageError | RuntimeException exception) {
 
-            switchLayerOff(drawnLayer, failure);
+            switchLayerOff(drawnLayer, exception);
             return answerWhereNothingDraws;
         }
     }

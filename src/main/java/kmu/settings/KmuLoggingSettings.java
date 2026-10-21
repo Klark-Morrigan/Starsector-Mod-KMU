@@ -47,7 +47,7 @@ public final class KmuLoggingSettings {
     }
 
     /**
-     * @return whether the reflective UI-tree traces narrate themselves; off by default, and read
+     * @return whether the reflective UI-tree traces narrate themselves, read
      *         alongside rather than instead of the log level, so a caller reports only where both
      *         this and DEBUG are on
      */

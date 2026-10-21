@@ -2,28 +2,29 @@ package kmu.maplayers.politicalmap.claims;
 
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
-import kmlib.starsector.ui.widgets.lists.SortDirection;
 
-import kmu.maplayers.ownermap.picker.RankedBloc;
+import kmu.maplayers.ownermap.picker.RankedOwner;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static kmu.maplayers.ownermap.picker.BlocSortFixtures.ROW_COLOUR;
-import static kmu.maplayers.ownermap.picker.BlocSortFixtures.buildBloc;
-import static kmu.maplayers.ownermap.picker.BlocSortFixtures.listIdsInModeOrder;
+import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.ROW_COLOUR;
+import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.buildOwner;
+import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.listIdsInModeOrder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins what this vocabulary declares: the frozen persistence keys a save round-trips through, which
- * number each mode reads, the direction that follows from it, the order ties break down the canonical
- * chain, and where the blocs that claim nowhere land. What a declared mode answers at all, and the
- * shape the ranking is then laid out in - the promoted key, the flip, the name and by-id tail - are
- * both shared and are pinned in their own suites, so a case here fails only when this vocabulary's own
- * declaration changes. All exercised on hand-built blocs, since the mode carries no Starsector types.
+ * Pins what this vocabulary declares: the modes it offers and its default, the frozen persistence keys
+ * a save round-trips through, which number each mode reads, the order ties break down the canonical
+ * chain, and where the blocs that claim nowhere land under the default.
+ *
+ * <p>What a mode does with its number is shared and pinned in its own suites: its direction, which
+ * number its ranking leads with, and the shape the ranking is laid out in. So a case here fails only
+ * when this vocabulary's own declaration changes. All exercised on hand-built blocs, since the mode
+ * carries no Starsector types.
  */
 final class ClaimSortModesTests {
 
@@ -43,7 +44,7 @@ final class ClaimSortModesTests {
             // Copied to the seam's own element type first: the bundle declares its modes as
             // "? extends ListSortMode", so a capture reaches the assertion and no constant can be named
             // against it directly.
-            var modes = List.<ListSortMode<RankedBloc<ClaimStats>>>copyOf(ClaimSortModes.MODES.modes());
+            var modes = List.<ListSortMode<RankedOwner<ClaimStats>>>copyOf(ClaimSortModes.MODES.modes());
 
             assertThat(modes)
                 .containsExactly(
@@ -86,7 +87,7 @@ final class ClaimSortModesTests {
         @Test
         void isTheModesMetricAsOneRowColouredRunForANumericMode() {
 
-            var bloc = buildBloc("hegemony", "Hegemony", new ClaimStats(4, 26));
+            var bloc = buildOwner("hegemony", "Hegemony", new ClaimStats(4, 26));
 
             // One run apiece, in the tone the picker offered: neither metric carries a colour of its
             // own, so each value matches the name beside it.
@@ -102,31 +103,9 @@ final class ClaimSortModesTests {
             // The name mode ranks on the label, so there is no number to show and the row's value
             // column stays unfilled.
             assertThat(ClaimSortModes.NAME.resolveTrailingRuns(
-                    buildBloc("hegemony", "Hegemony", new ClaimStats(4, 26)),
+                    buildOwner("hegemony", "Hegemony", new ClaimStats(4, 26)),
                     ROW_COLOUR))
                 .isEmpty();
-        }
-    }
-
-    @Nested
-    class DefaultDirection {
-
-        @Test
-        void isDescendingForANumericMode() {
-
-            // A numeric mode leads with the bigger claimant, so its natural order runs high-to-low.
-            assertThat(ClaimSortModes.CLAIMS.defaultDirection())
-                .isEqualTo(SortDirection.DESCENDING);
-            assertThat(ClaimSortModes.MARKET_SIZE.defaultDirection())
-                .isEqualTo(SortDirection.DESCENDING);
-        }
-
-        @Test
-        void isAscendingForTheNameMode() {
-
-            // The name mode reads A-to-Z, so its natural order runs ascending.
-            assertThat(ClaimSortModes.NAME.defaultDirection())
-                .isEqualTo(SortDirection.ASCENDING);
         }
     }
 
@@ -134,22 +113,12 @@ final class ClaimSortModesTests {
     class Comparator {
 
         @Test
-        void ranksANumericModeByItsOwnMetric() {
-
-            var low = buildBloc("low", "Low", new ClaimStats(1, 0));
-            var high = buildBloc("high", "High", new ClaimStats(9, 0));
-
-            assertThat(listIdsInModeOrder(ClaimSortModes.CLAIMS, low, high))
-                .containsExactly("high", "low");
-        }
-
-        @Test
         void breaksTiesDownTheCanonicalChainInOrder() {
 
             // The order this vocabulary declares behind its numbers: claims, then market size. The pair
             // is level on claims, so which bloc leads names the number the chain reaches next.
-            var smaller = buildBloc("a", "A", new ClaimStats(5, 2));
-            var bigger = buildBloc("b", "B", new ClaimStats(5, 7));
+            var smaller = buildOwner("a", "A", new ClaimStats(5, 2));
+            var bigger = buildOwner("b", "B", new ClaimStats(5, 7));
 
             assertThat(listIdsInModeOrder(ClaimSortModes.CLAIMS, smaller, bigger))
                 .containsExactly("b", "a");
@@ -161,22 +130,11 @@ final class ClaimSortModesTests {
             // readable: under the mode the view opens on they form a tail beneath every claimant, and
             // the list still opens on what the layer actually paints. A big holder claiming nothing is
             // what makes the point - it must not out-rank a small claimant on its market size.
-            var claimant = buildBloc("claimant", "Claimant", new ClaimStats(1, 0));
-            var holder = buildBloc("holder", "Holder", new ClaimStats(0, 90));
+            var claimant = buildOwner("claimant", "Claimant", new ClaimStats(1, 0));
+            var holder = buildOwner("holder", "Holder", new ClaimStats(0, 90));
 
             assertThat(listIdsInModeOrder(ClaimSortModes.CLAIMS, holder, claimant))
                 .containsExactly("claimant", "holder");
-        }
-
-        @Test
-        void interleavesTheClaimlessBlocsUnderTheNameMode() {
-            // Alphabetical means alphabetical: sorting by name mixes the claimless rows in among the
-            // claimants rather than keeping the tail the claims mode groups them into.
-            var claimant = buildBloc("b", "Beta", new ClaimStats(4, 0));
-            var holder = buildBloc("a", "Alpha", new ClaimStats(0, 90));
-
-            assertThat(listIdsInModeOrder(ClaimSortModes.NAME, claimant, holder))
-                .containsExactly("a", "b");
         }
     }
 

@@ -3,8 +3,8 @@ package kmu.maplayers.base.geometry.v3.ui;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.v3.CoastRounding;
-import kmu.maplayers.base.geometry.v3.Coastlines;
 import kmu.maplayers.base.geometry.v3.LandableFrontages;
+import kmu.maplayers.base.geometry.v3.TracedCoasts;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -34,7 +34,7 @@ public final class CoastalPocketsOverlay {
     // What the last trace found, held rather than recomputed while painting: a frame that
     // rebuilt it would be drawing marks measured against geometry the rest of the frame is not
     // being drawn from.
-    private Coastlines.TracedCoasts traced;
+    private TracedCoasts traced;
 
     // The accepted trace's lines with their sharp joins taken off, which is what this actually
     // strokes. Rounded on acceptance rather than while painting: a sector's coasts are tens of
@@ -68,7 +68,7 @@ public final class CoastalPocketsOverlay {
      * @param rounded that trace's lines as the map strokes them, one ring for one ring
      */
     public void acceptTrace(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             CoastRounding.RoundedCoasts rounded) {
 
         this.traced = traced;
@@ -93,7 +93,7 @@ public final class CoastalPocketsOverlay {
      *
      * @return it, or null where none has been accepted
      */
-    public Coastlines.TracedCoasts getTrace() {
+    public TracedCoasts getTrace() {
         return traced;
     }
 
@@ -144,7 +144,7 @@ public final class CoastalPocketsOverlay {
 
         MapPainting.paintLineRuns(
             g2,
-            Coastlines.collectDroppedRuns(traced, settings.parameters.measureArcSegments()),
+            traced.collectDroppedRuns(settings.parameters.measureArcSegments()),
             settings.droppedStretchColour);
     }
 

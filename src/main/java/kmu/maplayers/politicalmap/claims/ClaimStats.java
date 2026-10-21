@@ -1,15 +1,15 @@
 package kmu.maplayers.politicalmap.claims;
 
-import kmu.maplayers.ownermap.picker.PaintingBlocMetrics;
-import kmu.maplayers.ownermap.picker.SizedBlocMetrics;
-import kmu.maplayers.politicalmap.dominance.DominanceStats;
+import kmu.maplayers.ownermap.owners.holders.base.picker.SizedBlocMetrics;
+import kmu.maplayers.ownermap.picker.PaintingOwnerMetrics;
 
 /**
  * The two whole-sector numbers the claims picker sorts and displays a claiming bloc by, computed
  * once per grouped pass and carried beside the bloc's identity. The claims-layer counterpart to
- * {@link DominanceStats}: a separate record rather than two more fields on that one, so a layer's
- * sort can neither see nor be widened by another layer's metrics - the claims vocabulary has no
- * domination, presence, or dominance score to offer, and the held layers have no claim count.
+ * the dominance package's {@code DominanceStats}: a separate record rather than two more fields on
+ * that one, so a layer's sort can neither see nor be widened by another layer's metrics - the claims
+ * vocabulary has no domination, presence, or dominance score to offer, and the held layers have no
+ * claim count.
  *
  * <p>The two are deliberately different measures of a claimant. Claims counts exactly the territory
  * this layer paints, so it is the layer's primary metric. Market size answers the separate question
@@ -32,7 +32,8 @@ import kmu.maplayers.politicalmap.dominance.DominanceStats;
  */
 public record ClaimStats(
     int claims,
-    int marketSize) implements PaintingBlocMetrics, SizedBlocMetrics {
+    int marketSize)
+        implements PaintingOwnerMetrics, SizedBlocMetrics {
 
     /** A bloc claiming nothing and holding nothing; the identity a per-system fold begins from. */
     public static final ClaimStats EMPTY = new ClaimStats(0, 0);

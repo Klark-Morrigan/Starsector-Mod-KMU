@@ -1,7 +1,5 @@
 package kmu.maplayers.politicalmap.tooltip;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
@@ -18,8 +16,10 @@ import java.util.List;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.buildEmptySector;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.starsector.SectorFactionFixtures.HEGEMONY;
+import static kmu.starsector.SectorFactionFixtures.HEGEMONY_CREST;
+import static kmu.starsector.SectorFactionFixtures.buildEmptySector;
+import static kmu.starsector.SectorFactionFixtures.buildSectorKnowingHegemony;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins {@link CoreTerritoryHeading}: a system under no decree yields nothing, a decreed one shows its
  * faction's crest, name, and the core status marked out in the highlight colour as one centred line, a
  * box whose body states the decree yields nothing either, and a faction the sector cannot resolve still
- * shows as its bare id.
+ * shows as its bare ID.
  *
  * <p>That the line is centred rather than laid in the box's columns is the contract worth fixing, not a
  * detail of how it happens to look: a decree settles the whole system, so it is read off the title
@@ -41,8 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class CoreTerritoryHeadingTests {
 
-    private static final String CORE_FACTION = "hegemony";
-    private static final String CREST = "graphics/hegemony_crest.png";
+    private static final String CORE_FACTION = HEGEMONY;
 
     // A faction ID no sector resolves, which is what the fallback cases are read through.
     private static final String UNKNOWN_FACTION = "ghost_faction";
@@ -112,7 +111,7 @@ final class CoreTerritoryHeadingTests {
             var rows = resolveHegemonyHeading();
 
             assertThat(readLabelRun(rows.get(HEADING_ROW), CREST_RUN))
-                .isEqualTo(new ImageSpan(CREST));
+                .isEqualTo(new ImageSpan(HEGEMONY_CREST));
         }
 
         @Test
@@ -183,14 +182,5 @@ final class CoreTerritoryHeadingTests {
             buildEmptySector(),
             UNKNOWN_FACTION,
             BODY_IS_SILENT_ON_THE_DECREE);
-    }
-
-    private static SectorAPI buildSectorKnowingHegemony() {
-
-        var sectorMock = buildEmptySector();
-
-        stubFaction(sectorMock, CORE_FACTION, "The Hegemony", CREST);
-
-        return sectorMock;
     }
 }

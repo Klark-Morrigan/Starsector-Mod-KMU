@@ -155,10 +155,11 @@ final class ColonyObservationIntegrationTests {
 
             var sightings = SectorColonySightings.readSightings(fixture.getSector());
 
-            assertThat(sightings.readObservation(DERELICT_ID).locationId())
-                .isEqualTo(SYSTEM_ID);
+            assertThat(sightings.readObservation(DERELICT_ID))
+                .map(ColonyObservation::locationId)
+                .contains(SYSTEM_ID);
             assertThat(sightings.readObservation(NEIGHBOUR_ID))
-                .isNull();
+                .isEmpty();
         }
     }
 
@@ -219,9 +220,9 @@ final class ColonyObservationIntegrationTests {
             assertThat(readKnownColoniesIn(fixture, elsewhere))
                 .containsExactly(new Colony(mover, false));
             assertThat(SectorColonySightings.readSightings(fixture.getSector())
-                    .readObservation(MOVER_ID)
-                    .locationId())
-                .isEqualTo(OTHER_SYSTEM_ID);
+                    .readObservation(MOVER_ID))
+                .map(ColonyObservation::locationId)
+                .contains(OTHER_SYSTEM_ID);
         }
     }
 
@@ -234,7 +235,7 @@ final class ColonyObservationIntegrationTests {
             fixture.getSector(),
             fixture.getSystem(),
             SystemColonies.readColoniesIn(fixture.getSector(), fixture.getSystem()),
-            ColonyKnowledge.observingUnderTheFog());
+            ColonyKnowledge.observingUnderTheFog(fixture.getSector()));
     }
 
     // A derelict standing in the fixture's system, unregistered as vanilla builds one.

@@ -12,11 +12,10 @@ import java.util.TreeMap;
 /**
  * A whole sector's map geometry, built from a fixture at a given set of knobs.
  *
- * <p>One path from sites to drawable shapes, shared by everything that needs it: the
- * invariant tests assert on it, {@link SectorSvgWriter} draws it, and
- * {@link SectorGeometryViewer} rebuilds it per slider move. Sharing matters more than it
- * looks - three copies of "how the map is assembled" would drift, and then a picture would
- * stop being evidence about what the tests check.
+ * <p>One path from sites to drawable shapes, shared by everything that needs it: the SVG
+ * writer draws it and the viewer rebuilds it per slider move. Sharing matters more than it
+ * looks - two copies of "how the map is assembled" would drift, and a picture would then stop
+ * being evidence about the shapes anything else measures.
  *
  * <p>Everything is keyed by CELL rather than by system, and the owners travel with
  * the cells rather than being read back off the fixture. Today the two are the same thing:
@@ -78,16 +77,13 @@ public record SectorGeometry(
         // under asks under the key it holds that cell by - the grouping's own map is keyed by the
         // system a cell draws as, which is the same key only while every cell is its own star's.
         var owners = mapOwnerByCellKey(cellEdges.keySet(), grouping);
-        var shaped = CellShaper.shapeCells(
-            cellEdges,
-            grouping,
-            new EdgeInset(insetRule, parameters.borderInset()));
+        var edgeInset = new EdgeInset(insetRule, parameters.borderInset());
+        var shaped = CellShaper.shapeCells(cellEdges, grouping, edgeInset);
 
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
 
         var borderStyle = new BorderTraceStyle(
-            insetRule,
-            parameters.borderInset(),
+            edgeInset,
             parameters.weldTolerance(),
             parameters.miterSpikeLimit());
 
@@ -112,7 +108,7 @@ public record SectorGeometry(
             CellGrouping grouping,
             BorderTraceStyle borderStyle) {
 
-        if (borderStyle.insetRule().isFusingSharedEdges()) {
+        if (borderStyle.edgeInset().rule().isFusingSharedEdges()) {
 
             return SystemClusterBorders.traceBorderRings(
                 memberCellKeys, cellEdges, grouping, Set.of(), borderStyle);

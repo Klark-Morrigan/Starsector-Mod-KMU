@@ -7,6 +7,7 @@ import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverExpirer;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import org.junit.jupiter.api.AfterEach;
@@ -155,7 +156,7 @@ class MapHoverInstallerTests {
             verify(sectorMock)
                 .addTransientScript(scriptCaptor.capture());
 
-            hoverState.publishHover(new MapHover(
+            hoverState.publishHover(MapHoverFixture.buildHoverOn(
                 buildCellKey(HOVERED_SYSTEM_ID),
                 List.of(buildCellKey(HOVERED_SYSTEM_ID))));
 

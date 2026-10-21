@@ -1,9 +1,15 @@
 package kmu.maplayers;
 
+import kmlib.mods.nexerelin.NexerelinAllianceSource;
+import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
+import kmlib.starsector.factions.alliances.AllianceSource;
 import kmlib.starsector.settings.VanillaCommonDataStore;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 
+import kmu.maplayers.base.chrome.VanillaMapLayerToggleAttacher;
 import kmu.maplayers.base.compatibility.MapLayerGameReach;
+import kmu.maplayers.base.hover.cover.MapCover;
+import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.layer.LiveMapLayerArrangement;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
@@ -19,6 +25,7 @@ import kmu.maplayers.politicalmap.views.AlliancesView;
 import kmu.maplayers.politicalmap.views.ClaimsView;
 import kmu.maplayers.politicalmap.views.FactionsView;
 import kmu.mods.nexerelin.NexerelinAlliances;
+import kmu.mods.rat.RandomAssortmentOfThingsMinimapCover;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,41 +60,52 @@ public final class MapLayers {
 
     /**
      * Registers the layers the on-map bar shows, where the player's own arrangement of that bar is
-     * read from, the concealed colonies the sector openly points at, and where the live alliance set
-     * is read from.
+     * read from, the concealed colonies the sector openly points at, where the live alliance set
+     * is read from, and what the installed optional mods add to the hover and the filter row.
      * Called once at application load, before any
      * sector map can open. No Layer leads so the "show nothing" pick is the first tab; the
      * political-map tab hosts the view-selector radio over the roster {@link #selectPoliticalMapViews}
      * chooses, with the faction view its default so the overlay is up the first time the sector map
      * opens rather than blank.
+     *
+     * @return the screens the layers draw on, over the roster registered here and the player's
+     *         arrangement of it - for the entry point to seat on every sector it installs the layers on
      */
-    public static void registerAll() {
+    public static MapLayerScreens registerAll() {
 
         registerOpenlyKnownColonies();
         registerFactionAlliances();
+        registerOptionalModCovers();
+        registerAllianceViewAvailability();
 
         // KMU's own two, in the order they stand on the strip. The empty view leads it without
         // offering itself as the pick, which is what leaves a fresh save opening on the political map.
-        var politicalMap = new PoliticalMapLayer(selectPoliticalMapViews(), FactionsView.INSTANCE);
+        var politicalMap = new PoliticalMapLayer(
+            selectPoliticalMapViews(),
+            FactionsView.INSTANCE,
+            selectAllianceSource());
 
-        MapLayerRegistry.registerLayer(NoLayer.INSTANCE);
-        MapLayerRegistry.registerLayer(politicalMap);
+        var layerRegistry = new MapLayerRegistry();
 
-        registerBarArrangement();
-
-        // Each screen keeps its own tab, so the overlay has to follow the tab of the screen being
-        // looked at rather than one fixed screen's. This is the live binding that tells the two apart;
-        // naming it here keeps the registry ignorant of any concrete screen.
-        MapLayerScreens.registerIntelScreen(new VanillaIntelScreenView(MapLayerGameReach.MAP_VIEW.getReporter()));
+        layerRegistry.registerLayer(NoLayer.INSTANCE);
+        layerRegistry.registerLayer(politicalMap);
 
         // The spotlight is the other thing a settings change can invalidate, and it is the layer's:
         // healed under that layer's own views, so it is installed where the layer is made rather than
         // beside the switch listener, which answers which feature the settings switched.
         FilterSelectionHeal.installHealOnSettingsChange(politicalMap.resolveViewRegistry());
+
+        // Each screen keeps its own tab, so the overlay has to follow the tab of the screen being
+        // looked at rather than one fixed screen's. The intel binding is what tells the two apart;
+        // naming it here keeps the screens ignorant of any concrete one.
+        return new MapLayerScreens(
+            layerRegistry,
+            createBarArrangement(),
+            new VanillaIntelScreenView(MapLayerGameReach.MAP_VIEW.getReporter()));
     }
 
     /**
-     * Binds where the player's bar arrangement is read from: the game's own common data, held for the
+     * Where the player's bar arrangement is read from: the game's own common data, held for the
      * session once read. Kept as its own step because binding a store is a different decision from
      * registering a layer - what the row holds is KMU's to name, while how the player arranged it is
      * theirs and outlives every campaign.
@@ -95,10 +113,12 @@ public final class MapLayers {
      * <p>The two wrappings are each one job. The file is where a preference about the interface belongs,
      * per user rather than per save; holding what it read is what lets the bar ask on every frame it
      * draws and on every key it routes without opening a file for the answer.
+     *
+     * @return the arrangement bound to that store
      */
-    static void registerBarArrangement() {
+    static LiveMapLayerArrangement createBarArrangement() {
 
-        LiveMapLayerArrangement.registerArrangementSelection(
+        return new LiveMapLayerArrangement(
             new SessionHeldMapLayerArrangement(
                 new PersistedMapLayerArrangement(new VanillaCommonDataStore())));
     }
@@ -124,9 +144,54 @@ public final class MapLayers {
     static void registerFactionAlliances() {
 
         if (NexerelinAlliances.isAvailable()) {
+
             FactionAllianceRegistry.registerAllianceSource(
-                NexerelinAlliances::resolveFactionAlliances);
+                NexerelinAlliances::resolveFactionAlliancesIn);
         }
+    }
+
+    /**
+     * Where the political map's poll reads the alliances standing, so it repaints the views when one
+     * forms, dissolves, is renamed or changes members.
+     *
+     * <p>Behind the same mod-enabled gate as {@link #registerFactionAlliances}, so an install without
+     * the mod polls a source that has never named it.
+     *
+     * @return the live alliance source, or {@link AllianceSource#NO_ALLIANCES} without the mod
+     */
+    static AllianceSource selectAllianceSource() {
+
+        return NexerelinAlliances.isAvailable()
+            ? NexerelinAllianceSource::readAllianceRecords
+            : AllianceSource.NO_ALLIANCES;
+    }
+
+    /**
+     * Hands the hover the covers the installed optional mods lay over the map, so the framework
+     * never names an adapter.
+     *
+     * <p>Composed only where the mod is present, which is safe to settle here: the mod set is fixed
+     * for the launch. An install without the mod then never holds the cover, rather than asking one
+     * every frame that could only ever answer no.
+     */
+    static void registerOptionalModCovers() {
+
+        var covers = new ArrayList<MapCover>();
+
+        if (RandomAssortmentOfThingsPresence.isModEnabled()) {
+            covers.add(RandomAssortmentOfThingsMinimapCover.createForLiveScreen());
+        }
+
+        MapCoverReader.registerOptionalModCovers(covers);
+    }
+
+    /**
+     * Tells the filter row's tick box whether the political map offers an alliances view, so its
+     * hover lists the views the radio actually has. The same gate {@link #selectPoliticalMapViews}
+     * registers the view behind.
+     */
+    static void registerAllianceViewAvailability() {
+        VanillaMapLayerToggleAttacher.registerAllianceViewAvailability(NexerelinAlliances::isAvailable);
     }
 
     /**
@@ -143,6 +208,7 @@ public final class MapLayers {
     static List<OwnerPaintedView> selectPoliticalMapViews() {
 
         var views = new ArrayList<OwnerPaintedView>();
+
         views.add(FactionsView.INSTANCE);
 
         if (NexerelinAlliances.isAvailable()) {
@@ -150,6 +216,7 @@ public final class MapLayers {
         }
 
         views.add(ClaimsView.INSTANCE);
+
         return List.copyOf(views);
     }
 }

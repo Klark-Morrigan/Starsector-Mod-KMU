@@ -67,8 +67,8 @@ public final class KmuMapVisibilitySettings {
     /**
      * @return whether an unowned market carrying vanilla's abandoned-station condition is drawn,
      *         counted and named as soon as its entity is found, rather than waiting until the
-     *         player has been in its star system or somebody lives there who would have seen it;
-     *         off by default. A station a faction keeps wears the same condition and is not one of
+     *         player has been in its star system or somebody lives there who would have seen it.
+     *         A station a faction keeps wears the same condition and is not one of
      *         these
      */
     public static boolean shouldShowUnseenAbandonedStations() {
@@ -80,7 +80,7 @@ public final class KmuMapVisibilitySettings {
     /**
      * @return whether a market marked hidden is drawn, counted and named wherever it currently
      *         stands as soon as its entity is found, rather than waiting until somebody has seen it
-     *         standing there; off by default
+     *         standing there
      */
     public static boolean shouldShowUnseenHiddenMarkets() {
         return KmuLunaSettings.readBoolean(
@@ -91,7 +91,7 @@ public final class KmuMapVisibilitySettings {
     /**
      * @return whether a colony the player has not discovered yet still counts - bypassing the
      *         known-to-player gate, so such a colony marks its system as inhabited and, on a layer
-     *         that weighs colonies, folds into what that layer weighs; off by default
+     *         that weighs colonies, folds into what that layer weighs
      */
     public static boolean shouldShowUndiscoveredMarkets() {
         return KmuLunaSettings.readBoolean(
@@ -101,9 +101,7 @@ public final class KmuMapVisibilitySettings {
 
     /**
      * @return how far a decivilised world must have been surveyed before the map will say its
-     *         colony has collapsed; FULL by default, so an untouched install asserts such a
-     *         world only once the player has surveyed it or a neighbour vouches for it. A
-     *         separate axis from discovery: a planet flown past is
+     *         colony has collapsed. A separate axis from discovery: a planet flown past is
      *         discovered whatever its survey level says. The bar governs the player's own
      *         instruments and nothing beyond them: NONE admits every such world outright, SEEN is
      *         where having flown past is survey enough, and PRELIMINARY or FULL asks for readings
@@ -122,7 +120,7 @@ public final class KmuMapVisibilitySettings {
     /**
      * @return whether a star system the map would otherwise omit still seeds a cell - bypassing the
      *         map's own admission rule, so a system that is unreachable, unseen or uninhabited gets
-     *         geometry like any other; off by default
+     *         geometry like any other
      */
     public static boolean shouldShowHiddenSystems() {
         return KmuLunaSettings.readBoolean(

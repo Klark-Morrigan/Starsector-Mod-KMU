@@ -15,7 +15,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
@@ -40,6 +40,7 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelTex
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -50,8 +51,8 @@ import static org.mockito.Mockito.when;
  * <p>Each box resolves its status through a different route - the faction layer off the pass it
  * ranks under, the claims layer off a direct settings read - and each suite verifies only its own
  * route. That leaves the two free to drift apart onto different toggles while both suites stay
- * green, which is exactly the state this pair was in before: one layer calling a system
- * unpopulated while the other, a keystroke away, said nothing about it.
+ * green: one layer calling a system unpopulated while the other, a keystroke away, says nothing
+ * about it.
  *
  * <p>Integration rather than unit, because the agreement is a property of the whole chain - the
  * dev toggle, the pass built from it, the shared status row, and the discovery filter underneath -
@@ -76,13 +77,11 @@ final class PoliticalMapStatusRevealIntegrationTests {
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
     private final SystemClaimTooltip claimTooltip = new SystemClaimTooltip(
         claimBreakdownReaderFake,
-        HolderGrouping::identity,
-        ContestWordingFixtures.CONTESTED_WORDING);
+        PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake));
+
     private final SystemDominationTooltip dominationTooltip = new SystemDominationTooltip(
         HolderGrouping::identity,
-        claimBreakdownReaderFake,
-        HolderGrouping::identity,
-        ContestWordingFixtures.CONTESTED_WORDING);
+        PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake));
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
 
@@ -113,7 +112,8 @@ final class PoliticalMapStatusRevealIntegrationTests {
         standingsMock
             .when(() -> SystemStandings.rankByDominationScore(
                 any(StarSystemAPI.class),
-                any(DominancePass.class)))
+                any(DominancePass.class),
+                anyMap()))
             .thenReturn(List.of());
 
         when(systemMock.getPlanets())
@@ -122,9 +122,11 @@ final class PoliticalMapStatusRevealIntegrationTests {
 
     @AfterEach
     void clearSettingsAndTheLunaReads() {
+
         standingsMock.close();
         visibilityRulesMock.close();
         dominanceRulesMock.close();
+
         CellTooltipPaletteFake.clearPalette();
     }
 
@@ -136,11 +138,15 @@ final class PoliticalMapStatusRevealIntegrationTests {
 
             var sector = buildSectorHolding(buildConcealedBase(true));
 
-            // The leak that started this: the claims layer counted the unknown base and drew no
-            // status, so its absence told the player a base was hiding there.
+            // The leak this guards: a layer counting the unknown base draws no status, so its
+            // absence tells the player a base is hiding there.
             assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isEqualTo("Unpopulated");
-            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
+
+            assertThat(readStatus(dominationTooltip
+                    .composeBody(sector, systemMock, PATROL_DETAILS)
+                    .blocks()
+                    .readSections()))
                 .isEqualTo("Unpopulated");
         }
 
@@ -153,7 +159,11 @@ final class PoliticalMapStatusRevealIntegrationTests {
             // this system empty. Both layers must agree it is not.
             assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isNull();
-            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
+
+            assertThat(readStatus(dominationTooltip
+                    .composeBody(sector, systemMock, PATROL_DETAILS)
+                    .blocks()
+                    .readSections()))
                 .isNull();
         }
 
@@ -168,7 +178,11 @@ final class PoliticalMapStatusRevealIntegrationTests {
             // layer reads it directly, and the same unknown base has to satisfy both.
             assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isNull();
-            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
+
+            assertThat(readStatus(dominationTooltip
+                    .composeBody(sector, systemMock, PATROL_DETAILS)
+                    .blocks()
+                    .readSections()))
                 .isNull();
         }
     }
@@ -176,17 +190,19 @@ final class PoliticalMapStatusRevealIntegrationTests {
     // The status banner's words, or null when the body opens with something other than a status -
     // which for these systems means no status was drawn at all.
     private static String readStatus(List<TooltipSection> sections) {
+
         if (sections.isEmpty()) {
             return null;
         }
-        var firstRow = sections.get(STATUS_SECTION).readRowsInOrder().get(0);
 
+        var firstRow = sections.get(STATUS_SECTION).readRowsInOrder().get(0);
         return firstRow instanceof TooltipRow.CentredRow
             ? readLabelTextRun(firstRow, STATUS_RUN).text()
             : null;
     }
 
     private void setReveal(boolean shouldIncludeUndiscoveredMarkets) {
+
         visibilityRulesMock
             .when(MapVisibilityRules::readFromLunaSettings)
             .thenReturn(new MapVisibilityRules(

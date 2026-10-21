@@ -6,7 +6,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.settings.KmuOwnerMapRibbonSettings;
 import kmu.settings.RibbonNameClearanceChoice;
@@ -115,7 +115,7 @@ final class RibbonBakeSurfaceTests {
         @Test
         void keepsClearOfTheFittedBoxesUnderTheFittedBoxReading() {
 
-            var surface = createSurfaceSpelling(FactionNameFormatChoice.SHORT);
+            var surface = createSurfaceSpelling(OwnerNameFormatChoice.SHORT);
 
             assertThat(surface.nameBoxes())
                 .isSameAs(FITTED_BOXES);
@@ -130,7 +130,7 @@ final class RibbonBakeSurfaceTests {
                 .when(KmuOwnerMapRibbonSettings::getOwnerMapRibbonNameClearance)
                 .thenReturn(RibbonNameClearanceChoice.WORDS);
 
-            var surface = createSurfaceSpelling(FactionNameFormatChoice.SHORT);
+            var surface = createSurfaceSpelling(OwnerNameFormatChoice.SHORT);
 
             assertThat(surface.nameBoxes())
                 .isSameAs(WORD_BOXES);
@@ -143,7 +143,7 @@ final class RibbonBakeSurfaceTests {
             // Read off the build's name format rather than off the placements being empty: the
             // placements are built for the anchor overlay too, so they can stand while nothing is
             // drawn for a band to give way to.
-            var surface = createSurfaceSpelling(FactionNameFormatChoice.NONE);
+            var surface = createSurfaceSpelling(OwnerNameFormatChoice.NONE);
 
             assertThat(surface.nameBoxes())
                 .isEmpty();
@@ -160,7 +160,7 @@ final class RibbonBakeSurfaceTests {
                 .when(KmuOwnerMapRibbonSettings::shouldKeepOwnerMapRibbonsClearOfNames)
                 .thenReturn(false);
 
-            var surface = createSurfaceSpelling(FactionNameFormatChoice.SHORT);
+            var surface = createSurfaceSpelling(OwnerNameFormatChoice.SHORT);
 
             assertThat(surface.nameBoxes())
                 .isEmpty();
@@ -172,7 +172,7 @@ final class RibbonBakeSurfaceTests {
 
     // The surface over a build holding nobody, whose names are spelled the given way - the one
     // input the room kept for them is read off.
-    private RibbonBakeSurface createSurfaceSpelling(FactionNameFormatChoice nameFormat) {
+    private RibbonBakeSurface createSurfaceSpelling(OwnerNameFormatChoice nameFormat) {
 
         var clusters = OwnerMapClusterFixtures.createClustersSpellingNames(Map.of(), nameFormat);
 

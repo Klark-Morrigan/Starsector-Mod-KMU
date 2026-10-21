@@ -6,7 +6,7 @@ import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
 
-import kmu.maplayers.base.labels.anchor.DiagnosticPalette;
+import kmu.maplayers.base.render.DiagnosticPalette;
 import kmu.maplayers.base.render.MapFrame;
 
 import org.lwjgl.opengl.GL11;

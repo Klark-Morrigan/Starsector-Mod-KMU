@@ -2,10 +2,8 @@ package kmu.maplayers.base.chrome.arrange;
 
 import kmlib.starsector.ui.coreui.OverlayPresence;
 
-import kmu.maplayers.base.layer.MapLayerArrangements;
+import kmu.maplayers.base.layer.MapLayerRosters;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -27,18 +25,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 final class MapLayerArrangementDialogTests {
 
     private final MapLayerArrangementDialog dialog = MapLayerArrangementDialog.INSTANCE;
-
-    @BeforeEach
-    void bindNoArrangementStore() {
-        // The reading an install gives before its composition root has run, which is the state every
-        // refusal here is about.
-        MapLayerArrangements.forgetTheArrangement();
-    }
-
-    @AfterEach
-    void leaveNoArrangementStoreBehind() {
-        MapLayerArrangements.forgetTheArrangement();
-    }
 
     @Nested
     class IsDialogRaised {
@@ -70,7 +56,8 @@ final class MapLayerArrangementDialogTests {
         void standsNothingUpWithNoStoreToRecordTo() {
             // Refused before anything is built, which is what keeps it testable at all: a dialog that
             // stood a panel up first and then found nowhere to write would need a running game to say so.
-            dialog.openDialog();
+            // The bar an install gives before its composition root has run: bound to no store.
+            dialog.openDialog(MapLayerRosters.createScreensOverNoLayer().getMapPicks());
 
             assertThat(dialog.isDialogRaised())
                 .isFalse();

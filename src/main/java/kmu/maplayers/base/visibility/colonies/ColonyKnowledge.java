@@ -9,6 +9,7 @@ import kmlib.starsector.markets.MarketVisibility;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
+import kmlib.starsector.memory.observations.RecordedObservations;
 
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -52,7 +53,8 @@ import java.util.function.Predicate;
  * are a snapshot of the sector that pass read. Not safe for concurrent use, a pass being one
  * thread's work.
  */
-public final class ColonyKnowledge implements KnownColonyReader {
+public final class ColonyKnowledge
+        implements KnownColonyReader {
 
     // The kind test of a projection that turns nothing away for what it is - the known reading,
     // where the visibility rule is the whole of the filter.
@@ -62,23 +64,22 @@ public final class ColonyKnowledge implements KnownColonyReader {
     //
     // Keyed by identity rather than by market ID, because the colonies of one pass are the very
     // objects the colony index memoised: two indistinguishable twin colonies are distinct entries
-    // the set kept apart, and an id-keyed memo would let one answer for the other. A colony that
+    // the set kept apart, and an ID-keyed memo would let one answer for the other. A colony that
     // outlives the pass is nobody's concern - the pass is discarded with it.
     private final Map<Colony, ColonyKind> kindByColony = new IdentityHashMap<>();
 
     private final ColonyVisibility rule;
-    private final ColonySightings sightings;
+    private final RecordedObservations<ColonyObservation> sightings;
     private final FactionAlliances alliances;
 
     /**
      * Pairs a rule with the register it is read against, among factions standing alone.
      *
      * @param rule      what the player may be shown; null reads as {@link ColonyVisibility#BASE_FOG}
-     * @param sightings what has been observed and where; null reads as
-     *                  {@link ColonySightings#NONE}, which withholds a gated colony rather than
-     *                  leaking one
+     * @param sightings what has been observed of each colony and where, by colony ID; null reads as
+     *                  the empty register, which withholds a gated colony rather than leaking one
      */
-    public ColonyKnowledge(ColonyVisibility rule, ColonySightings sightings) {
+    public ColonyKnowledge(ColonyVisibility rule, RecordedObservations<ColonyObservation> sightings) {
         this(rule, sightings, FactionAlliances.NONE);
     }
 
@@ -87,19 +88,18 @@ public final class ColonyKnowledge implements KnownColonyReader {
      * read.
      *
      * @param rule      what the player may be shown; null reads as {@link ColonyVisibility#BASE_FOG}
-     * @param sightings what has been observed and where; null reads as
-     *                  {@link ColonySightings#NONE}, which withholds a gated colony rather than
-     *                  leaking one
+     * @param sightings what has been observed of each colony and where, by colony ID; null reads as
+     *                  the empty register, which withholds a gated colony rather than leaking one
      * @param alliances who stands with whom; null reads as {@link FactionAlliances#NONE}, which
      *                  credits every other faction present with speaking
      */
     public ColonyKnowledge(
             ColonyVisibility rule,
-            ColonySightings sightings,
+            RecordedObservations<ColonyObservation> sightings,
             FactionAlliances alliances) {
 
         this.rule = rule == null ? ColonyVisibility.BASE_FOG : rule;
-        this.sightings = sightings == null ? ColonySightings.NONE : sightings;
+        this.sightings = sightings == null ? RecordedObservations.createEmptyRegister() : sightings;
         this.alliances = alliances == null ? FactionAlliances.NONE : alliances;
     }
 
@@ -121,7 +121,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
         return new ColonyKnowledge(
             rule,
             SectorColonySightings.readSightings(sector),
-            FactionAllianceRegistry.readAlliances());
+            FactionAllianceRegistry.readAlliances(sector));
     }
 
     /**
@@ -138,15 +138,16 @@ public final class ColonyKnowledge implements KnownColonyReader {
      * behalf, so recording one here would write down the very announcement the rule declines to
      * credit.
      *
+     * @param sector the sector the observer stands in, whose alliances are read
      * @return knowledge classifying colonies and answering the gates, under the fog and nothing
      *         else
      */
-    public static ColonyKnowledge observingUnderTheFog() {
+    public static ColonyKnowledge observingUnderTheFog(SectorAPI sector) {
 
         return new ColonyKnowledge(
             ColonyVisibility.BASE_FOG,
-            ColonySightings.NONE,
-            FactionAllianceRegistry.readAlliances());
+            RecordedObservations.createEmptyRegister(),
+            FactionAllianceRegistry.readAlliances(sector));
     }
 
     /**
@@ -168,7 +169,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
      *
      * @return the register this knowledge reads against; never null
      */
-    public ColonySightings sightings() {
+    public RecordedObservations<ColonyObservation> sightings() {
         return sightings;
     }
 
@@ -184,6 +185,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (colony == null) {
             return ColonyKind.COLONY;
         }
+
         return kindByColony.computeIfAbsent(
             colony,
             found -> ColonyKind.resolveKind(found.market(), found.isListedByEconomy()));
@@ -366,6 +368,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // The emptiness of the same test, stopped at the first colony that passes - the pair to the
     // walk above, over the very filter that walk would have taken.
     private static boolean hasAnyColony(Colonies colonies, Predicate<Colony> isPassingColony) {
+
         return colonies != null
             && colonies.hasAnyColony(isPassingColony);
     }
@@ -388,12 +391,14 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (colonies == null) {
             return PlaceWitnesses.NONE;
         }
+
         for (var colony : colonies.colonies()) {
 
             if (isSettlingColony(colony, fogRule)) {
                 settlingOwnerIds.add(colony.readOwnerId());
             }
         }
+
         return new PlaceWitnesses(settlingOwnerIds, alliances);
     }
 
@@ -423,6 +428,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (!isFoundColony(colony, witnesses)) {
             return false;
         }
+
         // A reveal reaches the fog and stops there. It says a colony may be shown though nobody
         // has found it, which is no answer at all to whether anybody has seen it standing here -
         // and a reveal that quietly cleared a gate beside it would show a player a second thing
@@ -470,9 +476,11 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (isAdmittedByFog(colony, rule)) {
             return true;
         }
+
         if (!readKindOf(colony).isFoundByReport()) {
             return false;
         }
+
         return witnesses.wouldSpeakAbout(colony.readOwnerId())
             || (DecivilisedMarkets.isMetBySighting(rule.ungovernedColonySurveyLevel())
                 && isSighted(colony));
@@ -502,12 +510,14 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // statement of "counts as a known colony" living in this class.
     private boolean isAdmittedByFog(Colony colony, ColonyVisibility fogRule) {
 
-        if (readKindOf(colony) == ColonyKind.UNGOVERNED_COLONY) {
+        if (readKindOf(colony).isUngoverned()) {
+
             return MarketVisibility.isCountedAsUngovernedColony(
                 colony.market(),
                 fogRule.shouldIncludeUndiscoveredMarkets(),
                 fogRule.ungovernedColonySurveyLevel());
         }
+
         return MarketVisibility.isCountedAsColony(
             colony.market(),
             fogRule.shouldIncludeUndiscoveredMarkets());
@@ -523,7 +533,9 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // permanently in the sector's own sight, so an entry for one would answer nothing while costing
     // an entry per colony in the sector.
     private boolean isWorthRecording(Colony colony) {
-        return isGatedColony(colony) || readKindOf(colony).isFoundByReport();
+
+        return isGatedColony(colony)
+            || readKindOf(colony).isFoundByReport();
     }
 
     // Whether any gate at all covers this colony, whatever the rule happens to be holding back.
@@ -545,6 +557,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -564,6 +577,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // bar in it. The found routes take the two terms apart instead, the bar reaching one of them -
     // which is isFoundColony's business and stated there.
     private boolean isObserved(Colony colony, PlaceWitnesses witnesses) {
+
         return witnesses.wouldSpeakAbout(colony.readOwnerId())
             || isSighted(colony);
     }
@@ -584,8 +598,10 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (!(colony.market().getContainingLocation() instanceof StarSystemAPI system)) {
             return true;
         }
-        var observation = sightings.readObservation(colony.market().getId());
 
-        return observation != null && observation.locationId().equals(system.getId());
+        return sightings
+            .readObservation(colony.market().getId())
+            .filter(observation -> observation.locationId().equals(system.getId()))
+            .isPresent();
     }
 }

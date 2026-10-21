@@ -35,9 +35,8 @@ import kmlib.starsector.markets.Markets;
  * they are. {@link #isFoundByReport} asks who can be spoken about - which shapes the map may admit
  * on somebody else's word in place of the player having found them.
  *
- * <p>A kind rather than a boolean because the distinction was already known not to be binary, and
- * the fourth arrived exactly as expected. An enum admits a fifth without any reader changing shape,
- * where a boolean would have to be replaced.
+ * <p>A kind rather than a boolean because the distinction is not binary. An enum admits a fifth kind
+ * without any reader changing shape.
  *
  * <p>Resolved once per pass, where the colony set is memoised, and read back off
  * {@link ColonyKnowledge} from there. Every reader downstream routes on it, and each re-deriving
@@ -91,8 +90,8 @@ public enum ColonyKind {
      * deliberate act: the routine that builds a derelict pointedly does not register one, so a
      * market wearing the condition and trading anyway was made economically real on purpose.
      * Either alone is enough, since they are two ways of saying the same thing rather than two
-     * requirements - and reading only the first left a registered derelict taking a dominance weight
-     * while counting toward nobody living there.
+     * requirements - and reading only the first would leave a registered derelict taking a dominance
+     * weight while counting toward nobody living there.
      *
      * <p>The listing arrives as an argument rather than being read off the market, because which
      * markets the economy lists is decided by the walk that selected this one - by identity
@@ -142,6 +141,19 @@ public enum ColonyKind {
      * @return true when a report from the inhabitants of the location can find a place of this kind
      */
     public boolean isFoundByReport() {
+        return this == UNGOVERNED_COLONY;
+    }
+
+    /**
+     * Whether a place of this kind is people living under nobody's authority: the collapsed colony,
+     * which habitation admits and no polity runs.
+     *
+     * <p>One question every reader telling governed colonies from ungoverned ones asks of the kind,
+     * rather than each comparing against a constant of its own.
+     *
+     * @return true for the collapsed colony
+     */
+    public boolean isUngoverned() {
         return this == UNGOVERNED_COLONY;
     }
 

@@ -41,7 +41,7 @@ see the [mod README](../../../../../../../README.md) for project context.
   which reads the room the drawn lines take.
 - `base.labels.anchor` -
   the placement subsystem that decides where each name sits and paints its debug overlay,
-  plus the `DiagnosticPalette` every diagnostic grades its stages by.
+  in the grades of the render surface's `DiagnosticPalette`.
 - `base.labels.anchor.specifications` -
   the search's tuning surface,
   read once per rebuild:
@@ -72,8 +72,10 @@ it is what lets a standing placement be recognised as still belonging to the clu
 where a split or a merge matches nothing and re-fits by construction.
 
 A whole pass carries the other half of that question as an [`AnchorFitFingerprint`](anchor/AnchorFitFingerprint.java):
-the tuning it ran with and the geometry revision it ran against,
-the two things that invalidate every placement at once rather than any cluster's in particular.
+the tuning it ran with,
+the geometry revision it ran against,
+and the face every name was measured in -
+the three things that invalidate every placement at once rather than any cluster's in particular.
 The layer's rebuild is what reads the live tuning,
 so it is what labels the list,
 on every path -

@@ -134,7 +134,9 @@ the class the engine is handed being the concrete one either way.
 
 ## The substrate's poll
 
-`MapSubstrateStalenessSource` stales nothing.
+The substrate's own poll drives one sweep,
+[`ColonySightingsPoll`](../visibility/README.md#colonies-colonies),
+which stales nothing.
 It sweeps the sector for what each system's own inhabitants can see of the colonies a revelation gate holds back,
 and writes that onto the shared sighting register (`SectorColonySightings`) -
 a colony a gate holds back drops off the map the day its last neighbour dies
@@ -154,6 +156,10 @@ months later,
 on a map the player has since put back.
 `MapSubstrateRefreshInstaller` stands it up beside the machinery from the composition root,
 so it runs for as long as the layers are standing at all.
+The sweep lives beside the register it writes into and names no poll type;
+the installer adapts it to `MapLayerStalenessSource`,
+so `visibility` never imports this package,
+which already reads what is drawn through it.
 
 The cost is a second reading of the sector's colonies beside the one a layer's own pass makes.
 Taken knowingly,

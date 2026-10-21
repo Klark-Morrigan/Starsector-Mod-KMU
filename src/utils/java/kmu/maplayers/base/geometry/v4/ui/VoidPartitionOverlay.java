@@ -17,6 +17,7 @@ import kmu.maplayers.base.geometry.v4.LabelledWall;
 import kmu.maplayers.base.geometry.v4.LakePieces;
 import kmu.maplayers.base.geometry.v4.LakeTier;
 import kmu.maplayers.base.geometry.v4.LandableFrontage;
+import kmu.maplayers.base.geometry.v4.Shore;
 import kmu.maplayers.base.geometry.v4.VoidPartition;
 
 import java.awt.Graphics2D;
@@ -67,9 +68,7 @@ public final class VoidPartitionOverlay {
     // What the last refresh read, kept so a frame paints the void the rest of the frame was
     // drawn from rather than a reading taken while painting.
     private List<RingRegion> regions = List.of();
-
     private List<RingRegion> lakeWater = List.of();
-
     private List<RingRegion> lakeMargin = List.of();
 
     private List<NamedRegion> lakeNames = List.of();
@@ -79,7 +78,6 @@ public final class VoidPartitionOverlay {
     private List<double[]> landablePoints = List.of();
 
     private List<List<double[]>> lakeCoastLines = List.of();
-
     private List<List<double[]>> lakeBridgeLines = List.of();
 
     public VoidPartitionOverlay(ViewerSettings settings) {
@@ -111,13 +109,16 @@ public final class VoidPartitionOverlay {
 
         var sites = fixture.getSites();
 
-        // The shore the tiers' lines end on, read once for both of them.
-        var frontier = VoidPartition.collectFrontier(cellEdges);
+        // The shore the tiers' lines end on and the walk divides along, read once for all of
+        // them.
+        var shore = Shore.readShore(cellEdges, sites, settings.parameters);
+
         var coast = settings.isLakeCoastV4Shown()
-            ? LakeTier.layCoastWalls(lakes.reaches(), frontier, sites, settings.parameters)
+            ? LakeTier.layCoastWalls(lakes.reaches(), shore)
             : NOTHING_LAID;
+
         var bridges = settings.isLakeBridgesV4Shown()
-            ? LakeTier.layBridgeWalls(lakeBridges.get(), frontier, sites, settings.parameters)
+            ? LakeTier.layBridgeWalls(lakeBridges.get(), shore)
             : NOTHING_LAID;
 
         lakeCoastLines = coast.lines();
@@ -127,6 +128,7 @@ public final class VoidPartitionOverlay {
         // nothing else needs it - the laid lines are drawn from the tier, not from the walk.
         // So with none of those on it is not paid for, even with a tier switched on.
         if (!settings.shouldWalkVoidV4()) {
+
             clearLayers();
             return;
         }
@@ -134,19 +136,22 @@ public final class VoidPartitionOverlay {
         // A tier switched off lays nothing, so the switch takes its lines out of the partition
         // rather than leaving them dividing pieces nobody can see.
         var partition = VoidPartition.readVoidPartition(
-            cellEdges, sites, settings.parameters, joinWalls(coast, bridges));
+            shore,
+            settings.parameters,
+            joinWalls(coast, bridges));
 
         regions = settings.isVoidPiecesV4Shown()
             ? collectRegions(partition, settings)
             : List.of();
 
         readLakeLayers(partition.collectPieces(), coast.walls(), lakes.rings(), fixture);
-        readFrontage(partition, coast.walls(), frontier);
+        readFrontage(partition, coast.walls(), shore);
     }
 
     // Every tier's walls as one list for the walk, which divides by all of them at once.
     private static List<LabelledWall> joinWalls(
-            CarriedLines.LaidLines coast, CarriedLines.LaidLines bridges) {
+            CarriedLines.LaidLines coast,
+            CarriedLines.LaidLines bridges) {
 
         var walls = new ArrayList<LabelledWall>(coast.walls());
 
@@ -182,21 +187,27 @@ public final class VoidPartitionOverlay {
             ? LakePieces.collectLakePieces(pieces, coastWalls, lakeRings, fixture)
             : NO_LAKE_PIECES;
 
-        lakeWater = settings.isLakeWaterV4Shown() ? collectTrueRegions(lake.water()) : List.of();
+        lakeWater = settings.isLakeWaterV4Shown()
+            ? collectTrueRegions(lake.water())
+            : List.of();
+
         lakeMargin = settings.isLakeMarginV4Shown()
             ? collectTrueRegions(lake.margin())
             : List.of();
-        lakeNames = settings.isLakeNamesV4Shown() ? lake.names() : List.of();
+
+        lakeNames = settings.isLakeNamesV4Shown()
+            ? lake.names()
+            : List.of();
     }
 
     // What the window shows of the frontage: read only while it is drawn.
     private void readFrontage(
             VoidPartition partition,
             List<LabelledWall> coastWalls,
-            List<LabelledWall> frontier) {
+            Shore shore) {
 
         var frontage = settings.isLandableFrontageV4Shown()
-            ? collectLandableFrontage(partition, coastWalls, frontier)
+            ? collectLandableFrontage(partition, coastWalls, shore)
             : NO_FRONTAGE;
 
         landable = frontage.runs().stream().map(LandableFrontage.Run::points).toList();
@@ -213,6 +224,7 @@ public final class VoidPartitionOverlay {
         if (!settings.isVoidPiecesV4Shown()) {
             return;
         }
+
         MapPainting.paintRegionFills(
             g2,
             regions,
@@ -230,12 +242,15 @@ public final class VoidPartitionOverlay {
     public void paintLakeFills(Graphics2D g2) {
 
         if (settings.isLakeWaterV4Shown()) {
+
             MapPainting.paintRegionFills(
                 g2,
                 lakeWater,
                 settings.resolveWaterLook(settings.lakeWaterV4Colour, settings.lakeWaterV4Colour));
         }
+
         if (settings.isLakeMarginV4Shown()) {
+
             MapPainting.paintRegionFills(
                 g2,
                 lakeMargin,
@@ -253,7 +268,10 @@ public final class VoidPartitionOverlay {
      * @return one named region per piece the tier closed; empty while the names are off
      */
     public List<NamedRegion> collectLakeNames() {
-        return settings.isLakeNamesV4Shown() ? lakeNames : List.of();
+
+        return settings.isLakeNamesV4Shown()
+            ? lakeNames
+            : List.of();
     }
 
     /**
@@ -266,6 +284,7 @@ public final class VoidPartitionOverlay {
         if (!settings.isLakeCoastV4Shown()) {
             return;
         }
+
         MapPainting.paintLineRuns(g2, lakeCoastLines, settings.lakeCoastV4Colour);
     }
 
@@ -279,6 +298,7 @@ public final class VoidPartitionOverlay {
         if (!settings.isLakeBridgesV4Shown()) {
             return;
         }
+
         MapPainting.paintLineRuns(g2, lakeBridgeLines, settings.lakeBridgesV4Colour);
     }
 
@@ -293,6 +313,7 @@ public final class VoidPartitionOverlay {
         if (!settings.isLandableFrontageV4Shown()) {
             return;
         }
+
         MapPainting.paintLineRuns(g2, landable, settings.landableFrontageV4Colour);
         MapPainting.paintPointMarks(g2, landablePoints, settings.landableFrontageV4Colour);
     }
@@ -301,7 +322,8 @@ public final class VoidPartitionOverlay {
     // smoothing are knobs: under NOWHERE what is shaped is the partition itself, so the switch
     // costs a reshape of the same walk rather than a walk of it.
     private static List<RingRegion> collectRegions(
-            VoidPartition partition, ViewerSettings settings) {
+            VoidPartition partition,
+            ViewerSettings settings) {
 
         return PieceRegions.collectDrawableRegions(
             partition.collectPieces(),
@@ -328,12 +350,14 @@ public final class VoidPartitionOverlay {
     // along one. Which cell a run or a point is on is a fact for a reader of the map and not
     // for the stroke, so only the geometry is kept.
     private LandableFrontage.Frontage collectLandableFrontage(
-            VoidPartition partition, List<LabelledWall> coastWalls, List<LabelledWall> frontier) {
+            VoidPartition partition,
+            List<LabelledWall> coastWalls,
+            Shore shore) {
 
         return LandableFrontage.collectLandableFrontage(
             partition.collectPieces(),
             piece -> LakeTier.isCaptured(piece, coastWalls),
-            frontier,
-            settings.parameters.measureBoundSagitta());
+            shore.getFrontier(),
+            shore.getSagitta());
     }
 }

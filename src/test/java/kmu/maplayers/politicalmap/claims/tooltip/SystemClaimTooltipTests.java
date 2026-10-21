@@ -6,13 +6,13 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.PresenceOnlyClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -25,6 +25,7 @@ import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.content.CellTooltipLineName;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.CellTooltipRowReads;
@@ -32,12 +33,12 @@ import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
-import kmu.maplayers.ownermap.tooltip.SystemStatusRow;
 import kmu.maplayers.politicalmap.tooltip.ContestWording;
-import kmu.maplayers.politicalmap.tooltip.ContestWordingFixtures;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeams;
+import kmu.maplayers.politicalmap.tooltip.PoliticalBoxSeamsFixture;
 import kmu.maplayers.politicalmap.tooltip.PoliticalMapCellTooltipTests;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
+import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,17 +79,17 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelTex
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
-import static kmu.maplayers.ownermap.holding.HolderGroupingFixture.buildGroupOf;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubDispositionToward;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.base.visibility.colonies.FactionAllianceFixture.buildAllianceOf;
+import static kmu.maplayers.base.visibility.systems.MapVisibilityRulesFixtures.UNFORCED_UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.claims.tooltip.ListedClaimContestFixture.buildUnroutedContest;
+import static kmu.starsector.SectorFactionFixtures.stubDispositionToward;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -200,7 +201,7 @@ final class SystemClaimTooltipTests {
     // The alliance set the box routes its blocks against, restated by the cases about an ally and left
     // ungrouped for the rest - which is both the state an install with nothing grouping factions is
     // permanently in and the state every case predating the allied block was written under.
-    private HolderGrouping holderGrouping = HolderGrouping.identity();
+    private FactionAlliances alliances = FactionAlliances.NONE;
 
     // How the rival block is headed, restated by the case about an install where no system ever
     // changes hands and left as the contest for the rest - which is what every case predating the
@@ -209,8 +210,7 @@ final class SystemClaimTooltipTests {
 
     private final SystemClaimTooltip tooltip = new SystemClaimTooltip(
         claimBreakdownReaderFake,
-        () -> holderGrouping,
-        () -> contestWording);
+        new PoliticalBoxSeams(claimBreakdownReaderFake, sector -> alliances, () -> contestWording));
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
@@ -220,6 +220,7 @@ final class SystemClaimTooltipTests {
 
     @BeforeEach
     void installColoursAndTheSystemStatusSeam() {
+
         CellTooltipPaletteFake.installPalette();
 
         // The status line has its own suite and would otherwise demand a live economy here, so it is
@@ -247,13 +248,57 @@ final class SystemClaimTooltipTests {
 
     @AfterEach
     void clearColoursAndTheSystemStatusSeam() {
+
         visibilityRulesMock.close();
         statusRowMock.close();
+
         CellTooltipPaletteFake.clearPalette();
     }
 
     @Nested
     class ComposeBody {
+
+        @Test
+        void reachesTheAccountBehindAScoredStanding() {
+            // What the key at the foot of the box would reach: the colonies behind the faction, and
+            // the terms behind a colony's score - the deeper tiers accounting for the very score the
+            // shallowest states, and stopping where the mechanic's arithmetic does.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
+
+            assertThat(readComposedDepth())
+                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
+        }
+
+        @Test
+        void reachesTheAccountBehindAPresenceTheContestNeverWeighed() {
+            // Such a faction's colonies are exactly what the player can read nowhere else in the box,
+            // its line stating a nought and nothing more - so the key has something to open even
+            // where the mechanic weighed the whole system at nothing.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                null,
+                List.of(buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
+
+            assertThat(readComposedDepth())
+                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
+        }
+
+        @Test
+        void reachesNoDeeperWhereTheProjectionListsNobody() {
+            // The deeper tiers account for the factions this box lists, and the fog has left it
+            // listing none. Every level would state the same claim line, so the key would do nothing
+            // the player could see - and a hint over it would advertise that it would.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                null,
+                List.of(buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
+
+            assertThat(readComposedDepth())
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
+        }
 
         @Test
         void namesTheClaimantWithItsCrestAndScoreUnderTheClaimHeading() {
@@ -319,8 +364,12 @@ final class SystemClaimTooltipTests {
             // Posed over the whole chain, like the five-block case it mirrors, because what the
             // wording is not allowed to reach is the point: the blocks around it name a claim, two
             // relations and an eligibility, none of which an install can make false.
-            contestWording = ContestWording.PRESENT;
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            //
+            // Read as the same box drawn twice, once under each wording, so every line it holds is
+            // compared - an entry's crest, score and indent as well as the headings.
+            var rivalHeadingRow = 6;
+
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubFaction(sectorMock, LUDDIC_CHURCH, "The Luddic Church", null);
             stubDispositionToward(sectorMock, LUDDIC_CHURCH, HEGEMONY, RepLevel.FAVORABLE);
@@ -338,19 +387,26 @@ final class SystemClaimTooltipTests {
                         OUTSIDER_SCORE,
                         IS_NON_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(
-                    tooltip.composeBody(sectorMock, systemMock, FACTIONS).blocks().readSections()))
-                .containsExactly(
-                    "Claim:",
-                    "The Hegemony",
-                    "Allied with the claim holder:",
-                    "Tri-Tachyon",
-                    "Friendly with the claim holder:",
-                    "The Luddic Church",
-                    "Present:",
-                    "Pirates",
-                    "Non-territorial:",
-                    "Neutral");
+            var contestedRows = readBodyRows();
+
+            contestWording = ContestWording.PRESENT;
+
+            var presentRows = readBodyRows();
+
+            assertThat(presentRows)
+                .hasSameSizeAs(contestedRows);
+            assertThat(presentRows.subList(0, rivalHeadingRow))
+                .isEqualTo(contestedRows.subList(0, rivalHeadingRow));
+            assertThat(presentRows.subList(rivalHeadingRow + 1, presentRows.size()))
+                .isEqualTo(contestedRows.subList(rivalHeadingRow + 1, contestedRows.size()));
+
+            // The heading line itself keeps its kind and changes its words alone.
+            assertThat(presentRows.get(rivalHeadingRow).lineStyle())
+                .isEqualTo(contestedRows.get(rivalHeadingRow).lineStyle());
+            assertThat(CellTooltipRowReads.readOpeningWords(contestedRows.get(rivalHeadingRow)))
+                .isEqualTo("Contested by:");
+            assertThat(CellTooltipRowReads.readOpeningWords(presentRows.get(rivalHeadingRow)))
+                .isEqualTo("Present:");
         }
 
         @Test
@@ -432,7 +488,7 @@ final class SystemClaimTooltipTests {
             // is contesting the claim.
             var alliedEntryRow = 3;
 
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -463,7 +519,7 @@ final class SystemClaimTooltipTests {
             // construction would go on filing a faction under the alliance it left an hour ago. Posed
             // as the alliance dissolving between two hovers of the one system, which is the moment a
             // held grouping would answer for a sector that had moved on.
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -480,7 +536,7 @@ final class SystemClaimTooltipTests {
                     "Allied with the claim holder:",
                     "Tri-Tachyon");
 
-            holderGrouping = HolderGrouping.identity();
+            alliances = FactionAlliances.NONE;
 
             assertThat(readSectionOpeningWords(
                     tooltip.composeBody(sectorMock, systemMock, FACTIONS).blocks().readSections()))
@@ -498,7 +554,7 @@ final class SystemClaimTooltipTests {
             // kind, so the line is where this one says which it is.
             var alliedEntryRow = 3;
 
-            holderGrouping = buildGroupOf(HEGEMONY, PIRATES);
+            alliances = buildAllianceOf(HEGEMONY, PIRATES);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -600,7 +656,7 @@ final class SystemClaimTooltipTests {
             // excellent terms with the holder gains nothing by it - the two blocks would otherwise
             // both be true of one faction, and which of them it drew in would be down to the order
             // they happen to be tested in.
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubDispositionToward(sectorMock, TRITACHYON, HEGEMONY, RepLevel.FAVORABLE);
 
@@ -644,6 +700,7 @@ final class SystemClaimTooltipTests {
                     "The Hegemony",
                     "Friendly with the claim holder:",
                     "Pirates");
+
             assertThat(readLabelRun(readTableRow(sections, friendlyEntryRow), QUALIFIER_RUN))
                 .isEqualTo(new TextSpan("non-territorial", HIGHLIGHT));
         }
@@ -655,7 +712,7 @@ final class SystemClaimTooltipTests {
             // and who could never have taken it. Every other case here poses one block at a time, so
             // a routing that drew the friendly block after the contested one - or filed a faction two
             // blocks from where it belongs - would pass all of them and fail this.
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubFaction(sectorMock, LUDDIC_CHURCH, "The Luddic Church", null);
             stubDispositionToward(sectorMock, LUDDIC_CHURCH, HEGEMONY, RepLevel.FAVORABLE);
@@ -720,7 +777,7 @@ final class SystemClaimTooltipTests {
             // holder draws over a system without one - even where the two factions present are allied
             // to each other and on excellent terms besides, which is the pair either comparison would
             // otherwise have matched on.
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubDispositionToward(sectorMock, HEGEMONY, TRITACHYON, RepLevel.FAVORABLE);
             stubDispositionToward(sectorMock, TRITACHYON, HEGEMONY, RepLevel.FAVORABLE);
@@ -747,7 +804,7 @@ final class SystemClaimTooltipTests {
             // A decree settles who the holder is and nothing about how the blocks are routed, so the
             // decreed faction's ally sorts exactly as a winner's would - and the faction that would
             // have claimed by score is neither, so it goes on contesting.
-            holderGrouping = buildGroupOf(PIRATES, TRITACHYON);
+            alliances = buildAllianceOf(PIRATES, TRITACHYON);
 
             stubBreakdown(new SystemClaimBreakdown(
                 PIRATES,
@@ -841,7 +898,7 @@ final class SystemClaimTooltipTests {
             // about the box.
             visibilityRulesMock
                 .when(MapVisibilityRules::readFromLunaSettings)
-                .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
+                .thenReturn(UNFORCED_UNDER_THE_REVEAL);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -1157,7 +1214,7 @@ final class SystemClaimTooltipTests {
             // has turned it on is not told two different things by two layers about one system.
             visibilityRulesMock
                 .when(MapVisibilityRules::readFromLunaSettings)
-                .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
+                .thenReturn(UNFORCED_UNDER_THE_REVEAL);
 
             stubBreakdown(SystemClaimBreakdown.NONE);
 
@@ -1287,7 +1344,7 @@ final class SystemClaimTooltipTests {
             // The routing is the shared shape's and pinned there; what this case is about is that the
             // detail follows a faction into the block the relation put it in. An ally accounted for
             // only under `Contested by:` would be an account of a line the box no longer draws.
-            holderGrouping = buildGroupOf(HEGEMONY, TRITACHYON);
+            alliances = buildAllianceOf(HEGEMONY, TRITACHYON);
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -1429,7 +1486,7 @@ final class SystemClaimTooltipTests {
                     statusRowColonies.capture(),
                     statusRowKnowledge.capture()));
 
-                readingMock.verify(() -> SystemColonyReading.readColoniesIn(
+                readingMock.verify(() -> SystemColonyReading.readColonyReadingOf(
                     any(),
                     any(),
                     readingColonies.capture(),
@@ -1447,16 +1504,16 @@ final class SystemClaimTooltipTests {
             // through and the listing projected over it. Sampled twice, a toggle moved between the two
             // reads would list under one rule a breakdown whose markets were flagged under another.
             var openedRules = new ArrayList<ColonyVisibility>();
+            var openedSectors = new ArrayList<SectorAPI>();
             var settingsReads = new AtomicInteger();
             var recordingTooltip = new SystemClaimTooltip(
-                claimBreakdownReaderFake,
-                (sector, colonyVisibility) -> {
-                    openedRules.add(colonyVisibility);
+                (knownColonyReader, sectorIndex) -> {
+                    openedRules.add(((ColonyKnowledge) knownColonyReader).rule());
+                    openedSectors.add(sectorIndex.getSector());
                     return claimBreakdownReaderFake;
                 },
                 ClaimScoreRowResolver::resolveMarketRows,
-                HolderGrouping::identity,
-                ContestWordingFixtures.CONTESTED_WORDING);
+                PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake));
 
             // Counted in the answer rather than verified on the static, so only the box's own reads
             // are counted and never the stubbing call itself.
@@ -1464,7 +1521,7 @@ final class SystemClaimTooltipTests {
                 .when(MapVisibilityRules::readFromLunaSettings)
                 .thenAnswer(invocation -> {
                     settingsReads.incrementAndGet();
-                    return new MapVisibilityRules(UNDER_THE_REVEAL, false);
+                    return UNFORCED_UNDER_THE_REVEAL;
                 });
 
             stubBreakdown(new SystemClaimBreakdown(
@@ -1478,6 +1535,10 @@ final class SystemClaimTooltipTests {
                 .containsExactly(UNDER_THE_REVEAL);
             assertThat(settingsReads)
                 .hasValue(1);
+
+            // Over a walk of the handed sector: a reader opened with none reads the running game's.
+            assertThat(openedSectors)
+                .containsExactly(sectorMock);
         }
 
         @Test
@@ -1486,14 +1547,12 @@ final class SystemClaimTooltipTests {
             // between two hovers, so the second hover has to see the toggle moved after the first.
             var openedRules = new ArrayList<ColonyVisibility>();
             var recordingTooltip = new SystemClaimTooltip(
-                claimBreakdownReaderFake,
-                (sector, colonyVisibility) -> {
-                    openedRules.add(colonyVisibility);
+                (knownColonyReader, sectorIndex) -> {
+                    openedRules.add(((ColonyKnowledge) knownColonyReader).rule());
                     return claimBreakdownReaderFake;
                 },
                 ClaimScoreRowResolver::resolveMarketRows,
-                HolderGrouping::identity,
-                ContestWordingFixtures.CONTESTED_WORDING);
+                PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake));
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
@@ -1504,37 +1563,12 @@ final class SystemClaimTooltipTests {
 
             visibilityRulesMock
                 .when(MapVisibilityRules::readFromLunaSettings)
-                .thenReturn(new MapVisibilityRules(UNDER_THE_REVEAL, false));
+                .thenReturn(UNFORCED_UNDER_THE_REVEAL);
 
             recordingTooltip.composeBody(sectorMock, systemMock, FACTIONS);
 
             assertThat(openedRules)
                 .containsExactly(BASE_FOG, UNDER_THE_REVEAL);
-        }
-    }
-
-    @Nested
-    class OpenBreakdownReaderUnder {
-
-        @Test
-        void opensTheVanillaReaderUnderTheRuleItIsHanded() {
-            // A claim breakdown reports the player's knowledge as a flag on each market rather than by
-            // leaving the market out, so a reader opened under any rule but the hover's would surface
-            // only as a name the box should have withheld.
-            var openedRules = new ArrayList<ColonyVisibility>();
-
-            try (var readerConstructionMock = mockConstruction(
-                    VanillaClaimBreakdownReader.class,
-                    (readerMock, context) -> {
-                        if (context.arguments().get(0) instanceof ColonyKnowledge knowledge) {
-                            openedRules.add(knowledge.rule());
-                        }
-                    })) {
-
-                SystemClaimTooltip.openBreakdownReaderUnder(sectorMock, UNDER_THE_REVEAL);
-            }
-            assertThat(openedRules)
-                .containsExactly(UNDER_THE_REVEAL);
         }
     }
 
@@ -1665,8 +1699,8 @@ final class SystemClaimTooltipTests {
             // name instead of saying it, which is the resolver's own shape and pinned there.
             assertThat(readLabelTexts(entries))
                 .containsExactly("Chicomoztoc", NO_NAME_STATED);
-            assertThat(entries.get(1).line().hasRedactedName())
-                .isTrue();
+            assertThat(entries.get(1).line().name())
+                .isInstanceOf(CellTooltipLineName.Withheld.class);
         }
 
         @Test
@@ -1700,85 +1734,11 @@ final class SystemClaimTooltipTests {
         }
     }
 
-    @Nested
-    class ResolveDeepestHeldLevelFor {
-
-        @Test
-        void offersTheAccountBehindAScoredStanding() {
-            // What the key at the foot of the box would reach: the colonies behind the faction, and
-            // the terms behind a colony's score - the deeper tiers accounting for the very score the
-            // shallowest states, and stopping where the mechanic's arithmetic does.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                HEGEMONY,
-                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
-        }
-
-        @Test
-        void offersTheAccountBehindAPresenceTheContestNeverWeighed() {
-            // Such a faction's colonies are exactly what the player can read nowhere else in the box,
-            // its line stating a nought and nothing more - so the key has something to open even
-            // where the mechanic weighed the whole system at nothing.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                null,
-                List.of(buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
-        }
-
-        @Test
-        void offersNothingWhereTheProjectionListsNobody() {
-            // The deeper tiers account for the factions this box lists, and the fog has left it
-            // listing none. Every level would state the same claim line, so the key would do nothing
-            // the player could see - and a hint over it would advertise that it would.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                null,
-                List.of(buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
-        }
-
-        @Test
-        void agreesWithTheDepthThePaintReports() {
-            // The invariant the two-path design rests on, and the one place this box can break it: the
-            // press asks here while the paint takes the depth off the body it just composed, and the
-            // two run through separate reads of the system. Drifting, the hint would name a step the
-            // key does not take - or the key would act where the box said it would not.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                HEGEMONY,
-                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(readComposedDepth());
-        }
-
-        @Test
-        void agreesWithThePaintOverASystemListingNobody() {
-            // The same agreement at the other end, which is the half that would strand a player: a box
-            // the fog left listing nobody must report the shallowest through both paths, or the key
-            // would act over a box drawing no hint at all.
-            stubBreakdown(new SystemClaimBreakdown(
-                null,
-                null,
-                List.of(buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
-
-            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
-                .isEqualTo(readComposedDepth());
-        }
-    }
-
-    // How deep the paint says the box goes, off the body it composed - the counterpart to the
-    // press-time read, taken at the shallowest level since the depth reported is a fact about the
-    // system rather than about how deep this particular paint was asked to read.
+    // How deep the box goes, off the body it composed - the bound the hint and the key both read -
+    // taken at the shallowest level since the depth reported is a fact about the system rather than
+    // about how deep this particular composition was asked to read.
     private HoverTooltipDetailLevel readComposedDepth() {
+
         return tooltip
             .composeBody(sectorMock, systemMock, HoverTooltipDetailLevel.FACTIONS)
             .deepestHeldLevel();
@@ -1810,6 +1770,7 @@ final class SystemClaimTooltipTests {
     // Concealment rather than an absence from the economy's listing, arbitrarily: the two suppress
     // scoring identically and no case here is about which of them did it.
     private static MarketClaimBreakdown buildConcealedMarket(String marketName, int listingPosition) {
+
         return ClaimMarketFixture
             .startMarket(marketName)
             .setListingPosition(listingPosition)
@@ -1822,6 +1783,7 @@ final class SystemClaimTooltipTests {
     // The same market on a colony nobody has discovered, listed after the one above it, for the case
     // about which rule decides whether it is drawn at all.
     private static MarketClaimBreakdown buildUndiscoveredMarket(String marketName, int marketSize) {
+
         return ClaimMarketFixture
             .startMarket(marketName)
             .setListingPosition(SECOND_LISTED)
@@ -1839,6 +1801,7 @@ final class SystemClaimTooltipTests {
     // and a mark on every line would run through the reading-order assertions these cases are
     // actually about.
     private static MarketClaimBreakdown buildMarket(String marketName, int marketSize) {
+
         return ClaimMarketFixture
             .startMarket(marketName)
             .setListingPosition(FIRST_LISTED)
@@ -1848,6 +1811,7 @@ final class SystemClaimTooltipTests {
     }
 
     private static String readLabelText(List<TooltipSection> sections, int rowIndex) {
+
         return CellTooltipRowReads.readOpeningWords(
             TooltipSection.readRowsInOrder(sections).get(rowIndex));
     }
@@ -1856,6 +1820,7 @@ final class SystemClaimTooltipTests {
     // a centred line is a legal shape for one, but every line these cases assert on lays into the box's
     // columns - which is where the crest and value slots live.
     private static TooltipRow.TableRow readTableRow(List<TooltipSection> sections, int rowIndex) {
+
         return (TooltipRow.TableRow) TooltipSection
             .readRowsInOrder(sections)
             .get(rowIndex);
@@ -1863,12 +1828,18 @@ final class SystemClaimTooltipTests {
 
     // A box whose accounts come from the source handed in, reading every hover off the one reader.
     private SystemClaimTooltip buildTooltipAccountingThrough(ClaimAccountSourceFake accountSourceFake) {
+
         return new SystemClaimTooltip(
-            claimBreakdownReaderFake,
-            (sector, colonyVisibility) -> claimBreakdownReaderFake,
+            (knownColonyReader, sectorIndex) -> claimBreakdownReaderFake,
             accountSourceFake,
-            HolderGrouping::identity,
-            ContestWordingFixtures.CONTESTED_WORDING);
+            PoliticalBoxSeamsFixture.buildPlainSeamsOver(claimBreakdownReaderFake));
+    }
+
+    // The body at the shallowest level, read top to bottom as the lines a player sees.
+    private List<TooltipRow> readBodyRows() {
+
+        return TooltipSection.readRowsInOrder(
+            tooltip.composeBody(sectorMock, systemMock, FACTIONS).blocks().readSections());
     }
 
     /**
@@ -1886,6 +1857,7 @@ final class SystemClaimTooltipTests {
 
         @Override
         public List<CellTooltipEntry> apply(FactionClaimStanding standing, ClaimAccountReading reading) {
+
             requestedLevels.add(reading.detailLevel());
             return List.of();
         }

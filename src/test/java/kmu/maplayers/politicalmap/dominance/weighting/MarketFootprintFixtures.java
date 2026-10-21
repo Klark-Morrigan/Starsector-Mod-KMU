@@ -47,7 +47,7 @@ public final class MarketFootprintFixtures {
 
     /**
      * Builds the footprint map preserving insertion order, so a test can list the higher-scoring or
-     * higher-id entry first and still expect the rule to order it correctly.
+     * higher-ID entry first and still expect the rule to order it correctly.
      *
      * @param idsAndFootprints alternating holder ID and {@link MarketFootprint}, in the order the
      *                         rule should be handed them

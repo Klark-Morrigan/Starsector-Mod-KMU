@@ -1,5 +1,12 @@
 package kmu.maplayers.politicalmap.dominance;
 
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
+import kmlib.starsector.markets.colonies.Colonies;
+
+import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -15,8 +22,9 @@ import java.util.function.Predicate;
  * passed as one value it cannot be written.
  *
  * <p>Plain data with no Starsector types, so a rule taking these stays free of the live economy:
- * what bars a bloc arrives as a predicate and what settles a tie as a comparator, and where either
- * comes from is the caller's business.
+ * what bars a bloc arrives as a predicate and what settles a tie as a comparator. The live rules
+ * are built by {@link #createByMarketProximity}, the one place they are put together, so the walk
+ * that paints the fills and the poll that watches them cannot settle a tie two different ways.
  *
  * @param tieBreak  consulted only where two blocs tie on every weight level; the ID it orders first
  *                  wins. It must impose a total order over the IDs, so a winner never depends on map
@@ -28,8 +36,7 @@ public record HolderRankingRules(
     Comparator<String> tieBreak,
     Predicate<String> candidacy) {
 
-    // Nobody barred. Private, because a caller wanting an open contest says so through the factory
-    // below rather than by handing in a bar that bars nothing.
+    // Nobody barred: the second look a ranking takes where its bar admitted nobody.
     private static final Predicate<String> EVERY_BLOC = blocId -> true;
 
     public HolderRankingRules {
@@ -38,24 +45,30 @@ public record HolderRankingRules(
     }
 
     /**
-     * Rules breaking a dead heat by lowest ID, under the given bar - what a reader with no geometry
-     * to settle a tie by takes, map iteration order never deciding a winner.
+     * The rules a live system's holder is settled by: every bloc but the one painting in the
+     * neutral placeholder may win, and a dead heat goes to the bloc whose nearest market orbits
+     * closest to the system's centre.
      *
-     * @param candidacy which IDs may win the system
-     * @return those rules
+     * <p>The tie-break reads no geometry unless a tie forces it, so a system with a clear winner -
+     * nearly every system - pays nothing for carrying one.
+     *
+     * @param system          the system whose ranking these rules settle
+     * @param colonies        the system's colonies as the caller's one walk of it reported, so the
+     *                        tie is settled among the colonies the weights were folded from
+     * @param colonyKnowledge what the player may be shown of a colony, as the weights were folded
+     *                        under
+     * @param grouping        the active grouping, naming each bloc's colour faction
+     * @return the rules a ranking of this system's footprints is taken under
      */
-    public static HolderRankingRules createByLowestId(Predicate<String> candidacy) {
-        return new HolderRankingRules(Comparator.naturalOrder(), candidacy);
-    }
+    public static HolderRankingRules createByMarketProximity(
+            StarSystemAPI system,
+            Colonies colonies,
+            ColonyKnowledge colonyKnowledge,
+            HolderGrouping grouping) {
 
-    /**
-     * Rules breaking a dead heat by lowest ID with nobody barred - the ranking of a contest that is
-     * about weights rather than about who is allowed to win one.
-     *
-     * @return those rules
-     */
-    public static HolderRankingRules createOpenContestByLowestId() {
-        return createByLowestId(EVERY_BLOC);
+        return new HolderRankingRules(
+            MarketProximityTieBreak.createForSystem(system, colonies, colonyKnowledge, grouping),
+            BlocCandidacy.createForGrouping(grouping));
     }
 
     /**

@@ -4,6 +4,7 @@ import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
+import kmu.maplayers.base.geometry.LoadedSectors;
 import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.walls.Walls;
 
@@ -45,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class CoastWaterIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     // How finely a lake's middle is sampled when asking whether anything paints it. Well inside
     // the smallest lake on either fixture, since what is being asked is whether the middle is
@@ -67,6 +68,7 @@ class CoastWaterIntegrationTests {
             for (var lake : traced.lakes()) {
                 kept.add(lake.ringCells());
             }
+
             for (var puddle : traced.puddles()) {
                 kept.add(puddle.ringCells());
             }
@@ -74,6 +76,7 @@ class CoastWaterIntegrationTests {
             var lost = new ArrayList<Set<Integer>>();
 
             for (var run : offerWaterRuns(traced)) {
+
                 if (!kept.contains(run)) {
                     lost.add(run);
                 }
@@ -151,27 +154,32 @@ class CoastWaterIntegrationTests {
     private static List<String> findLakesWithNothingInside(
             String sector,
             VoidPockets.PocketShaping shaping) {
+
         var traced = traceContinentCoast(sector);
         var cells = VoidPockets.buildUnionFor(traced.union().sites(), PARAMETERS, shaping);
         var painted = collectPaintedWater(SectorPipeline.fillWater(sector, shaping));
         var empty = new ArrayList<String>();
 
-        for (var shore : Coastlines.collectLakeOutlines(traced)) {
+        for (var shore : traced.collectLakeOutlines()) {
+
             var inside = 0;
             var covered = 0;
 
             for (var at : sampleInside(shore)) {
+
                 if (cells.isPointInside(at)) {
                     continue;
                 }
+
                 inside++;
 
-                if (isInsideAny(painted, at)) {
+                if (PolygonRegions.isPointInsideAnyRing(painted, at[0], at[1])) {
                     covered++;
                 }
             }
 
             if (inside > 0 && covered == 0) {
+
                 var middle = Points.computeMean(shore);
 
                 empty.add(String.format(
@@ -181,6 +189,7 @@ class CoastWaterIntegrationTests {
                     inside));
             }
         }
+
         return empty;
     }
 
@@ -189,6 +198,7 @@ class CoastWaterIntegrationTests {
     private static List<String> findWaterPaintedByBothLayers(
             String sector,
             VoidPockets.PocketShaping shaping) {
+
         var water = SectorPipeline.fillWater(sector, shaping);
         var shared = new ArrayList<String>();
 
@@ -203,19 +213,23 @@ class CoastWaterIntegrationTests {
             List<List<double[]>> rings,
             List<List<double[]>> others,
             List<String> shared) {
+
         for (var ring : rings) {
+
             var sampled = 0;
             var doubled = 0;
 
             for (var at : sampleInside(ring)) {
+
                 sampled++;
 
-                if (isInsideAny(others, at)) {
+                if (PolygonRegions.isPointInsideAnyRing(others, at[0], at[1])) {
                     doubled++;
                 }
             }
 
             if (doubled > 0) {
+
                 var middle = Points.computeMean(ring);
 
                 shared.add(String.format(
@@ -230,6 +244,7 @@ class CoastWaterIntegrationTests {
     }
 
     private static List<List<double[]>> collectPaintedWater(FilledWater water) {
+
         var rings = new ArrayList<List<double[]>>();
 
         rings.addAll(water.collectShoreWater());
@@ -246,32 +261,27 @@ class CoastWaterIntegrationTests {
     // area rather than at its centroid - a lake bent round a cell has its mean point outside
     // itself.
     private static List<double[]> sampleInside(List<double[]> ring) {
+
         var bounds = Bounds.computeEnclosingBounds(ring);
         var inside = new ArrayList<double[]>();
 
         for (var x = bounds.minX(); x <= bounds.maxX(); x += SAMPLE_STEP) {
             for (var y = bounds.minY(); y <= bounds.maxY(); y += SAMPLE_STEP) {
+
                 if (PolygonRegions.isPointInsideRing(ring, x, y)) {
                     inside.add(new double[] {x, y});
                 }
             }
         }
-        return inside;
-    }
 
-    private static boolean isInsideAny(List<List<double[]>> rings, double[] at) {
-        for (var ring : rings) {
-            if (PolygonRegions.isPointInsideRing(ring, at[0], at[1])) {
-                return true;
-            }
-        }
-        return false;
+        return inside;
     }
 
     // The cells each run of water passes over, off the walk the trace itself runs. Walked again
     // here rather than read off the trace, because what is being asked is whether the trace kept
     // everything it was handed - and a list taken from its output cannot answer that.
-    private static List<Set<Integer>> offerWaterRuns(Coastlines.TracedCoasts traced) {
+    private static List<Set<Integer>> offerWaterRuns(TracedCoasts traced) {
+
         var runs = new ArrayList<Set<Integer>>();
 
         for (var run : DiscUnionBoundary.traceCoastRuns(
@@ -284,8 +294,10 @@ class CoastWaterIntegrationTests {
             for (var mark : run) {
                 cells.add(mark.circle());
             }
+
             runs.add(cells);
         }
+
         return runs;
     }
 }

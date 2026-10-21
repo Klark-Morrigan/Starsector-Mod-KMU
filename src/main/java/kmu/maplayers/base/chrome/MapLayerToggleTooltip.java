@@ -6,7 +6,9 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmlib.starsector.ui.map.controls.MapFilterToggle;
+import kmlib.starsector.ui.tooltip.TooltipSpacing;
 
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
@@ -42,15 +44,11 @@ final class MapLayerToggleTooltip {
     // hanging happens here too, so nothing outside has to hold a number it cannot judge.
     private static final float TOOLTIP_WIDTH = 300f;
 
-    // The gap vanilla leaves above a tooltip's first paragraph, matched so the one box that is not
-    // the game's does not sit its text differently from the six that are.
-    private static final float PARAGRAPH_PAD = 3f;
-
     // What separates one paragraph from the next. Wider than the pad above the first, because that
     // one only lifts the text off the tooltip's edge while this one has to read as a break: at the
     // same three units the three paragraphs run together as one block of prose, and the reader loses
     // the only cue that the middle one is a different kind of statement from the first.
-    private static final float PARAGRAPH_GAP = 10f;
+    private static final float PARAGRAPH_GAP = TooltipSpacing.OUTER_PAD;
 
     // Whether the political map offers an alliances view at all. Asked rather than stated, the view
     // itself being registered only where the mod that keeps alliances is installed - so an install
@@ -84,8 +82,10 @@ final class MapLayerToggleTooltip {
 
         var parts = readSentenceParts();
 
+        // Vanilla's pad above a first paragraph, so the one box that is not the game's does not sit
+        // its text differently from the six that are.
         new HighlightedParagraph(parts.composeSentence(), parts.listRunHighlights())
-            .addTo(tooltip, PARAGRAPH_PAD);
+            .addTo(tooltip, TooltipSpacing.SMALL_PAD);
 
         // Its own paragraph rather than a third sentence: the first says what the box does, this
         // says who is answerable for it and how to be rid of it, and a player looking for the second
@@ -107,8 +107,8 @@ final class MapLayerToggleTooltip {
     private SentenceParts readSentenceParts() {
 
         return new SentenceParts(
-            KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_LAYERS),
-            KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_POLITICAL_MAP),
+            KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_LAYERS),
+            KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_POLITICAL_MAP),
             listOfferedViews());
     }
 
@@ -120,21 +120,21 @@ final class MapLayerToggleTooltip {
         var views = new ArrayList<ViewMention>();
 
         views.add(ViewMention.named(
-            KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_FACTIONS)));
+            KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_FACTIONS)));
 
         if (isAllianceViewOffered.getAsBoolean()) {
 
             views.add(ViewMention.named(
-                KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_ALLIANCES)));
+                KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_ALLIANCES)));
         }
 
         // The one view whose name needs a word in front of it to read as English, and that word is
         // not part of the name - so the phrase and the run tinted inside it part company here.
-        var claimsName = KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS);
+        var claimsName = KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS);
 
         views.add(new ViewMention(
             KmuStringKeys.format(
-                KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS_QUALIFIED,
+                KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS_QUALIFIED,
                 claimsName),
             claimsName));
 
@@ -149,7 +149,7 @@ final class MapLayerToggleTooltip {
      * to qualify carries a word the name does not own, and tinting that word would say the
      * qualifier were part of what the view is called.
      *
-     * @param phrase        what the sentence reads at this point in its list
+     * @param phrase          what the sentence reads at this point in its list
      * @param highlightedName the view's name inside that phrase, which is what is tinted
      */
     private record ViewMention(String phrase, String highlightedName) {
@@ -174,11 +174,11 @@ final class MapLayerToggleTooltip {
         String composeSentence() {
 
             return KmuStringKeys.format(
-                KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE,
+                KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE,
                 layersName,
                 mapName,
                 String.join(
-                    KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_SEPARATOR),
+                    KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_SEPARATOR),
                     views.stream().map(ViewMention::phrase).toList()));
         }
 
@@ -186,8 +186,8 @@ final class MapLayerToggleTooltip {
         String composeUninstallNote() {
 
             return KmuStringKeys.format(
-                KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL,
-                KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER));
+                KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL,
+                KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER));
         }
 
         /**
@@ -200,14 +200,14 @@ final class MapLayerToggleTooltip {
         String composeUninstallWarning() {
 
             return KmuStringKeys.format(
-                KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING,
-                KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL),
-                KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
-                KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION),
+                KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING,
+                KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL),
+                KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
+                KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION),
                 layersName,
-                KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
-                KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
-                KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE));
+                KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
+                KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
+                KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE));
         }
 
         /**
@@ -218,13 +218,13 @@ final class MapLayerToggleTooltip {
         Highlight[] listUninstallWarningHighlights() {
 
             return new Highlight[] {
-                flagRun(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL),
-                nameRun(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
-                stepRun(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION),
+                flagRun(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL),
+                nameRun(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
+                stepRun(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION),
                 nameWord(layersName),
-                stepRun(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
-                nameRun(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
-                stepRun(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE),
+                stepRun(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
+                nameRun(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
+                stepRun(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE),
             };
         }
 
@@ -250,7 +250,7 @@ final class MapLayerToggleTooltip {
         Highlight[] listUninstallHighlights() {
 
             return new Highlight[] {
-                nameRun(KmuStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
+                nameRun(KmuMapStringKeys.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
             };
         }
 

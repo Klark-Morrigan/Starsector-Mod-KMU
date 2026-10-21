@@ -1,9 +1,5 @@
 package kmu.maplayers.base.render;
 
-import kmlib.starsector.ui.map.presence.MapPresence;
-
-import kmu.maplayers.base.compatibility.MapLayerGameReach;
-
 import java.util.List;
 import java.util.function.BooleanSupplier;
 
@@ -40,50 +36,68 @@ import java.util.function.BooleanSupplier;
  * dispatches to is reached through the registered layer rather than held per plugin - so every
  * surface drives one layer renderer, over one set of draw lists.
  */
-public class SectorMapLayerStarscapeTerrainPlugin extends SectorMapLayerTerrainPlugin {
+public class SectorMapLayerStarscapeTerrainPlugin
+        extends SectorMapLayerTerrainPlugin {
 
     // The band the fog is laid over, whatever the drawing layer chose to emit into it.
     private static final List<MapOverlayBand> BENEATH_BAND =
         List.of(MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
-    // Whether a Starscape map is on screen, held rather than re-resolved per frame. Transient and
-    // non-final because this plugin is serialised into the save with the terrain entity holding it,
-    // and the binding behind this field is not something XStream can carry. A save-restored plugin
-    // therefore comes back with it null - XStream skips transient fields and runs no field
-    // initialisers - so it is created lazily in renderOnMap rather than in a field initialiser.
-    private transient BooleanSupplier isStarscapeMapShowing;
+    // Whether a Starscape map is on screen. Transient and non-final because this plugin is
+    // serialised into the save with the terrain entity holding it, and the binding behind this field
+    // is not something XStream can carry. A save-restored plugin therefore comes back with it null -
+    // XStream skips transient fields and runs no field initialisers - so it is bound lazily in
+    // renderOnMap, to the read every surface shares, rather than in a field initialiser.
+    private transient BooleanSupplier isStarscapeVanillaMapShowing;
 
     /**
      * The pairing the terrain spec instantiates, reading whichever host is showing a Starscape map.
-     * The read is left unset here and resolved on the first render, since a save-restored plugin
+     * The read is left unset here and bound on the first render, since a save-restored plugin
      * arrives with it unset regardless and one lazy path then covers both arrivals.
      */
     public SectorMapLayerStarscapeTerrainPlugin() {
     }
 
-    /** Binds the Starscape read explicitly instead of letting the first render resolve it. */
-    SectorMapLayerStarscapeTerrainPlugin(BooleanSupplier isStarscapeMapShowing) {
-        this.isStarscapeMapShowing = isStarscapeMapShowing;
+    /** Binds the Starscape read explicitly instead of letting the first render bind it. */
+    SectorMapLayerStarscapeTerrainPlugin(BooleanSupplier isStarscapeVanillaMapShowing) {
+        this.isStarscapeVanillaMapShowing = isStarscapeVanillaMapShowing;
     }
 
     @Override
     public void renderOnMap(float factor, float alphaMult) {
-        // Recreated lazily: a save-restored plugin comes back with the field null (transient), so
-        // the first render this session rebuilds it before the guard below reads it.
-        if (isStarscapeMapShowing == null) {
-            isStarscapeMapShowing = new MapPresence(MapLayerGameReach.MAP_VIEW.getReporter())::isStarscapeMapShowing;
+
+        // Bound lazily: a save-restored plugin comes back with the field null (transient), so the
+        // first render this session binds it before the guard below reads it.
+        if (isStarscapeVanillaMapShowing == null) {
+            isStarscapeVanillaMapShowing = MAP_PRESENCE::isStarscapeVanillaMapShowing;
         }
+
         // Stand aside outside Starscape. The engine lets this half through in both modes, and
         // outside Starscape the base half is the one it is already calling, so drawing here as well
         // would lay the same overlay down twice and double the alpha of every fill.
-        if (!isStarscapeMapShowing.getAsBoolean()) {
+        if (!isStarscapeMapShowingThisFrame()) {
             return;
         }
+
         super.renderOnMap(factor, alphaMult);
     }
 
     @Override
     protected List<MapOverlayBand> resolvePaintedBands() {
         return BENEATH_BAND;
+    }
+
+    // The Starscape read, settled once per frame for both Starscape surfaces of the sector being
+    // drawn. Read live where this surface belongs to no sector: the pass draws nothing then, and the
+    // answer only decides whether the base surface's foreign-pass warning is reached.
+    private boolean isStarscapeMapShowingThisFrame() {
+
+        var machinery = resolveMachineryBeingDrawn();
+        if (machinery == null) {
+            return isStarscapeVanillaMapShowing.getAsBoolean();
+        }
+        return StarscapeFrameRead
+            .resolveReadIn(machinery)
+            .isStarscapeMapShowing(isStarscapeVanillaMapShowing);
     }
 }

@@ -38,7 +38,10 @@ final class NameFormatPreferenceTests {
     // The same base key under the second screen, which is what a pick here must never write.
     private static final String OTHER_KEY = "$test_layer_name_format_other";
 
-    private final NameFormatPreference preference = new NameFormatPreference(BASE_KEY);
+    // The radio's caption key, the layer's own word for its owners.
+    private static final String CAPTION_KEY = "test_ctl_names";
+
+    private final NameFormatPreference preference = new NameFormatPreference(BASE_KEY, CAPTION_KEY);
 
     private SectorMemoryFake sectorMemoryFake;
 
@@ -53,38 +56,49 @@ final class NameFormatPreferenceTests {
     }
 
     @Nested
+    class GetCaptionKey {
+
+        @Test
+        void answersTheKeyTheLayerHandedOver() {
+
+            assertThat(preference.getCaptionKey())
+                .isEqualTo("test_ctl_names");
+        }
+    }
+
+    @Nested
     class GetSelectedNameFormat {
 
         @Test
         void resolvesTheStoredKeyToItsChoice() {
 
-            sectorMemoryFake.storeValue(KEY, FactionNameFormatChoice.SHORT.persistenceKey());
+            sectorMemoryFake.storeValue(KEY, OwnerNameFormatChoice.SHORT.persistenceKey());
 
             assertThat(preference.getSelectedNameFormat(SCREEN_SCOPE))
-                .isEqualTo(FactionNameFormatChoice.SHORT);
+                .isEqualTo(OwnerNameFormatChoice.SHORT);
         }
 
         @Test
         void readsEachScreensOwnChoice() {
             // Per-screen isolation: the two panels frame the sector at different sizes, so the form
             // that fits one is not the form the other was set to.
-            sectorMemoryFake.storeValue(KEY, FactionNameFormatChoice.SHORT.persistenceKey());
-            sectorMemoryFake.storeValue(OTHER_KEY, FactionNameFormatChoice.NONE.persistenceKey());
+            sectorMemoryFake.storeValue(KEY, OwnerNameFormatChoice.SHORT.persistenceKey());
+            sectorMemoryFake.storeValue(OTHER_KEY, OwnerNameFormatChoice.NONE.persistenceKey());
 
             assertThat(preference.getSelectedNameFormat(SCREEN_SCOPE))
-                .isEqualTo(FactionNameFormatChoice.SHORT);
+                .isEqualTo(OwnerNameFormatChoice.SHORT);
             assertThat(preference.getSelectedNameFormat(OTHER_SCREEN_SCOPE))
-                .isEqualTo(FactionNameFormatChoice.NONE);
+                .isEqualTo(OwnerNameFormatChoice.NONE);
         }
 
         @Test
         void isFullNamesWhenThatScreenNeverPicked() {
             // A screen whose radio was never touched reads the shipped default, even while the other
             // screen holds a choice - a pick made there must not carry over.
-            sectorMemoryFake.storeValue(OTHER_KEY, FactionNameFormatChoice.NONE.persistenceKey());
+            sectorMemoryFake.storeValue(OTHER_KEY, OwnerNameFormatChoice.NONE.persistenceKey());
 
             assertThat(preference.getSelectedNameFormat(SCREEN_SCOPE))
-                .isEqualTo(FactionNameFormatChoice.FULL);
+                .isEqualTo(OwnerNameFormatChoice.FULL);
         }
 
         @Test
@@ -94,7 +108,7 @@ final class NameFormatPreferenceTests {
             sectorMemoryFake.removeSector();
 
             assertThat(preference.getSelectedNameFormat(SCREEN_SCOPE))
-                .isEqualTo(FactionNameFormatChoice.FULL);
+                .isEqualTo(OwnerNameFormatChoice.FULL);
         }
     }
 
@@ -108,11 +122,28 @@ final class NameFormatPreferenceTests {
 
             preference.selectNameFormat(
                 SCREEN_SCOPE,
-                FactionNameFormatChoice.SHORT,
+                OwnerNameFormatChoice.SHORT,
                 board);
 
             assertThat(sectorMemoryFake.readStoredValue(KEY))
-                .isEqualTo(FactionNameFormatChoice.SHORT.persistenceKey());
+                .isEqualTo(OwnerNameFormatChoice.SHORT.persistenceKey());
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE))
+                .isEqualTo(1);
+        }
+
+        @Test
+        void raisesAgainOnARepickOfTheStoredChoice() {
+            // A real write is one that landed in a save, not one that changed the value. Keeping a
+            // re-click of the lit segment from re-fitting the labels is the radio's job, which swallows it.
+            var board = new MapLayerRefreshBoard();
+
+            sectorMemoryFake.storeValue(KEY, OwnerNameFormatChoice.SHORT.persistenceKey());
+
+            preference.selectNameFormat(
+                SCREEN_SCOPE,
+                OwnerNameFormatChoice.SHORT,
+                board);
+
             assertThat(board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE))
                 .isEqualTo(1);
         }
@@ -123,7 +154,7 @@ final class NameFormatPreferenceTests {
             // alone, so the other keeps the form its labels were last fitted to.
             preference.selectNameFormat(
                 SCREEN_SCOPE,
-                FactionNameFormatChoice.SHORT,
+                OwnerNameFormatChoice.SHORT,
                 new MapLayerRefreshBoard());
 
             assertThat(sectorMemoryFake.hasStoredValue(OTHER_KEY))
@@ -139,7 +170,7 @@ final class NameFormatPreferenceTests {
 
             preference.selectNameFormat(
                 SCREEN_SCOPE,
-                FactionNameFormatChoice.SHORT,
+                OwnerNameFormatChoice.SHORT,
                 board);
 
             assertThat(board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE))

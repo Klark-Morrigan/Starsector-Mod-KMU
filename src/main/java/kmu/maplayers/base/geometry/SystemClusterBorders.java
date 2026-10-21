@@ -145,7 +145,7 @@ public final class SystemClusterBorders {
                     cellOwner,
                     grouping.ownerBySystemKey());
 
-                if (!edgeClass.isBoundary() && style.insetRule().isFusingSharedEdges()) {
+                if (!edgeClass.isBoundary() && style.edgeInset().rule().isFusingSharedEdges()) {
                     continue;
                 }
 
@@ -173,7 +173,7 @@ public final class SystemClusterBorders {
         var isAbutted = edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
             && coincidentNeighbourSystemKeys.contains(acrossSystem.systemKey());
 
-        return style.insetRule().resolveInsetOf(!isAbutted, style.borderInset());
+        return style.edgeInset().resolveInsetOf(!isAbutted);
     }
 
     // Copies a distance list into a primitive array, so the per-edge distances hand to the

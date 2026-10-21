@@ -13,7 +13,7 @@ import kmlib.starsector.systems.SystemKey;
  * cancelling back to no change.
  *
  * <p>A system is identified by its whole {@link SystemKey} rather than by its ID, because two
- * systems may answer to one id. Both would then contribute the same value, so one entering the
+ * systems may answer to one ID. Both would then contribute the same value, so one entering the
  * drawn set as the other left would move the fingerprint by nothing, and the map would go on
  * showing whatever it last built there.
  *

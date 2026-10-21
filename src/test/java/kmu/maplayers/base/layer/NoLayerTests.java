@@ -1,6 +1,7 @@
 package kmu.maplayers.base.layer;
 
 import kmu.settings.KmuMapKeybindSettings;
+import kmu.util.KmuMapStringKeys;
 import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.Nested;
@@ -39,7 +40,7 @@ final class NoLayerTests {
             try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
                 stringsMock
-                    .when(() -> KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TAB_NO_LAYER))
+                    .when(() -> KmuStringKeys.get(KmuMapStringKeys.MAP_LAYER_TAB_NO_LAYER))
                     .thenReturn("No Layer");
 
                 assertThat(NoLayer.INSTANCE.resolveTabLabelText())

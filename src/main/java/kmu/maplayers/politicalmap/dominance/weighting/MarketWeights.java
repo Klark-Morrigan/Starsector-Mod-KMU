@@ -41,7 +41,7 @@ public final class MarketWeights {
      * The fixed-point grid dominance weights live on: one market size point at
      * full stability contributes this many weight units. Rounding each market's
      * stability-scaled worth onto an integer grid keeps the dominance rule's
-     * comparisons exact - and its faction-id backstop deterministic - where
+     * comparisons exact - and its faction-ID backstop deterministic - where
      * fractional weights would force epsilon math into the rule.
      */
     public static final int DOMINANCE_WEIGHT_SCALE = 1000;

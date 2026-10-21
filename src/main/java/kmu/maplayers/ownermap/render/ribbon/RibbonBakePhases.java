@@ -46,7 +46,7 @@ public final class RibbonBakePhases {
         CARVE_PHASE_NAME,
         STROKE_PHASE_NAME);
 
-    /** Counting what the cell's system holds, which walks that system's colonies. */
+    /** Counting what the cell's system holds, which walks everything standing in that system. */
     public static final ProfilePhase PLAN_PHASE = BAKE_SECTION.resolvePhase(PLAN_PHASE_NAME);
 
     /** Reaching for the ring the band runs along, and walking it where none stands. */

@@ -5,6 +5,7 @@ import kmlib.math.geometry.Points;
 
 import kmu.maplayers.base.geometry.CoastMark;
 import kmu.maplayers.base.geometry.DiscUnion;
+import kmu.maplayers.base.geometry.LoadedSectors;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class LandableFrontagesIntegrationTests {
 
-    private static final String SECTORS = SectorPipeline.SECTORS;
+    private static final String SECTORS = LoadedSectors.SECTORS;
 
     // How much of a cell's radius a point may sit inside the border it is drawn on, in map
     // units. A sampled arc is chorded, so a point between two samples sits off the true circle

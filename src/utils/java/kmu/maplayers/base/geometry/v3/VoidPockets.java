@@ -3,10 +3,10 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
-import kmu.maplayers.base.geometry.BareVoidBoundary;
 import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidHole;
+import kmu.maplayers.base.geometry.walls.BareVoidBoundary;
 import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 
 import java.util.ArrayList;
@@ -358,14 +358,11 @@ public final class VoidPockets {
     private static List<List<double[]>> findHoleAround(List<VoidHole> widened, VoidHole hole) {
 
         var probe = hole.boundary().get(0);
+        var boundaries = widened.stream().map(VoidHole::boundary).toList();
+        var holding = PolygonRegions.findRingHolding(boundaries, probe[0], probe[1]);
 
-        for (var candidate : widened) {
-            if (PolygonRegions.isPointInsideRing(
-                    candidate.boundary(), probe[0], probe[1])) {
-                return List.of(candidate.boundary());
-            }
-        }
-        return List.of();
+        return holding == PolygonRegions.NO_RING
+            ? List.of()
+            : List.of(boundaries.get(holding));
     }
-
 }

@@ -2,8 +2,8 @@ package kmu.maplayers.base.chrome;
 
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 
-import kmu.starsector.StarsectorSettingsFake;
 import kmu.starsector.ui.ParagraphLabelMock;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +55,7 @@ final class MapLayerToggleTooltipTests {
     @BeforeEach
     void installStarsectorSettings() {
 
-        StarsectorSettingsFake.installSettings(key -> switch (key) {
+        KmuStringsSettingsFake.installSettings(key -> switch (key) {
             case HIGHLIGHT_COLOUR_KEY -> HIGHLIGHT;
             case POSITIVE_COLOUR_KEY -> POSITIVE;
             case NEGATIVE_COLOUR_KEY -> NEGATIVE;
@@ -66,7 +66,7 @@ final class MapLayerToggleTooltipTests {
     @AfterEach
     void clearStarsectorSettings() {
 
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested

@@ -4,9 +4,10 @@ What the sidebar is painted in,
 and how loudly it answers the pointer.
 `SidebarStyles` composes a look each frame from the running game's colours
 and the player's live settings;
+`SidebarSounds` composes how the panel sounds;
 `SidebarPalettes` maps the two colour choices a player makes onto shades.
-Neither holds anything between frames,
-and neither needs a live GL context -
+None of them holds anything between frames,
+and none needs a live GL context -
 a look is a value.
 
 Part of [the map layer sidebar](../README.md);
@@ -100,7 +101,7 @@ so it steps its own grey down instead.
 ## How the panel sounds
 
 The look also says how the panel *sounds*,
-and `SidebarStyles.buildSidebarSoundScheme` composes that:
+and `SidebarSounds.buildSoundScheme` composes that:
 the engine's own roles -
 a vanilla button's press and its mouseover,
 and the ID vanilla scrolls its own readouts with -
@@ -151,6 +152,16 @@ they choose between named factories rather than passing the difference as an arg
 The differences are vanilla conventions and not free choices -
 a strip's key is underlined and a button's is bare -
 so naming the two ends is what keeps a host from composing a look vanilla has no counterpart for.
+Behind the two tab factories,
+everything a row wears because of its chrome is one `ChromeConvention` -
+the box,
+the palette,
+the hotkey convention,
+the face,
+the ring,
+and the label sharpness.
+`SidebarStyles` switches on the chrome once to pick it,
+so a new chrome that forgets one of those parts does not compile.
 The file sits beside `SidebarPalettes` and out of the render pass for the same reason:
 a look is a value,
 so building one needs no live GL context.
@@ -576,8 +587,7 @@ scrollbar thickness,
 collapse seconds,
 and both anchors' paddings are LunaLib fields read through `kmu.settings.KmuMapSidebarSettings`,
 as are the colour scheme and the chevron colour -
-those two in their own "Overlay sidebar -
-colours" section below the box's dimensions.
+those two in their own "Map sidebar - colours" section below the box's dimensions.
 The three arrival levels and the list-scroll level are `kmu.settings.KmuMapSoundSettings`' on the `Map - Sound` tab,
 which is where the volume half of the look is stated rather than beside the shades.
 Every knob either class holds is a look;

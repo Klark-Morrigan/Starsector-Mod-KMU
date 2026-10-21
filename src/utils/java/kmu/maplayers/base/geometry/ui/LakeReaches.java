@@ -4,7 +4,10 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
 import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.v3.CoastVertex;
 import kmu.maplayers.base.geometry.v3.Coastlines;
+import kmu.maplayers.base.geometry.v3.Lake;
+import kmu.maplayers.base.geometry.v3.TracedCoasts;
 import kmu.maplayers.base.geometry.v4.LakeTier;
 
 import java.util.ArrayList;
@@ -44,12 +47,12 @@ public final class LakeReaches {
      * @return the lakes, ready to hand over
      */
     public static LakeTier.TracedLakes collectTracedLakes(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             double channel) {
 
         return new LakeTier.TracedLakes(
             collectLakeReaches(traced, channel),
-            traced.lakes().stream().map(Coastlines.Lake::ringCells).toList());
+            traced.lakes().stream().map(Lake::ringCells).toList());
     }
 
     /**
@@ -65,7 +68,7 @@ public final class LakeReaches {
      *         captured
      */
     static List<CellGap> collectLakeReaches(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             double channel) {
 
         var reaches = new ArrayList<CellGap>();
@@ -77,7 +80,7 @@ public final class LakeReaches {
 
             var shore = lake.shore();
             var isWaterOnTheLeft = PolygonRegions.computeSignedArea(
-                shore.vertices().stream().map(Coastlines.CoastVertex::point).toList()) > 0;
+                shore.vertices().stream().map(CoastVertex::point).toList()) > 0;
 
             for (var reach : Coastlines.collectStraightReaches(List.of(shore), channel)) {
 
@@ -89,7 +92,7 @@ public final class LakeReaches {
         return List.copyOf(reaches);
     }
 
-    private static CellGap buildGap(Coastlines.CoastVertex from, Coastlines.CoastVertex to) {
+    private static CellGap buildGap(CoastVertex from, CoastVertex to) {
 
         return new CellGap(
             from.circle(),

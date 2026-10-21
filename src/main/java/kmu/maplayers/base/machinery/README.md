@@ -47,9 +47,9 @@ The revisions make it worse rather than better:
 shared counters leave neither sector able to be stale on its own,
 since either one's change rebuilds both.
 
-The tell that a holder belongs to a sector is that it used to need emptying when the sector changed.
-Every holder here once had a per-load discard;
-disposal replaced all of them.
+The tell that a holder belongs to a sector is that it would need emptying when the sector changed.
+Disposal is that emptying,
+once for every holder rather than a per-load discard each.
 
 ## What machinery holds
 
@@ -136,12 +136,16 @@ so a sector removed mid-session would leak every one it had built if disposal we
 `SectorMapMachineryIndex` is the process-wide index,
 keyed by the sector object itself.
 
-- **`installMachineryOn(sector)`** makes a fresh machinery,
+- **`installMachineryOn(sector, seatedMachinery)`** makes a fresh machinery,
   releasing whatever that sector already had.
   Replacing rather than reusing is what keeps a second install from inheriting the first one's cached drawing.
   Done in one atomic step,
   so a frame resolving on the render thread between a removal
   and a re-insertion cannot observe the replacement as an absence.
+  What is seated is held from the machinery's first moment rather than made on first ask -
+  the layer screens,
+  which nothing on a sector can make -
+  so no frame can reach the machinery before its seats are in.
 - **`uninstallMachineryFrom(sector)`** releases and forgets.
   Reached with a sector nothing was ever installed on too,
   since a load with the overlay switched off takes it back rather than declining.
@@ -230,7 +234,7 @@ because a comparison that missed would take the whole overlay off screen instead
 
 It is also the only resolution that answers **null**,
 and deliberately.
-A surface exists because an machinery put its terrain there,
+A surface exists because a machinery put its terrain there,
 so a location with no machinery is a surface belonging to a sector nothing draws -
 a save carrying the terrain with the overlay switched off.
 Handing it the detached machinery would have it paint through the holder every sector-less caller shares,
@@ -296,10 +300,11 @@ so a reader does not go looking:
   its ordered views,
   default and host tab -
   are mod-load facts.
-  KMU's own are made in `MapLayers.registerAll` before any sector exists,
-  and a layer another mod ships joins the roster when that mod loads -
-  later still,
-  and no nearer any sector.
+  They are made in `MapLayers.registerAll` before any sector exists.
+  The screens are seated on every machinery as it is made,
+  so the passes the engine builds can reach them,
+  but they are the process's:
+  releasing a machinery lets go of its reference and nothing more.
   Which layers *exist* is the process's;
   which is *picked* is the sector's,
   and that half lives in sector memory.

@@ -24,6 +24,8 @@ including the `Fingerprints` primitive this document's revision counters fold th
   - [Clusters and draw lists](#clusters-and-draw-lists)
   - [Cluster-label placements](#cluster-label-placements)
   - [Hover lookups](#hover-lookups)
+  - [The hover box](#the-hover-box)
+  - [Reads settled once a frame](#reads-settled-once-a-frame)
   - [Sidebar pickers](#sidebar-pickers)
   - [Settled faces](#settled-faces)
   - [Per-rebuild memos](#per-rebuild-memos)
@@ -107,7 +109,7 @@ then reacts to each half on its own axis:
 the fingerprint moving means the geometry is stale
 (whole-map, since the partition depends on every site),
 while the owner map is diffed to mark exactly the systems whose owner changed.
-It also tracks the moving-system set and fingerprints the live alliance set.
+It also tracks the moving-system set and compares the live alliance records with the last poll's.
 All four baselines are its own,
 so nothing about the diff lives in the loop.
 
@@ -248,8 +250,10 @@ a producer reaching one it was not handed is a producer that can raise on a map 
 | Signal | Home | Raised by | Read by |
 | --- | --- | --- | --- |
 | `MapLayerCommonRefreshSignal.GEOMETRY` | `MapLayerCommonRefreshSignal` | the drawn-system set or moving-system set changing | the geometry cache |
-| `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental owner refresh |
-| `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance-set fingerprint moving | the alliances view only |
+| `MapLayerCommonRefreshSignal.DRAW_LISTS` | `MapLayerCommonRefreshSignal` | the overlay cache, after a full rebuild or a fold of marked systems | the hover box's memo |
+| `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental owner refresh, or a full rebuild where the standing map cannot take one |
+| grouping revision | `MapLayerRefreshBoard` | every system marked into the set above | the sidebar picker memo |
+| `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance records differing from the last poll's | every political view's content revision |
 | `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.MAP_STYLE` | `MapLayerCommonRefreshSignal` | the uninhabited-outline and name-format toggles | **nothing** - see below |
@@ -332,8 +336,11 @@ What a frame owes is
 answer,
 asked first and acted on:
 the decider holds what each half was built against and compares this frame's revisions and settings to it,
-which is a handful of int compares and opens no reading of the sector,
+which opens no reading of the sector,
 so nearly every frame stops at it.
+The settings the cells are cut from are read again only when KMU's settings revision moves,
+since every one of them is a LunaLib field and LunaLib reports each change;
+on any other frame the last reading stands.
 The two are apart because they run at different cadences -
 the question every frame,
 the rebuild rarely -
@@ -402,7 +409,8 @@ opens a fresh one rather than report a sector as it stood some flips ago.
 ### Cell geometry
 
 [`CellGeometryCache`](../../src/main/java/kmu/maplayers/base/geometry/CellGeometryCache.java)
-holds the raw Voronoi cells keyed by system id.
+holds the raw Voronoi cells keyed by `SystemKey`,
+since a system ID is not unique.
 It is updated by *diffing* the reachable set against what it holds
 and rebuilding only the affected cells:
 adding or removing one site changes that site's cell and the cells within twice the cell radius,
@@ -558,6 +566,74 @@ indexes each cluster by its members once per rebuild,
 so the hover highlight resolves a hit system to its whole cluster with a lookup instead of re-running the cluster search per frame.
 Deriving it from the same clustering the map drew is what keeps the highlighted region identical to the region that carries the name.
 
+The hovered system rides on the published hover beside its key.
+Finding a system by key walks every system in the sector,
+so the cursor read looks it up once where the cursor reaches the cell
+and carries it on from its last reading while the cursor stays there.
+
+### The hover box
+
+[`CellBoxMemo`](../../src/main/java/kmu/maplayers/base/tooltip/layout/CellBoxMemo.java)
+holds the last box composed on a sector:
+its title lines and its body,
+which together are every read of the sector the box makes.
+The box draws every frame the cursor rests on a cell,
+and the deeper levels walk every colony in the system,
+so the composition is read once per visit and laid out again each frame from what was held.
+The fit and the look stay outside it:
+they answer to the screen and the player's sliders,
+and laying out is cheap.
+
+It is kept against six things:
+the box,
+the sector,
+the system's key,
+the detail level,
+the cursor's arrivals at a cell (`MapHoverState.getCellArrivalCount`),
+and the `DRAW_LISTS` signal.
+One entry, since the cursor is over one cell at a time.
+The arrivals count rather than the hover,
+because a foreign map's pass parks the hover and the real one publishes it again every frame it draws beside it.
+The signal is raised by the overlay cache once a rebuild or a fold completes,
+and every setting,
+colony event,
+alliance change
+and view input that moves the map leads to one.
+
+This is **the per-frame path's second stated exception**
+to the rule that every live input needs a revision.
+The economy drifts under a still cursor -
+a colony's stability or size moving with no event fired -
+and nothing announces that.
+The box then shows the reading from when the cursor arrived,
+which is the same lag the fills have between rebuilds,
+and the next visit to the cell reads it afresh.
+Reading the economy every frame to catch that drift would cost the whole read the memo exists to save.
+
+The machinery holds it,
+so it goes with the sector;
+the sector is still in its key,
+because the machinery standing in where no game is loaded is shared by every sector without one.
+
+### Reads settled once a frame
+
+Two smaller reads are kept for a frame or across frames on the same terms.
+
+Whether a Starscape map is on screen is asked by both Starscape surfaces every frame a map is up,
+and it walks the intel screen's live widgets.
+[`StarscapeFrameRead`](../../src/main/java/kmu/maplayers/base/render/StarscapeFrameRead.java)
+answers it once per frame and sector,
+against the frame boundary `MapFramePreparationClaim` already sees,
+and reads every ask afresh until that boundary has been seen.
+
+A sidebar host's tab style is composed once and kept by `BaseSidebarHost.resolveTabStyle`
+until KMU's settings revision moves or another sector's settled faces are on screen,
+those being everything it is composed from.
+
+The drawn cells are parted into fused and lone ones once per write batch rather than per pass
+([`PaintedCellStore`](../../src/main/java/kmu/maplayers/ownermap/render/clusters/PaintedCellStore.java)),
+the emission drawing each form in a pass of its own.
+
 ### Sidebar pickers
 
 `RevisionMemo` is the memo any layer's sidebar holds its resolved picker in,
@@ -572,7 +648,7 @@ when it goes stale,
 and how long it lives are entirely the consumer's declaration -
 including the discard a consumer calls when whatever the value belonged to is released.
 
-[`SelectableBlocCache`](../../src/main/java/kmu/maplayers/ownermap/sidebar/SelectableBlocCache.java)
+[`SelectableOwnerCache`](../../src/main/java/kmu/maplayers/ownermap/sidebar/SelectableOwnerCache.java)
 is the owner-map tier's use of it:
 what it adds is the revision,
 the one thing the memo cannot know.
@@ -581,8 +657,11 @@ the blocs on offer and the vocabulary that ranks them -
 since a view answers both together and neither means anything without the other.
 Each of its resolves is a full grouped dominance pass over the sector,
 so it is the picker that most needs the memo to hold.
-That revision is the economy-weighting settings plus the view's own grouping inputs,
-and it deliberately **excludes** the filter selection.
+That revision is the economy-weighting settings,
+the view's own grouping inputs,
+and the board's grouping revision,
+which every system marked stale moves.
+It deliberately **excludes** the filter selection.
 The picker is which blocs are selectable,
 not which one is spotlighted,
 so picking or clearing a filter moves the lit row without invalidating the list.
@@ -600,9 +679,12 @@ which is also what replaces the discard it would otherwise need on load.
 Because the economy can drift between rebuild triggers,
 a displayed metric can lag until the next settings,
 view,
-or alliance change -
+alliance or owner change -
 the same cadence the overlay's own rebuild reconciles on,
 so the picker's numbers and the painted map stay in step with each other even when both lag the economy slightly.
+An owner change reaches both through the marked system:
+the overlay drains it and the picker reads the grouping revision it moved,
+so the two never compete for one set.
 
 ### Settled faces
 
@@ -643,6 +725,40 @@ a bloc with a homeland and three colonies is asked four times and answers once.
 The name-format choice is likewise read once per rebuild rather than per label,
 and the label face is asked once per fit and recorded on the fit's fingerprint for everything after it,
 the face itself having been [settled once for the sector](#settled-faces).
+
+A bloc's owner and its two shades are read once per pass.
+`SectorBlocPalettes` remembers each bloc's owner on first ask,
+a bloc whose colour faction has gone included,
+and the `HolderPass` holds the one instance every reader of that pass shares:
+the holder resolves,
+the spotlight,
+the claim resolves
+and the band bake.
+Each of them asks per system or per cell,
+so without it one faction would be looked up once per cell of the map.
+Holding it on the pass rather than on each reader is also what keeps them agreeing:
+a fill and the band inside it are coloured through the same object,
+under the same sector and grouping.
+It dies with the pass,
+so a faction's colours changed mid-session are read again by the next rebuild.
+
+An owner's paint is resolved once per build.
+`OwnerMapBuildInputs` remembers each owner's style decision carried down to its shades,
+since every cell of an owner and its cluster group ask for the same one.
+It lives as long as the build inputs do,
+across incremental refreshes,
+which is safe because everything it is resolved from is fixed with them.
+
+The paint scheme is read once per rebuild,
+as one `MapStyling` handed to everything the rebuild builds:
+the fills or the border-tracing overlay,
+and the names over either.
+It carries the border trace too,
+so a cluster group the incremental refresh redraws is traced under the same knobs as its neighbours
+rather than under a live read taken per group.
+
+The laying rules settle a band's uncontested lengths when they are sampled,
+rather than once per uncontested cell asking for them.
 
 The map's name labels are the one place KMU mints its own GL text.
 Each [`Label`](../../src/main/java/kmu/maplayers/base/labels/Label.java)
@@ -730,8 +846,8 @@ no transient marking required.
 That lifetime is exactly a sector's,
 and it has to be.
 Nothing else would notice a change of sector:
-the geometry cache reconciles by diffing system *IDs*,
-so a system present in both saves at a different position reads as unchanged.
+the geometry cache reconciles by diffing `SystemKey`s,
+so a system present in both saves under the same key at a different position reads as unchanged.
 So a cache serves one sector and one only -
 it is made when the layers are installed on that sector and released when they are removed,
 which a load does for every standing machinery before installing the loaded one ([the installed machinery](../../src/main/java/kmu/maplayers/base/machinery/README.md)
@@ -779,7 +895,7 @@ on load and on every settings change.
 - The per-frame path must stay int compares.
   Any new live input needs a revision of its own folded into a fingerprint -
   never a per-frame scan to detect change.
-  The settled faces are the one stated exception.
+  The settled faces and [the hover box](#the-hover-box) are the two stated exceptions.
 - An incremental update must read back the same inputs the full build used,
   and go through the same primitives,
   so the two cannot diverge.

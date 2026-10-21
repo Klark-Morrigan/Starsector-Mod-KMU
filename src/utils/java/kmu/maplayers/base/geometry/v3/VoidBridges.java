@@ -1,8 +1,10 @@
 package kmu.maplayers.base.geometry.v3;
 
-import kmlib.math.geometry.Segments;
+import kmlib.math.geometry.Bounds;
+import kmlib.math.geometry.UniformGrid;
 
 import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.LineCrossings;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -63,7 +65,7 @@ public final class VoidBridges {
             double reach,
             double maxSeparation) {
 
-        var candidates = findHeldGaps(sites, reach, maxSeparation - 2 * reach);
+        var candidates = findHeldGaps(sites, reach, maxSeparation);
 
         // Narrowest first, which is the whole selection rule. The sites break ties, and only
         // so that two equally narrow gaps are always offered in the same order.
@@ -74,56 +76,78 @@ public final class VoidBridges {
 
         var kept = new ArrayList<CellGap>();
 
+        // The kept bridges filed by their extent, so a candidate is tested only against the
+        // ones whose boxes it could reach: two bridges cross only where their boxes meet.
+        var keptGrid = new UniformGrid<CellGap>(reach);
+
         for (var candidate : candidates) {
 
-            if (!doesCrossAny(candidate, kept)) {
+            if (!doesCrossAny(candidate, keptGrid)) {
+
                 kept.add(candidate);
+                keptGrid.fileSegment(candidate.start(), candidate.end(), candidate);
             }
         }
+
         return kept;
     }
 
+    // Every pair of cells near enough to hold a gap with nothing across it.
+    //
+    // The pairs come off a grid of the sites, cut to the separation on squared distance, so a
+    // pair too far apart is dropped before any gap is built for it. The gap's own width is
+    // still the cap that decides, so the answer is the one a sweep of every pair gives.
     private static List<CellGap> findHeldGaps(
             List<double[]> sites,
             double reach,
-            double widestGap) {
+            double maxSeparation) {
 
+        var cells = CellGaps.createOverSites(sites, reach);
+        var widestGap = maxSeparation - 2 * reach;
         var held = new ArrayList<CellGap>();
 
         for (var first = 0; first < sites.size(); first++) {
-            for (var second = first + 1; second < sites.size(); second++) {
+            for (var second : cells.listLaterSitesWithin(first, maxSeparation)) {
 
-                var gap = CellGaps.findGapBetween(sites, first, second, reach);
+                var gap = cells.findGapBetween(first, second);
 
                 // Capped before the clearance test rather than after, because that test walks
-                // every site and the cap throws out most pairs on a subtraction.
+                // the sites near the gap and the cap throws out most pairs on a subtraction.
                 if (gap == null || gap.width() > widestGap) {
                     continue;
                 }
 
-                if (CellGaps.isLineClearOfCells(gap.start(), gap.end(), sites, reach)) {
+                if (cells.isLineClearOfCells(gap.start(), gap.end())) {
                     held.add(gap);
                 }
             }
         }
+
         return held;
     }
 
     private static boolean doesCrossAny(
             CellGap bridge,
-            List<CellGap> kept) {
+            UniformGrid<CellGap> keptGrid) {
 
-        for (var held : kept) {
+        var box = Bounds.computeEnclosingBounds(List.of(bridge.start(), bridge.end()));
+        var middleX = (box.minX() + box.maxX()) / 2;
+        var middleY = (box.minY() + box.maxY()) / 2;
+        var halfSide = Math.max(box.maxX() - box.minX(), box.maxY() - box.minY()) / 2;
 
-            if (Segments.intersectSegments(
+        for (var held : keptGrid.listItemsNear(middleX, middleY, halfSide)) {
+
+            if (LineCrossings.isCrossing(
                     bridge.start(),
                     bridge.end(),
                     held.start(),
-                    held.end()) != null) {
+                    held.end(),
+                    LineCrossings.SharedAnchor.IS_CROSSING)) {
 
                 return true;
             }
         }
+
         return false;
     }
 }

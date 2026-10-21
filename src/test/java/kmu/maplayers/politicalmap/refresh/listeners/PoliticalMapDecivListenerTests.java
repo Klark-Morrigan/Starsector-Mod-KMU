@@ -4,8 +4,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.visibility.colonies.ColonyObservation;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -123,9 +124,9 @@ final class PoliticalMapDecivListenerTests {
 
             assertThat(SectorColonySightings
                     .readSightings(sector)
-                    .readObservation(derelict.getId())
-                    .locationId())
-                .isEqualTo(SYSTEM_ID);
+                    .readObservation(derelict.getId()))
+                .map(ColonyObservation::locationId)
+                .contains(SYSTEM_ID);
         }
 
         @Test

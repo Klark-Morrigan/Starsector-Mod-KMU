@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static kmu.maplayers.politicalmap.dominance.HolderRankingRulesFixtures.OPEN_CONTEST_BY_LOWEST_ID;
+import static kmu.maplayers.politicalmap.dominance.HolderRankingRulesFixtures.createByLowestId;
 import static kmu.maplayers.politicalmap.dominance.weighting.MarketFootprintFixtures.buildWeightedFootprint;
 import static kmu.maplayers.politicalmap.dominance.weighting.MarketFootprintFixtures.listOrderedFootprints;
 
@@ -18,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * heaviest single market, then planet weight, then a tie-break over the tied
  * IDs (lowest ID by default, or the supplied comparator). Each test forces a
  * tie on every earlier level so it isolates exactly one tie-break, and lists
- * the higher faction ID first so the winner is shown to come from the rule, not
+ * the higher bloc ID first so the winner is shown to come from the rule, not
  * from map iteration order.
  *
  * <p>Also pins who is ranked at all: a candidacy bars an ID from winning
@@ -31,36 +33,36 @@ class SystemDominanceTests {
     private static final String PLACEHOLDER = "placeholder";
     private static final String SECOND_PLACEHOLDER = "placeholder-second";
 
-    // Stated here rather than taken from HolderRankingRules' own open contest, so a case about
-    // the weight levels poses its candidacy as plainly as a case about the bar does.
-    private static final Predicate<String> EVERY_BLOC = factionId -> true;
+    // The open bar for the cases that state their own tie-break, posed as plainly as a case about
+    // the bar poses its own.
+    private static final Predicate<String> EVERY_BLOC = blocId -> true;
 
-    // Both placeholder IDs sort below the scoring factions below, so a case a bar decides cannot
+    // Both placeholder IDs sort below the scoring blocs below, so a case a bar decides cannot
     // be passing on the natural ID order instead.
     private static final Predicate<String> BARS_PLACEHOLDERS =
-        factionId -> !Set.of(PLACEHOLDER, SECOND_PLACEHOLDER).contains(factionId);
+        blocId -> !Set.of(PLACEHOLDER, SECOND_PLACEHOLDER).contains(blocId);
 
     @Nested
-    class ResolveDominantFactionId {
+    class ResolveDominantBlocId {
 
         @Test
         void returnsNullForNoOwnedMarkets() {
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     Map.of(),
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isNull();
         }
 
         @Test
-        void picksTheOnlyFactionPresent() {
+        void picksTheOnlyBlocPresent() {
 
             var footprints = listOrderedFootprints(
                 "hegemony",
                 buildWeightedFootprint(7, 5, 5));
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isEqualTo("hegemony");
         }
 
@@ -75,24 +77,24 @@ class SystemDominanceTests {
                 "hegemony",
                 buildWeightedFootprint(8, 4, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isEqualTo("hegemony");
         }
 
         @Test
         void breaksCombinedWeightTieByHeaviestSingleMarket() {
-            // Equal totals: the faction holding the single heaviest market wins.
+            // Equal totals: the bloc holding the single heaviest market wins.
             var footprints = listOrderedFootprints(
                 "tritachyon",
                 buildWeightedFootprint(9, 4, 0),
                 "hegemony",
                 buildWeightedFootprint(9, 6, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isEqualTo("hegemony");
         }
 
@@ -106,15 +108,15 @@ class SystemDominanceTests {
                 "hegemony",
                 buildWeightedFootprint(9, 5, 7));
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isEqualTo("hegemony");
         }
 
         @Test
-        void breaksFullTieByLowestFactionId() {
-            // Identical footprints fall to the lowest faction ID, so the result
+        void breaksFullTieByLowestBlocId() {
+            // Identical footprints fall to the lowest bloc ID, so the result
             // is deterministic and independent of insertion order.
             var footprints = listOrderedFootprints(
                 "tritachyon",
@@ -122,9 +124,9 @@ class SystemDominanceTests {
                 "hegemony",
                 buildWeightedFootprint(9, 5, 5));
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
-                    HolderRankingRules.createOpenContestByLowestId()))
+                    OPEN_CONTEST_BY_LOWEST_ID))
                 .isEqualTo("hegemony");
         }
 
@@ -139,7 +141,7 @@ class SystemDominanceTests {
                 "tritachyon",
                 buildWeightedFootprint(9, 5, 5));
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
                     new HolderRankingRules(Comparator.reverseOrder(), EVERY_BLOC)))
                 .isEqualTo("tritachyon");
@@ -160,7 +162,7 @@ class SystemDominanceTests {
                 throw new AssertionError("tie-break consulted without a full tie");
             };
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
                     new HolderRankingRules(throwingTieBreak, EVERY_BLOC)))
                 .isEqualTo("hegemony");
@@ -176,9 +178,9 @@ class SystemDominanceTests {
                 "tritachyon",
                 buildWeightedFootprint(1, 1, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
-                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
+                    createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo("tritachyon");
         }
 
@@ -192,9 +194,9 @@ class SystemDominanceTests {
                 "tritachyon",
                 buildWeightedFootprint(0, 0, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
-                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
+                    createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo("tritachyon");
         }
 
@@ -206,9 +208,9 @@ class SystemDominanceTests {
                 PLACEHOLDER,
                 buildWeightedFootprint(4, 4, 0));
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
-                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
+                    createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo(PLACEHOLDER);
         }
 
@@ -222,9 +224,9 @@ class SystemDominanceTests {
                 PLACEHOLDER,
                 buildWeightedFootprint(9, 5, 5));
 
-            assertThat(SystemDominance.resolveDominantFactionId(
+            assertThat(SystemDominance.resolveDominantBlocId(
                     footprints,
-                    HolderRankingRules.createByLowestId(BARS_PLACEHOLDERS)))
+                    createByLowestId(BARS_PLACEHOLDERS)))
                 .isEqualTo(PLACEHOLDER);
         }
     }

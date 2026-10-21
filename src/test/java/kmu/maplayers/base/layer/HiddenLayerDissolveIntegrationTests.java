@@ -67,51 +67,60 @@ final class HiddenLayerDissolveIntegrationTests {
     // winds the pace up for itself.
     private MockedStatic<KmuMapSidebarSettings> mapLayerSettingsMock;
 
+    private LiveMapLayerArrangement layerArrangement;
+    private MapLayerScreens screens;
     private SectorMapMachinery machinery;
     private SectorMemoryFake sectorMemoryFake;
 
     @BeforeEach
     void standTheOneLayerThatPaintsUpOnASector() {
 
-        when(paintingLayerMock.getId()).thenReturn(PAINTING_LAYER_ID);
-        when(paintingLayerMock.resolveStanding()).thenReturn(standingMock);
+        when(paintingLayerMock.getId())
+            .thenReturn(PAINTING_LAYER_ID);
+        when(paintingLayerMock.resolveStanding())
+            .thenReturn(standingMock);
 
         // Offered as the default pick, so a save that has stored none opens on it and the screen has
         // a picture to catch without any case spelling a memory key.
-        when(paintingLayerMock.isOfferedAsDefaultPick()).thenReturn(true);
+        when(paintingLayerMock.isOfferedAsDefaultPick())
+            .thenReturn(true);
 
-        MapLayerRosters.replaceRosterWith(paintingLayerMock);
-        MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-        MapLayerScreens.registerIntelScreen(intelScreenFake);
+        layerArrangement = MapLayerArrangements.createRearrangeableBar(List.of(), List.of());
+        screens = MapLayerRosters.createScreensOver(
+            MapLayerRosters.createRosterOf(paintingLayerMock),
+            layerArrangement,
+            intelScreenFake);
 
         sectorMemoryFake = new SectorMemoryFake();
         mapLayerSettingsMock = mockStatic(KmuMapSidebarSettings.class);
 
-        when(paintingLayerMock.resolveRenderer(any())).thenReturn(layerRendererMock);
+        when(paintingLayerMock.resolveRenderer(any()))
+            .thenReturn(layerRendererMock);
 
-        machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
+        // Seated as the composition root seats them, which is where the guard and the standing walk
+        // read the screens from.
+        machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock, screens);
 
         MapLayerStandings.applyArrangementTo(sectorMock);
     }
 
     @AfterEach
     void releaseTheHidePace() {
+
         mapLayerSettingsMock.close();
     }
 
     @AfterEach
     void closeTheSectorMemory() {
+
         sectorMemoryFake.close();
     }
 
     @AfterEach
-    void restoreTheProcessWideState() {
-
+    void clearEveryMachineryThisCaseMade() {
+        // The index is process-wide, so a sector installed here would otherwise be one every later
+        // walk over every installed sector acted on.
         SectorMapMachineryIndex.disposeAllMachinery();
-        MapLayerScreenControls.forgetDrawnLayers();
-        MapLayerScreenControls.forgetControlsAttached();
-        MapLayerArrangements.forgetTheArrangement();
-        MapLayerRosters.restoreNonEmptyRoster();
     }
 
     @Nested
@@ -123,7 +132,8 @@ final class HiddenLayerDissolveIntegrationTests {
             drawAFrame();
             takeThePaintingTabOffTheBar();
 
-            verify(standingMock).standLayerDownFrom(sectorMock);
+            verify(standingMock)
+                .standLayerDownFrom(sectorMock);
         }
 
         @Test
@@ -163,7 +173,8 @@ final class HiddenLayerDissolveIntegrationTests {
             resolveTheDrawnRenderer();
             MapLayerStandings.applyArrangementWhereverInstalled();
 
-            verify(standingMock, times(1)).standLayerDownFrom(sectorMock);
+            verify(standingMock, times(1))
+                .standLayerDownFrom(sectorMock);
         }
     }
 
@@ -173,8 +184,7 @@ final class HiddenLayerDissolveIntegrationTests {
     private void drawAFrame() {
 
         standAControlOnTheMapScreen();
-
-        MapLayerRegistry.getDrawnLayer();
+        screens.resolveDrawnLayer();
     }
 
     // The renderer the map surface would be handed this frame, read the way the surface reads it.
@@ -201,14 +211,18 @@ final class HiddenLayerDissolveIntegrationTests {
     }
 
     private void hideThePaintingTabInTheArrangement() {
-        MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
+
+        MapLayerArrangements.rearrangeBar(
+            layerArrangement,
+            List.of(),
+            List.of(PAINTING_LAYER_ID));
     }
 
     // What the standing heal owes a bar whose last painting tab has gone. Posed rather than driven,
     // the pass that writes it being the map chrome's.
     private void switchTheScreenOff() {
 
-        MapLayerScreens
+        screens
             .getMapPicks()
             .layerVisibility()
             .showLayers(false);
@@ -220,7 +234,6 @@ final class HiddenLayerDissolveIntegrationTests {
     private void standAControlOnTheMapScreen() {
 
         intelScreenFake.setIntelTabOpen(false);
-
-        MapLayerScreenControls.standAControlOnTheShownScreen();
+        MapLayerScreenControls.standAControlOnTheShownScreen(screens);
     }
 }

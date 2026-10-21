@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
@@ -13,7 +14,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * The surroundings a render surface needs before it will draw at all: a terrain entity, the location
- * that entity sits in, and the machinery installed on the sector owning it.
+ * that entity sits in, and the machinery installed on the sector owning it, with the screens the
+ * surface reads what draws from seated on it.
  *
  * <p>A surface finds the sector it is drawing through its own entity, so a plugin built bare draws
  * nothing whatever else a case has staged. Seating one is therefore the shared setup of every case
@@ -30,10 +32,13 @@ final class MapSurfaceFixtures {
      * Seats every one of {@code surfaces} on one sector with the map machinery installed on it,
      * which is how the several surfaces painting a single map are posed.
      *
+     * @param screens  the screens seated on that sector's machinery, as the composition root seats them
      * @param surfaces the surfaces being posed
      * @return that sector's machinery, which is what each of them resolves as it draws
      */
-    static SectorMapMachinery seatSurfacesInAnInstalledSector(CampaignTerrainPlugin... surfaces) {
+    static SectorMapMachinery seatSurfacesInAnInstalledSector(
+            MapLayerScreens screens,
+            CampaignTerrainPlugin... surfaces) {
 
         var hyperspaceMock = mock(LocationAPI.class);
         var sectorMock = mock(SectorAPI.class);
@@ -44,7 +49,8 @@ final class MapSurfaceFixtures {
         for (var surface : surfaces) {
             seatSurfaceIn(surface, hyperspaceMock);
         }
-        return SectorMapMachineryIndex.installMachineryOn(sectorMock);
+
+        return SectorMapMachineryIndex.installMachineryOn(sectorMock, screens);
     }
 
     /**

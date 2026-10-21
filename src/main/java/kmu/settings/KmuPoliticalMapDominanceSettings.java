@@ -62,7 +62,7 @@ public final class KmuPoliticalMapDominanceSettings {
     /**
      * @return the multiplier on each colony's base size rating - a visible market's own size, or a
      *         hidden market's chosen base size - before the station and patrol bonuses and
-     *         stability fold in; 1.0 by default
+     *         stability fold in
      */
     public static double getColonySizeWeight() {
         return KmuLunaSettings.readDouble(COLONY_SIZE_WEIGHT_FIELD, DEFAULT_COLONY_SIZE_WEIGHT);
@@ -70,7 +70,7 @@ public final class KmuPoliticalMapDominanceSettings {
 
     /**
      * @return how a hidden market's base size rating is chosen: NORMAL by its real colony size,
-     *         FIXED at the hidden-market fixed weight regardless of size; FIXED by default
+     *         FIXED at the hidden-market fixed weight regardless of size
      */
     public static HiddenMarketScalingChoice getHiddenMarketScaling() {
         return KmuLunaSettings.readChoice(
@@ -80,7 +80,7 @@ public final class KmuPoliticalMapDominanceSettings {
 
     /**
      * @return the fixed size rating a hidden market folds in at, before the colony size weight and
-     *         stability apply; 1.0 by default. Unread while the scaling is NORMAL
+     *         stability apply. Unread while the scaling is NORMAL
      */
     public static double getHiddenMarketFixedWeight() {
         return KmuLunaSettings.readDouble(
@@ -90,7 +90,7 @@ public final class KmuPoliticalMapDominanceSettings {
 
     /**
      * @return the master switch for stability scaling, each dominance factor being cut at low
-     *         stability by its own penalty; on by default. Off ranks colonies by their raw
+     *         stability by its own penalty. Off ranks colonies by their raw
      *         weighted size, station, and patrol sum
      */
     public static boolean shouldWeighDominanceByStability() {
@@ -101,7 +101,7 @@ public final class KmuPoliticalMapDominanceSettings {
 
     /**
      * @return how much a colony's own size weight is cut at zero stability, 0..1 (half at 5, full
-     *         at 10); 1.0 by default. Applied only while stability weighting is on
+     *         at 10). Applied only while stability weighting is on
      */
     public static double getNormalLowStabilityPenalty() {
         return KmuLunaSettings.readDouble(
@@ -111,7 +111,7 @@ public final class KmuPoliticalMapDominanceSettings {
 
     /**
      * @return whether a market with an attached defensive station gains the station weight in size
-     *         points toward its system's dominance; on by default
+     *         points toward its system's dominance
      */
     public static boolean shouldWeighDominanceByStation() {
         return KmuLunaSettings.readBoolean(
@@ -121,7 +121,7 @@ public final class KmuPoliticalMapDominanceSettings {
 
     /**
      * @return the size points an attached defensive station adds to a visible colony's dominance
-     *         contribution, before its low-stability penalty applies; 1.0 by default. A hidden
+     *         contribution, before its low-stability penalty applies. A hidden
      *         market earns this scaled by the hidden-market station rate
      */
     public static double getStationWeight() {
@@ -129,8 +129,7 @@ public final class KmuPoliticalMapDominanceSettings {
     }
 
     /**
-     * @return the fraction of the station weight a station on a hidden market earns, 0..1; 0.5 by
-     *         default
+     * @return the fraction of the station weight a station on a hidden market earns, 0..1
      */
     public static double getStationHiddenMarketRate() {
         return KmuLunaSettings.readDouble(
@@ -139,7 +138,7 @@ public final class KmuPoliticalMapDominanceSettings {
     }
 
     /**
-     * @return how much the station bonus is cut at zero stability, 0..1; 0.5 by default. Applied
+     * @return how much the station bonus is cut at zero stability, 0..1. Applied
      *         only while stability weighting is on
      */
     public static double getStationLowStabilityPenalty() {
@@ -150,7 +149,7 @@ public final class KmuPoliticalMapDominanceSettings {
 
     /**
      * @return whether a colony gains size points toward its system's dominance for the patrols it
-     *         fields, weighted by patrol size; on by default
+     *         fields, weighted by patrol size
      */
     public static boolean shouldWeighDominanceByPatrols() {
         return KmuLunaSettings.readBoolean(
@@ -160,7 +159,7 @@ public final class KmuPoliticalMapDominanceSettings {
 
     /**
      * @return the size points each small (light) patrol adds to its colony's dominance
-     *         contribution, before the patrol low-stability penalty applies; 0.3 by default.
+     *         contribution, before the patrol low-stability penalty applies.
      *         Unread while patrol weighting is off
      */
     public static double getPatrolSmallWeight() {
@@ -169,7 +168,7 @@ public final class KmuPoliticalMapDominanceSettings {
 
     /**
      * @return the size points each medium patrol adds to its colony's dominance contribution,
-     *         before the patrol low-stability penalty applies; 0.6 by default. Unread while patrol
+     *         before the patrol low-stability penalty applies. Unread while patrol
      *         weighting is off
      */
     public static double getPatrolMediumWeight() {
@@ -178,7 +177,7 @@ public final class KmuPoliticalMapDominanceSettings {
 
     /**
      * @return the size points each large (heavy) patrol adds to its colony's dominance
-     *         contribution, before the patrol low-stability penalty applies; 1.2 by default.
+     *         contribution, before the patrol low-stability penalty applies.
      *         Unread while patrol weighting is off
      */
     public static double getPatrolLargeWeight() {
@@ -186,7 +185,7 @@ public final class KmuPoliticalMapDominanceSettings {
     }
 
     /**
-     * @return how much a colony's patrol bonus is cut at zero stability, 0..1; 0.5 by default.
+     * @return how much a colony's patrol bonus is cut at zero stability, 0..1.
      *         Applied only while stability weighting is on
      */
     public static double getPatrolLowStabilityPenalty() {

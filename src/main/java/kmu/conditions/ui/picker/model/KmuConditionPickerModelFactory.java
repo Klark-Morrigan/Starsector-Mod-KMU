@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
 import kmu.conditions.domain.KmuConditionService;
 import kmu.conditions.domain.KmuConditionSpec;
 import kmu.conditions.domain.KmuEditableMarket;
-import kmu.conditions.domain.StarsectorEditableMarket;
 import kmu.conditions.ui.picker.tooltip.KmuConditionTooltipRenderer;
 import kmu.conditions.ui.picker.tooltip.StarsectorConditionTooltipRenderer;
 
@@ -14,10 +13,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static kmu.util.KmuValues.getTextOrEmpty;
-import static kmu.util.KmuValues.hasText;
+import static kmlib.text.KmlibStrings.getTextOrEmpty;
+import static kmlib.text.KmlibStrings.hasText;
 
 public final class KmuConditionPickerModelFactory {
+
     private final KmuConditionService conditionService;
     private final StarsectorConditionPickerLocationFactory locationFactory;
 
@@ -28,12 +28,15 @@ public final class KmuConditionPickerModelFactory {
     KmuConditionPickerModelFactory(
             KmuConditionService conditionService,
             StarsectorConditionPickerLocationFactory locationFactory) {
+
         this.conditionService = Objects.requireNonNull(conditionService, "conditionService");
         this.locationFactory = Objects.requireNonNull(locationFactory, "locationFactory");
     }
 
     public KmuConditionPickerModel create(KmuEditableMarket market) {
+
         Objects.requireNonNull(market, "market");
+
         var currentConditionIds = conditionService.getCurrentConditionIds(market);
         var specs = conditionService.listConditionSpecsVisibleForMarket(market);
 
@@ -55,16 +58,14 @@ public final class KmuConditionPickerModelFactory {
 
         var liveCondition = liveConditionFor(spec, state, market);
 
-        return new KmuConditionPickerEntry(
-            spec.getId(),
-            spec.getName(),
-            iconFor(spec, liveCondition),
-            state,
-            tooltipText(spec),
-            spec.getSourceModName(),
-            tooltipRendererFor(liveCondition).orElse(null),
-            isSuppressed(spec, state, market),
-            liveCondition.map(this::isHidden).orElse(false));
+        return new KmuConditionPickerEntry.Builder(spec.getId(), spec.getName(), state)
+            .withIcon(iconFor(spec, liveCondition))
+            .withTooltipText(tooltipText(spec))
+            .withSourceModName(spec.getSourceModName())
+            .withTooltipRenderer(tooltipRendererFor(liveCondition).orElse(null))
+            .withSuppressed(isSuppressed(spec, state, market))
+            .withHidden(liveCondition.map(this::isHidden).orElse(false))
+            .build();
     }
 
     private String tooltipText(KmuConditionSpec spec) {
@@ -93,9 +94,11 @@ public final class KmuConditionPickerModelFactory {
         if (state != KmuConditionPickerEntryState.PRESENT) {
             return false;
         }
+
         try {
             return market.isConditionSuppressed(spec.getId());
-        } catch (RuntimeException exception) {
+
+        } catch (RuntimeException runtimeException) {
             return false;
         }
     }
@@ -105,34 +108,42 @@ public final class KmuConditionPickerModelFactory {
             KmuConditionPickerEntryState state,
             KmuEditableMarket market) {
 
-        if (state != KmuConditionPickerEntryState.PRESENT
-                || !(market instanceof StarsectorEditableMarket)) {
+        if (state != KmuConditionPickerEntryState.PRESENT) {
             return Optional.empty();
         }
+
         try {
-            return ((StarsectorEditableMarket) market).findCondition(spec.getId());
-        } catch (RuntimeException exception) {
+            return market.findCondition(spec.getId());
+
+        } catch (RuntimeException runtimeException) {
             return Optional.empty();
         }
     }
 
     private String liveIconName(MarketConditionAPI condition) {
+
         try {
             var plugin = condition.getPlugin();
             if (plugin == null) {
                 return null;
             }
+
             return plugin.getIconName();
-        } catch (RuntimeException exception) {
+
+        } catch (RuntimeException runtimeException) {
             return null;
         }
     }
 
     private boolean isHidden(MarketConditionAPI condition) {
+
         try {
             var plugin = condition.getPlugin();
-            return plugin != null && !plugin.showIcon();
-        } catch (RuntimeException exception) {
+
+            return plugin != null
+                && !plugin.showIcon();
+
+        } catch (RuntimeException runtimeException) {
             return false;
         }
     }

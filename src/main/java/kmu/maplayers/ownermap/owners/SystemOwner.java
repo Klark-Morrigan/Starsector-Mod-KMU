@@ -1,5 +1,6 @@
 package kmu.maplayers.ownermap.owners;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGrouping;
@@ -15,9 +16,10 @@ import java.util.Set;
  *
  * <p>The render-ready output of a layer's owner source: the layer settles who owns each system and
  * pairs that answer with the owner's shades, so the render stages consume a plain owner and never
- * learn what the ID means - a faction, a group of factions, or a value with nothing to do with
- * either. The player points each map element (fill, outer border, inner seam) at one of the two
- * slots through the settings, which is why the shades are carried by slot rather than by element.
+ * learn what the ID means - one owner, several folded into one, or a value with nothing to do with
+ * who holds a system. The player points each map element (fill, outer border, inner
+ * seam) at one of the two slots through the settings, which is why the shades are carried by slot
+ * rather than by element.
  * Retaining the ID beside the shades keeps the owner available for per-owner styling and naming,
  * decided off the same holding the fill was.
  *
@@ -26,7 +28,7 @@ import java.util.Set;
  */
 public record SystemOwner(
     String ownerId,
-    OwnerPalette palette) {
+    ColourPair palette) {
 
     /**
      * Maps each owned system to its owner's ID - the per-system key the owner-map geometry clusters

@@ -33,12 +33,16 @@ and the view-state text.
 `BaseSidebarHost` holds the plumbing common to both
 (controller, fold selection, layer selection, the per-load reseed, the shortcut jump, and the composed live gate),
 leaving each concrete host only the genuine differences.
-A concrete host names its screen's picks and its opening fold;
+A concrete host names its screen's scope and its opening fold;
 everything a real screen's host would otherwise compose for itself -
 the persisted fold,
 the sound player behind the controller -
 is composed in the base,
 which is what keeps the two hosts down to what actually differs.
+The one scope names both the fold's key and the picks drawn,
+which the base resolves on each ask from the screens seated on the live sector:
+a host lives for the process,
+while the screens it draws are reached through whichever sector is installed.
 
 | | `MapSidebarHost` | `IntelSidebarHost` |
 | --- | --- | --- |
@@ -55,6 +59,11 @@ The look is in that table because it is the host's:
 `resolveWidgetStyle()` answers what the panel is painted in
 and `HEADER_BAND_HEIGHT` how tall its tab row stands,
 and the same tab style feeds both the layout and the paint pass.
+A host composes that style (`composeTabStyle`) and `BaseSidebarHost.resolveTabStyle` keeps it
+until KMU's settings revision moves or another sector's faces are on screen -
+every knob it reads is one of those settings,
+and its face is settled per sector -
+so the placement refresh and the paint each frame read one composition rather than building two.
 The two screens sit in different company -
 one floating free on the map,
 the other overlaid on the intel visor amid that screen's own chrome -
@@ -186,16 +195,9 @@ Standing the sidebar down takes its cover over the map down with it,
 so the map's own hover would read straight through to the cells under whatever claimed the screen -
 and it is the act of hiding that does this,
 so a claimant that hides the panel *cannot* be reported by the panel's own cover.
-Each claimant is therefore a cover in its own right too:
-the console as `ConsoleMapCover`,
-a modal as `ModalDialogMapCover`,
-the codex as `CodexMapCover`,
-and this mod's own bar-arranging dialog as `ArrangementDialogMapCover` -
-see [map layers](../../../README.md) on `base/hover/cover`,
-where all four sit beside the sidebar's.
-That last one has to be read separately from the modal beside it:
-a dialog this mod stands in the core UI descends from nothing of the game's,
-so the walk that recognises the game's modals answers no on exactly the frames one of ours is up.
+The claim is therefore a cover in its own right too,
+read whole by [the map covers](../../hover/cover/README.md) ahead of the sidebar's,
+so a claimant added here covers the map as well.
 
 ## The screen gates and the roster
 

@@ -1,7 +1,7 @@
 package kmu.maplayers.base.layer;
 
+import kmlib.animation.TraverseDurations;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
-import kmlib.time.Timings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,13 +16,9 @@ import static org.assertj.core.api.Assertions.within;
  * defaults to shown, and that it never touches a second screen's slot - the independence the whole
  * per-screen split rests on.
  *
- * <p>The ramp cases are the reason the clock and the pace are injected rather than read: a fade derived
- * from elapsed real time is only checkable at instants a case can name, and a fade the shipped knob paces
- * would be re-tuned by any later pass over the settings screen.
- *
- * <p>Each expected fade is stated as the eased value, with the linear position it comes off named beside
- * it. The two are worth keeping apart in the reading: the linear position is what a flip records and what
- * a reversal sets off from, while the eased one is all a consumer ever sees.
+ * <p>The ramp itself is KMLib's {@code ClockedTraverseFractionTests}' to pin at named instants; the fade
+ * cases here pin only that a flip turns it and that it is read toward the stored pick. The pace is injected
+ * because a fade the shipped knob paces would be re-tuned by any later pass over the settings screen.
  */
 final class PersistedMapLayerVisibilityTests {
 
@@ -37,20 +33,24 @@ final class PersistedMapLayerVisibilityTests {
 
     // A pace no shipped default shares, so a reading that happens to match one is not mistaken for a
     // reading taken through the injected one.
-    private static final double RAMP_SECONDS = 0.4;
+    private static final float RAMP_SECONDS = 0.4f;
 
-    // How close an eased reading has to land. Loose enough to absorb the float arithmetic behind the
-    // curve, tight enough that no two positions in these cases could be confused for each other.
+    // A pace long enough that no case can run through a measurable share of it on the real clock.
+    private static final float AN_HOUR_IN_SECONDS = 3600f;
+
+    // Below anything a ramp an hour long reads in the moment after it turns, and far above the nothing a
+    // cut reads.
+    private static final float ALL_BUT_WHOLE = 0.99f;
+
+    // How close a settled reading has to land. Loose enough to absorb the float arithmetic behind the
+    // curve.
     private static final float FADE_TOLERANCE = 1e-6f;
 
     private SectorMemoryFake sectorMemoryFake;
     private PersistedMapLayerVisibility visibility;
 
-    // The instant the injected clock reads, moved by the ramp cases rather than by real time passing.
-    private long elapsedNanos;
-
-    // The injected pace, which one case winds to nothing to reach the cut branch.
-    private double rampSeconds = RAMP_SECONDS;
+    // The injected pace, which cases wind to nothing to reach the cut branch or out to an hour.
+    private float rampSeconds = RAMP_SECONDS;
 
     @BeforeEach
     void openASectorMemory() {
@@ -59,8 +59,7 @@ final class PersistedMapLayerVisibilityTests {
 
         visibility = new PersistedMapLayerVisibility(
             SCREEN_SCOPE,
-            () -> elapsedNanos,
-            () -> rampSeconds);
+            () -> TraverseDurations.createSymmetric(rampSeconds));
     }
 
     @AfterEach
@@ -154,51 +153,15 @@ final class PersistedMapLayerVisibilityTests {
         }
 
         @Test
-        void ridesDownTheRampAfterHiding() {
+        void startsDissolvingFromFullyShownOnAHide() {
+            // The hide turns the ramp rather than cutting: an hour-long pace has barely begun, so the
+            // layers still read all but whole where a cut would read nothing.
+            rampSeconds = AN_HOUR_IN_SECONDS;
 
             visibility.showLayers(false);
-            advanceClockBySeconds(0.1);
-
-            // A quarter of the way down, so linearly 0.75 - eased, still 0.84 on screen, the curve
-            // being at its flattest where it leaves an end.
-            assertThat(visibility.resolveShownFade())
-                .isCloseTo(0.84375f, within(FADE_TOLERANCE));
-        }
-
-        @Test
-        void settlesFullyHiddenOnceTheRampIsPast() {
-
-            visibility.showLayers(false);
-            advanceClockBySeconds(0.4);
 
             assertThat(visibility.resolveShownFade())
-                .isCloseTo(0f, within(FADE_TOLERANCE));
-        }
-
-        @Test
-        void ridesUpTheRampAfterShowing() {
-
-            sectorMemoryFake.storeValue(KEY, false);
-
-            visibility.showLayers(true);
-            advanceClockBySeconds(0.1);
-
-            // Linearly 0.25, eased to 0.15625 - the same flat start the way down has, mirrored.
-            assertThat(visibility.resolveShownFade())
-                .isCloseTo(0.15625f, within(FADE_TOLERANCE));
-        }
-
-        @Test
-        void settlesFullyShownOnceTheRampIsPast() {
-            // The far end of the ramp, which is the bound a fade left running would climb past: a
-            // consumer multiplying by it would brighten the overlay beyond what it paints at rest.
-            sectorMemoryFake.storeValue(KEY, false);
-
-            visibility.showLayers(true);
-            advanceClockBySeconds(4);
-
-            assertThat(visibility.resolveShownFade())
-                .isCloseTo(1f, within(FADE_TOLERANCE));
+                .isGreaterThan(ALL_BUT_WHOLE);
         }
 
         @Test
@@ -212,26 +175,5 @@ final class PersistedMapLayerVisibilityTests {
             assertThat(visibility.resolveShownFade())
                 .isCloseTo(0f, within(FADE_TOLERANCE));
         }
-
-        @Test
-        void reversesFromTheProgressTheFlipCaughtItAt() {
-
-            visibility.showLayers(false);
-            advanceClockBySeconds(0.1);
-
-            visibility.showLayers(true);
-            advanceClockBySeconds(0.05);
-
-            // Set off again from the 0.75 the hide had linearly reached and an eighth further up, so
-            // 0.875 linearly and 0.957 eased. A restart would read 0.043 here, and a resume from the
-            // far end would already be settled at 1.
-            assertThat(visibility.resolveShownFade())
-                .isCloseTo(0.95703125f, within(FADE_TOLERANCE));
-        }
-    }
-
-    // Moves the injected clock on, which is what the ramp cases stand in place of real time passing.
-    private void advanceClockBySeconds(double seconds) {
-        elapsedNanos += Timings.convertSecondsToNanos(seconds);
     }
 }

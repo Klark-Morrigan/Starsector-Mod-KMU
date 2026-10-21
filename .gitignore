@@ -14,6 +14,7 @@ gradle.properties
 # they are edited; these are the copies the game reads. Named exactly
 # rather than as data/, which also holds files that are not generated.
 /data/config/LunaSettings.csv
+/data/console/commands.csv
 /data/strings/strings.json
 
 # Written by writeLocaleFiles too: mod_info.base.json with the built

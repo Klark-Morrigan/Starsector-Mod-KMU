@@ -5,12 +5,11 @@ import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segment;
 import kmlib.math.geometry.Segments;
+import kmlib.math.geometry.UniformGrid;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Cuts a bag of lines apart wherever they cross, so that afterwards they only ever meet at
@@ -64,31 +63,23 @@ final class SegmentCrossings {
         // Only lines that share a square of the grid are asked about each other. Asking every
         // pair is a square of the work for an answer that is nearly always no - a sector's
         // worth of cell borders is thousands of lines, of which any one meets a handful.
-        for (var neighbours : gatherByGridSquare(boxes).values()) {
-            for (var first = 0; first < neighbours.size(); first++) {
-                for (var second = first + 1; second < neighbours.size(); second++) {
+        for (var pair : listCandidatePairs(boxes)) {
 
-                    var one = neighbours.get(first);
-                    var other = neighbours.get(second);
+            int one = pair.first();
+            int other = pair.second();
 
-                    if (!boxes.get(one).overlaps(boxes.get(other))) {
-                        continue;
-                    }
-
-                    var crossing = findCrossing(
-                        lines.get(one).segment(), lines.get(other).segment());
-
-                    if (crossing == null) {
-                        continue;
-                    }
-
-                    // A pair sharing several squares is asked several times and reports the
-                    // same point each time. Harmless: two cuts at one place leave nothing
-                    // between them, and a piece of no length is dropped rather than emitted.
-                    cuts.get(one).add(crossing);
-                    cuts.get(other).add(crossing);
-                }
+            if (!boxes.get(one).overlaps(boxes.get(other))) {
+                continue;
             }
+
+            var crossing = findCrossing(lines.get(one).segment(), lines.get(other).segment());
+
+            if (crossing == null) {
+                continue;
+            }
+
+            cuts.get(one).add(crossing);
+            cuts.get(other).add(crossing);
         }
 
         var pieces = new ArrayList<LabelledWall>(lines.size());
@@ -99,69 +90,25 @@ final class SegmentCrossings {
         return pieces;
     }
 
-    // Which lines fall in which square of a grid over the whole set, each line filed under
-    // every square its box reaches.
+    // Every pair of lines whose boxes share a square of a grid over the whole set, by their
+    // indices, each pair once.
     //
-    // The squares are sized so there are about as many of them as there are lines, which puts
-    // a handful of lines in each and keeps the pairing inside a square small. A line longer
-    // than a square is filed in each one it crosses - a long border is in many squares and is
-    // asked about more often, which is the cost of it genuinely being near more things.
-    private static Map<GridSquare, List<Integer>> gatherByGridSquare(List<Bounds> boxes) {
+    // A line longer than a square is filed in each one it crosses - a long border is in many
+    // squares and is paired more often, which is the cost of it genuinely being near more things.
+    private static List<UniformGrid.ItemPair<Integer>> listCandidatePairs(List<Bounds> boxes) {
 
-        var bySquare = new LinkedHashMap<GridSquare, List<Integer>>();
-
+        // No set to size a grid over, and no pair to find in it.
         if (boxes.isEmpty()) {
-            return bySquare;
+            return List.of();
         }
 
-        var side = measureGridSide(boxes);
+        var grid = new UniformGrid<Integer>(UniformGrid.measureAdaptiveCellSide(
+            Bounds.computeUnionBounds(boxes), boxes.size()));
 
         for (var index = 0; index < boxes.size(); index++) {
-
-            var box = boxes.get(index);
-
-            var fromColumn = (long) Math.floor(box.minX() / side);
-            var toColumn = (long) Math.floor(box.maxX() / side);
-            var fromRow = (long) Math.floor(box.minY() / side);
-            var toRow = (long) Math.floor(box.maxY() / side);
-
-            for (var column = fromColumn; column <= toColumn; column++) {
-                for (var row = fromRow; row <= toRow; row++) {
-
-                    bySquare
-                        .computeIfAbsent(new GridSquare(column, row), square -> new ArrayList<>())
-                        .add(index);
-                }
-            }
+            grid.fileBounds(boxes.get(index), index);
         }
-        return bySquare;
-    }
-
-    // How wide to make a square: the whole set divided into about as many squares as there are
-    // lines. Never zero, since a set whose boxes all sit at one point has no spread to divide.
-    private static double measureGridSide(List<Bounds> boxes) {
-
-        var minX = Double.POSITIVE_INFINITY;
-        var minY = Double.POSITIVE_INFINITY;
-        var maxX = Double.NEGATIVE_INFINITY;
-        var maxY = Double.NEGATIVE_INFINITY;
-
-        for (var box : boxes) {
-
-            minX = Math.min(minX, box.minX());
-            minY = Math.min(minY, box.minY());
-            maxX = Math.max(maxX, box.maxX());
-            maxY = Math.max(maxY, box.maxY());
-        }
-
-        var span = Math.max(maxX - minX, maxY - minY);
-
-        return Math.max(span / Math.sqrt(boxes.size()), Limits.MIN_EDGE_LENGTH);
-    }
-
-    // One square of that grid. A record rather than a packed key, so that two squares are the
-    // same square by their coordinates rather than by an encoding two callers have to agree on.
-    private record GridSquare(long column, long row) {
+        return grid.listCandidatePairs();
     }
 
     // One box per line, measured before the pairing rather than inside it, so the cheap test

@@ -32,7 +32,7 @@ so a band re-ranked from the weights alone would open on a bloc the cell is not 
 
 Behind the leader:
 descending combined weight,
-then ascending id.
+then ascending ID.
 The same two keys in the same order the standings box ranks by,
 so the band and the box cannot disagree about who stands second.
 

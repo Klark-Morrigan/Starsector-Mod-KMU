@@ -2,26 +2,29 @@ package kmu.maplayers.politicalmap.claims;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.ClaimReaderSource;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.OwnerPalette;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
@@ -35,7 +38,7 @@ final class FilteredClaimsTests {
     private static final Color PRIMARY = Color.RED;
     private static final Color SECONDARY = Color.BLUE;
     private static final SystemOwner SPOTLIT_HOLDER =
-        new SystemOwner("$spotlit", new OwnerPalette(PRIMARY, SECONDARY));
+        new SystemOwner("$spotlit", new ColourPair(PRIMARY, SECONDARY));
 
     private static final SystemKey HEGEMONY_CLAIMED = buildCellKey("hegemony-claimed");
     private static final SystemKey RIVAL_CLAIMED = buildCellKey("rival-claimed");
@@ -46,10 +49,44 @@ final class FilteredClaimsTests {
 
         var claims = new LinkedHashMap<SystemKey, SystemOwner>();
 
-        claims.put(HEGEMONY_CLAIMED, new SystemOwner("hegemony", new OwnerPalette(PRIMARY, SECONDARY)));
-        claims.put(RIVAL_CLAIMED, new SystemOwner("tritachyon", new OwnerPalette(PRIMARY, SECONDARY)));
+        claims.put(HEGEMONY_CLAIMED, new SystemOwner("hegemony", new ColourPair(PRIMARY, SECONDARY)));
+        claims.put(RIVAL_CLAIMED, new SystemOwner("tritachyon", new ColourPair(PRIMARY, SECONDARY)));
 
         return claims;
+    }
+
+    @Nested
+    class ResolveFilteredClaimsThrough {
+
+        @Test
+        void resolvesThroughAReaderOpenedOverThePass() {
+            // Opened over the pass's own walk and colony rule, so the claims read the colonies the
+            // pass already walked.
+            var sectorMock = mock(SectorAPI.class);
+            var claimReaderMock = mock(ClaimReader.class);
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
+            var claims = buildTwoClaimantSector();
+            var openedOver = new ArrayList<Object>();
+
+            ClaimReaderSource claimReaderSource = (knownColonyReader, sectorIndex) -> {
+                openedOver.add(knownColonyReader);
+                openedOver.add(sectorIndex);
+                return claimReaderMock;
+            };
+
+            try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
+
+                sectorClaimsMock
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(pass, claimReaderMock))
+                    .thenReturn(claims);
+
+                assertThat(FilteredClaims.resolveFilteredClaimsThrough(pass, claimReaderSource, null))
+                    .isSameAs(claims);
+            }
+
+            assertThat(openedOver)
+                .containsExactly(pass.colonyKnowledge(), pass.sectorIndex());
+        }
     }
 
     @Nested
@@ -61,7 +98,7 @@ final class FilteredClaimsTests {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
@@ -90,11 +127,11 @@ final class FilteredClaimsTests {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
-                    var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
+                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
@@ -102,9 +139,8 @@ final class FilteredClaimsTests {
                         claimReaderMock))
                     .thenReturn(claims);
 
-                filteredPoliticsMock
-                    .when(() -> FilteredPolitics
-                        .resolveSpotlitHolder(sectorMock, grouping, "hegemony"))
+                spotlitOwnersMock
+                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
                     .thenReturn(SPOTLIT_HOLDER);
 
                 var resolved = FilteredClaims.resolveFilteredClaims(
@@ -128,11 +164,11 @@ final class FilteredClaimsTests {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
+            var pass = HolderPass.createOver(sectorMock, UNDER_THE_FOG, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
-                    var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
+                    var spotlitOwnersMock = mockStatic(SpotlitOwners.class)) {
 
                 sectorClaimsMock
                     .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
@@ -140,9 +176,8 @@ final class FilteredClaimsTests {
                         claimReaderMock))
                     .thenReturn(claims);
 
-                filteredPoliticsMock
-                    .when(() -> FilteredPolitics
-                        .resolveSpotlitHolder(sectorMock, grouping, "hegemony"))
+                spotlitOwnersMock
+                    .when(() -> SpotlitOwners.createSpotlitOwner(any()))
                     .thenReturn(null);
 
                 var resolved = FilteredClaims.resolveFilteredClaims(
@@ -161,7 +196,7 @@ final class FilteredClaimsTests {
         void passesThePlainClaimResolveThroughWithNoSector() {
 
             var claimReaderMock = mock(ClaimReader.class);
-            var pass = HolderPass.over(null, UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(null, UNDER_THE_FOG, HolderGrouping.identity());
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
@@ -176,8 +211,8 @@ final class FilteredClaimsTests {
                     claimReaderMock,
                     "hegemony");
 
-                // There is no faction palette to read a spotlight holder from, so the selection is
-                // not acted on at all - the claim resolve's own empty answer stands.
+                // A pass over no sector walks no systems, so there is no claim for the selection to
+                // spotlight - the claim resolve's own empty answer stands.
                 assertThat(resolved)
                     .isEmpty();
             }

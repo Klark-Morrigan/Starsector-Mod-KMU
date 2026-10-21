@@ -1,6 +1,8 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Segments;
+import kmlib.math.geometry.UniformGrid;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +25,10 @@ import java.util.List;
  * before any of them is a graph edge or bounds any piece, so it shares nothing with the walk
  * that finds the pieces and needs nothing from it. Kept together with the span search, it read
  * as part of a rule about bridges when it is a rule about lines.
+ *
+ * <p>The walls are filed on a grid as they are laid, so a place is weighed only against the
+ * walls near it. A coast is thousands of segments, and every span offered asks about a handful
+ * of places.
  */
 public final class WallCoverage {
 
@@ -31,7 +37,38 @@ public final class WallCoverage {
     // wall for a stretch, without either question costing a sample per map unit.
     static final int LINE_SAMPLES = 8;
 
-    private WallCoverage() {
+    private final double tolerance;
+    private final UniformGrid<double[][]> wallGrid;
+
+    private WallCoverage(double tolerance, UniformGrid<double[][]> wallGrid) {
+
+        this.tolerance = tolerance;
+        this.wallGrid = wallGrid;
+    }
+
+    /**
+     * An empty set of walls, its grid sized for the walls that will be filed into it.
+     *
+     * @param extent    the box every wall to be filed fits inside
+     * @param wallCount how many walls will be filed, which sizes the grid's squares
+     * @param tolerance how far off a wall a place may be and still count as walled
+     * @return the walls, none filed yet
+     */
+    static WallCoverage createWithin(Bounds extent, int wallCount, double tolerance) {
+
+        return new WallCoverage(
+            tolerance,
+            new UniformGrid<>(UniformGrid.measureAdaptiveCellSide(extent, wallCount)));
+    }
+
+    /**
+     * Files one wall, so every later question counts it.
+     *
+     * @param start one end
+     * @param end   the other
+     */
+    void fileWall(double[] start, double[] end) {
+        wallGrid.fileSegment(start, end, new double[][] {start, end});
     }
 
     /**
@@ -41,23 +78,17 @@ public final class WallCoverage {
      * line begins and ends on one; a line that leaves a corner and strikes out across open void
      * is the ordinary case, and only one that never leaves the walls is a doubling.
      *
-     * @param start     one end
-     * @param end       the other
-     * @param walls     the walls already down, as pairs of endpoints
-     * @param tolerance how far off a wall a place may be and still count as walled
+     * @param start one end
+     * @param end   the other
      * @return whether the whole line is already walled
      */
-    static boolean isAlreadyWalled(
-            double[] start,
-            double[] end,
-            List<double[][]> walls,
-            double tolerance) {
+    boolean isAlreadyWalled(double[] start, double[] end) {
 
         // The ends included, because a stretch left uncovered at either end is exactly the gap
         // that makes a line worth laying.
         for (var step = 0; step <= LINE_SAMPLES; step++) {
 
-            if (!isPointWalled(findPointAlong(start, end, step), walls, tolerance)) {
+            if (!isPointWalled(findPointAlong(start, end, step))) {
                 return false;
             }
         }
@@ -110,12 +141,11 @@ public final class WallCoverage {
         return walls;
     }
 
-    private static boolean isPointWalled(
-            double[] point,
-            List<double[][]> walls,
-            double tolerance) {
+    // Whether any wall runs within the tolerance of a place. A wall that close has its box
+    // within the tolerance too, so the walls filed near the place are the only ones that can.
+    private boolean isPointWalled(double[] point) {
 
-        for (var wall : walls) {
+        for (var wall : wallGrid.listItemsNear(point[0], point[1], tolerance)) {
 
             if (Segments.computeDistanceToPoint(wall[0], wall[1], point) <= tolerance) {
                 return true;

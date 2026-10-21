@@ -7,16 +7,12 @@ held in the shape the rest of the map reads it in -
 plus `ElementStyleAdjustment`,
 the one value here a rebuild decides rather than the player,
 laid over a style to push an element into the background.
-Everything here is a record apart from three interfaces.
-Two are places a layer's own vocabulary plugs in rather than types this package populates:
+Everything here is a record apart from two interfaces.
+Both are places a layer's own vocabulary plugs in rather than types this package populates:
 `MapStyleCategory`,
 the key the per-category bundles are held under,
 and `ElementPaintSelection`,
 the colour pick an element carries.
-The third,
-`HatchStroke`,
-is sealed over this package's own records -
-see [the two tiers](#the-two-tiers).
 What little behaviour the records carry answers only from their own components -
 `ElementStyle.isDrawn`,
 `RenderStyle.categoryStyle`,
@@ -38,8 +34,9 @@ memberless,
 since a category is only ever looked up -
 and each layer declares its own constants of it beside the code that paints them;
 the owner-painted tier asks a layer for its own through `OwnerCategories`,
-and the layers painting holders answer with the four `OwnerMapCategory` values,
-both in [`ownermap.render.style`](../../ownermap/render/style/README.md).
+in [`ownermap.render.style`](../../ownermap/render/style/README.md),
+and the layers painting holders answer with the four `HolderCategory` values,
+in [`ownermap.owners.holders.base`](../../ownermap/owners/holders/README.md).
 `RenderStyle` keys on the interface,
 so a layer whose cells divide some other way brings its own set
 rather than inheriting one tier's vocabulary of owners.
@@ -107,11 +104,8 @@ The pattern is KMLib's own `HatchPattern` -
 the whole of what a cut depends on,
 and therefore exactly what `Hatching.computeHatchRun` takes -
 so the cut is handed the pattern alone and never holds a per-frame number it could come to bake.
-The stroke is the one sealed interface here -
-`GlLineHatchStroke` today -
-because how a hatch reaches the screen decides which numbers it needs at all,
-and a flat record carrying every substrate's fields would leave combinations nothing can draw representable.
-The renderer dispatches on which arrived and reads only what that one carries.
+The stroke is KMLib's `GlLineHatchStroke`,
+the line quality and width the GL line rasteriser strokes the segments at.
 
 The split is *when*, not *whose*:
 the line stroke's width is a fraction of the pattern's baked spacing,
@@ -182,7 +176,8 @@ the reader's knobs and its per-save uninhabited-outline preference are the owner
 and the palettes resolve an owner's recede.
 They sit in `ownermap` rather than in any one layer for the same reason,
 since every owner-painted layer divides and shades its cells that way;
-the layers painting holders share the four `OwnerMapCategory` values there too.
+the layers painting holders share the four `HolderCategory` values,
+which sit beside them in `ownermap.owners.holders.base`.
 A layer that paints by something other than an owner would bring its own categories
 and its own reader rather than share those.
 

@@ -3,7 +3,12 @@ package kmu.maplayers.base.render;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 
+import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.ProfileOrigin;
+import kmlib.profiling.ProfileSection;
+import kmlib.starsector.compatibility.GameReachReporter;
 import kmlib.starsector.scripts.InstalledTransientScript;
+import kmlib.starsector.ui.map.MapIconLayering;
 import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
@@ -35,7 +40,17 @@ import java.util.function.Supplier;
  * switched off mid-session has its script taken off by instance first, while the machinery is
  * still standing.
  */
-final class StarscapeTerrainReseat implements InstalledMachinery {
+final class StarscapeTerrainReseat
+        implements InstalledMachinery {
+
+    // The script's two reads, measured because it asks them on every advance a map is up - several
+    // per rendered frame under the campaign's speed-up - and each is a walk: hyperspace's terrain for
+    // the entity, and the live widget tree for where its icon sits.
+    private static final ProfileSection FIND_TERRAIN_SECTION =
+        ProfileSection.registerSection("mapLayer.reseat.findTerrain");
+
+    private static final ProfileSection READ_PLACEMENT_SECTION =
+        ProfileSection.registerSection("mapLayer.reseat.readPlacement");
 
     // The script this sector has running. A slot rather than a bare field so it comes off by
     // instance rather than by class: MapIconReseater is KMLib's and another mod may be running its
@@ -44,9 +59,14 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
     private final InstalledTransientScript<MapIconReseater> installedReseat =
         new InstalledTransientScript<>();
 
+    // Which game the reads' rows belong to in a profiling report: the script runs outside any frame
+    // beat, so each read is a root of its own.
+    private final ProfileOrigin profilingOrigin;
+
     // Reached through resolveReseatIn, so the only holders that exist are ones machinery
     // holds.
-    private StarscapeTerrainReseat() {
+    private StarscapeTerrainReseat(ProfileOrigin profilingOrigin) {
+        this.profilingOrigin = profilingOrigin;
     }
 
     @Override
@@ -63,9 +83,10 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
      * @return that sector's reseat
      */
     static StarscapeTerrainReseat resolveReseatIn(SectorMapMachinery machinery) {
+
         return machinery.resolveMachinery(
             StarscapeTerrainReseat.class,
-            StarscapeTerrainReseat::new);
+            () -> new StarscapeTerrainReseat(machinery.resolveProfilingOrigin()));
     }
 
     /**
@@ -83,8 +104,12 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
         // Read afresh per call rather than resolved here, since a save load replaces the entity and
         // the script outlives no load anyway - but asked about the sector being installed on, which
         // is the one whose terrain this reseat exists to lift.
-        Supplier<SectorEntityToken> findAboveNebulaeTerrain =
-            () -> MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(sector);
+        Supplier<SectorEntityToken> findAboveNebulaeTerrain = () -> {
+
+            try (var findScope = ActiveProfiler.resolveProfiler().openRoot(profilingOrigin, FIND_TERRAIN_SECTION)) {
+                return MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(sector);
+            }
+        };
 
         // The map read is the Starscape one and its sibling on MapPresence is the wrong one, which
         // is worth stating because nothing catches the swap: both compile, both are on the same
@@ -101,9 +126,9 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
         installedReseat.installOn(
             sector,
             () -> new MapIconReseater(
-                new MapPresence(reporter)::isStarscapeMapShowing,
+                new MapPresence(reporter)::isStarscapeVanillaMapShowing,
                 findAboveNebulaeTerrain,
-                entity -> MapIconLayeringProbe.readLayeringOf(entity, reporter)));
+                entity -> readPlacementOf(entity, reporter)));
     }
 
     /**
@@ -113,5 +138,13 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
      */
     void removeReseatFrom(SectorAPI sector) {
         installedReseat.removeFrom(sector);
+    }
+
+    // Where the entity's icon sits, measured as one of the script's two reads.
+    private MapIconLayering readPlacementOf(SectorEntityToken entity, GameReachReporter reporter) {
+
+        try (var readScope = ActiveProfiler.resolveProfiler().openRoot(profilingOrigin, READ_PLACEMENT_SECTION)) {
+            return MapIconLayeringProbe.readLayeringOf(entity, reporter);
+        }
     }
 }

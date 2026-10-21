@@ -1,7 +1,5 @@
 package kmu.maplayers.base.sidebar.runtime;
 
-import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
 
@@ -9,6 +7,7 @@ import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRosters;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -29,6 +28,9 @@ import static org.mockito.Mockito.when;
  * out of sector memory, so it cannot be built before the running game is stood in for. The assertion
  * arrives as a callback for the matching reason at the other end: a {@link org.mockito.MockedStatic}
  * cannot be verified once it has closed, so the caller's claim has to be made inside the stubbing.
+ *
+ * <p>A host reads its picks off the screens seated on the live sector, so the press seats screens over
+ * the one layer there for its length and releases them after.
  */
 final class LayerShortcutPresses {
 
@@ -42,8 +44,8 @@ final class LayerShortcutPresses {
     private LayerShortcutPresses() {
     }
 
-    // Registers one bound layer, presses its key on the given host, and hands the caller the sector
-    // memory the press wrote through.
+    // Seats screens over one bound layer on the live sector, presses its key on the given host, and hands
+    // the caller the sector memory the press wrote through.
     static void pressTheBoundKeyOn(Supplier<SidebarHost> host, Consumer<MemoryAPI> assertion) {
 
         var layerMock = mock(MapLayer.class);
@@ -53,9 +55,7 @@ final class LayerShortcutPresses {
         when(layerMock.resolveShortcutKeycode())
             .thenReturn(SHORTCUT_KEYCODE);
 
-        // The registry is static, so a neighbour's layers would otherwise outlive their test.
-        MapLayerRosters.replaceRosterWith(layerMock);
-
+        var screens = MapLayerRosters.createScreensOver(layerMock);
         var eventMock = mock(InputEventAPI.class);
 
         when(eventMock.getEventValue())
@@ -64,17 +64,16 @@ final class LayerShortcutPresses {
         try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
             var memoryMock = mock(MemoryAPI.class);
-            var sectorMock = mock(SectorAPI.class);
+            var sectorMock = LiveSectors.standInLiveSector(globalMock, memoryMock, screens);
 
-            when(sectorMock.getMemoryWithoutUpdate())
-                .thenReturn(memoryMock);
-            globalMock
-                .when(Global::getSector)
-                .thenReturn(sectorMock);
+            try {
+                host.get().handleKeyPress(eventMock);
 
-            host.get().handleKeyPress(eventMock);
+                assertion.accept(memoryMock);
 
-            assertion.accept(memoryMock);
+            } finally {
+                SectorMapMachineryIndex.uninstallMachineryFrom(sectorMock);
+            }
         }
     }
 }

@@ -3,15 +3,19 @@ package kmu.maplayers.base.tooltip.layout;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.ProfileSection;
 import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipRenderer;
+import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipStyle;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.faces.SettledFaces;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
@@ -52,10 +56,22 @@ import java.util.Optional;
  * at a fit of its own - and the box compresses before it withholds anything, a tooltip taking no input
  * to reach what it left out with.
  *
- * <p>Subclasses are expected to be stateless - the body is rebuilt from the live sector each paint -
- * so one shared instance per layer serves every view that injects it.
+ * <p>Subclasses are expected to be stateless - what a box composes is held per sector by
+ * {@link CellBoxMemo}, never by the box - so one shared instance per layer serves every view that
+ * injects it.
  */
-public abstract class SystemCellTooltip implements MapHoverTooltip {
+public abstract class SystemCellTooltip
+        implements MapHoverTooltip {
+
+    // The box's paint each frame the cursor rests on a cell, as a row of its own under the sector's
+    // origin: it draws in a UI pass outside every map frame beat.
+    private static final ProfileSection PAINT_SECTION =
+        ProfileSection.registerSection("mapLayer.hoverBox.paint");
+
+    // The read of the sector behind the box, inside the paint. Open only on the frames the memo
+    // misses, so its call count is how many times a box was composed.
+    private static final ProfileSection COMPOSE_SECTION =
+        ProfileSection.registerSection("mapLayer.hoverBox.compose");
 
     @Override
     public final void renderFor(
@@ -68,33 +84,26 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         if (sector.getEconomy() == null) {
             return;
         }
-        var titleRows = buildTitleRows(sector, system);
-        var body = composeBody(sector, system, detailLevel);
 
-        // Nothing to say about the system - drawing the name alone would only echo the cursor.
-        if (titleRows.isEmpty() && body.blocks().isEmpty()) {
-            return;
+        var machinery = SectorMapMachineryIndex.resolveMachineryFor(sector);
+
+        try (var paintScope = ActiveProfiler
+                .resolveProfiler()
+                .openRoot(machinery.resolveProfilingOrigin(), PAINT_SECTION)) {
+
+            var composedBox = resolveComposedBox(machinery, sector, system, detailLevel);
+
+            // Nothing to say about the system - drawing the name alone would only echo the cursor.
+            if (composedBox.isEmpty()) {
+                return;
+            }
+
+            paintBox(
+                system,
+                composedBox,
+                detailLevel,
+                CellTooltipLook.buildStyle(SettledFaces.resolveFacesIn(machinery)));
         }
-        var style = CellTooltipLook.buildStyle(
-            SettledFaces.resolveFacesIn(SectorMapMachineryIndex.resolveMachineryFor(sector)));
-
-        // The box is assembled against the room it has rather than drawn at whatever height its
-        // content came to. A box lists as much as the hovered system holds and is then clamped on
-        // screen, so an unfitted one runs past both edges over exactly the systems worth reading about
-        // - and a tooltip takes no input, so nothing it lost can be reached.
-        //
-        // Assembled through a call rather than built once, because the fit settles how much of the
-        // body there is room for and the answer changes what the box holds. Cheap to repeat: the
-        // sector was read once, above, and everything below that read is line building.
-        var fittedBox = CellTooltipContentFit.fitToHeight(
-            entryAllowance -> assembleSections(system, titleRows, body, detailLevel, entryAllowance),
-            style.typography(),
-            CursorTooltipRenderer.resolveHeightBudget(),
-            body.blocks().countLongestListing());
-
-        CursorTooltipRenderer.render(
-            fittedBox.sections(),
-            style.restyledAs(fittedBox.typography()));
     }
 
     @Override
@@ -103,25 +112,34 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
 
-        // The press-time entry to the same question the paint answers off its own composition, and
-        // the one place a read is unavoidable: a key press composes nothing, so there is no body to
-        // take the answer from. Judged by the one rule either way, so the key acts exactly where the
-        // box says it would rather than under a second rule that could drift from it.
+        // A sector the paint draws no box over is one the press has nothing to move on from.
+        if (sector.getEconomy() == null) {
+            return Optional.empty();
+        }
+
+        // Taken off the very composition the box is drawn from - the one the paint left held while
+        // the cursor rests on the cell, or a fresh one where nothing is held - so the key acts exactly
+        // where the hint says it would, and a press over a resting cell reads nothing at all.
         //
-        // Once per press rather than once per frame, so the read it costs is one the player asked
-        // for - and asked at every level, the deepest included: how far this box reaches is exactly
-        // what says whether the collapse would show the player anything, and a box the level has
-        // already outrun draws the same box on both sides of the press.
+        // Asked at every level, the deepest included: how far this box reaches is exactly what says
+        // whether the collapse would show the player anything, and a box the level has already outrun
+        // draws the same box on both sides of the press.
+        var composedBox = resolveComposedBox(
+            SectorMapMachineryIndex.resolveMachineryFor(sector),
+            sector,
+            system,
+            detailLevel);
+
         return CellTooltipFooter.resolveOfferedLevel(
             detailLevel,
-            resolveDeepestHeldLevelFor(sector, system));
+            composedBox.body().deepestHeldLevel());
     }
 
     /**
      * Builds the lines belonging to this layer's title block, read together with the system name above
-     * the parting that opens the body. Called once per paint with the live sector, after the economy
-     * precondition holds; a layer with nothing to head its box with supplies none, which is the ordinary
-     * case.
+     * the parting that opens the body. Called once per composition of the box with the live sector,
+     * after the economy precondition holds; a layer with nothing to head its box with supplies none,
+     * which is the ordinary case.
      *
      * <p>Held apart from the body because the two are parted differently, and that parting is what a
      * reader takes the shape of the box from: a title line is read off the system name as more of the
@@ -138,9 +156,10 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     }
 
     /**
-     * Composes this layer's contribution to one paint: the content blocks drawn top to bottom under
-     * the heading, and whether the deeper detail levels hold anything beyond the one asked for.
-     * Called once per paint with the live sector, after the economy precondition holds. The seam the
+     * Composes this layer's contribution to the box: the content blocks drawn top to bottom under the
+     * heading, and whether the deeper detail levels hold anything beyond the one asked for. Called once
+     * per composition with the live sector, after the economy precondition holds, and laid out again
+     * from what it returned on every frame the composition is held ({@link CellBoxMemo}). The seam the
      * whole class exists around: the box is framed here and its content is the layer's, so this shape
      * can be shared by layers it names none of.
      *
@@ -150,8 +169,8 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      *
      * <p>The offer comes back beside them rather than being asked for separately, because a layer
      * reads its system once to build the body and already holds the answer
-     * ({@link ComposedCellBody}). Asked apart, the box would pay for that read twice a frame and the
-     * hint could describe a reading the body no longer agrees with.
+     * ({@link ComposedCellBody}). Asked apart, the box would pay for that read twice and the hint
+     * could describe a reading the body no longer agrees with.
      *
      * <p>The level travels with the sector rather than being read here, because it reaches further than
      * the layout: a body composes down to the depth asked for and hands what it built to the blocks to
@@ -168,34 +187,68 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         StarSystemAPI system,
         HoverTooltipDetailLevel detailLevel);
 
-    /**
-     * The deepest level this box holds anything at for {@code system} - where its cycle wraps, so the
-     * press after it collapses the box instead of offering a tier that would redraw what is already on
-     * screen. Answered by a box taking part in the detail cycle, and left at the shallowest level for
-     * one that does not, which is the ordinary case.
-     *
-     * <p>This is the <em>press-time</em> entry to that question, reached when the key is struck and
-     * nothing has been composed to take the answer from. A paint gets the same answer out of
-     * {@link #composeBody} instead, off the read the body was built from, so the box never pays for
-     * this twice in a frame. A layer answering both states one rule and reaches it two ways.
-     *
-     * <p>Asked per hovered system rather than once per box, because how deep a box reaches is partly a
-     * fact about the system: one it lists nothing for holds nothing at any level, whatever tiers its
-     * account could carry elsewhere.
-     *
-     * <p>What the press would then be called is not asked of a box at all: the phrase belongs to the
-     * level being arrived at ({@link HoverTooltipDetailLevel#resolveArrivalPhrase}), so every layer
-     * names one step the same way.
-     *
-     * @param sector the live sector, whose economy the answer may read
-     * @param system the star system under the cursor
-     * @return the deepest level with something to show for this system
-     */
-    protected HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
+    // The box over the system at the level, as the sector's memo holds it or as a fresh read of the
+    // sector where nothing it holds still answers. Read once per visit to the cell rather than once per
+    // frame: the cursor resting still would otherwise repeat the whole read sixty times a second for
+    // the same answer. What the memo is kept against is its own to state.
+    private ComposedCellBox resolveComposedBox(
+            SectorMapMachinery machinery,
             SectorAPI sector,
-            StarSystemAPI system) {
+            StarSystemAPI system,
+            HoverTooltipDetailLevel detailLevel) {
 
-        return HoverTooltipDetailLevel.FACTIONS;
+        return CellBoxMemo
+            .resolveMemoIn(machinery)
+            .resolveBox(this, sector, system, detailLevel, () -> composeBox(sector, system, detailLevel));
+    }
+
+    // One read of the sector for the box: the title lines and the body, composed together so both
+    // come from the same moment of a live sector.
+    private ComposedCellBox composeBox(
+            SectorAPI sector,
+            StarSystemAPI system,
+            HoverTooltipDetailLevel detailLevel) {
+
+        try (var composeScope = ActiveProfiler.resolveProfiler().open(COMPOSE_SECTION)) {
+
+            return new ComposedCellBox(
+                buildTitleRows(sector, system),
+                composeBody(sector, system, detailLevel));
+        }
+    }
+
+    // The whole box laid out and drawn from one composition of it.
+    //
+    // The box is assembled against the room it has rather than drawn at whatever height its content
+    // came to. A box lists as much as the hovered system holds and is then clamped on screen, so an
+    // unfitted one runs past both edges over exactly the systems worth reading about - and a tooltip
+    // takes no input, so nothing it lost can be reached.
+    //
+    // Assembled through a call rather than built once, because the fit settles how much of the body
+    // there is room for and the answer changes what the box holds. Cheap to repeat: the sector was
+    // read when the box was composed, and everything here is line building.
+    private static void paintBox(
+            StarSystemAPI system,
+            ComposedCellBox composedBox,
+            HoverTooltipDetailLevel detailLevel,
+            CursorTooltipStyle style) {
+
+        var body = composedBox.body();
+
+        var fittedBox = CellTooltipContentFit.fitToHeight(
+            entryAllowance -> assembleSections(
+                system,
+                composedBox.titleRows(),
+                body,
+                detailLevel,
+                entryAllowance),
+            style.typography(),
+            CursorTooltipRenderer.resolveHeightBudget(),
+            body.blocks().countLongestListing());
+
+        CursorTooltipRenderer.render(
+            fittedBox.sections(),
+            style.restyledAs(fittedBox.typography()));
     }
 
     // The whole box at one entry allowance: the heading, the body laid out within that allowance, and

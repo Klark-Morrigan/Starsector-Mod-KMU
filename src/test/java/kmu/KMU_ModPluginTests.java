@@ -1,30 +1,40 @@
 package kmu;
 
 import com.fs.starfarer.api.BaseModPlugin;
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.compatibility.CompatibilityFailures;
+import kmlib.starsector.startup.ToggledFeature;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.compatibility.CompatibilityFailureFixture;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake;
+import kmlib.testfixtures.statics.StaticSeams;
 
+import kmu.conditions.ui.context.MarketUiContextInstaller;
 import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerStandings;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
-import kmu.mods.nexerelin.NexerelinInvasionListenerInstaller;
+import kmu.maplayers.base.visibility.colonies.ColonySightingInstaller;
+import kmu.mods.rat.RandomAssortmentOfThingsCompatibilityInstaller;
 import kmu.mods.rat.RandomAssortmentOfThingsSettings;
+import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuLunaSettings;
+import kmu.settings.KmuMapHoverSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.MockedStatic;
 import org.mockito.verification.VerificationMode;
 
@@ -34,6 +44,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -42,7 +54,9 @@ import static org.mockito.Mockito.times;
 /**
  * Pins what the entry point itself is answerable for: being the plugin the engine constructs, and
  * the composition it names - which steps a launch is made of, which switches it applies, which
- * installers the map layers are made of, and that switching them off reaches every one of them.
+ * installers the map layers are made of and in what order, and that switching them off reaches every
+ * one of them. A load and a settings change are pinned too, being the two places the switches are
+ * asked: a load applies each whatever it read before, and a change acts only on the one that moved.
  *
  * <p>Every step a launch runs names a class this mod owns, which is what makes the list assertable
  * at all: LunaLib is on no test classpath, so a step reaching it directly would fail to link, and
@@ -51,8 +65,8 @@ import static org.mockito.Mockito.times;
  * stood in for here like the rest.
  *
  * <p>What each installer registers is pinned beside that installer, and when a switch is worth
- * acting on is pinned on {@link KmuToggledFeature}. Neither is re-asserted here: this suite is
- * about the list, not about what the entries do or when they are asked.
+ * acting on is pinned on {@link ToggledFeature}. Neither is re-asserted here: this suite is
+ * about the list and which of the two asks each entry point makes, not about what the entries do.
  */
 class KMU_ModPluginTests {
 
@@ -101,6 +115,8 @@ class KMU_ModPluginTests {
                     var reflectionTracingMock = mockStatic(ReflectionTracingInstaller.class);
                     var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
 
+                answerTheRegistrationWithUnwiredScreens(mapLayersMock);
+
                 new KMU_ModPlugin().onApplicationLoad();
 
                 // The profiling step is pinned as a call rather than as a binding, because what it
@@ -143,6 +159,8 @@ class KMU_ModPluginTests {
                 lunaSettingsMock.when(KmuLunaSettings::describeLunaLibIntegration)
                     .thenCallRealMethod();
 
+                answerTheRegistrationWithUnwiredScreens(mapLayersMock);
+
                 new KMU_ModPlugin().onApplicationLoad();
             }
 
@@ -152,6 +170,186 @@ class KMU_ModPluginTests {
                 .isEqualTo("LunaLib");
             assertThat(failure.consumer().consumerKey())
                 .isEqualTo("kmu:lunalib-settings");
+        }
+    }
+
+    @Nested
+    class OnGameLoad {
+
+        private final SectorAPI loadedSectorMock = mock(SectorAPI.class);
+
+        @Test
+        void discardsThePreviousSavesMachineryBeforeStandingTheLayersUp() {
+            // No other seam is told that a sector went away, so a machinery left standing past this
+            // point would go on drawing the previous save over the loaded one.
+            try (var installers = new MapLayerInstallerMocks();
+                    var switches = new FeatureSwitchSeams(loadedSectorMock)) {
+
+                switches.switchMapLayers(true);
+
+                new KMU_ModPlugin().onGameLoad(false);
+
+                var machineryOrder = inOrder(SectorMapMachineryIndex.class);
+
+                machineryOrder.verify(
+                    installers.machineryIndexMock,
+                    SectorMapMachineryIndex::disposeAllMachinery);
+                machineryOrder.verify(
+                    installers.machineryIndexMock,
+                    () -> SectorMapMachineryIndex.installMachineryOn(
+                        eq(loadedSectorMock),
+                        any(MapLayerScreens.class)));
+            }
+        }
+
+        @Test
+        void seatsTheScreensTheLayersWereRegisteredUnder() {
+            // Every pass the engine builds reads its screens off the sector's machinery, so what is
+            // seated there has to be what the launch registered the layers under: any other screens
+            // would offer a roster nothing was registered into.
+            var screens = MapLayerScreens.createUnwiredScreens();
+
+            try (var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
+                    var mapLayersMock = mockStatic(MapLayers.class);
+                    var profilingMock = mockStatic(ProfilingCaptureInstaller.class);
+                    var reflectionTracingMock = mockStatic(ReflectionTracingInstaller.class);
+                    var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
+
+                mapLayersMock
+                    .when(MapLayers::registerAll)
+                    .thenReturn(screens);
+
+                new KMU_ModPlugin().onApplicationLoad();
+            }
+
+            try (var installers = new MapLayerInstallerMocks();
+                    var switches = new FeatureSwitchSeams(loadedSectorMock)) {
+
+                switches.switchMapLayers(true);
+
+                new KMU_ModPlugin().onGameLoad(false);
+
+                installers.machineryIndexMock.verify(
+                    () -> SectorMapMachineryIndex.installMachineryOn(loadedSectorMock, screens));
+            }
+        }
+
+        @Test
+        void discardsThePreviousSavesMachineryWithTheLayersSwitchedOff() {
+            // A load that finds the overlay off has as much of the previous sector's to discard as
+            // one that finds it on, which is why the discard runs ahead of the switch.
+            try (var installers = new MapLayerInstallerMocks();
+                    var switches = new FeatureSwitchSeams(loadedSectorMock)) {
+
+                switches.switchMapLayers(false);
+
+                new KMU_ModPlugin().onGameLoad(false);
+
+                installers.machineryIndexMock.verify(SectorMapMachineryIndex::disposeAllMachinery);
+                installers.verifyEveryStandUpFor(loadedSectorMock, never());
+            }
+        }
+
+        @Test
+        void keepsRecordingColonySightingsWithTheLayersSwitchedOff() {
+            // A register left unwritten while the layers are off would have every gated colony
+            // unobserved again once they are switched back on.
+            try (var installers = new MapLayerInstallerMocks();
+                    var switches = new FeatureSwitchSeams(loadedSectorMock)) {
+
+                switches.switchMapLayers(false);
+
+                new KMU_ModPlugin().onGameLoad(false);
+
+                switches.colonySightingsMock.verify(() -> ColonySightingInstaller.installAll(loadedSectorMock));
+            }
+        }
+
+        @Test
+        void bringsEveryFeatureIntoLineWithItsSwitchOnTheLoadedSector() {
+            // The compatibility mode reads as off throughout: the minimap it adapts to belongs to a
+            // mod no test classpath carries.
+            try (var installers = new MapLayerInstallerMocks();
+                    var switches = new FeatureSwitchSeams(loadedSectorMock)) {
+
+                switches.switchMapLayers(true);
+                switches.switchMarketConditionManager(true);
+
+                new KMU_ModPlugin().onGameLoad(false);
+
+                installers.verifyEveryStandUpFor(loadedSectorMock, times(1));
+                switches.marketUiContextMock.verify(() -> MarketUiContextInstaller.installAll(loadedSectorMock));
+                switches.compatibilityMock.verify(
+                    () -> RandomAssortmentOfThingsCompatibilityInstaller.uninstallAll(loadedSectorMock));
+            }
+        }
+
+        @Test
+        void standsTheLayersUpAgainWhereTheSwitchHasNotMovedSinceTheLastLoad() {
+            // The loaded sector carries none of the wiring the previous one had, so a switch reading
+            // as it did before is no reason to leave it unwired.
+            try (var installers = new MapLayerInstallerMocks();
+                    var switches = new FeatureSwitchSeams(loadedSectorMock)) {
+
+                switches.switchMapLayers(true);
+
+                new KMU_ModPlugin().onGameLoad(false);
+                new KMU_ModPlugin().onGameLoad(false);
+
+                installers.verifyEveryStandUpFor(loadedSectorMock, times(2));
+            }
+        }
+    }
+
+    @Nested
+    class ApplySwitchedFeatures {
+
+        private final SectorAPI loadedSectorMock = mock(SectorAPI.class);
+
+        @Test
+        void standsUpOnlyTheFeatureWhoseSwitchMoved() {
+            // LunaLib announces that the settings changed rather than which one did, so a feature
+            // acting on every announcement would be torn down and rebuilt for an unrelated slider.
+            try (var installers = new MapLayerInstallerMocks();
+                    var switches = new FeatureSwitchSeams(loadedSectorMock)) {
+
+                switches.switchMapLayers(true);
+                switches.switchMarketConditionManager(false);
+
+                new KMU_ModPlugin().onGameLoad(false);
+
+                installers.forgetRecordedCalls();
+                switches.forgetRecordedCalls();
+                switches.switchMarketConditionManager(true);
+
+                KMU_ModPlugin.applySwitchedFeatures();
+
+                switches.marketUiContextMock.verify(() -> MarketUiContextInstaller.installAll(loadedSectorMock));
+                installers.verifyEveryStandUpFor(loadedSectorMock, never());
+                installers.verifyEveryTakeBackFor(loadedSectorMock, never());
+                switches.compatibilityMock.verifyNoInteractions();
+            }
+        }
+
+        @Test
+        void takesBackAFeatureSwitchedOffSinceTheLoad() {
+            // Where the player flips it, not at the next load: the switch is answered on the sector
+            // already wired.
+            try (var installers = new MapLayerInstallerMocks();
+                    var switches = new FeatureSwitchSeams(loadedSectorMock)) {
+
+                switches.switchMapLayers(true);
+
+                new KMU_ModPlugin().onGameLoad(false);
+
+                installers.forgetRecordedCalls();
+                switches.switchMapLayers(false);
+
+                KMU_ModPlugin.applySwitchedFeatures();
+
+                installers.verifyEveryTakeBackFor(loadedSectorMock, times(1));
+                installers.verifyEveryStandUpFor(loadedSectorMock, never());
+            }
         }
     }
 
@@ -189,6 +387,20 @@ class KMU_ModPluginTests {
                 installers.verifyEveryTakeBackFor(sectorMock, never());
             }
         }
+
+        @Test
+        void standsTheInstallersUpInTheOrderEachNeedsThem() {
+            // Everything derives from the machinery, and the political map's save heal runs inside
+            // the standings and repairs what the render surfaces then read.
+            var sectorMock = mock(SectorAPI.class);
+
+            try (var installers = new MapLayerInstallerMocks()) {
+
+                KMU_ModPlugin.installMapLayers(sectorMock);
+
+                installers.verifyStandUpOrderFor(sectorMock);
+            }
+        }
     }
 
     @Nested
@@ -209,15 +421,30 @@ class KMU_ModPluginTests {
                 installers.verifyEveryStandUpFor(sectorMock, never());
             }
         }
+
+        @Test
+        void takesThemBackInTheReverseOfTheirStandUpOrder() {
+            // The machinery goes last: every other installer is taken back through the state it
+            // holds, so releasing it first would leave them undoing their work against nothing.
+            var sectorMock = mock(SectorAPI.class);
+
+            try (var installers = new MapLayerInstallerMocks()) {
+
+                KMU_ModPlugin.uninstallMapLayers(sectorMock);
+
+                installers.verifyTakeBackOrderFor(sectorMock);
+            }
+        }
     }
 
     // The switches the entry point declares, read off its fields by type. Reflection rather than a
     // list written out here, which would be a third copy of the same set and could be the one that
     // is right while the wiring is wrong.
     private static List<Object> readDeclaredSwitches() {
+
         return Arrays
             .stream(KMU_ModPlugin.class.getDeclaredFields())
-            .filter(field -> field.getType() == KmuToggledFeature.class)
+            .filter(field -> field.getType() == ToggledFeature.class)
             .map(KMU_ModPluginTests::readStaticFieldValue)
             .toList();
     }
@@ -231,23 +458,96 @@ class KMU_ModPluginTests {
     }
 
     private static Field findField(String name) {
+
         try {
             return KMU_ModPlugin.class.getDeclaredField(name);
-        } catch (NoSuchFieldException failure) {
+
+        } catch (NoSuchFieldException noSuchFieldException) {
+
             // Surfaced rather than swallowed: the field being gone means the walk is looking for a
             // list that no longer exists, which would otherwise read as a plugin applying nothing.
             throw new IllegalStateException(
                 "No " + APPLIED_SWITCHES_FIELD + " field on " + KMU_ModPlugin.class.getName(),
-                failure);
+                noSuchFieldException);
         }
     }
 
     private static Object readStaticFieldValue(Field field) {
+
         try {
+
             field.setAccessible(true);
             return field.get(null);
-        } catch (IllegalAccessException failure) {
-            throw new IllegalStateException("Could not read " + field.getName(), failure);
+
+        } catch (IllegalAccessException illegalAccessException) {
+
+            throw new IllegalStateException(
+                "Could not read " + field.getName(),
+                illegalAccessException);
+        }
+    }
+
+    // Answers the stood-in registration with screens nothing draws on, so the screens the plugin holds
+    // for later loads are a real value whichever case ran first - a stand-in left to its own default
+    // would hand the plugin null.
+    private static void answerTheRegistrationWithUnwiredScreens(MockedStatic<MapLayers> mapLayersMock) {
+
+        mapLayersMock
+            .when(MapLayers::registerAll)
+            .thenReturn(MapLayerScreens.createUnwiredScreens());
+    }
+
+    // The game and the switches a load and a settings change read, stood in together with the features
+    // they decide on. The switches are live LunaLib reads, which no test classpath can reach.
+    private static final class FeatureSwitchSeams implements AutoCloseable {
+
+        // First, since every seam below is opened into it.
+        private final StaticSeams staticSeams = new StaticSeams();
+
+        private final MockedStatic<ColonySightingInstaller> colonySightingsMock =
+            staticSeams.openSeam(ColonySightingInstaller.class);
+        private final MockedStatic<RandomAssortmentOfThingsCompatibilityInstaller> compatibilityMock =
+            staticSeams.openSeam(RandomAssortmentOfThingsCompatibilityInstaller.class);
+        private final MockedStatic<KmuFeatureSettings> featureSettingsMock =
+            staticSeams.openSeam(KmuFeatureSettings.class);
+        private final MockedStatic<Global> globalMock =
+            staticSeams.holdSeam(StubbedGlobalLogger.openGlobalAnsweringLoggers());
+        private final MockedStatic<MarketUiContextInstaller> marketUiContextMock =
+            staticSeams.openSeam(MarketUiContextInstaller.class);
+
+        private FeatureSwitchSeams(SectorAPI loadedSector) {
+
+            // Left answering false, so the compatibility mode reads as off and never asks for the
+            // minimap of a mod that is not installed.
+            staticSeams.openSeam(KmuMapHoverSettings.class);
+
+            globalMock.when(Global::getSector)
+                .thenReturn(loadedSector);
+        }
+
+        @Override
+        public void close() {
+
+            staticSeams.closeEverySeam();
+        }
+
+        private void forgetRecordedCalls() {
+
+            colonySightingsMock.clearInvocations();
+            marketUiContextMock.clearInvocations();
+            compatibilityMock.clearInvocations();
+        }
+
+        private void switchMapLayers(boolean isSwitchedOn) {
+
+            featureSettingsMock.when(KmuFeatureSettings::areMapLayersEnabled)
+                .thenReturn(isSwitchedOn);
+        }
+
+        private void switchMarketConditionManager(boolean isSwitchedOn) {
+
+            featureSettingsMock.when(KmuFeatureSettings::isMarketConditionManagerEnabled)
+                .thenReturn(isSwitchedOn);
         }
     }
 
@@ -260,8 +560,6 @@ class KMU_ModPluginTests {
             mockStatic(SectorMapMachineryIndex.class);
         private final MockedStatic<MapSubstrateRefreshInstaller> substrateRefreshMock =
             mockStatic(MapSubstrateRefreshInstaller.class);
-        private final MockedStatic<NexerelinInvasionListenerInstaller> transferRelayMock =
-            mockStatic(NexerelinInvasionListenerInstaller.class);
         private final MockedStatic<MapLayerStandings> standingsMock =
             mockStatic(MapLayerStandings.class);
         private final MockedStatic<MapSurfaceInstaller> surfaceMock =
@@ -273,6 +571,32 @@ class KMU_ModPluginTests {
         private final MockedStatic<MapChromeInstaller> chromeMock =
             mockStatic(MapChromeInstaller.class);
 
+        // Drops what the installers recorded so far, for a case asking what a later call did on its own.
+        private void forgetRecordedCalls() {
+
+            machineryIndexMock.clearInvocations();
+            substrateRefreshMock.clearInvocations();
+            standingsMock.clearInvocations();
+            surfaceMock.clearInvocations();
+            sidebarMock.clearInvocations();
+            hoverMock.clearInvocations();
+            chromeMock.clearInvocations();
+        }
+
+        // Opened over the stood-in classes rather than the handles, since a static stand-in records its
+        // calls against the class itself.
+        private InOrder openCallOrder() {
+
+            return inOrder(
+                SectorMapMachineryIndex.class,
+                MapSubstrateRefreshInstaller.class,
+                MapLayerStandings.class,
+                MapSurfaceInstaller.class,
+                SidebarInstaller.class,
+                MapHoverInstaller.class,
+                MapChromeInstaller.class);
+        }
+
         // Each half of the composition is listed once, with how often it was expected handed in.
         // A second copy of either list per expectation is how an entry comes to be asserted on in
         // one direction and forgotten in the other - which is the half that catches a stand-up
@@ -280,11 +604,12 @@ class KMU_ModPluginTests {
         private void verifyEveryStandUpFor(SectorAPI sector, VerificationMode howOften) {
 
             machineryIndexMock.verify(
-                () -> SectorMapMachineryIndex.installMachineryOn(sector), howOften);
+                () -> SectorMapMachineryIndex.installMachineryOn(eq(sector), any(MapLayerScreens.class)),
+                howOften);
+
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.installAll(sector), howOften);
-            transferRelayMock.verify(
-                () -> NexerelinInvasionListenerInstaller.installIfPresent(sector), howOften);
+
             standingsMock.verify(() -> MapLayerStandings.applyArrangementTo(sector), howOften);
             surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector), howOften);
             sidebarMock.verify(() -> SidebarInstaller.installAll(sector), howOften);
@@ -296,16 +621,45 @@ class KMU_ModPluginTests {
 
             machineryIndexMock.verify(
                 () -> SectorMapMachineryIndex.uninstallMachineryFrom(sector), howOften);
+
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.uninstallAll(sector), howOften);
-            transferRelayMock.verify(
-                () -> NexerelinInvasionListenerInstaller.uninstallIfPresent(sector), howOften);
+
             standingsMock.verify(
                 () -> MapLayerStandings.standEveryLayerDownFrom(sector), howOften);
+
             surfaceMock.verify(() -> MapSurfaceInstaller.uninstallAll(sector), howOften);
             sidebarMock.verify(() -> SidebarInstaller.uninstallAll(sector), howOften);
             hoverMock.verify(() -> MapHoverInstaller.uninstallAll(sector), howOften);
             chromeMock.verify(() -> MapChromeInstaller.uninstallAll(sector), howOften);
+        }
+
+        private void verifyStandUpOrderFor(SectorAPI sector) {
+
+            var standUpOrder = openCallOrder();
+
+            standUpOrder.verify(
+                machineryIndexMock,
+                () -> SectorMapMachineryIndex.installMachineryOn(eq(sector), any(MapLayerScreens.class)));
+            standUpOrder.verify(substrateRefreshMock, () -> MapSubstrateRefreshInstaller.installAll(sector));
+            standUpOrder.verify(standingsMock, () -> MapLayerStandings.applyArrangementTo(sector));
+            standUpOrder.verify(surfaceMock, () -> MapSurfaceInstaller.installAll(sector));
+            standUpOrder.verify(sidebarMock, () -> SidebarInstaller.installAll(sector));
+            standUpOrder.verify(hoverMock, () -> MapHoverInstaller.installAll(sector));
+            standUpOrder.verify(chromeMock, () -> MapChromeInstaller.installAll(sector));
+        }
+
+        private void verifyTakeBackOrderFor(SectorAPI sector) {
+
+            var takeBackOrder = openCallOrder();
+
+            takeBackOrder.verify(chromeMock, () -> MapChromeInstaller.uninstallAll(sector));
+            takeBackOrder.verify(hoverMock, () -> MapHoverInstaller.uninstallAll(sector));
+            takeBackOrder.verify(sidebarMock, () -> SidebarInstaller.uninstallAll(sector));
+            takeBackOrder.verify(surfaceMock, () -> MapSurfaceInstaller.uninstallAll(sector));
+            takeBackOrder.verify(standingsMock, () -> MapLayerStandings.standEveryLayerDownFrom(sector));
+            takeBackOrder.verify(substrateRefreshMock, () -> MapSubstrateRefreshInstaller.uninstallAll(sector));
+            takeBackOrder.verify(machineryIndexMock, () -> SectorMapMachineryIndex.uninstallMachineryFrom(sector));
         }
 
         @Override
@@ -316,7 +670,6 @@ class KMU_ModPluginTests {
             sidebarMock.close();
             surfaceMock.close();
             standingsMock.close();
-            transferRelayMock.close();
             substrateRefreshMock.close();
             machineryIndexMock.close();
         }

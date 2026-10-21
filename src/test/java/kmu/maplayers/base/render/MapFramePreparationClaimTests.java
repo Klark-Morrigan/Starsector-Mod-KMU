@@ -120,6 +120,58 @@ final class MapFramePreparationClaimTests {
     }
 
     @Nested
+    class GetOpenedFrameCount {
+
+        @Test
+        void countsEveryFrameBegun() {
+            // The number a read settled once per frame is kept against, so it moves on every boundary
+            // whatever the preparation did in between.
+            var claim = new MapFramePreparationClaim();
+
+            claim.renderInUICoordsBelowUI(null);
+            claim.claimPreparation();
+            claim.renderInUICoordsBelowUI(null);
+
+            assertThat(claim.getOpenedFrameCount())
+                .isEqualTo(2);
+        }
+    }
+
+    @Nested
+    class IsFrameBoundaryKnown {
+
+        @Test
+        void isFalseBeforeAnyFrameBegins() {
+
+            assertThat(new MapFramePreparationClaim().isFrameBoundaryKnown())
+                .isFalse();
+        }
+
+        @Test
+        void isTrueOnceAFrameBegins() {
+
+            var claim = new MapFramePreparationClaim();
+
+            claim.renderInUICoordsBelowUI(null);
+
+            assertThat(claim.isFrameBoundaryKnown())
+                .isTrue();
+        }
+
+        @Test
+        void isFalseOnceReleased() {
+
+            var claim = new MapFramePreparationClaim();
+
+            claim.renderInUICoordsBelowUI(null);
+            claim.disposeMachinery();
+
+            assertThat(claim.isFrameBoundaryKnown())
+                .isFalse();
+        }
+    }
+
+    @Nested
     class ResolveClaimIn {
 
         @Test

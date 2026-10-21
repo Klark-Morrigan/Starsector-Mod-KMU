@@ -10,9 +10,9 @@ import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.sidebar.ScreenSelectionSlot;
 import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferences;
 import kmu.maplayers.ownermap.preferences.OwnerMapBodyPreferencesFixtures;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
  * <p>The first is what it reads. Each pick is stored per save under a key of its own, all five are
  * stored per screen, and one of them - the spotlight - is stored per view as well, so a reading that
  * crossed two of those keys would paint the map by a pick the player made somewhere else. The picks
- * are written here through the very holders the sidebar writes them through, over a memory that really
+ * are written here through the very stores the sidebar writes them through, over a memory that really
  * stores, so a value written under one key and read under another fails rather than passing on two
  * stubs that agree.
  *
@@ -47,8 +47,8 @@ public final class ContentInputsTests {
 
     // The view whose picker the spotlight is read under. Its ID is what scopes the pick, so a
     // second view would read a slot of its own - which is FilterSelection's own suite to pin.
-    private static final String VIEW_ID = "factions";
-    private static final String SPOTLIT_BLOC_ID = "hegemony";
+    private static final String VIEW_ID = "owners";
+    private static final String SPOTLIT_OWNER_ID = "hegemony";
 
     // What a recede set resolves to on an untouched save: recoloured at full opacity, since
     // Desaturate defaults on and Mute defaults off. A literal, so a flip of either default breaks
@@ -70,11 +70,12 @@ public final class ContentInputsTests {
     private SectorMemoryFake sectorMemoryFake;
 
     // The board the sidebar's writers raise on. Nothing here reads it - what a flip raises is the
-    // holders' own suites to pin - but every writer takes one.
+    // stores' own suites to pin - but every writer takes one.
     private MapLayerRefreshBoard board;
 
     @BeforeEach
     void openTheSave() {
+
         // The board first, and not for tidiness: its logger is resolved once for the life of the
         // JVM, on first use of the class, and a resolution taken while the game's static entry
         // point is stood in for hands it a null that faults every later suite that logs a line.
@@ -89,6 +90,7 @@ public final class ContentInputsTests {
 
     @AfterEach
     void closeTheSave() {
+
         sectorMemoryFake.close();
     }
 
@@ -99,10 +101,10 @@ public final class ContentInputsTests {
         void readsTheSpotlightPickMadeOnTheViewsOwnPicker() {
             // The spotlight is the one pick stored per view, so it is read under the view being
             // painted rather than under whatever the map happens to hold elsewhere.
-            FilterSelection.selectId(createSpotlightSlot(SCREEN_SCOPE), SPOTLIT_BLOC_ID, board);
+            FilterSelection.selectId(createSpotlightSlot(SCREEN_SCOPE), SPOTLIT_OWNER_ID, board);
 
-            assertThat(ContentInputs.sampleForView(viewMock, preferences, SCREEN_SCOPE).selectedBlocId())
-                .isEqualTo(SPOTLIT_BLOC_ID);
+            assertThat(ContentInputs.sampleForView(viewMock, preferences, SCREEN_SCOPE).selectedOwnerId())
+                .isEqualTo(SPOTLIT_OWNER_ID);
         }
 
         @Test
@@ -113,18 +115,18 @@ public final class ContentInputsTests {
             // desaturate default is on, so this is the recede being gated and not merely absent.
             var inputs = ContentInputs.sampleForView(viewMock, preferences, SCREEN_SCOPE);
 
-            assertThat(inputs.selectedBlocId())
+            assertThat(inputs.selectedOwnerId())
                 .isNull();
             assertThat(inputs.filterRecedeAdjustment())
                 .isEqualTo(ElementStyleAdjustment.NONE);
         }
 
         @Test
-        void takesTheFilterRecedeWhileABlocIsSpotlighted() {
-            // With a bloc spotlit the rest of the sector recedes by the filter set's own toggles,
+        void takesTheFilterRecedeWhileAnOwnerIsSpotlighted() {
+            // With an owner spotlit the rest of the sector recedes by the filter set's own toggles,
             // resolved here rather than by whoever paints, so the pick and the recede it implies
             // are one reading.
-            FilterSelection.selectId(createSpotlightSlot(SCREEN_SCOPE), SPOTLIT_BLOC_ID, board);
+            FilterSelection.selectId(createSpotlightSlot(SCREEN_SCOPE), SPOTLIT_OWNER_ID, board);
 
             assertThat(ContentInputs.sampleForView(viewMock, preferences, SCREEN_SCOPE).filterRecedeAdjustment())
                 .isEqualTo(DESATURATING);
@@ -132,10 +134,10 @@ public final class ContentInputsTests {
 
         @Test
         void asksThePaintingViewForItsOwnRecedeApartFromTheFilterOne() {
-            // The view's own backdrop is the view's to answer, and the filter's is the layer's: with a
-            // bloc spotlit both are read, each from its own owner, so neither can stand in for the
-            // other.
-            FilterSelection.selectId(createSpotlightSlot(SCREEN_SCOPE), SPOTLIT_BLOC_ID, board);
+            // The view's own backdrop is the view's to answer, and the filter's is the layer's:
+            // with an owner spotlit both are read, each from its own source, so neither can stand
+            // in for the other.
+            FilterSelection.selectId(createSpotlightSlot(SCREEN_SCOPE), SPOTLIT_OWNER_ID, board);
 
             var inputs = ContentInputs.sampleForView(viewMock, preferences, SCREEN_SCOPE);
 
@@ -149,13 +151,13 @@ public final class ContentInputsTests {
         void readsTheNameFormatAndTheUninhabitedOutline() {
             // The two picks that are neither spotlight nor recede, both moved off their defaults so
             // a reading that failed to consult either would answer FULL and off.
-            preferences.nameFormat().selectNameFormat(SCREEN_SCOPE, FactionNameFormatChoice.SHORT, board);
+            preferences.nameFormat().selectNameFormat(SCREEN_SCOPE, OwnerNameFormatChoice.SHORT, board);
             preferences.uninhabitedOutline().setOutlineDrawn(SCREEN_SCOPE, true, board);
 
             var inputs = ContentInputs.sampleForView(viewMock, preferences, SCREEN_SCOPE);
 
             assertThat(inputs.nameFormat())
-                .isEqualTo(FactionNameFormatChoice.SHORT);
+                .isEqualTo(OwnerNameFormatChoice.SHORT);
             assertThat(inputs.isUninhabitedOutlineDrawn())
                 .isTrue();
         }
@@ -168,9 +170,10 @@ public final class ContentInputsTests {
             // one pick screen-blind, would answer with one of these rather than the defaults.
             var otherScreen = ScreenMemoryScopes.createOtherStandInScreen();
 
-            FilterSelection.selectId(createSpotlightSlot(otherScreen), SPOTLIT_BLOC_ID, board);
+            FilterSelection.selectId(createSpotlightSlot(otherScreen), SPOTLIT_OWNER_ID, board);
+
             preferences.filterRecede().setMuted(otherScreen, true, board);
-            preferences.nameFormat().selectNameFormat(otherScreen, FactionNameFormatChoice.NONE, board);
+            preferences.nameFormat().selectNameFormat(otherScreen, OwnerNameFormatChoice.NONE, board);
             preferences.uninhabitedOutline().setOutlineDrawn(otherScreen, true, board);
 
             // The view is asked for the screen being painted too, and answers for that one alone.
@@ -179,7 +182,7 @@ public final class ContentInputsTests {
                     null,
                     ElementStyleAdjustment.NONE,
                     VIEW_RECEDE,
-                    FactionNameFormatChoice.FULL,
+                    OwnerNameFormatChoice.FULL,
                     false));
         }
 
@@ -194,7 +197,7 @@ public final class ContentInputsTests {
                     null,
                     ElementStyleAdjustment.NONE,
                     VIEW_RECEDE,
-                    FactionNameFormatChoice.FULL,
+                    OwnerNameFormatChoice.FULL,
                     false));
         }
     }
@@ -206,15 +209,15 @@ public final class ContentInputsTests {
         void holdsForTwoReadingsOfUnmovedPicks() {
             // The frame this cache spends nearly all of its life on: nothing the player can click
             // has moved, so the map already on screen is the map these picks describe.
-            assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
-                .isEqualTo(buildReadingSpotlighting(SPOTLIT_BLOC_ID));
+            assertThat(buildReadingSpotlighting(SPOTLIT_OWNER_ID))
+                .isEqualTo(buildReadingSpotlighting(SPOTLIT_OWNER_ID));
         }
 
         @Test
         void separatesReadingsAcrossASpotlightChange() {
             // The pick decides who holds a cell rather than only how it is coloured, so a different
-            // bloc is a different map and not a restyle of the same one.
-            assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
+            // owner is a different map and not a restyle of the same one.
+            assertThat(buildReadingSpotlighting(SPOTLIT_OWNER_ID))
                 .isNotEqualTo(buildReadingSpotlighting("tritachyon"));
         }
 
@@ -222,25 +225,25 @@ public final class ContentInputsTests {
         void separatesReadingsAcrossAFilterRecedeChange() {
             // How far the backdrop gives way is baked into every non-spotlit cell, so a Mute or
             // Desaturate flip under a spotlight has to read as a different bake.
-            assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
+            assertThat(buildReadingSpotlighting(SPOTLIT_OWNER_ID))
                 .isNotEqualTo(new ContentInputs(
-                    SPOTLIT_BLOC_ID,
+                    SPOTLIT_OWNER_ID,
                     new ElementStyleAdjustment(0.4, true),
                     DESATURATING,
-                    FactionNameFormatChoice.FULL,
+                    OwnerNameFormatChoice.FULL,
                     false));
         }
 
         @Test
         void separatesReadingsAcrossAViewRecedeChange() {
-            // The view's own backdrop, separated on its own: a view bakes every bloc it recedes under
+            // The view's own backdrop, separated on its own: a view bakes every owner it recedes under
             // it, and it moves without the filter recede moving.
-            assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
+            assertThat(buildReadingSpotlighting(SPOTLIT_OWNER_ID))
                 .isNotEqualTo(new ContentInputs(
-                    SPOTLIT_BLOC_ID,
+                    SPOTLIT_OWNER_ID,
                     DESATURATING,
                     ElementStyleAdjustment.NONE,
-                    FactionNameFormatChoice.FULL,
+                    OwnerNameFormatChoice.FULL,
                     false));
         }
 
@@ -248,12 +251,12 @@ public final class ContentInputsTests {
         void separatesReadingsAcrossANameFormatChange() {
             // The format is the text every cluster label is fitted around, so it changes the search
             // as well as the words - a placement sized for a full name does not describe a short one.
-            assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
+            assertThat(buildReadingSpotlighting(SPOTLIT_OWNER_ID))
                 .isNotEqualTo(new ContentInputs(
-                    SPOTLIT_BLOC_ID,
+                    SPOTLIT_OWNER_ID,
                     DESATURATING,
                     DESATURATING,
-                    FactionNameFormatChoice.SHORT,
+                    OwnerNameFormatChoice.SHORT,
                     false));
         }
 
@@ -261,12 +264,12 @@ public final class ContentInputsTests {
         void separatesReadingsAcrossAnUninhabitedOutlineFlip() {
             // Whether never-settled space is outlined at all is baked into the theme the cells are
             // styled from, so the flip cannot show without a rebuild.
-            assertThat(buildReadingSpotlighting(SPOTLIT_BLOC_ID))
+            assertThat(buildReadingSpotlighting(SPOTLIT_OWNER_ID))
                 .isNotEqualTo(new ContentInputs(
-                    SPOTLIT_BLOC_ID,
+                    SPOTLIT_OWNER_ID,
                     DESATURATING,
                     DESATURATING,
-                    FactionNameFormatChoice.FULL,
+                    OwnerNameFormatChoice.FULL,
                     true));
         }
     }
@@ -276,12 +279,12 @@ public final class ContentInputsTests {
 
         @Test
         void dropsTheSpotlightAndTheRecedeBehindIt() {
-            // The debug border-tracing view paints real holders across the whole sector,
+            // The debug border-tracing view paints real owners across the whole sector,
             // so it must not recede anything - and a spotlight left standing would also have it
             // naming synthetic keys no view can spell.
-            var cleared = buildReadingSpotlighting(SPOTLIT_BLOC_ID).clearFilterPick();
+            var cleared = buildReadingSpotlighting(SPOTLIT_OWNER_ID).clearFilterPick();
 
-            assertThat(cleared.selectedBlocId())
+            assertThat(cleared.selectedOwnerId())
                 .isNull();
             assertThat(cleared.isFiltering())
                 .isFalse();
@@ -294,10 +297,10 @@ public final class ContentInputsTests {
             // Only the spotlight is dropped: such a pass still draws the names the player asked for,
             // in the format they asked for, over the categories they asked to see.
             var reading = new ContentInputs(
-                SPOTLIT_BLOC_ID,
+                SPOTLIT_OWNER_ID,
                 DESATURATING,
                 DESATURATING,
-                FactionNameFormatChoice.SHORT,
+                OwnerNameFormatChoice.SHORT,
                 true);
 
             var cleared = reading.clearFilterPick();
@@ -305,7 +308,7 @@ public final class ContentInputsTests {
             assertThat(cleared.viewRecedeAdjustment())
                 .isEqualTo(DESATURATING);
             assertThat(cleared.nameFormat())
-                .isEqualTo(FactionNameFormatChoice.SHORT);
+                .isEqualTo(OwnerNameFormatChoice.SHORT);
             assertThat(cleared.isUninhabitedOutlineDrawn())
                 .isTrue();
         }
@@ -313,22 +316,24 @@ public final class ContentInputsTests {
 
     // The slot a spotlight is seeded into, addressed as the sidebar addresses it: this mod's store
     // namespace, the screen the pick was made on, and the view whose picker made it. Written through
-    // the real holder rather than stubbed, so a sampling that composed any of the three differently
+    // the real store rather than stubbed, so a sampling that composed any of the three differently
     // reads back nothing.
     private static SelectionSlot createSpotlightSlot(ScreenMemoryScope memoryScope) {
+
         return new SelectionSlot(
             new ScreenSelectionSlot(KmuMod.MAP_STORE_NAMESPACE, memoryScope),
             VIEW_ID);
     }
 
-    // The reading the equality cases vary one pick of: a bloc spotlit with both backdrops
+    // The reading the equality cases vary one pick of: an owner spotlit with both backdrops
     // recolouring, full names and no uninhabited outline.
-    private static ContentInputs buildReadingSpotlighting(String selectedBlocId) {
+    private static ContentInputs buildReadingSpotlighting(String selectedOwnerId) {
+
         return new ContentInputs(
-            selectedBlocId,
+            selectedOwnerId,
             DESATURATING,
             DESATURATING,
-            FactionNameFormatChoice.FULL,
+            OwnerNameFormatChoice.FULL,
             false);
     }
 }

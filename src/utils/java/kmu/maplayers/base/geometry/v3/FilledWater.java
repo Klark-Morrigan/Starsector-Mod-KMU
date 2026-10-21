@@ -35,10 +35,11 @@ public final class FilledWater {
     // on every frame that mentions it.
     private List<List<double[]>> shoreWater;
     private List<List<double[]>> inletWater;
-    private LakePockets.LakeWater lakeWater;
     private List<List<double[]>> puddleWater;
     private List<List<double[]>> linkWater;
     private List<List<double[]>> linkedSectorWater;
+
+    private LakePockets.LakeWater lakeWater;
 
     FilledWater(
             BridgedContinents laid,
@@ -68,8 +69,10 @@ public final class FilledWater {
 
                 rings.addAll(walled.pocket().outlines());
             }
+
             shoreWater = List.copyOf(rings);
         }
+
         return shoreWater;
     }
 
@@ -83,6 +86,7 @@ public final class FilledWater {
         if (inletWater == null) {
             inletWater = fillBehindSpans(laid.layInletSpans());
         }
+
         return inletWater;
     }
 
@@ -111,10 +115,14 @@ public final class FilledWater {
 
         if (puddleWater == null) {
 
-            puddleWater = laid.traceCoasts().puddles().stream()
-                .map(Coastlines.Puddle::waterEdge)
+            puddleWater = laid
+                .traceCoasts()
+                .puddles()
+                .stream()
+                .map(Puddle::waterEdge)
                 .toList();
         }
+
         return puddleWater;
     }
 
@@ -136,6 +144,7 @@ public final class FilledWater {
                 laid.layInletSpans(),
                 new VoidPockets.PocketRules(laid.parameters(), shaping));
         }
+
         return linkWater;
     }
 
@@ -159,6 +168,7 @@ public final class FilledWater {
                 ownerBySite,
                 new VoidPockets.PocketRules(laid.parameters(), shaping));
         }
+
         return linkedSectorWater;
     }
 
@@ -209,6 +219,7 @@ public final class FilledWater {
                 laid.layLakeSpans(),
                 new VoidPockets.PocketRules(laid.parameters(), shaping));
         }
+
         return lakeWater;
     }
 
@@ -221,6 +232,9 @@ public final class FilledWater {
         return spans.isEmpty()
             ? List.of()
             : VoidBridgePockets.findBridgeWalledPockets(
-                laid.traceCoasts().union().sites(), spans, laid.parameters(), shaping);
+                laid.traceCoasts().union().sites(),
+                spans,
+                laid.parameters(),
+                shaping);
     }
 }

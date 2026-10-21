@@ -1,5 +1,6 @@
 package kmu.maplayers.base.tooltip.content;
 
+import kmlib.starsector.entities.EntityNameplate;
 import kmlib.text.KmlibNumbers;
 
 import java.util.List;
@@ -21,55 +22,30 @@ import java.util.Objects;
  * <p>Nothing here is faction-shaped. The mark is a texture path a caller may simply not have, so a list
  * of things that carry none - industries, conditions, hazards - is this same shape with a null in it.
  *
- * @param mark                the mark the line opens on and how it is coloured, or null for a line
- *                            carrying none. One value rather than a path beside a colouring, so a line
- *                            showing no mark has nowhere to state how one would have been drawn
- * @param labelText           what the line is called, or null where the name is withheld and the line
- *                            carries its shape instead
- * @param redactedWordLengths how many characters each word of the withheld name ran to, in reading
- *                            order, or null where the line says its name outright. The name itself
- *                            never reaches the line: what is held stands for the words without being
- *                            them, so there is nothing here for a later change to draw
- * @param labelFinding        the stretch of the name that is itself one of the box's findings, or null
- *                            where the name says none - a line calls at most one out inside its own
- *                            name
- * @param indexPlace          where the line falls in the ordering it belongs to and what that place
- *                            decided, run on after its name, or null where the line has no place worth
- *                            stating
- * @param noteText            a remark about the thing on the line that is not a finding about it -
- *                            how current what the box says about it is, say - run on at the end of the
- *                            line, or null where the line makes none
- * @param qualifier           the status called out after the line's name, or null when it states none
- * @param valueText           what the block counts this line in, or {@link #NO_SCORE}
- *                            for a line carrying no number
- * @param countedValue        the number the value states, where it is one the block's own arithmetic
- *                            adds up, or null where the line's value is not such a number. Never a
- *                            second statement of the value: a counted line is built from the number
- *                            and words the value out of it, so the two cannot come to disagree
- * @param valueWorkingText    the arithmetic the number came out of, stated before it, or null where
- *                            the line shows its number alone
- * @param isAside             whether the line is a note about the list rather than one of the things
- *                            in it - the arithmetic of a term its members share, say. Such a line is
- *                            drawn quiet down to its name, and only the number it arrives at stays a
- *                            finding
- * @param isValueUncounted    whether the line's number is one nothing earned - what an account
- *                            recorded for the thing on the line rather than anything it did. Only the
- *                            number quietens: the line is one of the things the list holds and is
- *                            named as loudly as its neighbours
+ * @param mark       the mark the line opens on and how it is coloured, or null for a line carrying none.
+ *                   One value rather than a path beside a colouring, so a line showing no mark has
+ *                   nowhere to state how one would have been drawn
+ * @param name       what the line is called, or the shape of a name the box withholds - one or the
+ *                   other, never both and never neither
+ * @param indexPlace where the line falls in the ordering it belongs to and what that place decided, run
+ *                   on after its name, or null where the line has no place worth stating
+ * @param noteText   a remark about the thing on the line that is not a finding about it - how current
+ *                   what the box says about it is, say - run on at the end of the line, or null where
+ *                   the line makes none
+ * @param qualifier  the status called out after the line's name, or null when it states none
+ * @param value      what the block counts this line in, and how that number reads
+ * @param isAside    whether the line is a note about the list rather than one of the things in it - the
+ *                   arithmetic of a term its members share, say. Such a line is drawn quiet down to its
+ *                   name, and only the number it arrives at stays a finding
  */
 public record CellTooltipEntryLine(
     CellTooltipMark mark,
-    String labelText,
-    List<Integer> redactedWordLengths,
-    CellTooltipLabelFinding labelFinding,
+    CellTooltipLineName name,
     CellTooltipIndexPlace indexPlace,
     String noteText,
     CellTooltipQualifier qualifier,
-    String valueText,
-    Integer countedValue,
-    String valueWorkingText,
-    boolean isAside,
-    boolean isValueUncounted) {
+    CellTooltipLineValue value,
+    boolean isAside) {
 
     /**
      * What a line counted in nothing states in place of a number - a status line, a heading, a row
@@ -85,11 +61,7 @@ public record CellTooltipEntryLine(
     // What a line carries in each of the parts it does not use. Named one per part rather than passed
     // as bare nulls, so the factories below say what a line has none of instead of handing the
     // constructor a row of unexplained absences a reader has to count off against the components -
-    // which is a count that goes wrong the moment a part is added. The first two are the one exclusive
-    // pair: a line says its name and holds no redaction, or withholds it and holds no name.
-    private static final String NO_NAME = null;
-    private static final List<Integer> NO_REDACTION = null;
-    private static final CellTooltipLabelFinding NO_LABEL_FINDING = null;
+    // which is a count that goes wrong the moment a part is added.
     private static final CellTooltipIndexPlace NO_PLACE = null;
     private static final String NO_NOTE = null;
     private static final CellTooltipQualifier NO_QUALIFIER = null;
@@ -105,31 +77,19 @@ public record CellTooltipEntryLine(
     private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
     private static final boolean IS_VALUE_EARNED = false;
 
+    // What a number nothing earned is marked as once statesUncountedValue is laid on a line.
+    private static final boolean IS_VALUE_UNCOUNTED = true;
+
     /**
-     * Rejects a valueless line, and one that neither states a name nor withholds one, at construction,
-     * where the caller that composed it is still on the stack. A block lays every line through the same
-     * two columns, so a line arriving with nothing for one of them would surface inside a measurement or
-     * a draw, well past the point that could say which line was meant. A line carrying no number states
-     * {@link #NO_SCORE}, which is a value the column collapses for rather than an
-     * absence.
-     *
-     * <p>A name and a redaction of one are refused together for the same reason each is refused alone:
-     * the label takes one account of what the line is called, so a line holding both would leave
-     * whatever draws it to pick - and the same line would come out named on one surface and blocked out
-     * on another.
-     *
-     * <p>The lengths are copied, so a caller that derived them from a list it goes on using cannot
-     * reshape a name the box has already stated.
+     * Rejects a line missing its name or its value at construction, where the caller that composed it
+     * is still on the stack. A block lays every line through the same two columns, so a line arriving
+     * with nothing for one of them would surface inside a measurement or a draw, well past the point
+     * that could say which line was meant.
      */
     public CellTooltipEntryLine {
-        Objects.requireNonNull(valueText, "valueText");
 
-        if ((labelText == null) == (redactedWordLengths == null)) {
-            throw new IllegalArgumentException("a line states its name or withholds it, never both");
-        }
-        if (redactedWordLengths != null) {
-            redactedWordLengths = List.copyOf(redactedWordLengths);
-        }
+        Objects.requireNonNull(name, "name");
+        Objects.requireNonNull(value, "value");
     }
 
     /**
@@ -152,19 +112,10 @@ public record CellTooltipEntryLine(
             String labelText,
             String valueText) {
 
-        return new CellTooltipEntryLine(
+        return createBareLine(
             mark,
-            labelText,
-            NO_REDACTION,
-            NO_LABEL_FINDING,
-            NO_PLACE,
-            NO_NOTE,
-            NO_QUALIFIER,
-            valueText,
-            NO_COUNT,
-            NO_WORKING,
-            IS_LISTED_IN_ITS_OWN_RIGHT,
-            IS_VALUE_EARNED);
+            CellTooltipLineName.createSpokenName(labelText),
+            createWordedValue(valueText));
     }
 
     /**
@@ -187,19 +138,30 @@ public record CellTooltipEntryLine(
             String labelText,
             int countedValue) {
 
-        return new CellTooltipEntryLine(
+        return createBareLine(
             mark,
-            labelText,
-            NO_REDACTION,
-            NO_LABEL_FINDING,
-            NO_PLACE,
-            NO_NOTE,
-            NO_QUALIFIER,
-            formatCountedValue(countedValue),
-            countedValue,
-            NO_WORKING,
-            IS_LISTED_IN_ITS_OWN_RIGHT,
-            IS_VALUE_EARNED);
+            CellTooltipLineName.createSpokenName(labelText),
+            createCountedValue(countedValue));
+    }
+
+    /**
+     * Builds a counted line naming something the sector map draws, led by the glyph the map marks it
+     * with.
+     *
+     * <p>Takes the entity's nameplate whole rather than its name and glyph apart, so the glyph can only
+     * have come from the entity the line names - and every box marks a thing on the map by the one
+     * rule.
+     *
+     * @param entity       the entity the line names
+     * @param countedValue what the block counts this line in
+     * @return the bare line, stating that number
+     */
+    public static CellTooltipEntryLine createCountedEntityLine(EntityNameplate entity, int countedValue) {
+
+        return createCountedLine(
+            CellTooltipMark.resolveMarkForMapIcon(entity.mapIcon()),
+            entity.displayName(),
+            countedValue);
     }
 
     /**
@@ -226,19 +188,10 @@ public record CellTooltipEntryLine(
             List<Integer> redactedWordLengths,
             String valueText) {
 
-        return new CellTooltipEntryLine(
+        return createBareLine(
             mark,
-            NO_NAME,
-            redactedWordLengths,
-            NO_LABEL_FINDING,
-            NO_PLACE,
-            NO_NOTE,
-            NO_QUALIFIER,
-            valueText,
-            NO_COUNT,
-            NO_WORKING,
-            IS_LISTED_IN_ITS_OWN_RIGHT,
-            IS_VALUE_EARNED);
+            new CellTooltipLineName.Withheld(redactedWordLengths),
+            createWordedValue(valueText));
     }
 
     /**
@@ -262,19 +215,10 @@ public record CellTooltipEntryLine(
             List<Integer> redactedWordLengths,
             int countedValue) {
 
-        return new CellTooltipEntryLine(
+        return createBareLine(
             mark,
-            NO_NAME,
-            redactedWordLengths,
-            NO_LABEL_FINDING,
-            NO_PLACE,
-            NO_NOTE,
-            NO_QUALIFIER,
-            formatCountedValue(countedValue),
-            countedValue,
-            NO_WORKING,
-            IS_LISTED_IN_ITS_OWN_RIGHT,
-            IS_VALUE_EARNED);
+            new CellTooltipLineName.Withheld(redactedWordLengths),
+            createCountedValue(countedValue));
     }
 
     /**
@@ -304,18 +248,6 @@ public record CellTooltipEntryLine(
     }
 
     /**
-     * Whether this line withholds its name and shows the shape of it instead of saying what the thing is
-     * called. The one place that reading is judged, so a surface cannot go looking for a name that is
-     * not there - and a line saying its name outright cannot be drawn as though something had been kept
-     * back.
-     *
-     * @return true where the line's name is withheld
-     */
-    public boolean hasRedactedName() {
-        return redactedWordLengths != null;
-    }
-
-    /**
      * Returns a copy of this line calling one finding out after its name - a status stated on the
      * line it is about rather than on a line of its own, such as why this line outranks a
      * higher-scoring one beneath it.
@@ -341,8 +273,11 @@ public record CellTooltipEntryLine(
      * @return an otherwise-identical line ending on that status
      */
     public CellTooltipEntryLine callsOut(CellTooltipQualifier qualifier) {
+
         var parts = new LineParts(this);
+
         parts.qualifier = qualifier;
+
         return parts.buildLine();
     }
 
@@ -360,9 +295,11 @@ public record CellTooltipEntryLine(
      * {@link CellTooltipLabelFinding} holds one: the name is the only copy of the name, and a stretch
      * free to carry its own text is a stretch free to disagree with it.
      *
-     * <p>Refused outright on a line whose name is {@linkplain #hasRedactedName withheld}. There is no
-     * name to pick a stretch out of, and the blocks drawn in its place stand for words rather than
-     * spelling them - so a range into one could only be gilding whatever happened to be that far along.
+     * <p>Refused outright on a line whose name is {@linkplain CellTooltipLineName.Withheld withheld}.
+     * There is no name to pick a stretch out of, and the blocks drawn in its place stand for words
+     * rather than spelling them - so a range into one could only be gilding whatever happened to be that
+     * far along. The refusal stays a runtime one because the line is one type whichever name it carries:
+     * a caller that read the name through {@link CellTooltipLineName#selectByCase} knows which it has.
      *
      * @param startIndex where the finding begins in the label, counted in characters from its start
      * @param endIndex   the character position just past the finding's last
@@ -370,15 +307,14 @@ public record CellTooltipEntryLine(
      */
     public CellTooltipEntryLine callsOutInLabel(int startIndex, int endIndex) {
 
-        if (hasRedactedName()) {
-            throw new IllegalStateException("a withheld name has no stretch to call out");
-        }
-        if (endIndex > labelText.length()) {
-            throw new IllegalArgumentException("endIndex must not run past the label");
-        }
+        var labelFinding = new CellTooltipLabelFinding(startIndex, endIndex);
         var parts = new LineParts(this);
 
-        parts.labelFinding = new CellTooltipLabelFinding(startIndex, endIndex);
+        parts.name = name.selectByCase(
+            spokenName -> new CellTooltipLineName.Spoken(spokenName.labelText(), labelFinding),
+            withheldName -> {
+                throw new IllegalStateException("a withheld name has no stretch to call out");
+            });
 
         return parts.buildLine();
     }
@@ -401,8 +337,11 @@ public record CellTooltipEntryLine(
      * @return an otherwise-identical line carrying that remark
      */
     public CellTooltipEntryLine notedWith(String noteText) {
+
         var parts = new LineParts(this);
+
         parts.noteText = noteText;
+
         return parts.buildLine();
     }
 
@@ -427,7 +366,9 @@ public record CellTooltipEntryLine(
             CellTooltipIndexOutcome indexOutcome) {
 
         var parts = new LineParts(this);
+
         parts.indexPlace = new CellTooltipIndexPlace(indexText, indexOutcome);
+
         return parts.buildLine();
     }
 
@@ -444,8 +385,11 @@ public record CellTooltipEntryLine(
      * @return an otherwise-identical line read as a note about the list rather than a member of it
      */
     public CellTooltipEntryLine readsAsAside() {
+
         var parts = new LineParts(this);
+
         parts.isAside = true;
+
         return parts.buildLine();
     }
 
@@ -463,8 +407,15 @@ public record CellTooltipEntryLine(
      * @return an otherwise-identical line whose number reads as one nothing earned
      */
     public CellTooltipEntryLine statesUncountedValue() {
+
         var parts = new LineParts(this);
-        parts.isValueUncounted = true;
+
+        parts.value = new CellTooltipLineValue(
+            value.valueText(),
+            value.countedValue(),
+            value.valueWorkingText(),
+            IS_VALUE_UNCOUNTED);
+
         return parts.buildLine();
     }
 
@@ -483,9 +434,48 @@ public record CellTooltipEntryLine(
      * @return an otherwise-identical line showing that working
      */
     public CellTooltipEntryLine derivesValueFrom(String valueWorkingText) {
+
         var parts = new LineParts(this);
-        parts.valueWorkingText = valueWorkingText;
+
+        parts.value = new CellTooltipLineValue(
+            value.valueText(),
+            value.countedValue(),
+            valueWorkingText,
+            value.isValueUncounted());
+
         return parts.buildLine();
+    }
+
+    // The plainest line holding a name and a value: no place, no note, no status, and one of the
+    // things the block lists. What every factory above builds before any refinement is laid on it.
+    private static CellTooltipEntryLine createBareLine(
+            CellTooltipMark mark,
+            CellTooltipLineName name,
+            CellTooltipLineValue value) {
+
+        return new CellTooltipEntryLine(
+            mark,
+            name,
+            NO_PLACE,
+            NO_NOTE,
+            NO_QUALIFIER,
+            value,
+            IS_LISTED_IN_ITS_OWN_RIGHT);
+    }
+
+    // A value handed over already worded, which the block's arithmetic does not add up.
+    private static CellTooltipLineValue createWordedValue(String valueText) {
+        return new CellTooltipLineValue(valueText, NO_COUNT, NO_WORKING, IS_VALUE_EARNED);
+    }
+
+    // A value worded here from the number it states, so the line holds the very number it shows.
+    private static CellTooltipLineValue createCountedValue(int countedValue) {
+
+        return new CellTooltipLineValue(
+            formatCountedValue(countedValue),
+            countedValue,
+            NO_WORKING,
+            IS_VALUE_EARNED);
     }
 
     /**
@@ -505,47 +495,34 @@ public record CellTooltipEntryLine(
     private static final class LineParts {
 
         private CellTooltipMark mark;
-        private String labelText;
-        private List<Integer> redactedWordLengths;
-        private CellTooltipLabelFinding labelFinding;
+        private CellTooltipLineName name;
         private CellTooltipIndexPlace indexPlace;
         private String noteText;
         private CellTooltipQualifier qualifier;
-        private String valueText;
-        private Integer countedValue;
-        private String valueWorkingText;
+        private CellTooltipLineValue value;
         private boolean isAside;
-        private boolean isValueUncounted;
 
         private LineParts(CellTooltipEntryLine line) {
+
             mark = line.mark();
-            labelText = line.labelText();
-            redactedWordLengths = line.redactedWordLengths();
-            labelFinding = line.labelFinding();
+            name = line.name();
             indexPlace = line.indexPlace();
             noteText = line.noteText();
             qualifier = line.qualifier();
-            valueText = line.valueText();
-            countedValue = line.countedValue();
-            valueWorkingText = line.valueWorkingText();
+            value = line.value();
             isAside = line.isAside();
-            isValueUncounted = line.isValueUncounted();
         }
 
         private CellTooltipEntryLine buildLine() {
+
             return new CellTooltipEntryLine(
                 mark,
-                labelText,
-                redactedWordLengths,
-                labelFinding,
+                name,
                 indexPlace,
                 noteText,
                 qualifier,
-                valueText,
-                countedValue,
-                valueWorkingText,
-                isAside,
-                isValueUncounted);
+                value,
+                isAside);
         }
     }
 }

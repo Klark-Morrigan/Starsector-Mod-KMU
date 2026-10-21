@@ -1,20 +1,20 @@
 package kmu.maplayers.politicalmap.dominance;
 
-import kmu.maplayers.ownermap.picker.PaintingBlocMetrics;
-import kmu.maplayers.ownermap.picker.SizedBlocMetrics;
+import kmu.maplayers.ownermap.owners.holders.base.picker.SizedBlocMetrics;
+import kmu.maplayers.ownermap.picker.PaintingOwnerMetrics;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 /**
  * The four whole-sector numbers the filter picker sorts and displays a bloc by on the layers
  * domination paints, computed once per grouped dominance pass and carried beside the bloc's identity
- * on {@link kmu.maplayers.ownermap.RankedBloc}. It exists so the picker can rank and label a
+ * on {@link kmu.maplayers.ownermap.picker.RankedOwner}. It exists so the picker can rank and label a
  * bloc without re-reading the economy: a single pass folds every system the bloc holds into these
  * totals, and the sidebar then reads the totals rather than walking the sector again per frame.
  *
  * <p>The four are deliberately distinct measures a player might sort by. Domination and presence are
  * system counts - how many systems the bloc wins outright versus how many it merely lives in - so a
  * bloc concentrated in a few contested systems reads differently from one spread thin.
- * Score is the summed dominance weight (the size-times-stability worth {@link MarketFootprint}
+ * Score is the summed dominance weight (the stability-cut worth {@link MarketFootprint}
  * carries), and market size is the summed raw {@code MarketAPI.getSize()}, so a heavily-weighted bloc
  * and a merely-large one are told apart. Market size is kept here rather than in {@link
  * MarketFootprint}, which stays scoped to the dominance-weight quantities the rule compares.
@@ -26,10 +26,10 @@ import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
  * registered included.
  *
  * <p>Presence in these stats is therefore not the same as painting something. Dominance weight is
- * what these layers paint by, and it is economy-fed - a colony the economy does not list has no
- * industries, no conditions and no computed stability - so a bloc present through such colonies
- * alone folds in at a score of nought and paints nowhere. That is what {@link #isPaintingNothing}
- * answers.
+ * what these layers paint by, and only the colonies the economy lists are weighed
+ * (<a href="README.md#only-the-economys-colonies-are-weighed">the market contest</a> says why), so
+ * a bloc present through unlisted colonies alone folds in at a score of nought and paints nowhere.
+ * That is what {@link #isPaintingNothing} answers.
  *
  * <p>Plain data with no Starsector types, so the aggregation runs without a live economy.
  *
@@ -45,7 +45,7 @@ public record DominanceStats(
     int domination,
     int presence,
     int score,
-    int marketSize) implements PaintingBlocMetrics, SizedBlocMetrics {
+    int marketSize) implements PaintingOwnerMetrics, SizedBlocMetrics {
 
     /** A bloc present in no system; the identity a per-system accumulation folds into. */
     public static final DominanceStats EMPTY = new DominanceStats(0, 0, 0, 0);

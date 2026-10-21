@@ -1,5 +1,8 @@
 package kmu.conditions.domain;
 
+import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.campaign.econ.MarketConditionAPI;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -474,6 +477,16 @@ class KmuConditionServiceTests {
                 throw hasConditionException;
             }
             return conditionIds.contains(conditionId);
+        }
+
+        @Override
+        public Optional<MarketAPI> findStarsectorMarket() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<MarketConditionAPI> findCondition(String conditionId) {
+            return Optional.empty();
         }
 
         @Override

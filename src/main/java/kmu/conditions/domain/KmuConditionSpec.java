@@ -2,11 +2,12 @@ package kmu.conditions.domain;
 
 import java.util.Objects;
 
-import static kmu.util.KmuValues.hasText;
-import static kmu.util.KmuValues.normaliseText;
-import static kmu.util.KmuValues.requireNonBlankText;
+import static kmlib.text.KmlibStrings.hasText;
+import static kmlib.text.KmlibStrings.normaliseText;
+import static kmlib.text.KmlibStrings.requireFieldText;
 
 public final class KmuConditionSpec {
+
     private final String id;
     private final String name;
     private final String icon;
@@ -25,7 +26,8 @@ public final class KmuConditionSpec {
             String description,
             String sourceModName,
             boolean planetary) {
-        this.id = requireNonBlankText(id, "id");
+
+        this.id = requireFieldText(id, "id");
         this.name = hasText(name) ? name : this.id;
         this.icon = icon;
         this.description = normaliseText(description);
@@ -59,13 +61,17 @@ public final class KmuConditionSpec {
 
     @Override
     public boolean equals(Object other) {
+
         if (this == other) {
             return true;
         }
+
         if (!(other instanceof KmuConditionSpec)) {
             return false;
         }
+
         var that = (KmuConditionSpec) other;
+
         return planetary == that.planetary
             && id.equals(that.id)
             && name.equals(that.name)
@@ -81,6 +87,7 @@ public final class KmuConditionSpec {
 
     @Override
     public String toString() {
+
         return "KmuConditionSpec{"
             + "id='" + id + '\''
             + ", name='" + name + '\''

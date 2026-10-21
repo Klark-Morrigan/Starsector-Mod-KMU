@@ -37,7 +37,7 @@ public final class KmuMapControlSettings {
 
     /**
      * @return whether the tick box that shows and hides the map layers is added to the vanilla map
-     *         filter row on either map screen; on by default. Off makes no attempt on either screen,
+     *         filter row on either map screen. Off makes no attempt on either screen,
      *         so both rows are left exactly as the game builds them, and a screen with no control of
      *         its own never hides its layers whatever the save holds
      */
@@ -49,7 +49,7 @@ public final class KmuMapControlSettings {
 
     /**
      * @return whether the bar's opener stands at the end of the map layer tab row whatever the
-     *         roster holds; off by default, which stands it only where there is more than one layer
+     *         roster holds. Off stands it only where there is more than one layer
      *         that paints. On is how the arranging box is reached at all on an install carrying one
      *         layer, where the row it would open has nowhere to move and nothing to uncheck
      */

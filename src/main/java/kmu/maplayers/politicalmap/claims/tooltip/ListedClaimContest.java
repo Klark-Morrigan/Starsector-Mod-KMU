@@ -2,47 +2,51 @@ package kmu.maplayers.politicalmap.claims.tooltip;
 
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.BlocFriendliness;
-import kmu.maplayers.ownermap.holding.ContestSide;
-import kmu.maplayers.ownermap.holding.ContestSides;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocRelations;
+import kmu.maplayers.ownermap.owners.holders.alliances.ContestSide;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * A hovered system's claim contest as a box may state it: the whole read, the standings the known
- * projection leaves it free to name, the colony rule that projection was taken under, and the two
- * relations to the claim holder the blocks are routed against.
+ * projection leaves it free to name, the colony rule that projection was taken under, and the block
+ * each of those standings is listed under.
  *
  * <p>They travel as one value because the standings are a projection of the breakdown under the
  * rule, and most lines a box draws are read against more than one of them - the claimant off the
  * breakdown, the number beside its name off the standing the projection kept, the banner over them
- * both off the rule, the block each falls in off the affiliation and the friendliness. Passed
- * apart, one call's standings could arrive beside another read's breakdown, and a box would state a
- * claimant it had no standing for - or judge a system's habitation under a rule its listing was
- * never projected through, or route two of its blocks against two different readings of who stands
- * with the holder.
+ * both off the rule, the block each falls in off the routing. Passed apart, one call's standings
+ * could arrive beside another read's breakdown, and a box would state a claimant it had no standing
+ * for - or judge a system's habitation under a rule its listing was never projected through.
  *
- * <p>Which block a standing falls in is answered here rather than by the box laying the blocks
- * down: every one of them is drawn from the same pool with the claimant already out of it, and a
- * box asking per block would re-derive that pool each time.
+ * <p>Which block a standing falls in is settled once, as the contest is selected, rather than by
+ * the box laying the blocks down: every block is drawn from the same pool with the claimant already
+ * out of it, and the two relations are read once for all of them. A box asking per block would
+ * re-derive the pool and re-read the relations each time, and could route two of its blocks against
+ * two different readings of who stands with the holder.
+ *
+ * @param breakdown        the whole claim read of the system
+ * @param colonyVisibility the colony rule the listing was projected through
+ * @param listedStandings  the standings the box may name, strongest first
+ * @param standingsByBlock the listed standings each block below the claim lists, strongest first;
+ *                         every block is present, a block listing nobody holding an empty list
  */
 record ListedClaimContest(
     SystemClaimBreakdown breakdown,
     ColonyVisibility colonyVisibility,
     List<FactionClaimStanding> listedStandings,
-    BlocAffiliation affiliation,
-    BlocFriendliness friendliness) {
+    Map<ClaimContestBlock, List<FactionClaimStanding>> standingsByBlock) {
 
     /**
      * Selects from a contest the standings the player may be shown, keeping the rule that
-     * selected them and the two relations they are placed under.
+     * selected them, and places each in the block it is listed under.
      *
      * <p>The listing rule the market lines beneath a faction are drawn through, asked of the
      * standing as a whole rather than line by line: a faction is kept where a box may draw a
@@ -61,21 +65,21 @@ record ListedClaimContest(
     static ListedClaimContest selectFrom(
             SystemClaimBreakdown breakdown,
             ColonyVisibility colonyVisibility,
-            BlocAffiliation affiliation,
-            BlocFriendliness friendliness) {
+            BlocRelations blocRelations) {
 
         var isListingUndiscoveredMarkets = colonyVisibility.shouldIncludeUndiscoveredMarkets();
+
+        var listedStandings = breakdown
+            .standings()
+            .stream()
+            .filter(standing -> hasListedColony(standing, isListingUndiscoveredMarkets))
+            .toList();
 
         return new ListedClaimContest(
             breakdown,
             colonyVisibility,
-            breakdown
-                .scores()
-                .stream()
-                .filter(standing -> hasListedColony(standing, isListingUndiscoveredMarkets))
-                .toList(),
-            affiliation,
-            friendliness);
+            listedStandings,
+            routeListedStandings(breakdown, listedStandings, blocRelations));
     }
 
     /** Whether anything survived the projection, which is what a box has to state at all. */
@@ -89,6 +93,7 @@ record ListedClaimContest(
      * one whose every colony there is concealed or unlisted and unseen.
      */
     Optional<FactionClaimStanding> findStanding(String factionId) {
+
         return listedStandings
             .stream()
             .filter(standing -> standing.factionId().equals(factionId))
@@ -96,95 +101,97 @@ record ListedClaimContest(
     }
 
     /**
-     * The standings shown under the allied block: everyone present who stands with the claim
-     * holder, of either eligibility.
+     * The standings one block below the claim lists.
      *
-     * <p>Both kinds, because the heading states an alliance and the alliance is true of an
-     * ineligible ally exactly as it is of a rival that nearly took the system. Which of the two
-     * a line is stays sayable on the line itself, so nothing is lost by not splitting them.
+     * @param block the block being laid down
+     * @return its standings in the order the breakdown handed them over, strongest first; empty
+     *         where nobody falls in it, which is what drops its heading
      */
-    List<FactionClaimStanding> selectAlliedStandings() {
-        return selectStandingsOn(ContestSide.ALLIED);
+    List<FactionClaimStanding> selectStandingsIn(ClaimContestBlock block) {
+        return standingsByBlock.get(block);
     }
 
-    /**
-     * The standings shown under the friendly block: everyone present who stands against the
-     * claim holder by alliance and yet on good terms with it, of either eligibility.
-     *
-     * <p>Taken out of what the alliance set left standing against the holder and out of nothing
-     * else, alliance being the outer axis: an ally who is merely favourable is still an ally,
-     * and one gone sour is still an ally too.
-     */
-    List<FactionClaimStanding> selectFriendlyStandings() {
-        return selectStandingsOn(ContestSide.RIVAL)
-            .stream()
-            .filter(this::isFriendlyWithClaimHolder)
-            .toList();
-    }
-
-    /**
-     * The standings shown under a block other than the claim and the two relation blocks:
-     * everyone present that neither relation took, narrowed to the eligibility that block is
-     * about. The claimant is dropped from every block, since a faction named twice would read as
-     * holding two separate presences.
-     *
-     * <p>Narrowed on eligibility rather than on which kind of standing the contest gave a
-     * faction, because that is what the two headings actually say. A territorial faction
-     * holding only concealed bases is in the running by the mechanic's own gate and scored
-     * nothing in this system, which is what the rival block plus a nought states exactly -
-     * while sorting it by record kind would file it beside a Remnant station's owner, which
-     * is ineligible where it is not.
-     */
-    List<FactionClaimStanding> selectRivalStandings(
-            Predicate<FactionClaimStanding> isWantedKind) {
-
-        return selectStandingsOn(ContestSide.RIVAL)
-            .stream()
-            .filter(standing -> !isFriendlyWithClaimHolder(standing))
-            .filter(isWantedKind)
-            .toList();
-    }
-
-    // Whether one faction stands on good terms with whoever holds the claim, asked as the two
-    // blocs of one they are on this layer: the fills are pinned per claiming faction, so a
-    // standing is never an alliance and the bloc-level rule degenerates to the single pair it is
-    // composed of. Going through that rule all the same, rather than reaching past it to the
-    // faction-level answer, so a faction is sorted here by exactly the test the standings box
-    // sorts a lone faction by.
+    // Places every listed standing but the claimant's in the one block it is listed under.
     //
-    // A system nobody holds names nobody to be friendly with, which the rule answers no for over
-    // the empty side - so the block never draws over a system without a holder its heading names.
-    private boolean isFriendlyWithClaimHolder(FactionClaimStanding standing) {
+    // The axes nest. Alliance comes first: everyone standing with the holder by it is allied, of
+    // either eligibility, since the heading states an alliance and the alliance is true of an
+    // ineligible ally exactly as of a rival that nearly took the system. Of the rest, disposition
+    // comes next, taken out of what alliance left standing against the holder and out of nothing
+    // else, for the reason ContestSides states - a friendly faction is friendly of either
+    // eligibility too. Eligibility parts what is left, because that is what the two remaining
+    // headings say: a territorial faction holding only concealed bases is in the running by the
+    // mechanic's own gate and scored nothing, which the contested block plus a nought states
+    // exactly.
+    //
+    // The claimant is out of every block, since a faction named twice would read as holding two
+    // separate presences. Dropped once here, so no routing rule added later can readmit it.
+    //
+    // The switch has no default arm, so a block added to the set without a placement here fails to
+    // compile rather than drawing a block that never fills.
+    private static Map<ClaimContestBlock, List<FactionClaimStanding>> routeListedStandings(
+            SystemClaimBreakdown breakdown,
+            List<FactionClaimStanding> listedStandings,
+            BlocRelations blocRelations) {
 
         var claimantFactionId = breakdown.claimantFactionId();
 
-        return friendliness.areBlocsFriendly(
-            Set.of(standing.factionId()),
-            KmlibStrings.hasText(claimantFactionId)
-                ? Set.of(claimantFactionId)
-                : Set.of());
-    }
-
-    // Everyone a box may name but the claim holder itself, which is the pool every block below
-    // the claim is drawn from. Dropped once here rather than per block, so no routing rule added
-    // later can readmit the claimant to a block that is by definition about somebody else.
-    private List<FactionClaimStanding> selectListedRivals() {
-        return listedStandings
+        var listedRivals = listedStandings
             .stream()
-            .filter(standing -> !standing.factionId().equals(breakdown.claimantFactionId()))
+            .filter(standing -> !standing.factionId().equals(claimantFactionId))
             .toList();
-    }
 
-    // The factions on one side of the contest below the claim, before the disposition or the
-    // eligibility a block may narrow them by. Placed by the shared split rather than by comparing
-    // blocs here, so this layer files a faction by the same rule the standings box and the bands
-    // beneath both do.
-    //
-    // A faction is its own bloc on this layer, the fills being pinned to the claiming faction,
-    // so the faction ID is the bloc ID the alliance set is read against.
-    private List<FactionClaimStanding> selectStandingsOn(ContestSide side) {
-        return new ContestSides(breakdown.claimantFactionId(), affiliation)
-            .selectSide(side, selectListedRivals(), FactionClaimStanding::factionId);
+        // A faction is its own bloc on this layer, the fills being pinned to the claiming faction,
+        // so the faction ID is the bloc ID the alliance set is read against.
+        var allied = blocRelations.selectSide(
+            ContestSide.ALLIED,
+            claimantFactionId,
+            listedRivals,
+            FactionClaimStanding::factionId);
+
+        var unallied = blocRelations.selectSide(
+            ContestSide.RIVAL,
+            claimantFactionId,
+            listedRivals,
+            FactionClaimStanding::factionId);
+
+        // The holder's membership, which the disposition is judged against. A system nobody holds
+        // names nobody to be friendly with, so the friendly block never draws over a system without
+        // a holder its heading names.
+        var holderMemberFactionIds = breakdown.hasClaimant()
+            ? Set.of(claimantFactionId)
+            : Set.<String>of();
+
+        var friendly = new ArrayList<FactionClaimStanding>();
+        var territorial = new ArrayList<FactionClaimStanding>();
+        var nonTerritorial = new ArrayList<FactionClaimStanding>();
+
+        for (var standing : unallied) {
+
+            if (blocRelations.isFactionFriendlyWith(standing.factionId(), holderMemberFactionIds)) {
+                friendly.add(standing);
+
+            } else if (standing.isTerritorial()) {
+                territorial.add(standing);
+
+            } else {
+                nonTerritorial.add(standing);
+            }
+        }
+
+        var standingsByBlock = new EnumMap<ClaimContestBlock, List<FactionClaimStanding>>(
+            ClaimContestBlock.class);
+
+        for (var block : ClaimContestBlock.values()) {
+
+            standingsByBlock.put(block, switch (block) {
+                case ALLIED -> allied;
+                case FRIENDLY -> List.copyOf(friendly);
+                case CONTESTED -> List.copyOf(territorial);
+                case NON_TERRITORIAL -> List.copyOf(nonTerritorial);
+            });
+        }
+
+        return standingsByBlock;
     }
 
     // Whether any colony a faction's standing rests on is one a box may name the faction over.

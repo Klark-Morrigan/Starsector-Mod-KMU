@@ -1,16 +1,13 @@
 package kmu.maplayers.politicalmap.dominance;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.SpotlitBlocs;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.ownermap.owners.holders.HolderResolution;
-import kmu.maplayers.ownermap.render.style.SectorBlocPalettes;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.LinkedHashMap;
@@ -37,7 +34,7 @@ import java.util.Set;
  * {@link HolderResolution#contestedSystemKeys()}, so the render layer can split the fill per
  * cell (solid where it dominates, hatched where contested) inside that one frontier rather than
  * fracturing the footprint into two separately-bordered clusters. The key itself is
- * {@link SpotlitBlocs}'s - asked for here and recognised there - so a resolve that stamps a
+ * {@link SpotlitOwners}'s - asked for here and recognised there - so a resolve that stamps a
  * footprint and a render side that reads one can never disagree about what a spotlit key is.
  */
 public final class FilteredPolitics {
@@ -54,8 +51,10 @@ public final class FilteredPolitics {
 
         /** The selected bloc holds the system outright: drawn solid, at full strength. */
         DOMINATES,
+
         /** The selected bloc lives here without winning the system: drawn contested (hatched). */
         PRESENT_BUT_DOMINATED,
+
         /** The selected bloc owns nothing here: the real dominant holder draws, receded. */
         ABSENT
     }
@@ -66,8 +65,8 @@ public final class FilteredPolitics {
      * handed and nothing else.
      *
      * <p>Presence and dominance are two questions, and this takes an answer to each rather than
-     * inferring the first from the second. A footprint is economy-fed in every term, so a bloc whose
-     * only colony here is one the economy does not list raises none - and a spotlight that read
+     * inferring the first from the second. A bloc whose only colony here is one the economy does not
+     * list raises no footprint - and a spotlight that read
      * presence off the footprints would dim the very system the player picked that bloc to see,
      * while the band inside the same cell drew its run. A present bloc that also wins the dominance
      * comparison dominates; a present bloc that does not - outranked, or holding nothing anybody
@@ -100,9 +99,11 @@ public final class FilteredPolitics {
         if (!presentBlocIds.contains(selectedBlocId)) {
             return SelectedBlocPresence.ABSENT;
         }
-        var dominantBlocId = SystemDominance.resolveDominantFactionId(
+
+        var dominantBlocId = SystemDominance.resolveDominantBlocId(
             footprintByBlocId,
             rankingRules);
+
         return selectedBlocId.equals(dominantBlocId)
             ? SelectedBlocPresence.DOMINATES
             : SelectedBlocPresence.PRESENT_BUT_DOMINATED;
@@ -122,6 +123,7 @@ public final class FilteredPolitics {
     public static HolderResolution resolveFilteredHolder(
             HolderPass pass,
             String selectedBlocId) {
+
         return resolveFilteredHolder(
             DominancePass.readRulesFromLunaSettings(pass),
             selectedBlocId);
@@ -157,43 +159,25 @@ public final class FilteredPolitics {
         if (!pass.canReadEconomy() || selectedBlocId == null) {
             return new HolderResolution(ownerBySystemKey, contestedSystemKeys, Set.of());
         }
+
+        // Resolved once for the whole walk: every system the bloc is present in joins the same
+        // spotlight territory, so they all carry the identical holder. The rebuild pass's own
+        // palettes, so the spotlight paints the bloc in the colours its bands take.
+        var spotlight = new Spotlight(
+            selectedBlocId,
+            SpotlitOwners.createSpotlitOwner(pass.palettes().readBlocPalette(selectedBlocId)));
+
         for (var system : pass.readSystems()) {
+
             var systemKey = SystemKey.readKeyOf(system);
-            var holder = resolveHolder(system, systemKey, pass, selectedBlocId, contestedSystemKeys);
+            var holder = resolveHolder(system, systemKey, pass, spotlight, contestedSystemKeys);
+
             if (holder != null) {
                 ownerBySystemKey.put(systemKey, holder);
             }
         }
+
         return new HolderResolution(ownerBySystemKey, contestedSystemKeys, Set.of());
-    }
-
-    /**
-     * The holder that draws a system as part of the selected bloc's single spotlight territory: the
-     * bloc's palette - its own for a faction, its dominant member's for an alliance - carried on the
-     * one synthetic spotlight key, so a cell holding it paints at the bloc's full strength and
-     * clusters into that one bordered frontier rather than a territory of its own.
-     *
-     * <p>Keying any system this way fuses it into the spotlight, whether the bloc reaches it through
-     * a market its presence pass reads or through a tie that pass never sees - so a system the
-     * normal resolve would leave out can still be drawn under the spotlight, keyed exactly as a
-     * present one. The synthetic key stays this class's secret: a caller holds the returned holder
-     * opaquely and never has to name the key.
-     *
-     * @param sector         the sector whose faction palette is read
-     * @param grouping       the grouping naming the bloc's colour faction
-     * @param selectedBlocId the spotlighted bloc to draw the system under
-     * @return the spotlight holder, or null when the bloc's colour faction does not resolve
-     */
-    public static SystemOwner resolveSpotlitHolder(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            String selectedBlocId) {
-
-        var palette = new SectorBlocPalettes(sector, grouping).readBlocPalette(selectedBlocId);
-        if (palette == null) {
-            return null;
-        }
-        return new SystemOwner(SpotlitBlocs.readSpotlitBlocKey(), palette);
     }
 
     // Resolves one system's presence-aware holder: the selected bloc under the spotlit key where
@@ -203,8 +187,8 @@ public final class FilteredPolitics {
     // them with both the classification and the real-holder fallback.
     //
     // Presence is read beside them rather than taken off them: the footprints answer who wins the
-    // system, and every term of that arithmetic is economy-fed, so a bloc whose only colony here is
-    // unregistered wins nothing and is still living in the system. Widening the footprints instead
+    // system, and a bloc whose only colony here is unregistered wins nothing and is still living in
+    // the system. Widening the footprints instead
     // would put such a bloc into the map the dominant-holder rank is taken over, where an
     // all-weightless system would hand it the system outright - a spotlight moving a fill, which
     // it must never do.
@@ -216,7 +200,7 @@ public final class FilteredPolitics {
             StarSystemAPI system,
             SystemKey systemKey,
             DominancePass pass,
-            String selectedBlocId,
+            Spotlight spotlight,
             Set<SystemKey> contestedSystemKeys) {
 
         var footprintByBlocId = pass.readBlocFootprints(system);
@@ -229,25 +213,22 @@ public final class FilteredPolitics {
         var presence = classifySelectedBlocPresence(
             footprintByBlocId,
             presentBlocIds,
-            selectedBlocId,
+            spotlight.blocId(),
             pass.resolveRankingRulesFor(system));
 
-        if (presence == SelectedBlocPresence.ABSENT) {
-            return resolveRealHolder(system, pass, footprintByBlocId);
-        }
-        var spotlit = resolveSpotlitHolder(pass.sector(), pass.grouping(), selectedBlocId);
-
-        // A selectable bloc's colour faction resolves; this fallback only guards the degenerate
+        // A selectable bloc's colour faction resolves; a missing holder only guards the degenerate
         // case where it vanished mid-session, so the system still draws (as its real receded
         // holder) rather than dropping off the map - and a system that fell back is not spotlit,
         // so it is not recorded contested.
-        if (spotlit == null) {
+        if (presence == SelectedBlocPresence.ABSENT || spotlight.holder() == null) {
             return resolveRealHolder(system, pass, footprintByBlocId);
         }
+
         if (presence == SelectedBlocPresence.PRESENT_BUT_DOMINATED) {
             contestedSystemKeys.add(systemKey);
         }
-        return spotlit;
+
+        return spotlight.holder();
     }
 
     // The system's real dominant holder, unchanged from the normal pass, for a system the
@@ -260,5 +241,13 @@ public final class FilteredPolitics {
             Map<String, MarketFootprint> footprintByBlocId) {
 
         return SectorPolitics.resolveDominantHolder(system, pass, footprintByBlocId);
+    }
+
+    // The spotlighted bloc and the one holder every system it is present in draws as, resolved
+    // together once per walk so no system can pair the bloc with a holder resolved apart from it.
+    // The holder is null in the degenerate case of a colour faction gone mid-session.
+    private record Spotlight(
+        String blocId,
+        SystemOwner holder) {
     }
 }

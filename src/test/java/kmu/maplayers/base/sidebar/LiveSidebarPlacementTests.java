@@ -10,8 +10,10 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
+import kmu.maplayers.base.layer.LiveMapLayerArrangement;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerArrangements;
+import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerVisibility;
@@ -67,7 +69,7 @@ final class LiveSidebarPlacementTests {
     // A visor whose left edge is x = 100, bottom edge y = 50, and top edge y + height = 650.
     private static final Rectangle MAP_VISOR = new Rectangle(100f, 50f, 800f, 600f);
 
-    // The IDs two registered layers stand under, the arrangement naming its layers by id.
+    // The IDs two registered layers stand under, the arrangement naming its layers by ID.
     private static final String FIRST_PAINTING_LAYER_ID = "political";
     private static final String SECOND_PAINTING_LAYER_ID = "trade_routes";
 
@@ -352,6 +354,7 @@ final class LiveSidebarPlacementTests {
         private MapLayer buildLayerMock(String label) {
 
             var layerMock = mock(MapLayer.class);
+
             when(layerMock.resolveTabLabelText())
                 .thenReturn(label);
 
@@ -362,11 +365,21 @@ final class LiveSidebarPlacementTests {
     @Nested
     class ResolveOpenerSpec {
 
+        // The roster and the bar the asking screen picks from, which its picks carry to the gate.
+        private final MapLayerRegistry layerRegistry = new MapLayerRegistry();
+
+        private final LiveMapLayerArrangement layerArrangement =
+            MapLayerArrangements.createRearrangeableBar(List.of(), List.of());
+
+        private final ScreenLayerPicks screenPicks =
+            MapLayerRosters.createScreensOver(layerRegistry, layerArrangement, null).getMapPicks();
+
         private SidebarLookScope lookScope;
         private MockedStatic<KmuMapControlSettings> controlSettingsMock;
 
         @BeforeEach
         void mockLiveColoursAndSettings() {
+
             // The host row's own style is composed from the live game, the opener wearing that style
             // unchanged but for its box.
             lookScope = SidebarLookScope.openOnVanillaAtlases();
@@ -375,6 +388,7 @@ final class LiveSidebarPlacementTests {
             // default: every case but one turns on the count being what answers, so the case that says
             // otherwise should be the only one that mentions it.
             controlSettingsMock = mockStatic(KmuMapControlSettings.class);
+
             closeTheArrangementOpenerHatch();
         }
 
@@ -385,21 +399,13 @@ final class LiveSidebarPlacementTests {
             lookScope.close();
         }
 
-        @AfterEach
-        void restoreTheRosterAndBarThisCasePosed() {
-            // Both holders are static, so a roster of stand-ins and a bar arranged here would otherwise
-            // outlive the case that posed them.
-            MapLayerRosters.restoreNonEmptyRoster();
-            MapLayerArrangements.forgetTheArrangement();
-        }
-
         @Test
         void standsTheOpenerWhereTwoLayersPaint() {
             // The install a foreign mod's layer makes, and the only one in which arranging the bar can
             // change what the map shows.
             registerTwoLayersThatPaintBesideTheEmptyView();
 
-            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
+            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle(), screenPicks))
                 .isNotNull();
         }
 
@@ -409,7 +415,7 @@ final class LiveSidebarPlacementTests {
             // nowhere to move it that changes which layer paints, and a hide the last-tab guard refuses.
             registerOneLayerThatPaintsBesideTheEmptyView();
 
-            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
+            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle(), screenPicks))
                 .isNull();
         }
 
@@ -417,9 +423,9 @@ final class LiveSidebarPlacementTests {
         void dropsTheOpenerWhereTheEmptyViewStandsAlone() {
             // The empty view is not counted, so a roster of it alone is a roster of nothing to arrange
             // rather than a row of one.
-            MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE);
+            layerRegistry.registerLayer(NoLayer.INSTANCE);
 
-            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
+            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle(), screenPicks))
                 .isNull();
         }
 
@@ -430,9 +436,9 @@ final class LiveSidebarPlacementTests {
             // arrangement that shortened it.
             registerTwoLayersThatPaintBesideTheEmptyView();
 
-            MapLayerArrangements.arrangeBarWith(List.of(), List.of(SECOND_PAINTING_LAYER_ID));
+            MapLayerArrangements.rearrangeBar(layerArrangement, List.of(), List.of(SECOND_PAINTING_LAYER_ID));
 
-            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
+            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle(), screenPicks))
                 .isNotNull();
         }
 
@@ -442,10 +448,9 @@ final class LiveSidebarPlacementTests {
             // every install until a second one ships - so it has to beat the count rather than be
             // read beside it.
             registerOneLayerThatPaintsBesideTheEmptyView();
-
             openTheArrangementOpenerHatch();
 
-            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
+            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle(), screenPicks))
                 .isNotNull();
         }
 
@@ -456,9 +461,8 @@ final class LiveSidebarPlacementTests {
             registerTwoLayersThatPaintBesideTheEmptyView();
 
             var hostStyle = buildHostTabStyle();
-            var openerAskedForDirectly = BarOpeners.buildOpenerSpec(hostStyle);
-
-            var opener = LiveSidebarPlacement.resolveOpenerSpec(hostStyle);
+            var openerAskedForDirectly = BarOpeners.buildOpenerSpec(hostStyle, screenPicks);
+            var opener = LiveSidebarPlacement.resolveOpenerSpec(hostStyle, screenPicks);
 
             assertThat(opener.icon())
                 .isEqualTo(openerAskedForDirectly.icon());
@@ -468,6 +472,7 @@ final class LiveSidebarPlacementTests {
 
         // The hatch as its row ships: the count is what answers.
         private void closeTheArrangementOpenerHatch() {
+
             controlSettingsMock
                 .when(KmuMapControlSettings::isMapLayerArrangementOpenerAlwaysShown)
                 .thenReturn(false);
@@ -475,6 +480,7 @@ final class LiveSidebarPlacementTests {
 
         // The hatch a player opens to reach the box whatever the roster holds.
         private void openTheArrangementOpenerHatch() {
+
             controlSettingsMock
                 .when(KmuMapControlSettings::isMapLayerArrangementOpenerAlwaysShown)
                 .thenReturn(true);
@@ -483,24 +489,25 @@ final class LiveSidebarPlacementTests {
         // The host row the opener is asked to stand in: the strip's own style, boxed as the sector map
         // boxes it.
         private TabStyle buildHostTabStyle() {
-            return SidebarStyles.buildStripTabStyle(HOST_BAND_HEIGHT)
+
+            return SidebarStyles
+                .buildStripTabStyle(HOST_BAND_HEIGHT)
                 .withTabBox(new TabBox(HOST_TAB_WIDTH, HOST_TAB_HEIGHT, HOST_TAB_GAP));
         }
 
         // KMU's own install: the empty view and the one layer that paints.
         private void registerOneLayerThatPaintsBesideTheEmptyView() {
-            MapLayerRosters.replaceRosterWith(
-                NoLayer.INSTANCE,
-                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID));
+
+            layerRegistry.registerLayer(NoLayer.INSTANCE);
+            layerRegistry.registerLayer(buildLayerMockUnder(FIRST_PAINTING_LAYER_ID));
         }
 
         // The same roster with a second painting layer on the end, which is the install a foreign mod's
         // layer makes and the only one there is anything to arrange on.
         private void registerTwoLayersThatPaintBesideTheEmptyView() {
-            MapLayerRosters.replaceRosterWith(
-                NoLayer.INSTANCE,
-                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID),
-                buildLayerMockUnder(SECOND_PAINTING_LAYER_ID));
+
+            registerOneLayerThatPaintsBesideTheEmptyView();
+            layerRegistry.registerLayer(buildLayerMockUnder(SECOND_PAINTING_LAYER_ID));
         }
 
         // A registered layer that is not the empty view, which is the whole of what makes it count. Its
@@ -508,6 +515,7 @@ final class LiveSidebarPlacementTests {
         private MapLayer buildLayerMockUnder(String layerId) {
 
             var layerMock = mock(MapLayer.class);
+
             when(layerMock.getId())
                 .thenReturn(layerId);
 
@@ -549,13 +557,16 @@ final class LiveSidebarPlacementTests {
             }
         }
 
-        // One screen's picks under the given scope. The tab and the hide are left as bare stand-ins,
-        // since which of the three the body is built from is the whole of what these cases read.
+        // One screen's picks under the given scope. The tab, the hide and the bar are left as bare
+        // stand-ins, since which of them the body is built from is the whole of what these cases read.
         private ScreenLayerPicks buildPicksUnder(ScreenMemoryScope memoryScope) {
+
             return new ScreenLayerPicks(
                 mock(ActiveLayerSelection.class),
                 new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
-                memoryScope);
+                memoryScope,
+                MapLayerRosters.createRosterOf(),
+                MapLayerArrangements.createUnarrangedBar());
         }
     }
 
@@ -604,7 +615,9 @@ final class LiveSidebarPlacementTests {
                 new ScreenLayerPicks(
                     selection,
                     new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
-                    ScreenMemoryScopes.createStandInScreen()),
+                    ScreenMemoryScopes.createStandInScreen(),
+                    MapLayerRosters.createRosterOf(),
+                    MapLayerArrangements.createUnarrangedBar()),
                 Set.of());
         }
     }

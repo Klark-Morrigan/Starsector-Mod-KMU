@@ -1,11 +1,8 @@
 package kmu.maplayers.base.geometry.v3;
 
-import kmlib.math.geometry.Points;
-
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,8 +45,8 @@ import java.util.function.BiPredicate;
  * ending short of it closes nothing; a whole fillet satisfies that, not merely the two corners
  * where one begins and ends.
  *
- * <p>Aiming only at those corners is what a first pass did, and it shows: a cell offers two
- * places to leave from, so several spans leave the same one and cross the void as a fan. The
+ * <p>Aiming only at those corners shows on the map: a cell offers two places to leave from,
+ * so several spans leave the same one and cross the void as a fan. The
  * lines are then a picture of where anchors were allowed rather than of where the void is
  * narrow, which is the one thing they are drawn to show.
  *
@@ -106,22 +103,22 @@ public final class ContinentBridges {
     /**
      * The knobs a set of spans is laid under.
      *
-     * @param reachMultiple      how much water a span may cross and still be laid, in cell
-     *                           radii. On the exterior shore it is read as how far apart the
-     *                           two cells may sit, which across open void is the same claim
-     *                           made of the centres; on the interior it caps the span itself,
-     *                           since a lake's shores can face each other from far centres
-     * @param coastSlack         how far off an existing wall a span may run and still count as
-     *                           running along it, in map units
+     * @param reachMultiple        how much water a span may cross and still be laid, in cell
+     *                             radii. On the exterior shore it is read as how far apart the
+     *                             two cells may sit, which across open void is the same claim
+     *                             made of the centres; on the interior it caps the span itself,
+     *                             since a lake's shores can face each other from far centres
+     * @param coastSlack           how far off an existing wall a span may run and still count as
+     *                             running along it, in map units
      * @param shouldThinFormations whether spans sharing an anchor are thinned once the laying
-     *                           is settled. A rule rather than a display switch: what it
-     *                           changes is which spans exist, so a report and a drawing that
-     *                           disagreed about it would describe different maps
-     * @param anchorSeparation   how close two spans' feet may stand before one of them moves
-     *                           along its frontage, and how much room it reaches for when it
-     *                           does, in map units. One number for both, since a fan is exactly
-     *                           a foot whose nearest neighbour is inside it. Non-positive leaves
-     *                           every foot where the search put it
+     *                             is settled. A rule rather than a display switch: what it
+     *                             changes is which spans exist, so a report and a drawing that
+     *                             disagreed about it would describe different maps
+     * @param anchorSeparation     how close two spans' feet may stand before one of them moves
+     *                             along its frontage, and how much room it reaches for when it
+     *                             does, in map units. One number for both, since a fan is exactly
+     *                             a foot whose nearest neighbour is inside it. Non-positive leaves
+     *                             every foot where the search put it
      */
     public record BridgeRules(
         double reachMultiple,
@@ -154,12 +151,15 @@ public final class ContinentBridges {
      *         were judged in rather than a sort of what came out
      */
     public static List<CellGap> findAnchoredBridges(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             CoastFrontages.Shore shore,
             SectorGeometryParameters parameters,
             BridgeRules rules) {
 
-        var frontages = CoastFrontages.gatherFrontagePoints(shore.collectFrontages(traced));
+        // Collected once: the offer reads their points, and the spreading reads the runs they
+        // came from, since a foot may only move along the stretch it already stands on.
+        var runs = shore.collectFrontages(traced);
+        var frontages = CoastFrontages.gatherFrontagePoints(runs);
 
         if (frontages.size() < 2) {
             return List.of();
@@ -175,44 +175,19 @@ public final class ContinentBridges {
         // span it could host is refused before anything else looks at it.
         var isPairBridgeable = resolvePairGate(shore, traced);
         var union = traced.union();
-        var sites = union.sites();
-
-        // Gathered once. Every candidate pairing is checked against these, and rebuilding
-        // them per candidate would be the same answer found tens of thousands of times.
-        var coastWalls = AnchoredSpans.collectCoastWalls(traced);
         var reach = parameters.cellRadius() * rules.reachMultiple();
         var offerDistance = resolveOfferDistance(shore, reach, parameters.cellRadius());
-        var offered = new ArrayList<CellGap>();
 
-        // Every pair the gate admits, once. Nothing is refused here for crossing anything:
-        // what the offer is depends only on the cells, and which of the offers survive is
-        // settled afterwards, in one place, against one rule.
-        for (var from : frontages.keySet()) {
-            for (var to : frontages.keySet()) {
-
-                if (from >= to
-                        || !isPairBridgeable.test(from, to)
-                        || Points.computeDistance(sites.get(from), sites.get(to))
-                            > offerDistance) {
-
-                    continue;
-                }
-
-                var span = AnchoredSpans.findClosestSpan(
-                    from,
-                    to,
-                    frontages.get(from),
-                    frontages.get(to),
-                    union);
-
-                if (span != null && isSpanWithinReach(shore, span, reach)) {
-                    offered.add(span);
-                }
-            }
-        }
+        var offered = AnchoredSpans.offerSpans(frontages, union, offerDistance, isPairBridgeable)
+            .stream()
+            .filter(span -> isSpanWithinReach(shore, span, reach))
+            .toList();
 
         var kept = AnchoredSpans.keepSpansWorthLaying(
-            offered, coastWalls, NOTHING_ALREADY_LAID, rules.coastSlack());
+            offered,
+            AnchoredSpans.collectCoastWalls(traced),
+            NOTHING_ALREADY_LAID,
+            rules.coastSlack());
 
         // Spread, then thinned, so every reader of this method's answer sees the same resolved
         // set: a formation left for a consumer to tidy is a formation two consumers tidy
@@ -225,11 +200,11 @@ public final class ContinentBridges {
         // dropped for sharing one is a piece of void nothing holds. So the crowd is spread
         // first, and the thinning is left with the formations that could not be separated - a
         // frontage of one point, or one whose every place is taken or would put the line across
-        // another span. Thinned first, spans were being dropped that had somewhere to stand.
+        // another span. Thinned first, spans are dropped that have somewhere to stand.
         var spread = CrowdedAnchors.spreadCrowdedAnchors(
             kept,
             NOTHING_ALREADY_LAID,
-            shore.collectFrontages(traced),
+            runs,
             union,
             rules.anchorSeparation());
 
@@ -244,7 +219,7 @@ public final class ContinentBridges {
     // the shore only names which of the two questions applies.
     private static BiPredicate<Integer, Integer> resolvePairGate(
             CoastFrontages.Shore shore,
-            Coastlines.TracedCoasts traced) {
+            TracedCoasts traced) {
 
         if (shore == CoastFrontages.Shore.INTERIOR) {
 
@@ -253,14 +228,14 @@ public final class ContinentBridges {
             return (from, to) -> isSharingALake(lakesOf, from, to);
         }
 
-        var continentOf = Coastlines.mapCellsToContinents(traced);
+        var continentOf = traced.mapCellsToContinents();
 
         // A span exists to round ONE outline up, so both its ends have to be corners of that
         // outline: the water it closes off is water that outline currently runs into. Two cells
         // on different continents have no shared inlet to capture - a line between them would
         // be joining two shapes rather than tidying either.
         return (from, to) ->
-            Coastlines.compareShapesOf(continentOf, from, to).isSameShape();
+            ShapeRelation.compareShapesOf(continentOf, from, to).isSameShape();
     }
 
     // How far apart two cells' centres may sit before a pair is not worth scanning, as the
@@ -297,7 +272,7 @@ public final class ContinentBridges {
 
     // Which lakes each cell rings, off the lakes' own rings. A set per cell, because a cell
     // between two lakes rings both and may be bridged over either.
-    private static Map<Integer, Set<Integer>> mapCellsToLakes(Coastlines.TracedCoasts traced) {
+    private static Map<Integer, Set<Integer>> mapCellsToLakes(TracedCoasts traced) {
 
         var lakesOf = new LinkedHashMap<Integer, Set<Integer>>();
 

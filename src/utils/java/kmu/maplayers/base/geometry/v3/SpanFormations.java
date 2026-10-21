@@ -84,7 +84,7 @@ public final class SpanFormations {
      */
     public static List<CellGap> resolveSharedAnchors(
             List<CellGap> spans,
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             SectorGeometryParameters parameters) {
 
         var anchors = new SpanAnchors(spans);
@@ -433,15 +433,17 @@ public final class SpanFormations {
 
         static SpanWaters mapSpanWaters(
                 List<CellGap> spans,
-                Coastlines.TracedCoasts traced,
+                TracedCoasts traced,
                 SectorGeometryParameters parameters) {
 
             // Every wall the map draws, as plain segments: the coast's own lines and the
             // spans alike. A flood is stopped by whichever of them it meets, so unlike the
             // boundary walk there is no contest between two walls for one cell's mouth - and
-            // that contest is exactly what a crowded anchor is.
-            var barriers = new ArrayList<>(
-                WallCoverage.collectRingWalls(collectShoreRings(traced)));
+            // that contest is exactly what a crowded anchor is. The shores as the borders they
+            // are, because what closes water off is where settled space ends, and a flood run
+            // against the rounded line instead would leak through every corner the rounding
+            // pulled in.
+            var barriers = new ArrayList<>(AnchoredSpans.collectCoastWalls(traced));
 
             for (var span : spans) {
                 barriers.add(new double[][] {span.start(), span.end()});
@@ -520,20 +522,6 @@ public final class SpanFormations {
                 isOpen |= water == OPEN_SEA;
             }
             return isOpen ? OPEN_SEA : UNREADABLE;
-        }
-
-        // Both shores of the construction as the borders they are, which is what a flood has to
-        // be stopped by: what closes water off is where settled space ends, and a flood run
-        // against the rounded line instead would leak through every corner the rounding pulled
-        // in.
-        private static List<List<double[]>> collectShoreRings(
-                Coastlines.TracedCoasts traced) {
-
-            var rings = new ArrayList<>(Coastlines.collectCoastOutlines(traced));
-
-            rings.addAll(Coastlines.collectLakeOutlines(traced));
-
-            return rings;
         }
 
         // Which piece of held water lies a step off one side of the span, at the given share

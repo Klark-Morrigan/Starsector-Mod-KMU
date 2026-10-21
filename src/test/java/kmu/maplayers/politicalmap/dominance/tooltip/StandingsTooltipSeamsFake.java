@@ -9,16 +9,18 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderGroupingSource;
-import kmu.maplayers.ownermap.tooltip.SystemStatusRow;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingSource;
 import kmu.maplayers.politicalmap.dominance.DominancePass;
 import kmu.maplayers.politicalmap.dominance.standings.GroupStanding;
 import kmu.maplayers.politicalmap.dominance.standings.SystemStandings;
+import kmu.maplayers.politicalmap.dominance.standings.WeighedFactionStanding;
 import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
+import kmu.maplayers.politicalmap.tooltip.SystemStatusRow;
 
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -29,9 +31,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.atLeastOnce;
@@ -76,7 +79,8 @@ public final class StandingsTooltipSeamsFake {
      * an assertion - which is exactly why it is shared: two suites spelling out weights neither of
      * them reads is two chances to state a rule that means nothing, differently.
      */
-    public static final DominanceRules ANY_RULES = new DominanceRules(false,
+    public static final DominanceRules ANY_RULES = new DominanceRules(
+        false,
         new BaseSizeWeighting(1.0, null, 1.0, 1.0),
         new StationWeighting(false, 1.0, 0.5, 0.5),
         new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
@@ -88,8 +92,11 @@ public final class StandingsTooltipSeamsFake {
      *
      * <p>A suite turning on the rule or the dev reveal builds its own and installs it instead.
      */
-    public static final DominancePass ANY_PASS =
-        DominancePass.createOver(null, ANY_RULES, UNDER_THE_FOG, VIEW_GROUPING);
+    public static final DominancePass ANY_PASS = DominancePass.createOver(
+        null,
+        ANY_RULES,
+        UNDER_THE_FOG,
+        VIEW_GROUPING);
 
     // What a standing carries when a case is about how groups are laid out rather than about what any
     // of them is made of. Never asserted on - a case that cares states its own standing. The bloc is
@@ -99,7 +106,7 @@ public final class StandingsTooltipSeamsFake {
 
     // Where the standings a block is being named sit in the resolver's parameters, which is what the
     // stand-in reads to answer that block with its own entries rather than with the whole box's.
-    private static final int STANDINGS_ARGUMENT = 1;
+    private static final int STANDINGS_ARGUMENT = 0;
 
     private static MockedStatic<DominancePass> dominancePassMock;
     private static MockedStatic<SystemStandings> standingsMock;
@@ -124,11 +131,13 @@ public final class StandingsTooltipSeamsFake {
         statusRowMock = Mockito.mockStatic(SystemStatusRow.class);
 
         stubPass(pass);
+        stubNoRows();
         stubNoStatus();
     }
 
     /** Takes every seam back down, so a suite leaves no statics mocked. */
     public static void clearSeams() {
+
         statusRowMock.close();
         rowResolverMock.close();
         standingsMock.close();
@@ -142,6 +151,7 @@ public final class StandingsTooltipSeamsFake {
      * @param pass the pass every read of the player's settings answers with
      */
     public static void stubPass(DominancePass pass) {
+
         dominancePassMock
             .when(() -> DominancePass.readFromLunaSettings(any(), any()))
             .thenReturn(pass);
@@ -166,8 +176,16 @@ public final class StandingsTooltipSeamsFake {
         var rankedStandings = new ArrayList<GroupStanding>(groupEntries.length);
 
         for (var index = 0; index < groupEntries.length; index++) {
-            rankedStandings.add(new GroupStanding(ANY_BLOC_ID_STEM + index, ANY_SCORE, List.of()));
+
+            var blocId = ANY_BLOC_ID_STEM + index;
+
+            // A group stands in a system only through a member there, so each is its own lone member.
+            rankedStandings.add(new GroupStanding(
+                blocId,
+                ANY_SCORE,
+                List.of(new WeighedFactionStanding(blocId, ANY_SCORE))));
         }
+
         stubRankedGroups(rankedStandings, List.of(groupEntries));
     }
 
@@ -189,20 +207,31 @@ public final class StandingsTooltipSeamsFake {
         var entriesByStanding = new HashMap<GroupStanding, CellTooltipEntry>();
 
         for (var index = 0; index < rankedStandings.size(); index++) {
-            entriesByStanding.put(rankedStandings.get(index), groupEntries.get(index));
+
+            entriesByStanding.put(
+                rankedStandings.get(index),
+                groupEntries.get(index));
         }
 
         standingsMock
             .when(() -> SystemStandings.rankByDominationScore(
                 any(StarSystemAPI.class),
-                any(DominancePass.class)))
+                any(DominancePass.class),
+                anyMap()))
             .thenReturn(List.copyOf(rankedStandings));
 
-        rowResolverMock
-            .when(() -> StandingRowResolver.resolveRows(any(), any(), any(), any()))
+        // Every box gets the one stand-in resolver, which answers each block with that block's entries.
+        var standInResolverMock = Mockito.mock(StandingRowResolver.class);
+
+        Mockito
+            .when(standInResolverMock.resolveRows(any()))
             .thenAnswer(invocation -> selectEntriesFor(
                 invocation.getArgument(STANDINGS_ARGUMENT),
                 entriesByStanding));
+
+        rowResolverMock
+            .when(() -> StandingRowResolver.createForBox(any(), any(), any()))
+            .thenReturn(standInResolverMock);
     }
 
     /**
@@ -223,8 +252,23 @@ public final class StandingsTooltipSeamsFake {
         return statusRow;
     }
 
+    /**
+     * Asserts the system was ranked over the given weights - the very ones the box read, rather than a
+     * reading of the ranking's own.
+     *
+     * @param breakdownsByFactionId the weights the box is expected to have handed the ranking
+     */
+    public static void verifyRankedOver(Map<String, List<MarketWeightBreakdown>> breakdownsByFactionId) {
+
+        standingsMock.verify(() -> SystemStandings.rankByDominationScore(
+            any(StarSystemAPI.class),
+            any(DominancePass.class),
+            same(breakdownsByFactionId)));
+    }
+
     /** Asserts the pass was read under the grouping the injecting view answered with. */
     public static void verifyPassReadUnderTheViewsGrouping() {
+
         dominancePassMock.verify(
             () -> DominancePass.readFromLunaSettings(any(), same(VIEW_GROUPING)));
     }
@@ -232,13 +276,13 @@ public final class StandingsTooltipSeamsFake {
     /**
      * Asserts the ranked groups were named under that same grouping.
      *
-     * <p>Matched over the calls rather than counted, a box naming its groups one block at a time:
-     * every block goes through the one call site, so what is worth pinning is the grouping that
-     * reached it and not how many blocks the box happens to offer.
+     * <p>Matched over the calls rather than counted: what is worth pinning is the grouping that reached
+     * the resolver, not how many boxes built one.
      */
     public static void verifyGroupsResolvedUnderTheViewsGrouping(SectorAPI sector) {
+
         rowResolverMock.verify(
-            () -> StandingRowResolver.resolveRows(same(sector), any(), same(VIEW_GROUPING), any()),
+            () -> StandingRowResolver.createForBox(same(sector), same(VIEW_GROUPING), any()),
             atLeastOnce());
     }
 
@@ -252,7 +296,7 @@ public final class StandingsTooltipSeamsFake {
             FactionAccountResolver accountResolver) {
 
         rowResolverMock.verify(
-            () -> StandingRowResolver.resolveRows(any(), any(), any(), same(accountResolver)),
+            () -> StandingRowResolver.createForBox(any(), any(), same(accountResolver)),
             atLeastOnce());
     }
 
@@ -294,9 +338,19 @@ public final class StandingsTooltipSeamsFake {
             .toList();
     }
 
+    // A box whose groups name nothing until a case stands some up: every block resolves to no entries,
+    // as the real resolver answers a block with no standings in it.
+    private static void stubNoRows() {
+
+        rowResolverMock
+            .when(() -> StandingRowResolver.createForBox(any(), any(), any()))
+            .thenReturn(Mockito.mock(StandingRowResolver.class));
+    }
+
     // A system with nothing to say about itself beyond its standings, which is the ordinary case and
     // what keeps the line above the contest out of the way of cases about the contest.
     private static void stubNoStatus() {
+
         statusRowMock
             .when(() -> SystemStatusRow.resolveStatusRow(any(), any(ColonyKnowledge.class)))
             .thenReturn(Optional.empty());

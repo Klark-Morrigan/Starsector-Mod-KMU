@@ -5,7 +5,6 @@ import kmlib.math.geometry.Segment;
 import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,36 +52,30 @@ public final class CarriedLines {
     /**
      * Lays every line as a wall under one label, each end moved onto its shore.
      *
-     * @param lines      the lines to lay, each a run across void from one cell's reach to
-     *                   another's
-     * @param frontier   every cell edge facing void, labelled with its cell, which is where an
-     *                   end's shore is looked for
-     * @param sites      the cells' own positions, which the ends are moved towards
-     * @param parameters the knobs the map is drawn under, for the resolution that says how far
-     *                   an end can float off the shore
-     * @param label      what every wall is labelled with on the pieces it closes
+     * @param lines the lines to lay, each a run across void from one cell's reach to another's
+     * @param shore where each end's shore is looked for, and how far an end can float off it
+     * @param label what every wall is labelled with on the pieces it closes
      * @return the walls to lay, and the lines to draw
      */
     public static LaidLines layCarriedLines(
             List<CellGap> lines,
-            List<LabelledWall> frontier,
-            List<double[]> sites,
-            SectorGeometryParameters parameters,
+            Shore shore,
             int label) {
 
         var walls = new ArrayList<LabelledWall>();
         var drawn = new ArrayList<List<double[]>>();
-        var sagitta = parameters.measureBoundSagitta();
 
         for (var line : lines) {
 
             drawn.add(List.of(line.start(), line.end()));
+
             walls.add(new LabelledWall(
                 Segment.joinPoints(
-                    landOnShore(line.start(), line.fromSite(), frontier, sites, sagitta),
-                    landOnShore(line.end(), line.toSite(), frontier, sites, sagitta)),
+                    landOnShore(line.start(), line.fromSite(), shore),
+                    landOnShore(line.end(), line.toSite(), shore)),
                 label));
         }
+
         return new LaidLines(List.copyOf(walls), List.copyOf(drawn));
     }
 
@@ -94,35 +87,37 @@ public final class CarriedLines {
     private static double[] landOnShore(
             double[] end,
             int cell,
-            List<LabelledWall> frontier,
-            List<double[]> sites,
-            double sagitta) {
+            Shore shore) {
 
-        var towardsSite = Points.computeUnitVector(
-            sites.get(cell)[0] - end[0], sites.get(cell)[1] - end[1], sagitta);
+        var site = shore.getSites().get(cell);
+        var sagitta = shore.getSagitta();
+        var towardsSite = Points.computeUnitVector(site[0] - end[0], site[1] - end[1], sagitta);
+
         var searchEnd = new double[] {
             end[0] + towardsSite[0] * SHORE_SEARCH_SAGITTAS * sagitta,
             end[1] + towardsSite[1] * SHORE_SEARCH_SAGITTAS * sagitta};
-        var shore = end;
+
+        var landing = end;
         var nearest = Double.MAX_VALUE;
 
-        for (var edge : frontier) {
-
-            if (edge.label() != cell) {
-                continue;
-            }
+        for (var edge : shore.listFrontierOf(cell)) {
 
             var crossing = Segments.intersectSegments(
-                end, searchEnd, edge.segment().readStart(), edge.segment().readEnd());
+                end,
+                searchEnd,
+                edge.segment().readStart(),
+                edge.segment().readEnd());
 
             if (crossing != null && Points.computeDistance(end, crossing) < nearest) {
+
                 nearest = Points.computeDistance(end, crossing);
-                shore = crossing;
+                landing = crossing;
             }
         }
+
         return new double[] {
-            shore[0] + towardsSite[0] * PAST_THE_SHORE_SAGITTAS * sagitta,
-            shore[1] + towardsSite[1] * PAST_THE_SHORE_SAGITTAS * sagitta};
+            landing[0] + towardsSite[0] * PAST_THE_SHORE_SAGITTAS * sagitta,
+            landing[1] + towardsSite[1] * PAST_THE_SHORE_SAGITTAS * sagitta};
     }
 
     /**

@@ -16,26 +16,23 @@ import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ViewReading;
-import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
 import kmu.maplayers.ownermap.owners.SectorWalk;
-import kmu.maplayers.ownermap.render.style.MapPalettes;
-import kmu.maplayers.ownermap.render.style.OwnerCategories;
-import kmu.maplayers.ownermap.render.style.RenderStyleReader;
+import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.Map;
 
 /**
  * Runs one full owner-map rebuild: asks the layer's source who owns each system, reads the theme,
  * shapes the cached cells into merged clusters, and drives the two per-item builders over
- * every cell and every owned bloc to produce a fresh {@link OwnerMapClusters}.
+ * every cell and every owner to produce a fresh {@link OwnerMapClusters}.
  *
  * <p>The orchestration only - each stage's actual work belongs to a collaborator, and this
  * class's job is to sample every input exactly once so the whole pass keys off one snapshot.
- * That is what lets an incremental re-shape reuse those same builders
- * ({@link PaintedCellBuilder} and {@link ClusterGroupBuilder}) on a handful of cells and
- * get a result identical to a full rebuild.
+ * That is what lets an incremental re-shape reuse those same builders ({@link PaintedCellBuilder}
+ * and {@link ClusterGroupBuilder}) on a handful of cells and get a result identical to a full
+ * rebuild.
  *
  * <p>Two entry points, because a rebuild has two halves that go stale for different reasons. The
  * owners - who owns what, who is where - are a reading of the sector, and are owed again only when
@@ -45,8 +42,8 @@ import java.util.Map;
  * has. Which of the two is stale is the caller's to decide: this resolves what it is asked to and
  * builds from what it is handed.
  *
- * <p>Nothing here reads a colony. What the owners are made of is the layer's source's business,
- * reached over the walk the rebuild opened; this sees only the answer.
+ * <p>Nothing here reads what stands in a system. What the owners are made of is the layer's
+ * source's business, reached over the walk the rebuild opened; this sees only the answer.
  *
  * <p>Each stage is a method below, apart because their order is the whole of the arrangement - a
  * stage that ran before the one it reads would key off a snapshot nothing else in the pass shares -
@@ -66,8 +63,8 @@ public final class OwnerMapBuilder {
     // have a row of their own so a rebuild that carried them over reads as missing that row, rather
     // than as a source's scans that each happened to cost nothing - and whatever the source profiles
     // of its own lands beneath it.
-    private static final ProfileSection RESOLVE_HOLDING_SECTION =
-        ProfileSection.registerSection("ownerMap.resolveHolding");
+    private static final ProfileSection RESOLVE_OWNERS_SECTION =
+        ProfileSection.registerSection("ownerMap.resolveOwners");
 
     private static final ProfileSection REBUILD_SECTION =
         ProfileSection.registerSection("ownerMap.rebuildClusters");
@@ -103,17 +100,16 @@ public final class OwnerMapBuilder {
             SectorWalk walk,
             ContentInputs contentInputs) {
 
-        try (var holdingScope = ActiveProfiler.resolveProfiler().open(RESOLVE_HOLDING_SECTION)) {
-            return source.resolveOwners(walk, contentInputs.selectedBlocId());
+        try (var ownersScope = ActiveProfiler.resolveProfiler().open(RESOLVE_OWNERS_SECTION)) {
+            return source.resolveOwners(walk, contentInputs.selectedOwnerId());
         }
     }
 
-    // Shapes the cached raw cells into merged clusters and partitions them into the
-    // cluster-filled (owned) and per-cell (decivilised/uninhabited) draw lists, baking in each
-    // cell's colours, opacities, and widths resolved from the current settings, then
-    // flattens each to GL-ready vertex runs. Reads the settings once per category, not
-    // per cell. The view's reading arrives with it, retained on the clusters so an incremental
-    // re-shape classifies against the same view, reading and source.
+    // Shapes the cached raw cells into merged clusters and partitions them into the cluster-filled
+    // (owned) and per-cell (settled/uninhabited) draw lists, baking in each cell's colours,
+    // opacities, and widths resolved from the handed styling, then flattens each to GL-ready vertex
+    // runs. The view's reading arrives with it, retained on the clusters so an incremental re-shape
+    // classifies against the same view, reading and source.
     //
     // The reading arrives rather than being resolved here because the owners were resolved through
     // the source that came with it, both over one sampling of the view's live inputs - a reading
@@ -121,21 +117,23 @@ public final class OwnerMapBuilder {
     // sidebar preferences arrive for a like reason: the rebuild sampled them once when it decided it
     // was owed, so reading them again here could paint the map under a pick the decision never saw.
     // The owners arrive for a third: they may be the answer a previous rebuild got, kept because
-    // nothing they read has moved since.
+    // nothing they read has moved since. The styling arrives for a fourth: the rebuild reads it once
+    // for everything it builds, the names fitted after these cells included.
     public static OwnerMapClusters buildClusters(
             CellGeometryCache geometryCache,
             ViewReading viewReading,
             ContentInputs contentInputs,
-            ResolvedOwners owners) {
+            ResolvedOwners owners,
+            MapStyling styling) {
 
         var profiler = ActiveProfiler.resolveProfiler();
 
         try (var rebuildScope = profiler.open(REBUILD_SECTION)) {
 
-            var styling = readMapStyling(
-                viewReading.view().resolveCategories(),
-                viewReading.reading(),
-                contentInputs);
+            // Stated once here, ahead of any geometry, because it does not vary across the bodies
+            // this pass then cuts: it is the heading the per-body hatch lines are read under, and
+            // the one place their units are given.
+            HatchBuildDiagnostics.logHatchSpecification(styling.renderStyle().global().hatch());
 
             var clusters = new OwnerMapClusters(
                 // Copied out of the owners rather than adopted: the incremental refresh folds
@@ -163,45 +161,8 @@ public final class OwnerMapBuilder {
         }
     }
 
-    // The paint scheme this build styles every cell from: the whole theme read once through the
-    // single reader seam for the layer's own categories, the reading's unowned shade, and the two
-    // palettes a spotlight separates its subject from its backdrop with. Held on the clusters so the
-    // incremental refresh re-shapes cells against the same snapshot this pass used.
-    private static MapStyling readMapStyling(
-            OwnerCategories categories,
-            OwnerReading reading,
-            ContentInputs contentInputs) {
-
-        var renderStyle = RenderStyleReader.readRenderStyle(categories, contentInputs);
-
-        var neutralColour = reading.resolveUnownedColour();
-
-        // Stated once here, ahead of any geometry, because it does not vary across the bodies this
-        // pass then cuts: it is the heading the per-body hatch lines are read under, and the one
-        // place their units are given.
-        HatchBuildDiagnostics.logHatchSpecification(renderStyle.global().hatch());
-
-        return new MapStyling(
-            renderStyle,
-            categories,
-            MapPalettes.resolveNeutralPalette(neutralColour),
-            // The receded background desaturates to one uniform palette, the reading's recede
-            // shades darkened by the live setting so it sits below the quieter owners' own space -
-            // a spotlit owner at full strength therefore reads distinctly against it.
-            MapPalettes.resolveDesaturationPalette(
-                reading.resolveRecedePalette(),
-                renderStyle.global().desaturationDarkening()),
-            // The other end of that separation: the neutral a spared factionless cell paints in,
-            // lifted toward white so it clears the greys the recede just sank. Resolved beside its
-            // counterpart, both once per pass, so the two ends cannot be read from different
-            // snapshots of the same two knobs.
-            MapPalettes.resolvePresencePalette(
-                neutralColour,
-                renderStyle.global().presenceLightening()));
-    }
-
     // Turns the cached raw cells into the two draw lists: each cell shaped against the holding and
-    // styled, the clusters re-derived off the keys that shaping fused them by, and each bloc's
+    // styled, the clusters re-derived off the keys that shaping fused them by, and each owner's
     // bodies traced across all of its cells.
     //
     // Written into the clusters rather than returned, because the per-cell builder reads the
@@ -247,7 +208,10 @@ public final class OwnerMapBuilder {
             if (painted == null) {
                 continue;
             }
-            clusters.getPaintedCells().putPaintedCell(entry.getKey(), painted);
+
+            clusters
+                .getPaintedCells()
+                .putPaintedCell(entry.getKey(), painted);
         }
         // The clusters the cursor read resolves a hovered cell's whole cluster group through. Derived
         // here off the same keys the shaping just fused the cells by, so a highlighted cluster group
@@ -256,12 +220,13 @@ public final class OwnerMapBuilder {
             geometryCache.getCellEdgesByCellKey(),
             geometryCache.getSystemKeyByCellKey());
 
-        // Each owned faction's cluster group: one entry per cluster (traced across all its cells so
+        // Each owner's cluster group: one entry per cluster (traced across all its cells so
         // a multi-system cluster reads as one frontier), tessellated for the fill and flattened
-        // for the border - the same shape for both. Built off the same raw cells and holders the
+        // for the border - the same shape for both. Built off the same raw cells and owners the
         // seams used, and profiled on its own since chaining, smoothing, and tessellating every
-        // faction's outline is comparable in cost to shaping the cells.
+        // owner's outline is comparable in cost to shaping the cells.
         try (var clusterGroupsScope = profiler.open(BUILD_CLUSTER_GROUPS_SECTION)) {
+
             ClusterGroupBuilder.buildAllClusterGroups(
                 clusters,
                 geometryCache,
@@ -269,12 +234,12 @@ public final class OwnerMapBuilder {
         }
 
         // The cells this pass shaped are what its duration is read against. What became of them -
-        // how many were styled, into how many blocs - is a fact about this one call, and the hatch
+        // how many were styled, into how many owners - is a fact about this one call, and the hatch
         // strokes it cut reach the row from where they were cut rather than being summed back out
         // of what was built.
         shapeScope.addCount(MapBuildCounters.CELLS, shapedCells.size());
         shapeScope.tagCall("styled=" + clusters.getStyledCellByCellKey().size()
-            + " blocs=" + clusters.getStyledClusterGroupByOwnerId().size());
+            + " owners=" + clusters.getStyledClusterGroupByOwnerId().size());
     }
 
     // The cell shaping as a row of its own: fusing same-owner cells and insetting each is comparable
@@ -285,11 +250,11 @@ public final class OwnerMapBuilder {
             CellGrouping cellGrouping) {
 
         try (var shapeScope = profiler.open(SHAPE_CELLS_SECTION)) {
+
             return CellShaper.shapeCells(
                 geometryCache.getCellEdgesByCellKey(),
                 cellGrouping,
                 EdgeInset.asTheMapDraws());
         }
     }
-
 }

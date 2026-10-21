@@ -26,6 +26,7 @@ Change this file with either post.
 - [Settings](#settings)
 - [Console commands](#console-commands)
 - [Compatibility](#compatibility)
+- [Q&A](#qa)
 - [Feedback](#feedback)
 - [Post-release roadmap](#post-release-roadmap)
 - [AI usage disclaimer](#ai-usage-disclaimer)
@@ -108,7 +109,7 @@ The [source notes][source-notes] list KMU's value for every input; what each inp
     Headline feature in [features and screens][kmu-features].
 - EN: This is the pre-release stage intended for public testing and feedback collection.
   - ZH: 本 Mod 目前处于预发布阶段，用于公开测试与收集反馈。
-  - Notes: Mod in [game and mods][kmu-mods].
+  - Notes: Mod in KMLib's [vanilla terms][kmlib-vanilla].
     Pre-release in [KMLib's forum terms][kmlib-forum].
 - EN: You can try this mod early and share your experiences, so I can improve it.
   - ZH: 欢迎提前试用并分享你的体验，帮助我改进它。
@@ -132,19 +133,19 @@ The English README's Languages section says the same to an English reader.
 
 - EN: Are you struggling to keep track of faction presence and growth?
   - ZH: 你是否苦于跟不上各势力的扩张与消长？
-  - Notes: Faction in [factions and relations][kmu-factions].
+  - Notes: Faction in KMLib's [vanilla terms][kmlib-vanilla].
     "Presence and growth" is 扩张与消长 (expansion, waxing and waning),
     not presence's 存在 from [the political map][kmu-politics], which reads as the map term.
 - EN: Do you want to know which systems are claimed and by who before you even take the trip there?
   - ZH: 你是否想在出发之前就知道哪些星系已被宣称、被谁宣称？
-  - Notes: Star system in [space][kmu-space]; claim in [the political map][kmu-politics].
+  - Notes: Star system in KMLib's [vanilla terms][kmlib-vanilla]; claim in [the political map][kmu-politics].
 - EN: Do you want to paint the map with your conquests?
   - ZH: 你是否想用自己的征服为星图上色？
   - Notes: Map in [screens and the map][kmu-screens].
     Paint in [the political map][kmu-politics].
 - EN: Do you just want to see all that border gore factions in your mod list produce?
   - ZH: 你是否只是想看看你 Mod 列表里的各路势力制造出的边界地狱？
-  - Notes: border in [the political map][kmu-politics]; Mod in [game and mods][kmu-mods].
+  - Notes: border in [the political map][kmu-politics]; Mod in KMLib's [vanilla terms][kmlib-vanilla].
     Border gore in [the political map][kmu-politics].
 - EN: Do you want to play Bad Apple?
   - ZH: none
@@ -212,24 +213,25 @@ The English README's Languages section says the same to an English reader.
   - Notes: Install mid-run in [KMLib's forum terms][kmlib-forum].
 - EN: and there's a short uninstall procedure you will need to follow if you decide to keep your save after uninstalling the mod.
   - ZH: 若卸载后仍想保留存档，需要先执行一个简短的卸载步骤。
-  - Notes: Save in [game and mods][kmu-mods].
+  - Notes: Save in KMLib's [vanilla terms][kmlib-vanilla].
     Uninstall and uninstall procedure in [KMLib's forum terms][kmlib-forum].
 
 ## Compatible mods
 
 - EN: This mod is made compatible with Nexerelin, Fast Rendering, Random Assortment of Things.
   - ZH: 本 Mod 已与 Nexerelin、Fast Rendering、Random Assortment of Things 做了兼容。
-  - Notes: proper nouns stay Latin, per the [rules][kmu-rules]; compatibility as in the Map - Compatibility tab in [settings tabs][kmu-tabs].
+  - Notes: proper nouns stay Latin, per KMLib's [rules][kmlib-rules]; compatibility as in the Map - Compatibility tab in [settings tabs][kmu-tabs].
 
 ## Sector Map Layers
 
-- EN: Sector Map Layers is an overlay for the map screen (Tab, Q), the intel screen (E, 1), the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have Random Assortment of Things installed.
+- EN: Sector Map Layers (colloquially known as the map mod) is an overlay for the map screen (Tab, Q), the intel screen (E, 1), the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have Random Assortment of Things installed.
   - ZH: 星图图层是叠加在星图界面 (Tab, Q) 和情报信息界面 (E, 1) 上的叠加层；若安装了 Random Assortment of Things，也会显示在屏幕右下角的小地图上（它替换了原版的雷达）。
   - Notes: Sector Map Layers, map screen and overlay in [features and screens][kmu-features]; Intel in [screens and the map][kmu-screens].
+    The map mod nickname is left untranslated and out of the Fossic post.
     Minimap in [features and screens][kmu-features]; radar in [screens and the map][kmu-screens]; vanilla in [KMLib's forum terms][kmlib-forum].
 - EN: Everything is calculated and drawn off of game data, and it gets updated as the state of the sector changes.
   - ZH: 一切都根据游戏数据计算并绘制，并随星域局势的变化而更新。
-  - Notes: Sector in [space][kmu-space].
+  - Notes: Sector in KMLib's [vanilla terms][kmlib-vanilla].
 - EN: Map layers don't alter any of the data being used to draw it, making map layers read-only by design.
   - ZH: 地图图层不会修改用于绘制它的任何数据，因此地图图层在设计上是只读的。
   - Notes: map layers in [features and screens][kmu-features].
@@ -255,6 +257,9 @@ The English README's Languages section says the same to an English reader.
 - EN: Random Assortment of Things minimap.
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+
+### Sector examples
+
 - EN: Sector examples
   - ZH: 星域示例
 - EN: image `promo/en/sector-1-vanilla.png`
@@ -262,7 +267,7 @@ The English README's Languages section says the same to an English reader.
 - EN: Vanilla.
   - ZH: 原版加 Nexerelin。
   - Notes: the Chinese screenshot is its own, vanilla with Nexerelin, so its caption differs.
-    Vanilla in [KMLib's forum terms][kmlib-forum]; Nexerelin stays Latin, per the [rules][kmu-rules].
+    Vanilla in [KMLib's forum terms][kmlib-forum]; Nexerelin stays Latin, per KMLib's [rules][kmlib-rules].
 - EN: image `promo/en/sector-2-modded-light.png`
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
@@ -275,13 +280,16 @@ The English README's Languages section says the same to an English reader.
 - EN: Heavily modded.
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+
+### How to access map layers
+
 - EN: How to access map layers
   - ZH: 如何打开地图图层
 - EN: KMU comes with Sector Map Layers feature turned on by default.
   - ZH: KMU 的星图图层功能默认开启。
 - EN: After loading a save or starting a new game, when you open the map screen or the intel screen, you'll see a new Map layers button among map filter buttons.
   - ZH: 读取存档或开始新游戏后，打开星图界面或情报信息界面，地图筛选栏中会多出一个地图图层按钮。
-  - Notes: Save in [game and mods][kmu-mods]; map screen, Map layers (filter row tick box) and filter row in [features and screens][kmu-features].
+  - Notes: Save in KMLib's [vanilla terms][kmlib-vanilla]; map screen, Map layers (filter row tick box) and filter row in [features and screens][kmu-features].
 - EN: Clicking that button or pressing (M) enables the map layer overlay and its sidebar.
   - ZH: 点击它或按 (M) 即可开启地图图层叠加层及其侧边栏。
   - Notes: overlay and sidebar in [features and screens][kmu-features].
@@ -309,7 +317,7 @@ The English README's Languages section says the same to an English reader.
   - ZH: 政治地图 (P)
 - EN: Focuses on populated colonies (markets) and their affiliation.
   - ZH: 关注有人居住的殖民地（市场）及其归属。
-  - Notes: Colony and Market in [colonies and markets][kmu-colonies]; 有人居住 is vanilla's Inhabited filter in [screens and the map][kmu-screens].
+  - Notes: Colony and Market in KMLib's [vanilla terms][kmlib-vanilla]; 有人居住 is vanilla's Inhabited filter in [screens and the map][kmu-screens].
     Affiliation in [the political map][kmu-politics].
 - EN: Only they paint the map.
   - ZH: 只有它们会为地图上色。
@@ -378,7 +386,7 @@ The English README's Languages section says the same to an English reader.
     "Population center" is any populated market here, so not vanilla's 人口中心, which reads as a large hub.
 - EN: Selecting any of them spotlights their presence across the sector.
   - ZH: 选中其中任意一个，即可聚焦其在整个星域的存在。
-  - Notes: spotlight and presence in [the political map][kmu-politics]; Sector in [space][kmu-space].
+  - Notes: spotlight and presence in [the political map][kmu-politics]; Sector in KMLib's [vanilla terms][kmlib-vanilla].
 - EN: Neutral is listed there alongside organised factions, so selecting it spotlights every system holding decivilised colonies.
   - ZH: 中立与有组织的势力并列其中，选中它即可聚焦所有持有荒蛮殖民地的星系。
   - Notes: decivilised colony in [the political map][kmu-politics].
@@ -484,6 +492,9 @@ The English README's Languages section says the same to an English reader.
 - EN: and there's a non-territorial faction (Independent) present.
   - ZH: none
   - Notes: no Chinese screenshot yet, so the Fossic post leaves this out.
+
+## Spoiler protection
+
 - EN: Spoiler protection
   - ZH: 防剧透
   - Notes: spoilers as in Visibility overrides (SPOILERS) in [settings][kmu-settings].
@@ -492,11 +503,11 @@ The English README's Languages section says the same to an English reader.
   - Notes: visibility as in the Map - Visibility tab in [settings tabs][kmu-tabs].
 - EN: Hidden systems (with no hyperspace anchor generated off of a star, nebula, or a black hole) are not revealed unless there's a visible population center present or it holds an active gate.
   - ZH: 隐藏星系（没有由恒星、星云或黑洞生成的超空间锚点）不会显示，除非其中有可见的有人居住的市场，或持有激活的星门。
-  - Notes: Hyperspace, Nebula and Gate in [space][kmu-space]; Hidden in [colonies and markets][kmu-colonies].
+  - Notes: Hyperspace in KMLib's [vanilla terms][kmlib-vanilla]; Nebula and Gate in [space][kmu-space]; Hidden in [colonies and markets][kmu-colonies].
     Hidden system in [the political map][kmu-politics]; hyperspace anchor in [vanilla mechanics without a name][kmu-unnamed]; star and black hole in [space][kmu-space]; population center in [the political map][kmu-politics].
 - EN: Entities marked as discoverable (hidden on the system map until in range of player fleet sensors) are not revealed.
   - ZH: 标记为可发现的实体（在玩家舰队探测范围之外时不显示在星系地图上）不会显示。
-  - Notes: fleet in KMLib's [what a failed binding costs][kmlib-costs].
+  - Notes: fleet in KMLib's [vanilla terms][kmlib-vanilla].
     Discoverable in [vanilla mechanics without a name][kmu-unnamed]; entity and sensors in [space][kmu-space]; system map in [screens and the map][kmu-screens].
 - EN: They are also listed on Claims tooltips because vanilla uses them in claim calculations, but are redacted.
   - ZH: 由于原版在宣称计算中会用到它们，它们也会列在宣称提示框中，但会被隐去。
@@ -577,7 +588,7 @@ The English README's Languages section says the same to an English reader.
 - EN: Spawns a gate or a jump point at the fleet position.
   - ZH: 在舰队位置生成星门或跳跃点。
   - Notes: 跳跃点 is the jump-point label in KMLib's own strings.
-    Jump point in [space][kmu-space].
+    Jump point in KMLib's [vanilla terms][kmlib-vanilla].
 - EN: [orbit_focus_id] defaults to system center.
   - ZH: [orbit_focus_id] 默认为星系中心。
 - EN: [speed] is derived from radius by default.
@@ -602,11 +613,11 @@ The English README's Languages section says the same to an English reader.
   - Notes: Sector map widget in [features and screens][kmu-features]; terrain in [space][kmu-space].
 - EN: And to be visible in the Starscape mode, the starscape terrain variant is tagged as a slipstream.
   - ZH: 为了在星景模式下也能显示，星景地形变体被标记为滑流。
-  - Notes: Starscape in [screens and the map][kmu-screens].
+  - Notes: Starscape in [screens and the map][kmu-screens]; Starscape mode in [features and screens][kmu-features].
     Slipstream in [space][kmu-space].
 - EN: Custom terrain is the only thing that has to be serialised into saves as Java class references, and that's why a clean uninstall is required for disabling the mod.
   - ZH: 自定义地形是唯一必须以 Java 类引用的形式序列化进存档的内容，这也是禁用本 Mod 前需要干净卸载的原因。
-  - Notes: Save in [game and mods][kmu-mods].
+  - Notes: Save in KMLib's [vanilla terms][kmlib-vanilla].
     Uninstall in [KMLib's forum terms][kmlib-forum].
 - EN: The game reuses the map widget, and so do many mods.
   - ZH: 游戏会复用星图控件，许多 Mod 也是如此。
@@ -633,8 +644,27 @@ The English README's Languages section says the same to an English reader.
   - ZH: 图层选择沿用星图界面。
 - EN: As a bonus, the map widget is made invisible when it's docked off-screen (docking is RAT's way of hiding the map widget when the player docks at markets or opens any UI screens) - that disables any related rendering and should provide a marginal performance improvement (more so when in hyperspace) in the menus that don't show the sector map.
   - ZH: 此外，当星图控件停靠到屏幕外时（停靠是 RAT 在玩家停靠市场或打开任何界面时隐藏星图控件的方式），本 Mod 会将其设为不可见，从而跳过相关渲染，在不显示星图的菜单中应能带来少许性能提升（在超空间中更明显）。
-  - Notes: Hyperspace in [space][kmu-space].
+  - Notes: Hyperspace in KMLib's [vanilla terms][kmlib-vanilla].
     Dock in [features and screens][kmu-features].
+
+## Q&A
+
+- EN: Q&A
+  - ZH: 常见问题
+  - Notes: Q&A in [KMLib's forum terms][kmlib-forum].
+- EN: Q: The nebulae in Starscape mode obscure parts of the map. Can I hide them?
+  - ZH: 问：星景模式下的星云会遮挡地图的部分内容，能把它们隐藏吗？
+  - Notes: Nebula in [space][kmu-space]; Starscape mode in [features and screens][kmu-features].
+- EN: A: You can choose which parts of Map Layers are painted above the Starscape nebulae and which stay below them.
+  - ZH: 答：你可以选择地图图层的哪些部分绘制在星景模式的星云之上、哪些留在星云之下。
+  - Notes: map layers in [features and screens][kmu-features].
+    The Starscape nebulae are the ones Starscape mode draws, so 星景模式的星云 rather than a bare 星景星云.
+- EN: Open the Map - Politics - Visuals settings tab and find its Nebula draw order section, which holds four settings: Territory fills, Borders, Presence bands and Faction names.
+  - ZH: 打开设置中的地图 - 政治 - 外观标签页，找到其中的星云绘制顺序部分，共有四项设置：领土填充、边界、存在色带和势力名称。
+  - Notes: the tab, section and setting names as the Chinese settings screen writes them,
+    each after its own verb so the tab and the section read apart; 部分 for a section, as the settings notes write it.
+    Nebula draw order in [settings][kmu-settings]; the four names in [the political map][kmu-politics].
+    Map - Politics - Visuals in [settings tabs][kmu-tabs].
 
 ## Feedback
 
@@ -739,7 +769,6 @@ The [source notes][source-notes] give why.
 [source-notes]: fossic-post.bbcode
 [kmu-holds]: ../localisation/zh-hans/README.md#what-this-folder-holds
 [kmu-unnamed]: ../localisation/zh-hans/README.md#vanilla-mechanics-without-a-name
-[kmu-rules]: ../localisation/zh-hans/README.md#rules
 [kmu-screens]: ../localisation/zh-hans/README.md#screens-and-the-map
 [kmu-space]: ../localisation/zh-hans/README.md#space
 [kmu-colonies]: ../localisation/zh-hans/README.md#colonies-and-markets
@@ -754,5 +783,6 @@ The [source notes][source-notes] give why.
 [kmu-console]: ../localisation/zh-hans/README.md#console-commands
 [kmu-banner]: ../localisation/zh-hans/README.md#the-forum-banner
 [kmlib-forum]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#forum-terms
-[kmlib-costs]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#what-a-failed-binding-costs
 [kmlib-settings]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#settings
+[kmlib-vanilla]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#vanilla-terms
+[kmlib-rules]: https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/localisation/zh-hans/README.md#rules

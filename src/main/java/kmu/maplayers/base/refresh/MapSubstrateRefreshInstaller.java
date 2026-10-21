@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.scripts.SectorScripts;
 
+import kmu.maplayers.base.visibility.colonies.ColonySightingsPoll;
+
 import static kmu.KmuWiringSteps.runGuardedStep;
 
 /**
@@ -11,8 +13,8 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * are switched off.
  *
  * <p>Beside the machinery rather than beside a layer, because what the poll keeps up to date is
- * shared by every layer there is - {@link MapSubstrateStalenessSource} says why that has to outlive
- * any one of them.
+ * shared by every layer there is - this package's README says why that has to outlive any one of
+ * them.
  *
  * <p>Final class with a private constructor: pure-function utility, no instance state.
  */
@@ -53,10 +55,16 @@ public final class MapSubstrateRefreshInstaller {
     //
     // Transient and cleared before it is added, so it is fresh on every load and never doubles up
     // within a session either.
+    //
+    // The sweep is adapted to the poll's port here rather than implementing it, so the register it
+    // writes into never imports the machinery that drives it.
     static void installMapSubstrateSectorWatcher(SectorAPI sector) {
+
+        var colonySightingsPoll = new ColonySightingsPoll(sector);
+
         SectorScripts.installTransientScript(
             sector,
-            () -> new MapSubstrateSectorWatcher(new MapSubstrateStalenessSource(sector)));
+            () -> new MapSubstrateSectorWatcher(colonySightingsPoll::recordSightingsByInhabitants));
     }
 
     // Stops the poll. By class, which is safe here where it would not be for a library script: this

@@ -10,12 +10,12 @@ import kmu.maplayers.base.sidebar.PickerScope;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.style.MapPalettes;
-import kmu.maplayers.ownermap.sidebar.SelectableBlocCache;
+import kmu.maplayers.ownermap.sidebar.SelectableOwnerCache;
 
 import java.awt.Color;
 
 /**
- * Lights every system the bloc under the spotlight picker's pointer is present in, over the map that
+ * Lights every system the owner under the spotlight picker's pointer is present in, over the map that
  * is already painting - what picking that row would spotlight, shown without picking it.
  *
  * <p>The preview for any layer offering the tier's spotlight picker: which rows exist and what each
@@ -26,12 +26,12 @@ import java.awt.Color;
  * re-trace. The frame's own draw lists are the only geometry it traces, and the assembly over them
  * is memoised, so a pointer resting on one row costs nothing after the first frame.
  *
- * <p>The shade is keyed on the bloc rather than on any cell of it, which is what separates this
- * from the cursor's highlight beside it. A previewed bloc lights cells that rivals hold and cells a
+ * <p>The shade is keyed on the owner rather than on any cell of it, which is what separates this
+ * from the cursor's highlight beside it. A previewed owner lights cells that rivals hold and cells a
  * spotlight has sunk to grey, and both would answer in someone else's colour - or in none - if the
  * shade were read off what the cell was painted as. It comes through the owner reading the frame was
  * built under, the painting layer's one answer to what colour an owner is, so no two surfaces
- * painting for a bloc can come to disagree - including on a bloc gone from the sector, which none
+ * painting for an owner can come to disagree - including on an owner gone from the sector, which none
  * of them paints.
  *
  * <p>It cannot collide with the cursor's highlight: the sidebar parks the map hover while the
@@ -39,8 +39,8 @@ import java.awt.Color;
  */
 public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewHighlight {
 
-    // The sector whose picker is being previewed - where the hovered bloc is read from, where the
-    // systems behind it are read from, and whose factions the shade is read from. Taken whole
+    // The sector whose picker is being previewed - where the hovered owner is read from, where the
+    // systems behind it are read from, and whose owners the shade is read from. Taken whole
     // rather than as the three reads separately, so they cannot end up naming different sectors.
     private final SectorMapMachinery machinery;
 
@@ -56,8 +56,8 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
     private final PreviewHighlightGeometry geometry = new PreviewHighlightGeometry();
 
     /**
-     * @param machinery the machinery installed on the sector whose map this draws over, holding
-     *                  both the picker's hover slot and the presence behind its rows
+     * @param machinery      the machinery installed on the sector whose map this draws over, holding
+     *                       both the picker's hover slot and the presence behind its rows
      * @param layerId        the layer whose picker is previewed, so the presence is read off that
      *                       layer's own memo rather than another layer's
      * @param storeNamespace the namespace the layer's picker reports its hover under
@@ -73,13 +73,13 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
     }
 
     /**
-     * Paints the previewed bloc's systems for one map frame, or nothing when no row is under the
+     * Paints the previewed owner's systems for one map frame, or nothing when no row is under the
      * pointer.
      *
      * @param clusters the draw lists the frame painted, which is the only geometry the preview
-     *                    traces and the theme it draws to
-     * @param mapFrame    the scale every coordinate is multiplied by, and the map's own fade
-     *                    applied on top of every element's opacity
+     *                 traces and the theme it draws to
+     * @param mapFrame the scale every coordinate is multiplied by, and the map's own fade
+     *                 applied on top of every element's opacity
      */
     @Override
     public void renderPreviewOnMap(
@@ -101,7 +101,7 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
     //
     // The three tests run cheapest first, and the order matters: the hovered row is a map lookup
     // and answers "nothing" on almost every frame the map is open, so a frame previewing nothing
-    // reads neither the theme nor the sector's factions and never reaches the assembly at all.
+    // reads neither the theme nor the sector's owners and never reaches the assembly at all.
     //
     // Package-private so the decision is answerable without a live map, the emission below it
     // being pure GL.
@@ -113,17 +113,17 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
         // The view's ID under the layer's own store namespace, which is how the picker reported the
         // hover: the ID is opaque, so a view named the same by another mod's picker is a different
         // list and must not preview here.
-        var previewedBlocId = FilterHoverSlot
+        var previewedOwnerId = FilterHoverSlot
             .resolveHoverSlotIn(machinery)
             .getHoveredIdOf(new PickerScope(storeNamespace, view.getId()));
 
-        if (previewedBlocId == null) {
+        if (previewedOwnerId == null) {
             return PreviewHighlightPaint.NONE;
         }
         // Resolved before the geometry for the reason the cursor's entry resolves its own colour
         // first: a shade the player has switched off ("No color") stands every frame the map is
         // open, and it is what says whether the assembly is worth running at all.
-        var colour = resolveShadeOf(clusters, previewedBlocId);
+        var colour = resolveShadeOf(clusters, previewedOwnerId);
 
         if (colour == null) {
             return PreviewHighlightPaint.NONE;
@@ -131,14 +131,14 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
         // Read under the view the frame painted, which is also the view the sidebar's rows were
         // listed under: the presence rides the same memo those rows came from, so asking under any
         // other view would both evict that memo and answer about a list the pointer is not on.
-        var presentSystemKeys = SelectableBlocCache
-            .resolveBlocCacheIn(machinery, layerId)
-            .readPresentSystemKeys(view, previewedBlocId);
+        var presentSystemKeys = SelectableOwnerCache
+            .resolveOwnerCacheIn(machinery, layerId)
+            .readPresentSystemKeys(view, previewedOwnerId);
 
         return new PreviewHighlightPaint(
             geometry.resolveHighlightFor(
                 new OwnerMapHoverHighlightSource(clusters),
-                previewedBlocId,
+                previewedOwnerId,
                 presentSystemKeys),
             colour);
     }
@@ -151,16 +151,16 @@ public final class SpotlightPreviewHighlightRenderer implements OwnerMapPreviewH
     }
 
     // The one shade the whole previewed set burns in, or null when it has none to burn - the
-    // player having pointed the tier at no shade, or the reading having no shades for the bloc.
-    // The second is the band rule's own answer, inherited rather than restated: a bloc the map
+    // player having pointed the tier at no shade, or the reading having no shades for the owner.
+    // The second is the band rule's own answer, inherited rather than restated: an owner the map
     // cannot colour is one neither surface paints.
-    private Color resolveShadeOf(OwnerMapClusters clusters, String blocId) {
+    private Color resolveShadeOf(OwnerMapClusters clusters, String ownerId) {
 
-        // The placeholder a failed first build stands behind resolved no reading, and a bloc with no
+        // The placeholder a failed first build stands behind resolved no reading, and an owner with no
         // reading to ask has no shade to burn.
         var buildInputs = clusters.getBuildInputs();
         var palette = buildInputs.wasBuilt()
-            ? buildInputs.viewReading().reading().resolvePalette(blocId)
+            ? buildInputs.viewReading().reading().resolvePalette(ownerId)
             : null;
 
         return palette == null

@@ -2,11 +2,11 @@ package kmu.maplayers.politicalmap.claims;
 
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.ClaimReaderSource;
 
-import kmu.maplayers.ownermap.holding.HolderPass;
+import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
-import kmu.maplayers.politicalmap.dominance.FilteredPolitics;
-import kmu.maplayers.politicalmap.dominance.SectorPolitics;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -15,8 +15,9 @@ import java.util.Map;
  * Resolves who paints each claimed star system while the filter spotlights one bloc: the selected
  * bloc's claims carry its one synthetic spotlight key, every rival's claim keeps its own.
  *
- * <p>The claim counterpart to {@link FilteredPolitics}, standing to {@link SectorClaims} exactly as
- * that class stands to {@link SectorPolitics} - the same resolve, answered under a spotlight. The
+ * <p>The claim counterpart to the dominance package's {@code FilteredPolitics}, standing to
+ * {@link SectorClaims} exactly as that class stands to {@code SectorPolitics} - the same resolve,
+ * answered under a spotlight. The
  * key is what the style layer reads: a rekeyed claim draws at full strength, a claim left on its
  * plain bloc key mutes and desaturates, so a claim always shares the fate of the territory it
  * belongs to.
@@ -39,12 +40,36 @@ public final class FilteredClaims {
     }
 
     /**
+     * The same resolve, with the claim reader opened over the pass here - the one way both
+     * claim-reading providers open and filter claims.
+     *
+     * <p>The reader is opened over the pass rather than held across passes, so it reads the colonies
+     * the pass already walked rather than walking every system a second time.
+     *
+     * @param pass              the rebuild's reading of the sector, as {@link #resolveFilteredClaims}
+     *                          takes it
+     * @param claimReaderSource the source the view reads every claim through
+     * @param selectedBlocId    the spotlighted bloc's ID, or null off filter
+     * @return the claiming holder keyed by {@link SystemKey}, in star-system walk order
+     */
+    public static Map<SystemKey, SystemOwner> resolveFilteredClaimsThrough(
+            HolderPass pass,
+            ClaimReaderSource claimReaderSource,
+            String selectedBlocId) {
+
+        return resolveFilteredClaims(
+            pass,
+            PassClaimReaders.openClaimReaderOver(pass, claimReaderSource),
+            selectedBlocId);
+    }
+
+    /**
      * Builds the claiming holder per system with the selected bloc's claims put under its
      * spotlight - the entry the claim-reading providers call in place of
      * {@link SectorClaims#resolveClaimingHolderBySystemKey}.
      *
-     * <p>Off filter, or with no sector to read a palette from, this is that plain claim resolve
-     * unchanged. A claim of the selected bloc whose spotlight holder does not resolve is dropped,
+     * <p>Off filter this is that plain claim resolve unchanged. A claim of the selected bloc whose
+     * spotlight holder does not resolve is dropped,
      * matching how the presence pass drops a spotlit system whose colour faction has gone.
      *
      * @param pass           the rebuild's reading of the sector - the systems walked, and the
@@ -63,18 +88,14 @@ public final class FilteredClaims {
         var claimingHolderBySystemKey = SectorClaims.resolveClaimingHolderBySystemKey(
             pass,
             claimReader);
-        var sector = pass.sector();
 
-        if (sector == null || selectedBlocId == null) {
+        if (selectedBlocId == null) {
             return claimingHolderBySystemKey;
         }
 
         // Resolved once for the whole walk: every system the bloc claims joins the same spotlight
         // territory, so they all carry the identical holder.
-        var spotlitHolder = FilteredPolitics.resolveSpotlitHolder(
-            sector,
-            pass.grouping(),
-            selectedBlocId);
+        var spotlitHolder = SpotlitOwners.createSpotlitOwner(pass.palettes().readBlocPalette(selectedBlocId));
         var spotlitClaims = new LinkedHashMap<SystemKey, SystemOwner>();
 
         for (var claim : claimingHolderBySystemKey.entrySet()) {

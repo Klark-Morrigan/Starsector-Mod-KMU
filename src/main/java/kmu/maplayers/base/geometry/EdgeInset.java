@@ -5,13 +5,12 @@ package kmu.maplayers.base.geometry;
  *
  * <p>The two never mean anything apart. A depth says nothing without the rule that decides
  * where it applies, and a rule handed a depth from somewhere else shapes a body whose fill
- * stops in a different place from the border traced beside it - which is how a cluster's fill
- * and its outline once came to disagree. {@link BorderTraceStyle} carries the same pair for the
- * same reason, flat, alongside the two tolerances a trace also needs.
+ * stops in a different place from the border traced beside it. {@link BorderTraceStyle} carries
+ * one for the same reason, alongside the two tolerances a trace also needs.
  *
- * <p>{@link #asTheMapDraws()} is the one the game ships, so the three passes that shape the map
- * itself name it rather than each restating the rule and the distance. Restated, they are two
- * values that have to move together and four call sites that could fail to.
+ * <p>{@link #asTheMapDraws()} is the one the game ships, so a pass that shapes the map itself
+ * names it rather than restating the rule and the distance, two values that have to move
+ * together.
  *
  * @param rule  which edges the channel is cut into
  * @param depth how far each of those edges pulls in

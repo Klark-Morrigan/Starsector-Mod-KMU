@@ -12,12 +12,12 @@ import java.util.Map;
  * and how each is styled, which one an owner at full strength draws in, and which one a cell nobody
  * owns falls to.
  *
- * <p>How a map divides is the vocabulary of whoever paints it - independent space set apart from
- * factions is one layer's division, relay coverage set apart from none is another's - so the tier
- * states the roles a category plays and never names a category itself. It indexes the theme by the
- * open {@link MapStyleCategory} the layer hands back. Which category an owner draws in is the
- * owner reading's answer rather than this declaration's, since it can depend on the snapshot the
- * reading was taken over.
+ * <p>How a map divides is the vocabulary of whoever paints it - held space set apart from
+ * unheld space is one layer's division, relay coverage set apart from none is another's - so
+ * the tier states the roles a category plays and never names a category itself. It indexes the
+ * theme by the open {@link MapStyleCategory} the layer hands back. Which category an owner draws in
+ * is the owner reading's answer rather than this declaration's, since it can depend on the snapshot
+ * the reading was taken over.
  *
  * <p>Two roles the tier's own rules are stated over, and so the two this declaration has to name:
  * the <em>full-strength</em> category, whose fill opacity every desaturated owner holds so a

@@ -13,7 +13,7 @@ import kmu.maplayers.ownermap.render.hover.OwnerMapPreviewHighlight;
 import java.util.function.Supplier;
 
 /**
- * Draws an owner map on the sector map as merged HOI4-style clusters, where adjacent same-holder
+ * Draws an owner map on the sector map as merged HOI4-style clusters, where adjacent same-owner
  * systems fuse into one solid cluster - by composing the owner-painted parts into the framework's
  * frame sequence. The sequence itself, and every rule about when each part is asked, is
  * {@link SequencedMapLayerRenderer}'s; what is settled here is which owner-map piece answers each part.
@@ -42,7 +42,7 @@ public final class OwnerMapLayerRenderer {
      *
      * @param machinery                 the machinery this renderer is being made for, whose sector its
      *                                  cache cuts its cells from, whose movers that cut leaves out,
-     *                                  whose hover holder the cursor read publishes into, whose picker
+     *                                  whose hover state the cursor read publishes into, whose picker
      *                                  the preview is read off, and whose origin its profiling rows are
      *                                  grouped under
      * @param layerId                   the ID of the layer this renderer draws, which its rows are

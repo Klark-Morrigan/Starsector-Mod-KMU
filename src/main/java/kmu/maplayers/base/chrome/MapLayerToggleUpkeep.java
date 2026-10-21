@@ -115,7 +115,7 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     public MapLayerToggleUpkeep() {
         this(
             KmuMapControlSettings::isMapFilterRowToggleEnabled,
-            MapLayerScreens::resolveLivePicks,
+            () -> MapLayerScreens.resolveScreensForLiveSector().resolveLivePicks(),
             () -> MapFilterRows.resolveShownMapFilterRow(MapLayerGameReach.FILTER_ROW_TOGGLE.getReporter()),
             CampaignScreenView::resolveShownCoreTab,
             new VanillaMapLayerToggleAttacher());

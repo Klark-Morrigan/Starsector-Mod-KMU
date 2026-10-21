@@ -70,7 +70,7 @@ class LakeTierTests {
         @Test
         void everyWallCarriesTheLakeCoastLabel() {
 
-            var laid = LakeTier.layCoastWalls(List.of(LINE), NO_SHORE, SITES, PARAMETERS);
+            var laid = LakeTier.layCoastWalls(List.of(LINE), Shore.indexShore(NO_SHORE, SITES, PARAMETERS));
 
             assertThat(laid.walls())
                 .isNotEmpty()
@@ -273,7 +273,7 @@ class LakeTierTests {
         @Test
         void everyWallCarriesTheLakeBridgesLabel() {
 
-            var laid = LakeTier.layBridgeWalls(List.of(LINE), NO_SHORE, SITES, PARAMETERS);
+            var laid = LakeTier.layBridgeWalls(List.of(LINE), Shore.indexShore(NO_SHORE, SITES, PARAMETERS));
 
             assertThat(laid.walls())
                 .isNotEmpty()

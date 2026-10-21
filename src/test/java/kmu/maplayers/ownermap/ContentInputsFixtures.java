@@ -1,7 +1,7 @@
 package kmu.maplayers.ownermap;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.ownermap.preferences.FactionNameFormatChoice;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 
 /**
  * The readings of the sidebar preferences a test poses a bake under, each varying the one pick its
@@ -35,44 +35,46 @@ public final class ContentInputsFixtures {
      * @return the inert reading
      */
     public static ContentInputs createInertInputs() {
+
         return createInputsSpotlighting(null);
     }
 
     /**
-     * A reading spotlighting one bloc, with nothing receding behind it.
+     * A reading spotlighting one owner, with nothing receding behind it.
      *
-     * @param selectedBlocId the spotlighted bloc, or null for a build off filter
+     * @param selectedOwnerId the spotlighted owner, or null for a build off filter
      * @return that pick over the inert reading
      */
-    public static ContentInputs createInputsSpotlighting(String selectedBlocId) {
-        return createInputsRecedingBehind(selectedBlocId, ElementStyleAdjustment.NONE);
+    public static ContentInputs createInputsSpotlighting(String selectedOwnerId) {
+
+        return createInputsRecedingBehind(selectedOwnerId, ElementStyleAdjustment.NONE);
     }
 
     /**
-     * A reading spotlighting one bloc with a stated recede behind it, for the suites about what the
+     * A reading spotlighting one owner with a stated recede behind it, for the suites about what the
      * rest of the sector does while a spotlight is up.
      *
-     * @param selectedBlocId  the spotlighted bloc, or null for a build off filter
-     * @param filterRecede    how every non-spotlit bloc draws
+     * @param selectedOwnerId the spotlighted owner, or null for a build off filter
+     * @param filterRecede    how every non-spotlit owner draws
      * @return those two picks over the inert reading
      */
     public static ContentInputs createInputsRecedingBehind(
-            String selectedBlocId,
+            String selectedOwnerId,
             ElementStyleAdjustment filterRecede) {
 
         return new ContentInputs(
-            selectedBlocId,
+            selectedOwnerId,
             filterRecede,
             ElementStyleAdjustment.NONE, // No backdrop recede.
-            FactionNameFormatChoice.NONE, // No names drawn.
+            OwnerNameFormatChoice.NONE, // No names drawn.
             false); // No uninhabited outline.
     }
 
     /**
-     * A reading carrying a view's own backdrop recede, for the suites about which blocs a view
+     * A reading carrying a view's own backdrop recede, for the suites about which owners a view
      * hands that recede to.
      *
-     * @param backdropRecede how a bloc outside a group draws
+     * @param backdropRecede how an owner outside a group draws
      * @return that pick over the inert reading
      */
     public static ContentInputs createInputsRecedingNonAllied(
@@ -82,7 +84,7 @@ public final class ContentInputsFixtures {
             null, // Nothing spotlighted.
             ElementStyleAdjustment.NONE, // No filter recede.
             backdropRecede,
-            FactionNameFormatChoice.NONE, // No names drawn.
+            OwnerNameFormatChoice.NONE, // No names drawn.
             false); // No uninhabited outline.
     }
 
@@ -94,11 +96,12 @@ public final class ContentInputsFixtures {
      * @return that pick over the inert reading
      */
     public static ContentInputs createInputsOutlining(boolean isUninhabitedOutlineDrawn) {
+
         return new ContentInputs(
             null, // Nothing spotlighted.
             ElementStyleAdjustment.NONE, // No filter recede.
             ElementStyleAdjustment.NONE, // No backdrop recede.
-            FactionNameFormatChoice.NONE, // No names drawn.
+            OwnerNameFormatChoice.NONE, // No names drawn.
             isUninhabitedOutlineDrawn);
     }
 
@@ -106,10 +109,11 @@ public final class ContentInputsFixtures {
      * A reading spelling the cluster names a stated way, for the suites about what a drawn name
      * costs the map around it.
      *
-     * @param nameFormat how this build's cluster labels spell their holders' names
+     * @param nameFormat how this build's cluster labels spell their owners' names
      * @return that pick over the inert reading
      */
-    public static ContentInputs createInputsSpellingNames(FactionNameFormatChoice nameFormat) {
+    public static ContentInputs createInputsSpellingNames(OwnerNameFormatChoice nameFormat) {
+
         return new ContentInputs(
             null, // Nothing spotlighted.
             ElementStyleAdjustment.NONE, // No filter recede.

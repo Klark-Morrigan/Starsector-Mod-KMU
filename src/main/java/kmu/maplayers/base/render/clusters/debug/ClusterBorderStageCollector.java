@@ -2,17 +2,18 @@ package kmu.maplayers.base.render.clusters.debug;
 
 import kmlib.opengl.GlVertexRuns;
 
+import kmu.maplayers.base.render.clusters.SmoothingStageSink;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Gathers a border-smoothing pipeline's stages as a producer runs them, and closes into the
+ * Gathers a border-smoothing pipeline's stages as they are produced, and closes into the
  * {@link ClusterBorderStageOverlay} a renderer draws.
  *
- * <p>Capturing every stage means running the passes one at a time rather than asking for the
- * finished loops, so a producer emits its three sets at three separate points inside its own
- * per-cluster loop. Handing it this rather than the three lists to append into is what keeps
- * which stage a loop set belongs to a named call instead of an argument position - two lists of
+ * <p>The producer captures the traced base itself, and the smoothing reports the two passes it ran
+ * into this as its {@link SmoothingStageSink}. A named call per stage, rather than three lists to
+ * append into, keeps which stage a loop set belongs to out of an argument position - two lists of
  * the same type, adjacent in a parameter list, are one transposition away from an overlay whose
  * colours say a pass ran that did not.
  *
@@ -20,7 +21,9 @@ import java.util.List;
  * happens once here instead of at each capture point, and a stage cannot be captured in the
  * wrong form.
  */
-public final class ClusterBorderStageCollector {
+public final class ClusterBorderStageCollector
+        implements SmoothingStageSink {
+
     private final List<float[]> baseRuns = new ArrayList<>();
     private final List<float[]> despikedRuns = new ArrayList<>();
     private final List<float[]> roundedRuns = new ArrayList<>();
@@ -52,6 +55,7 @@ public final class ClusterBorderStageCollector {
      *
      * @param loops the sanded loops, each a closed ring of {@code {x, y}} vertices
      */
+    @Override
     public void captureDespikedStage(List<List<double[]>> loops) {
         despikedRuns.addAll(GlVertexRuns.flattenLoops(loops));
     }
@@ -62,6 +66,7 @@ public final class ClusterBorderStageCollector {
      *
      * @param loops the rounded loops, each a closed ring of {@code {x, y}} vertices
      */
+    @Override
     public void captureRoundedStage(List<List<double[]>> loops) {
         roundedRuns.addAll(GlVertexRuns.flattenLoops(loops));
     }

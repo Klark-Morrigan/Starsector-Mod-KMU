@@ -32,7 +32,7 @@ final class MapHoverExpirerTests {
             // between them is a hover nobody is resolving any more.
             var state = new MapHoverState();
 
-            state.publishHover(new MapHover(buildCellKey("system"), List.of(buildCellKey("system"))));
+            state.publishHover(MapHoverFixture.buildHoverOn(buildCellKey("system"), List.of(buildCellKey("system"))));
 
             var expirer = new MapHoverExpirer(state);
 
@@ -47,7 +47,7 @@ final class MapHoverExpirerTests {
         void keepsAHoverThePassesGoOnPublishing() {
             // A map still drawing publishes every frame, so this never takes a live hover away.
             var state = new MapHoverState();
-            var hover = new MapHover(buildCellKey("system"), List.of(buildCellKey("system")));
+            var hover = MapHoverFixture.buildHoverOn(buildCellKey("system"), List.of(buildCellKey("system")));
             var expirer = new MapHoverExpirer(state);
 
             for (var frame = 0; frame < 3; frame++) {

@@ -6,9 +6,9 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 import kmu.settings.KmuMapVisibilitySettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -18,21 +18,21 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.util.List;
+import java.util.Set;
 
 import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
 import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.buildRulesUnder;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.markSystemAsVisitedByPlayer;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.buildRulesUnder;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.markSystemAsVisitedByPlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the Map - Visibility knobs from the settings read to the colony listing every painting
- * surface composes over - the one link in that chain with nothing behind it until they shipped.
+ * surface composes over - the one link in that chain no other suite holds.
  *
  * <p>Driven through the live {@link MapVisibilityRules#readFromLunaSettings()} rather than a rule
  * written out here, because the wiring between a toggle and a colony is the subject. A case handing
@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the player arriving or the people already living there. A suite that moved only the toggles would
  * pass over a map that had stopped revealing anything at all.
  *
- * <p>The reveals are here on the same grounds, and for one rule beyond it: each toggle on this tab
+ * <p>The reveals are here for the same reason, and for one rule beyond it: each toggle on this tab
  * clears the one thing it names and nothing beside it. That is the failure a player cannot
  * diagnose - they turn one thing on and a second thing they never asked about appears with it - and
  * it is invisible to any case that moves one toggle over a colony only that toggle could reach.
@@ -81,14 +81,14 @@ final class SpoilerGateIntegrationTests {
     }
 
     @Nested
-    class ReadKnownColoniesIn {
+    class ReadKnownColonyFactionIds {
 
         @Test
         void withholdsADerelictAndAConcealedBaseFromAnUnvisitedEmptySystem() {
             // The shipped state, both gates in force. Nobody has been here and nobody lives here,
             // so neither the derelict nor the base has been seen by anyone the player could have
-            // heard
-            // it from - and the fog alone would have shown both, neither entity being discoverable.
+            // heard it from - and the fog alone would have shown both, neither entity being
+            // discoverable.
             var sector = buildUnvisitedSectorHoldingGatedPair(SYSTEM_ID);
 
             assertThat(readKnownOwnerIds(sector))
@@ -237,17 +237,13 @@ final class SpoilerGateIntegrationTests {
 
     // Who the map may name in the sector's one system, read through a pass opened on the player's
     // live rule the way a rebuild opens one.
-    private static List<String> readKnownOwnerIds(SectorAPI sector) {
+    private static Set<String> readKnownOwnerIds(SectorAPI sector) {
 
-        var pass = HolderPass.over(
+        var pass = HolderPass.createOver(
             sector,
             buildRulesUnder(MapVisibilityRules.readFromLunaSettings().colonyVisibility()),
             HolderGrouping.identity());
 
-        return pass
-            .readKnownColoniesIn(buildOnlySystem(sector))
-            .stream()
-            .map(colony -> colony.market().getFaction().getId())
-            .toList();
+        return pass.readKnownColonyFactionIds(buildOnlySystem(sector));
     }
 }

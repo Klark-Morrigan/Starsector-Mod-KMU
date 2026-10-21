@@ -2,7 +2,7 @@ package kmu.maplayers.base.visibility.installations;
 
 import java.util.Optional;
 
-import static kmu.util.KmuValues.normaliseText;
+import static kmlib.text.KmlibStrings.normaliseText;
 
 /**
  * What kind of place a market-less installation is, as a map layer has to tell them apart: one

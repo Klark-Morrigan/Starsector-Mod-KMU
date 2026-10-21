@@ -9,6 +9,7 @@ import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
+import kmu.maplayers.base.tooltip.content.CellTooltipLineName;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 
@@ -57,6 +58,10 @@ final class CellTooltipLabels {
     // one run and leaves the rest of the room unused.
     private static final int ORDINARY_LABEL_RUNS = 4;
 
+    // The most a name splits into around a finding inside it: what comes before, the finding, and
+    // what comes after.
+    private static final int NAME_STRETCHES = 3;
+
     private CellTooltipLabels() {
     }
 
@@ -79,6 +84,7 @@ final class CellTooltipLabels {
         if (line.hasMark()) {
             labelRuns.add(resolveMarkSpan(line.mark(), lineColour));
         }
+
         appendNameRuns(labelRuns, line, lineColour);
         appendIndexRun(labelRuns, line);
         appendQualifierRuns(labelRuns, line, lineColour);
@@ -125,6 +131,7 @@ final class CellTooltipLabels {
     // a listed thing and one beneath a member read alike - and in the same shade a value's working
     // takes, since both are arithmetic rather than a finding.
     private static Color resolveLabelColour(CellTooltipEntryLine line, Color tierColour) {
+
         return line.isAside()
             ? resolveQuietColour()
             : tierColour;
@@ -165,52 +172,73 @@ final class CellTooltipLabels {
             CellTooltipEntryLine line,
             Color lineColour) {
 
-        // A withheld name takes the whole of the name's place, so the runs after it are laid exactly as
-        // they are on a line that says what it is called and a redacted line reads as one of the list
-        // with a part blocked out rather than as a shape of its own. In the line's own colour like the
-        // name it stands for, so a redaction on a quiet line quietens with it.
-        if (line.hasRedactedName()) {
-            labelRuns.add(new RedactedSpan(line.redactedWordLengths(), lineColour));
-            return;
-        }
-        var labelText = line.labelText();
-        var labelFinding = line.labelFinding();
+        labelRuns.addAll(line.name().selectByCase(
+            spokenName -> resolveSpokenNameRuns(spokenName, lineColour),
+            withheldName -> resolveWithheldNameRuns(withheldName, lineColour)));
+    }
+
+    // The runs a name said outright reads as: one run, or the stretch that reads as a finding with
+    // what surrounds it either side of it.
+    private static List<LabelRun> resolveSpokenNameRuns(
+            CellTooltipLineName.Spoken spokenName,
+            Color lineColour) {
+
+        var labelText = spokenName.labelText();
+        var labelFinding = spokenName.labelFinding();
 
         if (labelFinding == null) {
-            labelRuns.add(new TextSpan(labelText, lineColour));
-            return;
+            return List.of(new TextSpan(labelText, lineColour));
         }
+
         var findingStart = labelFinding.startIndex();
         var findingEnd = labelFinding.endIndex();
+        var nameRuns = new ArrayList<LabelRun>(NAME_STRETCHES);
 
-        // Where the name begins among the runs, so the first stretch of it stands its own word space
-        // clear of any mark while the stretches after it butt against what precedes them. Read as the
-        // list stands rather than assumed, a marked line would join its name onto its own mark.
-        var nameStart = labelRuns.size();
-
-        appendNameRun(labelRuns, nameStart, new TextSpan(
+        appendNameRun(nameRuns, new TextSpan(
             labelText.substring(0, findingStart), lineColour));
 
-        appendNameRun(labelRuns, nameStart, buildFindingSpan(
+        appendNameRun(nameRuns, buildFindingSpan(
             labelText.substring(findingStart, findingEnd)));
 
-        appendNameRun(labelRuns, nameStart, new TextSpan(
+        appendNameRun(nameRuns, new TextSpan(
             labelText.substring(findingEnd), lineColour));
+
+        return nameRuns;
+    }
+
+    // A withheld name takes the whole of the name's place, so the runs after it are laid exactly as
+    // they are on a line that says what it is called and a redacted line reads as one of the list
+    // with a part blocked out rather than as a shape of its own. In the line's own colour like the
+    // name it stands for, so a redaction on a quiet line quietens with it.
+    private static List<LabelRun> resolveWithheldNameRuns(
+            CellTooltipLineName.Withheld withheldName,
+            Color lineColour) {
+
+        return List.of(
+            new RedactedSpan(withheldName.redactedWordLengths(),
+            lineColour));
     }
 
     // Adds one stretch of a split name, joined to whatever the name already came to and passed over
     // where the finding sat at either end and left nothing on that side.
     //
+    // The first stretch stands its own word space clear of any mark while the stretches after it butt
+    // against what precedes them. Judged against the name's own runs rather than the label's, so a
+    // marked line cannot join its name onto its own mark.
+    //
     // Passed over on being empty rather than on drawing nothing: a stretch of spaces is part of the
     // name, holding its words apart, and a name that lost it would be drawn as something its subject
     // is not called. What that leaves out is only the nothing either side of a finding that opened or
     // closed the name.
-    private static void appendNameRun(List<LabelRun> labelRuns, int nameStart, TextSpan nameSpan) {
+    private static void appendNameRun(List<LabelRun> nameRuns, TextSpan nameSpan) {
 
         if (nameSpan.text().isEmpty()) {
             return;
         }
-        labelRuns.add(labelRuns.size() == nameStart ? nameSpan : nameSpan.joinsPreviousRun());
+
+        nameRuns.add(nameRuns.isEmpty()
+            ? nameSpan
+            : nameSpan.joinsPreviousRun());
     }
 
     // Runs the label on into where the thing on the line falls in its ordering. Laid before any
@@ -226,6 +254,7 @@ final class CellTooltipLabels {
         if (line.indexPlace() == null) {
             return;
         }
+
         labelRuns.add(new TextSpan(
             line.indexPlace().text(),
             resolveIndexColour(line.indexPlace().outcome())));
@@ -266,16 +295,18 @@ final class CellTooltipLabels {
             Color lineColour) {
 
         var qualifier = line.qualifier();
-
         if (qualifier == null) {
             return;
         }
+
         if (qualifier.hasLeadingWord()) {
             labelRuns.add(buildQuietSpan(qualifier.leadingWordText()));
         }
+
         if (qualifier.hasMark()) {
             labelRuns.add(resolveMarkSpan(qualifier.mark(), lineColour));
         }
+
         labelRuns.add(buildQualifierFindingSpan(qualifier));
 
         if (qualifier.hasTrailingWord()) {
@@ -317,6 +348,7 @@ final class CellTooltipLabels {
         if (!KmlibStrings.hasText(line.noteText())) {
             return;
         }
+
         labelRuns.add(buildQuietSpan(line.noteText()));
     }
 }

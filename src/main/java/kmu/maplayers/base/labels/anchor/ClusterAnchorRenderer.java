@@ -14,6 +14,7 @@ import kmlib.opengl.GlVertexRuns;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 
+import kmu.maplayers.base.render.DiagnosticPalette;
 import kmu.maplayers.base.render.MapFrame;
 import kmu.settings.KmuMapLabelSettings;
 

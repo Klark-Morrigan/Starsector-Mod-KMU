@@ -1,5 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+
 import kmlib.starsector.factions.alliances.FactionAlliances;
 
 /**
@@ -35,14 +37,15 @@ public final class FactionAllianceRegistry {
     }
 
     /**
-     * The alliances standing at this moment, as the registered supplier reports them.
+     * The alliances standing at this moment in one sector, as the registered supplier reports them.
      *
+     * @param sector the sector whose alliances are asked for
      * @return which factions stand together; never null, a supplier answering nothing reading as no
      *         alliances
      */
-    public static FactionAlliances readAlliances() {
+    public static FactionAlliances readAlliances(SectorAPI sector) {
 
-        var alliances = allianceSource.readAlliances();
+        var alliances = allianceSource.readAlliances(sector);
 
         return alliances == null ? FactionAlliances.NONE : alliances;
     }

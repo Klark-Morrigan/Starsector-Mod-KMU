@@ -1,5 +1,6 @@
 package kmu.maplayers.base.theme;
 
+import kmlib.opengl.hatch.GlLineHatchStroke;
 import kmlib.opengl.hatch.HatchPattern;
 
 /**
@@ -19,9 +20,9 @@ import kmlib.opengl.hatch.HatchPattern;
  * read a capture against, while every reader below still takes only the half it acts on.
  *
  * @param pattern the line family the hatched area is cut with
- * @param stroke  how the resulting primitives are put on screen
+ * @param stroke  how the resulting segments are put on screen
  */
 public record HatchStyle(
     HatchPattern pattern,
-    HatchStroke stroke) {
+    GlLineHatchStroke stroke) {
 }

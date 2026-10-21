@@ -1,5 +1,7 @@
 package kmu.desktop.ui.swing;
 
+import kmu.desktop.ui.RememberedValue;
+import kmu.desktop.ui.SavedValueFormat;
 import kmu.desktop.ui.SavedValues;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -12,18 +14,15 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins {@link ToggleTree.Row#ofSwitchPair} against a real {@link SavedValues} file.
- *
- * <p>What a pair has to be is two switches that behave exactly as they would apart, drawn on
- * one line. So the fault worth guarding is the half that gets forgotten: a right-hand switch
- * that never tells its owner, is not written down, or is not seen by the roll-up covering it
- * would leave a control that works to the eye and does nothing - and on a block of a dozen
- * nobody would notice which half had gone quiet.
+ * Pins {@link ToggleTree} against a real {@link SavedValues} file: a pair of switches behaves as
+ * two switches would apart, a roll-up reads and writes the switches it covers in three states,
+ * and a fold hides every row indented beneath it while leaving the switches alone.
  *
  * <p>Against the file rather than a stand-in, for the reason the radio's own round trip is:
  * a switch that appears to work for a session and remembers nothing is only caught here.
@@ -32,11 +31,15 @@ final class ToggleTreeIntegrationTests {
 
     private static final String LEFT_KEY = "showLeft";
     private static final String RIGHT_KEY = "showRight";
+    private static final String BRANCH_KEY = "showBranch";
+    private static final String LEAF_KEY = "showLeaf";
+    private static final String DEEP_KEY = "showDeep";
 
     @TempDir
     private Path store;
 
     private final List<String> applied = new ArrayList<>();
+    private final List<String> changes = new ArrayList<>();
 
     private boolean isLeftOn;
     private boolean isRightOn;
@@ -94,14 +97,16 @@ final class ToggleTreeIntegrationTests {
         }
 
         @Test
-        void writesDownBothHalves() {
+        void writesDownBothHalvesOnAChange() {
 
-            buildPairedTree(true, false);
+            var tree = buildPairedTree(true, false);
+
+            ComponentTreeFixture.findAll(tree, JCheckBox.class).get(2).doClick();
 
             assertThat(SavedValues.findSavedValues().getBoolean(LEFT_KEY, false))
                 .isTrue();
-            assertThat(SavedValues.findSavedValues().getBoolean(RIGHT_KEY, true))
-                .isFalse();
+            assertThat(SavedValues.findSavedValues().getBoolean(RIGHT_KEY, false))
+                .isTrue();
         }
 
         // The half a roll-up would forget: a pair is one ROW, and a roll-up that walked rows
@@ -121,22 +126,165 @@ final class ToggleTreeIntegrationTests {
         }
     }
 
+    @Nested
+    class OfRollUp {
+
+        @Test
+        void isTickedOnlyWhileEverySwitchItCoversIsOn() {
+
+            var boxes = ComponentTreeFixture.findAll(buildPairedTree(true, true), JCheckBox.class);
+
+            assertThat(boxes.get(0).isSelected())
+                .isTrue();
+
+            boxes.get(1).doClick();
+
+            assertThat(boxes.get(0).isSelected())
+                .isFalse();
+        }
+
+        // A mixed set is the third state, and from it the roll-up turns everything ON rather
+        // than off: what a reader clicking a part-filled box wants is the rest of it.
+        @Test
+        void turnsEverySwitchOnFromAMixedSet() {
+
+            var boxes = ComponentTreeFixture.findAll(buildPairedTree(true, false), JCheckBox.class);
+
+            boxes.get(0).doClick();
+
+            assertThat(isLeftOn)
+                .isTrue();
+            assertThat(isRightOn)
+                .isTrue();
+            assertThat(boxes.get(0).isSelected())
+                .isTrue();
+        }
+
+        @Test
+        void turnsEverySwitchOffFromAFullSet() {
+
+            var boxes = ComponentTreeFixture.findAll(buildPairedTree(true, true), JCheckBox.class);
+
+            boxes.get(0).doClick();
+
+            assertThat(isLeftOn)
+                .isFalse();
+            assertThat(isRightOn)
+                .isFalse();
+        }
+
+        @Test
+        void runsTheChangeOncePerClick() {
+
+            var boxes = ComponentTreeFixture.findAll(buildPairedTree(true, false), JCheckBox.class);
+
+            boxes.get(0).doClick();
+
+            assertThat(changes)
+                .containsExactly("changed");
+        }
+    }
+
+    @Nested
+    class BuildToggleTree {
+
+        @Test
+        void runsNoChangeWhileBuilt() {
+
+            buildPairedTree(true, false);
+
+            assertThat(changes)
+                .isEmpty();
+        }
+
+        @Test
+        void hidesEveryRowBeneathAFoldedBranch() {
+
+            var tree = buildNestedTree();
+            var boxes = ComponentTreeFixture.findAll(tree, JCheckBox.class);
+
+            ComponentTreeFixture.findAll(tree, JButton.class).get(0).doClick();
+
+            assertThat(boxes.get(1).getParent().isVisible())
+                .isFalse();
+            assertThat(boxes.get(2).getParent().isVisible())
+                .isFalse();
+        }
+
+        // A branch unfolded inside a folded parent stays hidden: what a row shows is read off
+        // every fold above it, not only the one directly above.
+        @Test
+        void keepsARowHiddenWhileAnyFoldAboveItIsShut() {
+
+            var tree = buildNestedTree();
+            var folds = ComponentTreeFixture.findAll(tree, JButton.class);
+            var deepRow = ComponentTreeFixture.findAll(tree, JCheckBox.class).get(2).getParent();
+
+            folds.get(1).doClick();
+            folds.get(0).doClick();
+            folds.get(1).doClick();
+
+            assertThat(deepRow.isVisible())
+                .isFalse();
+        }
+
+        @Test
+        void remembersAFoldUnderItsRowsOwnKey() {
+
+            var tree = buildNestedTree();
+
+            ComponentTreeFixture.findAll(tree, JButton.class).get(0).doClick();
+
+            assertThat(SavedValues.findSavedValues().getBoolean(BRANCH_KEY + "Unfolded", true))
+                .isFalse();
+        }
+
+        @Test
+        void leavesTheSwitchesAloneWhenFolding() {
+
+            var tree = buildNestedTree();
+
+            ComponentTreeFixture.findAll(tree, JButton.class).get(0).doClick();
+
+            assertThat(changes)
+                .isEmpty();
+        }
+    }
+
     // A roll-up over a pair, which is the smallest tree in which a pair can be got wrong.
     private Container buildPairedTree(boolean leftFallback, boolean rightFallback) {
 
         return ToggleTree.buildToggleTree(
-            () -> { },
+            () -> changes.add("changed"),
             ToggleTree.Row.ofRollUp(0, "both", "Both", LEFT_KEY, RIGHT_KEY),
             ToggleTree.Row.ofSwitchPair(
                 1,
-                new ToggleTree.Switch(LEFT_KEY, "Left", leftFallback, on -> {
-                    applied.add("left=" + on);
-                    isLeftOn = on;
-                }),
-                new ToggleTree.Switch(RIGHT_KEY, "Right", rightFallback, on -> {
-                    applied.add("right=" + on);
-                    isRightOn = on;
-                })));
+                new ToggleTree.Switch("Left", new RememberedValue<>(
+                    LEFT_KEY, leftFallback, SavedValueFormat.FLAG, isOn -> {
+                        applied.add("left=" + isOn);
+                        isLeftOn = isOn;
+                    })),
+                new ToggleTree.Switch("Right", new RememberedValue<>(
+                    RIGHT_KEY, rightFallback, SavedValueFormat.FLAG, isOn -> {
+                        applied.add("right=" + isOn);
+                        isRightOn = isOn;
+                    }))));
     }
 
+    // Three levels, each a branch of the one above, so a fold can be shut above another.
+    private Container buildNestedTree() {
+
+        return ToggleTree.buildToggleTree(
+            () -> changes.add("changed"),
+            ToggleTree.Row.ofSwitch(0, buildSwitch(BRANCH_KEY, "Branch")),
+            ToggleTree.Row.ofSwitch(1, buildSwitch(LEAF_KEY, "Leaf")),
+            ToggleTree.Row.ofSwitch(2, buildSwitch(DEEP_KEY, "Deep")));
+    }
+
+    private static ToggleTree.Switch buildSwitch(String key, String title) {
+
+        return new ToggleTree.Switch(
+            title,
+            new RememberedValue<>(key, true, SavedValueFormat.FLAG, isOn -> { }));
+    }
 }

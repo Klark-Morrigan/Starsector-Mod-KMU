@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -86,14 +87,14 @@ final class SectorColonySightingsTests {
         void reportsNothingSeenWhereTheRegisterHasNeverBeenWritten() {
 
             assertThat(readObservationOf("any"))
-                .isNull();
+                .isEmpty();
         }
 
         @Test
         void reportsNothingSeenWhereThereIsNoSectorToRead() {
 
             assertThat(SectorColonySightings.readSightings(null).readObservation("any"))
-                .isNull();
+                .isEmpty();
         }
 
         @Test
@@ -105,7 +106,7 @@ final class SectorColonySightingsTests {
             storeSightings(stored);
 
             assertThat(readObservationOf("sentinel_gantries"))
-                .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, 1720L));
+                .contains(ColonyObservation.createObservationAt(SYSTEM_ID, 1720L));
         }
 
         @Test
@@ -119,7 +120,7 @@ final class SectorColonySightingsTests {
             storeSightings(stored);
 
             assertThat(readObservationOf("sentinel_gantries"))
-                .isEqualTo(ColonyObservation.createUndatedObservation(SYSTEM_ID));
+                .contains(ColonyObservation.createUndatedObservation(SYSTEM_ID));
         }
 
     }
@@ -141,9 +142,9 @@ final class SectorColonySightingsTests {
             SectorColonySightings.recordSightingsIn(sectorMock, systemMock);
 
             assertThat(readObservationOf("pirate_base"))
-                .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
+                .contains(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
             assertThat(readObservationOf("sentinel_gantries"))
-                .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
+                .contains(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
         }
 
         @Test
@@ -159,7 +160,7 @@ final class SectorColonySightingsTests {
             SectorColonySightings.recordSightingsIn(sectorMock, systemMock);
 
             assertThat(readObservationOf("sentinel_gantries"))
-                .isEqualTo(ColonyObservation.createUndatedObservation(SYSTEM_ID));
+                .contains(ColonyObservation.createUndatedObservation(SYSTEM_ID));
         }
 
         @Test
@@ -204,7 +205,7 @@ final class SectorColonySightingsTests {
             SectorColonySightings.recordSightingsIn(sectorMock, systemMock);
 
             assertThat(readObservationOf("rat_exoship"))
-                .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
+                .contains(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
         }
 
         @Test
@@ -266,7 +267,7 @@ final class SectorColonySightingsTests {
             assertThat(readStoredSightings())
                 .containsOnlyKeys("sentinel_gantries");
             assertThat(readObservationOf("sentinel_gantries"))
-                .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
+                .contains(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
         }
 
         @Test
@@ -284,7 +285,7 @@ final class SectorColonySightingsTests {
             assertThat(readStoredSightings())
                 .containsOnlyKeys("tibicena");
             assertThat(readObservationOf("tibicena"))
-                .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
+                .contains(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
         }
 
         @Test
@@ -319,7 +320,7 @@ final class SectorColonySightingsTests {
             // The write is handed a place and a set rather than sweeping for either, so a caller
             // mid-walk over a sector that answers nothing must cost the register nothing.
             SectorColonySightings.recordSightingsByInhabitants(
-                sectorMock, null, Colonies.NONE, ColonyKnowledge.observingUnderTheFog());
+                sectorMock, null, Colonies.NONE, ColonyKnowledge.observingUnderTheFog(sectorMock));
 
             verifyNoInteractions(memoryMock);
         }
@@ -336,7 +337,7 @@ final class SectorColonySightingsTests {
             var observedColonies = SystemColonies.readColoniesIn(sectorMock, systemMock);
 
             SectorColonySightings.recordSightingsByInhabitants(
-                null, systemMock, observedColonies, ColonyKnowledge.observingUnderTheFog());
+                null, systemMock, observedColonies, ColonyKnowledge.observingUnderTheFog(sectorMock));
 
             verifyNoInteractions(memoryMock);
         }
@@ -347,7 +348,7 @@ final class SectorColonySightingsTests {
             // it has no reading of yet, and handing one over must cost the register nothing
             // rather than fault on the way through.
             SectorColonySightings.recordSightingsByInhabitants(
-                sectorMock, systemMock, null, ColonyKnowledge.observingUnderTheFog());
+                sectorMock, systemMock, null, ColonyKnowledge.observingUnderTheFog(sectorMock));
 
             verifyNoInteractions(memoryMock);
         }
@@ -367,7 +368,7 @@ final class SectorColonySightingsTests {
                 null);
 
             assertThat(readObservationOf("sentinel_gantries"))
-                .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
+                .contains(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
         }
     }
 
@@ -402,7 +403,7 @@ final class SectorColonySightingsTests {
             SectorColonySightings.dropSightingsOfAbsentColonies(sectorMock);
 
             assertThat(readObservationOf("rat_exoship"))
-                .isEqualTo(ColonyObservation.createUndatedObservation(OTHER_SYSTEM_ID));
+                .contains(ColonyObservation.createUndatedObservation(OTHER_SYSTEM_ID));
         }
 
         @Test
@@ -436,7 +437,7 @@ final class SectorColonySightingsTests {
             assertThat(readStoredSightings())
                 .containsOnlyKeys("sentinel_gantries");
             assertThat(readObservationOf("sentinel_gantries"))
-                .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
+                .contains(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
         }
 
         @Test
@@ -498,7 +499,7 @@ final class SectorColonySightingsTests {
             sectorMock,
             systemMock,
             SystemColonies.readColoniesIn(sectorMock, systemMock),
-            ColonyKnowledge.observingUnderTheFog());
+            ColonyKnowledge.observingUnderTheFog(sectorMock));
     }
 
     private void listColoniesInSystem(MarketAPI... colonies) {
@@ -536,7 +537,8 @@ final class SectorColonySightingsTests {
     // What the register says about one colony, read back through its own reader. The stored text
     // is this class's private business - a case asserting against it would be pinning an encoding
     // rather than an observation, and would have to be rewritten the day the encoding changes.
-    private ColonyObservation readObservationOf(String colonyId) {
+    private Optional<ColonyObservation> readObservationOf(String colonyId) {
+
         return SectorColonySightings
             .readSightings(sectorMock)
             .readObservation(colonyId);

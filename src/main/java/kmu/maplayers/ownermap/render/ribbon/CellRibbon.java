@@ -16,7 +16,7 @@ import java.util.List;
 public record CellRibbon(
     List<RibbonBand> bands) {
 
-    /** The cell that draws no band: no rival presence to report, or no room to report it in. */
+    /** The cell that draws no band: no presence to report, or no room to report it in. */
     public static final CellRibbon NONE = new CellRibbon(List.of());
 
     public CellRibbon {

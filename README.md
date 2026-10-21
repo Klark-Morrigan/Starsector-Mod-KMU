@@ -15,13 +15,17 @@
   - [Console commands](#console-commands)
   - [Compatibility](#compatibility)
   - [Diagnostics](#diagnostics)
+- [Q&A](#qa)
+  - [The nebulae in Starscape mode obscure parts of the map. Can I hide them?](#the-nebulae-in-starscape-mode-obscure-parts-of-the-map-can-i-hide-them)
 - [Creative applications](#creative-applications)
 - [For developers](#for-developers)
   - [Versioning](#versioning)
   - [Build And Release](#build-and-release)
   - [Localisation](#localisation)
   - [Local linting](#local-linting)
+  - [Developer tooling](#developer-tooling)
   - [Caching](#caching)
+  - [Nexerelin](#nexerelin)
   - [Documentation](#documentation)
 - [Thanks](#thanks)
 - [Licence](#licence)
@@ -43,9 +47,10 @@ Each release carries one zip per language, named for it:
 `KMU-<version>-en.zip` is English and `KMU-<version>-zh-hans.zip` is Simplified Chinese.
 Install one.
 Each is the whole mod;
-they differ only in the text of the settings screen, the Map Layers sidebar, the hover boxes and the notices,
+they differ only in the text of the settings screen, the Map sidebar, the hover boxes, the notices,
+the Market Condition Manager and the console commands' help,
 in the launcher's mod list entry,
-and in the language of the `CHANGELOG.md` inside.
+and in the language of the `CHANGELOG.md` inside and the changelog an update checker links to.
 Settings carry over between them.
 
 ### English
@@ -88,25 +93,23 @@ and on each release page, collapsed under 简体中文 below the English notes.
 
 ## Features
 
-This mod comes with a suite of **LunaLib** settings that allow you to tweak,
-visuals,
+This mod comes with a suite of **LunaLib** settings that allow you to tweak visuals,
 sound volume,
-keybinds,
-underlying mechanics.
+keybinds and underlying mechanics.
 
 ### Map layers
 
-**Sector Map Layers**
+**Sector Map Layers** (colloquially known as the **map mod**)
 is an overlay for the map screen **(Tab, Q)**,
 the intel screen **(E, 1)**,
 the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have **Random Assortment of Things** installed.
 
 Everything is calculated and drawn off of game data,
-and it gets updated as the state of the sector shanges.
+and it gets updated as the state of the sector changes.
 Map layers don't alter any of the data being used to draw it,
 making map layers **read-only** by design.
 
-The map layers feature **turned on by default**.
+The map layers feature is **turned on by default**.
 After loading a save or starting a new game,
 when you open the map screen or the intel screen,
 you'll see a new `Map layers` button among map filter buttons.
@@ -126,7 +129,7 @@ See [more on map layers](src/main/java/kmu/maplayers/README.md).
   (e.g. all colonies in a system are **decivilised**).
 - *Any given system can be painted by only a single faction*,
   so each system draws a **presence ribbon** hugging its border that represents each populated colony with the color of the faction holding them.
-  Ribbons are shortened to represent **solidified control** when only a single faction or alliance is present is a system,
+  Ribbons are shortened to represent **solidified control** when only a single faction or alliance is present in a system,
   while that presence is in no violation of **unconditional claims**.
 - **Expandable system tooltips**
   provide detailed information on how each market affects the balance of power.
@@ -166,7 +169,7 @@ The **Political Map** comes with 3 views:
   If you filter by a non-territorial faction,
   unclaimed systems with their presence will be spotlit.
 
-See [more on the political map](src/main/java/kmu/maplayers/README.md).
+See [more on the political map](src/main/java/kmu/maplayers/politicalmap/README.md).
 
 #### Spoiler protection
 
@@ -186,13 +189,15 @@ map layers operate on a vanilla-derived **visibility** system:
   They are also listed on **Claims** tooltips because vanilla uses them in claim calculations,
   but are redacted.
 - **Decivilised markets** are not revealed unless they start so,
-  or until the player visits their system.
+  or until the player performs a *Full* survey on them (adjustable in settings).
+  A visible colony of another faction in the same system reveals them too.
 - **Unowned markets** with the **Abandoned Station** condition follow visibility rules of **hidden markets**.
 
 ### Console commands
 
 | Command | Syntax | What it does |
 | --- | --- | --- |
+| `kmu_mcm_open` | No arguments | Opens the **Market Condition Manager (MCM)** for the market in front of you. The MCM is unfinished and ships switched off: **requires Enable Market Condition Manager (MCM) to be switched on in the *Features* settings tab.** |
 | `kmu_profiling` | `[tree\|flat\|walks] [namespace=<prefix>] [top=<count>] [perframe] [reset]` | Writes full or scoped performance measurements to game logs on demand. Calls exceeding the budget are logged automatically without this command. **Requires profiling to be enabled in settings.** |
 
 ### Compatibility
@@ -202,6 +207,12 @@ And to be visible in the **Starscape** mode,
 the *starscape terrain variant* is tagged as a **slipstream**.
 Custom terrain is the only thing that has to be serialised into saves as Java class references,
 and that's why a clean uninstall is required for disabling the mod.
+
+KMU is safe to install mid-run.
+To uninstall it cleanly,
+switch **Enable map layers** off on the *Features* settings tab,
+save,
+then remove the mod.
 
 The game reuses the map widget,
 and so do many mods.
@@ -238,9 +249,19 @@ the mod has been made specifically compatible with:
 - **Profiling** toggle and level in **KMU** map dev settings combined with usage of **kmu_profiling** console command.
   To trace where performance drops occur.
 
+## Q&A
+
+### The nebulae in Starscape mode obscure parts of the map. Can I hide them?
+
+You can choose which parts of **Map Layers** are painted above the **Starscape** nebulae and which stay below them.
+Open the *Map - Politics - Visuals* settings tab
+and find its **Nebula draw order** section,
+which holds four settings:
+**Territory fills**, **Borders**, **Presence bands** and **Faction names**.
+
 ## Creative applications
 
-- [Manipulating territorial visualisaion into a video player](https://www.reddit.com/r/starsector/comments/1wl36nq/finally_bad_apple_thanks_kmu/).
+- [Manipulating territorial visualisation into a video player](https://www.reddit.com/r/starsector/comments/1wl36nq/finally_bad_apple_thanks_kmu/).
 
 ## For developers
 
@@ -304,13 +325,22 @@ KMU states no build wiring of its own for it.
 
 ### Localisation
 
-KMU's strings and settings-screen text are kept per language under [localisation/](localisation/),
+KMU's strings, settings-screen text and console command help are kept per language under [localisation/](localisation/),
 one bundle directory per locale,
 with [localisation/manifest.json](localisation/manifest.json) naming the locales, the default,
 and where each bundle file lands.
 Edit the bundle, never the copy:
-`data/strings/strings.json` and `data/config/LunaSettings.csv` are written from one bundle
+`data/strings/strings.json`, `data/config/LunaSettings.csv` and `data/console/commands.csv` are written from one bundle
 by `gradlew jar` and are not committed.
+A command table translates only its `help` column;
+the parity suite holds the command, class, tags and syntax to the default's,
+since those are what a player types and what the console runs.
+Each translated help is followed by the English one, after a `-- English --` line,
+and so is each `strings.json` string the console prints, whose key starts with `console_`:
+Console Commands draws in fonts of its own that hold no Chinese, so until it does,
+the English copy is what a player can read.
+KMLib's [console text rule](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/README.md#console-commands)
+reads those strings and holds each copy to the English bundle word for word.
 The launcher's `mod_info.json` is written the same way,
 from the committed [mod_info.base.json](mod_info.base.json)
 with the locale's own `mod_info.json`, where it has one, merged over it -
@@ -323,7 +353,8 @@ is KMLib's `writeLocaleFiles`, described in
 `LocaleParityIntegrationTests` holds every locale to the default under `test`.
 
 A translated locale also keeps a full translation of [CHANGELOG.md](CHANGELOG.md) in its bundle directory,
-which its zip ships in place of the root one and its release notes show:
+which its zip ships in place of the root one, its release notes show,
+and its version file names as the `changelogURL` an update checker links to:
 [localisation/zh-hans/CHANGELOG.md](localisation/zh-hans/CHANGELOG.md).
 The parity suite holds it to the root changelog point for point,
 so an entry added to one is added to every translation in the same pull request.
@@ -379,10 +410,39 @@ lists what each half runs:
 (and its [.bat](scripts/fix-permissions.bat)) re-stages the executable bit on tracked `*.sh` files,
 which Windows checkouts drop;
 run it after adding a shell script so the `check-sh-executable` gate stays green.
-[.gitattributes](.gitattributes) pins line endings surgically -
-`*.sh` and `gradlew` to LF,
-`*.bat` and `gradlew.bat` to CRLF -
-and leaves binary / data assets to git's own detection.
+[.gitattributes](.gitattributes) keeps every text file LF,
+whatever `core.autocrlf` says,
+and batch files CRLF,
+which `cmd.exe` requires.
+Binary files are left to git's own detection.
+
+### Developer tooling
+
+The `utils` source set,
+[src/utils](src/utils),
+holds tooling that is neither shipped nor a test:
+the sector fixture,
+the pipeline that assembles it into shapes,
+and the tools that draw them.
+Its own source set keeps it out of the mod's jar while the tests share its fixture.
+Three Gradle tasks run it:
+
+- `viewSectorGeometry` opens the sector geometry viewer, with live sliders over a real sector.
+- `writeSectorSvg` writes every sector fixture to SVG, frontier off and on, into `build/reports`.
+- `writeVoidRegions` traces the void between cells and reports how it divides.
+
+[The geometry viewer's README](src/utils/java/kmu/maplayers/base/geometry/README.md) maps its packages.
+
+Four more scripts sit beside the lint shims:
+
+- [scripts/setup-hooks.sh](scripts/setup-hooks.sh)
+  wires the repo's `.githooks/` into git, once per clone, so the pre-commit hook runs.
+- [scripts/run-ci-gradle.sh](scripts/run-ci-gradle.sh)
+  runs the Gradle build and tests locally as CI's Gradle gate does.
+- [scripts/fix-whitespace.sh](scripts/fix-whitespace.sh)
+  trims trailing whitespace from the tracked Markdown and Gradle scripts.
+- [scripts/extract-sector-fixture-from-save.sh](scripts/extract-sector-fixture-from-save.sh)
+  regenerates the political map's sector fixture from a save, the newest one when given none.
 
 ### Caching
 
@@ -397,6 +457,18 @@ and the four rebuild paths a frame can take.
 Read it before adding a live input to the overlay -
 an input no counter reports is the one way to leave the map silently stale.
 
+### Nexerelin
+
+Nexerelin is optional,
+and it is the main source of the political change the map layers follow.
+[docs/dev/nexerelin.md](docs/dev/nexerelin.md)
+records the Nexerelin version KMU was checked against,
+what KMU and KMLib bind to,
+the Nexerelin concepts a layer could read,
+and the integration work still outstanding.
+Re-check it before upgrading the Nexerelin build KMLib compiles against;
+KMU's own build needs no Nexerelin jar.
+
 ### Documentation
 
 Development docs live under [docs/dev](docs/dev).
@@ -404,6 +476,11 @@ Package documentation lives beside the Java packages it describes under [src/mai
 a README per package that owns behaviour worth explaining,
 each with Mermaid diagrams inline where a picture carries more than prose.
 Start from [map layers](src/main/java/kmu/maplayers/README.md).
+Outside the map,
+[settings](src/main/java/kmu/settings/README.md),
+[the optional-mod adapters](src/main/java/kmu/mods/README.md)
+and [the Market Condition Manager](src/main/java/kmu/conditions/README.md)
+each have one too.
 
 Diagrams are Mermaid,
 written inline in the README that needs them.

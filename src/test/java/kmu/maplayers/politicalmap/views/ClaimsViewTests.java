@@ -2,94 +2,79 @@ package kmu.maplayers.politicalmap.views;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.factions.alliances.AllianceRecord;
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.SectorPassIndex;
-import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.systems.claims.ClaimBreakdownReader;
+import kmlib.starsector.systems.claims.ClaimBreakdownReaderSource;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
-import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.ownermap.ContentInputs;
-import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
-import kmu.maplayers.ownermap.holding.HolderGroupingFixture;
-import kmu.maplayers.ownermap.holding.HolderOwnerReading;
-import kmu.maplayers.ownermap.holding.HolderPass;
-import kmu.maplayers.ownermap.owners.holders.HolderOwnerSource;
-import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.picker.SelectableBloc;
-import kmu.maplayers.ownermap.render.style.HolderCategories;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanInputs;
-import kmu.maplayers.ownermap.ribbon.RibbonPlanRules;
-import kmu.maplayers.ownermap.ribbon.RibbonSegmentLengths;
-import kmu.maplayers.ownermap.ribbon.UncontestedRibbonRuns;
+import kmu.maplayers.ownermap.owners.OwnerAffiliation;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGroupingFixture;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
+import kmu.maplayers.ownermap.owners.holders.base.RibbonPlanInputs;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.OwnerStatsRead;
+import kmu.maplayers.ownermap.picker.RankedOwner;
+import kmu.maplayers.ownermap.picker.SelectableOwner;
+import kmu.maplayers.ownermap.preferences.OwnerNameFormatChoice;
 import kmu.maplayers.politicalmap.claims.ClaimStats;
 import kmu.maplayers.politicalmap.claims.ClaimStatsAggregator;
-import kmu.maplayers.politicalmap.claims.ClaimStatsRead;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.claims.tooltip.SystemClaimTooltip;
+import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.holders.ClaimSystemHolderResolve;
 import kmu.maplayers.politicalmap.holders.ClaimsHolderProvider;
-import kmu.maplayers.politicalmap.refresh.PoliticalMapRefreshSignal;
 import kmu.mods.nexerelin.NexerelinAlliances;
-import kmu.util.KmuStringKeys;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.UNDER_THE_FOG;
-import static kmu.maplayers.ownermap.holding.ColonyReadRulesFixtures.buildRulesUnder;
-import static kmu.maplayers.ownermap.picker.BlocPresenceIndexFixtures.buildIndexOf;
-import static kmu.maplayers.ownermap.picker.SelectableBlocFixtures.stubNamedFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.buildRulesUnder;
+import static kmu.maplayers.ownermap.ribbon.RibbonPlanRulesFixtures.STANDARD_RULES;
+import static kmu.starsector.SectorFactionFixtures.stubNamedFaction;
 
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the claims view's render rules: it is the faction view's look keyed off the vanilla claim
- * mechanic, so its grouping is identity, its holding comes from the claims-only provider, and its
- * bloc styling and label delegate to the faction view. Its picker is its own, though: it lists every
- * bloc that claims or holds something, receding the rows that claim nothing, and ranks them by claim
- * metrics rather than domination ones. Reproducing these here is what lets the
- * shared pipeline read the claims view through
- * {@link kmu.maplayers.ownermap.OwnerPaintedView} without naming it.
+ * Pins what the claims view decides: the factions view's look keyed off the vanilla claim mechanic,
+ * so its grouping is identity, its holding comes from the claims-only provider and its bands and
+ * hover box are the claim contest's. Its picker reads claim metrics through its own claim reader,
+ * recedes a row that claims nothing, and ranks by the claim vocabulary rather than the domination
+ * one.
+ *
+ * <p>What every view of the layer answers alike is {@link PoliticalHolderView}'s, pinned once by its
+ * own suite.
  */
 final class ClaimsViewTests {
-
-    // The claims view ignores its grouping argument (its own grouping is always identity), so any
-    // grouping stands in where the interface demands one.
-    private static final HolderGrouping ANY_GROUPING = HolderGrouping.identity();
-
-    // A reading that does recede something, so a NONE answer here is this view adjusting nothing
-    // rather than the picks it was handed holding nothing to adjust with.
-    private static final ContentInputs RECEDING_INPUTS =
-        ContentInputsFixtures.createInputsRecedingNonAllied(new ElementStyleAdjustment(0.4, true));
 
     @Nested
     class GetId {
 
         @Test
         void isTheSaveStableClaimsId() {
+            // Frozen: renaming it silently resets any save that selected this view to the default.
             assertThat(ClaimsView.INSTANCE.getId())
                 .isEqualTo("claims");
         }
@@ -100,8 +85,9 @@ final class ClaimsViewTests {
 
         @Test
         void isTheClaimsRadioLabel() {
+
             assertThat(ClaimsView.INSTANCE.getSegmentLabelKey())
-                .isEqualTo(KmuStringKeys.POLITICAL_MAP_CTL_CLAIMS);
+                .isEqualTo(KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_CLAIMS);
         }
     }
 
@@ -118,26 +104,6 @@ final class ClaimsViewTests {
     }
 
     @Nested
-    class ResolveContestGrouping {
-
-        @Test
-        void readsTheLiveAllianceSet() {
-            // Who stands together in a contest is the live alliance set on every view of this
-            // layer, whatever the view paints as one bloc: allies painted apart still read as allies.
-            var allianceSet = HolderGroupingFixture.buildGroupOf("hegemony", "persean");
-
-            try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
-                alliancesMock
-                    .when(NexerelinAlliances::resolveGrouping)
-                    .thenReturn(allianceSet);
-
-                assertThat(ClaimsView.INSTANCE.resolveContestGrouping())
-                    .isSameAs(allianceSet);
-            }
-        }
-    }
-
-    @Nested
     class ResolveHolderProvider {
 
         @Test
@@ -145,7 +111,27 @@ final class ClaimsViewTests {
             // Holder is the claim mechanic itself, so the view supplies the claims-only provider
             // rather than inheriting the held-plus-claims default.
             assertThat(ClaimsView.INSTANCE.resolveHolderProvider())
-                .isSameAs(ClaimsHolderProvider.INSTANCE);
+                .isInstanceOf(ClaimsHolderProvider.class);
+        }
+
+        @Test
+        void paintsItsFillsThroughTheViewsSource() {
+            // The fills read claims through the one source the bands and the box read through, so
+            // the three cannot name different claimants.
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var openedOver = new ArrayList<SectorPassIndex>();
+
+            var view = new ClaimsView((knownColonyReader, sectorIndex) -> {
+
+                openedOver.add(sectorIndex);
+                return mock(ClaimBreakdownReader.class);
+            });
+
+            view.resolveHolderProvider()
+                .resolveHolder(pass, null);
+
+            assertThat(openedOver)
+                .containsExactly(pass.sectorIndex());
         }
     }
 
@@ -156,14 +142,18 @@ final class ClaimsViewTests {
         void reDerivesAMarkedSystemByClaimantThroughTheViewsReader() {
             // A batch re-derives what this view painted - the claimant - through the reader every
             // claim of this view is read through, rather than by the market contest.
-            var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity());
             var openedOver = new ArrayList<SectorPassIndex>();
-            var view = new ClaimsView((visibility, colonies) -> {
-                openedOver.add(colonies);
-                return mock(ClaimReader.class);
+
+            var view = new ClaimsView((knownColonyReader, sectorIndex) -> {
+
+                openedOver.add(sectorIndex);
+                return mock(ClaimBreakdownReader.class);
             });
 
-            var resolve = view.resolveSystemHolderResolveSource().openResolveOver(pass);
+            var resolve = view
+                .resolveSystemHolderResolveSource()
+                .openResolveOver(pass);
 
             assertThat(resolve)
                 .isInstanceOf(ClaimSystemHolderResolve.class);
@@ -181,68 +171,29 @@ final class ClaimsViewTests {
             // is counted from the contest rather than by the dominance views' composition - which
             // would count a claimed system its claimant does not hold by the markets of whoever
             // does, and open the band on a bloc the cell is not painted for.
-            var planner = ClaimsView.INSTANCE.resolveRibbonPlanner(
-                new RibbonPlanInputs(
-                    HolderPass.over(
-                        mock(SectorAPI.class),
-                        // Undiscovered colonies do not count, as on the live map.
-                        UNDER_THE_FOG,
-                        HolderGrouping.identity()),
-                    blocId -> null,
-                    // Nothing stands together, which is what the claims layer's own binding hands
-                    // over on an install without alliances - and the planner it resolves does not
-                    // read this either way.
-                    BlocAffiliation.NONE,
-                    new RibbonPlanRules(
-                        new RibbonSegmentLengths(3, 1),
-                        new UncontestedRibbonRuns(false))));
+            var inputs = new RibbonPlanInputs(
+                HolderPass.createOver(mock(SectorAPI.class), UNDER_THE_FOG, HolderGrouping.identity()),
+                OwnerAffiliation.NONE,
+                STANDARD_RULES);
 
-            assertThat(planner)
-                .isInstanceOf(ClaimedSystemRibbonPlanner.class);
-        }
-    }
+            var plannerMock = mock(ClaimedSystemRibbonPlanner.class);
 
-    @Nested
-    class GetContentRevision {
+            ClaimBreakdownReaderSource claimReaderSource = (knownColonyReader, sectorIndex) ->
+                mock(ClaimBreakdownReader.class);
 
-        @Test
-        void shiftsWhenTheAllianceRevisionMoves() {
-            // The alliance set is this view's one live input: the fills stay per-claimant, but the
-            // bands over them lay a contested run only against a bloc the claimant is not allied
-            // with, so a membership change must shift the revision and repaint them.
-            var board = new MapLayerRefreshBoard();
-            var before = ClaimsView.INSTANCE.getContentRevision(board);
+            var view = new ClaimsView(claimReaderSource);
 
-            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
+            try (var plannerFactoryMock = mockStatic(ClaimedSystemRibbonPlanner.class)) {
 
-            assertThat(ClaimsView.INSTANCE.getContentRevision(board))
-                .isNotEqualTo(before);
-        }
+                // Matched on the view's own source, so a planner opened through any other binding
+                // answers null and fails the case.
+                plannerFactoryMock
+                    .when(() -> ClaimedSystemRibbonPlanner.createForPass(same(inputs), same(claimReaderSource)))
+                    .thenReturn(plannerMock);
 
-        @Test
-        void isInvariantAcrossAnUnrelatedSignal() {
-            // Only the alliance set is folded in - the market-inferred claims repaint on the shared
-            // economy revision, not here - so a signal this view renders nothing from, a geometry
-            // rebuild here, leaves its contribution fixed.
-            var board = new MapLayerRefreshBoard();
-            var before = ClaimsView.INSTANCE.getContentRevision(board);
-
-            board.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
-
-            assertThat(ClaimsView.INSTANCE.getContentRevision(board))
-                .isEqualTo(before);
-        }
-    }
-
-    @Nested
-    class ResolveOwnerReading {
-
-        @Test
-        void readsEachBlocOffTheFactionItPaintsAs() {
-            // The holder reading every layer painting holders shares, taken over the grouping the
-            // rebuild handed in - what it answers is pinned by that reading's own suite.
-            assertThat(ClaimsView.INSTANCE.resolveOwnerReading(mock(SectorAPI.class), HolderGrouping.identity()))
-                .isInstanceOf(HolderOwnerReading.class);
+                assertThat(view.resolveRibbonPlanner(inputs))
+                    .isSameAs(plannerMock);
+            }
         }
     }
 
@@ -250,34 +201,34 @@ final class ClaimsViewTests {
     class ResolveViewReading {
 
         @Test
-        void readsBlocsOffTheirFactionsAndFoldsHoldingByClaimant() {
-            // Claims fold strictly by claiming faction, so both answers stand on the identity
-            // grouping whatever the alliance set says.
+        void namesAnAlliedClaimantAsItsOwnFaction() {
+            // Claims fold strictly by claiming faction, so the reading stands on the identity
+            // grouping whatever the alliance set says: a member of a live alliance is still named
+            // as its own faction.
+            var sectorMock = mock(SectorAPI.class);
+
+            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
+
             try (var alliancesMock = mockStatic(NexerelinAlliances.class)) {
+
                 alliancesMock
                     .when(NexerelinAlliances::resolveGrouping)
                     .thenReturn(HolderGroupingFixture.buildGroupOf("hegemony", "persean"));
 
-                var viewReading = ClaimsView.INSTANCE.resolveViewReading(mock(SectorAPI.class));
+                // The same alliance as who stands together in a contest, which the reading's source
+                // reads beside the grouping.
+                alliancesMock
+                    .when(NexerelinAlliances::resolveFactionAlliances)
+                    .thenReturn(FactionAlliances.buildFrom(List.of(
+                        new AllianceRecord("pact", "Pact", List.of("hegemony", "persean")))));
 
-                assertThat(viewReading.reading())
-                    .isInstanceOf(HolderOwnerReading.class);
-                assertThat(viewReading.source())
-                    .isInstanceOfSatisfying(
-                        HolderOwnerSource.class,
-                        source -> assertThat(source.grouping()).isSameAs(HolderGrouping.identity()));
+                assertThat(ClaimsView
+                        .INSTANCE
+                        .resolveViewReading(sectorMock)
+                        .reading()
+                        .resolveName("hegemony", OwnerNameFormatChoice.SHORT))
+                    .isEqualTo("Hegemony");
             }
-        }
-    }
-
-    @Nested
-    class ResolveCategories {
-
-        @Test
-        void declaresTheHolderCategories() {
-
-            assertThat(ClaimsView.INSTANCE.resolveCategories())
-                .isSameAs(HolderCategories.INSTANCE);
         }
     }
 
@@ -290,7 +241,28 @@ final class ClaimsViewTests {
             // domination breakdown the other two views inject describes standings this view never
             // painted by, and would read as an account of a border it did not draw.
             assertThat(ClaimsView.INSTANCE.resolveHoverTooltip())
-                .contains(SystemClaimTooltip.INSTANCE);
+                .get()
+                .isInstanceOf(SystemClaimTooltip.class);
+        }
+
+        @Test
+        void explainsTheClaimsItReadsThroughTheViewsSource() {
+            // The box states the claim the cell under it was painted by, so it reads through the
+            // source the fills do.
+            ClaimBreakdownReaderSource claimReaderSource = (knownColonyReader, sectorIndex) ->
+                mock(ClaimBreakdownReader.class);
+
+            var tooltipMock = mock(SystemClaimTooltip.class);
+
+            try (var tooltipFactoryMock = mockStatic(SystemClaimTooltip.class)) {
+
+                tooltipFactoryMock
+                    .when(() -> SystemClaimTooltip.createReadingThrough(same(claimReaderSource)))
+                    .thenReturn(tooltipMock);
+
+                assertThat(new ClaimsView(claimReaderSource).resolveHoverTooltip())
+                    .containsSame(tooltipMock);
+            }
         }
     }
 
@@ -323,143 +295,17 @@ final class ClaimsViewTests {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of("hegemony", ANY_CLAIMANT_STATS)));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
+                assertThat(ClaimsView
+                        .INSTANCE
+                        .resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
-                    .containsExactly(new RankedBloc<>(
-                        new SelectableBloc(
+                    .containsExactly(new RankedOwner<>(
+                        new SelectableOwner(
                             "hegemony",
                             "Hegemony",
                             "graphics/hegemony_crest.png"),
                         ANY_CLAIMANT_STATS));
-            }
-        }
-
-        @Test
-        void offersAClaimantHoldingNoColonyAnywhere() {
-            // The gate is claim presence, not market presence: a faction claiming territory while
-            // holding nothing paints on this layer, so it must be spotlightable even at a market size
-            // of zero.
-            var sectorMock = mock(SectorAPI.class);
-
-            stubNamedFaction(sectorMock, "luddic_path", "Path");
-
-            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
-
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(buildReadOf(Map.of("luddic_path", new ClaimStats(1, 0))));
-
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
-                        .picker()
-                        .items())
-                    .extracting(RankedBloc::itemId)
-                    .containsExactly("luddic_path");
-            }
-        }
-
-        @Test
-        void offersABlocThatHoldsColoniesButClaimsNothing() {
-            // A faction the player can plainly see going unlisted reads as the map having forgotten
-            // it, so a colony holder that claims nowhere is offered rather than dropped. What says
-            // it paints nothing here is the row itself: it carries a claim count of zero, which is
-            // what its metrics read back from.
-            var sectorMock = mock(SectorAPI.class);
-
-            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
-            stubNamedFaction(sectorMock, "tritachyon", "Tri-Tachyon");
-
-            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
-
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(buildReadOf(Map.of(
-                        "hegemony", new ClaimStats(1, 0),
-                        "tritachyon", new ClaimStats(0, 40))));
-
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
-                        .picker()
-                        .items())
-                    .extracting(RankedBloc::itemId)
-                    .containsExactlyInAnyOrder("hegemony", "tritachyon");
-            }
-        }
-
-        @Test
-        void recedesTheRowOfABlocThatClaimsNothing() {
-            // Listing the claimless is only legible because the row says which it is, so the option
-            // the view builds must carry that state through to the picker rather than reading as an
-            // ordinary claimant with a zero on it.
-            var sectorMock = mock(SectorAPI.class);
-
-            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
-            stubNamedFaction(sectorMock, "tritachyon", "Tri-Tachyon");
-
-            var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
-
-            statsByBlocId.put("hegemony", new ClaimStats(1, 0));
-            statsByBlocId.put("tritachyon", new ClaimStats(0, 40));
-
-            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
-
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(buildReadOf(statsByBlocId));
-
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
-                        .picker()
-                        .items())
-                    .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
-                    .containsExactly(
-                        tuple("hegemony", false),
-                        tuple("tritachyon", true));
-            }
-        }
-
-        @Test
-        void keepsTheBlocsInTheFoldsWalkOrder() {
-            // The options come back in the order the sector walk surfaced them, which is the order
-            // the sort then arranges from. An ordered stub with a claimless bloc in the middle is
-            // what makes a reordering visible - the list must neither drop it nor sink it here, since
-            // where a receded row lands is the active sort's decision and not the assembly's.
-            var sectorMock = mock(SectorAPI.class);
-
-            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
-            stubNamedFaction(sectorMock, "tritachyon", "Tri-Tachyon");
-            stubNamedFaction(sectorMock, "persean", "Persean League");
-
-            var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
-
-            statsByBlocId.put("hegemony", new ClaimStats(1, 0));
-            statsByBlocId.put("tritachyon", new ClaimStats(0, 40));
-            statsByBlocId.put("persean", new ClaimStats(3, 12));
-
-            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
-
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(buildReadOf(statsByBlocId));
-
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
-                        .picker()
-                        .items())
-                    .extracting(RankedBloc::itemId)
-                    .containsExactly("hegemony", "tritachyon", "persean");
-            }
-        }
-
-        @Test
-        void offersNoItemsWhenTheFoldSurfacesNothing() {
-            // A bloc that neither claims nor holds anything never reaches the fold, so a sector with
-            // none of either offers no options - the picker draws no controls at all - and a stale
-            // saved selection heals to none.
-            var sectorMock = mock(SectorAPI.class);
-
-            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
-
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(buildReadOf(Map.of()));
-
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
-                        .picker()
-                        .items())
-                    .isEmpty();
             }
         }
 
@@ -470,22 +316,25 @@ final class ClaimsViewTests {
             // moment. Opening the reader under a rule of its own would also let a bloc's claim count
             // be answered about colonies its market size was never shown.
             var sectorMock = mock(SectorAPI.class);
-            var claimReaderMock = mock(ClaimReader.class);
+            var claimReaderMock = mock(ClaimBreakdownReader.class);
             var openedOver = new ArrayList<SectorPassIndex>();
             var openedUnder = new ArrayList<KnownColonyReader>();
-
             var aggregatedPasses = new ArrayList<HolderPass>();
 
             var view = new ClaimsView((knownColonyReader, sectorIndex) -> {
+
                 openedUnder.add(knownColonyReader);
                 openedOver.add(sectorIndex);
+
                 return claimReaderMock;
             });
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
+                aggregatorMock
+                    .when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenAnswer(invocation -> {
+
                         aggregatedPasses.add(invocation.getArgument(0));
                         return buildReadOf(Map.of());
                     });
@@ -519,10 +368,13 @@ final class ClaimsViewTests {
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
+                aggregatorMock
+                    .when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of()));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
+                assertThat(ClaimsView
+                        .INSTANCE
+                        .resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .sortModes()
                         .modes())
@@ -531,20 +383,23 @@ final class ClaimsViewTests {
             }
         }
 
+    }
+
+    @Nested
+    class ResolveOwnerPickerRead {
+
         @Test
-        void reachesNoWeightingRuleOnItsLiveEntry() {
-            // The live entry the sidebar and the stale-selection heal call, driven whole rather than
-            // under stated knobs - which is the only way this can be asked at all. A weighting rule
-            // is read from LunaLib, a class the test JVM cannot load, so a seam handing this layer
-            // one would take the case down here rather than merely doing work nobody spends. That
-            // is the assertion: the claims picker is painted by the claim mechanic, and reads the
-            // settings of no other.
+        void readsNoWeightingRule() {
+            // The claims picker is painted by the claim mechanic, so its live entry reads the
+            // settings of no other: the weighting rule is the domination contest's alone.
             var sectorMock = mock(SectorAPI.class);
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class);
-                    var visibilityRulesMock = mockStatic(MapVisibilityRules.class)) {
+                    var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
+                    var weightingRulesMock = mockStatic(DominanceRules.class)) {
 
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
+                aggregatorMock
+                    .when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of()));
 
                 // The one live read this entry is meant to make, stood in as the plain fog.
@@ -552,32 +407,9 @@ final class ClaimsViewTests {
                     .when(MapVisibilityRules::readFromLunaSettings)
                     .thenReturn(MapVisibilityRules.BASE);
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock).picker().items())
-                    .isEmpty();
-            }
-        }
+                ClaimsView.INSTANCE.resolveOwnerPickerRead(sectorMock);
 
-        @Test
-        void carriesTheClaimWalksPresenceBesideTheRows() {
-            // The presence comes off the same walk the rows do, handed on rather than derived here.
-            // That the walk's index is the claim arm's alone - a bloc's colonies being summed from
-            // wherever they are, so a system it merely lives in is never named - is the aggregator's
-            // guarantee and is pinned there; what this pins is that the view does not lose it.
-            var sectorMock = mock(SectorAPI.class);
-
-            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
-
-            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
-
-                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(new ClaimStatsRead(
-                        Map.of("hegemony", ANY_CLAIMANT_STATS),
-                        buildIndexOf("hegemony", "corvus")));
-
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
-                        .presenceIndex()
-                        .readPresentSystemKeys("hegemony"))
-                    .containsExactlyElementsOf(buildCellKeys("corvus"));
+                weightingRulesMock.verifyNoInteractions();
             }
         }
     }
@@ -585,7 +417,7 @@ final class ClaimsViewTests {
     // A stubbed aggregation posing blocs and nowhere in particular, for the cases about the rows
     // alone: the claimed-system index beside them is left empty rather than stubbed to systems those
     // cases never ask about.
-    private static ClaimStatsRead buildReadOf(Map<String, ClaimStats> statsByBlocId) {
-        return new ClaimStatsRead(statsByBlocId, BlocPresenceIndex.EMPTY);
+    private static OwnerStatsRead<ClaimStats> buildReadOf(Map<String, ClaimStats> statsByBlocId) {
+        return new OwnerStatsRead<>(statsByBlocId, OwnerPresenceIndex.EMPTY);
     }
 }

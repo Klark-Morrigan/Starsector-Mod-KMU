@@ -1,10 +1,12 @@
 package kmu.maplayers.politicalmap.claims.tooltip;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
+import kmlib.starsector.factions.relation.FactionSetFriendliness;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.ownermap.holding.BlocAffiliation;
-import kmu.maplayers.ownermap.holding.BlocFriendliness;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocAffiliation;
+import kmu.maplayers.ownermap.owners.holders.alliances.BlocRelations;
 
 /**
  * A contest nothing groups and nothing warms, which is the state every case about something other
@@ -21,8 +23,8 @@ public final class ListedClaimContestFixture {
     // Nobody above neutral with anybody. Vanilla starts most faction pairs at indifference, so this
     // is the ordinary sector rather than a hostile one - and it is what leaves the friendly block
     // empty over every system a case built here poses.
-    private static final BlocFriendliness INDIFFERENT_FACTIONS =
-        new BlocFriendliness((factionId, otherFactionId) -> false);
+    private static final FactionSetFriendliness INDIFFERENT_FACTIONS =
+        new FactionSetFriendliness((factionId, otherFactionId) -> false);
 
     private ListedClaimContestFixture() {
     }
@@ -31,7 +33,7 @@ public final class ListedClaimContestFixture {
      * Projects a contest under a colony rule, with every standing left to sort on eligibility
      * alone.
      *
-     * @param breakdown       the contest as the mechanic settled it
+     * @param breakdown        the contest as the mechanic settled it
      * @param colonyVisibility the colony rule the listing is projected under, which is what a case
      *                         about the fog states
      * @return the contest a box would have read, routed by nothing but eligibility
@@ -43,7 +45,6 @@ public final class ListedClaimContestFixture {
         return ListedClaimContest.selectFrom(
             breakdown,
             colonyVisibility,
-            BlocAffiliation.NONE,
-            INDIFFERENT_FACTIONS);
+            new BlocRelations(new BlocAffiliation(FactionAlliances.NONE), INDIFFERENT_FACTIONS));
     }
 }

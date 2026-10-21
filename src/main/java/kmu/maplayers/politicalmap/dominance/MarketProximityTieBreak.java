@@ -7,7 +7,7 @@ import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.StarSystems;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.politicalmap.dominance.weighting.KnownMarketFootprints;
 
 import java.util.Comparator;
@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  * Breaks an exact dominance tie by which bloc holds the market nearest the system's centre,
- * so a tie resolves the same on every view instead of by the arbitrary ordering of bloc ids.
+ * so a tie resolves the same on every view instead of by the arbitrary ordering of bloc IDs.
  *
  * <p>A bloc ID is a faction ID on the faction view but an alliance's own ID on the alliances
  * view, so a tie falling to the lowest ID could flip holder between views purely because an
@@ -59,14 +59,14 @@ public final class MarketProximityTieBreak {
      * the lowest colour-faction ID when two nearest markets orbit at the same depth. Reads no
      * geometry until first compared, so a system that never ties costs nothing.
      *
-     * @param system           the system the tie is decided within
-     * @param colonies         the system's colony set, as the pass's one walk of it reported -
-     *                         the same colonies every other surface reads, so a dead heat cannot
-     *                         be settled among a set of markets nothing else in the pass saw
+     * @param system          the system the tie is decided within
+     * @param colonies        the system's colony set, as the pass's one walk of it reported -
+     *                        the same colonies every other surface reads, so a dead heat cannot
+     *                        be settled among a set of markets nothing else in the pass saw
      * @param colonyKnowledge what the player may be shown of a colony, matching the pass's own
-     *                         projection so the tie weighs the markets the ranking above it did
-     * @param grouping         the active grouping, so a market's bloc and the colour-faction
-     *                         backstop resolve as the pass grouped them
+     *                        projection so the tie weighs the markets the ranking above it did
+     * @param grouping        the active grouping, so a market's bloc and the colour-faction
+     *                        backstop resolve as the pass grouped them
      * @return a comparator ordering the closer-to-centre bloc first
      */
     public static Comparator<String> createForSystem(

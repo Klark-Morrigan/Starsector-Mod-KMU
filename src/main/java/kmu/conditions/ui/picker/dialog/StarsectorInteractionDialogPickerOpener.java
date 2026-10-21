@@ -1,16 +1,11 @@
 package kmu.conditions.ui.picker.dialog;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import java.util.Objects;
 
 public final class StarsectorInteractionDialogPickerOpener implements KmuConditionPickerDialogOpener {
     private final SectorAPI sector;
-
-    public StarsectorInteractionDialogPickerOpener() {
-        this(Global.getSector());
-    }
 
     public StarsectorInteractionDialogPickerOpener(SectorAPI sector) {
         this.sector = Objects.requireNonNull(sector, "sector");

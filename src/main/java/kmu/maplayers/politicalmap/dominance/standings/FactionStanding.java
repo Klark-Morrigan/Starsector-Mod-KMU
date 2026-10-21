@@ -33,6 +33,14 @@ public sealed interface FactionStanding
     String factionId();
 
     /**
+     * Whether the pass weighed the faction's colonies - true of a {@link WeighedFactionStanding},
+     * false of a {@link PresenceOnlyFactionStanding}.
+     *
+     * @return whether the score is a weight somebody worked out rather than a named nought
+     */
+    boolean isWeighed();
+
+    /**
      * @return the faction's summed domination weight in the hovered system
      */
     int score();

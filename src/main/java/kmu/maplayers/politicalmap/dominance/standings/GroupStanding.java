@@ -28,8 +28,20 @@ public record GroupStanding(
     int aggregateScore,
     List<FactionStanding> members) {
 
+    /**
+     * Takes an immutable copy of the members.
+     *
+     * @throws IllegalArgumentException where there are no members - a group stands in a system only
+     *                                  through a member present there, and a reader of a lone-faction
+     *                                  group reads its first member
+     */
     public GroupStanding {
+
         members = List.copyOf(members);
+
+        if (members.isEmpty()) {
+            throw new IllegalArgumentException("A group standing needs at least one member: " + blocId);
+        }
     }
 
     /**
@@ -67,7 +79,7 @@ public record GroupStanding(
     public boolean hasWeighedMember() {
 
         for (var member : members) {
-            if (member instanceof WeighedFactionStanding) {
+            if (member.isWeighed()) {
                 return true;
             }
         }

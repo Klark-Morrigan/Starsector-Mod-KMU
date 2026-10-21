@@ -10,7 +10,7 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.ownermap.owners.SectorOwnershipFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,14 +23,14 @@ import static kmu.maplayers.SectorScenarioFixtures.placeDerelictIn;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildFaction;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildOnlySystem;
-import static kmu.maplayers.ownermap.owners.SectorOwnershipFixtures.buildVisibleMarket;
-import static kmu.maplayers.ownermap.tooltip.SectorFactionsFake.stubFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildFaction;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildOnlySystem;
+import static kmu.maplayers.ownermap.owners.holders.base.SectorOwnershipFixtures.buildVisibleMarket;
 import static kmu.maplayers.politicalmap.tooltip.PoliticalMapBoxReads.buildClaimBreakdownReaderOver;
 import static kmu.maplayers.politicalmap.tooltip.PoliticalMapBoxReads.buildDominanceBox;
 import static kmu.maplayers.politicalmap.tooltip.PoliticalMapBoxReads.readClaimSections;
 import static kmu.maplayers.politicalmap.tooltip.PoliticalMapBoxReads.readDominanceSections;
+import static kmu.starsector.SectorFactionFixtures.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -128,13 +128,9 @@ final class DerelictReadoutIntegrationTests {
                 .contains("The Hegemony", "Neutral")
                 .doesNotContain("Unpopulated");
         }
-    }
-
-    @Nested
-    class ResolveDeepestHeldLevelFor {
 
         @Test
-        void offersTheAccountOverASystemTheBoxCallsUnpopulated() {
+        void reachesTheAccountOverASystemTheBoxCallsUnpopulated() {
             // The other half of the same disagreement, and the half a stubbed suite cannot pin: the
             // status line and the standings answer different questions of one walk, so the key hint
             // has to follow the listing rather than the banner. The derelict is the system's only
@@ -147,7 +143,7 @@ final class DerelictReadoutIntegrationTests {
         }
 
         @Test
-        void offersNothingOverASystemNobodyStandsIn() {
+        void reachesNoDeeperOverASystemNobodyStandsIn() {
             // Nothing in the system at all, so nothing ranks and there is no account for the
             // counterpart to state. The banner is the same one the case above draws, which is what
             // makes the pair worth stating: the boxes part on the listing, not on the line.
@@ -195,7 +191,8 @@ final class DerelictReadoutIntegrationTests {
     private static HoverTooltipDetailLevel resolveDominationDeepestHeldLevel(SectorAPI sector) {
 
         return buildDominanceBox()
-            .resolveDeepestHeldLevelFor(sector, buildOnlySystem(sector));
+            .composeBody(sector, buildOnlySystem(sector), FACTIONS)
+            .deepestHeldLevel();
     }
 
     // The claim contest behind the system, read through the real mechanic over the pass's own walk
@@ -210,7 +207,7 @@ final class DerelictReadoutIntegrationTests {
     private static int readScore(SystemClaimBreakdown breakdown, String factionId) {
 
         return breakdown
-            .scores()
+            .standings()
             .stream()
             .filter(standing -> factionId.equals(standing.factionId()))
             .mapToInt(FactionClaimStanding::score)

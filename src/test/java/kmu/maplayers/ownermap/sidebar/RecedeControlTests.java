@@ -10,9 +10,11 @@ import kmlib.starsector.ui.controls.specs.LabelSpec;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
+import kmu.maplayers.base.sidebar.BodyControlTarget;
 import kmu.maplayers.ownermap.preferences.RecedePreferences;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.util.KmuOwnerMapStringKeys;
 import kmu.util.KmuStringKeys;
+import kmu.util.KmuStringsSettingsFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +45,7 @@ import static org.mockito.Mockito.when;
 final class RecedeControlTests {
     // A sample caption the caller supplies, echoed into the first cell; a fixed value so the test
     // depends on no context's real caption.
-    private static final String CAPTION_LABEL = "Non-allied factions are";
+    private static final String CAPTION_LABEL = "Other owners are";
 
     // The board a control is built against, standing in for one sector's installed machinery. Held
     // by identity rather than read for revisions: the set is a mock, so nothing raises on it here and
@@ -74,7 +76,7 @@ final class RecedeControlTests {
     void installColours() {
         // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
         // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
+        KmuStringsSettingsFake.installSettings();
 
         miscMock = Mockito.mockStatic(Misc.class);
         miscMock
@@ -85,7 +87,7 @@ final class RecedeControlTests {
     @AfterEach
     void clearColours() {
         miscMock.close();
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 
     @Nested
@@ -241,9 +243,9 @@ final class RecedeControlTests {
     // lands in which position - without depending on the live strings table. The caption is the
     // caller's own string, passed in, so it needs no stub.
     private static void stubCheckboxLabels(MockedStatic<KmuStringKeys> stringsMock) {
-        stringsMock.when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_MUTED))
+        stringsMock.when(() -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_MUTED))
                 .thenReturn("Muted");
-        stringsMock.when(() -> KmuStringKeys.get(KmuStringKeys.OWNER_MAP_CTL_DESATURATED))
+        stringsMock.when(() -> KmuStringKeys.get(KmuOwnerMapStringKeys.OWNER_MAP_CTL_DESATURATED))
                 .thenReturn("Desaturated");
     }
 }

@@ -4,10 +4,14 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
+import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
+import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbon;
 import kmu.maplayers.ownermap.render.ribbon.CellRibbonPath;
 import kmu.maplayers.ownermap.render.ribbon.CellRingPathCache;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,28 +33,60 @@ import java.util.Map;
  * fields.
  *
  * <p>Live and mutable throughout: a full rebuild fills it, and the incremental refresh replaces
- * just the cells a holder change touched. The maps it hands back are the live ones, since the
+ * just the cells an owner change touched. The maps it hands back are the live ones, since the
  * emission walks them per frame and the highlight memoises on their contents by identity - a
  * defensive copy would cost a frame and defeat that memo.
+ *
+ * <p>The draw records are also kept parted by form, which is how the emission walks them. Parted
+ * on the first read after a write rather than on every read: the emission reads them several times a
+ * frame, and only a rebuild or a refresh writes.
  */
 public final class PaintedCellStore {
 
     private final Map<SystemKey, StyledCell> styledCellByCellKey = new LinkedHashMap<>();
-
     private final Map<SystemKey, List<double[]>> fillPolygonByCellKey = new LinkedHashMap<>();
-
     private final Map<SystemKey, CellRibbon> ribbonByCellKey = new LinkedHashMap<>();
-
     private final Map<SystemKey, CellRibbonPath> ribbonPathByCellKey = new LinkedHashMap<>();
+
+    // The draw records as callers read them. Read-only, because every write has to go through the
+    // put and remove below: those are what mark the parted lists stale, and a write made straight
+    // into the map would leave the emission drawing the cells as they were before it.
+    private final Map<SystemKey, StyledCell> styledCellView =
+        Collections.unmodifiableMap(styledCellByCellKey);
 
     private final CellRingPathCache ringPathCache = new CellRingPathCache();
 
+    // The draw records parted by form, in the map's own order, and whether a write has landed since
+    // they were parted.
+    private List<FusedCell> fusedCells = List.of();
+    private List<LoneCell> loneCells = List.of();
+
+    private boolean areCellFormsStale;
+
     /**
-     * @return each drawn cell's draw record, keyed by cell key; a cell that puts no ink on the map
-     *         is absent
+     * @return each drawn cell's draw record, keyed by cell key, read-only; a cell that puts no ink
+     *         on the map is absent
      */
     public Map<SystemKey, StyledCell> getStyledCellByCellKey() {
-        return styledCellByCellKey;
+        return styledCellView;
+    }
+
+    /**
+     * @return every drawn cell that fused into a cluster, in the order the cells were recorded
+     */
+    public List<FusedCell> getFusedCells() {
+
+        partCellsByFormIfStale();
+        return fusedCells;
+    }
+
+    /**
+     * @return every drawn cell that fused with nothing, in the order the cells were recorded
+     */
+    public List<LoneCell> getLoneCells() {
+
+        partCellsByFormIfStale();
+        return loneCells;
     }
 
     /**
@@ -112,6 +148,8 @@ public final class PaintedCellStore {
 
         styledCellByCellKey.put(cellKey, paintedCell.styledCell());
         fillPolygonByCellKey.put(cellKey, paintedCell.paintedExtent());
+
+        areCellFormsStale = true;
         dropRingFittedWork(cellKey);
     }
 
@@ -133,6 +171,7 @@ public final class PaintedCellStore {
         // pass walks only the cells that draw one - which is a small share of them.
         if (ribbon.isEmpty()) {
             ribbonByCellKey.remove(cellKey);
+
         } else {
             ribbonByCellKey.put(cellKey, ribbon);
         }
@@ -156,6 +195,7 @@ public final class PaintedCellStore {
         // player has it off.
         if (ribbonPath.isEmpty()) {
             ribbonPathByCellKey.remove(cellKey);
+
         } else {
             ribbonPathByCellKey.put(cellKey, ribbonPath);
         }
@@ -168,9 +208,39 @@ public final class PaintedCellStore {
      * @param cellKey the cell that no longer draws
      */
     public void removePaintedCell(SystemKey cellKey) {
+
         styledCellByCellKey.remove(cellKey);
         fillPolygonByCellKey.remove(cellKey);
+
+        areCellFormsStale = true;
         dropRingFittedWork(cellKey);
+    }
+
+    // Parts the draw records by form where a write has landed since they were last parted. A write
+    // batch - a rebuild, or a refresh of a few cells - is parted once, on the first frame after it.
+    private void partCellsByFormIfStale() {
+
+        if (!areCellFormsStale) {
+            return;
+        }
+
+        var partedFusedCells = new ArrayList<FusedCell>();
+        var partedLoneCells = new ArrayList<LoneCell>();
+
+        for (var styledCell : styledCellByCellKey.values()) {
+
+            if (styledCell instanceof FusedCell fusedCell) {
+                partedFusedCells.add(fusedCell);
+
+            } else if (styledCell instanceof LoneCell loneCell) {
+                partedLoneCells.add(loneCell);
+            }
+        }
+
+        fusedCells = List.copyOf(partedFusedCells);
+        loneCells = List.copyOf(partedLoneCells);
+
+        areCellFormsStale = false;
     }
 
     // Everything laid inside one cell's ring: its band, that band's diagnostic path, and the traced
@@ -178,8 +248,10 @@ public final class PaintedCellStore {
     // fitted to the ring that is going - a band left behind would draw the last shape's stripe
     // inside this shape's cell, and a ring left behind would have the next bake lay one there.
     private void dropRingFittedWork(SystemKey cellKey) {
+
         ribbonByCellKey.remove(cellKey);
         ribbonPathByCellKey.remove(cellKey);
+
         ringPathCache.dropRingPathOf(cellKey);
     }
 }

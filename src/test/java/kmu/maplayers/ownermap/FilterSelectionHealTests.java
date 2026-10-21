@@ -6,18 +6,22 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.sidebar.SelectionSlot;
-import kmu.maplayers.ownermap.picker.BlocMetricsFake;
-import kmu.maplayers.ownermap.picker.BlocPickerRead;
-import kmu.maplayers.ownermap.picker.BlocPresenceIndex;
-import kmu.maplayers.ownermap.picker.BlocSortModesFake;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.picker.SelectableBloc;
+import kmu.maplayers.ownermap.picker.OwnerMetricsFake;
+import kmu.maplayers.ownermap.picker.OwnerPickerRead;
+import kmu.maplayers.ownermap.picker.OwnerPresenceIndex;
+import kmu.maplayers.ownermap.picker.OwnerSortModesFake;
+import kmu.maplayers.ownermap.picker.RankedOwner;
+import kmu.maplayers.ownermap.picker.SelectableOwner;
 import kmu.settings.KmuLunaSettings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -41,20 +45,23 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the glue that heals a loaded save's spotlight selections against each screen's selected view:
  * a screen with no view selected is skipped (its persisted filter is left for a later view to judge),
- * and a screen with one is healed with a predicate that reports a bloc selectable exactly when that
+ * and a screen with one is healed with a predicate that reports an owner selectable exactly when that
  * screen's view still lists it, judged against the sector the caller handed over. The views, the
  * sector, and the filter selection are stubbed so this pins the wiring alone, not how the selection
  * actually clears.
  *
  * <p>The sector-less entries are pinned too - the settings registration, that being the moment a live
- * game can lose a bloc from the picker without a load or a view switch to heal against, and the live
+ * game can lose an owner from the picker without a load or a view switch to heal against, and the live
  * entry a sidebar click takes - since each resolves the running sector once and must hand exactly that
  * one down.
+ *
+ * <p>The screens a heal walks are the ones seated on the sector's machinery, so every case seats them
+ * there as the composition root does.
  */
 final class FilterSelectionHealTests {
 
     // How many screens a heal is owed, pinned as a literal: a screen added without its heal would
-    // leave one panel spotlighting a bloc the player can no longer unpick from the panel they are on.
+    // leave one panel spotlighting an owner the player can no longer unpick from the panel they are on.
     private static final int SCREEN_COUNT = 2;
 
     // The layer whose spotlights are healed, stubbed per case to each screen's selected view.
@@ -63,11 +70,25 @@ final class FilterSelectionHealTests {
     private final OwnerPaintedView viewMock = mock(OwnerPaintedView.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
+    private final MapLayerScreens screens = MapLayerRosters.createScreensOverNoLayer();
+
+    @BeforeEach
+    void seatTheScreensOnTheSector() {
+        SectorMapMachineryIndex.installMachineryOn(sectorMock, screens);
+    }
+
+    @AfterEach
+    void clearEveryMachineryThisCaseMade() {
+        // The index is process-wide, so a sector installed here would otherwise outlive its case.
+        SectorMapMachineryIndex.disposeAllMachinery();
+    }
+
     @Nested
     class HealStaleSelectionAgainstActiveView {
 
         @Test
         void doesNothingWhenNoViewIsSelected() {
+
             try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 when(viewRegistryMock.getSelectedView(any()))
@@ -85,52 +106,55 @@ final class FilterSelectionHealTests {
 
         @Test
         void healsNothingWithoutASector() {
-            // Against no sector every view offers no blocs, so judging a stored spotlight there would
+            // Against no sector every view offers no owners, so judging a stored spotlight there would
             // clear every one of them as lapsed. Nothing is judged instead.
             try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView(null, viewRegistryMock);
 
-                selectionMock.verifyNoInteractions();
+                selectionMock
+                    .verifyNoInteractions();
+
                 verifyNoInteractions(viewRegistryMock);
             }
         }
 
         @Test
-        void healsWithTheActiveViewsSelectableBlocs() {
+        void healsWithTheActiveViewsSelectableOwners() {
+
             try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 when(viewRegistryMock.getSelectedView(any()))
                     .thenReturn(viewMock);
-
                 when(viewMock.getId())
-                    .thenReturn("factions");
+                    .thenReturn("owners");
 
-                stubOfferedBlocs(buildReadListing("hegemony"));
+                stubOfferedOwners(buildReadListing("hegemony"));
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
-                // The predicate handed to the heal reports a bloc selectable exactly when the active
-                // view still lists it, so a still-listed bloc survives and a vanished one is stale.
+                // The predicate handed to the heal reports an owner selectable exactly when the active
+                // view still lists it, so a still-listed owner survives and a vanished one is stale.
                 var predicate = capturePredicate(selectionMock);
 
-                assertThat(predicate.test("hegemony")).isTrue();
-                assertThat(predicate.test("vanished")).isFalse();
+                assertThat(predicate.test("hegemony"))
+                    .isTrue();
+                assertThat(predicate.test("vanished"))
+                    .isFalse();
             }
         }
 
         @Test
         void healsEveryScreensSlot() {
-            // A bloc that lapsed lapsed for both panels, so both are judged in the one pass. Healing
+            // An owner that lapsed lapsed for both panels, so both are judged in the one pass. Healing
             // only the screen being looked at would leave the other spotlighting a footprint that is
             // no longer on the map, and no way to unpick it from the panel the player is on.
             try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 when(viewRegistryMock.getSelectedView(any()))
                     .thenReturn(viewMock);
-
                 when(viewMock.getId())
-                    .thenReturn("factions");
+                    .thenReturn("owners");
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
@@ -142,14 +166,14 @@ final class FilterSelectionHealTests {
                 assertThat(healedSlots)
                     .extracting(slot -> slot.screenSlot().memoryScope())
                     .containsExactlyInAnyOrderElementsOf(
-                        MapLayerScreens.getAllScreenPicks().stream()
+                        screens.getAllScreenPicks().stream()
                             .map(ScreenLayerPicks::memoryScope)
                             .toList());
 
                 // Each under the active view's ID, since a spotlight is per view as well as per screen.
                 assertThat(healedSlots)
                     .extracting(SelectionSlot::scopeId)
-                    .containsOnly("factions");
+                    .containsOnly("owners");
             }
         }
 
@@ -157,13 +181,13 @@ final class FilterSelectionHealTests {
         void judgesEachScreenUnderItsOwnView() {
             // The view is that panel's pick as much as the spotlight is, so each slot is judged under
             // the view its own panel is set to. Judged under the other panel's view instead, a
-            // perfectly live faction spotlight would be cleared for not appearing in a group list.
+            // perfectly live owner spotlight would be cleared for not appearing in a group list.
             try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 var otherViewMock = mock(OwnerPaintedView.class);
 
                 when(viewMock.getId())
-                    .thenReturn("factions");
+                    .thenReturn("owners");
                 when(otherViewMock.getId())
                     .thenReturn("groups");
 
@@ -172,10 +196,10 @@ final class FilterSelectionHealTests {
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
                 // Each screen's slot under its own screen's view ID, which is the pairing a shared view
-                // read would collapse onto one id.
+                // read would collapse onto one ID.
                 assertThat(captureHealedSlots(selectionMock))
                     .extracting(SelectionSlot::scopeId)
-                    .containsExactly("factions", "groups");
+                    .containsExactly("owners", "groups");
             }
         }
 
@@ -186,7 +210,7 @@ final class FilterSelectionHealTests {
             try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 when(viewMock.getId())
-                    .thenReturn("factions");
+                    .thenReturn("owners");
 
                 stubOneViewPerScreen(viewRegistryMock, null, viewMock);
 
@@ -199,30 +223,32 @@ final class FilterSelectionHealTests {
         }
 
         @Test
-        void readsNoBlocsUntilOneIsThereToJudge() {
+        void readsNoOwnersUntilOneIsThereToJudge() {
             // The cost contract, which matters because every settings change arrives here and
-            // most saves hold no spotlight: resolving the view's blocs is a whole grouped holder
+            // most saves hold no spotlight: resolving the view's owners is a whole grouped
             // pass over the sector, so it must not run before the heal has found a stored ID worth
             // judging. Pinned on the seam that pass goes through, the pass itself being the view's.
             try (var selectionMock = mockStatic(FilterSelection.class)) {
 
                 when(viewRegistryMock.getSelectedView(any()))
                     .thenReturn(viewMock);
-
                 when(viewMock.getId())
-                    .thenReturn("factions");
+                    .thenReturn("owners");
 
-                stubOfferedBlocs(buildReadListing());
+                stubOfferedOwners(buildReadListing());
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView(sectorMock, viewRegistryMock);
 
-                verify(viewMock, never()).resolveBlocPickerRead(sectorMock);
+                verify(viewMock, never())
+                    .resolveOwnerPickerRead(sectorMock);
 
                 // And it is that same predicate that pays the cost once there is an ID to judge, so
                 // the work is deferred rather than dropped.
-                capturePredicate(selectionMock).test("hegemony");
+                capturePredicate(selectionMock)
+                    .test("hegemony");
 
-                verify(viewMock).resolveBlocPickerRead(sectorMock);
+                verify(viewMock)
+                    .resolveOwnerPickerRead(sectorMock);
             }
         }
     }
@@ -233,7 +259,7 @@ final class FilterSelectionHealTests {
         @Test
         void judgesAgainstTheRunningSector() {
             // A sidebar click is handed no sector, so the running one is resolved at the entry and
-            // is the one the view's blocs are read off.
+            // is the one the view's owners are read off.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
@@ -241,11 +267,10 @@ final class FilterSelectionHealTests {
 
                 when(viewRegistryMock.getSelectedView(any()))
                     .thenReturn(viewMock);
-
                 when(viewMock.getId())
-                    .thenReturn("factions");
+                    .thenReturn("owners");
 
-                stubOfferedBlocs(buildReadListing("hegemony"));
+                stubOfferedOwners(buildReadListing("hegemony"));
 
                 FilterSelectionHeal.healStaleSelectionAgainstLiveSector(viewRegistryMock);
 
@@ -260,9 +285,10 @@ final class FilterSelectionHealTests {
 
         @Test
         void registersTheHealAsTheSettingsChangeReaction() {
-            // A settings change is what takes a bloc off the picker mid-game (a visibility override
-            // switched off can leave a faction with no visible market), so what is pinned is that the
-            // runnable handed to the settings seam is the heal itself and not some other reaction.
+            // A settings change is what takes an owner off the picker mid-game (a visibility
+            // override switched off can leave an owner holding no visible system), so what is
+            // pinned is that the runnable handed to the settings seam is the heal itself and not
+            // some other reaction.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                     var settingsMock = mockStatic(KmuLunaSettings.class)) {
 
@@ -274,6 +300,7 @@ final class FilterSelectionHealTests {
                 FilterSelectionHeal.installHealOnSettingsChange(viewRegistryMock);
 
                 var captor = ArgumentCaptor.forClass(Runnable.class);
+
                 settingsMock.verify(
                     () -> KmuLunaSettings.runOnSettingsChange(captor.capture()));
 
@@ -281,7 +308,8 @@ final class FilterSelectionHealTests {
                 // read - on the registry the install was handed - is what identifies the reaction.
                 captor.getValue().run();
 
-                verify(viewRegistryMock, times(SCREEN_COUNT)).getSelectedView(any());
+                verify(viewRegistryMock, times(SCREEN_COUNT))
+                    .getSelectedView(any());
             }
         }
 
@@ -297,14 +325,19 @@ final class FilterSelectionHealTests {
                 FilterSelectionHeal.installHealOnSettingsChange(viewRegistryMock);
 
                 var captor = ArgumentCaptor.forClass(Runnable.class);
+
                 settingsMock.verify(
                     () -> KmuLunaSettings.runOnSettingsChange(captor.capture()));
 
-                globalMock.verify(Global::getSector, never());
+                globalMock.verify(
+                    Global::getSector,
+                    never());
 
                 captor.getValue().run();
 
-                globalMock.verify(Global::getSector, times(1));
+                globalMock.verify(
+                    Global::getSector,
+                    times(1));
             }
         }
     }
@@ -317,41 +350,44 @@ final class FilterSelectionHealTests {
             .thenReturn(sectorMock);
     }
 
-    // Answers the case's view with a picker read listing the given blocs against the case's sector.
+    // Answers the case's view with a picker read listing the given owners against the case's sector.
     // Stubbed through doReturn because the seam answers a wildcarded read, whose captured item type a
     // when() stub would have to name.
-    private void stubOfferedBlocs(BlocPickerRead<RankedBloc<BlocMetricsFake>> read) {
+    private void stubOfferedOwners(OwnerPickerRead<RankedOwner<OwnerMetricsFake>> read) {
 
         doReturn(read)
             .when(viewMock)
-            .resolveBlocPickerRead(sectorMock);
+            .resolveOwnerPickerRead(sectorMock);
     }
 
-    // A picker read listing the given bloc IDs. The heal matches on the ID alone, so the stats half of
+    // A picker read listing the given owner IDs. The heal matches on the ID alone, so the stats half of
     // each option, the vocabulary bundled beside the list, and the presence beside the rows all stand
     // in.
-    private static BlocPickerRead<RankedBloc<BlocMetricsFake>> buildReadListing(String... blocIds) {
+    private static OwnerPickerRead<RankedOwner<OwnerMetricsFake>> buildReadListing(String... ownerIds) {
 
-        var rows = new ArrayList<RankedBloc<BlocMetricsFake>>();
-        for (var blocId : blocIds) {
-            rows.add(new RankedBloc<>(
-                new SelectableBloc(blocId, blocId, "crest_" + blocId),
-                BlocMetricsFake.EMPTY_FAKE));
+        var rows = new ArrayList<RankedOwner<OwnerMetricsFake>>();
+
+        for (var ownerId : ownerIds) {
+
+            rows.add(new RankedOwner<>(
+                new SelectableOwner(ownerId, ownerId, "crest_" + ownerId),
+                OwnerMetricsFake.EMPTY_FAKE));
         }
-        return new BlocPickerRead<>(
-            new ListPicker<>(rows, BlocSortModesFake.MODES),
-            BlocPresenceIndex.EMPTY);
+
+        return new OwnerPickerRead<>(
+            new ListPicker<>(rows, OwnerSortModesFake.MODES),
+            OwnerPresenceIndex.EMPTY);
     }
 
     // Sets each screen's own selected view, in the order the screens are walked, so a case can pose two
     // panels on different views - or one with its map off. Which screens those are stays
     // MapLayerScreens' answer: the views are handed out against the scopes it names rather than against
     // two spelled-out screens.
-    private static void stubOneViewPerScreen(
+    private void stubOneViewPerScreen(
             MapLayerViewRegistry viewRegistryMock,
             OwnerPaintedView... viewPerScreen) {
 
-        var screenPicks = MapLayerScreens.getAllScreenPicks();
+        var screenPicks = screens.getAllScreenPicks();
 
         for (var screenIndex = 0; screenIndex < screenPicks.size(); screenIndex++) {
 
@@ -369,22 +405,27 @@ final class FilterSelectionHealTests {
             MockedStatic<FilterSelection> selectionMock) {
 
         ArgumentCaptor<SelectionSlot> captor = ArgumentCaptor.forClass(SelectionSlot.class);
+
         selectionMock.verify(
             () -> FilterSelection.healStaleSelection(captor.capture(), any()),
             times(SCREEN_COUNT));
+
         return captor.getAllValues();
     }
 
     // Captures the predicate passed to FilterSelection.healStaleSelection, so a test can exercise the
-    // selectability rule the glue built from a screen's view's blocs. Used by the cases that pose one
+    // selectability rule the glue built from a screen's view's owners. Used by the cases that pose one
     // view across both screens, where every rule captured is built from that one view, so the last one
     // stands for all of them.
     private static Predicate<String> capturePredicate(MockedStatic<FilterSelection> selectionMock) {
+
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Predicate<String>> captor = ArgumentCaptor.forClass(Predicate.class);
+
         selectionMock.verify(
             () -> FilterSelection.healStaleSelection(any(), captor.capture()),
             times(SCREEN_COUNT));
+
         return captor.getValue();
     }
 }

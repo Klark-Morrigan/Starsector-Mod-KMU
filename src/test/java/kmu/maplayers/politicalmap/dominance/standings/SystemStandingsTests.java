@@ -1,7 +1,19 @@
 package kmu.maplayers.politicalmap.dominance.standings;
 
-import kmu.maplayers.ownermap.holding.HolderGrouping;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
+
+import kmlib.starsector.entities.EntityNameplate;
+
+import kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures;
+import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
+import kmu.maplayers.politicalmap.dominance.DominancePass;
+import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeFactor;
+import kmu.maplayers.politicalmap.dominance.weighting.BaseSizeWeighting;
+import kmu.maplayers.politicalmap.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
+import kmu.maplayers.politicalmap.dominance.weighting.MarketWeightBreakdown;
+import kmu.maplayers.politicalmap.dominance.weighting.PatrolWeighting;
+import kmu.maplayers.politicalmap.dominance.weighting.StationWeighting;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -10,19 +22,21 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static kmu.maplayers.politicalmap.dominance.weighting.MarketFootprintFixtures.buildWeightedFootprint;
 import static kmu.maplayers.politicalmap.dominance.weighting.MarketFootprintFixtures.listOrderedFootprints;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * Pins {@link SystemStandings}'s grouped ranking on hand-built inputs and a hand-built grouping,
  * free of any live economy: groups rank by summed score and members rank within, ties breaking by ID
  * at both tiers. The faction cases prove the identity grouping renders every faction its own
  * singleton group; the alliance cases prove members fold into one bloc whose summed score can outrank
- * a lone faction no single member would. Each input lists the higher-scoring or higher-id entry first
+ * a lone faction no single member would. Each input lists the higher-scoring or higher-ID entry first
  * so the ordering is shown to come from the rule, not the map's walk order.
  *
  * <p>The presence cases pin the second input: a faction the pass could weigh nothing for is still
@@ -35,6 +49,42 @@ class SystemStandingsTests {
 
     @Nested
     class RankByDominationScore {
+
+        @Test
+        void ranksTheWeightsItWasHandedRatherThanWeighingAgain() {
+            // The live entry folds the box's own weights, so the ranking and the account beneath it
+            // explain one weighing. Over no sector, so the pass reads no colony at all - and a
+            // ranking that weighed for itself would find nobody.
+            var pass = DominancePass.createOver(
+                null,
+                new DominanceRules(
+                    false,
+                    new BaseSizeWeighting(1.0, null, 1.0, 1.0),
+                    new StationWeighting(false, 1.0, 0.5, 0.5),
+                    new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5)),
+                ColonyReadRulesFixtures.UNDER_THE_FOG,
+                HolderGrouping.identity());
+
+            var standings = SystemStandings.rankByDominationScore(
+                mock(StarSystemAPI.class),
+                pass,
+                Map.of("hegemony", List.of(new MarketWeightBreakdown(
+                    "jangala",
+                    EntityNameplate.createUnmarkedNameplate("Jangala"),
+                    false,
+                    false,
+                    10.0,
+                    new BaseSizeFactor(4, 4.0, 2.0, 0.0),
+                    Optional.empty(),
+                    Optional.empty()))));
+
+            assertThat(standings)
+                .containsExactly(
+                    new GroupStanding(
+                        "hegemony",
+                        2000,
+                        List.of(new WeighedFactionStanding("hegemony", 2000))));
+        }
 
         @Test
         void returnsNoGroupsForAnUninhabitedSystem() {
@@ -295,7 +345,7 @@ class SystemStandingsTests {
 
         @Test
         void leavesOutAWeighedFactionTheGroupingCanNameNoBlocFor() {
-            // A colony a mod hung on a faction carrying no id. A nameless key would travel on as a
+            // A colony a mod hung on a faction carrying no ID. A nameless key would travel on as a
             // bloc the box cannot name, and the group tie-break would fault on it the moment a
             // second group stood beside it - which is the ordinary case.
             var footprints = listOrderedFootprints(

@@ -30,11 +30,11 @@ import java.util.TreeSet;
  * <p>The layout is a flat resource extracted once from a developed save. The extractor
  * reads the save's obfuscated serialisation internals and is brittle across game versions
  * and mod sets, so it is deliberately not part of the build: this fixture is the only
- * source, and no test reads a save.
+ * source, and nothing here reads a save.
  *
- * <p>Each system's score is a realistic spread of owner strengths, not the real
- * {@code DominanceRules} weight - the fixture's own header says so. It is here to shape
- * geometry, never to assert what dominance resolves to.
+ * <p>Each row also carries a score, a spread of owner strengths rather than the real
+ * {@code DominanceRules} weight. Nothing reads it: the fixture shapes geometry, and who wins a
+ * system is no question of geometry.
  */
 public final class SectorFixture {
 
@@ -49,14 +49,12 @@ public final class SectorFixture {
     private static final int COLUMN_X = 1;
     private static final int COLUMN_Y = 2;
     private static final int COLUMN_GROUP_KEY = 3;
-    private static final int COLUMN_SCORE = 4;
     private static final int COLUMN_COUNT = 5;
 
     private final List<String> systemIds = new ArrayList<>();
     private final List<double[]> sites = new ArrayList<>();
 
     private final Map<String, String> ownerBySystemId = new LinkedHashMap<>();
-    private final Map<String, Integer> scoreBySystemId = new LinkedHashMap<>();
 
     private SectorFixture() {
     }
@@ -76,7 +74,7 @@ public final class SectorFixture {
     public static List<String> listSectorNames() {
 
         // Every classpath root is scanned, not just the first. This resource path mirrors a
-        // package, so it exists twice at test time - once under the compiled-classes output,
+        // package, so it can exist twice on one classpath - once under the compiled-classes output,
         // which holds the sub-packages and no fixture, and once under the resources output.
         // getResource answers with whichever comes first and would report an empty folder.
         var names = new TreeSet<String>();
@@ -194,19 +192,14 @@ public final class SectorFixture {
         return ownerBySystemKey;
     }
 
-    Map<String, Integer> getScoreBySystemId() {
-        return scoreBySystemId;
-    }
-
     /**
      * Builds the cell-adjacency graph for the whole sector, the input every shaping and
      * tracing consumer reads.
      *
-     * <p>This repeats the translation {@link CellGeometryCache} performs from a
-     * labelled cell to tagged {@link CellEdge}s, because that translation is private to the
-     * cache and the cache itself needs a live sector. So the graph here is equivalent to
-     * the cache's, not produced by it: this exercises the geometry below the cache, and
-     * pins nothing about the cache's own diffing.
+     * <p>Each cell goes through the translation {@link CellGeometryCache} turns a labelled cell
+     * into tagged {@link CellEdge}s with, so an edge here is exactly the edge the map builds. The
+     * cache itself is not run, since it needs a live sector: nothing here reaches its diffing or
+     * its incremental refresh.
      *
      * <p>Keyed by {@link SystemKey} as the live cut keys its own cells. The fixture's rows carry
      * an ID and nothing else, so each key states that arm alone - which is enough to key a cell,
@@ -237,6 +230,12 @@ public final class SectorFixture {
     public Map<SystemKey, List<CellEdge>> buildCellEdgesBySystemKey(
             double cellRadius, int boundSegments) {
 
+        var systemKeys = new ArrayList<SystemKey>(systemIds.size());
+
+        for (var index = 0; index < systemIds.size(); index++) {
+            systemKeys.add(readSystemKeyAt(index));
+        }
+
         var edgesBySystemKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
 
         for (var index = 0; index < systemIds.size(); index++) {
@@ -247,30 +246,10 @@ public final class SectorFixture {
                 cellRadius,
                 boundSegments);
 
-            edgesBySystemKey.put(readSystemKeyAt(index), buildCellEdges(cell));
+            edgesBySystemKey.put(
+                systemKeys.get(index), CellGeometryCache.buildCellEdges(cell, systemKeys));
         }
         return edgesBySystemKey;
-    }
-
-    // Walks a labelled cell into edges, resolving each edge's neighbour site index back to
-    // the system across it - and BOUND_EDGE to the reach bound that means "no star across it".
-    private List<CellEdge> buildCellEdges(VoronoiCellBuilder.LabelledCell cell) {
-
-        var vertices = cell.vertices();
-        var edges = new ArrayList<CellEdge>(vertices.size());
-
-        for (var i = 0; i < vertices.size(); i++) {
-
-            var from = vertices.get(i);
-            var to = vertices.get((i + 1) % vertices.size());
-            var neighbourIndex = cell.edgeNeighbourSiteIndices()[i];
-            var target = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
-                ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(readSystemKeyAt(neighbourIndex));
-
-            edges.add(new CellEdge(from[0], from[1], to[0], to[1], target));
-        }
-        return edges;
     }
 
     // One row's system as the cells address it: the ID the fixture states, with neither entity
@@ -299,6 +278,5 @@ public final class SectorFixture {
         if (!columns[COLUMN_GROUP_KEY].isEmpty()) {
             ownerBySystemId.put(systemId, columns[COLUMN_GROUP_KEY]);
         }
-        scoreBySystemId.put(systemId, Integer.parseInt(columns[COLUMN_SCORE]));
     }
 }

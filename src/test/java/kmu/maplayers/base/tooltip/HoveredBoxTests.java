@@ -5,11 +5,10 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
-import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverFixture;
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -33,7 +32,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -46,7 +44,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>Which box a layer injects is pinned with a stand-in layer, since which concrete layers exist is
  * the composition root's business and this chain must not know: a layer with no renderer, one that
- * injects no box, and no registered pick at all resolve alike to nothing to draw.
+ * injects no box, and no registered pick at all resolve alike to nothing to draw. The chain reads
+ * what draws off the screens seated on the machinery it resolves, so every case seats its screens there.
  */
 final class HoveredBoxTests {
 
@@ -56,17 +55,15 @@ final class HoveredBoxTests {
     // since the publish looks like.
     private static final String DROPPED_SYSTEM_ID = "gone";
 
-    // Machinery over no sector, for the cases that hand machinery in rather than have the
-    // chain resolve one. One for the class, since those cases are about which box a layer injects
-    // and not about whose map it is: a fresh one per assertion would suggest the sector turned
-    // something.
-    private final SectorMapMachinery detachedMachinery = new SectorMapMachinery(null);
-
     private final MapHoverTooltip tooltipMock = mock(MapHoverTooltip.class);
     private final MapLayer tooltipLayerMock = mock(MapLayer.class);
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
+
+    // The screens the chain reads what draws from, wired to no intel screen so every read resolves to
+    // the map screen's pick. Over the one layer showing a box unless a case says otherwise.
+    private MapLayerScreens screens;
 
     @BeforeEach
     void registerALayerShowingATooltip() {
@@ -84,22 +81,16 @@ final class HoveredBoxTests {
         when(sectorMock.getStarSystems())
             .thenReturn(List.of(systemMock));
 
-        MapLayerRosters.replaceRosterWith(tooltipLayerMock);
-
-        // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
-        // each test from the intel screen closed, which resolves reads to the map screen's pick.
-        MapLayerScreens.registerIntelScreen(new IntelScreenViewFake());
+        screens = MapLayerRosters.createScreensOver(tooltipLayerMock);
 
         // The chain reads the hover and the sector off one machinery, so the box can only be
         // about a sector the machinery is actually installed on - a hover parked on machinery
         // belonging to no sector describes no map and draws nothing.
-        SectorMapMachineryIndex.installMachineryOn(sectorMock);
+        SectorMapMachineryIndex.installMachineryOn(sectorMock, screens);
     }
 
     @AfterEach
     void restoreTheSharedState() {
-
-        MapLayerRosters.restoreNonEmptyRoster();
 
         // The index is process-wide, so a sector left installed would carry this test's hover into
         // the next one.
@@ -292,12 +283,12 @@ final class HoveredBoxTests {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
-                // No sector means no stored pick, so the registry resolves to the registered default.
+                // No sector means no stored pick, so the screens resolve to the registered default.
                 globalMock
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
+                assertThat(HoveredBox.resolveActiveTooltip(createMachineryOverNoSector(screens)))
                     .contains(tooltipMock);
             }
         }
@@ -314,7 +305,7 @@ final class HoveredBoxTests {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
+                assertThat(HoveredBox.resolveActiveTooltip(createMachineryOverNoSector(screens)))
                     .isEmpty();
             }
         }
@@ -339,7 +330,7 @@ final class HoveredBoxTests {
             when(tooltipLayerMock.isOfferedAsDefaultPick())
                 .thenReturn(true);
 
-            MapLayerRosters.replaceRosterWith(silencedLayerMock, tooltipLayerMock);
+            screens = MapLayerRosters.createScreensOver(silencedLayerMock, tooltipLayerMock);
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -347,7 +338,7 @@ final class HoveredBoxTests {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
+                assertThat(HoveredBox.resolveActiveTooltip(createMachineryOverNoSector(screens)))
                     .contains(tooltipMock);
             }
         }
@@ -366,7 +357,7 @@ final class HoveredBoxTests {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
+                assertThat(HoveredBox.resolveActiveTooltip(createMachineryOverNoSector(screens)))
                     .isEmpty();
             }
         }
@@ -380,7 +371,7 @@ final class HoveredBoxTests {
             when(silentLayerMock.getId())
                 .thenReturn("silent");
 
-            MapLayerRosters.replaceRosterWith(silentLayerMock);
+            screens = MapLayerRosters.createScreensOver(silentLayerMock);
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -388,7 +379,7 @@ final class HoveredBoxTests {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
+                assertThat(HoveredBox.resolveActiveTooltip(createMachineryOverNoSector(screens)))
                     .isEmpty();
             }
         }
@@ -399,27 +390,22 @@ final class HoveredBoxTests {
             // what the cursor is over, and has nothing to report about layers the player has just
             // switched off. Posed with a renderer still standing behind the pick, so what is pinned is
             // the box standing down on the pick rather than on the renderer going away with it.
-            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class);
-                 var layerScreensMock = mockStatic(MapLayerScreens.class)) {
+            var screensMock = mock(MapLayerScreens.class);
 
-                layerScreensMock
-                    .when(MapLayerScreens::areLayersShownOnLiveScreen)
-                    .thenReturn(false);
+            when(screensMock.areLayersShownOnLiveScreen())
+                .thenReturn(false);
+            when(screensMock.resolveDrawnLayer())
+                .thenReturn(tooltipLayerMock);
 
-                layerRegistryMock
-                    .when(MapLayerRegistry::getDrawnLayer)
-                    .thenReturn(tooltipLayerMock);
-
-                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
-                    .isEmpty();
-            }
+            assertThat(HoveredBox.resolveActiveTooltip(createMachineryOverNoSector(screensMock)))
+                .isEmpty();
         }
 
         @Test
         void isEmptyWithoutAnActiveLayer() {
             // The pre-registration frame: both passes are installed on game load, so the chain can be
             // asked before any composition root has run rather than dereference a null pick.
-            MapLayerRosters.forgetEveryLayer();
+            screens = MapLayerRosters.createScreensOver();
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
@@ -427,7 +413,7 @@ final class HoveredBoxTests {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
+                assertThat(HoveredBox.resolveActiveTooltip(createMachineryOverNoSector(screens)))
                     .isEmpty();
             }
         }
@@ -439,7 +425,9 @@ final class HoveredBoxTests {
         @Test
         void isTrueForAHoveredCell() {
 
-            var hover = new MapHover(buildCellKey(SYSTEM_ID), List.of(buildCellKey(SYSTEM_ID)));
+            var hover = MapHoverFixture.buildHoverOn(
+                buildCellKey(SYSTEM_ID),
+                List.of(buildCellKey(SYSTEM_ID)));
 
             assertThat(HoveredBox.shouldDrawTooltipFor(hover))
                 .isTrue();
@@ -450,6 +438,13 @@ final class HoveredBoxTests {
             assertThat(HoveredBox.shouldDrawTooltipFor(MapHover.NONE))
                 .isFalse();
         }
+    }
+
+    // Machinery over no sector with the given screens seated on it, for the cases that hand machinery in
+    // rather than have the chain resolve one: those are about which box a layer injects and not about
+    // whose map it is.
+    private static SectorMapMachinery createMachineryOverNoSector(MapLayerScreens seatedScreens) {
+        return new SectorMapMachinery(null, seatedScreens);
     }
 
     // Puts the cursor over the registered system, on the machinery of the sector that system is in -

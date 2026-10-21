@@ -1,11 +1,12 @@
 package kmu.settings;
 
+import kmlib.math.percentages.Percentages;
 import kmlib.math.ranges.Ranges;
 
 /**
  * The sidebar box's own chrome: where it sits, how it is drawn, how fast it moves. Every knob here
- * is a look, which is what makes the class one thing - the hatches that used to sit among them are
- * {@link KmuMapControlSettings}' and the capture budget {@link KmuProfilingSettings}'.
+ * is a look, which is what makes the class one thing - the hatches belong to
+ * {@link KmuMapControlSettings} and the capture budget to {@link KmuProfilingSettings}.
  *
  * <p>The panel is drawn on two screens whose chrome differs, so several knobs come in pairs: what
  * reads correctly beside the intel screen's buttons is not what reads correctly under the sector
@@ -40,7 +41,7 @@ public final class KmuMapSidebarSettings {
     private static final String SIDEBAR_COLOUR_SCHEME_FIELD =
         "kmu_map_visuals_sidebar_colours_scheme";
 
-    private static final String SIDEBAR_CHEVRON_COLOR_FIELD =
+    private static final String SIDEBAR_CHEVRON_COLOUR_FIELD =
         "kmu_map_visuals_sidebar_colours_chevron";
 
     // The same sidebar box drawn on the intel screen sits flush against the left edge of that
@@ -85,7 +86,7 @@ public final class KmuMapSidebarSettings {
     private static final int DEFAULT_SIDEBAR_BORDER_WIDTH = 1;
 
     // Stored 50..100 in the CSV, exposed 0..1. The floor is not a taste: the body is what the controls
-    // are read against, and its words no longer take its translucency, so a body faded much past half
+    // are read against, and its words do not take its translucency, so a body faded much past half
     // leaves opaque text standing on whatever the map happens to show through - which is harder to read
     // than the same text on a dimmer panel, and unreadable over a bright cluster.
     private static final int DEFAULT_SIDEBAR_OPACITY_PERCENT = 80;
@@ -135,16 +136,15 @@ public final class KmuMapSidebarSettings {
     }
 
     /**
-     * @return how far down from the top edge of the screen the overlay sidebar box sits, in pixels;
-     *         36 by default, clearing the sector map's own tab strip
+     * @return how far down from the top edge of the screen the overlay sidebar box sits, in pixels,
+     *         clearing the sector map's own tab strip
      */
     public static int getMapSidebarPaddingTop() {
         return KmuLunaSettings.readInt(SIDEBAR_PADDING_TOP_FIELD, DEFAULT_SIDEBAR_PADDING_TOP);
     }
 
     /**
-     * @return how far in from the left edge of the screen the overlay sidebar box sits, in pixels;
-     *         9 by default
+     * @return how far in from the left edge of the screen the overlay sidebar box sits, in pixels
      */
     public static int getMapSidebarPaddingLeft() {
         return KmuLunaSettings.readInt(SIDEBAR_PADDING_LEFT_FIELD, DEFAULT_SIDEBAR_PADDING_LEFT);
@@ -152,7 +152,7 @@ public final class KmuMapSidebarSettings {
 
     /**
      * @return how far above the bottom edge of the screen the overlay sidebar box must stay, in
-     *         pixels; 79 by default. The panel body caps its height to this margin and the bloc
+     *         pixels. The panel body caps its height to this margin and the bloc
      *         list scrolls within the room left
      */
     public static int getMapSidebarPaddingBottom() {
@@ -163,7 +163,7 @@ public final class KmuMapSidebarSettings {
 
     /**
      * @return how far down from the top edge of the intel screen's map preview (the "visor") the
-     *         overlay sidebar box sits, in pixels; 21 by default, clearing the vanilla Starscape
+     *         overlay sidebar box sits, in pixels, clearing the vanilla Starscape
      *         and fuel-range toggles at the top of that map. The box sits flush against the visor's
      *         left edge and its height caps to the visor's bottom, so only this top offset is
      *         exposed
@@ -175,8 +175,8 @@ public final class KmuMapSidebarSettings {
     }
 
     /**
-     * @return the line width of the outer border framing the overlay sidebar box, in pixels; 1 by
-     *         default, 0 drawing no border
+     * @return the line width of the outer border framing the overlay sidebar box, in pixels; 0 draws
+     *         no border
      */
     public static int getMapSidebarBorderWidth() {
         return KmuLunaSettings.readInt(SIDEBAR_BORDER_WIDTH_FIELD, DEFAULT_SIDEBAR_BORDER_WIDTH);
@@ -184,7 +184,7 @@ public final class KmuMapSidebarSettings {
 
     /**
      * @return the overlay sidebar box's background opacity as a 0..1 fraction, the CSV storing it
-     *         as a 0..100 percentage; 0.8 by default
+     *         as a 0..100 percentage
      */
     public static float getMapSidebarBackgroundOpacity() {
 
@@ -197,11 +197,11 @@ public final class KmuMapSidebarSettings {
             MIN_SIDEBAR_OPACITY_PERCENT,
             MAX_SIDEBAR_OPACITY_PERCENT);
 
-        return clamped / (float) KmuLunaSettings.PERCENT_PER_UNIT;
+        return (float) Percentages.convertPercentToFraction(clamped);
     }
 
     /**
-     * @return how thick the overlay sidebar's scrollbar draws, in pixels; 3 by default, held between 1
+     * @return how thick the overlay sidebar's scrollbar draws, in pixels, held between 1
      *         and 12 so the panel always stands a bar the player can find. The layout the value is handed
      *         to is what reserves the room a bar this wide needs
      */
@@ -219,7 +219,7 @@ public final class KmuMapSidebarSettings {
 
     /**
      * @return how long the overlay sidebar's collapse handle takes to fold the body to its docked
-     *         rail (and to unfold it), in seconds; 0.25 by default, 0 snapping it instantly. Fed to
+     *         rail (and to unfold it), in seconds; 0 snaps it instantly. Fed to
      *         the collapse holder's per-frame advance so the player sets the animation pace
      */
     public static float getMapSidebarCollapseSeconds() {
@@ -230,8 +230,8 @@ public final class KmuMapSidebarSettings {
 
     /**
      * @return how long the map layers take to dissolve off a screen when they are hidden (and to
-     *         come back when they are shown), in seconds; 0.25 by default, 0 cutting between the two
-     *         with no fade. Multiplied into what the layers paint, so the whole overlay, its labels
+     *         come back when they are shown), in seconds; 0 cuts between the two with
+     *         no fade. Multiplied into what the layers paint, so the whole overlay, its labels
      *         and its sidebar thin together rather than one snapping out from under another
      */
     public static float getMapLayerHideFadeSeconds() {
@@ -242,7 +242,7 @@ public final class KmuMapSidebarSettings {
 
     /**
      * @return which palette the overlay sidebar's frame, control accents, and tab-row chrome are
-     *         coloured from: the fixed UI palette (the default), the neutral chrome greys, or the
+     *         coloured from: the fixed UI palette, the neutral chrome greys, or the
      *         player faction's own accents. One answer for all three reads, since a panel framed in
      *         one palette and ruled in another reads worse than either
      */
@@ -254,19 +254,19 @@ public final class KmuMapSidebarSettings {
 
     /**
      * @return which colour the overlay sidebar's collapse-handle chevron draws in: the vanilla
-     *         highlight gold (the default), or the panel's own accents under the chosen colour
+     *         highlight gold, or the panel's own accents under the chosen colour
      *         scheme, brightening under the pointer
      */
     public static NotchChevronColourChoice getMapSidebarChevronColour() {
         return KmuLunaSettings.readChoice(
-            SIDEBAR_CHEVRON_COLOR_FIELD,
+            SIDEBAR_CHEVRON_COLOUR_FIELD,
             DEFAULT_SIDEBAR_CHEVRON_COLOUR);
     }
 
     /**
      * @return how much of the intel sidebar's hard-edged label strokes survives, 0 leaving them
-     *         interpolated as the font loader hands them over and 1 drawing them unfiltered; 0.8 by
-     *         default, settled against the vanilla raised buttons that row stands beside
+     *         interpolated as the font loader hands them over and 1 drawing them unfiltered. The
+     *         default is settled against the vanilla raised buttons that row stands beside
      */
     public static double getIntelSidebarPixelFontSharpness() {
         return KmuLunaSettings.readDouble(
@@ -276,7 +276,7 @@ public final class KmuMapSidebarSettings {
 
     /**
      * @return the same dial for the sector-map sidebar's tab labels, read against the vanilla
-     *         Sector/System tabs directly above them; 0 by default. The two rows answer separately,
+     *         Sector/System tabs directly above them. The two rows answer separately,
      *         so dialling one never moves the other
      */
     public static double getMapSidebarPixelFontSharpness() {

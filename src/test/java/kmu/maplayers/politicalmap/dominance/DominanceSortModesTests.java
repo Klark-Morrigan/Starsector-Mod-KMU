@@ -2,28 +2,29 @@ package kmu.maplayers.politicalmap.dominance;
 
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
-import kmlib.starsector.ui.widgets.lists.SortDirection;
 
-import kmu.maplayers.ownermap.picker.RankedBloc;
+import kmu.maplayers.ownermap.picker.RankedOwner;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static kmu.maplayers.ownermap.picker.BlocSortFixtures.ROW_COLOUR;
-import static kmu.maplayers.ownermap.picker.BlocSortFixtures.buildBloc;
-import static kmu.maplayers.ownermap.picker.BlocSortFixtures.listIdsInModeOrder;
+import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.ROW_COLOUR;
+import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.buildOwner;
+import static kmu.maplayers.ownermap.picker.OwnerSortFixtures.listIdsInModeOrder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins what this vocabulary declares: the frozen persistence keys a save round-trips through, which
- * number each mode reads, the direction that follows from it, and the order ties break down the
- * canonical chain. What a declared mode answers at all, and the shape the ranking is then laid out in
- * - the promoted key, the flip, the name and by-id tail - are both shared and are pinned in their own
- * suites, so a case here fails only when this vocabulary's own declaration changes. All exercised on
- * hand-built blocs, since the mode carries no Starsector types.
+ * Pins what this vocabulary declares: the modes it offers and its default, the frozen persistence keys
+ * a save round-trips through, which number each mode reads, and the order ties break down the
+ * canonical chain.
+ *
+ * <p>What a mode does with its number is shared and pinned in its own suites: its direction, which
+ * number its ranking leads with, and the shape the ranking is laid out in. So a case here fails only
+ * when this vocabulary's own declaration changes. All exercised on hand-built blocs, since the mode
+ * carries no Starsector types.
  */
 final class DominanceSortModesTests {
 
@@ -43,7 +44,7 @@ final class DominanceSortModesTests {
             // Copied to the seam's own element type first: the bundle declares its modes as
             // "? extends ListSortMode", so a capture reaches the assertion and no constant can be named
             // against it directly.
-            var modes = List.<ListSortMode<RankedBloc<DominanceStats>>>copyOf(
+            var modes = List.<ListSortMode<RankedOwner<DominanceStats>>>copyOf(
                 DominanceSortModes.MODES.modes());
 
             assertThat(modes)
@@ -92,7 +93,7 @@ final class DominanceSortModesTests {
         @Test
         void isTheModesMetricAsOneRowColouredRunForANumericMode() {
 
-            var bloc = buildBloc(
+            var bloc = buildOwner(
                 "hegemony",
                 "Hegemony",
                 new DominanceStats(5, 8, 40, 12));
@@ -115,7 +116,7 @@ final class DominanceSortModesTests {
             // The name mode ranks on the label, so there is no number to show and the row's value
             // column stays unfilled.
             assertThat(DominanceSortModes.NAME.resolveTrailingRuns(
-                    buildBloc(
+                    buildOwner(
                         "hegemony",
                         "Hegemony",
                         new DominanceStats(5, 8, 40, 12)),
@@ -125,45 +126,7 @@ final class DominanceSortModesTests {
     }
 
     @Nested
-    class DefaultDirection {
-
-        @Test
-        void isDescendingForANumericMode() {
-
-            // A numeric mode leads with the bigger bloc, so its natural order runs high-to-low.
-            assertThat(DominanceSortModes.DOMINATION.defaultDirection())
-                .isEqualTo(SortDirection.DESCENDING);
-            assertThat(DominanceSortModes.MARKET_SIZE.defaultDirection())
-                .isEqualTo(SortDirection.DESCENDING);
-        }
-
-        @Test
-        void isAscendingForTheNameMode() {
-
-            // The name mode reads A-to-Z, so its natural order runs ascending.
-            assertThat(DominanceSortModes.NAME.defaultDirection())
-                .isEqualTo(SortDirection.ASCENDING);
-        }
-    }
-
-    @Nested
     class Comparator {
-
-        @Test
-        void ranksANumericModeByItsOwnMetric() {
-
-            var low = buildBloc(
-                "low",
-                "Low",
-                new DominanceStats(1, 0, 0, 0));
-            var high = buildBloc(
-                "high",
-                "High",
-                new DominanceStats(9, 0, 0, 0));
-
-            assertThat(listIdsInModeOrder(DominanceSortModes.DOMINATION, low, high))
-                .containsExactly("high", "low");
-        }
 
         @Test
         void breaksTiesDownTheCanonicalChainInOrder() {
@@ -173,20 +136,20 @@ final class DominanceSortModesTests {
             // differs on, so which bloc leads names the number the chain reaches next.
             assertThat(listIdsInModeOrder(
                     DominanceSortModes.DOMINATION,
-                    buildBloc("lower", "A", new DominanceStats(5, 2, 0, 0)),
-                    buildBloc("higher", "B", new DominanceStats(5, 7, 0, 0))))
+                    buildOwner("lower", "A", new DominanceStats(5, 2, 0, 0)),
+                    buildOwner("higher", "B", new DominanceStats(5, 7, 0, 0))))
                 .containsExactly("higher", "lower");
 
             assertThat(listIdsInModeOrder(
                     DominanceSortModes.DOMINATION,
-                    buildBloc("lower", "A", new DominanceStats(5, 5, 10, 0)),
-                    buildBloc("higher", "B", new DominanceStats(5, 5, 40, 0))))
+                    buildOwner("lower", "A", new DominanceStats(5, 5, 10, 0)),
+                    buildOwner("higher", "B", new DominanceStats(5, 5, 40, 0))))
                 .containsExactly("higher", "lower");
 
             assertThat(listIdsInModeOrder(
                     DominanceSortModes.DOMINATION,
-                    buildBloc("lower", "A", new DominanceStats(5, 5, 10, 3)),
-                    buildBloc("higher", "B", new DominanceStats(5, 5, 10, 9))))
+                    buildOwner("lower", "A", new DominanceStats(5, 5, 10, 3)),
+                    buildOwner("higher", "B", new DominanceStats(5, 5, 10, 9))))
                 .containsExactly("higher", "lower");
         }
     }

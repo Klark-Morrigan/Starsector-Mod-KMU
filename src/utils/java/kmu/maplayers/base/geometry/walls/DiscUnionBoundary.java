@@ -2,7 +2,6 @@ package kmu.maplayers.base.geometry.walls;
 
 import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Limits;
-import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
 import kmu.maplayers.base.geometry.Chord;
@@ -11,13 +10,9 @@ import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.VoidHole;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * The boundary of a {@link DiscUnion}, as closed cycles of circular arcs.
@@ -27,10 +22,10 @@ import java.util.Map;
  * cycle is either the outer silhouette of a run of overlapping cells or a hole enclosed by
  * them. The holes are the void the cells bind.
  *
- * <p>The shared radius is what makes this cheap and exact rather than a general shape union:
- * the part of one circle lying inside another is a single angular interval computed in closed
- * form, and each circle's boundary arcs are the gaps left when its neighbours' intervals are
- * merged.
+ * <p>The walk runs in four steps, each in its own class: {@link WallLaying} drops the walls
+ * that cannot attach, {@link CoverSweep} cuts every circle into the arcs nothing covers, and
+ * this class joins each arc to the one it names and follows the joins round until they close.
+ * {@link ChordRefusals} explains the first step to a reader.
  *
  * <p>The arcs link without matching any coordinates. An arc ends where its circle enters some
  * neighbour's disc, and the boundary continues on that neighbour from the point where the
@@ -60,32 +55,22 @@ import java.util.Map;
  * finds the pockets, run at the reach plus the channel it finds what is left of them once the
  * channel is taken out, and run at the reach minus it, what they become when the cells fill
  * right up to them. Every consumer that wants a pocket at some reach wants this, and there is
- * now more than one of them.
+ * more than one of them.
  *
  * <p><b>Reading the void with nothing laid across it does not come through here.</b> It is the
  * same sweep with no walls given, but that reading is sound in a way this one is not - none of
  * the accommodations a zero-width wall forced is reached when there are no walls - so it has a
- * door of its own at {@link kmu.maplayers.base.geometry.BareVoidBoundary}, outside this
+ * door of its own at {@link kmu.maplayers.base.geometry.walls.BareVoidBoundary}, outside this
  * package, and what may only have the bare void is shut off from this one.
  */
 public final class DiscUnionBoundary {
-
-    // Stands in for a neighbouring circle where there is none: a disc that overlaps nothing
-    // contributes its whole circle as one arc, with no disc entered or left at either end.
-    private static final int NO_CIRCLE = -1;
 
     // Stands in for the arc a cycle continues onto where there is none, which is a walk that
     // has run off the end of a broken chain rather than closed.
     private static final int NO_SUCCESSOR = -1;
 
-    // No arc begins here, so an arc pointed at it simply has no successor. Beyond the range
-    // either kind of real terminal can reach, rather than a value one of them might produce.
-    private static final long NO_TERMINAL = Long.MIN_VALUE;
-
-    // Which of a chord's two circles a terminal belongs to. A chord meets each of its circles
-    // once, so the pair of side markers names its two mouths and nothing else does.
-    private static final int FROM_SIDE = 0;
-    private static final int TO_SIDE = 1;
+    // A filled shape winds counter-clockwise, and a hole is turned to read the same way.
+    private static final boolean IS_FILL_COUNTER_CLOCKWISE = true;
 
     private DiscUnionBoundary() {
     }
@@ -120,7 +105,7 @@ public final class DiscUnionBoundary {
 
         var holes = new ArrayList<VoidHole>();
 
-        for (var cycle : traceCycles(union, walls, boundSegments)) {
+        for (var cycle : traceCycles(linkArcs(union, walls), union, boundSegments)) {
 
             // A cycle is a hole when it winds the opposite way to a silhouette. Each arc is
             // walked anticlockwise on its own circle, which keeps the discs' interior to the
@@ -128,16 +113,13 @@ public final class DiscUnionBoundary {
             // clockwise.
             if (isHole(cycle)) {
 
-                // Reversed so a hole reads the same way round as any other filled shape. The
+                // Turned so a hole reads the same way round as any other filled shape. The
                 // marks are left in walk order beside it, as the corners and the ringed cells
                 // are: they are the walk's own record of where the cycle ran, and reversing
                 // that to match a winding chosen for the fill would be answering a question
                 // about the drawing with the one form nothing draws.
-                var boundary = new ArrayList<>(cycle.boundary());
-                Collections.reverse(boundary);
-
                 holes.add(new VoidHole(
-                    boundary,
+                    PolygonRegions.orientRing(cycle.boundary(), IS_FILL_COUNTER_CLOCKWISE),
                     cycle.corners(),
                     cycle.marks(),
                     cycle.ringing(),
@@ -145,6 +127,7 @@ public final class DiscUnionBoundary {
                     cycle.walledBy()));
             }
         }
+
         return holes;
     }
 
@@ -178,18 +161,19 @@ public final class DiscUnionBoundary {
      *                      arc is flattened onto, to tell a silhouette from a hole by the
      *                      area it comes out with
      * @return the silhouettes, the lakes and the walled holes, one run of marks each, in walk
-     *         order
+     *         order, and the walls the walk laid
      */
     public static CoastRuns traceCoastRuns(
             DiscUnion union,
             Walls walls,
             int boundSegments) {
 
+        var linked = linkArcs(union, walls);
         var silhouettes = new ArrayList<List<CoastMark>>();
         var lakes = new ArrayList<List<CoastMark>>();
         var walled = new ArrayList<List<CoastMark>>();
 
-        for (var cycle : traceCycles(union, walls, boundSegments)) {
+        for (var cycle : traceCycles(linked, union, boundSegments)) {
 
             if (!isHole(cycle)) {
                 silhouettes.add(cycle.marks());
@@ -199,92 +183,12 @@ public final class DiscUnionBoundary {
                 walled.add(cycle.marks());
             }
         }
-        return new CoastRuns(silhouettes, lakes, walled);
-    }
 
-    /**
-     * What {@link #traceCoastRuns} finds: every stretch of the union's boundary, sorted by what
-     * closed the space behind it.
-     *
-     * <p>One value rather than three methods because all of them come out of one walk, and the
-     * walk is not cheap - asked for separately, each caller pays for it again and the answers
-     * can be about different walks.
-     *
-     * <p>Three buckets rather than two because a caller wants different ones. What draws a map's
-     * coast wants the silhouettes and the lakes; what asks where the cells face water a wall
-     * shut in wants the third, and drawing that one beside the pockets would answer for the same
-     * water twice. Sorted here rather than left to a caller to sort, since the walk is the only
-     * thing that knows what walled each cycle.
-     *
-     * @param silhouettes one run of marks per outer silhouette, in walk order
-     * @param lakes       one run of marks per hole the cells closed unaided, in walk order
-     * @param walled      one run of marks per hole a laid wall closed, in walk order
-     */
-    public record CoastRuns(
-        List<List<CoastMark>> silhouettes,
-        List<List<CoastMark>> lakes,
-        List<List<CoastMark>> walled) {
-    }
-
-    /**
-     * Where two laid walls cross each other, which the walk does not yet know about.
-     *
-     * <p>Each wall is walked from its mouth on one circle to its mouth on the other, so where
-     * two of them cross, each runs on past the crossing into space the other closes. That
-     * overshoot is the wedge between their lines, and it is the one shape on this map bounded
-     * by something the trace never asks about.
-     *
-     * <p>Counted before it is fixed: a handful of crossings is a case to teach the walk, and
-     * hundreds would be a different construction.
-     *
-     * @param union the discs the walls are laid across
-     * @param walls the walls on offer
-     * @return one entry per crossing pair, as {@code {fromA, toA, fromB, toB}} cells
-     */
-    public static List<int[]> findWallCrossings(DiscUnion union, Walls walls) {
-
-        var laid = findAttachableChords(union, walls);
-        var crossings = new ArrayList<int[]>();
-
-        for (var one = 0; one < laid.size(); one++) {
-            for (var other = one + 1; other < laid.size(); other++) {
-
-                if (doWallsCross(laid.get(one), laid.get(other))) {
-
-                    crossings.add(new int[] {
-                        laid.get(one).fromCircle(),
-                        laid.get(one).toCircle(),
-                        laid.get(other).fromCircle(),
-                        laid.get(other).toCircle()});
-                }
-            }
-        }
-        return crossings;
-    }
-
-    // Whether two walls cross within both of their own runs, rather than on the lines they
-    // lie along - a wall bounds void only where it actually runs.
-    private static boolean doWallsCross(Chord one, Chord other) {
-
-        var oneFrom = new double[] {one.line().originX(), one.line().originY()};
-        var oneTo = new double[] {
-            one.line().originX() + one.line().directionX(),
-            one.line().originY() + one.line().directionY()};
-        var otherFrom = new double[] {other.line().originX(), other.line().originY()};
-        var otherTo = new double[] {
-            other.line().originX() + other.line().directionX(),
-            other.line().originY() + other.line().directionY()};
-
-        return turnsLeft(oneFrom, oneTo, otherFrom) != turnsLeft(oneFrom, oneTo, otherTo)
-            && turnsLeft(otherFrom, otherTo, oneFrom) != turnsLeft(otherFrom, otherTo, oneTo);
-    }
-
-    // Which side of a directed line a point falls on, by the sign of the cross product. Left is
-    // the side the walk keeps the union on, so this is how a step is told from its reverse.
-    private static boolean turnsLeft(double[] from, double[] to, double[] point) {
-
-        return (to[0] - from[0]) * (point[1] - from[1])
-            - (to[1] - from[1]) * (point[0] - from[0]) > 0;
+        return new CoastRuns(
+            silhouettes,
+            lakes,
+            walled,
+            linked.laid().chords());
     }
 
     /**
@@ -304,438 +208,27 @@ public final class DiscUnionBoundary {
      */
     public static List<BrokenLink> findBrokenLinks(DiscUnion union, Walls walls) {
 
-        var laid = new Walls(
-            findAttachableChords(union, walls), walls.channel(), walls.pinchedCells());
-        var arcs = findUncoveredArcs(union, laid);
-        var successors = linkArcsIntoCycles(arcs);
+        var linked = linkArcs(union, walls);
+        var arcs = linked.arcs();
         var broken = new ArrayList<BrokenLink>();
 
         for (var index = 0; index < arcs.size(); index++) {
 
-            if (successors[index] == NO_SUCCESSOR) {
+            if (linked.successors()[index] == NO_SUCCESSOR) {
 
                 var arc = arcs.get(index);
 
                 broken.add(new BrokenLink(
                     findPointOnCircle(
-                        union.sites().get(arc.circle()), union.reach(), arc.toAngle()),
+                        union.sites().get(arc.circle()),
+                        union.reach(),
+                        arc.toAngle()),
                     arc.circle(),
-                    describeTerminal(arc.endsAt(), laid)));
+                    describeTerminal(arc.endsAt(), linked.laid())));
             }
         }
+
         return broken;
-    }
-
-    /**
-     * One place the walk ran off the end of the boundary.
-     *
-     * @param at      where the arc ended
-     * @param circle  whose cell's border it ran along
-     * @param endedOn what it ran on to, which is the name nothing began at
-     */
-    public record BrokenLink(
-        double[] at,
-        int circle,
-        String endedOn) {
-    }
-
-    // What a terminal is, in words: a wall's own end, or a crossing between two discs. The one
-    // thing a broken link needs said about it - which of the two kinds of join failed to pair
-    // decides where to look for the reason.
-    private static String describeTerminal(long terminal, Walls laid) {
-
-        if (terminal == NO_TERMINAL) {
-            return "nothing at all";
-        }
-
-        if (!isChordTerminal(terminal)) {
-            return "a crossing between discs";
-        }
-        var chord = laid.chords().get(readChordFrom(terminal));
-
-        return chord.kind() + " " + chord.fromCircle() + "-" + chord.toCircle();
-    }
-
-    /**
-     * The chords that can actually be laid at this reach, which are the only ones traced.
-     *
-     * <p>Wanted by anything measuring the result: a chord that was dropped has no business
-     * being looked for on an outline, and one that was laid has to be on one.
-     *
-     * <p>Two things stop a chord. Its own END can lie inside another disc, which is what
-     * becomes of a bridge whose cells have closed over. Or its mouth can be swallowed whole by
-     * a mouth an earlier chord on the same circle already took, leaving it no terminal of its
-     * own to leave from or land on once the sweep merges the two.
-     *
-     * <p>The END, not the two edges of the mouth it opens. A mouth is a channel wide, so a
-     * wall ending where two circles cross has half of it inside the neighbouring disc whatever
-     * the wall did - and refusing it there leaves the void the wall shut in open to the sea
-     * with the line still drawn across it.
-     *
-     * <p>Sharing PART of a mouth is allowed. Both walls keep an outer terminal, and the
-     * sweep hands one straight on to the next rather than choosing between them.
-     *
-     * <p>How much this has to rule on depends on the reach it is asked at, because that is
-     * what decides how wide a mouth is. Walked on the cells' own border, no two mouths on a
-     * circle overlap at all and neither rule fires. Walked a channel outside it, where a wall
-     * cuts into its cells rather than meeting them, mouths widen enough that a few dozen
-     * pairs overlap on each sector and a handful swallow one another.
-     *
-     * <p>Offered in order and taken greedily, so the caller's own ordering decides which of
-     * two crowding chords survives.
-     *
-     * @param union the discs the walls are laid across
-     * @param walls the walls on offer
-     * @return the chords that can be laid, in the order they were offered
-     */
-    public static List<Chord> findAttachableChords(DiscUnion union, Walls walls) {
-
-        var attachable = new ArrayList<Chord>();
-
-        for (var verdict : judgeEveryOfferedChord(union, walls)) {
-
-            if (verdict.reason() == RefusalReason.LAID) {
-                attachable.add(verdict.chord());
-            }
-        }
-        return attachable;
-    }
-
-    /**
-     * The greedy laying itself: every offered wall judged in the order it was offered, with the
-     * mouths each laid wall claimed carried forward.
-     *
-     * <p><b>The one place the laying rule lives.</b> Which walls end up down and why any one of
-     * them did not are the same walk asked for two different things, and they were written as
-     * two loops - one keeping what it laid, the other additionally noting who took each mouth so
-     * it could name a rival. Two spellings of one rule are free to drift, and the drift is
-     * invisible: the map goes on being drawn correctly while the report explains a refusal the
-     * walk never made.
-     *
-     * <p>Verdicts rather than a filtered list, because what a refusal WAS is the whole of what
-     * the reports want and is thrown away by a method that returns only survivors.
-     *
-     * <p>No detail string is built here. Naming the cell that covered a wall's end costs a scan
-     * over the discs, and this runs on every trace while the answer is wanted for one wall at a
-     * time - so the reason is settled on the walk and the explaining is left to whoever asks.
-     * The rival's name is the exception: it has to be read while the wall is being judged,
-     * since a later wall changes who holds a mouth.
-     *
-     * @param union the discs the walls are laid across
-     * @param walls the walls on offer, in the order they are offered
-     * @return one verdict per offered wall, in that same order
-     */
-    private static List<ChordVerdict> judgeEveryOfferedChord(DiscUnion union, Walls walls) {
-
-        var takenByCircle = new LinkedHashMap<Integer, List<double[]>>();
-        var takers = new LinkedHashMap<Integer, List<TakenMouth>>();
-        var verdicts = new ArrayList<ChordVerdict>(walls.chords().size());
-
-        for (var chord : walls.chords()) {
-
-            var mouthed = MouthedChord.measureMouths(union, chord, walls);
-            var reason = mouthed == null
-                ? RefusalReason.NO_MOUTH
-                : judgeMouthedChord(union, mouthed, takenByCircle);
-
-            verdicts.add(new ChordVerdict(
-                chord,
-                mouthed,
-                reason,
-                reason == RefusalReason.CROWDED_OUT ? nameTaker(takers, mouthed) : null));
-
-            if (reason == RefusalReason.LAID) {
-
-                recordBothMouths(takenByCircle, mouthed);
-                recordTaker(takers, chord.fromCircle(), mouthed.fromMouth(), chord);
-                recordTaker(takers, chord.toCircle(), mouthed.toMouth(), chord);
-            }
-        }
-        return verdicts;
-    }
-
-    // Why one wall was or was not laid, given what is already down. Reason only: see the note
-    // on the walk above about where the explaining happens.
-    private static RefusalReason judgeMouthedChord(
-            DiscUnion union,
-            MouthedChord mouthed,
-            Map<Integer, List<double[]>> takenByCircle) {
-
-        if (!isWallOnBoundaryAtBothEnds(union, mouthed)) {
-            return RefusalReason.OFF_BOUNDARY;
-        }
-
-        if (isCrowdedOut(takenByCircle, mouthed)) {
-            return RefusalReason.CROWDED_OUT;
-        }
-        return RefusalReason.LAID;
-    }
-
-    /**
-     * What the walk did with one offered wall, kept as it was judged.
-     *
-     * @param chord     the wall
-     * @param mouthed   it together with its two mouths, or null where it had none
-     * @param reason    what the walk did with it
-     * @param crowdedBy the rival holding the mouth it wanted, read while it was judged because
-     *                  a later wall changes who holds one; null unless it was crowded out
-     */
-    private record ChordVerdict(
-        Chord chord,
-        MouthedChord mouthed,
-        RefusalReason reason,
-        String crowdedBy) {
-
-        // The reason with its explanation attached, worked out only for a wall someone asked
-        // about. Which end failed is re-tested rather than remembered: it is two boundary
-        // tests on one wall, against a scan per wall on every trace to carry it.
-        ChordRefusal describeRefusal(DiscUnion union) {
-
-            if (reason != RefusalReason.OFF_BOUNDARY) {
-                return new ChordRefusal(reason, crowdedBy);
-            }
-
-            var covered = isWallOnBoundary(
-                union, chord, chord.fromCircle(), mouthed.fromMouth())
-                ? chord.toCircle()
-                : chord.fromCircle();
-
-            return new ChordRefusal(
-                RefusalReason.OFF_BOUNDARY,
-                describeCover(
-                    union,
-                    chord,
-                    covered,
-                    covered == chord.fromCircle() ? mouthed.fromMouth() : mouthed.toMouth()));
-        }
-    }
-
-    /**
-     * Why one wall was not laid, as the rule that stopped it.
-     *
-     * <p>{@link #findAttachableChords} answers WHICH walls were laid, which is what the walk
-     * needs and nothing at all to someone looking at a gap on screen and asking why the line
-     * across it holds nothing back. The refusals are not interchangeable: a wall whose end is
-     * covered has cells that met without it, and one crowded out is competing with a
-     * neighbour - the first is geometry, the second is ordering.
-     *
-     * <p>Runs the whole laying rather than testing the wall alone, because whether a mouth was
-     * already taken depends on every wall offered before it - and runs the SAME laying the walk
-     * does, so that what is explained here is what actually happened rather than a second
-     * opinion about it.
-     *
-     * @param union the discs the walls are laid across
-     * @param walls the walls on offer, in the order they are offered
-     * @param wall  the one to ask about, which must be among them
-     * @return what became of it
-     */
-    public static ChordRefusal describeChordRefusal(DiscUnion union, Walls walls, Chord wall) {
-
-        for (var verdict : judgeEveryOfferedChord(union, walls)) {
-
-            if (verdict.chord() == wall) {
-                return verdict.describeRefusal(union);
-            }
-        }
-        return new ChordRefusal(RefusalReason.NOT_OFFERED, null);
-    }
-
-    /**
-     * A wall together with where it meets each of its two cells.
-     *
-     * <p>The three never travel apart. A mouth means nothing without the wall it belongs to,
-     * and every question asked of a wall from here on - is it on the boundary, has a rival
-     * taken its place, which rival - is asked of both mouths in turn. Carried loose, that is
-     * three arguments threaded through five methods, in an order two of them could swap
-     * without the compiler noticing.
-     *
-     * @param chord     the wall
-     * @param fromMouth where it meets the cell it leaves
-     * @param toMouth   where it meets the cell it lands on
-     */
-    private record MouthedChord(Chord chord, double[] fromMouth, double[] toMouth) {
-
-        /**
-         * Measures both of a wall's mouths.
-         *
-         * @param union the discs it is laid across
-         * @param chord the wall
-         * @param walls the walls it is one of, for the channel each of its ends keeps
-         * @return the wall and its mouths, or null where either end has no mouth at all -
-         *         which is a wall with nowhere to leave from or nowhere to land, and so not a
-         *         wall this can say anything further about
-         */
-        static MouthedChord measureMouths(DiscUnion union, Chord chord, Walls walls) {
-
-            var fromMouth = WallMouths.measureMouth(
-                union, chord, chord.fromCircle(), walls.channelOn(chord.fromCircle()));
-            var toMouth = WallMouths.measureMouth(
-                union, chord, chord.toCircle(), walls.channelOn(chord.toCircle()));
-
-            return fromMouth == null || toMouth == null
-                ? null
-                : new MouthedChord(chord, fromMouth, toMouth);
-        }
-    }
-
-    // Whether both of a wall's ends sit on the boundary. Asked of the pair rather than of each
-    // end, because a wall is laid only if both do and no caller has ever wanted one answer.
-    private static boolean isWallOnBoundaryAtBothEnds(DiscUnion union, MouthedChord mouthed) {
-
-        var chord = mouthed.chord();
-
-        return isWallOnBoundary(union, chord, chord.fromCircle(), mouthed.fromMouth())
-            && isWallOnBoundary(union, chord, chord.toCircle(), mouthed.toMouth());
-    }
-
-    // Both of a wall's mouths, written down as taken now that it is laid.
-    private static void recordBothMouths(
-            Map<Integer, List<double[]>> takenByCircle,
-            MouthedChord mouthed) {
-
-        recordMouth(takenByCircle, mouthed.chord().fromCircle(), mouthed.fromMouth());
-        recordMouth(takenByCircle, mouthed.chord().toCircle(), mouthed.toMouth());
-    }
-
-    /**
-     * What became of one wall the walk was offered.
-     *
-     * @param reason what the walk did with it
-     * @param detail which cell or which rival wall made that the answer, or null where the
-     *               reason says the whole of it
-     */
-    public record ChordRefusal(RefusalReason reason, String detail) {
-
-        @Override
-        public String toString() {
-            return detail == null ? reason.describe() : reason.describe() + " " + detail;
-        }
-    }
-
-    /** The verdicts the walk can reach about a wall it was offered. */
-    public enum RefusalReason {
-
-        /** Laid, and the boundary runs along it. */
-        LAID("laid"),
-
-        /** The wall passes too far from one of its circles to open a mouth on it at all. */
-        NO_MOUTH("no mouth"),
-
-        /** One of its sides lies inside another disc, so it is not on the boundary. */
-        OFF_BOUNDARY("off the boundary"),
-
-        /** A wall already laid holds the mouth this one would have left from or landed on. */
-        CROWDED_OUT("crowded out by"),
-
-        /** Not among the walls offered, so the walk never ruled on it. */
-        NOT_OFFERED("not offered");
-
-        private final String wording;
-
-        RefusalReason(String wording) {
-            this.wording = wording;
-        }
-
-        String describe() {
-            return wording;
-        }
-    }
-
-    /**
-     * A mouth a laid wall holds, and the wall holding it.
-     *
-     * @param mouth the stretch of circle taken, as {@code {start, width}}
-     * @param wall  the wall that took it
-     */
-    private record TakenMouth(double[] mouth, Chord wall) {
-    }
-
-    // Notes which chord took a mouth on a circle, for the refusal report. Kept per circle
-    // because the question it answers is asked of one circle at a time: what already holds the
-    // place this chord wanted.
-    private static void recordTaker(
-            Map<Integer, List<TakenMouth>> takers,
-            int circle,
-            double[] mouth,
-            Chord chord) {
-
-        takers.computeIfAbsent(circle, key -> new ArrayList<>())
-            .add(new TakenMouth(mouth, chord));
-    }
-
-    // The laid wall whose mouth swallowed this one, named by its own cells so a crowding
-    // refusal points at its rival rather than leaving it to be hunted for.
-    private static String nameTaker(
-            Map<Integer, List<TakenMouth>> takers,
-            MouthedChord mouthed) {
-
-        var chord = mouthed.chord();
-        var named = nameTakerOn(takers, chord.fromCircle(), mouthed.fromMouth());
-
-        return named != null
-            ? named
-            : nameTakerOn(takers, chord.toCircle(), mouthed.toMouth());
-    }
-
-    // Which chord already holds a mouth, named for a reader. Empty where nothing does, so the
-    // report can say a chord was refused for some other reason rather than invent a rival.
-    private static String nameTakerOn(
-            Map<Integer, List<TakenMouth>> takers,
-            int circle,
-            double[] mouth) {
-
-        for (var taken : takers.getOrDefault(circle, List.of())) {
-
-            if (isMouthTaken(Map.of(circle, List.of(taken.mouth())), circle, mouth)) {
-
-                return taken.wall().kind() + " " + taken.wall().fromCircle()
-                    + "-" + taken.wall().toCircle() + " on cell " + circle;
-            }
-        }
-        return "an earlier wall";
-    }
-
-    /**
-     * The two lines a laid chord actually becomes, as their end points.
-     *
-     * <p>A chord with a channel is two lines rather than one: each runs half a channel from
-     * the centre, so each meets the two circles at its own pair of points, and the void on
-     * one side of the wall closes on one of them while the void on the other side closes on
-     * the other. Handed back paired rather than as four loose points, because the pairing is
-     * not the obvious one - a line leaves one circle on the near edge of its mouth and
-     * arrives at the other on the FAR edge, since the two circles face opposite ways.
-     *
-     * <p>No search and no snapping: the mouth's half-width is the angle whose sine is the
-     * channel over the reach, and the ends are that angle either side of facing.
-     *
-     * @param union the discs the chord runs between
-     * @param chord the chord
-     * @param walls the walls it is one of, for the channel each of its ends keeps
-     * @return the two lines, each as its pair of end points
-     */
-    public static List<List<double[]>> findChordSides(
-            DiscUnion union,
-            Chord chord,
-            Walls walls) {
-
-        var fromMouth = WallMouths.measureMouth(
-            union, chord, chord.fromCircle(), walls.channelOn(chord.fromCircle()));
-        var toMouth = WallMouths.measureMouth(
-            union, chord, chord.toCircle(), walls.channelOn(chord.toCircle()));
-
-        if (fromMouth == null || toMouth == null) {
-            return List.of();
-        }
-        var from = union.sites().get(chord.fromCircle());
-        var to = union.sites().get(chord.toCircle());
-
-        return List.of(
-            List.of(
-                findPointOnCircle(from, union.reach(), fromMouth[0]),
-                findPointOnCircle(to, union.reach(), toMouth[0] + toMouth[1])),
-            List.of(
-                findPointOnCircle(to, union.reach(), toMouth[0]),
-                findPointOnCircle(from, union.reach(), fromMouth[0] + fromMouth[1])));
     }
 
     // The holes the channel leaves inside one pocket - none when it closes over, more than
@@ -745,6 +238,7 @@ public final class DiscUnionBoundary {
     public static List<List<double[]>> findHolesInside(List<VoidHole> narrowed, VoidHole hole) {
 
         var inside = new ArrayList<List<double[]>>();
+
         for (var candidate : narrowed) {
 
             var probe = candidate.boundary().get(0);
@@ -753,36 +247,80 @@ public final class DiscUnionBoundary {
                 inside.add(candidate.boundary());
             }
         }
+
         return inside;
     }
 
-    // The whole walk, in the order its four steps depend on each other: drop the walls that
-    // cannot attach, cut every circle into the arcs nothing covers, join each arc to the one
-    // it names, then follow the joins round until they close.
-    private static List<VoidHole> traceCycles(
-            DiscUnion union,
-            Walls walls,
-            int boundSegments) {
+    /**
+     * The point at one angle along one stretch's own circle.
+     *
+     * <p>The single conversion from an angle on a {@link CoastMark} to a place on the map,
+     * so no reader of a mark does the site-and-reach lookup its own way. Here rather than
+     * with any one of those readers, because the mark is this class's type and more than one
+     * class reads them.
+     *
+     * @param union the discs the mark was traced against
+     * @param mark  the stretch
+     * @param angle the direction from the stretch's own centre
+     * @return the point on the stretch's circle
+     */
+    public static double[] findPointOnMark(DiscUnion union, CoastMark mark, double angle) {
+        return findPointOnCircle(union.sites().get(mark.circle()), union.reach(), angle);
+    }
+
+    /**
+     * The point at one angle on one circle.
+     *
+     * @param centre where the circle is centred
+     * @param reach  its radius
+     * @param angle  the direction from the centre
+     * @return the point on the circle
+     */
+    static double[] findPointOnCircle(double[] centre, double reach, double angle) {
+
+        return new double[] {
+            centre[0] + reach * Math.cos(angle),
+            centre[1] + reach * Math.sin(angle)};
+    }
+
+    // The walk up to the joins: drop the walls that cannot attach, cut every circle into the
+    // arcs nothing covers, and join each arc to the one it names. Shared by the walk and by the
+    // search for where it broke, so the two are about the same arcs.
+    private static LinkedArcs linkArcs(DiscUnion union, Walls walls) {
 
         var laid = new Walls(
-            findAttachableChords(union, walls), walls.channel(), walls.pinchedCells());
-        var arcs = findUncoveredArcs(union, laid);
-        var successors = linkArcsIntoCycles(arcs);
+            WallLaying.findAttachableChords(union, walls),
+            walls.channel(),
+            walls.pinchedCells());
+
+        var arcs = CoverSweep.findUncoveredArcs(union, laid);
+
+        return new LinkedArcs(laid, arcs, linkArcsIntoCycles(arcs));
+    }
+
+    // The rest of the walk, over the joins already made: each followed round until it closes.
+    private static List<VoidHole> traceCycles(
+            LinkedArcs linked,
+            DiscUnion union,
+            int boundSegments) {
+
+        var arcs = linked.arcs();
         var cycles = new ArrayList<VoidHole>();
         var walked = new boolean[arcs.size()];
 
         for (var start = 0; start < arcs.size(); start++) {
 
-            var cycle = walkCycleFrom(start, arcs, successors, walked);
+            var cycle = walkCycleFrom(start, arcs, linked.successors(), walked);
             if (cycle.isEmpty()) {
                 continue;
             }
 
-            var built = buildHole(cycle, arcs, union, laid.chords(), boundSegments);
+            var built = buildHole(cycle, arcs, union, linked.laid().chords(), boundSegments);
             if (built != null) {
                 cycles.add(built);
             }
         }
+
         return cycles;
     }
 
@@ -793,289 +331,11 @@ public final class DiscUnionBoundary {
         return PolygonRegions.computeSignedArea(cycle.boundary()) < 0;
     }
 
-    // Every stretch of every circle that nothing covers, which is the whole boundary of the
-    // union - outer silhouettes and holes alike, not yet told apart - with the walls' mouths
-    // taken out of it alongside the neighbouring discs.
-    private static List<Arc> findUncoveredArcs(DiscUnion union, Walls walls) {
-
-        var arcs = new ArrayList<Arc>();
-        for (var circle = 0; circle < union.sites().size(); circle++) {
-            arcs.addAll(findUncoveredArcsOn(circle, union, walls));
-        }
-        return arcs;
-    }
-
-    // One circle's uncovered stretches, as the gaps between everything that covers it. Kept
-    // as angles rather than points so the two ends of a gap stay attributed to whatever made
-    // them, be that a neighbouring disc or a chord's mouth.
-    private static List<Arc> findUncoveredArcsOn(
-            int circle,
-            DiscUnion union,
-            Walls walls) {
-
-        var covers = findCoveringIntervals(circle, union);
-        covers.addAll(findChordCovers(circle, union, walls));
-
-        if (covers.isEmpty()) {
-
-            // A disc that nothing overlaps and no chord reaches is a closed cycle on its own.
-            var whole = formatDiscTerminal(circle, NO_CIRCLE, union.sites().size());
-            return List.of(new Arc(circle, 0, Angles.FULL_TURN, whole, whole));
-        }
-        return buildArcsBetweenCovers(circle, covers);
-    }
-
-    // The stretch of one circle lying inside a neighbour's disc. With equal radii the two
-    // circles cross symmetrically about the line joining the sites, so the interval is the
-    // half-angle whose cosine is half the separation over the reach, either side of that
-    // line - no intersection points needed to find it.
-    private static List<Cover> findCoveringIntervals(int circle, DiscUnion union) {
-
-        var sites = union.sites();
-        var centre = sites.get(circle);
-        var covers = new ArrayList<Cover>();
-
-        for (var other = 0; other < sites.size(); other++) {
-
-            if (other == circle) {
-                continue;
-            }
-            var separation = Points.computeDistance(centre, sites.get(other));
-
-            if (separation >= 2 * union.reach() || separation == 0) {
-                continue;
-            }
-            var towards = measureAngleTowards(union, circle, other);
-            var halfWidth = Math.acos(separation / (2 * union.reach()));
-
-            covers.add(new Cover(
-                Angles.normalise(towards - halfWidth),
-                2 * halfWidth,
-                formatDiscTerminal(other, circle, sites.size()),
-                formatDiscTerminal(circle, other, sites.size())));
-        }
-        return covers;
-    }
-
-    // The stretch of one circle taken up by a chord's mouth: the arc facing the circle at the
-    // chord's far end, wide enough for the channel to pass through. The boundary arriving at
-    // its near edge leaves along the chord and reappears at the far circle's own mouth; the
-    // boundary leaving its far edge is where the chord coming the other way put it down.
-    private static List<Cover> findChordCovers(
-            int circle,
-            DiscUnion union,
-            Walls walls) {
-
-        var covers = new ArrayList<Cover>();
-
-        for (var index = 0; index < walls.chords().size(); index++) {
-
-            var chord = walls.chords().get(index);
-            var isFromSide = chord.fromCircle() == circle;
-
-            if (!isFromSide && chord.toCircle() != circle) {
-                continue;
-            }
-            var mouth = WallMouths.measureMouth(union, chord, circle, walls.channelOn(circle));
-
-            if (mouth == null) {
-                continue;
-            }
-
-            covers.add(new Cover(
-                mouth[0],
-                mouth[1],
-                formatChordTerminal(index, isFromSide ? TO_SIDE : FROM_SIDE),
-                formatChordTerminal(index, isFromSide ? FROM_SIDE : TO_SIDE)));
-        }
-        return covers;
-    }
-
-    // How close a mouth of no width may start to a disc cover's own start and still be read as
-    // starting AT it. Arithmetic rather than geometry: a wall pinched to a point lands on a
-    // frontage point the coast collapsed onto, and a collapse sits exactly where two cells
-    // cross - which is exactly where the neighbour's cover begins - so the two angles are one
-    // number arrived at two ways and differ by rounding alone. Far below anything the touching
-    // tolerance admits, and far above anything a rounding produces.
-    private static final double POINT_MOUTH_EDGE_TIE = 1e-6;
-
-    // Where the sweep hands over at a crossing that a point mouth sits on. Sorted by start
-    // alone, a mouth of no width and the disc cover beginning at the same angle are a tie, and
-    // the disc coming first puts the mouth INSIDE it: the overlap branch below then hands the
-    // boundary to the wall at the disc's far edge rather than at the wall's own end, and the
-    // wall's side runs from a point that is not its foot. The mouth coming first hands the
-    // boundary to the wall at the crossing and the disc takes over from the wall's far
-    // terminal, which is the map. So a point mouth is moved ahead of any disc cover it starts
-    // within a rounding of. Only a mouth of no width: a mouth with width starting on a disc's
-    // edge is the overlap the branch below was written for.
-    private static void bringPointMouthsBeforeDiscEdges(List<Cover> covers) {
-
-        for (var index = 1; index < covers.size(); index++) {
-
-            var cover = covers.get(index);
-            var before = covers.get(index - 1);
-
-            if (cover.width() == 0
-                    && isChordTerminal(cover.arrival())
-                    && !isChordTerminal(before.arrival())
-                    && cover.start() - before.start() <= POINT_MOUTH_EDGE_TIE) {
-
-                covers.set(index - 1, cover);
-                covers.set(index, before);
-            }
-        }
-    }
-
-    // The gaps a circle's covers leave between them, swept once round in order. Each gap runs
-    // from wherever the last cover let go to wherever the next takes hold, so its two ends are
-    // named by the covers that made them and nothing has to be matched up by position.
-    private static List<Arc> buildArcsBetweenCovers(int circle, List<Cover> covers) {
-
-        covers.sort(Comparator.comparingDouble(Cover::start));
-        bringPointMouthsBeforeDiscEdges(covers);
-
-        var origin = covers.get(0).start();
-        var windowEnd = origin + Angles.FULL_TURN;
-        var reached = openSweepAt(origin, covers);
-        var arcs = new ArrayList<Arc>();
-
-        for (var index = reached.firstUnswept(); index < covers.size(); index++) {
-
-            var cover = covers.get(index);
-
-            if (cover.start() > reached.coveredTo()) {
-
-                arcs.add(new Arc(
-                    circle, reached.coveredTo(), cover.start(),
-                    reached.departingFrom(), cover.arrival()));
-
-            } else if (isHandingOverToAWall(reached.departingFrom(), cover)) {
-                arcs.add(buildEmptyHandover(circle, reached, cover));
-                reached = reached.handOverIfSwallowed(cover);
-            }
-            reached = reached.advanceOver(cover);
-        }
-
-        if (reached.coveredTo() < windowEnd) {
-
-            arcs.add(new Arc(
-                circle, reached.coveredTo(), windowEnd,
-                reached.departingFrom(), covers.get(0).arrival()));
-        }
-        return arcs;
-    }
-
-    /**
-     * How far round the circle the sweep has got, and which terminal the next gap leaves from.
-     *
-     * <p>The pair travel together because a gap is named by both: it runs from wherever the
-     * last cover let go to wherever the next takes hold, and the terminal is what the walk
-     * joins one gap to the next by. Carried apart, an extent advanced without its terminal is
-     * an arc beginning at a name nothing else uses.
-     *
-     * @param coveredTo     how far round the circle is covered so far
-     * @param departingFrom the terminal the next gap begins at, or {@link #NO_TERMINAL} before
-     *                      the sweep has passed a cover at all
-     * @param firstUnswept  which cover the walk starts at, the opening one having been read
-     */
-    private record SweepReach(double coveredTo, long departingFrom, int firstUnswept) {
-
-        // A cover reaching further round than anything so far becomes what the next gap leaves
-        // from. One that does not is already inside covered space and changes nothing.
-        SweepReach advanceOver(Cover cover) {
-
-            return cover.start() + cover.width() > coveredTo
-                ? new SweepReach(cover.start() + cover.width(), cover.departure(), firstUnswept)
-                : this;
-        }
-
-        // A cover swallowed WHOLE reaches no further round than what is already covered, so
-        // advanceOver leaves it alone and its far terminal would be dropped - an arrival with
-        // no departure, which is a chain the walk runs off rather than a cycle. Handing the
-        // departure on makes the swallowed cover the one the next stretch of boundary leaves
-        // from, which is what the pair do on the map.
-        //
-        // Not the same as a crowded-out mouth. Crowding is a pairwise test against each
-        // earlier mouth; what is covered here is the merged extent of every cover so far, so a
-        // mouth no single wall nests can still be buried by two of them between them - laid,
-        // and with nowhere to depart from.
-        SweepReach handOverIfSwallowed(Cover cover) {
-
-            return cover.start() + cover.width() <= coveredTo
-                ? new SweepReach(coveredTo, cover.departure(), firstUnswept)
-                : this;
-        }
-    }
-
-    // Where the sweep starts, which is not simply the first cover.
-    //
-    // An interval running past the far end of the window covers the near end of it as well, so
-    // the sweep has to start already covered up to wherever that reaches - otherwise it reports
-    // a gap the wrapping interval actually fills.
-    //
-    // Failing that it opens on the first cover explicitly, rather than letting the loop reach
-    // past the origin on that cover's own width. A cover of no width reaches nowhere past the
-    // origin and so would set neither the extent nor the departure, leaving its terminal to
-    // begin no arc - and the cycle returning along that wall is then a chain, which is a pocket
-    // dropped. Where a wrapping cover already lies over the first, the first is swallowed
-    // instead and the handover branch is its reader.
-    private static SweepReach openSweepAt(double origin, List<Cover> covers) {
-
-        var coveredTo = origin;
-        var departingFrom = NO_TERMINAL;
-
-        for (var cover : covers) {
-
-            var wrapped = cover.start() + cover.width() - Angles.FULL_TURN;
-
-            if (wrapped > coveredTo) {
-                coveredTo = wrapped;
-                departingFrom = cover.departure();
-            }
-        }
-
-        return coveredTo > origin
-            ? new SweepReach(coveredTo, departingFrom, 0)
-            : new SweepReach(
-                origin + covers.get(0).width(), covers.get(0).departure(), 1);
-    }
-
-    // Whether two overlapping covers are a place the boundary changes hands rather than one
-    // stretch of covered circle.
-    //
-    // At least one of them has to be a wall's mouth: a wall laid against another wall's mouth,
-    // or laid so close past a third cell that its mouth and that cell's cover meet. The wall's
-    // terminal MUST be paired at such a place, because nowhere else will - a disc cover ending
-    // beyond the mouth takes over as the departure, the mouth's own terminal begins no arc, and
-    // the walk arriving from the far circle finds nothing to continue onto and throws away every
-    // cycle through it. That is a pocket missing behind any wall grazing a cell it does not join.
-    //
-    // Never where two DISCS are what overlap. Their crossing lies inside the union and the
-    // boundary transition between them happens out on their own rims, so joining their terminals
-    // would run a cycle through covered space. NO_TERMINAL is not a join either: it is the sweep
-    // not yet having passed a cover, not a terminal awaiting a pair.
-    private static boolean isHandingOverToAWall(long departingFrom, Cover cover) {
-
-        return departingFrom != NO_TERMINAL
-            && (isChordTerminal(departingFrom) || isChordTerminal(cover.arrival()));
-    }
-
-    // The handover itself: an arc of no width, since what the walk wants of it is that its two
-    // terminals name each other rather than any length. The boundary comes back along one cover
-    // and leaves along the other with nothing on the circle in between, so the stretch between
-    // them is empty rather than absent.
-    private static Arc buildEmptyHandover(int circle, SweepReach reached, Cover cover) {
-
-        return new Arc(
-            circle, reached.coveredTo(), reached.coveredTo(),
-            reached.departingFrom(), cover.arrival());
-    }
-
     // Which arc the boundary continues onto, as a plain join: every arc names the terminal it
     // begins at and the terminal it runs on to, and the two are the same name. That holds for
     // a crossing between two discs and for a chord's two mouths alike, so nothing here has to
     // know which kind it is looking at.
-    private static int[] linkArcsIntoCycles(List<Arc> arcs) {
+    private static int[] linkArcsIntoCycles(List<BoundaryArc> arcs) {
 
         var byStart = new LinkedHashMap<Long, Integer>();
 
@@ -1090,6 +350,7 @@ public final class DiscUnionBoundary {
             var next = byStart.get(arcs.get(index).endsAt());
             successors[index] = next == null ? NO_SUCCESSOR : next;
         }
+
         return successors;
     }
 
@@ -1098,7 +359,7 @@ public final class DiscUnionBoundary {
     // into some earlier cycle and not a cycle of its own.
     private static List<Integer> walkCycleFrom(
             int start,
-            List<Arc> arcs,
+            List<BoundaryArc> arcs,
             int[] successors,
             boolean[] walked) {
 
@@ -1115,9 +376,12 @@ public final class DiscUnionBoundary {
             cycle.add(at);
             at = successors[at];
         }
+
         // A run that stopped on an arc it had already walked, rather than on the one it
         // started from, is a chain into an earlier cycle and not a cycle of its own.
-        return at == start ? cycle : List.of();
+        return at == start
+            ? cycle
+            : List.of();
     }
 
     // A walked cycle as the shape it stands for: its arcs sampled into a closed outline, the
@@ -1126,7 +390,7 @@ public final class DiscUnionBoundary {
     // rather than a pocket too small to matter.
     private static VoidHole buildHole(
             List<Integer> cycle,
-            List<Arc> arcs,
+            List<BoundaryArc> arcs,
             DiscUnion union,
             List<Chord> laid,
             int boundSegments) {
@@ -1162,12 +426,14 @@ public final class DiscUnionBoundary {
             // rather than this one. Left off, the straight run would start a sample short of
             // where the chord actually does, which is the whole failure this construction
             // exists to avoid.
-            if (isChordTerminal(arc.endsAt())) {
+            if (BoundaryTerminals.isChordTerminal(arc.endsAt())) {
 
-                walledBy.add(laid.get(readChordFrom(arc.endsAt())));
+                walledBy.add(laid.get(BoundaryTerminals.readChordFrom(arc.endsAt())));
 
                 boundary.add(findPointOnCircle(
-                    union.sites().get(arc.circle()), union.reach(), arc.toAngle()));
+                    union.sites().get(arc.circle()),
+                    union.reach(),
+                    arc.toAngle()));
             }
         }
 
@@ -1220,8 +486,10 @@ public final class DiscUnionBoundary {
             if (measureBoundVertexAngle(vertex, boundSegments) >= toAngle) {
                 break;
             }
+
             points.add(findBoundVertexOnCircle(centre, reach, vertex, boundSegments));
         }
+
         return points;
     }
 
@@ -1248,307 +516,81 @@ public final class DiscUnionBoundary {
             measureBoundVertexAngle(Math.floorMod(vertex, boundSegments), boundSegments));
     }
 
-    // Whether a wall still reaches the boundary at this circle - asked of whichever part of
-    // it carries the answer for the kind of wall it is, and against whichever circle that part
-    // actually sits on.
-    //
-    // A BRIDGE is asked about its mouth's two EDGES, at the reach being traced. Its line runs
-    // through both sites, so it crosses squarely between them and its mouth lies where the gap
-    // it spans lies: buried, and the two cells have closed over the gap, which is exactly when
-    // the bridge must go.
-    //
-    // A COAST REACH is asked about its own END, against the circle that end sits on. It leaves
-    // a cell along a tangent and can end exactly where two circles cross, and a mouth is a
-    // channel wide by construction - so half of it is inside the neighbouring disc whatever the
-    // reach did, and the mouth test refuses a wall that is on the boundary. That refusal is
-    // what left the void behind a coast's own reach open to the sea, with the line drawn across
-    // the gap and no wall laid under it.
-    private static boolean isWallOnBoundary(
-            DiscUnion union,
-            Chord chord,
-            int circle,
-            double[] mouth) {
+    // What a terminal is, in words: a wall's own end, or a crossing between two discs. The one
+    // thing a broken link needs said about it - which of the two kinds of join failed to pair
+    // decides where to look for the reason.
+    private static String describeTerminal(long terminal, Walls laid) {
 
-        for (var point : collectBoundaryTests(union, chord, circle, mouth)) {
-
-            if (findDeepestCover(union, chord, circle, point) != null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    // The points on one circle that carry the answer for the kind of wall this is: a coast
-    // reach's own end, or a bridge's two mouth edges. One list, so the verdict and the account
-    // of it below are about the same points - an account of a different point is how a refusal
-    // comes to be explained by a cell that had nothing to do with it.
-    //
-    // A mouth is judged at its EDGES. A third disc reaching into the middle of one without
-    // touching an edge changes nothing: its cover nests inside the mouth's, so the merged sweep
-    // still opens the arcs at the mouth's own edges.
-    private static List<double[]> collectBoundaryTests(
-            DiscUnion union,
-            Chord chord,
-            int circle,
-            double[] mouth) {
-
-        if (chord.kind().isShoreReach()) {
-            return List.of(chord.findEndOn(circle));
+        if (terminal == BoundaryTerminals.NO_TERMINAL) {
+            return "nothing at all";
         }
 
-        return List.of(
-            findPointOnCircle(union.sites().get(circle), union.reach(), mouth[0]),
-            findPointOnCircle(union.sites().get(circle), union.reach(), mouth[0] + mouth[1]));
-    }
-
-    // How far out the circle a landing sits on reaches, which is not always the union's.
-    //
-    // A bridge's mouth edge is a point on the circle BEING TRACED, so the union's reach is the
-    // edge it is on. A coast reach's end is a point on the cells' OWN border, wherever the
-    // trace is running - it was put there by the smoothing, which walks at the reach that
-    // defines void, and no later trace moves it. Out at the reach a shape is drawn at, every
-    // disc has grown by the channel, so such an end lies inside each neighbour by as much as
-    // that neighbour grew: judged against the union's reach it is refused for the drawing's own
-    // inset, and the void behind it goes unclaimed on the very map a reader is looking at.
-    //
-    // Its own distance from its own site IS that reach, so nothing has to carry it: the end is
-    // on that circle by construction, and asking against it is asking whether the end's nearest
-    // site is still its own cell - the same question at any reach.
-    private static double measureLandingReach(
-            DiscUnion union,
-            Chord chord,
-            int circle,
-            double[] point) {
-
-        return chord.kind().isShoreReach()
-            ? Points.computeDistance(point, union.sites().get(circle))
-            : union.reach();
-    }
-
-    // The disc that covers one of a wall's landings deepest, as {site, depth}, or null where
-    // none does. The one reading the verdict and the account of it are both taken from, so a
-    // refusal is never explained by a cell that did not cause it.
-    private static double[] findDeepestCover(
-            DiscUnion union,
-            Chord chord,
-            int circle,
-            double[] point) {
-
-        var sites = union.sites();
-        var toEdge = measureLandingReach(union, chord, circle, point);
-        double[] deepest = null;
-
-        for (var site = 0; site < sites.size(); site++) {
-
-            if (site == circle) {
-                continue;
-            }
-            var under = union.measureCoverOf(point, site, toEdge);
-
-            if (under > DiscUnion.TOUCHING_TOLERANCE
-                    && (deepest == null || under > deepest[1])) {
-
-                deepest = new double[] {site, under};
-            }
-        }
-        return deepest;
-    }
-
-    // Which disc covers one of a wall's landings, and by how far it reaches over it.
-    //
-    // The depth is the whole of the diagnosis. A landing a whole cell deep inside a neighbour
-    // is geometry - the cells met without the wall, and refusing it is right. A landing under
-    // it by a rounding error is a wall the map draws and the trace throws away, and the two
-    // read as the same verdict without a number beside them.
-    private static String describeCover(
-            DiscUnion union,
-            Chord chord,
-            int circle,
-            double[] mouth) {
-
-        double[] deepest = null;
-
-        for (var point : collectBoundaryTests(union, chord, circle, mouth)) {
-
-            var cover = findDeepestCover(union, chord, circle, point);
-
-            if (cover != null && (deepest == null || cover[1] > deepest[1])) {
-                deepest = cover;
-            }
+        if (!BoundaryTerminals.isChordTerminal(terminal)) {
+            return "a crossing between discs";
         }
 
-        return deepest == null
-            ? "on cell " + circle
-            : String.format(
-                Locale.ROOT,
-                "on cell %d, %.3f inside cell %d",
-                circle,
-                deepest[1],
-                (int) deepest[0]);
-    }
+        var chord = laid
+            .chords()
+            .get(BoundaryTerminals.readChordFrom(terminal));
 
-    // Whether an earlier wall's mouth leaves this one nowhere to attach.
-    //
-    // Not asked of a REACH OF COAST, because the sweep now hands a swallowed reach the
-    // boundary rather than dropping it. A coast leaves a cell along its tangent, so where the
-    // coast turns on a cell the mouth it arrives by swallows the mouth it leaves by - two
-    // real walls, one of which was being refused for the shape of the other.
-    //
-    // Still asked of a BRIDGE. A bridge crosses its circles squarely between its two sites,
-    // so its mouth is swallowed only where the gap it spans has closed over, and a wall laid
-    // across a gap that is no longer there cuts through cells that have already met.
-    private static boolean isCrowdedOut(
-            Map<Integer, List<double[]>> takenByCircle,
-            MouthedChord mouthed) {
-
-        var chord = mouthed.chord();
-
-        return !chord.kind().isShoreReach()
-            && (isMouthTaken(takenByCircle, chord.fromCircle(), mouthed.fromMouth())
-                || isMouthTaken(takenByCircle, chord.toCircle(), mouthed.toMouth()));
-    }
-
-    // A mouth is taken when an earlier wall's mouth swallows it whole, or is swallowed by it.
-    // The sweep merges what overlaps and the merged cover keeps only the outer pair of
-    // terminals, so a mouth wholly inside another loses both of its own: the wall it belongs
-    // to then has nowhere to leave from and nowhere to land, which breaks the walk rather than
-    // spoiling a shape.
-    //
-    // Overlapping in part is not that. Each wall keeps the outer terminal the walk needs and
-    // the sweep hands one straight on to the other, so refusing those would leave the void
-    // behind one of them open to the sea with nothing to close it.
-    private static boolean isMouthTaken(
-            Map<Integer, List<double[]>> takenByCircle,
-            int circle,
-            double[] mouth) {
-
-        for (var taken : takenByCircle.getOrDefault(circle, List.<double[]>of())) {
-
-            if (Angles.measureGap(taken[0] + taken[1] / 2, mouth[0] + mouth[1] / 2)
-                    <= Math.abs(taken[1] - mouth[1]) / 2) {
-
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Remembers a mouth as taken, so the walls offered after this one are held to what is
-    // left of the circle rather than to the whole of it.
-    private static void recordMouth(
-            Map<Integer, List<double[]>> takenByCircle,
-            int circle,
-            double[] mouth) {
-
-        takenByCircle.computeIfAbsent(circle, held -> new ArrayList<>()).add(mouth);
-    }
-
-    // The direction from one circle's centre to another's, which is where the stretch of the
-    // first that the second swallows is centred.
-    private static double measureAngleTowards(
-            DiscUnion union,
-            int fromCircle,
-            int toCircle) {
-
-        var from = union.sites().get(fromCircle);
-        var to = union.sites().get(toCircle);
-
-        return Angles.normalise(Math.atan2(to[1] - from[1], to[0] - from[0]));
+        return chord.kind() + " " + chord.fromCircle() + "-" + chord.toCircle();
     }
 
     /**
-     * The point at one angle on one circle.
+     * What {@link #traceCoastRuns} finds: every stretch of the union's boundary, sorted by what
+     * closed the space behind it.
      *
-     * @param centre where the circle is centred
-     * @param reach  its radius
-     * @param angle  the direction from the centre
-     * @return the point on the circle
+     * <p>One value rather than three methods because all of them come out of one walk, and the
+     * walk is not cheap - asked for separately, each caller pays for it again and the answers
+     * can be about different walks.
+     *
+     * <p>Three buckets rather than two because a caller wants different ones. What draws a map's
+     * coast wants the silhouettes and the lakes; what asks where the cells face water a wall
+     * shut in wants the third, and drawing that one beside the pockets would answer for the same
+     * water twice. Sorted here rather than left to a caller to sort, since the walk is the only
+     * thing that knows what walled each cycle.
+     *
+     * <p>The walls the walk laid come back with the runs, because a caller placing a coast
+     * along them needs to know which cells a wall attaches to. Laid again to find out, they are
+     * a second laying of the same walls - the dearest part of the walk paid for twice.
+     *
+     * @param silhouettes one run of marks per outer silhouette, in walk order
+     * @param lakes       one run of marks per hole the cells closed unaided, in walk order
+     * @param walled      one run of marks per hole a laid wall closed, in walk order
+     * @param laid        the walls that attached at this reach, in the order they were offered
      */
-    static double[] findPointOnCircle(double[] centre, double reach, double angle) {
-
-        return new double[] {
-            centre[0] + reach * Math.cos(angle),
-            centre[1] + reach * Math.sin(angle)};
+    public record CoastRuns(
+        List<List<CoastMark>> silhouettes,
+        List<List<CoastMark>> lakes,
+        List<List<CoastMark>> walled,
+        List<Chord> laid) {
     }
 
     /**
-     * The point at one angle along one stretch's own circle.
+     * One place the walk ran off the end of the boundary.
      *
-     * <p>The single conversion from an angle on a {@link CoastMark} to a place on the map,
-     * so no reader of a mark does the site-and-reach lookup its own way. Here rather than
-     * with any one of those readers, because the mark is this class's type and more than one
-     * class reads them.
-     *
-     * @param union the discs the mark was traced against
-     * @param mark  the stretch
-     * @param angle the direction from the stretch's own centre
-     * @return the point on the stretch's circle
+     * @param at      where the arc ended
+     * @param circle  whose cell's border it ran along
+     * @param endedOn what it ran on to, which is the name nothing began at
      */
-    public static double[] findPointOnMark(DiscUnion union, CoastMark mark, double angle) {
-        return findPointOnCircle(union.sites().get(mark.circle()), union.reach(), angle);
-    }
-
-    // Offset by one so the "no neighbour" marker cannot land on the name of a real pairing,
-    // and kept positive so a chord's terminal can never be mistaken for a crossing.
-    private static long formatDiscTerminal(int circle, int neighbour, int siteCount) {
-        return (long) circle * (siteCount + 1) + neighbour + 1;
-    }
-
-    // Negative, so a wall's terminal can never collide with a crossing between two discs -
-    // those are the positive half of the same space. Offset by one because a wall at index
-    // zero would otherwise name terminal zero, which is neither negative nor free.
-    private static long formatChordTerminal(int chord, int side) {
-        return -(2L * chord + side + 1);
-    }
-
-    // Which half of the terminal space a name came from. The sweep needs it to tell a mouth
-    // from a disc's cover: two mouths that overlap hand the boundary from one wall to the
-    // next, while a stretch a disc swallows is off the boundary and joins nothing.
-    private static boolean isChordTerminal(long terminal) {
-        return terminal < 0 && terminal != NO_TERMINAL;
-    }
-
-    // Which wall a chord terminal names, undoing formatChordTerminal. The side marker is the
-    // low bit, so the wall is what is left once it is taken off.
-    private static int readChordFrom(long terminal) {
-        return (int) ((-terminal - 1) / 2);
-    }
-
-    /**
-     * One stretch of a circle that the boundary does not run along.
-     *
-     * <p>Either a neighbouring disc swallowing it or a chord's mouth passing through it - the
-     * sweep merges both the same way, and each names what the arcs either side of it link to
-     * so that nothing downstream has to know which kind made the gap.
-     *
-     * @param start     the angle it begins at, anticlockwise
-     * @param width     how far it runs
-     * @param arrival   what an arc ending at {@code start} continues onto
-     * @param departure what an arc beginning at the far end of it is named by
-     */
-    private record Cover(
-        double start,
-        double width,
-        long arrival,
-        long departure) {
-    }
-
-    /**
-     * One stretch of a circle that nothing covers - a single edge of the union's boundary.
-     *
-     * @param circle    whose circle it runs on
-     * @param fromAngle the angle it begins at
-     * @param toAngle   the angle it ends at, always greater than {@code fromAngle}
-     * @param startsAt  the terminal it begins at, naming either the disc it comes out of or
-     *                  the chord mouth it leaves
-     * @param endsAt    the terminal it runs on to, which is the {@code startsAt} of whichever
-     *                  arc the boundary continues along
-     */
-    private record Arc(
+    public record BrokenLink(
+        double[] at,
         int circle,
-        double fromAngle,
-        double toAngle,
-        long startsAt,
-        long endsAt) {
+        String endedOn) {
+    }
+
+    /**
+     * The arcs the walk runs over, joined: the walls actually laid, the arcs they and the discs
+     * leave, and for each arc the one it runs on to.
+     *
+     * @param laid       the walls that attached, whose order the arcs' chord terminals index
+     * @param arcs       every uncovered arc
+     * @param successors per arc, the index of the arc it continues onto, or
+     *                   {@link #NO_SUCCESSOR} where nothing begins at its terminal
+     */
+    private record LinkedArcs(
+        Walls laid,
+        List<BoundaryArc> arcs,
+        int[] successors) {
     }
 }

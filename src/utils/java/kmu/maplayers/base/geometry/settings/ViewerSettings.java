@@ -7,6 +7,7 @@ import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
+import kmu.maplayers.base.geometry.v3.CoastRules;
 import kmu.maplayers.base.geometry.v3.Coastlines;
 import kmu.maplayers.base.geometry.v3.ContinentBridges;
 import kmu.maplayers.base.geometry.v3.StraightRuns;
@@ -42,6 +43,10 @@ import java.awt.Color;
  * Accessors would have implied a read-only view that nothing actually has, and paying sixty
  * methods for that fiction is worse than admitting this is a bag of values.
  *
+ * <p>The fields are grouped as the settings panel's sections are - global geometry, cell
+ * geometry, cell appearance, then the two void constructions - so a field and the knob that
+ * writes it are found in the same place in both files.
+ *
  * <p>The defaults live here rather than with the widgets because a default is a property of
  * the setting - what it is when nobody has chosen - while the range a slider allows is a
  * property of the widget, and belongs with it.
@@ -65,7 +70,6 @@ public final class ViewerSettings {
     // which is how anyone reading a map thinks about how far a cell sticks out.
     public static final double CONTINENT_MIN_FRONTAGE_DEFAULT =
         Coastlines.DEFAULT_RULES.minFrontageShare();
-    public static final double FRONTAGE_PERCENT_SCALE = 100.0;
 
     // The puddle floor, read off the coast's own default for the reason the frontage floor
     // is. A share of one cell's area; the slider asks for it as a percentage.
@@ -89,10 +93,9 @@ public final class ViewerSettings {
     // shorter than the rounding steps back by survives rounding untouched - the cut clamps to
     // those edges - so it has to come out first or not at all.
     //
-    // This window's own opening numbers, not the shipped ones. They read the same today, but
-    // the map keeps its behind LunaLib where nothing outside the game can reach them, so
-    // these are a second answer rather than the same one - and a window that claimed
-    // otherwise would go on claiming it after the map moved.
+    // This window's own opening numbers, not the shipped ones. They read the same, but the map
+    // keeps its own behind LunaLib, so these are a second answer rather than the same one - and
+    // a window that claimed otherwise would go on claiming it after the map moved.
     //
     // On here, where the shipped map leaves the pass off. This window exists to look at
     // shapes, and a pass left off by default is a pass nobody looks at; what it costs is one
@@ -100,29 +103,23 @@ public final class ViewerSettings {
     public static final double SPIKE_HEIGHT_DEFAULT = 150.0;
     public static final double SPIKE_BELOW_DEGREES_DEFAULT = 60.0;
 
-    public static final Color CONTINENT_COAST_DEFAULT = MapLook.CONTINENT_COAST;
-
-    public static final Color CONTINENT_BRIDGE_DEFAULT = MapLook.CONTINENT_BRIDGE;
-
-    public static final Color INTERCONTINENTAL_BRIDGE_DEFAULT = MapLook.INTERCONTINENTAL_BRIDGE;
-
     public static final Color DROPPED_STRETCH_DEFAULT = MapLook.DROPPED_STRETCH;
 
     public static final Color LANDABLE_FRONTAGE_DEFAULT = MapLook.LANDABLE_FRONTAGE;
-
     public static final Color BRIDGE_FRONTAGE_DEFAULT = MapLook.BRIDGE_FRONTAGE;
 
     public static final Color VOID_PIECES_V4_DEFAULT = MapLook.VOID_PIECES_V4;
 
     public static final Color LAKE_COAST_V4_DEFAULT = MapLook.LAKE_COAST_V4;
-
     public static final Color LAKE_BRIDGES_V4_DEFAULT = MapLook.LAKE_BRIDGES_V4;
-
     public static final Color LAKE_WATER_V4_DEFAULT = MapLook.LAKE_WATER_V4;
-
     public static final Color LAKE_MARGIN_V4_DEFAULT = MapLook.LAKE_MARGIN_V4;
 
     public static final Color CONTINENT_COASTAL_VOID_DEFAULT = MapLook.CONTINENT_COASTAL_VOID;
+    public static final Color CONTINENT_COAST_DEFAULT = MapLook.CONTINENT_COAST;
+    public static final Color CONTINENT_BRIDGE_DEFAULT = MapLook.CONTINENT_BRIDGE;
+
+    public static final Color INTERCONTINENTAL_BRIDGE_DEFAULT = MapLook.INTERCONTINENTAL_BRIDGE;
 
     public static final Color SITE_COLOUR = MapLook.SITE;
 
@@ -130,6 +127,7 @@ public final class ViewerSettings {
     // that asks about the cells alone. Its answer is what the puddle spans are claimed from.
     public static final double BRIDGE_REACH_DEFAULT =
         Coastlines.DEFAULT_RULES.bridgeReachMultiple();
+
     public static final double BRIDGE_REACH_STEP_SCALE = 100.0;
 
     // The spans laid against the coastlines open on that same reach, so the two lists start
@@ -171,14 +169,101 @@ public final class ViewerSettings {
 
     public static final int OWNER_FILL_ALPHA = 90;
 
+    // Which map of the void the overlays draw: the void's own extent, with no choice about it.
+    // The other shaping takes the channel out by re-tracing at a moved reach, which is what a
+    // section stops doing once the inset is a per-edge verdict from the ownership rule - so
+    // offering it is offering a map that is on its way out, and a reading taken from it is not
+    // evidence about the one being built.
+    //
+    // Named here rather than at each overlay, because every layer drawn in one frame has to be
+    // drawn from the same map of the void or they are describing different maps.
+    public static final VoidPockets.PocketShaping POCKET_SHAPING =
+        VoidPockets.PocketShaping.AT_TRUE_EXTENT;
+
+    // Global geometry.
+
+    // How a drawn line is rounded where it turns sharply, for every line on the map that is
+    // rounded at all - both coasts and the cluster borders alike.
+    //
+    // One set of knobs rather than a set per line. Rounding is a question about how a LINE is
+    // drawn, not about what any of these constructions mean, and the lines are on screen to
+    // be compared: rounded to different numbers, a difference between two of them would be
+    // partly a difference between the sliders that drew them.
+    public double roundingRadius = ROUNDING_RADIUS_DEFAULT;
+    public int roundingSegments = ROUNDING_SEGMENTS_DEFAULT;
+    public double roundBelowDegrees = ROUND_BELOW_DEGREES_DEFAULT;
+
+    // How tall a protrusion may be and still be spliced out before the rounding, and how
+    // sharp it has to be to count as one at all. Either at zero switches the pass off, which
+    // is what the pass itself reads a non-positive threshold as.
+    public double spikeHeight = SPIKE_HEIGHT_DEFAULT;
+    public double spikeBelowDegrees = SPIKE_BELOW_DEGREES_DEFAULT;
+
+    // Whether a straight run may land only where the cell it leaves can actually see it, which
+    // is what the placement clamp reads as doing and does not do. What each answer costs the
+    // map is measured on StraightRuns.ReachAnchor.
+    //
+    // Off, and the map is drawn that way on purpose: the correct window removes nearly every
+    // incursion into a cell and collapses more cells to a single point in exchange, which reads
+    // worse. Here as a switch because that verdict is a judgement about how the map looks, and
+    // the only way to weigh it again is to put the two side by side.
+    //
+    // One knob over every coast, like the rounding: it decides how a coast is placed rather
+    // than which coast is being traced.
+    public boolean shouldLandWhereVisible;
+
+    // How little of its own border a cell may face the void with before it is dropped from the
+    // walk outright, as a share of the whole turn. The whole of how a coast is smoothed: one
+    // intrinsic measure, with nothing carried from one stretch to the next.
+    public double continentMinFrontageShare = CONTINENT_MIN_FRONTAGE_DEFAULT;
+
+    // The puddle floor: how much water a hole must hold to be drawn as a lake, as a share of
+    // one cell's area. One knob over every shore, like the rounding: it is a claim about what
+    // counts as water worth drawing, not about how any one coast is traced.
+    public double minLakeShare = MIN_LAKE_SHARE_DEFAULT;
+
+    // Cell geometry.
+
+    public SectorGeometryParameters parameters = SectorGeometryParameters.createDefaults();
+
+    // Which cell edges take the border channel. The map's own rule to open on, so the window
+    // opens on the map; the other two answer for every edge at once and are what separates the
+    // cells' true partition from the channel cut into it on screen.
+    public EdgeInsetRule cellInsetRule = EdgeInsetRule.AT_EVERY_BORDER;
+
+    // Cell appearance.
+
     public Color ownedCellColour = OWNED_CELL_DEFAULT;
     public Color ownedCellEdge = OWNED_CELL_DEFAULT;
+    public int ownedCellOpacity = OWNER_FILL_ALPHA;
+
     public Color unownedCellColour = UNOWNED_CELL_DEFAULT;
     public Color unownedCellEdge = UNOWNED_CELL_DEFAULT;
+    public int unownedCellOpacity = OWNER_FILL_ALPHA;
+
+    public boolean showUnboundedCells;
     public Color unboundedCellColour = UNBOUNDED_CELL_DEFAULT;
     public Color unboundedCellEdge = UNBOUNDED_CELL_DEFAULT;
+    public int unboundedCellOpacity = OWNER_FILL_ALPHA;
+
+    public boolean jitterOwned = true;
+    public boolean jitterUnowned;
+    public float jitterStrength = (float) (JITTER_DEFAULT / JITTER_SCALE);
+
+    public Color siteColour = SITE_COLOUR;
+    public Color centrelineColour = CENTRELINE_DEFAULT;
+    public Color channelColour = CHANNEL_DEFAULT;
+    public Color channelEdge = CHANNEL_DEFAULT;
+    public int channelOpacity = OWNER_FILL_ALPHA;
+
+    // The cells' own names, whose system IDs the void's names are built out of. Not part of the
+    // void group: a cell is there whatever the void is doing.
+    public boolean showCellNames;
+    public Color regionNameColour = REGION_NAME_DEFAULT;
+
     public int voidFillOpacity = OWNER_FILL_ALPHA;
-    public double bridgeReachMultiple = BRIDGE_REACH_DEFAULT;
+
+    // Void pockets - v3.
 
     // One switch over the whole void construction, suppressing all of it whatever its own
     // switches are set to.
@@ -188,81 +273,9 @@ public final class ViewerSettings {
     // under it down on the way out and could only turn every one of them on to come back, so
     // whatever arrangement was being looked at is gone the moment it is set down.
     //
-    // On by default, so what the viewer opens with is decided by the switches below as it
-    // always was. Off by default, it would instead be a hidden reason for a knob to do nothing
-    // when moved.
+    // On by default, so what the viewer opens with is decided by the switches below. Off by
+    // default, it would instead be a hidden reason for a knob to do nothing when moved.
     public boolean showContinentVoid = true;
-
-    // v4's own master, the twin of the switch above. Each construction has a tree of its own
-    // and each tree has a root, which is what makes the two comparable: a reader sets one down
-    // and picks the other up without either reaching into the other's layers.
-    //
-    // Off, so the window opens on exactly what it opened on before v4 existed.
-    public boolean showVoidV4;
-
-    // v4's pieces of void: the partition as every tier switched on has divided it, and with
-    // none on, the void as the cells alone leave it. Every tier is a division of that, so it is
-    // the first thing the stack has to agree with.
-    public boolean showVoidPiecesV4 = true;
-
-    // Every stretch of v4's cell border facing void nothing has captured. A diagnostic of the
-    // pieces rather than a layer of them: nothing is laid from it, and it is drawn so that where
-    // a bridge may land can be looked at beside the bridges that did. Off, like v3's, since it
-    // is read for a reason rather than looked at every time.
-    public boolean showLandableFrontageV4;
-
-    // The lake coast: each lake's coast where it cuts across a bay, laid into v4's walk. The
-    // coast is v3's, traced by v3; what this switches is whether its reaches divide v4's
-    // partition. Its own switch, apart from the bridges that come after it, because a line laid
-    // alone is a line whose effect on the partition can be measured alone.
-    //
-    // Off, so the window opens on the partition the cells alone leave and a reader turns the
-    // first tier on to see what it changed.
-    public boolean showLakeCoastV4;
-
-    // The lake bridges: the runs across each lake from one cell on its coast to another, laid
-    // into v4's walk. The bridges are found by v3's search under v3's bridge knobs, bar the
-    // thinning below; what this switches is whether they divide v4's partition. Off, for the
-    // coast's reason.
-    public boolean showLakeBridgesV4;
-
-    // Whether v4's lake bridges sharing an anchor are thinned: chains down to their end walls,
-    // fans down to one. v4's own rather than v3's shouldThinSpanFormations, because it is a rule
-    // of the tier laying the bridges, and turning it off in one construction to see its
-    // formations unthinned must not move what the other lays. On, as v3's is and the map lays.
-    public boolean shouldThinLakeBridgesV4 = true;
-
-    // The lake water: every piece inside a lake's coast - the whole lake where nothing crosses
-    // it, or one pocket of it a bridge closed - filled in the tier's own colour. A fill of the
-    // pieces above rather than a layer over them: the same pieces, told apart by what closed
-    // them. Off, for the coast's reason.
-    public boolean showLakeWaterV4;
-
-    // The lake margin: the bay behind each reach, which the coast gave up to the cells. Under a
-    // partition it is a piece like any other, so it has a switch like any other - which is what
-    // the other construction's margin never had, and why it went unlooked at.
-    public boolean showLakeMarginV4;
-
-    // Whether the lake tier's pieces have their names written on them, water and margin alike.
-    // One switch for the tier rather than one per kind, because both kinds are the lake tier's
-    // water and are judged together; the prefix says which is which.
-    public boolean showLakeNamesV4;
-
-    // Which edges of v4's pieces take the border channel. A mode of the layer above rather than
-    // a layer of its own: it is one division painted several ways, and the pieces do not change
-    // when it moves.
-    //
-    // The same three answers the cells are offered, so the two constructions can be set alike
-    // and compared like for like - a boolean here would have made the void's two readings a
-    // different question from the cells' three.
-    //
-    // NOWHERE to open on, so what is drawn is the partition itself. The true geometry is the
-    // thing being judged, and a window opening on the inset would show it already dressed.
-    public EdgeInsetRule voidInsetRule = EdgeInsetRule.NOWHERE;
-
-    // The cells' own names, whose system IDs the void's names are built out of. Not part of the
-    // void group: a cell is there whatever the void is doing.
-    public boolean showCellNames;
 
     // The coasts, in their two shores.
     //
@@ -296,6 +309,23 @@ public final class ViewerSettings {
     // actually runs along, so one that looks as though it ignored a nearer cell has usually
     // been offered nowhere nearer to anchor - which is invisible until the eligible stretches
     // are on screen beside the spans that used them.
+
+    // The same spans laid over the interior coastlines instead - across water the cells closed
+    // around unaided rather than across the void between continents. One search over two shores
+    // rather than two searches, so the sets differ only by what the shore decides: where a span
+    // may anchor, which pairs are worth offering - one lake's ring rather than one outline's
+    // cells - and how the reach is read, by the water crossed rather than by the centres.
+    //
+    // Its own switch and not the lake shore's, because a shoreline and a span across the water
+    // it bounds are two proposals: whether to draw a lake at all is one question, and whether
+    // to take its water back into the continent is another.
+    public boolean showContinentLakeBridges;
+
+    // The water those spans shut in: each crossed lake cut into the finer pockets its spans
+    // hold, the way the inlet fill is the water the exterior spans hold. Found with the spans
+    // as the only walls, and only what a span actually walled is drawn - a lake nothing
+    // crosses stays the lake shore's own layer, under its own switch above.
+    public boolean showContinentLakePocketFill;
 
     // The spans laid once the coastlines are down, across the inlets those coasts leave.
     //
@@ -358,73 +388,16 @@ public final class ViewerSettings {
     public boolean showContinentInletNames;
     public boolean showIntercontinentalNames;
 
-    // The same spans laid over the interior coastlines instead - across water the cells closed
-    // around unaided rather than across the void between continents. One search over two shores
-    // rather than two searches, so the sets differ only by what the shore decides: where a span
-    // may anchor, which pairs are worth offering - one lake's ring rather than one outline's
-    // cells - and how the reach is read, by the water crossed rather than by the centres.
-    //
-    // Its own switch and not the lake shore's, because a shoreline and a span across the water
-    // it bounds are two proposals: whether to draw a lake at all is one question, and whether
-    // to take its water back into the continent is another.
-    public boolean showContinentLakeBridges;
+    public Color continentCoastColour = CONTINENT_COAST_DEFAULT;
+    public Color continentCoastalVoidColour = CONTINENT_COASTAL_VOID_DEFAULT;
+    public Color continentCoastalVoidEdge = CONTINENT_COASTAL_VOID_DEFAULT;
 
-    // The water those spans shut in: each crossed lake cut into the finer pockets its spans
-    // hold, the way the inlet fill is the water the exterior spans hold. Found with the spans
-    // as the only walls, and only what a span actually walled is drawn - a lake nothing
-    // crosses stays the lake shore's own layer, under its own switch above.
-    public boolean showContinentLakePocketFill;
+    // How far apart two cells may sit and still hold water between them, in cell radii, for the
+    // search asked of the cells alone.
+    public double bridgeReachMultiple = BRIDGE_REACH_DEFAULT;
 
-    // Every stretch of frontage the smoothing chose not to pass through, on whichever coasts
-    // are being drawn. One switch rather than one per coast: it shows a DECISION rather than a
-    // layer, and the answer it gives - what the rules left out - is the same question of both.
-    public boolean showDroppedStretches;
-
-    // Every stretch of exposed border a straight line could arrive at from the open void, on
-    // whichever coasts are being drawn. Answered from the discs rather than from any line, so
-    // it says the same thing whichever construction it is drawn beside - which is what makes it
-    // worth putting under both.
-    public boolean showLandableFrontage;
-
-    // How a drawn line is rounded where it turns sharply, for every line on the map that is
-    // rounded at all - both coasts and the cluster borders alike.
-    //
-    // One set of knobs rather than a set per line. Rounding is a question about how a LINE is
-    // drawn, not about what any of these constructions mean, and the lines are on screen to
-    // be compared: rounded to different numbers, a difference between two of them would be
-    // partly a difference between the sliders that drew them.
-    public double roundingRadius = ROUNDING_RADIUS_DEFAULT;
-    public int roundingSegments = ROUNDING_SEGMENTS_DEFAULT;
-    public double roundBelowDegrees = ROUND_BELOW_DEGREES_DEFAULT;
-
-    // How tall a protrusion may be and still be spliced out before the rounding, and how
-    // sharp it has to be to count as one at all. Either at zero switches the pass off, which
-    // is what the pass itself reads a non-positive threshold as.
-    public double spikeHeight = SPIKE_HEIGHT_DEFAULT;
-    public double spikeBelowDegrees = SPIKE_BELOW_DEGREES_DEFAULT;
-
-    // Whether a straight run may land only where the cell it leaves can actually see it, which
-    // is what the placement clamp reads as doing and does not do. What each answer costs the
-    // map is measured on StraightRuns.ReachAnchor.
-    //
-    // Off, and the map is drawn that way on purpose: the correct window removes nearly every
-    // incursion into a cell and collapses more cells to a single point in exchange, which reads
-    // worse. Here as a switch because that verdict is a judgement about how the map looks, and
-    // the only way to weigh it again is to put the two side by side.
-    //
-    // One knob over every coast, like the rounding: it decides how a coast is placed rather
-    // than which coast is being traced.
-    public boolean shouldLandWhereVisible;
-
-    // The puddle floor: how much water a hole must hold to be drawn as a lake, as a share of
-    // one cell's area. One knob over every shore, like the rounding: it is a claim about what
-    // counts as water worth drawing, not about how any one coast is traced.
-    public double minLakeShare = MIN_LAKE_SHARE_DEFAULT;
-
-    // How little of its own border a cell may face the void with before it is dropped from the
-    // walk outright, as a share of the whole turn. The whole of how a coast is smoothed: one
-    // intrinsic measure, with nothing carried from one stretch to the next.
-    public double continentMinFrontageShare = CONTINENT_MIN_FRONTAGE_DEFAULT;
+    public Color continentBridgeColour = CONTINENT_BRIDGE_DEFAULT;
+    public Color bridgeFrontageColour = BRIDGE_FRONTAGE_DEFAULT;
 
     // How far apart two cells may sit and still be spanned once the coastlines are down, in
     // cell radii. Its own knob rather than the bare search's above, because the two are offered
@@ -432,14 +405,6 @@ public final class ViewerSettings {
     // the void, so the reach that finds the right spans there is not the one that finds them
     // among the cells alone.
     public double continentBridgeReachMultiple = CONTINENT_BRIDGE_REACH_DEFAULT;
-
-    // Whether spans sharing an anchor point are thinned once the laying is settled: chains
-    // down to their end walls, fans down to one span, and nothing dropped that holds void in.
-    //
-    // On by default, because the thinned set is what the map lays - the switch is here to
-    // see what the pass did, which cannot be read off the map otherwise since a dropped span
-    // is gone rather than marked.
-    public boolean shouldThinSpanFormations = true;
 
     // How far off a wall already down a span may run and still count as running along it,
     // in map units. A real judgement rather than rounding: a span shadowing the coast at a
@@ -457,59 +422,115 @@ public final class ViewerSettings {
     // improvement - see the default, where the measurements are.
     public double spanAnchorSeparation = SPAN_ANCHOR_SEPARATION_DEFAULT;
 
-    public Color continentBridgeColour = CONTINENT_BRIDGE_DEFAULT;
+    // Whether spans sharing an anchor point are thinned once the laying is settled: chains
+    // down to their end walls, fans down to one span, and nothing dropped that holds void in.
+    //
+    // On by default, because the thinned set is what the map lays - the switch is here to
+    // see what the pass did, which cannot be read off the map otherwise since a dropped span
+    // is gone rather than marked.
+    public boolean shouldThinSpanFormations = true;
+
     public Color intercontinentalBridgeColour = INTERCONTINENTAL_BRIDGE_DEFAULT;
-    public Color bridgeFrontageColour = BRIDGE_FRONTAGE_DEFAULT;
-    public Color continentCoastalVoidColour = CONTINENT_COASTAL_VOID_DEFAULT;
-    public Color continentCoastalVoidEdge = CONTINENT_COASTAL_VOID_DEFAULT;
+
+    // Every stretch of frontage the smoothing chose not to pass through, on whichever coasts
+    // are being drawn. One switch rather than one per coast: it shows a DECISION rather than a
+    // layer, and the answer it gives - what the rules left out - is the same question of both.
+    public boolean showDroppedStretches;
+    public Color droppedStretchColour = DROPPED_STRETCH_DEFAULT;
+
+    // Every stretch of exposed border a straight line could arrive at from the open void, on
+    // whichever coasts are being drawn. Answered from the discs rather than from any line, so
+    // it says the same thing whichever construction it is drawn beside - which is what makes it
+    // worth putting under both.
+    public boolean showLandableFrontage;
+    public Color landableFrontageColour = LANDABLE_FRONTAGE_DEFAULT;
+
+    // Void pockets - v4.
+
+    // v4's own master, the twin of v3's. Each construction has a tree of its own and each tree
+    // has a root, which is what makes the two comparable: a reader sets one down and picks the
+    // other up without either reaching into the other's layers.
+    //
+    // Off, so the window opens on v3 alone and v4 is something a reader turns on to compare.
+    public boolean showVoidV4;
+
+    // v4's pieces of void: the partition as every tier switched on has divided it, and with
+    // none on, the void as the cells alone leave it. Every tier is a division of that, so it is
+    // the first thing the stack has to agree with.
+    public boolean showVoidPiecesV4 = true;
+
+    // The lake coast: each lake's coast where it cuts across a bay, laid into v4's walk. The
+    // coast is v3's, traced by v3; what this switches is whether its reaches divide v4's
+    // partition. Its own switch, apart from the bridges that come after it, because a line laid
+    // alone is a line whose effect on the partition can be measured alone.
+    //
+    // Off, so the window opens on the partition the cells alone leave and a reader turns the
+    // first tier on to see what it changed.
+    public boolean showLakeCoastV4;
+
+    // The lake bridges: the runs across each lake from one cell on its coast to another, laid
+    // into v4's walk. The bridges are found by v3's search under v3's bridge knobs, bar the
+    // thinning below; what this switches is whether they divide v4's partition. Off, for the
+    // coast's reason.
+    public boolean showLakeBridgesV4;
+
+    // Whether v4's lake bridges sharing an anchor are thinned: chains down to their end walls,
+    // fans down to one. v4's own rather than v3's shouldThinSpanFormations, because it is a rule
+    // of the tier laying the bridges, and turning it off in one construction to see its
+    // formations unthinned must not move what the other lays. On, as v3's is and the map lays.
+    public boolean shouldThinLakeBridgesV4 = true;
+
+    // The lake water: every piece inside a lake's coast - the whole lake where nothing crosses
+    // it, or one pocket of it a bridge closed - filled in the tier's own colour. A fill of the
+    // pieces above rather than a layer over them: the same pieces, told apart by what closed
+    // them. Off, for the coast's reason.
+    public boolean showLakeWaterV4;
+
+    // The lake margin: the bay behind each reach, which the coast gave up to the cells. Under a
+    // partition it is a piece like any other, so it has a switch like any other.
+    public boolean showLakeMarginV4;
+
+    // Whether the lake tier's pieces have their names written on them, water and margin alike.
+    // One switch for the tier rather than one per kind, because both kinds are the lake tier's
+    // water and are judged together; the prefix says which is which.
+    public boolean showLakeNamesV4;
+
+    // Every stretch of v4's cell border facing void nothing has captured. A diagnostic of the
+    // pieces rather than a layer of them: nothing is laid from it, and it is drawn so that where
+    // a bridge may land can be looked at beside the bridges that did. Off, like v3's, since it
+    // is read for a reason rather than looked at every time.
+    public boolean showLandableFrontageV4;
+
+    // Which edges of v4's pieces take the border channel. A mode of the layer above rather than
+    // a layer of its own: it is one division painted several ways, and the pieces do not change
+    // when it moves.
+    //
+    // The same three answers the cells are offered, so the two constructions can be set alike
+    // and compared like for like - a boolean here would have made the void's two readings a
+    // different question from the cells' three.
+    //
+    // NOWHERE to open on, so what is drawn is the partition itself. The true geometry is the
+    // thing being judged, and a window opening on the inset would show it already dressed.
+    public EdgeInsetRule voidInsetRule = EdgeInsetRule.NOWHERE;
 
     public Color voidPiecesV4Colour = VOID_PIECES_V4_DEFAULT;
-    public Color landableFrontageV4Colour = LANDABLE_FRONTAGE_DEFAULT;
-
     public Color lakeCoastV4Colour = LAKE_COAST_V4_DEFAULT;
     public Color lakeBridgesV4Colour = LAKE_BRIDGES_V4_DEFAULT;
     public Color lakeWaterV4Colour = LAKE_WATER_V4_DEFAULT;
     public Color lakeMarginV4Colour = LAKE_MARGIN_V4_DEFAULT;
-
-    public Color droppedStretchColour = DROPPED_STRETCH_DEFAULT;
-    public Color landableFrontageColour = LANDABLE_FRONTAGE_DEFAULT;
-    public Color continentCoastColour = CONTINENT_COAST_DEFAULT;
-    public Color regionNameColour = REGION_NAME_DEFAULT;
-    public Color siteColour = SITE_COLOUR;
-    public Color centrelineColour = CENTRELINE_DEFAULT;
-    public Color channelColour = CHANNEL_DEFAULT;
-    public Color channelEdge = CHANNEL_DEFAULT;
-
-    public int channelOpacity = OWNER_FILL_ALPHA;
-    public int ownedCellOpacity = OWNER_FILL_ALPHA;
-    public int unownedCellOpacity = OWNER_FILL_ALPHA;
-    public int unboundedCellOpacity = OWNER_FILL_ALPHA;
-
-    public boolean jitterOwned = true;
-    public boolean jitterUnowned;
-
-    public float jitterStrength = (float) (JITTER_DEFAULT / JITTER_SCALE);
-
-    public boolean showUnboundedCells;
-
-    public SectorGeometryParameters parameters = SectorGeometryParameters.createDefaults();
-
-    // Which cell edges take the border channel. The map's own rule to open on, so the window
-    // opens on the map; the other two answer for every edge at once and are what separates the
-    // cells' true partition from the channel cut into it on screen.
-    //
-    // The cells only. The void is not shaped through this, and will not be until the pockets
-    // are pieces of one partition with edges of their own to ask the question of.
-    public EdgeInsetRule cellInsetRule = EdgeInsetRule.AT_EVERY_BORDER;
+    public Color landableFrontageV4Colour = LANDABLE_FRONTAGE_DEFAULT;
 
     // One chosen colour for every owner, optionally spread in brightness so neighbours can
     // still be told apart. Brightness rather than hue on purpose: a hue jitter makes each
     // owner look like a different faction, which is what the shipped palette means, while a
     // brightness jitter reads as one thing seen in several places.
     public Color resolveOwnedColour(String ownerId) {
+
         return jitterOwned
             ? MapPainting.jitterBrightness(
-                ownedCellColour, ownerId.hashCode(), jitterStrength)
+                ownedCellColour,
+                ownerId.hashCode(),
+                jitterStrength)
             : ownedCellColour;
     }
 
@@ -529,18 +550,6 @@ public final class ViewerSettings {
      */
     public FillLook resolveWaterLook(Color fill, Color edge) {
         return new FillLook(fill, voidFillOpacity, edge);
-    }
-
-    // Which map of the void the overlays are asking for. Asked of the settings rather than
-    // worked out at each overlay, because every layer drawn in one frame has to be asked the
-    // same question or they are describing different maps.
-    //
-    // The void's own extent, with no choice about it. The other shaping takes the channel out
-    // by re-tracing at a moved reach, which is what a section stops doing once the inset is a
-    // per-edge verdict from the ownership rule - so offering it is offering a map that is on
-    // its way out, and a reading taken from it is not evidence about the one being built.
-    public VoidPockets.PocketShaping resolvePocketShaping() {
-        return VoidPockets.PocketShaping.AT_TRUE_EXTENT;
     }
 
     /**
@@ -595,6 +604,7 @@ public final class ViewerSettings {
     public boolean isSectionOnScreen(VoidSection.SectionKind kind) {
 
         return showContinentVoid && switch (kind) {
+
             case PUDDLE -> showContinentPuddleFill;
             case LAKE -> showContinentLakeCoastline && showContinentLakeFill;
             case LAKE_POCKET -> showContinentLakeBridges && showContinentLakePocketFill;
@@ -615,7 +625,9 @@ public final class ViewerSettings {
      * @return true where both are on
      */
     public boolean isVoidPiecesV4Shown() {
-        return showVoidV4 && showVoidPiecesV4;
+
+        return showVoidV4
+            && showVoidPiecesV4;
     }
 
     /**
@@ -625,7 +637,9 @@ public final class ViewerSettings {
      * @return true where both are on
      */
     public boolean isLandableFrontageV4Shown() {
-        return showVoidV4 && showLandableFrontageV4;
+
+        return showVoidV4
+            && showLandableFrontageV4;
     }
 
     /**
@@ -639,7 +653,9 @@ public final class ViewerSettings {
      * @return true where both are on
      */
     public boolean isLakeCoastV4Shown() {
-        return showVoidV4 && showLakeCoastV4;
+
+        return showVoidV4
+            && showLakeCoastV4;
     }
 
     /**
@@ -649,7 +665,9 @@ public final class ViewerSettings {
      * @return true where both are on
      */
     public boolean isLakeBridgesV4Shown() {
-        return showVoidV4 && showLakeBridgesV4;
+
+        return showVoidV4
+            && showLakeBridgesV4;
     }
 
     /**
@@ -659,7 +677,9 @@ public final class ViewerSettings {
      * @return true where both are on
      */
     public boolean isLakeWaterV4Shown() {
-        return showVoidV4 && showLakeWaterV4;
+
+        return showVoidV4
+            && showLakeWaterV4;
     }
 
     /**
@@ -669,7 +689,9 @@ public final class ViewerSettings {
      * @return true where both are on
      */
     public boolean isLakeMarginV4Shown() {
-        return showVoidV4 && showLakeMarginV4;
+
+        return showVoidV4
+            && showLakeMarginV4;
     }
 
     /**
@@ -679,7 +701,9 @@ public final class ViewerSettings {
      * @return true where both are on
      */
     public boolean isLakeNamesV4Shown() {
-        return showVoidV4 && showLakeNamesV4;
+
+        return showVoidV4
+            && showLakeNamesV4;
     }
 
     /**
@@ -711,6 +735,7 @@ public final class ViewerSettings {
     public boolean shouldWriteSectionNames(VoidSection.SectionKind kind) {
 
         return showContinentVoid && switch (kind) {
+
             case PUDDLE -> showContinentPuddleNames;
             case LAKE -> showContinentLakeNames;
             case LAKE_POCKET -> showContinentLakePocketNames;
@@ -773,6 +798,7 @@ public final class ViewerSettings {
      * @return the corner shape every rounded line on the map is drawn to
      */
     public CornerRounding resolveLineRounding() {
+
         return new CornerRounding(
             roundingRadius,
             roundingSegments,
@@ -784,6 +810,7 @@ public final class ViewerSettings {
     // rules are: the overlay that lays them and anything that later reports on them have to be
     // describing one set, not two built from the same sliders a moment apart.
     public ContinentBridges.BridgeRules resolveContinentBridgeRules() {
+
         return new ContinentBridges.BridgeRules(
             continentBridgeReachMultiple,
             continentBridgeCoastSlack,
@@ -799,8 +826,9 @@ public final class ViewerSettings {
     // The bridge reach in it is the search asked of the cells alone, which the coasts never
     // run: no spans are laid while a coast is traced. What reads it is the puddle claim, which
     // takes that search's answer and keeps the spans standing over water too small for a shore.
-    public Coastlines.CoastRules resolveContinentCoastRules() {
-        return new Coastlines.CoastRules(
+    public CoastRules resolveContinentCoastRules() {
+
+        return new CoastRules(
             bridgeReachMultiple,
             continentMinFrontageShare,
             minLakeShare,

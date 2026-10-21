@@ -2,6 +2,8 @@ package kmu.starsector;
 
 import com.fs.starfarer.api.util.Misc;
 
+import kmu.util.KmuStringsSettingsFake;
+
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
@@ -66,6 +68,12 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
     /** The gold an emphasised word reads in. */
     public static final Color HIGHLIGHT_GOLD = new Color(255, 255, 175);
 
+    /** The green a good figure is highlighted in. */
+    public static final Color POSITIVE_HIGHLIGHT = new Color(140, 255, 140);
+
+    /** The red a bad figure is highlighted in. */
+    public static final Color NEGATIVE_HIGHLIGHT = new Color(255, 120, 120);
+
     /**
      * What every other named engine colour key answers with - {@code buttonShortcut} and the rest. One
      * shade for all of them because a case pinning a particular key names it itself; this is the floor
@@ -95,7 +103,7 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
      */
     public static StarsectorUiColoursMock install() {
 
-        StarsectorSettingsFake.installSettings(
+        KmuStringsSettingsFake.installSettings(
             key -> NAMED_ENGINE_SHADES.getOrDefault(key, ENGINE_UI_SHADE));
 
         var miscMock = mockStatic(Misc.class);
@@ -121,6 +129,12 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
         miscMock
             .when(Misc::getHighlightColor)
             .thenReturn(HIGHLIGHT_GOLD);
+        miscMock
+            .when(Misc::getPositiveHighlightColor)
+            .thenReturn(POSITIVE_HIGHLIGHT);
+        miscMock
+            .when(Misc::getNegativeHighlightColor)
+            .thenReturn(NEGATIVE_HIGHLIGHT);
 
         return new StarsectorUiColoursMock(miscMock);
     }
@@ -130,6 +144,6 @@ public final class StarsectorUiColoursMock implements AutoCloseable {
 
         miscMock.close();
 
-        StarsectorSettingsFake.clearSettings();
+        KmuStringsSettingsFake.clearSettings();
     }
 }

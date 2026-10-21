@@ -5,6 +5,9 @@ The engine gives the sector map's render pass to a terrain plugin;
 this is that plugin,
 and the seam through which it hands the frame to whichever layer the player has selected.
 It names no layer and knows nothing of what any of them paints.
+It also holds `DiagnosticPalette`,
+the three grades every dev overlay paints its stages in,
+so the label and cluster overlays share it without reaching into each other.
 
 Part of [the map layers](../../README.md),
 in Klark Morrigan's Utilities (KMU);
@@ -91,17 +94,19 @@ so painting through it draws no sector at all.
 and everything downstream rests on that -
 the cursor read inverts whichever transform the running pass bound
 and divides by the `factor` it supplied,
-both meaningless if the pass is not a map's.
+both meaningless unless the pass comes from a vanilla map screen.
 Nothing enforces it:
-the hook is a plain method on a terrain plugin,
+the hook is a plain method on a terrain plugin.
+A map widget a mod embeds in its own screen drives it,
 and any mod walking the sector's terrain can call it with a transform and a zoom of its own.
 The failure is quiet rather than loud,
 because a cursor pixel inverted against a foreign transform still yields a world point,
 and in hyperspace -
 where campaign coordinates *are* sector map coordinates -
 that point lands inside real cells,
-lighting and announcing systems the pointer is nowhere near with no map open.
-`ForeignMapPassWarning` says that once per session at WARN,
+lighting and announcing systems the pointer is nowhere near with no vanilla map open.
+KMLib's `ForeignMapPassWarning` says that once per session at WARN,
+in the words the terrain plugin hands it,
 carrying the caller's stack on a throwable that was never thrown,
 since the caller is precisely what cannot be worked out from inside the pass.
 It never throws:
@@ -393,7 +398,7 @@ and a refresh hung off its own root would leave the preparation's inclusive tota
 
 Each beat also states what one call of it is allowed,
 which is what turns the capture from a table into findings.
-Two bounds today.
+Two bounds.
 A beat may take the milliseconds the `Frame beat budget` knob on `Map - Dev` states,
 asked for as the beat ends so a knob moved mid-session holds the next frame,
 and 0 there states no bound at all.
@@ -426,73 +431,11 @@ The stand-down reads sit inside the beat and outside that row,
 so a frame with nothing to draw reports what standing down cost
 and opens no row for a layer that never ran.
 
-A rebuild's own steps say so in the log as they close.
-Each registers its section on `RebuildStepTerms.LOGGED_EVERY_CALL` (in `kmu.maplayers.base.profiling`),
-so every call of it is a debug line carrying the duration the row was accumulated from,
-what the call counted,
-and what it named itself.
-That replaces the hand-written `took=` lines those steps used to print:
-one measurement,
-read in the log as a rebuild happens or in the report afterwards,
-rather than two that could disagree.
-The counts themselves are the three in `MapBuildCounters`,
-beside the library's own sector counters -
-few on purpose,
-since every counter a shown row touches widens the reading it appears in;
-anything that is a detail of one call rides on that call's name instead.
-
-Stating a threshold also buys those calls a reading of their own conditions,
-written straight after the duration as `first` and `jitMs=`:
-a step's first call of a session runs on code the JIT has not compiled yet
-and can cost half again what every warm call after it does,
-which is a reading to discount rather than a regression to chase.
-That is why the mark is worth having exactly here -
-a rebuild step runs a handful of times a session,
-so its first call is a large share of what a reader sees,
-where a beat that runs every frame has warmed up before anyone looks.
-
-Those lines follow the profiler,
-which is the trade the single measurement is worth:
-with the level knob off,
-a rebuild says nothing at all,
-where the hand-written lines were written whenever the log was at debug.
-Turning the knob on is what a reader after them does,
-and it is the same switch that gives them the report.
-
-Nothing is recorded unless a profiler is bound:
-the library's default keeps nothing and allocates nothing,
-so an unmeasured frame pays a virtual call per beat and no more.
-Which one is bound follows the `Profiling level` knob on `Map - Dev`,
-which ships off -
-so a player who never opens the `kmu_profiling` readout is not measured at all.
-The beats above are coarse and so are timed by any capture that is running;
-what a level rules out is the finer work inside a per-item loop.
-
-What the readout writes is a reading of the capture rather than the capture itself.
-`tree` is the beats as they were measured,
-each row under the one it ran inside;
-`flat` puts the rows that spent the time first,
-each named by its whole path;
-and `walks` keeps only the rows that traversed the sector,
-worst call first,
-which is the same witness the refresh's bound is stated against.
-`namespace=` narrows any of them to one layer's rows -
-the beats those rows sit inside kept,
-so a share is still readable against the whole -
-and `top=` keeps only as many as are wanted.
-
-`perframe` divides the totals by the calls of `mapLayer.prepare`,
-which is the beat that runs once a frame,
-so a figure means the same whether the map was left open for four seconds or four minutes;
-a capture holding no call of it says so and leaves the totals alone.
-
-Every reading goes to `starsector-core/starsector.log`,
-and the console gets a line saying so.
-The table is wider than the overlay can lay out,
-so what the overlay would show is a wrapped copy of what the log holds aligned -
-and the log is the file a capture asked for in a bug report has to end up in anyway.
-The notice is printed rather than nothing,
-since a command that visibly did nothing reads as one that failed.
+A rebuild's own steps log every call they make,
+and nothing is recorded at all unless a profiler is bound.
+Both,
+and what the `kmu_profiling` readout writes,
+are [the profiling vocabulary](../profiling/README.md#the-readout)'s.
 
 ## Silencing a minimap parked off screen
 
@@ -611,6 +554,18 @@ each adding one thing:
 the stand-aside,
 then the band.
 
+The stand-aside asks whether a Starscape map is on screen,
+and both Starscape surfaces ask it on every frame a map is up,
+in either look.
+The answer walks the intel screen's live widgets
+and cannot move between two surfaces of one frame,
+so it is settled once per frame and sector by `StarscapeFrameRead`,
+kept against the frame boundary `MapFramePreparationClaim` already sees.
+Before any boundary is seen every ask reads afresh,
+the same fail-open the claim takes.
+The read itself goes through the one `MapPresence` binding the base surface holds,
+so no surface carries a binding of its own.
+
 `MapLayerTerrainInstaller` is what puts any of them into a loaded save
 and keeps exactly one of each there,
 and it owns the type IDs they are built under.
@@ -674,6 +629,17 @@ and the first sector's removal would then reach for a script it never had
 while the one still running went untouched.
 It is taken off by instance rather than by class besides,
 `MapIconReseater` being KMLib's and another mod free to run its own over the same sector.
+
+Both reads are measured,
+as `mapLayer.reseat.findTerrain` and `mapLayer.reseat.readPlacement`,
+each a root under the sector's profiling origin.
+The script asks them on every advance a map is up,
+several per rendered frame under the campaign's speed-up,
+and each is a walk:
+hyperspace's terrain for the entity,
+the live widget tree for its icon.
+They are roots rather than children of a beat because the script runs between frames,
+outside every beat [what a frame costs](#what-a-frame-costs) names.
 `MapSurfaceInstaller` only says when the reseat goes on and comes off,
 and behind which guard.
 
@@ -681,7 +647,9 @@ Only the above-nebulae surface is moved.
 The one beneath it is meant to be fogged,
 so lifting both would flatten the split back into a single pass beneath the fog.
 
-The move takes that terrain out of hyperspace for one advance,
+The move takes that terrain out of hyperspace until a rendered frame has dropped its icon -
+one advance ordinarily,
+a few under the campaign's speed-up -
 which is among the reasons `installAboveStarscapeNebulaeTerrain` stays a per-load sweep;
 its Javadoc has what that costs a save written inside the window.
 Losing the surface entirely costs the upper band alone -
@@ -697,17 +665,14 @@ and `SectorMapLayerStarscapeTerrain`'s -
 the Starscape surfaces use a mod-owned entity where the base one uses a vanilla one.
 
 XStream stores the concrete class name.
-A save naming a class that no longer exists does not fail gracefully and does not lose the overlay -
+A save naming a class that does not exist does not fail gracefully and does not lose the overlay -
 it fails the whole read with `CannotResolveClassException`,
 and the player cannot load that game at all.
 Renaming,
 moving or deleting any of the four is therefore a save-destroying change to every campaign already running with this mod.
 
-Nothing currently bridges an old name to a new one.
-Four aliases used to,
-covering this package's own rename history,
-and they were dropped once the mod was young enough that no save worth keeping predated them.
-So the rule for the next rename is:
+Nothing bridges an old name to a new one,
+so the rule for a rename is:
 
 - **Before shipping a rename**,
   add a `configureXStream` override on the mod plugin that calls `x.alias("<the old fully-qualified name>", TheClass.class)`.

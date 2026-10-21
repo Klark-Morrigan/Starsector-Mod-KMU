@@ -2,7 +2,8 @@ package kmu.maplayers.base.visibility.structures;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.visibility.observations.ObservationStore;
+import kmlib.starsector.memory.observations.ObservationStore;
+import kmlib.starsector.memory.observations.RecordedObservations;
 
 /**
  * The structure register kept in the sector's own memory: which key it is held under, how one
@@ -35,13 +36,19 @@ public final class SectorStructureObservations {
     /**
      * Opens the sector's structure register for reading.
      *
+     * <p>Says nothing about who did the observing. The player standing in a system, a colony living
+     * in one, and a relay heard over its own network are all observations, and one register holds
+     * them alike - which is what keeps a structure known once whatever reported it is gone.
+     *
+     * <p>Says nothing either about what may be shown right now. The record is one half of that; what
+     * a route is revealing at this moment is the other, and the two are weighed where a box is
+     * composed rather than here.
+     *
      * @param sector the sector whose memory holds the register; null - or one holding no register
      *               yet - reads as nothing having been observed of anything
      * @return what was last observed of each structure, by entity ID; never null
      */
-    public static StructureObservations readObservations(SectorAPI sector) {
-
-        return OBSERVATIONS_REGISTER
-            .readObservations(sector)::readObservationOrNull;
+    public static RecordedObservations<StructureObservation> readObservations(SectorAPI sector) {
+        return OBSERVATIONS_REGISTER.readObservations(sector);
     }
 }

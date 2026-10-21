@@ -1,11 +1,10 @@
 package kmu.maplayers.base.geometry.v3;
 
 import kmlib.math.geometry.Segments;
+import kmlib.math.geometry.UniformGrid;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The coastline the links added, drawn by the walk that draws every other coastline.
@@ -43,7 +42,7 @@ import java.util.Map;
  * composite's outer silhouette runs. The seas the links wall in are deliberately not shored by
  * it - the water inside them is the fills' subject and the land around them already carries the
  * continent coasts, so a line there would say a third time what two layers already say. The
- * second trace still keeps those holes' shores ({@link Coastlines.TracedCoasts#walledShores}),
+ * second trace still keeps those holes' shores ({@link TracedCoasts#walledShores}),
  * because the walk needs the walls laid to close the outer silhouette at all and other readers
  * want the border facing that water; this layer just does not draw them.
  */
@@ -55,18 +54,10 @@ public final class IntercontinentalCoasts {
     // absorb two traces arriving at one stretch by different arithmetic.
     private static final double SAME_LINE = 25;
 
-    // How wide a square of the lookup grid is, in map units. At least the tolerance above, so a
-    // point's own square and the eight round it cover every line that could be within it, and
-    // near the length of one sampled step, so a square holds few lines.
-    private static final double PLACE_GRID = 500;
-
-    // What separates the two halves of a place's key. Coordinates run to a few hundred thousand
-    // units, so a grid square's number fits an int and the pair fits a long with nothing lost.
-    private static final int PLACE_KEY_SHIFT = 32;
-
-    // Keeps the lower half of a place's key to the second coordinate alone, a negative one otherwise
-    // sign-extending over the first when it is widened to a long.
-    private static final long PLACE_KEY_MASK = 0xffffffffL;
+    // How wide a cell of the lookup grid is, in map units. Near the length of one sampled step,
+    // so a cell holds few lines. Any width finds every line within the tolerance, since a lookup
+    // reads every cell that far round its point.
+    private static final double LOOKUP_CELL_SIDE = 500;
 
     // Where a segment's two ends sit within the pair each is carried as.
     private static final int SEGMENT_FROM = 0;
@@ -87,8 +78,8 @@ public final class IntercontinentalCoasts {
      *         no point of at all comes back whole, ending where it began
      */
     public static List<List<double[]>> findLinkedShores(
-            Coastlines.TracedCoasts traced,
-            Coastlines.TracedCoasts linked) {
+            TracedCoasts traced,
+            TracedCoasts linked) {
 
         // Nothing was laid, so the second trace is the first and every stretch of it is already
         // drawn.
@@ -104,7 +95,7 @@ public final class IntercontinentalCoasts {
         // Only the second trace's OUTER silhouettes. Its walled holes' shores face water the
         // fills and the continent coasts already account for - see the class note - and its
         // lakes are the first trace's lakes, which the cut would take away anyway.
-        for (var ring : Coastlines.collectCoastOutlines(linked)) {
+        for (var ring : linked.collectCoastOutlines()) {
             runs.addAll(cutUndrawnRuns(ring, drawn));
         }
         return List.copyOf(runs);
@@ -116,12 +107,11 @@ public final class IntercontinentalCoasts {
     // against each other here, and the rounding moves a corner by up to its own radius - so
     // matched against rounded lines, a stretch the two traces agree on reads as new coastline
     // wherever it runs into a corner, and the layer lays a second copy of the first over it.
-    private static List<List<double[]>> gatherEveryShore(Coastlines.TracedCoasts traced) {
+    private static List<List<double[]>> gatherEveryShore(TracedCoasts traced) {
 
-        var shores = new ArrayList<>(Coastlines.collectCoastOutlines(traced));
+        var shores = new ArrayList<>(traced.collectShoreOutlines());
 
-        shores.addAll(Coastlines.collectLakeOutlines(traced));
-        shores.addAll(Coastlines.collectWalledShoreOutlines(traced));
+        shores.addAll(traced.collectWalledShoreOutlines());
 
         return List.copyOf(shores);
     }
@@ -131,7 +121,7 @@ public final class IntercontinentalCoasts {
     // as the one run it is rather than as two ending nowhere.
     private static List<List<double[]>> cutUndrawnRuns(
             List<double[]> ring,
-            Map<Long, List<double[][]>> drawn) {
+            UniformGrid<double[][]> drawn) {
 
         var begin = findDrawnStart(ring, drawn);
 
@@ -173,7 +163,7 @@ public final class IntercontinentalCoasts {
     // know nothing about.
     private static int findDrawnStart(
             List<double[]> ring,
-            Map<Long, List<double[][]>> drawn) {
+            UniformGrid<double[][]> drawn) {
 
         for (var index = 0; index < ring.size(); index++) {
 
@@ -195,75 +185,37 @@ public final class IntercontinentalCoasts {
         return List.copyOf(closed);
     }
 
-    // The drawn coastlines' own segments, filed under every grid square they pass near. A sector
+    // The drawn coastlines' own segments, filed under every grid cell they pass through. A sector
     // carries tens of thousands of them and the second trace asks about as many points, so asked
     // by walking the whole line each time this pass would cost more than either trace.
-    private static Map<Long, List<double[][]>> indexDrawnLines(List<List<double[]>> rings) {
+    private static UniformGrid<double[][]> indexDrawnLines(List<List<double[]>> rings) {
 
-        var filed = new HashMap<Long, List<double[][]>>();
+        var filed = new UniformGrid<double[][]>(LOOKUP_CELL_SIDE);
 
         for (var ring : rings) {
             for (var index = 1; index < ring.size(); index++) {
 
-                var segment = new double[][] {ring.get(index - 1), ring.get(index)};
+                var from = ring.get(index - 1);
+                var to = ring.get(index);
 
-                fileSegment(filed, segment);
+                filed.fileSegment(from, to, new double[][] {from, to});
             }
         }
         return filed;
     }
 
-    // One segment under every square its extent touches, so a point within the tolerance of it
-    // finds it among the squares round that point.
-    private static void fileSegment(
-            Map<Long, List<double[][]>> filed,
-            double[][] segment) {
+    // Whether a drawn line runs through a point. Only the lines filed within the tolerance of it
+    // are measured, which is every line that could be.
+    private static boolean isAlreadyDrawn(double[] point, UniformGrid<double[][]> drawn) {
 
-        var from = segment[SEGMENT_FROM];
-        var to = segment[SEGMENT_TO];
+        for (var segment : drawn.listItemsNear(point[0], point[1], SAME_LINE)) {
 
-        var fromX = (int) Math.floor(Math.min(from[0], to[0]) / PLACE_GRID);
-        var toX = (int) Math.floor(Math.max(from[0], to[0]) / PLACE_GRID);
-        var fromY = (int) Math.floor(Math.min(from[1], to[1]) / PLACE_GRID);
-        var toY = (int) Math.floor(Math.max(from[1], to[1]) / PLACE_GRID);
+            if (Segments.computeDistanceToPoint(
+                    segment[SEGMENT_FROM], segment[SEGMENT_TO], point) <= SAME_LINE) {
 
-        for (var atX = fromX; atX <= toX; atX++) {
-            for (var atY = fromY; atY <= toY; atY++) {
-
-                filed
-                    .computeIfAbsent(buildPlaceKey(atX, atY), whichever -> new ArrayList<>())
-                    .add(segment);
-            }
-        }
-    }
-
-    // Whether a drawn line runs through a point. Its own square and the eight round it, which
-    // covers every segment that could be within the tolerance since a square is wider than one.
-    private static boolean isAlreadyDrawn(double[] point, Map<Long, List<double[][]>> drawn) {
-
-        var atX = (int) Math.floor(point[0] / PLACE_GRID);
-        var atY = (int) Math.floor(point[1] / PLACE_GRID);
-
-        for (var alongX = -1; alongX <= 1; alongX++) {
-            for (var alongY = -1; alongY <= 1; alongY++) {
-
-                for (var segment : drawn.getOrDefault(
-                        buildPlaceKey(atX + alongX, atY + alongY), List.of())) {
-
-                    if (Segments.computeDistanceToPoint(
-                            segment[SEGMENT_FROM], segment[SEGMENT_TO], point) <= SAME_LINE) {
-
-                        return true;
-                    }
-                }
+                return true;
             }
         }
         return false;
-    }
-
-    // One grid square's two coordinates as a single map key. Packed rather than boxed into a
-    // pair, because this is asked once per point of every ring on the map.
-    private static long buildPlaceKey(int atX, int atY) {
-        return ((long) atX << PLACE_KEY_SHIFT) ^ (atY & PLACE_KEY_MASK);
     }
 }

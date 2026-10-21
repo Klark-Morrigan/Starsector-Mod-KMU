@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.claims.tooltip;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.maplayers.ownermap.tooltip.SystemColonyReading;
+import kmu.maplayers.politicalmap.tooltip.SystemColonyReading;
 
 import java.util.Objects;
 

@@ -16,6 +16,7 @@ import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -25,8 +26,7 @@ import java.util.Map;
  *
  * <p>Apart from the canvas that calls it, because the two answer to different things. The canvas
  * owns the view - where the map sits, what a click means, what a drag does - while what a cell
- * looks like answers to the settings and to the geometry it was handed. Held together, the
- * panning and the painting shared one class and neither could be read without the other.
+ * looks like answers to the settings and to the geometry it was handed.
  *
  * <p>In four passes rather than one, because the void's own layers are drawn between them: the
  * water a coast shuts in goes over the unclipped partition and under the fills, and a coastline
@@ -36,10 +36,24 @@ import java.util.Map;
  * <p>The geometry arrives per call rather than being held. It is rebuilt whenever a geometry
  * knob moves, and a copy captured when this was built would go on drawing the sector as it was
  * at startup - the same reason the colours are read off the settings each time.
+ *
+ * <p>What the lines are is worked out once per geometry, though, not once per frame: which ring
+ * each channel fills, and which of a cell's contour edges are stroked in which colour. Those
+ * depend on the geometry alone, and walking every edge of every cell against its true edges on
+ * each repaint is most of what a repaint costs.
  */
 public final class CellsOverlay {
 
     private final ViewerSettings settings;
+
+    // The geometry the shapes below were worked out for. Compared by identity, since every
+    // rebuild hands over a new one and nothing else does.
+    private SectorGeometry cachedGeometry;
+
+    private List<Line2D> centrelines = List.of();
+    private List<Path2D> channelPaths = List.of();
+
+    private List<ContourStroke> contourStrokes = List.of();
 
     public CellsOverlay(ViewerSettings settings) {
         this.settings = settings;
@@ -85,7 +99,9 @@ public final class CellsOverlay {
 
         g2.setStroke(new BasicStroke(MapLook.RING_STROKE));
 
-        paintChannels(g2, geometry);
+        cacheLinesOf(geometry);
+
+        paintChannels(g2);
         paintUnownedCells(g2, geometry);
         paintOwnerClusters(g2, smoothedRingsByOwner);
     }
@@ -101,8 +117,10 @@ public final class CellsOverlay {
 
         g2.setStroke(new BasicStroke(MapLook.CELL_STROKE));
 
-        paintFillContours(g2, geometry);
-        paintCentrelines(g2, geometry);
+        cacheLinesOf(geometry);
+
+        paintFillContours(g2);
+        paintCentrelines(g2);
     }
 
     /**
@@ -120,6 +138,19 @@ public final class CellsOverlay {
         }
     }
 
+    // Works out the shapes the lines are drawn from, once for each geometry handed over.
+    private void cacheLinesOf(SectorGeometry geometry) {
+
+        if (geometry == cachedGeometry) {
+            return;
+        }
+
+        cachedGeometry = geometry;
+        channelPaths = collectChannelPaths(geometry);
+        contourStrokes = collectContourStrokes(geometry);
+        centrelines = collectCentrelines(geometry);
+    }
+
     // The channel is the ring a cell leaves between its true edge and its inset fill, so
     // painting the whole true cell and letting the fill cover the middle leaves exactly
     // that ring showing - no second shape to build, and it cannot disagree with where the
@@ -128,12 +159,12 @@ public final class CellsOverlay {
     // Filled only. The outline of this shape is the shared cell boundary, which is the
     // centreline rather than the channel's own border; the border is the inset contour,
     // stroked later once the fills are down.
-    private void paintChannels(Graphics2D g2, SectorGeometry geometry) {
+    private void paintChannels(Graphics2D g2) {
 
         g2.setColor(MapPainting.applyAlpha(settings.channelColour, settings.channelOpacity));
 
-        for (var cell : geometry.cellEdgesByCellKey().values()) {
-            g2.fill(MapPainting.buildPath(CellEdges.convertEdgesToRing(cell)));
+        for (var path : channelPaths) {
+            g2.fill(path);
         }
     }
 
@@ -144,10 +175,11 @@ public final class CellsOverlay {
         for (var entry : geometry.shapedCellByCellKey().entrySet()) {
 
             if (geometry.ownerByCellKey().containsKey(entry.getKey())
-                    || entry.getValue().fillPolygon().size()
-                        < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+                    || entry.getValue().fillPolygon().size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+
                 continue;
             }
+
             MapPainting.paintFilledShape(
                 g2,
                 MapPainting.buildPath(entry.getValue().fillPolygon()),
@@ -171,7 +203,8 @@ public final class CellsOverlay {
     // per cell rather than one per cluster, which is a count this reads no differently - an
     // owner already arrives here as several rings whenever its cells sit apart.
     private void paintOwnerClusters(
-            Graphics2D g2, Map<String, List<List<double[]>>> smoothedRingsByOwner) {
+            Graphics2D g2,
+            Map<String, List<List<double[]>>> smoothedRingsByOwner) {
 
         for (var entry : smoothedRingsByOwner.entrySet()) {
 
@@ -180,6 +213,7 @@ public final class CellsOverlay {
             for (var ring : entry.getValue()) {
                 cluster.append(MapPainting.buildPath(ring), false);
             }
+
             MapPainting.paintFilledShape(
                 g2,
                 cluster,
@@ -188,6 +222,43 @@ public final class CellsOverlay {
                     settings.ownedCellOpacity,
                     settings.ownedCellEdge));
         }
+    }
+
+    // Each stroked contour edge in the colour its kind is drawn in now. The kinds are fixed
+    // per geometry; the colours are read off the settings at every paint.
+    private void paintFillContours(Graphics2D g2) {
+
+        for (var stroke : contourStrokes) {
+
+            var colour = switch (stroke.colour()) {
+                case OWNED_EDGE -> settings.ownedCellEdge;
+                case UNOWNED_EDGE -> settings.unownedCellEdge;
+                case CHANNEL_EDGE -> settings.channelEdge;
+            };
+
+            g2.setColor(MapPainting.applyAlpha(colour, MapLook.OPAQUE_ALPHA));
+            g2.draw(stroke.line());
+        }
+    }
+
+    private void paintCentrelines(Graphics2D g2) {
+
+        g2.setColor(MapPainting.applyAlpha(settings.centrelineColour, MapLook.OPAQUE_ALPHA));
+
+        for (var line : centrelines) {
+            g2.draw(line);
+        }
+    }
+
+    private static List<Path2D> collectChannelPaths(SectorGeometry geometry) {
+
+        var paths = new ArrayList<Path2D>(geometry.cellEdgesByCellKey().size());
+
+        for (var cell : geometry.cellEdgesByCellKey().values()) {
+            paths.add(MapPainting.buildPath(CellEdges.convertEdgesToRing(cell)));
+        }
+
+        return List.copyOf(paths);
     }
 
     // The fill contour, edge by edge, because one contour carries two different
@@ -199,7 +270,9 @@ public final class CellsOverlay {
     // Which is which comes from the true edge the fill edge was pulled off: the inset is
     // a parallel offset, so the nearest true edge to a fill edge's midpoint is the edge
     // it came from, and that edge is tagged with what lies across it.
-    private void paintFillContours(Graphics2D g2, SectorGeometry geometry) {
+    private static List<ContourStroke> collectContourStrokes(SectorGeometry geometry) {
+
+        var strokes = new ArrayList<ContourStroke>();
 
         for (var entry : geometry.shapedCellByCellKey().entrySet()) {
 
@@ -208,13 +281,17 @@ public final class CellsOverlay {
 
             if (trueEdges == null
                     || shaped.fillPolygon().size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+
                 continue;
             }
 
-            var cellOwner = geometry.ownerByCellKey().get(entry.getKey());
-            var cellEdge = cellOwner != null
-                ? settings.ownedCellEdge
-                : settings.unownedCellEdge;
+            var cellOwner = geometry
+                .ownerByCellKey()
+                .get(entry.getKey());
+
+            var cellColour = cellOwner != null
+                ? ContourColour.OWNED_EDGE
+                : ContourColour.UNOWNED_EDGE;
 
             var fill = shaped.fillPolygon();
 
@@ -237,15 +314,14 @@ public final class CellsOverlay {
                     continue;
                 }
 
-                g2.setColor(MapPainting.applyAlpha(
+                strokes.add(new ContourStroke(
+                    new Line2D.Double(from[0], from[1], to[0], to[1]),
                     facing != null && facing.target() instanceof EdgeTarget.AcrossSystem
-                        ? settings.channelEdge
-                        : cellEdge,
-                    MapLook.OPAQUE_ALPHA));
-
-                g2.draw(new Line2D.Double(from[0], from[1], to[0], to[1]));
+                        ? ContourColour.CHANNEL_EDGE
+                        : cellColour));
             }
         }
+        return List.copyOf(strokes);
     }
 
     // The true cell border, but only where another cell is actually across it. That is
@@ -253,20 +329,19 @@ public final class CellsOverlay {
     // same inset, leaving it running down the middle of what opens up. A reach-bound
     // edge has nothing on the far side to be the centre of - it is the cell's outer
     // silhouette, and belongs to the cell's own outline colour.
-    private void paintCentrelines(Graphics2D g2, SectorGeometry geometry) {
+    private static List<Line2D> collectCentrelines(SectorGeometry geometry) {
 
-        g2.setColor(MapPainting.applyAlpha(settings.centrelineColour, MapLook.OPAQUE_ALPHA));
+        var lines = new ArrayList<Line2D>();
 
         for (var edges : geometry.cellEdgesByCellKey().values()) {
             for (var edge : edges) {
 
-                if (!(edge.target() instanceof EdgeTarget.AcrossSystem)) {
-                    continue;
+                if (edge.target() instanceof EdgeTarget.AcrossSystem) {
+                    lines.add(new Line2D.Double(edge.x1(), edge.y1(), edge.x2(), edge.y2()));
                 }
-
-                g2.draw(new Line2D.Double(edge.x1(), edge.y1(), edge.x2(), edge.y2()));
             }
         }
+        return List.copyOf(lines);
     }
 
     // Which of the cell's true edges a drawn edge came from, matched by its middle. A drawn
@@ -291,11 +366,24 @@ public final class CellsOverlay {
     // The owners are addressed by cell, which is the address the edge's target names while
     // each cell is its own star's - the identity the geometry is built under.
     private static boolean isFusedSeamAt(
-            SectorGeometry geometry, CellEdge facing, String cellOwner) {
+            SectorGeometry geometry,
+            CellEdge facing,
+            String cellOwner) {
 
         return facing != null
             && !EdgeClassifier
                 .classifyAcross(facing, cellOwner, geometry.ownerByCellKey())
                 .isBoundary();
+    }
+
+    // Which outline colour a contour edge is drawn in.
+    private enum ContourColour {
+        OWNED_EDGE, UNOWNED_EDGE, CHANNEL_EDGE
+    }
+
+    // One contour edge to stroke, and the colour it takes.
+    private record ContourStroke(
+        Line2D line,
+        ContourColour colour) {
     }
 }

@@ -4,8 +4,7 @@ import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 /**
  * Where one listed line stands: how far in it is set from the block's own lines, and how far under the
  * box's own voice it speaks. Carried down the walk that lays a listing out
- * ({@link CellTooltipBody}) and read by the vocabulary that draws each line ({@link CellTooltipRows}).
- *
+ * ({@link CellTooltipBlocks}) and read by the vocabulary that draws each line ({@link CellTooltipRows}). *
  * <p>Two counts rather than one, because a line may be set in without being demoted. The factions
  * inside an alliance sit under the line naming it, yet they are the same kind of statement it is - who
  * holds the system - while a market beneath a faction is the account of <em>why</em>. Read off the

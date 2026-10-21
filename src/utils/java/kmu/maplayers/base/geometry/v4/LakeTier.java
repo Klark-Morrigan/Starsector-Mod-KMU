@@ -3,7 +3,6 @@ package kmu.maplayers.base.geometry.v4;
 import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidKeys;
 
 import java.util.List;
@@ -128,37 +127,23 @@ public final class LakeTier {
     /**
      * Lays every reach of the lakes' coasts as a wall, each end moved onto its shore.
      *
-     * @param reaches    the reaches, already told apart from the fillets
-     * @param frontier   every cell edge facing void, which the ends are moved onto
-     * @param sites      the cells' own positions, which the ends are moved towards
-     * @param parameters the knobs the map is drawn under
+     * @param reaches the reaches, already told apart from the fillets
+     * @param shore   the shore the ends are moved onto
      * @return the walls to lay, and the reaches to draw
      */
-    public static CarriedLines.LaidLines layCoastWalls(
-            List<CellGap> reaches,
-            List<LabelledWall> frontier,
-            List<double[]> sites,
-            SectorGeometryParameters parameters) {
-
-        return CarriedLines.layCarriedLines(reaches, frontier, sites, parameters, THE_LAKE_COAST);
+    public static CarriedLines.LaidLines layCoastWalls(List<CellGap> reaches, Shore shore) {
+        return CarriedLines.layCarriedLines(reaches, shore, THE_LAKE_COAST);
     }
 
     /**
      * Lays every bridge across the lakes as a wall, each end moved onto its shore.
      *
-     * @param bridges    the bridges, as the search left them
-     * @param frontier   every cell edge facing void, which the ends are moved onto
-     * @param sites      the cells' own positions, which the ends are moved towards
-     * @param parameters the knobs the map is drawn under
+     * @param bridges the bridges, as the search left them
+     * @param shore   the shore the ends are moved onto
      * @return the walls to lay, and the bridges to draw
      */
-    public static CarriedLines.LaidLines layBridgeWalls(
-            List<CellGap> bridges,
-            List<LabelledWall> frontier,
-            List<double[]> sites,
-            SectorGeometryParameters parameters) {
-
-        return CarriedLines.layCarriedLines(bridges, frontier, sites, parameters, THE_LAKE_BRIDGES);
+    public static CarriedLines.LaidLines layBridgeWalls(List<CellGap> bridges, Shore shore) {
+        return CarriedLines.layCarriedLines(bridges, shore, THE_LAKE_BRIDGES);
     }
 
     /**

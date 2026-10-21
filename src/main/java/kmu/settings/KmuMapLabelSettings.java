@@ -127,7 +127,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return how far apart two outline points may be and still weld into one corner when chaining
-     *         the national border, in world units; 100.0 by default. Raised if borders go missing,
+     *         the national border, in world units. Raised if borders go missing,
      *         lowered if distinct corners merge
      */
     public static double getMapBorderWeldTolerance() {
@@ -138,7 +138,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return the multiple of the border inset past which a sharp corner's miter is bevelled
-     *         instead of pointed; 4.0 by default. Lower bevels sooner (rounder corners, no inward
+     *         instead of pointed. Lower bevels sooner (rounder corners, no inward
      *         spikes), higher keeps crisper points
      */
     public static double getMapBorderMiterLimit() {
@@ -147,7 +147,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return how many directions the label-anchor search fans over the half-circle (0..180
-     *         degrees, a label line being undirected); 4 by default. Pure horizontal, the cluster's
+     *         degrees, a label line being undirected). Pure horizontal, the cluster's
      *         own principal axis, and the preferred slant are always searched on top of the fan
      */
     public static int getMapAnchorDirectionCount() {
@@ -158,7 +158,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return how many parallel lines the search sweeps across the cluster per direction, spaced
-     *         evenly over the cluster's extent perpendicular to that direction; 10 by default. This
+     *         evenly over the cluster's extent perpendicular to that direction. This
      *         is what lets the accepted line slide off the centroid into a roomier part of the
      *         cluster, and 1 degenerates to a single centred line per direction
      */
@@ -170,7 +170,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return how close the anchor search must land to the largest font height each candidate line
-     *         holds, in world units; 1.0 by default. The fit grows the font by halving the size
+     *         holds, in world units. The fit grows the font by halving the size
      *         clamp and re-measures the label's band at every halving, so a coarser tolerance buys
      *         those measurements back one for one. Returned as stored, so a reader that cannot take
      *         a nonsensical value holds it to a floor of its own
@@ -183,7 +183,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return how much length a shallower (more horizontal) candidate line may give up and still
-     *         win the search, 0..1; 0.3 by default. A candidate's clear length is scaled by
+     *         win the search, 0..1. A candidate's clear length is scaled by
      *         {@code 1 - strength * sin(angle)^exponent}, so 0 picks the pure longest line
      *         regardless of slope and 1 scores a vertical line zero
      */
@@ -195,7 +195,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return how sharply the vertical penalty concentrates toward vertical - the exponent on
-     *         {@code sin(angle)} in the score, at least 1; 2.0 by default. A higher exponent leaves
+     *         {@code sin(angle)} in the score, at least 1. A higher exponent leaves
      *         already-shallow lines almost unpenalised and bites only as a line approaches vertical
      */
     public static double getMapAnchorVerticalPenaltyExponent() {
@@ -205,8 +205,8 @@ public final class KmuMapLabelSettings {
     }
 
     /**
-     * @return how far a label may lean off level to follow its cluster's long axis, in degrees; 45
-     *         by default. The search prefers this cluster-specific slant over screen-horizontal,
+     * @return how far a label may lean off level to follow its cluster's long axis, in degrees.
+     *         The search prefers this cluster-specific slant over screen-horizontal,
      *         capped here so a tall cluster never stands its name vertical and faded toward level
      *         as a cluster gets rounder; 0 forces dead-horizontal labels
      */
@@ -218,7 +218,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return how far short of the national border each end of a label anchor stops, in multiples
-     *         of the border inset channel; 4.0 by default. A clear line shorter than twice this
+     *         of the border inset channel. A clear line shorter than twice this
      *         collapses to the dot
      */
     public static double getMapAnchorEndInsetMultiple() {
@@ -229,7 +229,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return the keep-out radius around each system icon that a label anchor must not cross, in
-     *         world units; 100.0 by default. A tuned approximation of the icon's on-map footprint,
+     *         world units. A tuned approximation of the icon's on-map footprint,
      *         icons drawing at a fixed pixel size while the anchor is fitted once in world space
      */
     public static double getMapAnchorIconClearance() {
@@ -239,8 +239,8 @@ public final class KmuMapLabelSettings {
     }
 
     /**
-     * @return the smallest per-line font height a cluster's name may render at, in world units;
-     *         200.0 by default. A placement that cannot hold even one line this tall anywhere
+     * @return the smallest per-line font height a cluster's name may render at, in world units.
+     *         A placement that cannot hold even one line this tall anywhere
      *         collapses to the dot and shows no name
      */
     public static double getMapNameMinFontSize() {
@@ -248,15 +248,15 @@ public final class KmuMapLabelSettings {
     }
 
     /**
-     * @return the largest per-line font height the name fit will grow to, in world units; 4000.0 by
-     *         default, so a roomy cluster does not mint an oversized label
+     * @return the largest per-line font height the name fit will grow to, in world units, so a
+     *         roomy cluster does not mint an oversized label
      */
     public static double getMapNameMaxFontSize() {
         return KmuLunaSettings.readDouble(NAME_MAX_FONT_SIZE_FIELD, DEFAULT_NAME_MAX_FONT_SIZE);
     }
 
     /**
-     * @return the most lines the fit may wrap a name into; 3 by default. A length-poor but
+     * @return the most lines the fit may wrap a name into. A length-poor but
      *         girth-rich cluster wraps the name to shorten its widest line, chosen only when that
      *         renders a strictly larger font than fewer lines would; 1 forces single-line names
      */
@@ -265,16 +265,16 @@ public final class KmuMapLabelSettings {
     }
 
     /**
-     * @return the line-height multiple between a multi-line name's stacked lines; 1.15 by default,
-     *         and at least 1 (lines flush)
+     * @return the line-height multiple between a multi-line name's stacked lines, at least 1
+     *         (lines flush)
      */
     public static double getMapNameLineSpacing() {
         return KmuLunaSettings.readDouble(NAME_LINE_SPACING_FIELD, DEFAULT_NAME_LINE_SPACING);
     }
 
     /**
-     * @return the fill opacity of the debug band quad, 0..1; 0.35 by default - low enough that the
-     *         national border reads through the band, an overflow being the whole point of drawing
+     * @return the fill opacity of the debug band quad, 0..1, kept low so the national border
+     *         reads through the band, an overflow being the whole point of drawing
      *         it
      */
     public static double getMapAnchorBandOpacity() {
@@ -283,7 +283,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return the opacity of the debug band box's strokes - its outline, the line-count divider
-     *         rules, the centreline, and the anchor dot - 0..1; 0.9 by default, kept apart from the
+     *         rules, the centreline, and the anchor dot - 0..1, kept apart from the
      *         fill alpha so the outline stays legible over a faint band wash
      */
     public static double getMapAnchorBandLineOpacity() {
@@ -295,8 +295,7 @@ public final class KmuMapLabelSettings {
     /**
      * @return whether a cluster whose accepted label line collapsed to the dot also draws, in red,
      *         the best candidate its fit found before the border, icon, or end-margin trim
-     *         discarded it; off by default, meaningful only while the cluster anchors themselves
-     *         draw
+     *         discarded it, meaningful only while the cluster anchors themselves draw
      */
     public static boolean shouldShowRejectedAxes() {
         return KmuLunaSettings.readBoolean(SHOW_REJECTED_AXES_FIELD, DEFAULT_SHOW_REJECTED_AXES);
@@ -304,7 +303,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return whether each cluster also draws, in yellow, the label line its fit would accept with
-     *         no horizontal bias applied; off by default, meaningful only while the cluster anchors
+     *         no horizontal bias applied, meaningful only while the cluster anchors
      *         themselves draw. Drawn only where the unbiased direction actually differs from the
      *         accepted line's
      */

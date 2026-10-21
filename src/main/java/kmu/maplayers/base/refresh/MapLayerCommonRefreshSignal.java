@@ -7,23 +7,36 @@ package kmu.maplayers.base.refresh;
  * would mean by each of these exactly what a political one does.
  *
  * <p>Two things a signal can be, and the three sidebar ones are only the second. {@link #GEOMETRY}
- * is folded into a consumer's staleness, so raising it is what makes a rebuild happen. The other
- * three are a record that a preference moved: a bake samples the preference <em>values</em> and
- * folds those, since a screen switch moves a value without moving any counter, so what these
- * raises leave is the board's line naming which one a player touched and when. That line is read
- * beside a capture, where it says which flip preceded a rebuild - which the sampled values, folded
- * into one number, cannot.
+ * and {@link #DRAW_LISTS} are folded into a consumer's staleness, so raising either is what makes
+ * that consumer rebuild. The other three are a record that a preference moved: a bake samples the
+ * preference <em>values</em> and folds those, since a screen switch moves a value without moving any
+ * counter, so what these raises leave is the board's line naming which one a player touched and
+ * when. That line is read beside a capture, where it says which flip preceded a rebuild - which the
+ * sampled values, folded into one number, cannot.
  */
-public enum MapLayerCommonRefreshSignal implements MapLayerRefreshSignal {
+public enum MapLayerCommonRefreshSignal
+        implements MapLayerRefreshSignal {
 
     /**
      * The set of reachable systems changed - a gate activated, a jump point was established - so
      * the cell geometry must be rebuilt. The Voronoi partition is expensive but changes rarely,
      * which is why it is worth its own signal rather than riding on a styling one.
      *
-     * <p>The one signal here a consumer folds into its staleness, so a raise rebuilds.
+     * <p>Folded into the geometry cache's staleness, so a raise recuts the cells.
      */
     GEOMETRY,
+
+    /**
+     * A layer rebuilt what it draws, in full or for a handful of marked systems. Raised by the layer
+     * after the rebuild rather than by whatever caused it, because a rebuild has several causes - a
+     * setting, a colony event, a view's live input - and a reader of what the map shows needs only
+     * the one fact that they all lead to.
+     *
+     * <p>Folded by the hover box's memo: what a box states is read off the same sector the map was
+     * just rebuilt from, so a box composed before the rebuild describes a map that is no longer
+     * drawn.
+     */
+    DRAW_LISTS,
 
     /**
      * A toggle governing how a receded cluster draws flipped. Sidebar-only per-save state rather

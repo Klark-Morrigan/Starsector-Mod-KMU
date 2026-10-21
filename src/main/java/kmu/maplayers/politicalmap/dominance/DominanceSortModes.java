@@ -3,32 +3,32 @@ package kmu.maplayers.politicalmap.dominance;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
-import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.picker.BlocMetricSortMode;
-import kmu.maplayers.ownermap.picker.BlocSortModeComposer;
-import kmu.maplayers.ownermap.picker.RankedBloc;
-import kmu.maplayers.ownermap.picker.SharedBlocSortModes;
-import kmu.maplayers.ownermap.picker.SizedBlocMetrics;
-import kmu.util.KmuStringKeys;
+import kmu.maplayers.ownermap.owners.holders.base.HolderPaintedView;
+import kmu.maplayers.ownermap.owners.holders.base.picker.SizedBlocMetrics;
+import kmu.maplayers.ownermap.picker.OwnerMetricSortMode;
+import kmu.maplayers.ownermap.picker.OwnerSortModeComposer;
+import kmu.maplayers.ownermap.picker.RankedOwner;
+import kmu.util.KmuPoliticalMapStringKeys;
 
 import java.util.List;
 import java.util.function.ToIntFunction;
 
 /**
  * The dominance-painted views' sort vocabulary: the metrics their filter picker ranks its selectable
- * blocs by, one per row of the sort selector. Every mode here ranks {@link RankedBloc} over
+ * blocs by, one per row of the sort selector. Every mode here ranks {@link RankedOwner} over
  * {@link DominanceStats} alone, so a view painted by some other mechanic cannot be offered a
  * vocabulary that reads numbers its blocs do not carry.
  *
  * <p>What a vocabulary states of itself is only its numbers, the key and label each is offered under,
  * and the order ties break down them: domination, then presence, then score, then market size. What a
- * mode then <em>is</em> is {@link BlocMetricSortMode}'s, and the ranking it lays out is
- * {@link BlocSortModeComposer}'s, so every mode of every vocabulary answers the picker identically and
+ * mode then <em>is</em> is {@link OwnerMetricSortMode}'s, and the ranking it lays out is
+ * {@link OwnerSortModeComposer}'s, so every mode of every vocabulary answers the picker identically and
  * breaks a tie the same way.
  *
- * <p>{@link #MARKET_SIZE} is asked for rather than declared: its number is measured the same way under
- * every mechanic, so {@link SharedBlocSortModes} owns its key and label and this vocabulary supplies
- * only the chain. The rest are this contest's own and are named nowhere else.
+ * <p>{@link #NAME} and {@link #MARKET_SIZE} are asked for rather than declared: each ranks the same way
+ * under every mechanic, so {@link OwnerMetricSortMode} and {@link SizedBlocMetrics} own their keys and
+ * labels and this vocabulary supplies only the chain. The rest are this contest's own and are named
+ * nowhere else.
  *
  * <p>{@link #DEFAULT} is domination, the metric a fresh save and any unrecognised stored key fall back
  * to, so the picker always has a live ordering even before the player picks one.
@@ -54,51 +54,47 @@ public final class DominanceSortModes {
     // Declared in the order the sort selector stacks its rows top to bottom: name first, then the
     // numeric metrics. Each key is frozen once shipped, since renaming one silently resets every save
     // that stored that mode back to DEFAULT.
-    public static final ListSortMode<RankedBloc<DominanceStats>> NAME =
-        new BlocMetricSortMode<>(
-            "name",
-            KmuStringKeys.POLITICAL_MAP_CTL_SORT_NAME,
-            null,
-            CANONICAL_METRIC_CHAIN);
+    public static final ListSortMode<RankedOwner<DominanceStats>> NAME =
+        OwnerMetricSortMode.createNameMode(CANONICAL_METRIC_CHAIN);
 
-    public static final ListSortMode<RankedBloc<DominanceStats>> DOMINATION =
-        new BlocMetricSortMode<>(
+    public static final ListSortMode<RankedOwner<DominanceStats>> DOMINATION =
+        new OwnerMetricSortMode<>(
             "domination",
-            KmuStringKeys.POLITICAL_MAP_CTL_SORT_DOMINATION,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_DOMINATION,
             DOMINATION_METRIC,
             CANONICAL_METRIC_CHAIN);
 
-    public static final ListSortMode<RankedBloc<DominanceStats>> PRESENCE =
-        new BlocMetricSortMode<>(
+    public static final ListSortMode<RankedOwner<DominanceStats>> PRESENCE =
+        new OwnerMetricSortMode<>(
             "presence",
-            KmuStringKeys.POLITICAL_MAP_CTL_SORT_PRESENCE,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_PRESENCE,
             PRESENCE_METRIC,
             CANONICAL_METRIC_CHAIN);
 
-    public static final ListSortMode<RankedBloc<DominanceStats>> SCORE =
-        new BlocMetricSortMode<>(
+    public static final ListSortMode<RankedOwner<DominanceStats>> SCORE =
+        new OwnerMetricSortMode<>(
             "score",
-            KmuStringKeys.POLITICAL_MAP_CTL_SORT_SCORE,
+            KmuPoliticalMapStringKeys.POLITICAL_MAP_CTL_SORT_SCORE,
             SCORE_METRIC,
             CANONICAL_METRIC_CHAIN);
 
-    public static final ListSortMode<RankedBloc<DominanceStats>> MARKET_SIZE =
-        SharedBlocSortModes.declareMarketSizeMode(CANONICAL_METRIC_CHAIN);
+    public static final ListSortMode<RankedOwner<DominanceStats>> MARKET_SIZE =
+        SizedBlocMetrics.createMarketSizeMode(CANONICAL_METRIC_CHAIN);
 
     /** The mode a fresh save and any unrecognised stored key fall back to, so an ordering always exists. */
-    public static final ListSortMode<RankedBloc<DominanceStats>> DEFAULT = DOMINATION;
+    public static final ListSortMode<RankedOwner<DominanceStats>> DEFAULT = DOMINATION;
 
     /**
      * This contest's half of the dominance-painted views' sort vocabulary - every mode declared here
      * in selector display order, with {@link #DEFAULT} as the fallback. A view hands it to
-     * {@link OwnerPaintedView#buildBlocPickerRead}, which offers it with the standing ranking behind
+     * {@link HolderPaintedView#readPickerUnderOneGrouping}, which offers it with the standing ranking behind
      * it, so the selector draws these numbers plus the one criterion no vocabulary declares.
      *
      * <p>It travels with the bloc list from there on, which is what keeps the rows and the modes that
      * can rank them one value and has the stored-sort resolution read the same pair the selector
      * draws.
      */
-    public static final ListSortModes<RankedBloc<DominanceStats>> MODES =
+    public static final ListSortModes<RankedOwner<DominanceStats>> MODES =
         new ListSortModes<>(
             List.of(
                 NAME,

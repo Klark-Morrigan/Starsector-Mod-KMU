@@ -1,8 +1,10 @@
 # Owner seams (`ownermap.owners`)
 
-The two questions the owner-map tier asks a layer about its owners:
+The two questions the owner-map tier asks a layer about its owners -
 which systems each one holds,
-and how each one looks.
+and how each one looks -
+and the one its band plan asks:
+which of them stand together in a contest.
 Nothing else in the tier knows what an owner is.
 
 Part of [the owner-map tier](../README.md),
@@ -17,6 +19,7 @@ see the [mod README](../../../../../../../README.md) for project context.
 - [One system at a time](#one-system-at-a-time)
 - [The bands](#the-bands)
 - [How an owner looks](#how-an-owner-looks)
+- [Who stands together](#who-stands-together)
 - [What is not here](#what-is-not-here)
 
 ## At a glance
@@ -36,8 +39,9 @@ flowchart LR
 
 A rebuild opens one `SectorWalk`:
 the `SectorPassIndex` that walks each system once,
-and the visibility rules the cells were cut under.
-It names no colony rule and no owner.
+and the visibility rules the cells were cut under,
+so a source reads what stands in each system under the rule that decided which systems got cells.
+It names no owner and no rule for reading one.
 It keeps whatever reading a source opens over it,
 one per source,
 so the owners, the per-system answers and the band count asked of one walk share one reading
@@ -45,9 +49,6 @@ and the source stays a set of rules.
 
 The source is handed the walk rather than the sector,
 so whatever it opens over it shares the traversal the cut already paid for.
-The rules ride beside the index
-because a source reading colonies has to read them under the rule that decided which systems got cells.
-A source sampling the rules for itself could resolve owners for a sector the standing geometry was not cut for.
 
 A walk is one rebuild's or one batch's,
 and is discarded with it.
@@ -58,18 +59,14 @@ and is discarded with it.
 as one `ResolvedOwners`:
 
 - who owns each system;
-- which owned systems draw hatched (`contestedSystemKeys`) or unfilled (`unfilledSystemKeys`);
+- which owned systems draw hatched or unfilled - [the fill states](../render/clusters/README.md#the-split-fill-solid-hatched-unfilled);
 - which systems anything stands in, whoever owns them;
 - where the spotlit owner lives among the inhabited systems nobody owns.
 
-One value because the five are one reading of the sector,
-and because they are what a rebuild may keep.
-A rebuild owed by a style pick alone paints over the owners the last one resolved
+One value because its five parts are one reading of the sector,
+and because they are what a rebuild may keep:
+a rebuild owed by a style pick alone paints over the owners the last one resolved
 instead of asking the source again.
-
-The inhabited set is independent of the owner map on purpose.
-A rule that gives nobody a settled system leaves it unowned for reasons of its own,
-and only that set tells such a system from empty space.
 
 ## One system at a time
 
@@ -82,8 +79,7 @@ whether anything stands in it,
 and whether the spotlit owner is among what does.
 
 The batch asks the source the standing build was resolved by,
-never the view afresh.
-That source carries the one sampling of the layer's live inputs every neighbour was painted under,
+never the view afresh,
 so a refreshed cell lands the owner a full rebuild of the same moment would.
 
 ## The bands
@@ -100,16 +96,28 @@ once per bake.
 name,
 crest,
 recede and category,
-and the shades an unowned or receded cell is derived from.
-`OwnerPalette` is the pair of shades,
-and `SystemOwner` pairs an owner ID with its palette.
+the shade an unowned cell paints in,
+and the pair a receded one sinks toward.
+The pair of shades is KMLib's `ColourPair`,
+and `SystemOwner` pairs an owner ID with its pair.
 
 A view answers the reading and the source in one call,
 `OwnerPaintedView.resolveViewReading`,
 because the two have to agree about what an owner is:
-a reading naming owners under one sampling of a live fold
-while the source resolved the holding under another
-would paint a fold the holding never made.
+a reading sampled under one live input
+and a source resolved under another
+would paint owners the source never made.
+
+## Who stands together
+
+`OwnerAffiliation` answers whether two owners are on one side of a contest,
+so two allies sharing a system do not band as rivals.
+No tier seam asks for it:
+a layer's band planner hands it to `RibbonPlan`.
+
+It is a question apart from which owner a cell is painted for:
+a layer can paint two owners apart and still have them stand together.
+A layer where nobody does hands over `OwnerAffiliation.NONE`.
 
 ## What is not here
 

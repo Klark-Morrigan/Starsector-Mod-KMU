@@ -44,14 +44,14 @@ import java.util.Set;
  * question a band is actually about: a system splits whether or not the mechanic painting the map
  * gives it to anybody, and a layer's holding can leave a settled system unaccounted for.
  * That gate is also what keeps a bake affordable, most of the sector being empty space and every
- * ask walking a system's colonies - for some mechanics settling a whole contest over them. What
+ * ask walking what a system holds - for some mechanics settling a whole contest over it. What
  * its looser reading costs is weighed in this package's README.
  *
  * <p>Which cells get a band at all is settled here, in three refusals read in one place: a cell
  * nothing lives in or with nowhere to start from, a system the sector no longer lists, and a cell
- * whose plan came back empty. The last of them is the one that has to be answered before the
- * geometry rather than inside it, since what it saves is the ring walk - the single-holder cell
- * is most of the sector, and it costs a bake nothing.
+ * whose plan came back empty, because nothing the layer counts is present in it. Every cell with
+ * something counted in it bands, contested or not. The empty plan has to be answered before the
+ * geometry rather than inside it, since what it saves is the ring walk.
  *
  * <p>A cell's ring is asked of the surface's store before it is traced and written back once it is,
  * which leaves a re-bake walking rings only for the cells a change actually re-shaped.
@@ -168,12 +168,12 @@ public final class CellRibbonSource {
 
         // Marked apart from the geometry that follows it because it is the one phase of a bake
         // that grows with what the systems hold rather than with the cells: the first ask about a
-        // system walks its colonies, so a sector's colonies move this and the cells' own ring work
-        // by different factors.
+        // system walks what it holds, so how much the sector holds moves this and the cells' own
+        // ring work by different factors.
         var plan = planner.planSystemRibbon(system);
         bakeScope.markPhase(RibbonBakePhases.PLAN_PHASE);
 
-        // The single-holder cell, and most of the sector: nothing was planned, so nothing is laid
+        // Nothing the layer counts is present here, so nothing was planned and nothing is laid
         // out. Answered here rather than by the geometry because what it saves is the ring walk -
         // a cell with nothing to say must not pay for a path nothing would be laid on.
         if (plan.sumLengthUnits() <= 0) {
@@ -196,7 +196,7 @@ public final class CellRibbonSource {
      * it.
      *
      * <p>Over the cells the band pass considered rather than every cell on the map: a band is only
-     * ever laid where a bloc paints, so tracing the rest would bury the cells the overlay is asked
+     * ever laid where somebody lives, so tracing the rest would bury the cells the overlay is asked
      * about under a ring around every piece of empty space in the sector. What it adds to the pass
      * above is everything downstream of the ring - a cell whose plan came back empty, and one
      * refused the room to draw what it planned, both still show the path they would have used.
@@ -221,9 +221,10 @@ public final class CellRibbonSource {
     // now, or a fresh trace where none stands.
     //
     // Asked of the cache first because a bake is repeated far more often than a cell is re-shaped.
-    // A bake runs whenever a cluster name may have moved - which is every colony flip, since a
-    // re-fit can place a name on a cell the flip never touched - while the ring itself is settled
-    // by which of a cell's edges are same-owner seams, so it moves only when the cell is cut again.
+    // A bake runs whenever a cluster name may have moved - which is every change the layer marks,
+    // since a re-fit can place a name on a cell the change never touched - while the ring itself
+    // is settled by which of a cell's edges are same-owner seams, so it moves only when the cell
+    // is cut again.
     // Between the two, every cell in the sector would otherwise re-trace to arrive at the path it
     // discarded a moment earlier.
     //
@@ -251,7 +252,7 @@ public final class CellRibbonSource {
     // The point a cell's band is laid out from, or null on a cell no band is laid on at all.
     //
     // Two refusals in one answer, since both are the same fact about the cell rather than about
-    // the band. Nobody lives in it, so there are no holdings for a band to report how a system
+    // the band. Nobody lives in it, so there are no stakes for a band to report how a system
     // splits between - a band over empty space would be a readout of nothing; or it has no recorded
     // site, leaving the band nowhere to start from rather than starting it somewhere arbitrary.
     //

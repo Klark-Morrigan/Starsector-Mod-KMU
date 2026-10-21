@@ -8,15 +8,17 @@ import java.util.List;
 
 /**
  * Works out what the cursor's hover lights up: the frontier of the cluster the hovered cell sits
- * in, and that cell's own painted extent as fillable geometry, both resolved through
- * {@link CellFrontierGeometry} so one lit cell reads as part of the same cluster a whole lit set
- * would.
+ * in, and that cell's own painted extent as fillable geometry. The frontier is found through
+ * {@link CellFrontierGeometry} and the cell clamped to it by
+ * {@link PolygonTessellator#tessellateToBoundaryLoopsWithinLoop}, the same pair a whole lit set
+ * goes through, so one lit cell reads as part of the same cluster a whole lit set would.
  *
  * <p>Both answers are memoised against the hovered cell and the geometry behind it, since
  * they change only when the cursor crosses into another cell or a rebuild replaces that
  * cell's shape - not sixty times a second while it rests on one.
  */
 public final class HoverHighlightGeometry {
+
     // What the retained answer was resolved from. Held by identity, not by value: a rebuild or
     // an incremental re-shape replaces the whole loop list and the whole extent rather than
     // editing either in place, so a reference that still matches is the same geometry. Keyed on
@@ -44,23 +46,30 @@ public final class HoverHighlightGeometry {
         if (!hover.isHovering()) {
             return HoverHighlight.NONE;
         }
+
         var cellKey = hover.hoveredSystemKey();
         var paintedExtent = source.resolvePaintedExtentOf(cellKey);
+
         if (paintedExtent.isEmpty()) {
             return HoverHighlight.NONE;
         }
+
         // A cell that fuses into no cluster - or one whose group traced no border at all - has no
         // candidates, so nothing encloses it and it washes without a halo.
         var frontierLoops = source.resolveCandidateFrontierLoopsOf(cellKey);
+
         if (cellKey.equals(resolvedCellKey)
                 && frontierLoops == resolvedFrontierLoops
                 && paintedExtent == resolvedPaintedExtent) {
+
             return resolvedHighlight;
         }
+
         resolvedCellKey = cellKey;
         resolvedFrontierLoops = frontierLoops;
         resolvedPaintedExtent = paintedExtent;
         resolvedHighlight = buildHighlight(frontierLoops, paintedExtent);
+
         return resolvedHighlight;
     }
 
@@ -75,7 +84,7 @@ public final class HoverHighlightGeometry {
         // Resolve the wash to boundary loops once, then fill and trace both come off it - so the
         // wash and its outline are the same cluster by construction (as a cluster's fill and its
         // border already are), and the clip runs a single tessellation rather than one per half.
-        var washLoops = CellFrontierGeometry.clipCellsToFrontier(
+        var washLoops = PolygonTessellator.tessellateToBoundaryLoopsWithinLoop(
             List.of(paintedExtent),
             enclosingLoop);
 

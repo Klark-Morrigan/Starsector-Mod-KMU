@@ -10,9 +10,9 @@ import java.util.Map;
  * The band paths traced inside one build's cell shapes, kept for as long as those shapes stand.
  *
  * <p>A path is settled by the ring it was traced inside and the sizes it was traced at, and a
- * cluster name moves neither. A bake runs whenever a name may have moved - which is every colony
- * flip, since a re-fit can place a name on a cell the flip never touched - so without this every
- * cell in the sector pays a full trace, a miter inset and fold splice and clearance walk and
+ * cluster name moves neither. A bake runs whenever a name may have moved - which is every flip the
+ * layer marks, since a re-fit can place a name on a cell the flip never touched - so without this
+ * every cell in the sector pays a full trace, a miter inset and fold splice and clearance walk and
  * arc-length walk apiece, to arrive at the path it discarded a moment earlier. A cell's ring is
  * decided by which of its edges are same-owner seams, so after a flip the cells that need tracing
  * again are the handful that were re-shaped.
