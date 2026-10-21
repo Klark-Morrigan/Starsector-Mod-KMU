@@ -27,9 +27,9 @@ import java.util.List;
  *
  * <p><b>The band is a hole of the same walk, never a ring difference.</b> Two holes of one walk
  * share no point, so pockets and band are disjoint however the corners fall. Taken as the
- * water's edge minus the shore instead, the band claimed a wedge at every corner where two
+ * water's edge minus the shore instead, the band claims a wedge at every corner where two
  * reaches meet - a wall's side is held off its own line by the channel, and on the circle that
- * lands past the neighbouring reach - and it was the one fill on the map with no channel
+ * lands past the neighbouring reach - and it is the one fill on the map with no channel
  * against the cells.
  *
  * <p>Which holes are which is decided by where each lies, because a shore has water on BOTH
@@ -67,11 +67,11 @@ public final class LakePockets {
      * @return the pockets and the bands, over every lake
      */
     public static LakeWater findLakeWater(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             List<CellGap> spans,
             VoidPockets.PocketRules rules) {
 
-        var shores = Coastlines.collectLakeOutlines(traced);
+        var shores = traced.collectLakeOutlines();
 
         if (shores.isEmpty()) {
             return new LakeWater(List.of(), List.of());
@@ -85,9 +85,9 @@ public final class LakePockets {
 
         chords.addAll(CoastPockets.buildLakeShoreWalls(traced, parameters.borderInset()));
 
-        // The shores keep the channel every other wall keeps. Laying them at no width was
-        // tried, to close the gutter the stroke sits in: a wall with no mouth is not a wall to
-        // the walk, and the pockets then ran out past the shore they were meant to stop at.
+        // The shores keep the channel every other wall keeps, although laying them at no width
+        // would close the gutter the stroke sits in: a wall with no mouth is not a wall to the
+        // walk, and the pockets run out past the shore they are meant to stop at.
         var walls = new Walls(chords, parameters.borderInset());
 
         var pockets = new ArrayList<List<double[]>>();
@@ -98,9 +98,9 @@ public final class LakePockets {
 
             var middle = Points.computeMean(hole.boundary());
 
-            if (isInsideAny(shores, middle)) {
+            if (PolygonRegions.isPointInsideAnyRing(shores, middle[0], middle[1])) {
                 pockets.add(hole.boundary());
-            } else if (isInsideAny(edges, middle)) {
+            } else if (PolygonRegions.isPointInsideAnyRing(edges, middle[0], middle[1])) {
                 bands.add(hole.boundary());
             }
         }
@@ -109,7 +109,7 @@ public final class LakePockets {
 
     // The cells' own arcs round each lake, which is the outer limit of what any lake water can
     // be: a hole outside every shore but inside one of these is a band.
-    private static List<List<double[]>> collectWaterEdges(Coastlines.TracedCoasts traced) {
+    private static List<List<double[]>> collectWaterEdges(TracedCoasts traced) {
 
         var edges = new ArrayList<List<double[]>>(traced.lakes().size());
 
@@ -117,16 +117,5 @@ public final class LakePockets {
             edges.add(lake.waterEdge());
         }
         return edges;
-    }
-
-    private static boolean isInsideAny(List<List<double[]>> rings, double[] at) {
-
-        for (var ring : rings) {
-
-            if (PolygonRegions.isPointInsideRing(ring, at[0], at[1])) {
-                return true;
-            }
-        }
-        return false;
     }
 }

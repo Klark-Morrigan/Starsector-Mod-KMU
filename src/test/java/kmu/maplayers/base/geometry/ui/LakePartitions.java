@@ -110,9 +110,7 @@ final class LakePartitions {
 
             walls.addAll(LakeTier.layBridgeWalls(
                     layContinents(name).layLakeSpans(),
-                    SectorPartitions.readFrontier(name),
-                    SectorPartitions.loadFixture(name).getSites(),
-                    SectorPartitions.KNOBS)
+                    SectorPartitions.readShore(name))
                 .walls());
 
             return SectorPartitions.readPartition(name, walls);
@@ -125,9 +123,7 @@ final class LakePartitions {
 
         return COAST_WALLS.computeIfAbsent(sector, name -> LakeTier.layCoastWalls(
                 readTracedLakes(name).reaches(),
-                SectorPartitions.readFrontier(name),
-                SectorPartitions.loadFixture(name).getSites(),
-                SectorPartitions.KNOBS)
+                SectorPartitions.readShore(name))
             .walls());
     }
 }

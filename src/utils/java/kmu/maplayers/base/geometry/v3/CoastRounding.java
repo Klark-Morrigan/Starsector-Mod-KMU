@@ -62,13 +62,13 @@ public final class CoastRounding {
      *         same order, so a caller can pair them with whatever it holds per coast
      */
     public static RoundedCoasts roundTracedCoasts(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             CornerRounding rounding) {
 
         return new RoundedCoasts(
-            roundOutlines(Coastlines.collectCoastOutlines(traced), rounding),
-            roundOutlines(Coastlines.collectLakeOutlines(traced), rounding),
-            roundOutlines(Coastlines.collectWalledShoreOutlines(traced), rounding));
+            roundOutlines(traced.collectCoastOutlines(), rounding),
+            roundOutlines(traced.collectLakeOutlines(), rounding),
+            roundOutlines(traced.collectWalledShoreOutlines(), rounding));
     }
 
     // One rounding applied to a whole layer of lines. The rounding is a property of the map

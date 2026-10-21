@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.KNOBS;
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.measureSea;
 import static kmu.maplayers.base.geometry.v4.SectorPartitions.measureVoid;
-import static kmu.maplayers.base.geometry.v4.SectorPartitions.readFrontier;
+import static kmu.maplayers.base.geometry.v4.SectorPartitions.readShore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withinPercentage;
@@ -71,6 +71,7 @@ class LakeBridgesIntegrationTests {
                     assertThat(frontages.get(bridge.fromSite()))
                         .as("the frontage of cell %d", bridge.fromSite())
                         .contains(bridge.start());
+
                     assertThat(frontages.get(bridge.toSite()))
                         .as("the frontage of cell %d", bridge.toSite())
                         .contains(bridge.end());
@@ -94,8 +95,9 @@ class LakeBridgesIntegrationTests {
             var frontage = LandableFrontage.collectLandableFrontage(
                 LakePartitions.readCoastPartition(sector).collectPieces(),
                 piece -> LakeTier.isCaptured(piece, coastWalls),
-                readFrontier(sector),
-                KNOBS.measureBoundSagitta());
+                readShore(sector).getFrontier(),
+                readShore(sector).getSagitta());
+
             var contacts = CoastFrontages.collectLakeFrontages(continents.traceCoasts());
             var furthest = CONTACT_SLACK_SAGITTAS * KNOBS.measureBoundSagitta();
             var endsOnAPoint = 0;
@@ -183,12 +185,14 @@ class LakeBridgesIntegrationTests {
                 return true;
             }
         }
+
         return false;
     }
 
     // How far a bridge end stands from the nearest stretch of open frontage.
     private static double measureDistanceToRuns(
-            List<LandableFrontage.Run> runs, double[] end) {
+            List<LandableFrontage.Run> runs,
+            double[] end) {
 
         var nearest = Double.MAX_VALUE;
 
@@ -196,7 +200,9 @@ class LakeBridgesIntegrationTests {
             for (var corner = 0; corner + 1 < run.points().size(); corner++) {
 
                 nearest = Math.min(nearest, Segments.computeDistanceToPoint(
-                    run.points().get(corner), run.points().get(corner + 1), end));
+                    run.points().get(corner),
+                    run.points().get(corner + 1),
+                    end));
             }
         }
         return nearest;
@@ -204,17 +210,21 @@ class LakeBridgesIntegrationTests {
 
     // How far a bridge end stands from the nearest point of open frontage.
     private static double measureDistanceToPoints(
-            List<LandableFrontage.Point> points, double[] end) {
+            List<LandableFrontage.Point> points,
+            double[] end) {
 
         var nearest = Double.MAX_VALUE;
 
         for (var point : points) {
             nearest = Math.min(nearest, Points.computeDistance(point.point(), end));
         }
+
         return nearest;
     }
 
     // One end of a bridge and the cell it stands on.
-    private record BridgeEnd(int cell, double[] point) {
+    private record BridgeEnd(
+        int cell,
+        double[] point) {
     }
 }

@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Segments;
+
 import java.util.List;
 
 /**
@@ -73,22 +75,9 @@ public final class CellEdges {
      */
     public static double measureGapToEdge(CellEdge edge, double x, double y) {
 
-        var spanX = edge.x2() - edge.x1();
-        var spanY = edge.y2() - edge.y1();
-        var lengthSquared = spanX * spanX + spanY * spanY;
-
-        if (lengthSquared <= 0) {
-            return Math.hypot(x - edge.x1(), y - edge.y1());
-        }
-
-        var along = Math.max(
-            0.0,
-            Math.min(
-                1.0,
-                ((x - edge.x1()) * spanX + (y - edge.y1()) * spanY) / lengthSquared));
-
-        return Math.hypot(
-            x - (edge.x1() + along * spanX),
-            y - (edge.y1() + along * spanY));
+        return Segments.computeDistanceToPoint(
+            new double[] {edge.x1(), edge.y1()},
+            new double[] {edge.x2(), edge.y2()},
+            new double[] {x, y});
     }
 }

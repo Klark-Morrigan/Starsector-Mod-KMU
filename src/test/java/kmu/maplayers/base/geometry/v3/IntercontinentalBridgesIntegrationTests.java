@@ -4,7 +4,7 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.DiscUnion;
+import kmu.maplayers.base.geometry.LineCrossings;
 import kmu.maplayers.base.geometry.LoadedSectors;
 
 import org.junit.jupiter.api.Nested;
@@ -87,17 +87,22 @@ class IntercontinentalBridgesIntegrationTests {
             //
             // Shapes rather than continents, since an island is a shape of the sector with no
             // coastline: absent from the silhouettes, and still a thing a link may join.
-            var continentOf = Coastlines.mapCellsToShapes(traceContinentCoast(sector));
+            var continentOf = traceContinentCoast(sector).mapCellsToShapes();
             var misjoined = new ArrayList<String>();
 
             for (var link : layLinks(sector)) {
+
                 var from = continentOf.get(link.fromSite());
                 var to = continentOf.get(link.toSite());
 
                 if (from == null || to == null || from.equals(to)) {
+
                     misjoined.add(String.format(
                         "cells %d-%d on continents %s and %s",
-                        link.fromSite(), link.toSite(), from, to));
+                        link.fromSite(),
+                        link.toSite(),
+                        from,
+                        to));
                 }
             }
 
@@ -120,8 +125,10 @@ class IntercontinentalBridgesIntegrationTests {
             var strayed = new ArrayList<String>();
 
             for (var link : layLinks(sector)) {
+
                 if (!isPointOfFrontage(link.start(), frontages.get(link.fromSite()))
                         || !isPointOfFrontage(link.end(), frontages.get(link.toSite()))) {
+
                     strayed.add(String.format("cells %d-%d", link.fromSite(), link.toSite()));
                 }
             }
@@ -142,14 +149,20 @@ class IntercontinentalBridgesIntegrationTests {
 
             for (var link : layLinks(sector)) {
                 for (var inlet : inlets) {
-                    if (!isSharingAnAnchor(link, inlet)
-                            && Segments.intersectSegments(
-                                link.start(), link.end(),
-                                inlet.start(), inlet.end()) != null) {
+
+                    if (LineCrossings.isCrossing(
+                            link.start(),
+                            link.end(),
+                            inlet.start(),
+                            inlet.end(),
+                            LineCrossings.SharedAnchor.IS_TOUCH)) {
+
                         crossing.add(String.format(
                             "link %d-%d over inlet span %d-%d",
-                            link.fromSite(), link.toSite(),
-                            inlet.fromSite(), inlet.toSite()));
+                            link.fromSite(),
+                            link.toSite(),
+                            inlet.fromSite(),
+                            inlet.toSite()));
                     }
                 }
             }
@@ -172,15 +185,22 @@ class IntercontinentalBridgesIntegrationTests {
             standing.addAll(links);
 
             var relaid = IntercontinentalBridges.findIntercontinentalBridges(
-                traceContinentCoast(sector), standing, PARAMETERS, SPAN_RULES);
+                traceContinentCoast(sector),
+                standing,
+                PARAMETERS,
+                SPAN_RULES);
 
             var joinedTwice = new ArrayList<String>();
 
             for (var again : relaid) {
                 for (var link : links) {
+
                     if (isSamePair(again, link)) {
+
                         joinedTwice.add(String.format(
-                            "cells %d-%d", link.fromSite(), link.toSite()));
+                            "cells %d-%d",
+                            link.fromSite(),
+                            link.toSite()));
                     }
                 }
             }
@@ -206,9 +226,11 @@ class IntercontinentalBridgesIntegrationTests {
             var reached = new LinkedHashSet<Integer>();
 
             for (var link : layLinks(sector)) {
+
                 if (islands.contains(link.fromSite())) {
                     reached.add(link.fromSite());
                 }
+
                 if (islands.contains(link.toSite())) {
                     reached.add(link.toSite());
                 }
@@ -232,6 +254,7 @@ class IntercontinentalBridgesIntegrationTests {
             var linked = new LinkedHashSet<Integer>();
 
             for (var link : layLinks(sector)) {
+
                 linked.add(link.fromSite());
                 linked.add(link.toSite());
             }
@@ -239,14 +262,17 @@ class IntercontinentalBridgesIntegrationTests {
             var overlooked = new ArrayList<String>();
 
             for (var island : traced.islands()) {
+
                 if (linked.contains(island)) {
                     continue;
                 }
 
                 for (var cell : collectAnchorableFrontagesOf(sector).keySet()) {
+
                     if (cell != island
                             && Points.computeDistance(sites.get(cell), sites.get(island))
                                 <= reach) {
+
                         overlooked.add(String.format("island %d, cell %d near it", island, cell));
                     }
                 }
@@ -267,13 +293,19 @@ class IntercontinentalBridgesIntegrationTests {
             var overreached = new ArrayList<String>();
 
             for (var link : layLinks(sector)) {
+
                 var separation = Points.computeDistance(
-                    sites.get(link.fromSite()), sites.get(link.toSite()));
+                    sites.get(link.fromSite()),
+                    sites.get(link.toSite()));
 
                 if (separation > reach) {
+
                     overreached.add(String.format(
                         "cells %d-%d at %.0f apart, over %.0f",
-                        link.fromSite(), link.toSite(), separation, reach));
+                        link.fromSite(),
+                        link.toSite(),
+                        separation,
+                        reach));
                 }
             }
 
@@ -285,6 +317,7 @@ class IntercontinentalBridgesIntegrationTests {
 
     // Every stretch a link may anchor on: the continents' coasts, and the islands' whole rims.
     private static Map<Integer, List<List<double[]>>> collectAnchorableFrontagesOf(String sector) {
+
         var traced = traceContinentCoast(sector);
         var frontages = new java.util.LinkedHashMap<>(
             CoastFrontages.Shore.EXTERIOR.collectFrontages(traced));
@@ -298,14 +331,17 @@ class IntercontinentalBridgesIntegrationTests {
     // Whether a point lies on the traced coast a cell offers, which is what anchoring on the
     // frontage means - on the line rather than near it.
     private static boolean isPointOfFrontage(double[] anchor, List<List<double[]>> runs) {
+
         if (runs == null) {
             return false;
         }
 
         for (var run : runs) {
             for (var index = 1; index < run.size(); index++) {
-                if (Segments.computeDistanceToPoint(
-                        run.get(index - 1), run.get(index), anchor) <= ON_THE_LINE) {
+
+                if (Segments.computeDistanceToPoint(run.get(index - 1), run.get(index), anchor)
+                        <= ON_THE_LINE) {
+
                     return true;
                 }
             }
@@ -314,27 +350,15 @@ class IntercontinentalBridgesIntegrationTests {
                 return true;
             }
         }
+
         return false;
     }
 
     private static boolean isSamePair(CellGap one, CellGap other) {
+
         return Math.min(one.fromSite(), one.toSite())
                 == Math.min(other.fromSite(), other.toSite())
             && Math.max(one.fromSite(), one.toSite())
                 == Math.max(other.fromSite(), other.toSite());
-    }
-
-    // Whether two spans meet at a point rather than cross. Two lines leaving one anchor touch
-    // there by construction, and the search allows that - so a check on crossings has to allow
-    // it too or it fails on the very case the search means to permit.
-    private static boolean isSharingAnAnchor(CellGap span, CellGap held) {
-        return isSamePlace(span.start(), held.start())
-            || isSamePlace(span.start(), held.end())
-            || isSamePlace(span.end(), held.start())
-            || isSamePlace(span.end(), held.end());
-    }
-
-    private static boolean isSamePlace(double[] one, double[] other) {
-        return Points.computeDistance(one, other) <= DiscUnion.TOUCHING_TOLERANCE;
     }
 }

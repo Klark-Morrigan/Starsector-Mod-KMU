@@ -31,7 +31,7 @@ public final class SectorPipeline {
     static final SectorGeometryParameters PARAMETERS = ShippedMap.KNOBS;
 
     /** How the coast is traced. */
-    static final Coastlines.CoastRules COAST_RULES = ShippedMap.COAST_RULES;
+    static final CoastRules COAST_RULES = ShippedMap.COAST_RULES;
 
     /** The laying the map ships, which is the one worth reporting on. */
     static final ContinentBridges.BridgeRules SPAN_RULES = ShippedMap.SPAN_RULES;
@@ -50,7 +50,7 @@ public final class SectorPipeline {
      * @param sector which sector
      * @return its continent coasts, traced once under the shipped knobs
      */
-    static Coastlines.TracedCoasts traceContinentCoast(String sector) {
+    static TracedCoasts traceContinentCoast(String sector) {
         return layContinents(sector).traceCoasts();
     }
 
@@ -107,7 +107,7 @@ public final class SectorPipeline {
      * @param sector which sector
      * @return the second trace, laid once
      */
-    static Coastlines.TracedCoasts traceLinkedCoasts(String sector) {
+    static TracedCoasts traceLinkedCoasts(String sector) {
         return layContinents(sector).traceLinkedCoasts();
     }
 

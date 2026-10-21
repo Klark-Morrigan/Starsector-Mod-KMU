@@ -5,7 +5,6 @@ import kmu.maplayers.base.geometry.v3.CoastCrossings;
 import kmu.maplayers.base.geometry.v3.CoastMeasures;
 import kmu.maplayers.base.geometry.v3.CoastPocketFaults;
 import kmu.maplayers.base.geometry.v3.CoastPockets;
-import kmu.maplayers.base.geometry.v3.Coastlines;
 import kmu.maplayers.base.geometry.v3.FilledWater;
 import kmu.maplayers.base.geometry.v3.LaidCoast;
 import kmu.maplayers.base.geometry.v3.UndrawnVoid;
@@ -34,9 +33,6 @@ import java.util.Locale;
  * cannot show.
  */
 public final class CoastVoidReport {
-
-    // Area percentiles worth naming when describing how big the trapped pockets are.
-    private static final double[] REPORTED_PERCENTILES = {0.5, 0.9, 1.0};
 
     // The low end as well as the high, because what is being asked of the frontages is
     // whether the crossed cells sit at the crowded end of the population.
@@ -163,12 +159,10 @@ public final class CoastVoidReport {
         System.out.printf(
             Locale.ROOT,
             "void the coast traps: %d pockets, %d of them drawn once the channel is taken "
-                + "out; span p50 %.0f / p90 %.0f / max %.0f%n",
+                + "out; span %s%n",
             pockets.size(),
             countDrawn(pockets),
-            ReportFigures.findPercentile(spans, REPORTED_PERCENTILES[0]),
-            ReportFigures.findPercentile(spans, REPORTED_PERCENTILES[1]),
-            ReportFigures.findPercentile(spans, REPORTED_PERCENTILES[2]));
+            ReportFigures.describeSpread(spans, "%.0f"));
 
         reportTrappedVoidAtTrueExtent(continents);
     }
@@ -230,9 +224,9 @@ public final class CoastVoidReport {
 
         return CoastPocketFaults.findSpills(
             pockets,
-            Coastlines.collectCoastOutlines(rules.shaping().isAtTrueExtent()
+            (rules.shaping().isAtTrueExtent()
                 ? continents.traceCoasts()
-                : continents.traceCoastsAtDrawnReach()),
+                : continents.traceCoastsAtDrawnReach()).collectCoastOutlines(),
             rules);
     }
 

@@ -7,6 +7,7 @@ import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
+import kmu.maplayers.base.geometry.v3.CoastRules;
 import kmu.maplayers.base.geometry.v3.Coastlines;
 import kmu.maplayers.base.geometry.v3.ContinentBridges;
 import kmu.maplayers.base.geometry.v3.StraightRuns;
@@ -825,9 +826,9 @@ public final class ViewerSettings {
     // The bridge reach in it is the search asked of the cells alone, which the coasts never
     // run: no spans are laid while a coast is traced. What reads it is the puddle claim, which
     // takes that search's answer and keeps the spans standing over water too small for a shore.
-    public Coastlines.CoastRules resolveContinentCoastRules() {
+    public CoastRules resolveContinentCoastRules() {
 
-        return new Coastlines.CoastRules(
+        return new CoastRules(
             bridgeReachMultiple,
             continentMinFrontageShare,
             minLakeShare,

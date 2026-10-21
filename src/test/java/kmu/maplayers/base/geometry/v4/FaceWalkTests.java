@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -386,6 +387,57 @@ class FaceWalkTests {
 
             assertThat(measureBoundedAreas(faces))
                 .hasSize(1);
+        }
+    }
+
+    @Nested
+    class IsBiggerThanSmallestFace {
+
+        // A resolution of 2, so the floor is an area of 4.
+        private static final double RESOLUTION = 2;
+
+        @Test
+        void aRingAboveTheFloorIsBigger() {
+
+            assertThat(FaceWalk.isBiggerThanSmallestFace(buildSquareRing(3), RESOLUTION))
+                .isTrue();
+        }
+
+        @Test
+        void aRingExactlyAtTheFloorIsNotBigger() {
+
+            assertThat(FaceWalk.isBiggerThanSmallestFace(buildSquareRing(2), RESOLUTION))
+                .isFalse();
+        }
+
+        @Test
+        void aRingWoundClockwiseIsJudgedByTheAreaItEncloses() {
+
+            var clockwise = new ArrayList<>(buildSquareRing(3));
+
+            Collections.reverse(clockwise);
+
+            assertThat(FaceWalk.isBiggerThanSmallestFace(clockwise, RESOLUTION))
+                .isTrue();
+        }
+
+        @Test
+        void aSlitWithNoWidthIsNeverBigger() {
+            // Walked out and back along one line, which encloses nothing at any resolution.
+            var slit = List.of(new double[] {0, 0}, new double[] {100, 0}, new double[] {0, 0});
+
+            assertThat(FaceWalk.isBiggerThanSmallestFace(slit, 0))
+                .isFalse();
+        }
+
+        // A square of the given side, wound counter-clockwise from the origin.
+        private static List<double[]> buildSquareRing(double side) {
+
+            return List.of(
+                new double[] {0, 0},
+                new double[] {side, 0},
+                new double[] {side, side},
+                new double[] {0, side});
         }
     }
 

@@ -42,7 +42,7 @@ import java.util.List;
  * composite's outer silhouette runs. The seas the links wall in are deliberately not shored by
  * it - the water inside them is the fills' subject and the land around them already carries the
  * continent coasts, so a line there would say a third time what two layers already say. The
- * second trace still keeps those holes' shores ({@link Coastlines.TracedCoasts#walledShores}),
+ * second trace still keeps those holes' shores ({@link TracedCoasts#walledShores}),
  * because the walk needs the walls laid to close the outer silhouette at all and other readers
  * want the border facing that water; this layer just does not draw them.
  */
@@ -78,8 +78,8 @@ public final class IntercontinentalCoasts {
      *         no point of at all comes back whole, ending where it began
      */
     public static List<List<double[]>> findLinkedShores(
-            Coastlines.TracedCoasts traced,
-            Coastlines.TracedCoasts linked) {
+            TracedCoasts traced,
+            TracedCoasts linked) {
 
         // Nothing was laid, so the second trace is the first and every stretch of it is already
         // drawn.
@@ -95,7 +95,7 @@ public final class IntercontinentalCoasts {
         // Only the second trace's OUTER silhouettes. Its walled holes' shores face water the
         // fills and the continent coasts already account for - see the class note - and its
         // lakes are the first trace's lakes, which the cut would take away anyway.
-        for (var ring : Coastlines.collectCoastOutlines(linked)) {
+        for (var ring : linked.collectCoastOutlines()) {
             runs.addAll(cutUndrawnRuns(ring, drawn));
         }
         return List.copyOf(runs);
@@ -107,12 +107,11 @@ public final class IntercontinentalCoasts {
     // against each other here, and the rounding moves a corner by up to its own radius - so
     // matched against rounded lines, a stretch the two traces agree on reads as new coastline
     // wherever it runs into a corner, and the layer lays a second copy of the first over it.
-    private static List<List<double[]>> gatherEveryShore(Coastlines.TracedCoasts traced) {
+    private static List<List<double[]>> gatherEveryShore(TracedCoasts traced) {
 
-        var shores = new ArrayList<>(Coastlines.collectCoastOutlines(traced));
+        var shores = new ArrayList<>(traced.collectShoreOutlines());
 
-        shores.addAll(Coastlines.collectLakeOutlines(traced));
-        shores.addAll(Coastlines.collectWalledShoreOutlines(traced));
+        shores.addAll(traced.collectWalledShoreOutlines());
 
         return List.copyOf(shores);
     }

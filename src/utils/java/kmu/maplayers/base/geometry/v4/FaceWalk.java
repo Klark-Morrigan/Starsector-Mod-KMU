@@ -88,13 +88,13 @@ public final class FaceWalk {
 
         var arrangement = layOntoWeldedBase(
             PlanarArrangement.weldArrangement(
-                SegmentCrossings.splitAtCrossings(baseWalls), weldTolerance),
+                SegmentCrossings.splitAtCrossings(baseWalls),
+                weldTolerance),
             laidWalls);
 
         var closed = new ArrayList<LabelledRing>();
         var groups = new ArrayList<Integer>();
         var walked = new HashSet<PlanarArrangement.HalfEdge>();
-        var smallestFace = measureSmallestFace(weldTolerance);
         var componentOf = arrangement.labelComponents();
 
         // Every edge in both directions, each direction closing the face on that side of it.
@@ -111,12 +111,45 @@ public final class FaceWalk {
 
             var ring = walkRingFrom(arrangement, start, halfEdges.size(), walked);
 
-            if (Math.abs(PolygonRegions.computeSignedArea(ring.vertices())) > smallestFace) {
+            if (isBiggerThanSmallestFace(ring.vertices(), weldTolerance)) {
+
                 closed.add(ring);
                 groups.add(componentOf[start.from()]);
             }
         }
+
         return cutEnclosedRingsOut(closed, groups);
+    }
+
+    /**
+     * Whether a ring encloses more than the smallest piece the map can hold.
+     *
+     * <p>Below that area a piece is not a piece. A face narrower than the resolution is thinner
+     * than the lines were joined at, so whether it is there at all is a question about the
+     * arithmetic rather than about the shape - and a slit, which is a face walked out and back
+     * with no width, is exactly that face with an area of nothing.
+     *
+     * <p>The base's tolerance for every face, laid lines or not, although laid lines are joined
+     * at rounding. The map is drawn at the base's resolution, and a sliver a laid line closes
+     * against the shore thinner than that is below it in the same way as a sliver the frontier
+     * closes on its own - so both go, and the pieces cover the void less exactly those. The
+     * floor rounding alone would allow is no answer either: it is below what the area sum over
+     * map-sized coordinates can tell from nothing, so a slit would start coming back as a
+     * piece.
+     *
+     * <p>One floor for the walk and for anything drawn from its pieces, so nothing drawn is
+     * smaller than a piece can be.
+     *
+     * @param ring       the ring, in either winding
+     * @param resolution how far apart two reports of one corner may stand and still meet, which
+     *                   is the sagitta the frontier is walked at
+     * @return whether its area is above the square of the resolution
+     */
+    public static boolean isBiggerThanSmallestFace(List<double[]> ring, double resolution) {
+
+        var floor = Math.max(resolution, Limits.MIN_EDGE_LENGTH);
+
+        return Math.abs(PolygonRegions.computeSignedArea(ring)) > floor * floor;
     }
 
     // The welded base with the laid lines cut into it, joined at rounding.
@@ -132,12 +165,14 @@ public final class FaceWalk {
         if (laidWalls.isEmpty()) {
             return base;
         }
+
         var lines = new ArrayList<>(base.collectLines());
 
         lines.addAll(laidWalls);
 
         return PlanarArrangement.weldArrangement(
-            SegmentCrossings.splitAtCrossings(lines), Limits.MIN_EDGE_LENGTH);
+            SegmentCrossings.splitAtCrossings(lines),
+            Limits.MIN_EDGE_LENGTH);
     }
 
     // Each ring as a face, with any ring it encloses cut out of it rather than standing as a
@@ -151,7 +186,8 @@ public final class FaceWalk {
     // The smallest enclosing piece takes it, so a lake inside a group inside the sea is cut from
     // the group rather than from the sea.
     private static List<Face> cutEnclosedRingsOut(
-            List<LabelledRing> rings, List<Integer> groups) {
+            List<LabelledRing> rings,
+            List<Integer> groups) {
 
         var pieces = new ArrayList<Face>();
         var enclosing = new ArrayList<Integer>();
@@ -161,6 +197,7 @@ public final class FaceWalk {
         }
 
         for (var index = 0; index < rings.size(); index++) {
+
             enclosing.add(pieces.get(index).isOuterFace()
                 ? findSmallestEnclosing(pieces, groups, index)
                 : NOTHING_ENCLOSES_IT);
@@ -171,17 +208,21 @@ public final class FaceWalk {
         for (var index = 0; index < rings.size(); index++) {
 
             var parent = enclosing.get(index);
-
             if (parent != NOTHING_ENCLOSES_IT) {
-                pieces.set(parent, pieces.get(parent).cutOut(rings.get(index)));
+
+                pieces.set(
+                    parent,
+                    pieces.get(parent).cutOut(rings.get(index)));
             }
         }
 
         for (var index = 0; index < rings.size(); index++) {
+
             if (enclosing.get(index) == NOTHING_ENCLOSES_IT) {
                 cut.add(pieces.get(index));
             }
         }
+
         return List.copyOf(cut);
     }
 
@@ -193,7 +234,9 @@ public final class FaceWalk {
     // would end up cut out of the piece beside it. Across groups no corner is shared and the
     // test means what it says.
     private static int findSmallestEnclosing(
-            List<Face> pieces, List<Integer> groups, int ring) {
+            List<Face> pieces,
+            List<Integer> groups,
+            int ring) {
 
         var smallest = NOTHING_ENCLOSES_IT;
         var corner = pieces.get(ring).boundary().get(0);
@@ -206,13 +249,17 @@ public final class FaceWalk {
                     || piece.isOuterFace()
                     || !PolygonRegions.isPointInsideRing(
                         piece.boundary(), corner[0], corner[1])) {
+
                 continue;
             }
+
             if (smallest == NOTHING_ENCLOSES_IT
                     || piece.measureArea() < pieces.get(smallest).measureArea()) {
+
                 smallest = index;
             }
         }
+
         return smallest;
     }
 
@@ -240,30 +287,13 @@ public final class FaceWalk {
             edge = arrangement.findNextAroundFace(edge);
 
             if (boundary.size() > mostCorners) {
+
                 throw new IllegalStateException(
                     "face walk did not close after taking every edge direction once");
             }
+
         } while (!edge.equals(start));
 
         return LabelledRing.ofGatheredLabels(boundary, labels);
-    }
-
-    // Below what area a piece is not a piece. A face narrower than the welding tolerance is
-    // thinner than the resolution the lines were joined at, so whether it is there at all is a
-    // question about the arithmetic rather than about the shape - and a slit, which is a face
-    // walked out and back with no width, is exactly that face with an area of nothing.
-    //
-    // The base's tolerance for every face, laid lines or not, although laid lines are joined
-    // at rounding. The map is drawn at the base's resolution, and a sliver a laid line closes
-    // against the shore thinner than that is below it in the same way as a sliver the frontier
-    // closes on its own - so both go, and the pieces cover the void less exactly those. The
-    // floor rounding alone would allow is no answer either: it is below what the area sum over
-    // map-sized coordinates can tell from nothing, so a slit would start coming back as a
-    // piece.
-    private static double measureSmallestFace(double weldTolerance) {
-
-        var resolution = Math.max(weldTolerance, Limits.MIN_EDGE_LENGTH);
-
-        return resolution * resolution;
     }
 }

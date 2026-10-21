@@ -128,6 +128,7 @@ public final class CrowdedAnchors {
 
         var working = new ArrayList<>(spans);
         var settled = gatherFeet(standing);
+        var clearance = CellGaps.createOverSites(union.sites(), union.reach());
 
         for (var index = 0; index < working.size(); index++) {
 
@@ -135,7 +136,7 @@ public final class CrowdedAnchors {
 
             var moved = spreadOneSpan(
                 working.get(index),
-                new MoveContext(settled, gatherFeet(others), others, union, separation),
+                new MoveContext(settled, gatherFeet(others), others, clearance, separation),
                 frontages);
 
             working.set(index, moved);
@@ -253,10 +254,10 @@ public final class CrowdedAnchors {
     // gains LESS how far it is - both distances, so the trade is a subtraction - and standing
     // still is worth nothing, which is the bar a move has to clear.
     //
-    // Taking the roomiest place outright instead is what a first attempt did, and above the
-    // separation the frontages can actually supply it dragged every crowded foot to the far end
-    // of its stretch for a few units of room. The spans grew a fifth of a cell radius on average
-    // and stopped pointing at their own gaps.
+    // Taking the roomiest place outright instead, above the separation the frontages can
+    // actually supply, drags every crowded foot to the far end of its stretch for a few units
+    // of room. Measured, the spans grow a fifth of a cell radius on average and stop pointing at
+    // their own gaps.
     //
     // The rule also produces the three cases worth naming without any of them being written
     // down: a stretch with room to spare gives a place clear by the separation, a stretch too
@@ -343,8 +344,7 @@ public final class CrowdedAnchors {
             double[] otherEnd,
             MoveContext context) {
 
-        return CellGaps.isLineClearOfCells(
-                point, otherEnd, context.union().sites(), context.union().reach())
+        return context.clearance().isLineClearOfCells(point, otherEnd)
             && !AnchoredSpans.doesCrossAnySpan(point, otherEnd, context.otherSpans())
             && !wouldCrowdAFootWithRoom(point, context);
     }
@@ -467,14 +467,14 @@ public final class CrowdedAnchors {
      *                    is standing on is a crowd whichever of the two was there first
      * @param otherSpans  those same spans as lines, since moving a foot swings the whole span
      *                    and the new line has to cross none of them
-     * @param union       the cells, to keep a moved span from cutting back through one
+     * @param clearance   the cells, to keep a moved span from cutting back through one
      * @param separation  how far along the frontage the move is asked to reach
      */
     private record MoveContext(
         List<double[]> settledFeet,
         List<double[]> takenFeet,
         List<CellGap> otherSpans,
-        DiscUnion union,
+        CellGaps clearance,
         double separation) {
     }
 }

@@ -85,7 +85,7 @@ public final class LandableFrontages {
      *         no width, which is what that stretch honestly offers
      */
     public static List<CoastMark> collectLandableFrontages(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             int arcSegments) {
 
         var landable = new ArrayList<CoastMark>();
@@ -107,7 +107,7 @@ public final class LandableFrontages {
      * @return one open run of points per reachable sub-stretch
      */
     public static List<List<double[]>> collectLandableRuns(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             int arcSegments) {
 
         var runs = new ArrayList<List<double[]>>();
@@ -126,7 +126,7 @@ public final class LandableFrontages {
     // void. Leaving them out here would report the shapes a link most needs to reach as offering
     // nowhere to reach.
     private static List<CoastMark> gatherOuterMarks(
-            Coastlines.TracedCoasts traced) {
+            TracedCoasts traced) {
 
         var marks = new ArrayList<CoastMark>();
 

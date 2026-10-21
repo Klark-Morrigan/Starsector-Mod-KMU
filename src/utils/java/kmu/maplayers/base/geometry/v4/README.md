@@ -26,10 +26,10 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 
 | Step | Class | In | Out |
 | --- | --- | --- | --- |
-| the cells' own frontier | `VoidPartition` | each cell's adjacency-tagged edges | the lines between cell and void, and a frame round the sector |
+| the cells' own frontier | `Shore`, `VoidPartition` | each cell's adjacency-tagged edges | the lines between cell and void, indexed by cell, and a frame round the sector |
 | cut the base at crossings | `SegmentCrossings` | those lines | lines meeting only at their ends |
 | weld and order the base | `PlanarArrangement` | those lines, at the sagitta | a graph knowing the turn order at each vertex |
-| lay a tier's lines | `LakeTier`, through `CarriedLines` | lines as `CellGap`s, two points and two cells, and the frontier | walls, one straight segment each, its ends moved just inside the shore |
+| lay a tier's lines | `LakeTier`, through `CarriedLines` | lines as `CellGap`s, two points and two cells, and the `Shore` | walls, one straight segment each, its ends moved just inside the shore |
 | cut them into the base | `SegmentCrossings` | the welded base read back as lines, and the walls | lines meeting only at their ends |
 | weld and order again | `PlanarArrangement` | those lines, at rounding | the graph the faces are walked on |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
@@ -61,6 +61,9 @@ and the package both versions build on would depend on its own dependents.
 
 Every tier lays its lines through `CarriedLines`, which carries each end through the shore:
 what makes a line divide is one fact about the walk, so it is answered once rather than per tier.
+The shore travels as one `Shore` -
+the frontier indexed by cell, the sites, and the sagitta an end can float off it -
+read once per rebuild and handed to every tier and to the walk alike.
 
 ## Why the cells are the input
 
@@ -192,7 +195,7 @@ The folds at every corner too tight for the channel are spliced the same way bef
 
 **Nothing drawn is smaller than a piece can be.**
 The rounding steps a sharp corner back by more than the corner's own edges, and the loop that leaves comes back from the resolve as a region a few units across.
-`PieceRegions` keeps no region under a sagitta squared, which is the floor the walk keeps no face under.
+`PieceRegions` holds every region to the floor the walk holds every face to, `FaceWalk.isBiggerThanSmallestFace`.
 
 ## What the resolution decides
 

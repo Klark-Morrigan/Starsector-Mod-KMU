@@ -2,10 +2,11 @@ package kmu.maplayers.base.geometry.v3;
 
 import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Points;
-import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.DiscUnion;
+import kmu.maplayers.base.geometry.LineCrossings;
+import kmu.maplayers.base.geometry.SquareKey;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -90,24 +91,30 @@ final class ShutInVoidSweep {
         for (var site : union.sites()) {
 
             var fromX = Math.max(
-                0, (int) ((site[0] - union.reach() - walked.minX()) / stride));
-            var toX = Math.min(grid.countAcross() - 1, (int) Math.ceil(
-                (site[0] + union.reach() - walked.minX()) / stride));
+                0,
+                (int) ((site[0] - union.reach() - walked.minX()) / stride));
+            var toX = Math.min(
+                grid.countAcross() - 1,
+                (int) Math.ceil((site[0] + union.reach() - walked.minX()) / stride));
             var fromY = Math.max(
-                0, (int) ((site[1] - union.reach() - walked.minY()) / stride));
-            var toY = Math.min(grid.countUp() - 1, (int) Math.ceil(
-                (site[1] + union.reach() - walked.minY()) / stride));
+                0,
+                (int) ((site[1] - union.reach() - walked.minY()) / stride));
+            var toY = Math.min(
+                grid.countUp() - 1,
+                (int) Math.ceil((site[1] + union.reach() - walked.minY()) / stride));
 
             for (var x = fromX; x <= toX; x++) {
                 for (var y = fromY; y <= toY; y++) {
 
                     if (Points.computeDistance(grid.findSquareAt(x, y), site)
                             < union.reach()) {
+
                         grid.markLand(x, y);
                     }
                 }
             }
         }
+
         return grid;
     }
 
@@ -130,6 +137,7 @@ final class ShutInVoidSweep {
                 }
             }
         }
+
         return found;
     }
 
@@ -182,21 +190,35 @@ final class ShutInVoidSweep {
                     walls.findWallsNear(square[0], square[1]));
 
                 if (blockedBy != null) {
+
                     blocking.add(blockedBy);
                     continue;
                 }
+
                 grid.markReached(nextX, nextY);
                 pending.add(new int[] {nextX, nextY});
             }
         }
-        return escaped ? null : new ShutInVoid(points, grid.stride(), List.copyOf(blocking));
+
+        return escaped
+            ? null
+            : new ShutInVoid(points, grid.stride(), List.copyOf(blocking));
     }
 
     private static Chord findBlockingChord(
-            double[] from, double[] to, List<Chord> walls) {
+            double[] from,
+            double[] to,
+            List<Chord> walls) {
 
         for (var wall : walls) {
-            if (Segments.intersectSegments(from, to, wall.findStart(), wall.findEnd()) != null) {
+
+            if (LineCrossings.isCrossing(
+                    from,
+                    to,
+                    wall.findStart(),
+                    wall.findEnd(),
+                    LineCrossings.SharedAnchor.IS_CROSSING)) {
+
                 return wall;
             }
         }
@@ -214,7 +236,8 @@ final class ShutInVoidSweep {
      *
      * @param wallsBySquare the walls filed against each square they could stop a step out of
      */
-    private record WallIndex(Map<Long, List<Chord>> wallsBySquare) {
+    private record WallIndex(
+        Map<Long, List<Chord>> wallsBySquare) {
 
         // How far around a wall's own box its squares are filed. One square: a step spans
         // exactly one, so a step a wall crosses starts within a square of the crossing point,
@@ -239,22 +262,19 @@ final class ShutInVoidSweep {
                     for (var y = fromY; y <= toY; y++) {
 
                         wallsBySquare
-                            .computeIfAbsent(keyFor(x, y), square -> new ArrayList<>())
+                            .computeIfAbsent(
+                                SquareKey.packSquareKey(x, y),
+                                square -> new ArrayList<>())
                             .add(wall);
                     }
                 }
             }
+
             return new WallIndex(wallsBySquare);
         }
 
-        // One key per square, packed rather than boxed as a pair: the flood asks for a square's
-        // walls millions of times, and a key object per ask costs more than the scan saved.
-        private static long keyFor(int x, int y) {
-            return ((long) x << Integer.SIZE) | Integer.toUnsignedLong(y);
-        }
-
         List<Chord> findWallsNear(int x, int y) {
-            return wallsBySquare.getOrDefault(keyFor(x, y), List.of());
+            return wallsBySquare.getOrDefault(SquareKey.packSquareKey(x, y), List.of());
         }
     }
 
@@ -309,7 +329,10 @@ final class ShutInVoidSweep {
         // since a step that skipped any of them would walk off the array or loop forever.
         boolean isUnreachedWater(int x, int y) {
 
-            return x >= 0 && y >= 0 && x < countAcross() && y < countUp()
+            return x >= 0
+                && y >= 0
+                && x < countAcross()
+                && y < countUp()
                 && !isLand[x][y]
                 && !reached[x][y];
         }
@@ -317,13 +340,20 @@ final class ShutInVoidSweep {
         // The border is where water is open to the sea, since the box is drawn well clear of
         // every cell.
         boolean isOnBorder(int x, int y) {
-            return x == 0 || y == 0 || x == countAcross() - 1 || y == countUp() - 1;
+
+            return x == 0
+                || y == 0
+                || x == countAcross() - 1
+                || y == countUp() - 1;
         }
 
         // Where one square sits in the world. Named because the stamping, the flood and the
         // points a piece of void is made of all have to agree about it exactly.
         double[] findSquareAt(int x, int y) {
-            return new double[] {walked.minX() + x * stride, walked.minY() + y * stride};
+
+            return new double[] {
+                walked.minX() + x * stride,
+                walked.minY() + y * stride};
         }
 
         // The other direction: which column and row a place in the world falls in. Rounded
@@ -367,10 +397,12 @@ final class ShutInVoidSweep {
 
                     if (Points.computeDistance(point, union.sites().get(site))
                             < union.reach() + stride) {
+
                         ringing.add(systemIdBySite.get(site));
                     }
                 }
             }
+
             return List.copyOf(ringing);
         }
     }

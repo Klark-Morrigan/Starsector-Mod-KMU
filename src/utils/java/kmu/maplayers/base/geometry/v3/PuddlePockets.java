@@ -43,7 +43,7 @@ public final class PuddlePockets {
      * @return every span whose void is a puddle's water, in the order they were offered
      */
     public static List<CellGap> claimPuddleBridges(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             List<CellGap> bridges) {
 
         if (traced.puddles().isEmpty()) {
@@ -63,7 +63,7 @@ public final class PuddlePockets {
 
     private static boolean isAcrossAnyPuddle(
             CellGap bridge,
-            List<Coastlines.Puddle> puddles) {
+            List<Puddle> puddles) {
 
         for (var puddle : puddles) {
 

@@ -7,7 +7,7 @@ import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.LoadedSectors;
-import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.WallLaying;
 import kmu.maplayers.base.geometry.walls.Walls;
 
 import org.junit.jupiter.api.Nested;
@@ -112,16 +112,20 @@ class IntercontinentalPocketsIntegrationTests {
             var outlines = fillSeasOf(sector, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
             var stoppedShort = new ArrayList<String>();
 
-            for (var chord : DiscUnionBoundary.findAttachableChords(
-                    traceContinentCoast(sector).union(), walls)) {
+            for (var chord : WallLaying.findAttachableChords(
+                    traceContinentCoast(sector).union(),
+                    walls)) {
+
                 if (!links.contains(chord)) {
                     continue;
                 }
 
                 for (var end : List.of(chord.fromCircle(), chord.toCircle())) {
+
                     if (!walls.pinchedCells().contains(end)) {
                         continue;
                     }
+
                     var foot = chord.findEndOn(end);
                     var nearest = measureToNearestOutline(outlines, foot);
 
@@ -146,8 +150,10 @@ class IntercontinentalPocketsIntegrationTests {
                 var degenerate = new ArrayList<String>();
 
                 for (var outline : fillSeasOf(sector, shaping)) {
+
                     if (outline.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA
                             || Math.abs(PolygonRegions.computeSignedArea(outline)) == 0) {
+
                         degenerate.add(String.format("%d points", outline.size()));
                     }
                 }
@@ -168,17 +174,22 @@ class IntercontinentalPocketsIntegrationTests {
             var sites = traceContinentCoast(sector).union().sites();
 
             for (var shaping : VoidPockets.PocketShaping.values()) {
+
                 var reach = measureReachAt(shaping);
                 var covered = new ArrayList<String>();
 
                 for (var outline : fillSeasOf(sector, shaping)) {
                     for (var point : outline) {
                         for (var site = 0; site < sites.size(); site++) {
-                            var separation = Points.computeDistance(sites.get(site), point);
 
+                            var separation = Points.computeDistance(sites.get(site), point);
                             if (separation < reach - ON_THE_BORDER) {
+
                                 covered.add(String.format(
-                                    "cell %d at %.0f, inside %.0f", site, separation, reach));
+                                    "cell %d at %.0f, inside %.0f",
+                                    site,
+                                    separation,
+                                    reach));
                             }
                         }
                     }
@@ -197,16 +208,19 @@ class IntercontinentalPocketsIntegrationTests {
             // link joins two shapes, so the water it helps close runs against a cell of each;
             // water ringed by cells of ONE shape is a bay or a lake, and those have layers of
             // their own that would then paint it a second time.
-            var shapeOf = Coastlines.mapCellsToShapes(traceContinentCoast(sector));
+            var shapeOf = traceContinentCoast(sector).mapCellsToShapes();
             var sites = traceContinentCoast(sector).union().sites();
 
             for (var shaping : VoidPockets.PocketShaping.values()) {
+
                 var enclosed = new ArrayList<String>();
 
                 for (var outline : fillSeasOf(sector, shaping)) {
+
                     var shapes = new LinkedHashSet<Integer>();
 
                     for (var point : outline) {
+
                         // Only cells that are ON a shape count. One on none faces nothing but a
                         // lake, so it cannot bound open sea - and counted as a shape of its own
                         // it would satisfy this check without any second continent.
@@ -233,6 +247,7 @@ class IntercontinentalPocketsIntegrationTests {
     // of it stands outside of: the cells' own border at the true extent, and one channel out from
     // it at the drawn one.
     private static double measureReachAt(VoidPockets.PocketShaping shaping) {
+
         return shaping.isAtTrueExtent()
             ? PARAMETERS.cellRadius()
             : PARAMETERS.measureDrawnReach();
@@ -241,23 +256,26 @@ class IntercontinentalPocketsIntegrationTests {
     // The cell an outline point runs along. Every point of the walk lies on some cell's circle,
     // so the nearest site is the one whose border it was sampled from.
     private static int findNearestSite(List<double[]> sites, double[] point) {
+
         var nearest = 0;
         var closest = Double.MAX_VALUE;
 
         for (var site = 0; site < sites.size(); site++) {
-            var separation = Points.computeDistance(sites.get(site), point);
 
+            var separation = Points.computeDistance(sites.get(site), point);
             if (separation < closest) {
                 closest = separation;
                 nearest = site;
             }
         }
+
         return nearest;
     }
 
     // The walls the fill is walked against, built as the construction builds them: the links
     // and the standing inlet spans, pinched on every cell whose whole frontage is one point.
     private static Walls buildLaidWallsOf(String sector) {
+
         var laid = new ArrayList<>(Chord.buildChordsFrom(layLinks(sector)));
 
         laid.addAll(Chord.buildChordsFrom(layInletSpans(sector)));
@@ -269,20 +287,26 @@ class IntercontinentalPocketsIntegrationTests {
     }
 
     private static double measureToNearestOutline(List<List<double[]>> outlines, double[] point) {
+
         var nearest = Double.MAX_VALUE;
 
         for (var outline : outlines) {
             for (var index = 0; index < outline.size(); index++) {
+
                 nearest = Math.min(nearest, Segments.computeDistanceToPoint(
-                    outline.get(index), outline.get((index + 1) % outline.size()), point));
+                    outline.get(index),
+                    outline.get((index + 1) % outline.size()),
+                    point));
             }
         }
+
         return nearest;
     }
 
     private static List<List<double[]>> fillSeasOf(
             String sector,
             VoidPockets.PocketShaping shaping) {
+
         return POCKETS.computeIfAbsent(sector + "@" + shaping, key ->
             IntercontinentalPockets.findLinkWalledPockets(
                 traceContinentCoast(sector),

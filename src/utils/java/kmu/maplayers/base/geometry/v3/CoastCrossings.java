@@ -47,7 +47,7 @@ public final class CoastCrossings {
      * @param borderStroke how wide a cell's border is drawn
      * @return the crossings that show, deepest first
      */
-    public static List<Penetration> findVisibleCrossings(Coastlines.TracedCoasts traced, double borderStroke) {
+    public static List<Penetration> findVisibleCrossings(TracedCoasts traced, double borderStroke) {
 
         var visible = new ArrayList<Penetration>();
 
@@ -73,8 +73,8 @@ public final class CoastCrossings {
      * <p><b>Every site, including the two the run departs from and lands on.</b> Leaving
      * those out looks reasonable - a run touches both by construction, so they read as false
      * positives - but they are exactly the cells a run cuts through when the sliding fails,
-     * and excluding them made this report zero while chain ends were being crossed end to
-     * end. A run that leaves both borders outwards touches them and no more, so a real
+     * and excluding them makes this report zero while chain ends are crossed end to end. A
+     * run that leaves both borders outwards touches them and no more, so a real
      * incursion there is as real as any other.
      *
      * <p>Fillets are left out, because a fillet is drawn ON a cell's border and its chord
@@ -84,11 +84,11 @@ public final class CoastCrossings {
      * @param traced the coast, as it was traced
      * @return one entry per offending run, in the order they are drawn
      */
-    public static List<Penetration> findPenetrations(Coastlines.TracedCoasts traced) {
+    public static List<Penetration> findPenetrations(TracedCoasts traced) {
 
         var found = new ArrayList<Penetration>();
 
-        for (var reach : Coastlines.collectStraightReaches(traced)) {
+        for (var reach : traced.collectStraightReaches()) {
 
             var pierced = findPiercedCells(traced.union(), reach.from(), reach.to());
 
@@ -119,8 +119,8 @@ public final class CoastCrossings {
      *                a run cutting a cell in half is worth hundreds
      */
     public record Penetration(
-        Coastlines.CoastVertex from,
-        Coastlines.CoastVertex to,
+        CoastVertex from,
+        CoastVertex to,
         List<Integer> circles,
         double depth) {
     }
@@ -131,8 +131,8 @@ public final class CoastCrossings {
     // to differ.
     private static List<Pierce> findPiercedCells(
             DiscUnion union,
-            Coastlines.CoastVertex from,
-            Coastlines.CoastVertex to) {
+            CoastVertex from,
+            CoastVertex to) {
 
         var pierced = new ArrayList<Pierce>();
 
@@ -171,7 +171,7 @@ public final class CoastCrossings {
      * @return the deepest any straight run of coast reaches inside a cell, which is zero when
      *         none of them enters one
      */
-    public static double measureDeepestIncursion(Coastlines.TracedCoasts traced) {
+    public static double measureDeepestIncursion(TracedCoasts traced) {
 
         var deepest = 0.0;
 

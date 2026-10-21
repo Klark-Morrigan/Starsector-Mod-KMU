@@ -65,7 +65,7 @@ public final class IntercontinentalPockets {
      * @return one outline per pocket a link helped close
      */
     public static List<List<double[]>> findLinkWalledPockets(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             List<CellGap> links,
             List<CellGap> standing,
             VoidPockets.PocketRules rules) {

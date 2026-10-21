@@ -13,7 +13,33 @@ import java.util.Locale;
  */
 public final class ReportFigures {
 
+    // The middle, the far end, and the worst - which is what a population of shapes wants read
+    // out of it. A mean would hide the one value that is nothing like the rest, and the rest is
+    // what the median already says.
+    private static final double MEDIAN = 0.5;
+    private static final double NINETIETH = 0.9;
+    private static final double WORST = 1.0;
+
     private ReportFigures() {
+    }
+
+    /**
+     * A sorted population's middle, far end and worst, as one line every report words the same
+     * way.
+     *
+     * @param sorted      the population, already in order
+     * @param valueFormat how to print one value, which differs by what the measure is counted
+     *                    in - a share wants decimals where a count of cells does not
+     * @return {@code p50 _ / p90 _ / max _}
+     */
+    public static String describeSpread(List<Double> sorted, String valueFormat) {
+
+        return String.format(
+            Locale.ROOT,
+            "p50 " + valueFormat + " / p90 " + valueFormat + " / max " + valueFormat,
+            findPercentile(sorted, MEDIAN),
+            findPercentile(sorted, NINETIETH),
+            findPercentile(sorted, WORST));
     }
 
     /**
@@ -47,9 +73,10 @@ public final class ReportFigures {
     public static double findMedian(List<Double> values) {
 
         var sorted = new ArrayList<>(values);
+
         sorted.sort(Double::compare);
 
-        return findPercentile(sorted, 0.5);
+        return findPercentile(sorted, MEDIAN);
     }
 
     /**
@@ -66,6 +93,7 @@ public final class ReportFigures {
         for (var value : values) {
             listed.add(String.format(Locale.ROOT, "%.0f", value));
         }
+
         return joinSpaced(listed, whenEmpty);
     }
 
@@ -78,6 +106,8 @@ public final class ReportFigures {
      */
     static String joinSpaced(List<String> values, String whenEmpty) {
 
-        return values.isEmpty() ? whenEmpty : String.join(" ", values);
+        return values.isEmpty()
+            ? whenEmpty
+            : String.join(" ", values);
     }
 }

@@ -1,7 +1,9 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.PolygonRegions;
-import kmlib.math.geometry.Segments;
+
+import kmu.maplayers.base.geometry.LineCrossings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,17 +55,18 @@ public final class LinkedSectorPockets {
      * @return one outline per pocket the drawn map encloses and nothing else fills
      */
     public static List<List<double[]>> findUnpaintedPockets(
-            Coastlines.TracedCoasts linked,
+            TracedCoasts linked,
             List<List<double[]>> painted,
             List<String> ownerBySite,
             VoidPockets.PocketRules rules) {
 
+        var boxedPainted = boxRings(painted);
         var outlines = new ArrayList<List<double[]>>();
 
         for (var walled : CoastPockets.findCoastPockets(linked, ownerBySite, rules)) {
             for (var outline : walled.pocket().outlines()) {
 
-                if (!isOverlappingAnything(outline, painted)) {
+                if (!isOverlappingAnything(outline, boxedPainted)) {
                     outlines.add(outline);
                 }
             }
@@ -77,22 +80,29 @@ public final class LinkedSectorPockets {
     // Either can hold a vertex of the other, which containment catches; one can swallow the
     // other whole, which is why containment is asked both ways round; and two can cross without
     // either holding a vertex at all, overlapping in a lens between four edge crossings. The
-    // last is the one a vertex test cannot see, and measured on the fixtures it was most of what
-    // a vertex test let through - a tenth of a cell of water painted twice.
+    // last is the one a vertex test cannot see, and measured on the fixtures it is most of what
+    // a vertex test lets through - a tenth of a cell of water painted twice.
     private static boolean isOverlappingAnything(
             List<double[]> outline,
-            List<List<double[]>> painted) {
+            List<BoxedRing> painted) {
 
-        var bounds = measureBounds(outline);
+        // A pocket with no outline holds no water to share.
+        if (outline.isEmpty()) {
+            return false;
+        }
 
-        for (var ring : painted) {
+        var bounds = Bounds.computeEnclosingBounds(outline);
+
+        for (var boxed : painted) {
 
             // Nowhere near, so nothing below can be true. Asked first because it is the cheap
             // answer for almost every pair: a pocket meets a handful of the rings on a map and
             // misses the rest by a sector's width.
-            if (isApart(bounds, measureBounds(ring))) {
+            if (!bounds.overlaps(boxed.bounds())) {
                 continue;
             }
+
+            var ring = boxed.ring();
 
             if (isHoldingAnyPoint(ring, outline)
                     || isHoldingAnyPoint(outline, ring)
@@ -120,9 +130,10 @@ public final class LinkedSectorPockets {
         for (var here = 1; here < outline.size(); here++) {
             for (var there = 1; there < ring.size(); there++) {
 
-                if (Segments.intersectSegments(
+                if (LineCrossings.isCrossing(
                         outline.get(here - 1), outline.get(here),
-                        ring.get(there - 1), ring.get(there)) != null) {
+                        ring.get(there - 1), ring.get(there),
+                        LineCrossings.SharedAnchor.IS_CROSSING)) {
 
                     return true;
                 }
@@ -131,27 +142,23 @@ public final class LinkedSectorPockets {
         return false;
     }
 
-    // One ring's extent as low and high corners, for the rejection above.
-    private static double[][] measureBounds(List<double[]> ring) {
+    // Each painted ring with its box, measured once rather than once per pocket asked about it.
+    // An empty ring paints nothing, so it is left out rather than boxed.
+    private static List<BoxedRing> boxRings(List<List<double[]>> rings) {
 
-        var low = new double[] {Double.MAX_VALUE, Double.MAX_VALUE};
-        var high = new double[] {-Double.MAX_VALUE, -Double.MAX_VALUE};
+        var boxed = new ArrayList<BoxedRing>(rings.size());
 
-        for (var point : ring) {
+        for (var ring : rings) {
 
-            low[0] = Math.min(low[0], point[0]);
-            low[1] = Math.min(low[1], point[1]);
-            high[0] = Math.max(high[0], point[0]);
-            high[1] = Math.max(high[1], point[1]);
+            if (!ring.isEmpty()) {
+                boxed.add(new BoxedRing(ring, Bounds.computeEnclosingBounds(ring)));
+            }
         }
-        return new double[][] {low, high};
+        return boxed;
     }
 
-    private static boolean isApart(double[][] one, double[][] other) {
-
-        return one[1][0] < other[0][0]
-            || other[1][0] < one[0][0]
-            || one[1][1] < other[0][1]
-            || other[1][1] < one[0][1];
+    private record BoxedRing(
+        List<double[]> ring,
+        Bounds bounds) {
     }
 }

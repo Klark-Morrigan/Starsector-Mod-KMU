@@ -56,7 +56,7 @@ public final class CoastPockets {
      * @return the pockets, each with a closed outline and the reaches that walled it
      */
     public static List<WalledPocket> findCoastPockets(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             List<String> ownerBySite,
             VoidPockets.PocketRules rules) {
 
@@ -162,7 +162,7 @@ public final class CoastPockets {
      * @return the two sets laid together, at the coast's channel
      */
     static Walls layCoastWalls(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             List<Chord> reaches,
             double channel) {
 
@@ -216,10 +216,10 @@ public final class CoastPockets {
      * @return one wall per reach, in walk order
      */
     static List<Chord> buildCoastWalls(
-            Coastlines.TracedCoasts traced) {
+            TracedCoasts traced) {
 
         return buildReachWalls(
-            Coastlines.collectStraightReaches(traced),
+            traced.collectStraightReaches(),
             WallKind.COAST_REACH);
     }
 
@@ -240,10 +240,10 @@ public final class CoastPockets {
      * @return one wall per reach over every lake, in walk order
      */
     static List<Chord> buildLakeShoreWalls(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             double channel) {
 
-        var shores = new ArrayList<Coastlines.Coast>(traced.lakes().size());
+        var shores = new ArrayList<Coast>(traced.lakes().size());
 
         for (var lake : traced.lakes()) {
             shores.add(lake.shore());
@@ -257,7 +257,7 @@ public final class CoastPockets {
     // reach is placed the same way whichever side the water is on; what the kind carries is
     // which side that is.
     private static List<Chord> buildReachWalls(
-            List<Coastlines.CoastReach> reaches,
+            List<CoastReach> reaches,
             WallKind kind) {
 
         var walls = new ArrayList<Chord>();

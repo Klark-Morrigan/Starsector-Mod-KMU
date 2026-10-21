@@ -31,11 +31,6 @@ import java.util.TreeSet;
  */
 public final class VoidSectionReport {
 
-    // The middle, the far end, and the worst - which is what a population of shapes wants
-    // read out of it. A mean would hide the one section that is nothing like the rest, and
-    // the rest is what the median already says.
-    private static final double[] REPORTED_PERCENTILES = {0.5, 0.9, 1.0};
-
     // Enough of the field to see whether a section was taken outright or scraped. Beyond the
     // first few the tail says nothing a reader acts on.
     private static final int REPORTED_CLAIMS = 4;
@@ -58,7 +53,6 @@ public final class VoidSectionReport {
 
         var systemIds = fixture.getSystemIds();
         var ownerBySite = fixture.getOwnerBySite();
-
         var named = new ArrayList<OwnedSection>();
 
         for (var section : VoidSections.collectNamedSections(laid, systemIds)) {
@@ -67,6 +61,7 @@ public final class VoidSectionReport {
                 section,
                 VoidSectionOwners.resolveSectionOwner(section.section(), ownerBySite)));
         }
+
         reportNaming(named, systemIds);
         reportCellCounts(named);
         reportTiling(named);
@@ -120,19 +115,21 @@ public final class VoidSectionReport {
                 }
 
                 var anchor = section.region().anchor();
-
                 if (other.region().holds(anchor[0], anchor[1])) {
 
                     overlapping++;
+
                     System.out.printf(
                         Locale.ROOT,
                         "  overlap: %s has its middle inside %s%n",
                         section.id(),
                         other.id());
+
                     break;
                 }
             }
         }
+
         System.out.printf(
             Locale.ROOT,
             "%d sections have their middle inside another (has to be 0)%n",
@@ -159,6 +156,7 @@ public final class VoidSectionReport {
             if (!distinct.add(section.id())) {
                 collided.add(section.id());
             }
+
             if (stars.contains(section.id()) || !isKeyShaped(section.id())) {
                 unsafe.add(section.id());
             }
@@ -198,15 +196,13 @@ public final class VoidSectionReport {
                 loneCell++;
             }
         }
+
         counts.sort(Double::compare);
 
         System.out.printf(
             Locale.ROOT,
-            "cells a section runs on: p50 %.0f / p90 %.0f / max %.0f; %d run on one cell "
-                + "and cannot take a side%n",
-            ReportFigures.findPercentile(counts, REPORTED_PERCENTILES[0]),
-            ReportFigures.findPercentile(counts, REPORTED_PERCENTILES[1]),
-            ReportFigures.findPercentile(counts, REPORTED_PERCENTILES[2]),
+            "cells a section runs on: %s; %d run on one cell and cannot take a side%n",
+            ReportFigures.describeSpread(counts, "%.0f"),
             loneCell);
     }
 
@@ -227,13 +223,11 @@ public final class VoidSectionReport {
         var takenByUnowned = 0;
         var tied = 0;
         var contested = 0;
-
         var sectionsByOwner = new LinkedHashMap<String, Integer>();
 
         for (var section : named) {
 
             var owner = section.owner();
-
             if (owner.owner() != null) {
                 held++;
             } else if (owner.claims().get(0).owner() == null) {
@@ -241,9 +235,11 @@ public final class VoidSectionReport {
             } else {
                 tied++;
             }
+
             if (owner.isContested()) {
                 contested++;
             }
+
             sectionsByOwner.merge(owner.owner(), 1, Integer::sum);
         }
 
@@ -261,6 +257,7 @@ public final class VoidSectionReport {
         for (var entry : sectionsByOwner.entrySet()) {
             holders.add(new VoidSectionOwners.OwnerClaim(entry.getKey(), entry.getValue()));
         }
+
         holders.sort(Comparator
             .comparingInt(VoidSectionOwners.OwnerClaim::cells).reversed()
             .thenComparing(
@@ -317,7 +314,7 @@ public final class VoidSectionReport {
         if (claims.size() > atMost) {
             listed.add("+" + (claims.size() - atMost) + " more");
         }
+
         return String.join(" / ", listed);
     }
-
 }

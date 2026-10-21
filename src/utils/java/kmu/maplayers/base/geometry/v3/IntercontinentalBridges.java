@@ -1,11 +1,8 @@
 package kmu.maplayers.base.geometry.v3;
 
-import kmlib.math.geometry.Points;
-
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,7 +38,7 @@ import java.util.Set;
  * <p><b>And the islands, whose whole border is that.</b> A cell alone in the void carries no
  * coastline - the line round it would be its own border drawn twice - which is a reason not to
  * draw one and none at all to leave the cell unreachable. So an island is a shape of the sector
- * like any other here, numbered among them by {@link Coastlines#mapCellsToShapes} and anchored
+ * like any other here, numbered among them by {@link TracedCoasts#mapCellsToShapes} and anchored
  * on its own rim.
  *
  * <p><b>Against what is already down, never over it.</b> The inlet spans were laid first and are
@@ -92,7 +89,7 @@ public final class IntercontinentalBridges {
      *         were judged in rather than a sort of what came out
      */
     public static List<CellGap> findIntercontinentalBridges(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             List<CellGap> laid,
             SectorGeometryParameters parameters,
             ContinentBridges.BridgeRules rules) {
@@ -111,44 +108,21 @@ public final class IntercontinentalBridges {
             return List.of();
         }
 
-        var continentOf = Coastlines.mapCellsToShapes(traced);
+        var shapeOf = traced.mapCellsToShapes();
         var joined = gatherJoinedPairs(laid);
         var union = traced.union();
-        var sites = union.sites();
 
         // Read as how far apart the two cells may sit, which across open void is the same claim
         // made of the centres - the cell-pair search's reading, and the one the exterior spans are
         // offered under.
         var reach = parameters.cellRadius() * rules.reachMultiple();
-        var offered = new ArrayList<CellGap>();
 
-        // Every pair the gates admit, once. Nothing is refused here for crossing anything: what
-        // the offer is depends only on the cells, and which of the offers survive is settled
-        // afterwards, in one place, against one rule.
-        for (var from : frontages.keySet()) {
-            for (var to : frontages.keySet()) {
-
-                if (from >= to
-                        || !Coastlines.compareShapesOf(continentOf, from, to)
-                            .isDifferentShapes()
-                        || joined.contains(SpannedCells.buildFromCells(from, to))
-                        || Points.computeDistance(sites.get(from), sites.get(to)) > reach) {
-
-                    continue;
-                }
-
-                var span = AnchoredSpans.findClosestSpan(
-                    from,
-                    to,
-                    frontages.get(from),
-                    frontages.get(to),
-                    union);
-
-                if (span != null) {
-                    offered.add(span);
-                }
-            }
-        }
+        var offered = AnchoredSpans.offerSpans(
+            frontages,
+            union,
+            reach,
+            (from, to) -> ShapeRelation.compareShapesOf(shapeOf, from, to).isDifferentShapes()
+                && !joined.contains(SpannedCells.buildFromCells(from, to)));
 
         var kept = AnchoredSpans.keepSpansWorthLaying(
             offered, AnchoredSpans.collectCoastWalls(traced), laid, rules.coastSlack());

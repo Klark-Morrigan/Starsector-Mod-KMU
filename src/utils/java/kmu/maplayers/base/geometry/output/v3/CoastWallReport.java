@@ -8,7 +8,8 @@ import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.WallKind;
 import kmu.maplayers.base.geometry.v3.LaidCoast;
-import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.ChordRefusals;
+import kmu.maplayers.base.geometry.walls.WallLaying;
 import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
@@ -47,15 +48,19 @@ public final class CoastWallReport {
         var offered = laid.offered();
         var walls = laid.walls();
         var atCells = laid.atCells();
+        var refusedAtCells = ChordRefusals.judgeEveryRefusal(atCells, walls);
 
         System.out.printf(
             Locale.ROOT,
             "coast reaches offered %d: at the cells' own reach %s | a channel out %s%n",
             offered.size(),
-            WallRefusals.summariseRefusals(atCells, walls, offered),
-            WallRefusals.summariseRefusals(laid.atDrawnReach(), walls, offered));
+            WallRefusals.summariseRefusals(refusedAtCells, offered),
+            WallRefusals.summariseRefusals(
+                ChordRefusals.judgeEveryRefusal(laid.atDrawnReach(), walls),
+                offered));
 
-        WallRefusals.reportEachRefusal(atCells, walls, offered, "reach");
+        WallRefusals.reportEachRefusal(refusedAtCells, offered, "reach");
+
         reportWallCrossings(atCells, laid.atDrawnReach(), walls);
         reportWallSideStray(atCells, walls, laid.parameters());
         reportCoastTurns(atCells, walls);
@@ -72,8 +77,8 @@ public final class CoastWallReport {
         System.out.printf(
             Locale.ROOT,
             "walls crossing another wall: %d at the cells' own reach, %d a channel out%n",
-            DiscUnionBoundary.findWallCrossings(atCells, walls).size(),
-            DiscUnionBoundary.findWallCrossings(atDrawn, walls).size());
+            WallLaying.findWallCrossings(atCells, walls).size(),
+            WallLaying.findWallCrossings(atDrawn, walls).size());
     }
 
     // How far a laid wall's two drawn sides sit from the wall itself.
@@ -96,12 +101,13 @@ public final class CoastWallReport {
         var worst = 0.0;
         double[] worstAt = null;
 
-        for (var chord : DiscUnionBoundary.findAttachableChords(union, walls)) {
+        for (var chord : WallLaying.findAttachableChords(union, walls)) {
 
             if (chord.kind() != WallKind.COAST_REACH) {
                 continue;
             }
-            for (var side : DiscUnionBoundary.findChordSides(union, chord, walls)) {
+
+            for (var side : WallLaying.findChordSides(union, chord, walls)) {
 
                 for (var point : side) {
 
@@ -109,6 +115,7 @@ public final class CoastWallReport {
                         chord.findStart(), chord.findEnd(), point);
 
                     if (away > worst) {
+
                         worst = away;
                         worstAt = point;
                     }
@@ -138,7 +145,7 @@ public final class CoastWallReport {
 
         var laid = new ArrayList<Chord>();
 
-        for (var chord : DiscUnionBoundary.findAttachableChords(union, walls)) {
+        for (var chord : WallLaying.findAttachableChords(union, walls)) {
 
             if (chord.kind() == WallKind.COAST_REACH) {
                 laid.add(chord);
@@ -152,14 +159,15 @@ public final class CoastWallReport {
             for (var other = one + 1; other < laid.size(); other++) {
 
                 var shared = findSharedCell(laid.get(one), laid.get(other));
-
                 if (shared < 0) {
                     continue;
                 }
+
                 turns++;
 
                 var apart = Points.computeDistance(
-                    laid.get(one).findEndOn(shared), laid.get(other).findEndOn(shared));
+                    laid.get(one).findEndOn(shared),
+                    laid.get(other).findEndOn(shared));
 
                 if (apart < TIGHT_TURN_WITHIN) {
 
@@ -198,6 +206,7 @@ public final class CoastWallReport {
         if (one.toCircle() == other.fromCircle() || one.toCircle() == other.toCircle()) {
             return one.toCircle();
         }
+
         return -1;
     }
 }

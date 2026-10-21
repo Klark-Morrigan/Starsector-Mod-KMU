@@ -3,7 +3,7 @@ package kmu.maplayers.base.geometry.ui;
 import kmlib.math.geometry.Points;
 
 import kmu.maplayers.base.geometry.SectorFixture;
-import kmu.maplayers.base.geometry.v3.Coastlines;
+import kmu.maplayers.base.geometry.v3.Lake;
 import kmu.maplayers.base.geometry.v4.LakeTier;
 
 import org.junit.jupiter.api.Nested;
@@ -60,7 +60,7 @@ class LakeReachesIntegrationTests {
 
             assertThat(LakePartitions.readTracedLakes(sector).rings())
                 .containsExactlyElementsOf(
-                    lakes.stream().map(Coastlines.Lake::ringCells).toList());
+                    lakes.stream().map(Lake::ringCells).toList());
         }
 
         @ParameterizedTest

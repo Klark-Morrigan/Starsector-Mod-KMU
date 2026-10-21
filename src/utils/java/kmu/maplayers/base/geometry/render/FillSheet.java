@@ -6,7 +6,6 @@ import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -65,9 +64,8 @@ public final class FillSheet {
      */
     public void addRing(List<double[]> ring) {
 
-        var isCounterClockwise = PolygonRegions.computeSignedArea(ring) >= 0;
         var path = MapPainting.buildPath(
-            isCounterClockwise == IS_FILL_COUNTER_CLOCKWISE ? ring : reverseRing(ring));
+            PolygonRegions.orientRing(ring, IS_FILL_COUNTER_CLOCKWISE));
 
         edges.add(path);
         body.append(path, false);
@@ -96,17 +94,5 @@ public final class FillSheet {
         for (var edge : edges) {
             g2.draw(edge);
         }
-    }
-
-    // The same ring traced the other way round, as a fresh list - the corners are shared,
-    // since nothing here moves one. Reversing changes where the path starts and which way it
-    // runs, neither of which a stroked outline can show.
-    private static List<double[]> reverseRing(List<double[]> ring) {
-
-        var reversed = new ArrayList<>(ring);
-
-        Collections.reverse(reversed);
-
-        return reversed;
     }
 }

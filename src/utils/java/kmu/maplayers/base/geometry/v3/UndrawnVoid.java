@@ -118,7 +118,7 @@ public final class UndrawnVoid {
 
         var patches = collectPatches(collectBareSamples(
             laid,
-            Coastlines.collectCoastOutlines(laid.traced()),
+            laid.traced().collectCoastOutlines(),
             collectDrawnFills(water),
             clearOfCells,
             clearOfCoast));

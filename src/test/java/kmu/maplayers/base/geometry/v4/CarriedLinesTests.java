@@ -74,7 +74,7 @@ class CarriedLinesTests {
             // From (0, 300) down to the left shore at (0, 260) and 2.5 past it, (0, 257.5);
             // from (1000, 300) down to the right shore at (1000, 280) and 2.5 past, (1000, 277.5).
             var laid = CarriedLines.layCarriedLines(
-                List.of(LINE), BOTH_SHORES, SITES, PARAMETERS, SOME_TIER);
+                List.of(LINE), indexShore(BOTH_SHORES), SOME_TIER);
 
             assertThat(laid.walls())
                 .hasSize(1);
@@ -86,7 +86,7 @@ class CarriedLinesTests {
         void anEndWithNoShoreInReachStepsTheSameDistanceTowardsItsSite() {
             // Already inside, or on a corner: the same step puts it inside either way.
             var laid = CarriedLines.layCarriedLines(
-                List.of(LINE), NO_SHORE, SITES, PARAMETERS, SOME_TIER);
+                List.of(LINE), indexShore(NO_SHORE), SOME_TIER);
 
             assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 297.5);
             assertThatPointIs(laid.walls().get(0).segment().readEnd(), 1000, 297.5);
@@ -98,9 +98,7 @@ class CarriedLinesTests {
             // through it as if it were not there.
             var laid = CarriedLines.layCarriedLines(
                 List.of(LINE),
-                List.of(RIGHT_CELLS_EDGE_UNDER_THE_LEFT_END, RIGHT_SHORE),
-                SITES,
-                PARAMETERS,
+                indexShore(List.of(RIGHT_CELLS_EDGE_UNDER_THE_LEFT_END, RIGHT_SHORE)),
                 SOME_TIER);
 
             assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 297.5);
@@ -111,9 +109,7 @@ class CarriedLinesTests {
             // Two edges of the left cell under its end: the wall stops at the first.
             var laid = CarriedLines.layCarriedLines(
                 List.of(LINE),
-                List.of(LEFT_SHORE_FURTHER_DOWN, LEFT_SHORE, RIGHT_SHORE),
-                SITES,
-                PARAMETERS,
+                indexShore(List.of(LEFT_SHORE_FURTHER_DOWN, LEFT_SHORE, RIGHT_SHORE)),
                 SOME_TIER);
 
             assertThatPointIs(laid.walls().get(0).segment().readStart(), 0, 257.5);
@@ -123,7 +119,7 @@ class CarriedLinesTests {
         void everyWallCarriesTheLabelItWasHanded() {
 
             var laid = CarriedLines.layCarriedLines(
-                List.of(LINE), BOTH_SHORES, SITES, PARAMETERS, SOME_TIER);
+                List.of(LINE), indexShore(BOTH_SHORES), SOME_TIER);
 
             assertThat(laid.walls())
                 .extracting(LabelledWall::label)
@@ -135,7 +131,7 @@ class CarriedLinesTests {
             // The wall's ends moved; the drawn line's did not, since what a reader compares
             // against the other construction is the line that construction found.
             var laid = CarriedLines.layCarriedLines(
-                List.of(LINE), BOTH_SHORES, SITES, PARAMETERS, SOME_TIER);
+                List.of(LINE), indexShore(BOTH_SHORES), SOME_TIER);
 
             assertThat(laid.lines())
                 .hasSize(1);
@@ -149,13 +145,18 @@ class CarriedLinesTests {
         void noLinesLayNothing() {
 
             var laid = CarriedLines.layCarriedLines(
-                List.of(), BOTH_SHORES, SITES, PARAMETERS, SOME_TIER);
+                List.of(), indexShore(BOTH_SHORES), SOME_TIER);
 
             assertThat(laid.walls())
                 .isEmpty();
             assertThat(laid.lines())
                 .isEmpty();
         }
+    }
+
+    // The frontier given, over the two sites, at the knobs above.
+    private static Shore indexShore(List<LabelledWall> frontier) {
+        return Shore.indexShore(frontier, SITES, PARAMETERS);
     }
 
     private static void assertThatPointIs(double[] point, double x, double y) {

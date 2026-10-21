@@ -38,9 +38,13 @@ import java.util.List;
  */
 public final class BridgedContinents {
 
+    // A coast traced at the drawn reach holds nothing back from its own line: the channel is
+    // already spent on the reach itself.
+    private static final double NO_CHANNEL = 0;
+
     private final List<double[]> sites;
     private final SectorGeometryParameters parameters;
-    private final Coastlines.CoastRules coastRules;
+    private final CoastRules coastRules;
     private final ContinentBridges.BridgeRules bridgeRules;
 
     // The cell-pair bridge search, handed in rather than made here. It is the one search that
@@ -51,22 +55,24 @@ public final class BridgedContinents {
     // Null until asked for, which is what tells "not yet searched" from "searched, found
     // nothing" - an empty list is a real answer here, and the two have to be told apart or a
     // sector with no lakes pays for the lake search on every frame that mentions it.
-    private Coastlines.TracedCoasts traced;
+    private TracedCoasts traced;
     private CoastRounding.RoundedCoasts rounded;
+
     private List<CellGap> inletSpans;
     private List<CellGap> lakeSpans;
     private List<CellGap> lakeSpansThinnedOtherwise;
     private List<CellGap> puddleSpans;
     private List<CellGap> links;
-    private Coastlines.TracedCoasts linked;
+
+    private TracedCoasts linked;
     private List<List<double[]>> linkedShores;
-    private Coastlines.TracedCoasts atDrawnReach;
+    private TracedCoasts atDrawnReach;
     private LaidCoast walled;
 
     private BridgedContinents(
             List<double[]> sites,
             SectorGeometryParameters parameters,
-            Coastlines.CoastRules coastRules,
+            CoastRules coastRules,
             ContinentBridges.BridgeRules bridgeRules,
             VoidBridgeCache sectorBridges) {
 
@@ -96,12 +102,16 @@ public final class BridgedContinents {
     public static BridgedContinents layContinents(
             List<double[]> sites,
             SectorGeometryParameters parameters,
-            Coastlines.CoastRules coastRules,
+            CoastRules coastRules,
             ContinentBridges.BridgeRules bridgeRules,
             VoidBridgeCache sectorBridges) {
 
         return new BridgedContinents(
-            sites, parameters, coastRules, bridgeRules, sectorBridges);
+            sites,
+            parameters,
+            coastRules,
+            bridgeRules,
+            sectorBridges);
     }
 
     /**
@@ -113,11 +123,12 @@ public final class BridgedContinents {
      *
      * @return the coasts, and the water the cells closed around unaided along with them
      */
-    public Coastlines.TracedCoasts traceCoasts() {
+    public TracedCoasts traceCoasts() {
 
         if (traced == null) {
             traced = Coastlines.traceContinentCoasts(sites, parameters, coastRules);
         }
+
         return traced;
     }
 
@@ -145,6 +156,7 @@ public final class BridgedContinents {
         if (rounded == null) {
             rounded = CoastRounding.roundTracedCoasts(traceCoasts(), coastRules.rounding());
         }
+
         return rounded;
     }
 
@@ -177,6 +189,7 @@ public final class BridgedContinents {
         if (inletSpans == null) {
             inletSpans = layAnchoredSpans(CoastFrontages.Shore.EXTERIOR, bridgeRules);
         }
+
         return inletSpans;
     }
 
@@ -195,6 +208,7 @@ public final class BridgedContinents {
         if (lakeSpans == null) {
             lakeSpans = layAnchoredSpans(CoastFrontages.Shore.INTERIOR, bridgeRules);
         }
+
         return lakeSpans;
     }
 
@@ -216,12 +230,14 @@ public final class BridgedContinents {
         if (shouldThinFormations == bridgeRules.shouldThinFormations()) {
             return layLakeSpans();
         }
+
         if (lakeSpansThinnedOtherwise == null) {
 
             lakeSpansThinnedOtherwise = layAnchoredSpans(
                 CoastFrontages.Shore.INTERIOR,
                 bridgeRules.copyWithThinning(shouldThinFormations));
         }
+
         return lakeSpansThinnedOtherwise;
     }
 
@@ -245,6 +261,7 @@ public final class BridgedContinents {
                     parameters.cellRadius(),
                     parameters.cellRadius() * coastRules.bridgeReachMultiple()));
         }
+
         return puddleSpans;
     }
 
@@ -266,6 +283,7 @@ public final class BridgedContinents {
             links = IntercontinentalBridges.findIntercontinentalBridges(
                 traceCoasts(), layInletSpans(), parameters, bridgeRules);
         }
+
         return links;
     }
 
@@ -284,7 +302,7 @@ public final class BridgedContinents {
      * @return the second trace, or the first where no link was laid and there is nothing for a
      *         second one to differ about
      */
-    public Coastlines.TracedCoasts traceLinkedCoasts() {
+    public TracedCoasts traceLinkedCoasts() {
 
         if (linked == null) {
 
@@ -303,6 +321,7 @@ public final class BridgedContinents {
                         parameters.borderInset(),
                         CoastFrontages.collectPinchedCells(traceCoasts())));
         }
+
         return linked;
     }
 
@@ -320,8 +339,10 @@ public final class BridgedContinents {
         if (linkedShores == null) {
 
             linkedShores = IntercontinentalCoasts.findLinkedShores(
-                traceCoasts(), traceLinkedCoasts());
+                traceCoasts(),
+                traceLinkedCoasts());
         }
+
         return linkedShores;
     }
 
@@ -345,20 +366,18 @@ public final class BridgedContinents {
      *
      * @return the continents at the drawn reach, traced once and kept
      */
-    public Coastlines.TracedCoasts traceCoastsAtDrawnReach() {
+    public TracedCoasts traceCoastsAtDrawnReach() {
 
         if (atDrawnReach == null) {
 
             atDrawnReach = Coastlines.traceContinentCoasts(
                 sites,
-                new SectorGeometryParameters(
-                    parameters.measureDrawnReach(),
-                    parameters.boundSegments(),
-                    0,
-                    parameters.weldTolerance(),
-                    parameters.miterSpikeLimit()),
+                parameters
+                    .withCellRadius(parameters.measureDrawnReach())
+                    .withBorderInset(NO_CHANNEL),
                 coastRules);
         }
+
         return atDrawnReach;
     }
 
@@ -393,16 +412,24 @@ public final class BridgedContinents {
             var spans = new ArrayList<Chord>();
 
             spans.addAll(Chord.buildChordsFrom(
-                layInletSpans(), WallKind.INLET_SPAN));
+                layInletSpans(),
+                WallKind.INLET_SPAN));
+
             spans.addAll(Chord.buildChordsFrom(
-                layLakeSpans(), WallKind.LAKE_SPAN));
+                layLakeSpans(),
+                WallKind.LAKE_SPAN));
+
             spans.addAll(Chord.buildChordsFrom(
-                claimPuddleSpans(), WallKind.PUDDLE_SPAN));
+                claimPuddleSpans(),
+                WallKind.PUDDLE_SPAN));
+
             spans.addAll(Chord.buildChordsFrom(
-                layLinks(), WallKind.LINK));
+                layLinks(),
+                WallKind.LINK));
 
             walled = LaidCoast.layCoast(traceCoasts(), spans, parameters);
         }
+
         return walled;
     }
 

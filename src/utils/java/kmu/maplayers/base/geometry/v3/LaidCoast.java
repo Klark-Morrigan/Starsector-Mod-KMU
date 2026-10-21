@@ -29,7 +29,7 @@ import java.util.List;
  *                   the walk lays
  */
 public record LaidCoast(
-    Coastlines.TracedCoasts traced,
+    TracedCoasts traced,
     SectorGeometryParameters parameters,
     List<Chord> offered,
     Walls walls) {
@@ -50,7 +50,7 @@ public record LaidCoast(
      * @return the coast with its walls down
      */
     public static LaidCoast layCoast(
-            Coastlines.TracedCoasts traced,
+            TracedCoasts traced,
             List<Chord> spans,
             SectorGeometryParameters parameters) {
 

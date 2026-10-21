@@ -2,6 +2,7 @@ package kmu.maplayers.base.geometry.v3;
 
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
+import kmlib.math.geometry.UniformGrid;
 
 import kmu.maplayers.base.geometry.CellGap;
 
@@ -36,6 +37,10 @@ import java.util.List;
  * through its own cell dips below the reach part way along and is refused, which is right.
  * That is a real fault rather than an artefact of the test, and it is one a line sampled at a
  * few points can slip past entirely.
+ *
+ * <p>The sites are filed on a grid a reach across, so a line is weighed only against the sites
+ * near it. A search asks this of tens of thousands of lines, and almost every site in the sector
+ * is nowhere near any one of them.
  */
 public final class CellGaps {
 
@@ -45,25 +50,47 @@ public final class CellGaps {
     // grazing site being read as a blocking one by a rounding.
     private static final double COVER_TOLERANCE = 1e-6;
 
-    private CellGaps() {
+    private final List<double[]> sites;
+    private final double reach;
+    private final UniformGrid<Integer> siteGrid;
+
+    private CellGaps(List<double[]> sites, double reach, UniformGrid<Integer> siteGrid) {
+
+        this.sites = sites;
+        this.reach = reach;
+        this.siteGrid = siteGrid;
+    }
+
+    /**
+     * Files every site, ready to be asked about any pair of cells or any line.
+     *
+     * @param sites the sites
+     * @param reach how far every cell reaches from its site; positive
+     * @return the cells' gaps, at that reach
+     */
+    static CellGaps createOverSites(List<double[]> sites, double reach) {
+
+        // A reach across, because every question asked here reaches a reach or a few beyond
+        // what it is asked about.
+        var siteGrid = new UniformGrid<Integer>(reach);
+
+        for (var site = 0; site < sites.size(); site++) {
+            siteGrid.filePoint(sites.get(site)[0], sites.get(site)[1], site);
+        }
+
+        return new CellGaps(sites, reach, siteGrid);
     }
 
     /**
      * The corridor between two cells, at their common reach.
      *
-     * @param sites    the sites
      * @param fromSite the first cell
      * @param toSite   the second
-     * @param reach    how far either cell reaches from its site
      * @return the corridor, or null when the two cells overlap and there is none - which is
      *         what makes them neighbours, so a caller sweeping every pair gets the pairs
      *         with void between them and no adjacency test of its own
      */
-    static CellGap findGapBetween(
-            List<double[]> sites,
-            int fromSite,
-            int toSite,
-            double reach) {
+    CellGap findGapBetween(int fromSite, int toSite) {
 
         var from = sites.get(fromSite);
         var to = sites.get(toSite);
@@ -74,12 +101,33 @@ public final class CellGaps {
         if (width <= 0) {
             return null;
         }
+
         return new CellGap(
             fromSite,
             toSite,
             projectAlong(from, to, reach, separation),
             projectAlong(to, from, reach, separation),
             width);
+    }
+
+    /**
+     * The cells whose sites lie within a distance of one cell's own, each of them after it in
+     * site order, so a sweep over every cell meets each pair once.
+     *
+     * @param site     the cell asked about
+     * @param distance how far from its site to look, centre to centre
+     * @return the later cells within that distance, in site order
+     */
+    List<Integer> listLaterSitesWithin(int site, double distance) {
+
+        var centre = sites.get(site);
+        var distanceSquared = distance * distance;
+
+        return siteGrid.listItemsNear(centre[0], centre[1], distance).stream()
+            .filter(other -> other > site)
+            .filter(other -> Points.computeDistanceSquared(centre, sites.get(other))
+                <= distanceSquared)
+            .toList();
     }
 
     /**
@@ -96,23 +144,24 @@ public final class CellGaps {
      *
      * @param start one end
      * @param end   the other
-     * @param sites every site, because a cell nowhere near either end can still lie across
-     *              the middle
-     * @param reach how far a cell reaches from its site
      * @return whether nothing is in the way
      */
-    static boolean isLineClearOfCells(
-            double[] start,
-            double[] end,
-            List<double[]> sites,
-            double reach) {
+    boolean isLineClearOfCells(double[] start, double[] end) {
 
-        for (var site : sites) {
+        // Every site within a reach of any point of the line lies within a reach and half the
+        // line's length of its middle, so that square holds every site that could answer.
+        var middle = new double[] {(start[0] + end[0]) / 2, (start[1] + end[1]) / 2};
+        var halfLength = Points.computeDistance(start, end) / 2;
 
-            if (Segments.computeDistanceToPoint(start, end, site) < reach - COVER_TOLERANCE) {
+        for (var site : siteGrid.listItemsNear(middle[0], middle[1], halfLength + reach)) {
+
+            if (Segments.computeDistanceToPoint(start, end, sites.get(site))
+                    < reach - COVER_TOLERANCE) {
+
                 return false;
             }
         }
+
         return true;
     }
 

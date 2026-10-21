@@ -1,9 +1,8 @@
 package kmu.maplayers.base.geometry.output.v3;
 
 import kmu.maplayers.base.geometry.Chord;
-import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
-import kmu.maplayers.base.geometry.walls.Walls;
+import kmu.maplayers.base.geometry.walls.ChordRefusals;
+import kmu.maplayers.base.geometry.walls.RefusalReason;
 
 import java.util.List;
 import java.util.Locale;
@@ -36,14 +35,12 @@ public final class WallRefusals {
      * <p>Asked of the verdict rather than of its wording, so a rule that renames a refusal
      * cannot quietly move a count into the wrong column.
      *
-     * @param union   the discs the walls are laid across
-     * @param walls   the walls on offer, in the order they are offered
-     * @param offered the ones to count, which must be among them
+     * @param refusals what one laying made of the walls on offer
+     * @param offered  the ones to count, which must be among them
      * @return the counts, as one line
      */
     public static String summariseRefusals(
-            DiscUnion union,
-            Walls walls,
+            ChordRefusals refusals,
             List<Chord> offered) {
 
         var laid = 0;
@@ -54,7 +51,7 @@ public final class WallRefusals {
 
         for (var chord : offered) {
 
-            switch (DiscUnionBoundary.describeChordRefusal(union, walls, chord).reason()) {
+            switch (refusals.describeRefusal(chord).reason()) {
                 case LAID -> laid++;
                 case OFF_BOUNDARY -> offBoundary++;
                 case CROWDED_OUT -> crowded++;
@@ -83,25 +80,23 @@ public final class WallRefusals {
      * <p>A count says how many; the void left open by one of them is found by knowing WHICH,
      * and there are few enough of these to name them all.
      *
-     * @param union   the discs the walls are laid across
-     * @param walls   the walls on offer, in the order they are offered
-     * @param offered the ones to report on, which must be among them
-     * @param kind    what to call one in the report, since a bridge and a reach of coast read
-     *                as different things to anyone looking for the one being described
+     * @param refusals what one laying made of the walls on offer
+     * @param offered  the ones to report on, which must be among them
+     * @param kind     what to call one in the report, since a bridge and a reach of coast read
+     *                 as different things to anyone looking for the one being described
      */
     public static void reportEachRefusal(
-            DiscUnion union,
-            Walls walls,
+            ChordRefusals refusals,
             List<Chord> offered,
             String kind) {
 
         for (var chord : offered) {
 
-            var refusal = DiscUnionBoundary.describeChordRefusal(union, walls, chord);
-
-            if (refusal.reason() == DiscUnionBoundary.RefusalReason.LAID) {
+            var refusal = refusals.describeRefusal(chord);
+            if (refusal.reason() == RefusalReason.LAID) {
                 continue;
             }
+
             var from = chord.findStart();
             var to = chord.findEnd();
 
