@@ -7,15 +7,15 @@ import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.owners.OwnerReading;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
+import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 
 import java.util.Map;
 
 /**
  * Everything one label rebuild resolves a cluster's colour and name from: who owns each system, the
- * paint scheme the build beneath the names was styled by, the painting layer's reading of its
- * owners, the picks the pass was baked under - the spotlight the rest of the sector recedes by, and
- * the format a name is spelled in - and the face every name is measured in.
+ * paints the build beneath the names was painted in - its scheme, the painting layer's reading of
+ * its owners, and the picks it was baked under - and the face every name is measured in.
  *
  * <p>Held as one value because the parts have to describe the same moment. A rebuild that named
  * owners under this pass's reading while receding them by the last pass's filter would produce
@@ -23,27 +23,26 @@ import java.util.Map;
  * not as an error. Passing them one by one is what makes that possible; passing the snapshot
  * makes it unrepresentable.
  *
+ * <p>The paints are the build's own rather than a second set resolved from the same parts, so a
+ * name's colour is read off the very style decision its fill was painted from.
+ *
  * <p>The two paths that produce one differ in where the owners come from - the production
  * build hands over the clusters it just built, the border-tracing diagnostic hands over the owners
  * the active view's source resolved with nothing spotlit - and agree on everything downstream, which is
  * the point of them meeting in one type.
  *
  * @param ownerBySystemKey the owner of each drawn system, keyed by {@link SystemKey}
- * @param mapStyling       the scheme the build beneath the names was styled by: the categories a
- *                         spotlit owner's name is held in and each category's name style, and the
- *                         shades a desaturated owner's name recolours to
- * @param reading          the painting layer's answers about its owners - each one's name,
- *                         category and recede
- * @param contentInputs    the picks the pass was baked under: the spotlight names and shades
- *                         recede by, and the name format they are spelled and fitted in
+ * @param paints           the paints the build beneath the names was painted in: each owner's
+ *                         style decision, the categories a name style is read for, the shades a
+ *                         desaturated owner's name recolours to, the reading an owner's name comes
+ *                         off, and the picks - the spotlight names recede by, and the name format
+ *                         they are spelled and fitted in
  * @param labelFace        the face the sector settled its labels on, which the fit measures every
  *                         name in and records beside its placements for the mint to draw in
  */
 public record ClusterLabelStylingSnapshot(
     Map<SystemKey, SystemOwner> ownerBySystemKey,
-    MapStyling mapStyling,
-    OwnerReading reading,
-    ContentInputs contentInputs,
+    MapPaints paints,
     FontAtlas labelFace) {
 
     /**
@@ -56,15 +55,11 @@ public record ClusterLabelStylingSnapshot(
      */
     public static ClusterLabelStylingSnapshot resolveFrom(OwnerMapClusters clusters, FontAtlas labelFace) {
 
-        // The owners off the live occupancy, which the refresh folds, and the rest off the inputs
+        // The owners off the live occupancy, which the refresh folds, and the paints off the inputs
         // the build was baked under, which stand until the next rebuild.
-        var buildInputs = clusters.getBuildInputs();
-
         return new ClusterLabelStylingSnapshot(
             clusters.getOccupancy().getOwnerBySystemKey(),
-            buildInputs.styling(),
-            buildInputs.viewReading().reading(),
-            buildInputs.contentInputs(),
+            clusters.getBuildInputs().getPaints(),
             labelFace);
     }
 
@@ -74,7 +69,8 @@ public record ClusterLabelStylingSnapshot(
      *
      * <p>The view never filters, so the pick is dropped from the picks it goes in under: it recedes
      * nothing and names no synthetic spotlight key. Dropped rather than the whole picks being
-     * replaced, since the names are still drawn in the format the player asked for.
+     * replaced, since the names are still drawn in the format the player asked for. The view paints
+     * no fills, so its paints are resolved here for its names alone.
      *
      * @param ownerBySystemKey the owners the view traced, so its names and its borders name one
      *                         owner per cell
@@ -94,9 +90,7 @@ public record ClusterLabelStylingSnapshot(
 
         return new ClusterLabelStylingSnapshot(
             ownerBySystemKey,
-            mapStyling,
-            reading,
-            contentInputs.clearFilterPick(),
+            new MapPaints(mapStyling, reading, contentInputs.clearFilterPick()),
             labelFace);
     }
 }

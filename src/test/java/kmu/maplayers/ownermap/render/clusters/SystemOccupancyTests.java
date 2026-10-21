@@ -3,6 +3,7 @@ package kmu.maplayers.ownermap.render.clusters;
 import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import org.junit.jupiter.api.Nested;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -206,6 +208,73 @@ final class SystemOccupancyTests {
 
             assertThat(occupancy.readOwnerOf(HELD_SYSTEM))
                 .isSameAs(HEGEMONY);
+        }
+
+        @Test
+        void answersNobodyForACellDrawnAsNoSystem() {
+            // A cell with no star of its own names no system, and is answered here rather than by
+            // each caller guarding the read before it asks.
+            var occupancy = SystemOccupancy.createCopyOf(
+                Map.of(HELD_SYSTEM, HEGEMONY),
+                Set.of(),
+                Set.of());
+
+            var actualOwner = occupancy.readOwnerOf(null);
+
+            assertThat(actualOwner)
+                .isNull();
+        }
+    }
+
+    @Nested
+    class ReadOwnerOfMembers {
+
+        @Test
+        void answersTheOwnerOfTheSystemTheFirstMemberDrawsAs() {
+            // Every member of a group is keyed by the owner of the system it draws as, so the first
+            // answers for all - here an absorbed cell drawing as the held system's star.
+            var absorbedCell = buildCellKey("absorbed");
+            var occupancy = SystemOccupancy.createCopyOf(
+                Map.of(HELD_SYSTEM, HEGEMONY),
+                Set.of(),
+                Set.of());
+            var cellGrouping = new CellGrouping(
+                Map.of(absorbedCell, HELD_SYSTEM),
+                Map.of(HELD_SYSTEM, "hegemony"));
+
+            var actualOwner = occupancy.readOwnerOfMembers(cellGrouping, List.of(absorbedCell));
+
+            assertThat(actualOwner)
+                .isSameAs(HEGEMONY);
+        }
+
+        @Test
+        void readsTheFirstMembersOwnerUnderThatMembersOwnKey() {
+            // The members and the owners share one address, so a group whose member shares a
+            // vanilla ID with another system reads its own owner - where a lookup by ID alone could
+            // only have named whichever of the pair the map happened to hold.
+            var owners = new LinkedHashMap<SystemKey, SystemOwner>();
+
+            owners.put(FIRST_TWIN, HEGEMONY);
+            owners.put(SECOND_TWIN, TRITACHYON);
+
+            var occupancy = SystemOccupancy.createCopyOf(owners, Set.of(), Set.of());
+            var cellGrouping = new CellGrouping(
+                Map.of(
+                    FIRST_TWIN,
+                    FIRST_TWIN,
+                    SECOND_TWIN,
+                    SECOND_TWIN),
+                Map.of(
+                    FIRST_TWIN,
+                    "hegemony",
+                    SECOND_TWIN,
+                    "tritachyon"));
+
+            var actualOwner = occupancy.readOwnerOfMembers(cellGrouping, List.of(SECOND_TWIN));
+
+            assertThat(actualOwner)
+                .isSameAs(TRITACHYON);
         }
     }
 

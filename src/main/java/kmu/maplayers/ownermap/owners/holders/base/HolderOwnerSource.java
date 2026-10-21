@@ -6,6 +6,7 @@ import kmlib.profiling.Profiler;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.profiling.RebuildStepTerms;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.ownermap.owners.OwnerAffiliation;
 import kmu.maplayers.ownermap.owners.OwnerSource;
 import kmu.maplayers.ownermap.owners.ResolvedOwners;
@@ -99,8 +100,7 @@ public final class HolderOwnerSource
 
         return new ResolvedOwners(
             resolution.ownerBySystemKey(),
-            resolution.contestedSystemKeys(),
-            resolution.unfilledSystemKeys(),
+            resolution.fillStates(),
             inhabitedSystemKeys,
             measureSpotlitPresenceScan(
                 profiler,
@@ -161,8 +161,8 @@ public final class HolderOwnerSource
 
             holdersScope.tagCall("owned=" + resolution.ownerBySystemKey().size()
                 + " filtering=" + (spotlitOwnerId != null)
-                + " contested=" + resolution.contestedSystemKeys().size()
-                + " unfilled=" + resolution.unfilledSystemKeys().size());
+                + " contested=" + resolution.fillStates().countSystemsIn(FillState.HATCHED)
+                + " unfilled=" + resolution.fillStates().countSystemsIn(FillState.UNFILLED));
 
             return resolution;
         }

@@ -262,7 +262,7 @@ final class MarkedSystemRederiveTests {
                 walk,
                 ownerSourceFake.openSystemResolve(
                     walk,
-                    clusters.getBuildInputs().contentInputs().selectedOwnerId()),
+                    clusters.getBuildInputs().getContentInputs().selectedOwnerId()),
                 Set.copyOf(buildCellKeys(markedSystemIds)));
         }
 

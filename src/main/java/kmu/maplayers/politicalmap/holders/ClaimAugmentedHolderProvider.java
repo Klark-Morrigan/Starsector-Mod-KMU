@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.holders;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
 import kmu.maplayers.ownermap.owners.holders.base.HolderProvider;
@@ -10,7 +12,6 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.claims.FilteredClaims;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 
 /**
@@ -90,7 +91,7 @@ public final class ClaimAugmentedHolderProvider
             Map<SystemKey, SystemOwner> claimingHolderBySystemKey) {
 
         var ownerBySystemKey = new LinkedHashMap<>(held.ownerBySystemKey());
-        var unfilledSystemKeys = new LinkedHashSet<>(held.unfilledSystemKeys());
+        var fillStateBySystemKey = new LinkedHashMap<>(held.fillStates().getNonSolidFillStateBySystemKey());
 
         for (var claim : claimingHolderBySystemKey.entrySet()) {
 
@@ -99,12 +100,11 @@ public final class ClaimAugmentedHolderProvider
             }
 
             ownerBySystemKey.put(claim.getKey(), claim.getValue());
-            unfilledSystemKeys.add(claim.getKey());
+            fillStateBySystemKey.put(claim.getKey(), FillState.UNFILLED);
         }
 
         return new HolderResolution(
             ownerBySystemKey,
-            held.contestedSystemKeys(),
-            unfilledSystemKeys);
+            SystemFillStates.createOf(fillStateBySystemKey));
     }
 }

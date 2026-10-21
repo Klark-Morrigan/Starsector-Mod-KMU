@@ -1,8 +1,9 @@
 package kmu.maplayers.ownermap.render.clusters;
 
 import kmlib.colour.ColourPair;
-import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
@@ -20,37 +21,35 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.util.Set;
+import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins what the retained inputs answer for themselves: that the empty placeholder carries the
  * view it was built for over inert stand-ins and says it was never built, that the constructor
- * threads each snapshot and each derived set into its matching accessor, and that an owner's paint
- * cascades the inputs' own reading, picks and shades rather than any handed in beside them, once
- * per owner.
+ * threads each snapshot and the fill states into its matching accessor, and that the paints it
+ * holds are resolved over its own reading, picks and scheme rather than any handed in beside them.
  *
- * <p>The cascade's rule is {@link kmu.maplayers.ownermap.render.style.OwnerStylingTests}'s
- * and what an element then paints is
- * {@link kmu.maplayers.ownermap.render.style.ResolvedOwnerPaintTests}'s; what belongs here
- * is that both are asked over these inputs' own snapshots, which is the whole reason the
- * composition sits on the type that holds them.
+ * <p>How a paint is resolved and remembered is
+ * {@link kmu.maplayers.ownermap.render.style.MapPaintsTests}'s; what belongs here is that the
+ * paints are resolved over these inputs' own snapshots, which is the whole reason they sit on the
+ * type that holds them.
  */
 final class OwnerMapBuildInputsTests {
 
     private static final String OWNER_ID = "hegemony";
 
-    // Two distinct sets so a swapped slot is caught by identity, held apart from each other.
-    private static final Set<SystemKey> UNFILLED = Set.of(buildCellKey("unfilled-system"));
-    private static final Set<SystemKey> CONTESTED = Set.of(buildCellKey("contested-system"));
+    // The fill states a build hands over, naming one system so they are told from the all-solid
+    // placeholder by more than identity.
+    private static final SystemFillStates FILL_STATES =
+        SystemFillStates.createOf(Map.of(buildCellKey("unfilled-system"), FillState.UNFILLED));
 
     // The owner a paint is resolved for, and the shades the record sinks a desaturated one to.
     // Distinct from the owner's own pair, so a resolved palette names which of the two it took.
@@ -71,20 +70,18 @@ final class OwnerMapBuildInputsTests {
 
             // The view is the one thing a later frame reads off the placeholder - which panel a
             // fallback was drawn for - so it is the view it was built for rather than a stand-in.
-            assertThat(inputs.viewReading().view())
+            assertThat(inputs.getViewReading().view())
                 .isSameAs(viewMock);
 
             // The empty fallback is never a filtered build, so it selects no owner, recedes nothing
             // and derives nothing about the fill; the scheme's own stand-ins are MapStyling's to
             // pin, read back here only to prove no slot is left null.
-            assertThat(inputs.contentInputs().isFiltering())
+            assertThat(inputs.getContentInputs().isFiltering())
                 .isFalse();
-            assertThat(inputs.styling().neutralPalette())
+            assertThat(inputs.getStyling().neutralPalette())
                 .isNotNull();
-            assertThat(inputs.unfilledSystemKeys())
-                .isEmpty();
-            assertThat(inputs.contestedSystemKeys())
-                .isEmpty();
+            assertThat(inputs.getFillStates())
+                .isSameAs(SystemFillStates.ALL_SOLID);
         }
     }
 
@@ -105,21 +102,18 @@ final class OwnerMapBuildInputsTests {
                 styling,
                 viewReading,
                 contentInputs,
-                UNFILLED,
-                CONTESTED);
+                FILL_STATES);
 
-            // By identity throughout: the two sets are the same type in adjacent slots, so only
-            // distinct instances catch a swap between them.
-            assertThat(inputs.styling())
+            // By identity throughout: the scheme and the picks are read back through the paints
+            // the inputs hold, and must be the very ones handed in.
+            assertThat(inputs.getStyling())
                 .isSameAs(styling);
-            assertThat(inputs.viewReading())
+            assertThat(inputs.getViewReading())
                 .isSameAs(viewReading);
-            assertThat(inputs.contentInputs())
+            assertThat(inputs.getContentInputs())
                 .isSameAs(contentInputs);
-            assertThat(inputs.unfilledSystemKeys())
-                .isSameAs(UNFILLED);
-            assertThat(inputs.contestedSystemKeys())
-                .isSameAs(CONTESTED);
+            assertThat(inputs.getFillStates())
+                .isSameAs(FILL_STATES);
         }
     }
 
@@ -146,87 +140,43 @@ final class OwnerMapBuildInputsTests {
     }
 
     @Nested
-    class ResolveOwnerPaintOf {
+    class Paints {
 
         @Test
-        void cascadesTheInputsOwnReadingAndPicks() {
-            // Off filter the decision is the reading's own call, asked with the picks this build was
-            // baked under - so the reading sees exactly the inputs' other snapshot, and the
-            // adjustment it answers is the one the owner draws under.
-            var adjustment = new ElementStyleAdjustment(0.5, false);
+        void resolvesOverTheInputsOwnReadingAndPicks() {
+            // The paints a build's cells and cluster groups draw in are resolved over the reading
+            // and picks this build was baked under - so the reading is asked with exactly the
+            // inputs' other snapshot, and the adjustment it answers is the one the owner draws under.
+            var expectedAdjustment = new ElementStyleAdjustment(0.5, false);
             var contentInputs = ContentInputsFixtures.createInertInputs();
-            var readingMock = buildReadingAdjustingBy(adjustment);
-            var paint = buildInputsUnder(readingMock, contentInputs)
-                .resolveOwnerPaintOf(OWNER);
+            var readingMock = mock(OwnerReading.class);
 
-            assertThat(paint.adjustment())
-                .isSameAs(adjustment);
-            assertThat(paint.style())
-                .isNotNull();
+            when(readingMock.resolveStyleAdjustment(any(), any()))
+                .thenReturn(expectedAdjustment);
+            when(readingMock.resolveCategory(any(), any()))
+                .thenReturn(StandInCategoryFake.OWNED);
 
+            var inputs = buildInputsUnder(readingMock, contentInputs);
+            var actualPaint = inputs.getPaints().resolveOwnerPaintOf(OWNER);
+
+            assertThat(actualPaint.adjustment())
+                .isSameAs(expectedAdjustment);
             verify(readingMock)
                 .resolveStyleAdjustment(OWNER_ID, contentInputs);
         }
 
         @Test
-        void sinksADesaturatedOwnerToTheRetainedDesaturationShades() {
-            // The shades come off the inputs' own styling rather than from the caller, which is
-            // what keeps an owner's fill, its border and its cells' seams sunk to one grey: a
-            // builder reaching for the palette itself is a builder that could reach a different
-            // build's.
-            var paint = buildInputsUnder(
-                    buildReadingAdjustingBy(new ElementStyleAdjustment(1.0, true)),
-                    ContentInputsFixtures.createInertInputs())
-                .resolveOwnerPaintOf(OWNER);
-
-            assertThat(paint.palette())
-                .isSameAs(DESATURATION_PALETTE);
-        }
-
-        @Test
-        void answersASecondAskWithThePaintTheFirstResolved() {
-
-            var adjustment = new ElementStyleAdjustment(0.5, false);
+        void resolvesAgainstTheInputsOwnStyling() {
+            // The shades and the trace a stage reads off the paints are the inputs' own, so a cell
+            // re-shaped by a later batch is styled by the scheme its neighbours were.
             var inputs = buildInputsUnder(
-                buildReadingAdjustingBy(adjustment),
+                OwnerReadingFake.createAnsweringNothing(),
                 ContentInputsFixtures.createInertInputs());
 
-            inputs.resolveOwnerPaintOf(OWNER);
-            var paint = inputs.resolveOwnerPaintOf(OWNER);
+            var actualStyling = inputs.getPaints().getStyling();
 
-            assertThat(paint.adjustment())
-                .isSameAs(adjustment);
-            assertThat(paint.palette())
-                .isEqualTo(new ColourPair(Color.RED, Color.BLUE));
-        }
-
-        @Test
-        void asksTheReadingOnceForAnOwnerAskedPerCell() {
-            // Every cell of an owner and its cluster group ask for the same paint, so a build that
-            // went back to the reading each time would decide one owner's style once per cell.
-            var contentInputs = ContentInputsFixtures.createInertInputs();
-            var readingMock = buildReadingAdjustingBy(new ElementStyleAdjustment(0.5, false));
-            var inputs = buildInputsUnder(readingMock, contentInputs);
-
-            inputs.resolveOwnerPaintOf(OWNER);
-            inputs.resolveOwnerPaintOf(OWNER);
-
-            verify(readingMock, times(1))
-                .resolveStyleAdjustment(OWNER_ID, contentInputs);
-        }
-
-        // A reading that recedes every owner by the stated adjustment and keeps every one at full
-        // strength, so what a case reads back can only have come from the record.
-        private static OwnerReading buildReadingAdjustingBy(ElementStyleAdjustment adjustment) {
-
-            var readingMock = mock(OwnerReading.class);
-
-            when(readingMock.resolveStyleAdjustment(any(), any()))
-                .thenReturn(adjustment);
-            when(readingMock.resolveCategory(any(), any()))
-                .thenReturn(StandInCategoryFake.OWNED);
-
-            return readingMock;
+            assertThat(actualStyling)
+                .isSameAs(inputs.getStyling());
         }
     }
 
@@ -247,7 +197,6 @@ final class OwnerMapBuildInputsTests {
                 OwnerMapClusterFixtures.NEUTRAL_PALETTE),
             new ViewReading(mock(OwnerPaintedView.class), reading, new OwnerSourceFake()),
             contentInputs,
-            Set.of(),
-            Set.of());
+            SystemFillStates.ALL_SOLID);
     }
 }

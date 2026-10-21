@@ -8,6 +8,7 @@ import kmu.maplayers.base.render.clusters.ClusterDrawLists;
 import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.ContentInputs;
@@ -24,10 +25,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeTo;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -37,6 +38,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 
 /**
  * Pins the built map state the renderer paints and the incremental refresh edits:
@@ -91,7 +93,7 @@ final class OwnerMapClustersTests {
             // The placeholder inputs' own stand-ins are OwnerMapBuildInputs' to pin; read back
             // here only to prove the fallback carries the view it was built for, which is the one
             // thing about them a later frame reads.
-            assertThat(clusters.getBuildInputs().viewReading().view())
+            assertThat(clusters.getBuildInputs().getViewReading().view())
                 .isSameAs(viewMock);
         }
     }
@@ -157,8 +159,7 @@ final class OwnerMapClustersTests {
                         OwnerReadingFake.createAnsweringNothing(),
                         new OwnerSourceFake()),
                     ContentInputs.createEmpty(),
-                    Set.of(),
-                    Set.of()));
+                    SystemFillStates.ALL_SOLID));
 
             clusters.getPaintedCells().putPaintedCell(
                 SYSTEM_CELL,
@@ -314,6 +315,74 @@ final class OwnerMapClustersTests {
     }
 
     @Nested
+    class CreatePaintedCellBuilder {
+
+        @Test
+        void standsTheBuilderUpOnTheBuildsPaintsAndLiveOccupancy() {
+            // The one place the pipeline states the builder's inputs, so the full build and every
+            // batch after it bake a cell from the same paints and the same occupancy the refresh
+            // folds into - by identity, since a copy of either would miss the next fold or memo.
+            var occupancy = SystemOccupancy.createEmpty();
+            var buildInputs = OwnerMapBuildInputs.createEmpty(mock(OwnerPaintedView.class));
+            var clusters = new OwnerMapClusters(occupancy, buildInputs);
+            var actualArguments = new ArrayList<List<?>>();
+
+            try (var builderConstructionMock = mockConstruction(
+                    PaintedCellBuilder.class,
+                    (builderMock, context) -> actualArguments.add(context.arguments()))) {
+
+                clusters.createPaintedCellBuilder();
+            }
+
+            assertThat(actualArguments)
+                .singleElement()
+                .satisfies(arguments -> {
+
+                    assertThat(arguments.get(0))
+                        .isSameAs(buildInputs.getPaints());
+                    assertThat(arguments.get(1))
+                        .isSameAs(occupancy);
+                });
+        }
+    }
+
+    @Nested
+    class CreateClusterGroupBuilder {
+
+        @Test
+        void standsTheBuilderUpOnTheBuildsPaintsAndFillStatesOverTheGivenCells() {
+            // The paints and fill states are the build's own; the grouping and edges are the
+            // caller's, since a batch groups the cells afresh once its flips have folded.
+            var buildInputs = OwnerMapBuildInputs.createEmpty(mock(OwnerPaintedView.class));
+            var clusters = new OwnerMapClusters(SystemOccupancy.createEmpty(), buildInputs);
+            var cellGrouping = clusters.resolveCellGroupingOver(Map.of());
+            var cellEdgesByCellKey = Map.<SystemKey, List<CellEdge>>of();
+            var actualArguments = new ArrayList<List<?>>();
+
+            try (var builderConstructionMock = mockConstruction(
+                    ClusterGroupBuilder.class,
+                    (builderMock, context) -> actualArguments.add(context.arguments()))) {
+
+                clusters.createClusterGroupBuilder(cellGrouping, cellEdgesByCellKey);
+            }
+
+            assertThat(actualArguments)
+                .singleElement()
+                .satisfies(arguments -> {
+
+                    assertThat(arguments.get(0))
+                        .isSameAs(buildInputs.getPaints());
+                    assertThat(arguments.get(1))
+                        .isSameAs(cellGrouping);
+                    assertThat(arguments.get(2))
+                        .isSameAs(cellEdgesByCellKey);
+                    assertThat(arguments.get(3))
+                        .isSameAs(buildInputs.getFillStates());
+                });
+        }
+    }
+
+    @Nested
     class ReindexClusters {
 
         @Test
@@ -439,7 +508,7 @@ final class OwnerMapClustersTests {
 
         clusters.reindexClusters(
             buildKeyedValues(edges),
-            buildDrawnSystemKeys(systemIdByCellId));
+            clusters.resolveCellGroupingOver(buildDrawnSystemKeys(systemIdByCellId)));
     }
 
     // A clusters whose only varying inputs are the two draw lists; the retained inputs are the

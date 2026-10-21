@@ -7,6 +7,7 @@ import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.hover.HoverHighlight;
 import kmu.maplayers.base.hover.HoverHighlightGeometry;
 import kmu.maplayers.base.hover.MapHoverFixture;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -21,7 +22,6 @@ import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapBuildInputs;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusterFixtures;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
-import kmu.maplayers.ownermap.render.clusters.PaintedCellBuilder;
 import kmu.maplayers.ownermap.render.clusters.SystemOccupancy;
 import kmu.maplayers.ownermap.render.hover.OwnerMapHoverHighlightSource;
 import kmu.maplayers.ownermap.render.style.MapStyling;
@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
@@ -133,10 +132,9 @@ final class OwnerMapHoverHighlightIntegrationTests {
             CornerRoundingStyle cornerRounding) {
 
         var clusters = buildUnpopulatedClustersUnder(cornerRounding);
-        var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-            clusters,
-            UNPOPULATED_CELL,
-            buildSquareCell());
+        var painted = clusters
+            .createPaintedCellBuilder()
+            .buildPaintedCell(UNPOPULATED_CELL, buildSquareCell());
 
         assertThat(painted)
             .as("the fixture must draw a cell for the chain to carry one")
@@ -169,8 +167,7 @@ final class OwnerMapHoverHighlightIntegrationTests {
                     OwnerReadingFake.createAnsweringNothing(),
                     new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
-                Set.of(),
-                Set.of()));
+                SystemFillStates.ALL_SOLID));
     }
 
     // Every category drawn by its outline alone, over a sector-wide tier carrying the given corner

@@ -120,7 +120,7 @@ final class OwnerMapDrawables {
 
         return clusters != null
             && clusters.getBuildInputs().wasBuilt()
-            && !clusters.getBuildInputs().contentInputs().isFiltering();
+            && !clusters.getBuildInputs().getContentInputs().isFiltering();
     }
 
     /**

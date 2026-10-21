@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderInhabitation;
@@ -82,8 +83,8 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isTrue();
-            assertThat(filtered.contestedSystemKeys())
-                .doesNotContain(buildCellKey("owned-system"));
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .doesNotContainKey(buildCellKey("owned-system"));
             assertThat(holder.palette().primaryColour())
                 .isEqualTo(HEGEMONY_FACTION_BRIGHT);
             assertThat(holder.palette().secondaryColour())
@@ -108,8 +109,8 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isTrue();
-            assertThat(filtered.contestedSystemKeys())
-                .contains(buildCellKey("owned-system"));
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .containsEntry(buildCellKey("owned-system"), FillState.HATCHED);
             assertThat(holder.palette().primaryColour())
                 .isEqualTo(TRITACHYON_FACTION_BRIGHT);
             assertThat(holder.palette().secondaryColour())
@@ -133,8 +134,8 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(holder.ownerId())
                 .isEqualTo("tritachyon");
-            assertThat(filtered.contestedSystemKeys())
-                .doesNotContain(buildCellKey("tritachyon-system"));
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .doesNotContainKey(buildCellKey("tritachyon-system"));
             assertThat(holder.palette().primaryColour())
                 .isEqualTo(TRITACHYON_FACTION_BRIGHT);
         }
@@ -158,8 +159,9 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(filtered.ownerBySystemKey().get(buildCellKey("solid-system")).ownerId())
                 .isEqualTo(filtered.ownerBySystemKey().get(buildCellKey("contested-system")).ownerId());
-            assertThat(filtered.contestedSystemKeys())
-                .contains(buildCellKey("contested-system")).doesNotContain(buildCellKey("solid-system"));
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .containsEntry(buildCellKey("contested-system"), FillState.HATCHED)
+                .doesNotContainKey(buildCellKey("solid-system"));
         }
 
         @Test
@@ -177,8 +179,8 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(filtered.ownerBySystemKey().get(buildCellKey("system-a")).ownerId())
                 .isEqualTo(filtered.ownerBySystemKey().get(buildCellKey("system-b")).ownerId());
-            assertThat(filtered.contestedSystemKeys())
-                .isEmpty();
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .doesNotContainValue(FillState.HATCHED);
         }
 
         @Test
@@ -232,8 +234,8 @@ class FilteredPoliticsIntegrationTests {
             assertThat(SpotlitOwners.isSpotlitOwner(
                     filtered.ownerBySystemKey().get(buildCellKey("salvage-system")).ownerId()))
                 .isTrue();
-            assertThat(filtered.contestedSystemKeys())
-                .doesNotContain(buildCellKey("salvage-system"));
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .doesNotContainKey(buildCellKey("salvage-system"));
         }
 
         @Test
@@ -250,8 +252,8 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isTrue();
-            assertThat(filtered.contestedSystemKeys())
-                .contains(buildCellKey("owned-system"));
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .containsEntry(buildCellKey("owned-system"), FillState.HATCHED);
             assertThat(holder.palette().primaryColour())
                 .isEqualTo(TRITACHYON_FACTION_BRIGHT);
         }
@@ -274,8 +276,8 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(SpotlitOwners.isSpotlitOwner(holder.ownerId()))
                 .isTrue();
-            assertThat(filtered.contestedSystemKeys())
-                .contains(buildCellKey("haven"));
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .containsEntry(buildCellKey("haven"), FillState.HATCHED);
         }
 
         @Test
@@ -345,8 +347,8 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(filtered.ownerBySystemKey())
                 .isEmpty();
-            assertThat(filtered.contestedSystemKeys())
-                .isEmpty();
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .doesNotContainValue(FillState.HATCHED);
         }
 
         @Test
@@ -356,8 +358,8 @@ class FilteredPoliticsIntegrationTests {
 
             assertThat(filtered.ownerBySystemKey())
                 .isEmpty();
-            assertThat(filtered.contestedSystemKeys())
-                .isEmpty();
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .doesNotContainValue(FillState.HATCHED);
         }
 
         @Test
@@ -374,10 +376,10 @@ class FilteredPoliticsIntegrationTests {
 
             var filtered = resolveFor(sector, "tritachyon");
 
-            assertThat(filtered.contestedSystemKeys())
-                .containsExactly(buildCellKey("owned-system"));
-            assertThat(filtered.unfilledSystemKeys())
-                .isEmpty();
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .containsEntry(buildCellKey("owned-system"), FillState.HATCHED);
+            assertThat(filtered.fillStates().getNonSolidFillStateBySystemKey())
+                .doesNotContainValue(FillState.UNFILLED);
         }
     }
 

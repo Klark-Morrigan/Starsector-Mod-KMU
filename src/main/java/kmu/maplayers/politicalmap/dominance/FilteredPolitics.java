@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.owners.SpotlitOwners;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
@@ -11,7 +13,6 @@ import kmu.maplayers.ownermap.owners.holders.base.HolderResolution;
 import kmu.maplayers.politicalmap.dominance.weighting.MarketFootprint;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,7 +32,7 @@ import java.util.Set;
  * agnostic geometry ({@code CellShaper}, {@code SystemClusters}, and the border trace) fuses
  * the whole footprint into a single territory outlined by one frontier, with no awareness of
  * the filter. Which of those systems are contested is reported apart from the key, in
- * {@link HolderResolution#contestedSystemKeys()}, so the render layer can split the fill per
+ * {@link HolderResolution#fillStates()}, so the render layer can split the fill per
  * cell (solid where it dominates, hatched where contested) inside that one frontier rather than
  * fracturing the footprint into two separately-bordered clusters. The key itself is
  * {@link SpotlitOwners}'s - asked for here and recognised there - so a resolve that stamps a
@@ -154,10 +155,10 @@ public final class FilteredPolitics {
             String selectedBlocId) {
 
         var ownerBySystemKey = new LinkedHashMap<SystemKey, SystemOwner>();
-        var contestedSystemKeys = new LinkedHashSet<SystemKey>();
+        var fillStateBySystemKey = new LinkedHashMap<SystemKey, FillState>();
 
         if (!pass.canReadEconomy() || selectedBlocId == null) {
-            return new HolderResolution(ownerBySystemKey, contestedSystemKeys, Set.of());
+            return new HolderResolution(ownerBySystemKey, SystemFillStates.createOf(fillStateBySystemKey));
         }
 
         // Resolved once for the whole walk: every system the bloc is present in joins the same
@@ -170,14 +171,14 @@ public final class FilteredPolitics {
         for (var system : pass.readSystems()) {
 
             var systemKey = SystemKey.readKeyOf(system);
-            var holder = resolveHolder(system, systemKey, pass, spotlight, contestedSystemKeys);
+            var holder = resolveHolder(system, systemKey, pass, spotlight, fillStateBySystemKey);
 
             if (holder != null) {
                 ownerBySystemKey.put(systemKey, holder);
             }
         }
 
-        return new HolderResolution(ownerBySystemKey, contestedSystemKeys, Set.of());
+        return new HolderResolution(ownerBySystemKey, SystemFillStates.createOf(fillStateBySystemKey));
     }
 
     // Resolves one system's presence-aware holder: the selected bloc under the spotlit key where
@@ -201,7 +202,7 @@ public final class FilteredPolitics {
             SystemKey systemKey,
             DominancePass pass,
             Spotlight spotlight,
-            Set<SystemKey> contestedSystemKeys) {
+            Map<SystemKey, FillState> fillStateBySystemKey) {
 
         var footprintByBlocId = pass.readBlocFootprints(system);
         var presentBlocIds = pass.readHabitationIn(system).blocIds();
@@ -225,7 +226,7 @@ public final class FilteredPolitics {
         }
 
         if (presence == SelectedBlocPresence.PRESENT_BUT_DOMINATED) {
-            contestedSystemKeys.add(systemKey);
+            fillStateBySystemKey.put(systemKey, FillState.HATCHED);
         }
 
         return spotlight.holder();

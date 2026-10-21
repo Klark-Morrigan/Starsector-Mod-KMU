@@ -157,8 +157,11 @@ split along the line between deciding and drawing.
 
 `FillSplit` is the pure partition -
 which of three states (solid, hatched, unfilled) each member system draws in,
-decidable from plain ID sets.
-Which systems land in the two non-solid sets is the layer's call,
+read off a `SystemFillStates`.
+That value names each system that is not solid in one state,
+so no system can be named hatched and unfilled at once,
+and answers solid for every other.
+Which systems it names is the layer's call,
 handed in;
 nothing here decides it.
 

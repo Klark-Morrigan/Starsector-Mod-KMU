@@ -13,6 +13,7 @@ import kmlib.testfixtures.statics.StaticSeams;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.geometry.ShapedCell;
+import kmu.maplayers.base.geometry.SquareCellFixture.SquareSide;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.LabelsBuilder;
@@ -44,6 +45,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
@@ -54,20 +56,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCell;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCellFacing;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.CELL_LESS_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.DISTANT_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.FLIPPED_SYSTEM;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.HEGEMONY;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.NEIGHBOUR_SYSTEM;
+import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.SMALL_CELL_SIDE;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.TRITACHYON;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnerOf;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildOwnersOf;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildSectorWithSystems;
-import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildSquareCellFacing;
 import static kmu.maplayers.ownermap.render.StaleOwnerMapFixtures.buildTwoAdjacentCells;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -76,7 +79,10 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -93,8 +99,9 @@ import static org.mockito.Mockito.when;
  *
  * <p>A unit test, so what the redraw delegates to is stood in for: the owner source the standing
  * build retains, whose resolve answers who owns a marked system and whether anything stands in it;
- * and, at their static seams, the two builders that turn a re-shaped cell and an owner's members
- * into draw records, and the anchor and label rebuilds that ride along. Each is pinned by its own
+ * the two builders that turn a re-shaped cell and an owner's members into draw records, stood in
+ * as the batch constructs them; and, at their static seams, the anchor and label rebuilds that ride
+ * along. Each is pinned by its own
  * suite; what belongs here is only the decision about which of them to call and with what.
  *
  * <p>The same "only what moved" promise is pinned on the placements the redraw carries along: a
@@ -122,6 +129,10 @@ public final class IncrementalOwnerRefreshTests {
     // business and no case reads it; the face is what the re-fit has to measure in.
     private static final AnchorFitFingerprint STANDING_FIT =
         new AnchorFitFingerprint(null, GEOMETRY_REVISION - 1, STANDING_LABEL_FACE);
+
+    // A cell large enough to hold the authored band clear of its own border, so a re-bake that ran
+    // comes back with runs rather than with the empty band a collapsed inset would give.
+    private static final double BAND_SIZED_CELL_SIDE = 4000;
 
     @Nested
     class ApplyStaleOwnerUpdates {
@@ -155,8 +166,8 @@ public final class IncrementalOwnerRefreshTests {
         // The walk the last run was handed, so a case can read back which walk reached the source.
         private SectorWalk handedWalk;
 
-        private MockedStatic<PaintedCellBuilder> paintedCellsMock;
-        private MockedStatic<ClusterGroupBuilder> clustersMock;
+        private MockedConstruction<PaintedCellBuilder> paintedCellsMock;
+        private MockedConstruction<ClusterGroupBuilder> clustersMock;
         private MockedStatic<ClusterAnchorsBuilder> anchorsMock;
         private MockedStatic<KmuOwnerMapRibbonSettings> settingsMock;
 
@@ -181,29 +192,21 @@ public final class IncrementalOwnerRefreshTests {
             // which keeps the owner cases free of a second fact moving underneath them.
             ownerSourceFake.answerEverySystemInhabited();
 
-            paintedCellsMock = seams.openSeam(PaintedCellBuilder.class);
-            paintedCellsMock
-                .when(() -> PaintedCellBuilder.buildPaintedCellForSystem(
-                    any(),
-                    any(),
-                    any()))
-                // Echoes back the shape it was handed, as the real builder does for a cell inside a
-                // cluster. A fixed ring would have every re-shaped cell answer with the same shape
-                // whatever geometry it was built from, which is the one thing the band cases below
-                // read off a re-shaped cell.
-                .thenAnswer(invocation -> OwnerMapClusterFixtures
-                    .createPlaceholderPaintedCellOn(
-                        invocation.<ShapedCell>getArgument(2).fillPolygon()));
+            // Each builder the batch stands up echoes back the shape it was handed, as the real one
+            // does for a cell inside a cluster. A fixed ring would have every re-shaped cell answer
+            // with the same shape whatever geometry it was built from, which is the one thing the
+            // band cases below read off a re-shaped cell.
+            paintedCellsMock = mockConstruction(
+                PaintedCellBuilder.class,
+                (builderMock, context) -> when(builderMock.buildPaintedCell(any(), any()))
+                    .thenAnswer(invocation -> OwnerMapClusterFixtures
+                        .createPlaceholderPaintedCellOn(
+                            invocation.<ShapedCell>getArgument(1).fillPolygon())));
 
-            clustersMock = seams.openSeam(ClusterGroupBuilder.class);
-            clustersMock
-                .when(() -> ClusterGroupBuilder.buildClusterGroup(
-                    any(),
-                    any(),
-                    any(),
-                    any(),
-                    anyList()))
-                .thenReturn(OwnerMapClusterFixtures.createClusterGroupWithLoops(List.of()));
+            clustersMock = mockConstruction(
+                ClusterGroupBuilder.class,
+                (builderMock, context) -> when(builderMock.buildClusterGroup(any(), anyList()))
+                    .thenReturn(OwnerMapClusterFixtures.createClusterGroupWithLoops(List.of())));
 
             // Both ride along after a flip and are pinned by their own suites; opening them
             // leaves each a no-op, so a case here asserts the fold and not their output. The
@@ -244,6 +247,10 @@ public final class IncrementalOwnerRefreshTests {
 
         @AfterEach
         void closeSeams() {
+
+            paintedCellsMock.close();
+            clustersMock.close();
+
             seams.closeEverySeam();
         }
 
@@ -259,7 +266,6 @@ public final class IncrementalOwnerRefreshTests {
 
             assertThat(ownerSourceFake.readResolvedSystemIds())
                 .isEmpty();
-
             assertThat(clusters.getStyledCellByCellKey())
                 .isEmpty();
         }
@@ -277,8 +283,8 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            paintedCellsMock.verifyNoInteractions();
-            clustersMock.verifyNoInteractions();
+            verifyNoCellBaked();
+            verifyNoClusterGroupTraced();
         }
 
         @Test
@@ -309,8 +315,8 @@ public final class IncrementalOwnerRefreshTests {
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             // Nothing else moved: a re-bake is not a re-shape.
-            paintedCellsMock.verifyNoInteractions();
-            clustersMock.verifyNoInteractions();
+            verifyNoCellBaked();
+            verifyNoClusterGroupTraced();
         }
 
         @Test
@@ -477,20 +483,13 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            paintedCellsMock.verify(
-                () -> PaintedCellBuilder.buildPaintedCellForSystem(
-                    any(),
-                    eq(buildCellKey(FLIPPED_SYSTEM)),
-                    any()));
+            verify(readCellBuilder())
+                .buildPaintedCell(eq(buildCellKey(FLIPPED_SYSTEM)), any());
 
-            paintedCellsMock.verify(
-                () -> PaintedCellBuilder.buildPaintedCellForSystem(
-                    any(),
-                    eq(buildCellKey(NEIGHBOUR_SYSTEM)),
-                    any()),
-                never());
+            verify(readCellBuilder(), never())
+                .buildPaintedCell(eq(buildCellKey(NEIGHBOUR_SYSTEM)), any());
 
-            clustersMock.verifyNoInteractions();
+            verifyNoClusterGroupTraced();
         }
 
         @Test
@@ -595,8 +594,13 @@ public final class IncrementalOwnerRefreshTests {
 
             var cellEdgesByCellKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
 
-            cellEdgesByCellKey.put(firstCell, buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0));
-            cellEdgesByCellKey.put(twinCell, buildSquareCellFacing(NEIGHBOUR_SYSTEM, 100));
+            cellEdgesByCellKey.put(
+                firstCell,
+                buildSquareCellFacing(0, 0, SMALL_CELL_SIDE, SquareSide.BOTTOM, NEIGHBOUR_SYSTEM));
+
+            cellEdgesByCellKey.put(
+                twinCell,
+                buildSquareCellFacing(100, 0, SMALL_CELL_SIDE, SquareSide.BOTTOM, NEIGHBOUR_SYSTEM));
 
             var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
 
@@ -621,11 +625,11 @@ public final class IncrementalOwnerRefreshTests {
             // asked about nor redrawn, since nothing marked it.
             assertThat(ownerSourceFake.readResolvedSystemIds())
                 .containsExactly(FLIPPED_SYSTEM);
-            paintedCellsMock.verify(
-                () -> PaintedCellBuilder.buildPaintedCellForSystem(any(), eq(twinCell), any()));
-            paintedCellsMock.verify(
-                () -> PaintedCellBuilder.buildPaintedCellForSystem(any(), eq(firstCell), any()),
-                never());
+
+            verify(readCellBuilder())
+                .buildPaintedCell(eq(twinCell), any());
+            verify(readCellBuilder(), never())
+                .buildPaintedCell(eq(firstCell), any());
         }
 
         @Test
@@ -644,17 +648,11 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            paintedCellsMock.verify(
-                () -> PaintedCellBuilder.buildPaintedCellForSystem(
-                    any(),
-                    eq(buildCellKey(FLIPPED_SYSTEM)),
-                    any()));
+            verify(readCellBuilder())
+                .buildPaintedCell(eq(buildCellKey(FLIPPED_SYSTEM)), any());
 
-            paintedCellsMock.verify(
-                () -> PaintedCellBuilder.buildPaintedCellForSystem(
-                    any(),
-                    eq(buildCellKey(NEIGHBOUR_SYSTEM)),
-                    any()));
+            verify(readCellBuilder())
+                .buildPaintedCell(eq(buildCellKey(NEIGHBOUR_SYSTEM)), any());
         }
 
         @Test
@@ -673,20 +671,10 @@ public final class IncrementalOwnerRefreshTests {
             markStale(FLIPPED_SYSTEM);
             applyTo(clusters);
 
-            clustersMock.verify(
-                () -> ClusterGroupBuilder.buildClusterGroup(
-                    any(),
-                    any(),
-                    any(),
-                    eq(HEGEMONY),
-                    anyList()));
-            clustersMock.verify(
-                () -> ClusterGroupBuilder.buildClusterGroup(
-                    any(),
-                    any(),
-                    any(),
-                    eq(TRITACHYON),
-                    anyList()));
+            verify(readGroupBuilder())
+                .buildClusterGroup(argThat(owner -> owner.ownerId().equals(HEGEMONY)), anyList());
+            verify(readGroupBuilder())
+                .buildClusterGroup(argThat(owner -> owner.ownerId().equals(TRITACHYON)), anyList());
         }
 
         @Test
@@ -777,7 +765,7 @@ public final class IncrementalOwnerRefreshTests {
         // it - which is what lets a case about the reasons other than a re-shape use it.
         private void seedDrawnDistantCell(OwnerMapClusters clusters) {
 
-            seedDistantCellGeometry(clusters, buildIsolatedSquareCell(10000));
+            seedDistantCellGeometry(clusters, buildSquareCell(10000, 0, SMALL_CELL_SIDE));
 
             clusters.getPaintedCells().putPaintedCell(
                 buildCellKey(DISTANT_SYSTEM),
@@ -789,7 +777,7 @@ public final class IncrementalOwnerRefreshTests {
         // actually cut, so a case reading a band back off a redrawn cell needs the edges to cut a
         // ring a band fits in - and reads back a band this batch laid rather than one it was given.
         private void seedBandSizedDistantCell(OwnerMapClusters clusters) {
-            seedDistantCellGeometry(clusters, buildBandSizedIsolatedCell());
+            seedDistantCellGeometry(clusters, buildSquareCell(10000, 10000, BAND_SIZED_CELL_SIDE));
         }
 
         // What both distant-cell arrangements share: the distant cell added to the two adjacent
@@ -803,9 +791,9 @@ public final class IncrementalOwnerRefreshTests {
             when(cellGeometry.cells().getCellEdgesByCellKey())
                 .thenReturn(buildKeyedValues(Map.of(
                     FLIPPED_SYSTEM,
-                    buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0),
+                    buildSquareCellFacing(0, 0, SMALL_CELL_SIDE, SquareSide.BOTTOM, NEIGHBOUR_SYSTEM),
                     NEIGHBOUR_SYSTEM,
-                    buildSquareCellFacing(FLIPPED_SYSTEM, 100),
+                    buildSquareCellFacing(100, 0, SMALL_CELL_SIDE, SquareSide.BOTTOM, FLIPPED_SYSTEM),
                     DISTANT_SYSTEM,
                     distantCellEdges)));
 
@@ -913,6 +901,31 @@ public final class IncrementalOwnerRefreshTests {
                 .isEqualTo(STANDING_FIT);
         }
 
+        // The cell builder the batch stood up, which every cell it re-shaped was baked by. One per
+        // batch, made through the standing build's own factory.
+        private PaintedCellBuilder readCellBuilder() {
+            return paintedCellsMock.constructed().get(0);
+        }
+
+        // The cluster-group builder the batch stood up once its flips had folded.
+        private ClusterGroupBuilder readGroupBuilder() {
+            return clustersMock.constructed().get(0);
+        }
+
+        // That the batch baked no cell: whatever cell builder it stood up was never asked.
+        private void verifyNoCellBaked() {
+
+            assertThat(paintedCellsMock.constructed())
+                .allSatisfy(cellBuilder -> verifyNoInteractions(cellBuilder));
+        }
+
+        // That the batch traced no owner: it stood no cluster-group builder up, or never asked one.
+        private void verifyNoClusterGroupTraced() {
+
+            assertThat(clustersMock.constructed())
+                .allSatisfy(groupBuilder -> verifyNoInteractions(groupBuilder));
+        }
+
         // What the re-derive answers for one system this pass. Every case stubs the systems
         // it marks; an unstubbed one comes back null, which reads as a system that lost its
         // owner rather than as a missing stub.
@@ -965,6 +978,7 @@ public final class IncrementalOwnerRefreshTests {
     // it and the block is girthier than the cell, so no stretch of that cell's ring is left
     // uncovered. Only the accepted line and the girth are read off a placement here.
     private static ClusterAnchor buildNameAcrossTheCell() {
+
         return new ClusterAnchor(
             new ClusterIdentity(HEGEMONY, Set.of(buildCellKey(FLIPPED_SYSTEM))),
             0f,
@@ -983,6 +997,7 @@ public final class IncrementalOwnerRefreshTests {
     // the carve does run over it, but one that cell's ring never meets - which is what tells a
     // band laid around the words apart from a band laid as though no name existed.
     private static List<double[]> buildWordsBoxAwayFromTheCell() {
+
         return List.of(
             new double[] {-10000.0, -10000.0},
             new double[] {-9000.0, -10000.0},
@@ -993,6 +1008,7 @@ public final class IncrementalOwnerRefreshTests {
     // A placement whose name lies over the distant cell and nowhere near the flip: what a re-fit
     // that moved a name onto an untouched cell leaves behind.
     private static ClusterAnchor buildNameOverTheDistantCell() {
+
         return new ClusterAnchor(
             new ClusterIdentity(HEGEMONY, Set.of(buildCellKey(DISTANT_SYSTEM))),
             0f,
@@ -1010,6 +1026,7 @@ public final class IncrementalOwnerRefreshTests {
     // The distant cell's own ring: the band-sized square above, moved clear of every other
     // fixture so nothing can reach it by accident.
     private static List<double[]> buildDistantBandSizedCell() {
+
         return List.of(
             new double[] {10000.0, 10000.0},
             new double[] {14000.0, 10000.0},
@@ -1020,32 +1037,12 @@ public final class IncrementalOwnerRefreshTests {
     // A cell large enough to hold the authored band clear of its own border, so a re-bake that
     // ran comes back with runs rather than with the empty band a collapsed inset would give.
     private static List<double[]> buildBandSizedCell() {
+
         return List.of(
             new double[] {0.0, 0.0},
             new double[] {4000.0, 0.0},
             new double[] {4000.0, 4000.0},
             new double[] {0.0, 4000.0});
-    }
-
-    // The distant cell's own edges, cutting the band-sized square its recorded ring describes: the
-    // geometry a case needs when the cell it is about is redrawn and so cut afresh from its edges.
-    private static List<CellEdge> buildBandSizedIsolatedCell() {
-        return List.of(
-            buildEdgeFacing(10000, 10000, 14000, 10000, null),
-            buildEdgeFacing(14000, 10000, 14000, 14000, null),
-            buildEdgeFacing(14000, 14000, 10000, 14000, null),
-            buildEdgeFacing(10000, 14000, 10000, 10000, null));
-    }
-
-    // A closed four-edge cell whose every edge faces its own outer reach, so no flip anywhere can
-    // re-shape it - the cell a case needs when what it is about is the reasons other than a
-    // re-shape.
-    private static List<CellEdge> buildIsolatedSquareCell(double offsetX) {
-        return List.of(
-            buildEdgeFacing(offsetX, 0, offsetX + 50, 0, null),
-            buildEdgeFacing(offsetX + 50, 0, offsetX + 50, 50, null),
-            buildEdgeFacing(offsetX + 50, 50, offsetX, 50, null),
-            buildEdgeFacing(offsetX, 50, offsetX, 0, null));
     }
 
     // A clusters holding the given systems, every one of which it also counts settled - the only

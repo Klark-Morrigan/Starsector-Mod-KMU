@@ -5,6 +5,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.owners.holders.base.HolderGrouping;
 import kmu.maplayers.ownermap.owners.holders.base.HolderPass;
@@ -17,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.Map;
-import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.ownermap.owners.holders.base.ColonyReadRulesFixtures.UNDER_THE_FOG;
@@ -63,10 +64,10 @@ final class DominanceHolderProviderTests {
 
                 assertThat(resolution.ownerBySystemKey())
                     .isEqualTo(holders);
-                assertThat(resolution.contestedSystemKeys())
-                    .isEmpty();
-                assertThat(resolution.unfilledSystemKeys())
-                    .isEmpty();
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .doesNotContainValue(FillState.HATCHED);
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .doesNotContainValue(FillState.UNFILLED);
             }
         }
 
@@ -79,8 +80,9 @@ final class DominanceHolderProviderTests {
                 OWNED_SYSTEM,
                 new SystemOwner("$spotlit", new ColourPair(PRIMARY, SECONDARY)));
 
-            var contested = Set.of(OWNED_SYSTEM);
-            var filtered = new HolderResolution(holders, contested, Set.of());
+            var filtered = new HolderResolution(
+                holders,
+                SystemFillStates.createOf(Map.of(OWNED_SYSTEM, FillState.HATCHED)));
 
             try (var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
@@ -89,7 +91,7 @@ final class DominanceHolderProviderTests {
                     .thenReturn(filtered);
 
                 // Handed on whole: the presence-aware resolver already answers the full resolution,
-                // so nothing about its holders or its contested and unfilled sets is restated here.
+                // so nothing about its holders or its fill states is restated here.
                 assertThat(DominanceHolderProvider.INSTANCE.resolveHolder(pass, "hegemony"))
                     .isSameAs(filtered);
             }

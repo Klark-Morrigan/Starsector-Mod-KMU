@@ -13,7 +13,6 @@ import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.ownermap.owners.SectorWalk;
-import kmu.maplayers.ownermap.owners.SystemOwner;
 import kmu.maplayers.ownermap.render.clusters.ClusterGroupBuilder;
 import kmu.maplayers.ownermap.render.clusters.OwnerMapClusters;
 import kmu.maplayers.ownermap.render.clusters.PaintedCellBuilder;
@@ -66,6 +65,11 @@ public final class IncrementalOwnerRefresh {
     private final OwnerMapClusters clusters;
     private final CellGeometryCache geometryCache;
 
+    // The cell builder every re-shaped cell of the batch is baked by, over the paints the standing
+    // build was baked under and the occupancy the batch folds into. Made once per batch through the
+    // factory the full build uses, so a re-shaped cell is built from the values its neighbours were.
+    private final PaintedCellBuilder cellBuilder;
+
     // The batch's one walk of the sector. Every question asked about a marked system - its owner,
     // whether anybody lives there, the spotlit owner's presence in it, and the counts its band
     // reports - is answered off this single walk of it, through the source the standing build was
@@ -78,6 +82,8 @@ public final class IncrementalOwnerRefresh {
         this.clusters = standingMap.clusters();
         this.geometryCache = standingMap.cellGeometry().cells();
         this.walk = walk;
+
+        cellBuilder = clusters.createPaintedCellBuilder();
     }
 
     // Folds the changes of the systems marked stale into the standing clusters,
@@ -116,9 +122,9 @@ public final class IncrementalOwnerRefresh {
         var markedSystemKeys = selectDrawnSystemKeys(staleSystemKeys);
 
         var buildInputs = clusters.getBuildInputs();
-        var ownerResolve = buildInputs.viewReading().source().openSystemResolve(
+        var ownerResolve = buildInputs.getViewReading().source().openSystemResolve(
             walk,
-            buildInputs.contentInputs().selectedOwnerId());
+            buildInputs.getContentInputs().selectedOwnerId());
 
         var disturbance = MarkedSystemRederive.rederiveMarkedSystems(
             clusters,
@@ -165,12 +171,19 @@ public final class IncrementalOwnerRefresh {
             Set<SystemKey> markedSystemKeys,
             StaleOwnerMapDisturbance disturbance) {
 
+        // The cells grouped once under the owners the batch just folded, for every step below: each
+        // re-shaped cell is told a seam from a border by its neighbours' owners, and a flip
+        // re-indexes and re-traces over the same grouping. Once per batch rather than per cell and
+        // per step, since composing a grouping copies every owner on the map.
+        var cellGrouping = clusters.resolveCellGroupingOver(
+            geometryCache.getSystemKeyByCellKey());
+
         for (var cellKey : disturbance.getCellKeysToRedraw()) {
-            reshapeCellInPlace(cellKey);
+            reshapeCellInPlace(cellGrouping, cellKey);
         }
 
         var nameDisturbance = disturbance.hasFlips()
-            ? rebuildFlippedOwners(disturbance)
+            ? rebuildFlippedOwners(cellGrouping, disturbance)
             : ClusterNameDisturbance.NONE;
 
         // A marked system's band counts what is in it, and the events that mark a system are
@@ -193,16 +206,18 @@ public final class IncrementalOwnerRefresh {
     // What a flip owes beyond the cells themselves: the cluster index and the two sides'
     // clusters rebuilt off the updated owners, and the names re-fitted over them. Reports what
     // that re-fit moved, since the bands below have to be re-laid wherever a name did.
-    private ClusterNameDisturbance rebuildFlippedOwners(StaleOwnerMapDisturbance disturbance) {
+    private ClusterNameDisturbance rebuildFlippedOwners(
+            CellGrouping cellGrouping,
+            StaleOwnerMapDisturbance disturbance) {
 
         // A flip changes which systems are contiguous - it can sever one cluster group in two or
         // bridge two into one - so the cursor read's cluster index is re-derived off the
         // updated owners here, in step with the cells that just re-shaped.
         clusters.reindexClusters(
             geometryCache.getCellEdgesByCellKey(),
-            geometryCache.getSystemKeyByCellKey());
+            cellGrouping);
 
-        rebuildAffectedClusterGroups(disturbance);
+        rebuildAffectedClusterGroups(cellGrouping, disturbance);
 
         // A flip can split or merge clusters (a lost system severs one, a gained
         // one bridges two), so the whole placement list is re-derived off the updated
@@ -230,7 +245,7 @@ public final class IncrementalOwnerRefresh {
         LabelsBuilder.rebuildLabels(
             standingMap.ownerLabels(),
             standingAnchors,
-            clusters.getBuildInputs().contentInputs().nameFormat().areNamesDrawn());
+            clusters.getBuildInputs().getContentInputs().nameFormat().areNamesDrawn());
 
         return nameDisturbance;
     }
@@ -239,16 +254,23 @@ public final class IncrementalOwnerRefresh {
     // owners' clusters can have changed shape; every other owner's rings trace unchanged
     // cells, so they are left as-is. An owner's members are the cells it draws, so they are
     // grouped from the cells here to match what buildClusterGroup traces.
-    private void rebuildAffectedClusterGroups(StaleOwnerMapDisturbance disturbance) {
+    //
+    // The builder is made here rather than with the batch, since only a batch that flipped something
+    // traces an owner at all.
+    private void rebuildAffectedClusterGroups(
+            CellGrouping cellGrouping,
+            StaleOwnerMapDisturbance disturbance) {
 
-        var cellGrouping = clusters.resolveCellGroupingOver(
-            geometryCache.getSystemKeyByCellKey());
+        var groupBuilder = clusters.createClusterGroupBuilder(
+            cellGrouping,
+            geometryCache.getCellEdgesByCellKey());
 
         var cellsByOwner = cellGrouping.groupCellKeysByOwner();
 
         for (var ownerId : disturbance.getAffectedOwnerIds()) {
 
             rebuildClusterGroupInPlace(
+                groupBuilder,
                 cellGrouping,
                 ownerId,
                 cellsByOwner.get(ownerId));
@@ -311,7 +333,9 @@ public final class IncrementalOwnerRefresh {
     // The cell's band is not laid here: replacing the shape drops it, and the band pass at the end
     // of the batch lays a fresh one inside the new shape, once the names it has to keep clear of
     // have been re-fitted.
-    private void reshapeCellInPlace(SystemKey cellKey) {
+    private void reshapeCellInPlace(
+            CellGrouping cellGrouping,
+            SystemKey cellKey) {
 
         var edges = geometryCache.getCellEdgesByCellKey().get(cellKey);
         if (edges == null) {
@@ -319,28 +343,18 @@ public final class IncrementalOwnerRefresh {
             return;
         }
 
-        // The system the cell draws as, whose owner colours and keys it. Every cell here is a
-        // star's own, so it resolves to that star, but the resolve is explicit so an
+        // This cell's own owner narrowly, and every system's owner beside it: the shaper compares
+        // every neighbour's owner against this one to tell a same-owner seam from a border. Both
+        // come off the batch's one grouping, read through the system the cell draws as, so an
         // absorbed cell would key by its owner rather than its own missing star.
-        var drawnSystemKey = geometryCache.getSystemKeyByCellKey().get(cellKey);
-        var occupancy = clusters.getOccupancy();
-        var owner = drawnSystemKey == null
-            ? null
-            : occupancy.readOwnerOf(drawnSystemKey);
-
-        // This cell's own owner narrowly, and the whole holding beside it: the shaper compares
-        // every neighbour's owner against this one to tell a same-owner seam from a border, so that
-        // half is one of the few reads the map itself answers.
-        var ownerId = owner == null ? null : owner.ownerId();
         var shaped = CellShaper.shapeCell(
             edges,
-            ownerId,
-            SystemOwner.mapOwnerIdBySystemKey(occupancy.getOwnerBySystemKey()),
+            cellGrouping.resolveOwnerOf(cellKey),
+            cellGrouping.ownerBySystemKey(),
             EdgeInset.asTheMapDraws());
 
-        var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-            clusters,
-            drawnSystemKey,
+        var painted = cellBuilder.buildPaintedCell(
+            cellGrouping.resolveDrawnSystemKeyOf(cellKey),
             shaped);
 
         if (painted == null) {
@@ -355,17 +369,15 @@ public final class IncrementalOwnerRefresh {
     // owner that lost its last member, or whose cluster no longer yields drawable
     // geometry, is removed so its fill and border stop drawing.
     private void rebuildClusterGroupInPlace(
+            ClusterGroupBuilder groupBuilder,
             CellGrouping cellGrouping,
             String ownerId,
             List<SystemKey> memberCellKeys) {
 
         var clusterGroup = memberCellKeys == null || memberCellKeys.isEmpty()
             ? null
-            : ClusterGroupBuilder.buildClusterGroup(
-                clusters,
-                geometryCache,
-                cellGrouping,
-                ownerId,
+            : groupBuilder.buildClusterGroup(
+                clusters.getOccupancy().readOwnerOfMembers(cellGrouping, memberCellKeys),
                 memberCellKeys);
 
         clusters.putStyledClusterGroup(ownerId, clusterGroup);

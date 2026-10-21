@@ -36,6 +36,16 @@ Every input arrives sampled once,
 so the whole pass keys off one snapshot -
 which is what lets an incremental re-shape reuse those same builders on a handful of cells
 and land on a result identical to a full rebuild.
+
+The build is the **default wiring** of the two builders,
+not the only way to reach them.
+Each stands up on the values it is handed and reads nothing of the build those came from,
+so a layer holding the same values bakes the same cells and owners without the pipeline.
+The build hands them over through two factories on `OwnerMapClusters`
+(`createPaintedCellBuilder`, `createClusterGroupBuilder`),
+which the incremental refresh calls too:
+one place states each builder's inputs,
+so the full build and a batch cannot hand them different ones.
 The paint scheme is one of them:
 the rebuild reads one `MapStyling`
 (in [`render.style`](../style/README.md))
@@ -49,6 +59,12 @@ is traced under one reading of the trace's knobs.
 
 - `PaintedCellBuilder` bakes one cell,
   choosing which form of `StyledCell` it takes.
+  It stands up on two values:
+  the build's `MapPaints`
+  (in [`render.style`](../style/README.md)),
+  and the `SystemOccupancy` saying who is in each system.
+  It reads the occupancy per cell rather than copying it,
+  so a batch that folds a marked system before re-shaping it bakes what it folded.
   An **owned** cell becomes a `FusedCell` and contributes only its interior seams,
   because its fill and cluster border belong to the cluster it fuses into -
   the form has no slot for either.
@@ -72,6 +88,15 @@ is traced under one reading of the trace's knobs.
   see [the split fill](#the-split-fill-solid-hatched-unfilled) below.
   Fill and border come from the same loops,
   so they cannot drift apart.
+  It stands up on the paints,
+  the cells' edges,
+  how the cells group under the owners,
+  and the `SystemFillStates` the fill splits by;
+  each call names the owner itself,
+  whose ID keys the group and whose shades it paints in.
+  The grouping is the caller's because it spans every cell on the map:
+  a batch groups the cells afresh once its flips have folded,
+  where an owner resolving its own would regroup the whole map per owner.
 
 No presence band is laid here.
 A band is baked *around* the cluster names,
@@ -93,7 +118,7 @@ and `StyledCell`,
 Element colours,
 opacities,
 and widths come from cascading the `base.theme` records with each owner's recede adjustment,
-asked for through `OwnerMapBuildInputs.resolveOwnerPaintOf` so every part of an owner resolves from one read.
+asked of the build's one `MapPaints` so every part of an owner resolves from one read.
 
 ## What recedes
 
@@ -144,9 +169,13 @@ so it leaves it alone.
 Off filter the pass's recede is the identity,
 so an unfiltered map draws its unowned systems untouched.
 
-The rule itself is not here:
-`PaintedCellBuilder` asks [`UnownedStyleResolver`](../style/README.md),
-which also decides which of the two unowned categories a cell falls in.
+The rule itself is not here.
+`PaintedCellBuilder` classifies the cell -
+settled or empty,
+and whether the pick lives there -
+and asks the build's `MapPaints` for the paint those two answers take.
+The paints ask [`UnownedStyleResolver`](../style/README.md) for the recede,
+and the layer's categories for which of the two unowned bundles the cell falls in.
 One classification drives both,
 so a cell cannot take the settled style yet miss the recede that style draws under.
 
@@ -316,8 +345,8 @@ the `MapStyling` (the theme, the border trace, the layer's categories and the th
 the `ViewReading` (the view, the owner reading it was styled and named by,
 and the owner source it was resolved under),
 the `ContentInputs` it sampled,
-and the two sets the source derived about the fill -
-the unfilled systems and the contested ones.
+and the `SystemFillStates` the source decided -
+which systems hatch and which paint no fill.
 The source rides there for the incremental refresh alone,
 which reopens a per-system resolve under the sampling it patches;
 nothing styles or names by it.
@@ -326,24 +355,24 @@ They are one value because they are fixed together:
 set once when the build ends and read until the next one,
 where the occupancy beside them is folded per marked system.
 A reader takes the value and names which snapshot it reads -
-`styling()`,
-`viewReading()`,
-`contentInputs()` -
+`getStyling()`,
+`getViewReading()`,
+`getContentInputs()` -
 rather than reaching one field of it through a flat getter on the built map,
 which would let a pass compose a cell out of one snapshot's theme and another's reading without the type saying so.
-`resolveOwnerPaintOf` sits on it for the same reason:
-it cascades the reading, the categories, the picks and the theme's shades into the one thing an element is painted from
-(`ResolvedOwnerPaint`, in [`render.style`](../style/README.md)),
-so it belongs to the type that holds all four.
-It answers once per owner and remembers the paint,
-every input to it being fixed with the build -
-which is why the type is a class rather than a record.
+It holds the build's one `MapPaints`
+(in [`render.style`](../style/README.md)),
+resolved over its own scheme,
+reading and picks,
+and hands it out through `getPaints()`.
+The scheme and the picks are read back through those paints rather than held a second time beside them,
+so the two can never be two samplings.
+Held here rather than built by each stage,
+because the paints remember every answer,
+and the full build and every batch after it then share one memo rather than resolving each owner again.
 `wasBuilt` is its answer to whether a build ran under it at all:
 the placeholder a failed first build stands behind resolved no reading,
 so the incremental refresh and the picker preview ask it before reaching for one.
-The bundle-and-adjustment step behind it stays private:
-a caller wanting one is a caller about to paint an element with it,
-and resolving the shades separately is how a fill comes to be muted while the border beside it is not.
 
 ## The split fill: solid, hatched, unfilled
 
@@ -354,9 +383,11 @@ the fill is what varies per system inside it.
 an owner with no exception among its systems fills its whole cluster from that one border
 and pays nothing for the split,
 the common case.
-The two exceptions each carve a sub-cluster out of the solid,
-hatched (`contestedSystemKeys`) and unfilled (`unfilledSystemKeys`),
-and both are decided upstream by the layer's owner source;
+The other two states each carve a sub-cluster out of the solid,
+hatched and unfilled.
+Each system's state is named once in the build's `SystemFillStates`,
+so no system is both,
+and which state each takes is decided upstream by the layer's owner source;
 what follows is how the draw honours them.
 
 The machinery is the framework's -

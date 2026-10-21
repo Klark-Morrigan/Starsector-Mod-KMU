@@ -101,7 +101,7 @@ import javax.swing.SwingUtilities;
  *       {@code DominanceRules} weight - so who owns what is approximately, not exactly, what
  *       the game resolves. There is no view switching, filter, or spotlight.</li>
  *   <li><i>Turning rings into a picture</i> - {@code OwnerMapBuilder.buildClusters},
- *       {@code buildPaintedCellForSystem}, {@code buildClusterGroup},
+ *       {@code buildPaintedCell}, {@code buildClusterGroup},
  *       {@code PolygonTessellator.tessellateToBoundaryLoops}, {@code tessellateToTriangles},
  *       {@code Hatching.computeHatchRun}, {@code GlVertexRuns.flattenVertices}. The
  *       smoothing itself does run, above; what does not is the tessellator's resolve either

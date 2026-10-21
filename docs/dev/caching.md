@@ -743,8 +743,12 @@ It dies with the pass,
 so a faction's colours changed mid-session are read again by the next rebuild.
 
 An owner's paint is resolved once per build.
-`OwnerMapBuildInputs` remembers each owner's style decision carried down to its shades,
+The build's one `MapPaints`,
+held by `OwnerMapBuildInputs`,
+remembers each owner's style decision carried down to its shades,
 since every cell of an owner and its cluster group ask for the same one.
+It remembers the four shapes an unowned cell's paint can take as well,
+so the uninhabited backdrop covering most of the sector resolves its paint once.
 It lives as long as the build inputs do,
 across incremental refreshes,
 which is safe because everything it is resolved from is fixed with them.

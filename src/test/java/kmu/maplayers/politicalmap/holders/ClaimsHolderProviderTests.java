@@ -9,6 +9,7 @@ import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
@@ -83,10 +84,10 @@ final class ClaimsHolderProviderTests {
                 // every claim paints solid, so the fill split takes its whole-cluster-solid fast path.
                 assertThat(resolution.ownerBySystemKey())
                     .containsExactly(Map.entry(buildCellKey("claimed"), claimHolder));
-                assertThat(resolution.contestedSystemKeys())
-                    .isEmpty();
-                assertThat(resolution.unfilledSystemKeys())
-                    .isEmpty();
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .doesNotContainValue(FillState.HATCHED);
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .doesNotContainValue(FillState.UNFILLED);
             }
         }
 
@@ -132,10 +133,10 @@ final class ClaimsHolderProviderTests {
 
                 // The spotlight changes only which key a claim carries: every claim still paints
                 // solid, so the fill split keeps its whole-cluster-solid fast path under a filter.
-                assertThat(resolution.contestedSystemKeys())
-                    .isEmpty();
-                assertThat(resolution.unfilledSystemKeys())
-                    .isEmpty();
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .doesNotContainValue(FillState.HATCHED);
+                assertThat(resolution.fillStates().getNonSolidFillStateBySystemKey())
+                    .doesNotContainValue(FillState.UNFILLED);
             }
         }
 

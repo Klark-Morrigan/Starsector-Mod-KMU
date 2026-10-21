@@ -6,19 +6,18 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.colour.ColourPair;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
-import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.geometry.SquareCellFixture.SquareSide;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCellFacing;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -47,6 +46,10 @@ final class StaleOwnerMapFixtures {
     // A system nothing about the flip reaches: sharing no edge with what flipped, so the only
     // things that can oblige its cell are its own facts and a re-fitted name landing on it.
     static final String DISTANT_SYSTEM = "distant";
+
+    // The side of the small square cells the batch cases redraw. Real coordinates because a redraw
+    // insets these edges for real; only the adjacency tag is what the re-derive itself reads.
+    static final double SMALL_CELL_SIDE = 50;
 
     // Fixtures only; never instantiated.
     private StaleOwnerMapFixtures() {
@@ -110,9 +113,9 @@ final class StaleOwnerMapFixtures {
         when(geometryCacheMock.getCellEdgesByCellKey())
             .thenReturn(buildKeyedValues(Map.of(
                 FLIPPED_SYSTEM,
-                buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0),
+                buildSquareCellFacing(0, 0, SMALL_CELL_SIDE, SquareSide.BOTTOM, NEIGHBOUR_SYSTEM),
                 NEIGHBOUR_SYSTEM,
-                buildSquareCellFacing(FLIPPED_SYSTEM, 100))));
+                buildSquareCellFacing(100, 0, SMALL_CELL_SIDE, SquareSide.BOTTOM, FLIPPED_SYSTEM))));
 
         when(geometryCacheMock.getSystemKeyByCellKey())
             .thenReturn(buildDrawnSystemKeys(Map.of(
@@ -122,16 +125,5 @@ final class StaleOwnerMapFixtures {
                 NEIGHBOUR_SYSTEM)));
 
         return geometryCacheMock;
-    }
-
-    // A closed four-edge cell offset along x, one edge of which faces the given neighbour while the
-    // rest face the cell's own outer reach. Real coordinates because a redraw insets these edges
-    // for real; only the adjacency tag is what the re-derive itself reads.
-    static List<CellEdge> buildSquareCellFacing(String neighbourSystemId, double offsetX) {
-        return List.of(
-            buildEdgeFacing(offsetX, 0, offsetX + 50, 0, neighbourSystemId),
-            buildEdgeFacing(offsetX + 50, 0, offsetX + 50, 50, null),
-            buildEdgeFacing(offsetX + 50, 50, offsetX, 50, null),
-            buildEdgeFacing(offsetX, 50, offsetX, 0, null));
     }
 }

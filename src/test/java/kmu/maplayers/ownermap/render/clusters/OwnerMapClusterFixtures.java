@@ -9,6 +9,7 @@ import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
@@ -297,8 +298,7 @@ public final class OwnerMapClusterFixtures {
                     OwnerReadingFake.createAnsweringNothing(),
                     ownerSource),
                 contentInputs,
-                Set.of(), // No unfilled systems.
-                Set.of())); // No contested systems.
+                SystemFillStates.ALL_SOLID));
     }
 
     /**
@@ -347,8 +347,7 @@ public final class OwnerMapClusterFixtures {
                     NEUTRAL_PALETTE), // Presence palette.
                 new ViewReading(view, reading, new OwnerSourceFake()),
                 ContentInputs.createEmpty(),
-                Set.of(),
-                Set.of()));
+                SystemFillStates.ALL_SOLID));
     }
 
     /**

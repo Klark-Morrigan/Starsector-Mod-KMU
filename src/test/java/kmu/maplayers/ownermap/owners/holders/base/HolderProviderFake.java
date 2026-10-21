@@ -1,10 +1,11 @@
 package kmu.maplayers.ownermap.owners.holders.base;
 
+import kmu.maplayers.base.render.clusters.SystemFillStates;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A holding source a tier case can hand over without reaching for a mechanic's own resolver.
@@ -43,7 +44,7 @@ public final class HolderProviderFake implements HolderProvider {
      * @return a provider answering empty holding for any pass
      */
     public static HolderProviderFake createHoldingNothing() {
-        return createAnswering(new HolderResolution(Map.of(), Set.of(), Set.of()));
+        return createAnswering(new HolderResolution(Map.of(), SystemFillStates.ALL_SOLID));
     }
 
     /**

@@ -5,15 +5,15 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.geometry.SquareCellFixture.SquareSide;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
-import kmu.maplayers.ownermap.OwnerPaintedView;
-import kmu.maplayers.ownermap.ViewReading;
 import kmu.maplayers.ownermap.owners.OwnerReadingFake;
-import kmu.maplayers.ownermap.owners.OwnerSourceFake;
 import kmu.maplayers.ownermap.owners.SystemOwner;
+import kmu.maplayers.ownermap.render.style.MapPaints;
 import kmu.maplayers.ownermap.render.style.MapStyling;
 import kmu.maplayers.ownermap.render.style.OwnerCategoriesFake;
 import kmu.maplayers.ownermap.render.style.OwnerPaletteSlot;
@@ -26,12 +26,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCell;
+import static kmu.maplayers.base.geometry.SquareCellFixture.buildSquareCellFacing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -48,6 +49,10 @@ import static org.mockito.Mockito.when;
  * stay two bodies; and a rival an owner has surrounded must come back as an enclave of the one body
  * around it. Each of those goes wrong silently - every ring still strokes, in the right colour,
  * with only the filled cells wrong.
+ *
+ * <p>Every case stands the builder up on the values it states - the paints, the cells, their
+ * grouping and the fill sets - with no build around it, which is the whole of what a layer needs to
+ * trace owners.
  *
  * <p>The geometry underneath is pinned elsewhere and only wired here: the ring trace by
  * {@link kmu.maplayers.base.render.clusters.ClusterBorderTraceIntegrationTests}, the fill's carve by
@@ -92,67 +97,31 @@ final class ClusterGroupBuilderTests {
     private static final double BORDER_OPACITY = 0.25;
     private static final double BORDER_WIDTH = 3.0;
 
+    // The side of every square cell here, sized well clear of the fixed border channel.
+    private static final double CELL_SIDE = 2000;
+
     private static final Map<String, List<CellEdge>> EDGES = Map.of(
-        HELD_SYSTEM, List.of(
-            buildEdgeFacing(0, 0, 2000, 0, null),
-            buildEdgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
-            buildEdgeFacing(2000, 2000, 0, 2000, null),
-            buildEdgeFacing(0, 2000, 0, 0, null)),
-        NEIGHBOUR_SYSTEM, List.of(
-            buildEdgeFacing(2000, 0, 4000, 0, null),
-            buildEdgeFacing(4000, 0, 4000, 2000, null),
-            buildEdgeFacing(4000, 2000, 2000, 2000, null),
-            buildEdgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)),
-        ISLAND_SYSTEM, List.of(
-            buildEdgeFacing(10000, 0, 12000, 0, null),
-            buildEdgeFacing(12000, 0, 12000, 2000, null),
-            buildEdgeFacing(12000, 2000, 10000, 2000, null),
-            buildEdgeFacing(10000, 2000, 10000, 0, null)),
-        EXCLAVE_SYSTEM, List.of(
-            buildEdgeFacing(30000, 0, 32000, 0, null),
-            buildEdgeFacing(32000, 0, 32000, 2000, null),
-            buildEdgeFacing(32000, 2000, 30000, 2000, null),
-            buildEdgeFacing(30000, 2000, 30000, 0, null)),
-        RIVAL_SYSTEM, List.of(
-            buildEdgeFacing(20000, 0, 22000, 0, null),
-            buildEdgeFacing(22000, 0, 22000, 2000, null),
-            buildEdgeFacing(22000, 2000, 20000, 2000, null),
-            buildEdgeFacing(20000, 2000, 20000, 0, null)));
+        HELD_SYSTEM,
+        buildSquareCellFacing(0, 0, CELL_SIDE, SquareSide.RIGHT, NEIGHBOUR_SYSTEM),
+        NEIGHBOUR_SYSTEM,
+        buildSquareCellFacing(2000, 0, CELL_SIDE, SquareSide.LEFT, HELD_SYSTEM),
+        ISLAND_SYSTEM,
+        buildSquareCell(10000, 0, CELL_SIDE),
+        EXCLAVE_SYSTEM,
+        buildSquareCell(30000, 0, CELL_SIDE),
+        RIVAL_SYSTEM,
+        buildSquareCell(20000, 0, CELL_SIDE));
 
     @Nested
     class BuildClusterGroup {
 
         @Test
-        void readsItsFirstMembersPaletteUnderThatMembersOwnKey() {
-            // The members and the holding share one address, so a body whose member shares a
-            // vanilla ID with another system paints from its own owner - where a lookup by ID
-            // alone could only have named whichever of the pair the map happened to hold.
-            var anchoredCell = new SystemKey(ISLAND_SYSTEM, null, "8b3");
-            var twin = new SystemKey(ISLAND_SYSTEM, null, "38d53");
-            var owners = new LinkedHashMap<SystemKey, SystemOwner>();
-
-            owners.put(anchoredCell, HEGEMONY_OWNER);
-            owners.put(twin, TRITACHYON_OWNER);
-
-            var clusterGroup = buildClusterGroupOf(
-                buildClustersHeldBy(buildDrawnStyle(), owners),
-                listAnchoredCellFor(ISLAND_SYSTEM, anchoredCell),
-                HEGEMONY,
-                List.of(anchoredCell));
-
-            // The owner resolved, so the body paints; an unresolved one would leave the owner
-            // with no palette to fill from and the whole record dropped.
-            assertThat(clusterGroup)
-                .isNotNull();
-        }
-
-        @Test
         void tracesTwoTouchingSystemsAsOneFrontier() {
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersStyledBy(buildDrawnStyle()),
+                buildHoldingStyledBy(buildDrawnStyle()),
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
-                HEGEMONY,
+                HEGEMONY_OWNER,
                 buildCellKeys(HELD_SYSTEM, NEIGHBOUR_SYSTEM));
 
             // The shared edge is a same-owner seam, so it is never a border: the pair reads as one
@@ -173,9 +142,9 @@ final class ClusterGroupBuilderTests {
         void tracesDisjointHoldingsAsAClusterApiece() {
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersStyledBy(buildDrawnStyle()),
+                buildHoldingStyledBy(buildDrawnStyle()),
                 listCellsFor(ISLAND_SYSTEM, EXCLAVE_SYSTEM),
-                HEGEMONY,
+                HEGEMONY_OWNER,
                 buildCellKeys(ISLAND_SYSTEM, EXCLAVE_SYSTEM));
 
             // Rebuilding an owner from its current members re-splits it: an exclave keeps its own
@@ -199,9 +168,9 @@ final class ClusterGroupBuilderTests {
         void tracesAnEnclosedRivalAsAnEnclaveOfTheOneBody() {
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersStyledBy(buildDrawnStyle(), listGridOwners()),
+                buildHoldingStyledBy(buildDrawnStyle(), listGridOwners()),
                 listGridCells(),
-                HEGEMONY,
+                HEGEMONY_OWNER,
                 buildCellKeys(listGridRingCellIds().toArray(String[]::new)));
 
             // A ring of cells is connected, so it is one body - and the rival it encloses is a
@@ -223,9 +192,9 @@ final class ClusterGroupBuilderTests {
         void paintsEachSlotFromItsOwnPaletteChoiceAndOpacity() {
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersStyledBy(buildDrawnStyle()),
+                buildHoldingStyledBy(buildDrawnStyle()),
                 listCellsFor(ISLAND_SYSTEM),
-                HEGEMONY,
+                HEGEMONY_OWNER,
                 buildCellKeys(ISLAND_SYSTEM));
 
             // Read off the group, since an owner's paints are its own wherever its bodies sit.
@@ -245,9 +214,9 @@ final class ClusterGroupBuilderTests {
         void bakesNoBorderRunsForANoColourBorder() {
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersStyledBy(buildFillOnlyStyle()),
+                buildHoldingStyledBy(buildFillOnlyStyle()),
                 listCellsFor(ISLAND_SYSTEM),
-                HEGEMONY,
+                HEGEMONY_OWNER,
                 buildCellKeys(ISLAND_SYSTEM));
 
             // A border switched off bakes no runs at all rather than runs the draw pass skips -
@@ -267,9 +236,9 @@ final class ClusterGroupBuilderTests {
         void bakesNoFillForANoColourFill() {
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersStyledBy(buildBorderOnlyStyle()),
+                buildHoldingStyledBy(buildBorderOnlyStyle()),
                 listCellsFor(ISLAND_SYSTEM),
-                HEGEMONY,
+                HEGEMONY_OWNER,
                 buildCellKeys(ISLAND_SYSTEM));
 
             // A fill switched off tessellates nothing rather than triangles the draw pass skips,
@@ -288,9 +257,9 @@ final class ClusterGroupBuilderTests {
         void bakesNothingWhenNeitherFillNorBorderDrawsAColour() {
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersStyledBy(buildNoColourStyle()),
+                buildHoldingStyledBy(buildNoColourStyle()),
                 listCellsFor(ISLAND_SYSTEM),
-                HEGEMONY,
+                HEGEMONY_OWNER,
                 buildCellKeys(ISLAND_SYSTEM));
 
             // Short-circuited before the trace: an owner that paints nothing must not pay for the
@@ -313,9 +282,9 @@ final class ClusterGroupBuilderTests {
                     HELD_SYSTEM)));
 
             var clusterGroup = buildClusterGroupOf(
-                buildClustersStyledBy(buildDrawnStyle()),
+                buildHoldingStyledBy(buildDrawnStyle()),
                 geometryCacheMock,
-                HEGEMONY,
+                HEGEMONY_OWNER,
                 buildCellKeys(HELD_SYSTEM));
 
             // A member whose cell carries no edges traces no ring, and an owner with no frontier
@@ -325,65 +294,6 @@ final class ClusterGroupBuilderTests {
         }
     }
 
-    @Nested
-    class BuildAllClusterGroups {
-
-        @Test
-        void keysEachOwnersClusterGroupByItsGroupingKey() {
-
-            var clusters = buildClustersStyledBy(buildDrawnStyle(), Map.of(
-                HELD_SYSTEM,
-                HEGEMONY_OWNER,
-                NEIGHBOUR_SYSTEM,
-                HEGEMONY_OWNER,
-                RIVAL_SYSTEM,
-                TRITACHYON_OWNER));
-
-            buildAllClustersOf(
-                clusters,
-                listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM, RIVAL_SYSTEM));
-
-            // One entry per owner rather than per system: the two Hegemony systems fuse into the
-            // single cluster group their shared key groups them into.
-            assertThat(clusters.getStyledClusterGroupByOwnerId())
-                .containsOnlyKeys(HEGEMONY, TRITACHYON);
-
-            assertThat(clusters.getStyledClusterGroupByOwnerId().get(HEGEMONY).clusters())
-                .hasSize(1);
-        }
-
-        @Test
-        void skipsAnOwnerThatBakesNothing() {
-
-            var clusters = buildClustersStyledBy(buildDrawnStyle(), Map.of(
-                HELD_SYSTEM,
-                HEGEMONY_OWNER,
-                RIVAL_SYSTEM,
-                TRITACHYON_OWNER));
-
-            // The rival's cell is grouped but carries no edges, so its owner bakes nothing.
-            var geometryCacheMock = mock(CellGeometryCache.class);
-
-            when(geometryCacheMock.getCellEdgesByCellKey())
-                .thenReturn(buildKeyedValues(Map.of(HELD_SYSTEM, EDGES.get(HELD_SYSTEM))));
-
-            when(geometryCacheMock.getSystemKeyByCellKey())
-                .thenReturn(buildDrawnSystemKeys(Map.of(
-                    HELD_SYSTEM,
-                    HELD_SYSTEM,
-                    RIVAL_SYSTEM,
-                    RIVAL_SYSTEM)));
-
-            buildAllClustersOf(clusters, geometryCacheMock);
-
-            // Absent rather than mapped to null: every reader of this map paints what it finds.
-            assertThat(clusters.getStyledClusterGroupByOwnerId())
-                .containsOnlyKeys(HEGEMONY);
-        }
-    }
-
-    // A geometry cache holding just the named cells, each drawing as its own star - the raw
-    // partition an owner's border is traced from.
     // The 3x3 block as a geometry cache, every cell drawing as its own system.
     private static CellGeometryCache listGridCells() {
 
@@ -481,21 +391,8 @@ final class ClusterGroupBuilderTests {
             && row == GRID_CENTRE;
     }
 
-    // The same cut with one cell keyed as the sector states its system rather than by the ID
-    // alone - the shape a system carrying an anchor cuts, and the one that reaches the holding
-    // only by narrowing.
-    private static CellGeometryCache listAnchoredCellFor(String systemId, SystemKey cellKey) {
-
-        var geometryCacheMock = mock(CellGeometryCache.class);
-
-        when(geometryCacheMock.getCellEdgesByCellKey())
-            .thenReturn(Map.of(cellKey, EDGES.get(systemId)));
-        when(geometryCacheMock.getSystemKeyByCellKey())
-            .thenReturn(Map.of(cellKey, cellKey));
-
-        return geometryCacheMock;
-    }
-
+    // A geometry cache holding just the named cells, each drawing as its own star - the raw
+    // partition an owner's border is traced from.
     private static CellGeometryCache listCellsFor(String... systemIds) {
 
         var geometryCacheMock = mock(CellGeometryCache.class);
@@ -518,9 +415,9 @@ final class ClusterGroupBuilderTests {
 
     // An unfiltered pass over the four fixture systems, every category drawing under the one
     // style a test names - so which category the resolver picks cannot account for an outcome.
-    private static OwnerMapClusters buildClustersStyledBy(CategoryStyle style) {
+    private static PaintedHolding buildHoldingStyledBy(CategoryStyle style) {
 
-        return buildClustersStyledBy(style, Map.of(
+        return buildHoldingStyledBy(style, Map.of(
             HELD_SYSTEM,
             HEGEMONY_OWNER,
             NEIGHBOUR_SYSTEM,
@@ -533,50 +430,41 @@ final class ClusterGroupBuilderTests {
             TRITACHYON_OWNER));
     }
 
-    // One owner's cluster group, traced against the pass's own grouping. The builder takes that
-    // grouping rather than resolving it, since production resolves it once for the whole map; a
-    // case states the holding and the cells and this composes the two the way a rebuild does.
+    // One owner's cluster group, stood up on the values the builder states and nothing else: the
+    // paints, the cells, how they group under the holding, and two empty fill sets. The grouping is
+    // composed here the way a rebuild composes it once for the whole map.
     private static StyledClusterGroup buildClusterGroupOf(
-            OwnerMapClusters clusters,
+            PaintedHolding holding,
             CellGeometryCache geometryCache,
-            String ownerId,
+            SystemOwner owner,
             List<SystemKey> memberCellKeys) {
 
-        return ClusterGroupBuilder.buildClusterGroup(
-            clusters,
-            geometryCache,
-            clusters.resolveCellGroupingOver(geometryCache.getSystemKeyByCellKey()),
-            ownerId,
-            memberCellKeys);
+        var groupBuilder = new ClusterGroupBuilder(
+            holding.paints(),
+            SystemOwner.mapCellGrouping(
+                geometryCache.getSystemKeyByCellKey(),
+                holding.ownerBySystemKey()),
+            geometryCache.getCellEdgesByCellKey(),
+            SystemFillStates.ALL_SOLID);
+
+        return groupBuilder.buildClusterGroup(owner, memberCellKeys);
     }
 
-    // Every owner's cluster group, under that same one grouping.
-    private static void buildAllClustersOf(
-            OwnerMapClusters clusters,
-            CellGeometryCache geometryCache) {
-
-        ClusterGroupBuilder.buildAllClusterGroups(
-            clusters,
-            geometryCache,
-            clusters.resolveCellGroupingOver(geometryCache.getSystemKeyByCellKey()));
-    }
-
-    private static OwnerMapClusters buildClustersStyledBy(
+    private static PaintedHolding buildHoldingStyledBy(
             CategoryStyle style,
             Map<String, SystemOwner> ownerBySystemId) {
 
-        return buildClustersHeldBy(style, buildKeyedValues(ownerBySystemId));
+        return buildHoldingKeyedBy(style, buildKeyedValues(ownerBySystemId));
     }
 
-    // The same clusters with its owners stated by key, for the one case a name cannot pose:
+    // The same holding with its owners stated by key, for the one case a name cannot pose:
     // two systems sharing a vanilla ID, held by different owners.
-    private static OwnerMapClusters buildClustersHeldBy(
+    private static PaintedHolding buildHoldingKeyedBy(
             CategoryStyle style,
             Map<SystemKey, SystemOwner> ownerBySystemKey) {
 
-        return new OwnerMapClusters(
-            SystemOccupancy.createCopyOf(ownerBySystemKey, Set.of(), Set.of()),
-            new OwnerMapBuildInputs(
+        return new PaintedHolding(
+            new MapPaints(
                 new MapStyling(
                     OwnerMapClusterFixtures.createRenderStyleForEveryCategory(style),
                     OwnerMapClusterFixtures.BORDER_TRACE,
@@ -586,13 +474,9 @@ final class ClusterGroupBuilderTests {
                     OwnerMapClusterFixtures.NEUTRAL_PALETTE),
                 // A reading placing every owner at full strength and receding none of them, so the
                 // paints below come from the category style and the owner's palette alone.
-                new ViewReading(
-                    mock(OwnerPaintedView.class),
-                    OwnerReadingFake.createAnsweringNothing(),
-                    new OwnerSourceFake()),
-                ContentInputsFixtures.createInertInputs(),
-                Set.of(),
-                Set.of()));
+                OwnerReadingFake.createAnsweringNothing(),
+                ContentInputsFixtures.createInertInputs()),
+            ownerBySystemKey);
     }
 
     // Fill and cluster border both drawn, each from a different palette slot so the two paints
@@ -660,5 +544,17 @@ final class ClusterGroupBuilderTests {
                 null,
                 1.0),
                 1.0);
+    }
+
+    /**
+     * What a case states before the cells: the paints the owners draw in, and who holds each
+     * system - the half of the builder's inputs a case varies by holding rather than by geometry.
+     *
+     * @param paints           the paints every owner draws in
+     * @param ownerBySystemKey who holds each system, which the grouping is composed over
+     */
+    private record PaintedHolding(
+        MapPaints paints,
+        Map<SystemKey, SystemOwner> ownerBySystemKey) {
     }
 }

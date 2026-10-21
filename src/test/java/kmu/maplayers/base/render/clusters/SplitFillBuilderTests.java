@@ -6,6 +6,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
 import kmu.maplayers.base.theme.ThemeFixtures;
 
 import org.junit.jupiter.api.Nested;
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacingCell;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
@@ -170,8 +170,9 @@ final class SplitFillBuilderTests {
                     FillSplit.splitMembersByFillState(
                         TWIN_GROUPING,
                         List.of(FIRST_TWIN, SECOND_TWIN),
-                        Set.of(SECOND_TWIN),
-                        Set.of()),
+                        SystemFillStates.createOf(Map.of(
+                            SECOND_TWIN,
+                            FillState.HATCHED))),
                     REGION_KEY)
                 .buildFillFor(BOTH_CELLS_BODY);
 
@@ -245,8 +246,7 @@ final class SplitFillBuilderTests {
         return FillSplit.splitMembersByFillState(
             GROUPING,
             List.of(HELD_SYSTEM, HATCHED_SYSTEM),
-            Set.of(),
-            Set.of());
+            SystemFillStates.ALL_SOLID);
     }
 
     // One member solid, one hatched - the split the carve exists to draw.
@@ -255,8 +255,9 @@ final class SplitFillBuilderTests {
         return FillSplit.splitMembersByFillState(
             GROUPING,
             List.of(HELD_SYSTEM, HATCHED_SYSTEM),
-            Set.of(HATCHED_SYSTEM),
-            Set.of());
+            SystemFillStates.createOf(Map.of(
+                HATCHED_SYSTEM,
+                FillState.HATCHED)));
     }
 
     // An axis-aligned square ring, counter-clockwise, spanning [minX, minX + side] x

@@ -32,7 +32,8 @@ import java.util.Map;
  * class's job is to sample every input exactly once so the whole pass keys off one snapshot.
  * That is what lets an incremental re-shape reuse those same builders ({@link PaintedCellBuilder}
  * and {@link ClusterGroupBuilder}) on a handful of cells and get a result identical to a full
- * rebuild.
+ * rebuild. It is the default wiring of those builders rather than the only way to reach them: each
+ * stands up on the values it is handed, and this is where the rebuild hands them over.
  *
  * <p>Two entry points, because a rebuild has two halves that go stale for different reasons. The
  * owners - who owns what, who is where - are a reading of the sector, and are owed again only when
@@ -147,13 +148,9 @@ public final class OwnerMapBuilder {
                     styling,
                     viewReading,
                     contentInputs,
-                    // The owned systems this resolution paints no fill for - owned for border and
-                    // label but drawn empty inside the one frontier. Filled only by a source that
-                    // extends what an owner holds with systems it does not, and empty otherwise.
-                    owners.unfilledSystemKeys(),
-                    // The one thing this build derived about the spotlight: which of the spotlit
-                    // owner's systems it is present in without winning.
-                    owners.contestedSystemKeys()));
+                    // Which owned systems hatch - the spotlit owner's systems it is present in
+                    // without winning - and which paint no fill, owned for border and label alone.
+                    owners.fillStates()));
 
             shapeAndStyleCells(profiler, clusters, geometryCache);
 
@@ -161,14 +158,14 @@ public final class OwnerMapBuilder {
         }
     }
 
-    // Turns the cached raw cells into the two draw lists: each cell shaped against the holding and
+    // Turns the cached raw cells into the two draw lists: each cell shaped against the owners and
     // styled, the clusters re-derived off the keys that shaping fused them by, and each owner's
     // bodies traced across all of its cells.
     //
-    // Written into the clusters rather than returned, because the per-cell builder reads the
-    // very model it fills - a cell's style is resolved from the holding, theme and spotlight
-    // already retained on it, which is what makes an incremental re-shape of one cell identical to
-    // this build's.
+    // Written into the clusters rather than returned, because the clusters are what an incremental
+    // re-shape later folds into. The builders themselves read nothing of them: each is handed the
+    // inputs the clusters retain - the paints, the occupancy, the fill states - through the same
+    // factories a batch uses, which is what makes a re-shaped cell identical to this build's.
     private static void shapeAndStyleCells(
             Profiler profiler,
             OwnerMapClusters clusters,
@@ -187,51 +184,25 @@ public final class OwnerMapBuilder {
             CellGeometryCache geometryCache,
             ProfileScope shapeScope) {
 
-        // Shape the raw cells into merged clusters once, holding-aware. The agnostic geometry
+        // Shape the raw cells into merged clusters once, grouped by owner. The agnostic geometry
         // clusters by owner, so hand it each system's owner ID as the key. Cells consumed by
-        // the inset (fewer than three vertices left) drop out.
+        // the inset (fewer than three vertices left) drop out. The one grouping serves every step
+        // below, so no two of them group the cells by two readings of the owners.
         var cellGrouping = clusters.resolveCellGroupingOver(
             geometryCache.getSystemKeyByCellKey());
 
         var shapedCells = shapeCells(profiler, geometryCache, cellGrouping);
 
-        // No band is laid here. A band keeps clear of the cluster names, and the names are fitted
-        // after this pass - a name is placed inside the border these very cells trace - so bands
-        // are baked in their own pass afterwards, over the shapes recorded below.
-        for (var entry : shapedCells.entrySet()) {
+        paintShapedCells(clusters, cellGrouping, shapedCells);
 
-            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
-                clusters,
-                cellGrouping.resolveDrawnSystemKeyOf(entry.getKey()),
-                entry.getValue());
-
-            if (painted == null) {
-                continue;
-            }
-
-            clusters
-                .getPaintedCells()
-                .putPaintedCell(entry.getKey(), painted);
-        }
         // The clusters the cursor read resolves a hovered cell's whole cluster group through. Derived
         // here off the same keys the shaping just fused the cells by, so a highlighted cluster group
         // is exactly the one the map merged into a single cluster.
         clusters.reindexClusters(
             geometryCache.getCellEdgesByCellKey(),
-            geometryCache.getSystemKeyByCellKey());
+            cellGrouping);
 
-        // Each owner's cluster group: one entry per cluster (traced across all its cells so
-        // a multi-system cluster reads as one frontier), tessellated for the fill and flattened
-        // for the border - the same shape for both. Built off the same raw cells and owners the
-        // seams used, and profiled on its own since chaining, smoothing, and tessellating every
-        // owner's outline is comparable in cost to shaping the cells.
-        try (var clusterGroupsScope = profiler.open(BUILD_CLUSTER_GROUPS_SECTION)) {
-
-            ClusterGroupBuilder.buildAllClusterGroups(
-                clusters,
-                geometryCache,
-                cellGrouping);
-        }
+        buildAllClusterGroups(profiler, clusters, geometryCache, cellGrouping);
 
         // The cells this pass shaped are what its duration is read against. What became of them -
         // how many were styled, into how many owners - is a fact about this one call, and the hatch
@@ -240,6 +211,62 @@ public final class OwnerMapBuilder {
         shapeScope.addCount(MapBuildCounters.CELLS, shapedCells.size());
         shapeScope.tagCall("styled=" + clusters.getStyledCellByCellKey().size()
             + " owners=" + clusters.getStyledClusterGroupByOwnerId().size());
+    }
+
+    // Bakes every shaped cell into its draw record, dropping the cells that put no ink down.
+    //
+    // No band is laid here. A band keeps clear of the cluster names, and the names are fitted
+    // after this pass - a name is placed inside the border these very cells trace - so bands
+    // are baked in their own pass afterwards, over the shapes recorded below.
+    private static void paintShapedCells(
+            OwnerMapClusters clusters,
+            CellGrouping cellGrouping,
+            Map<SystemKey, ShapedCell> shapedCells) {
+
+        var cellBuilder = clusters.createPaintedCellBuilder();
+
+        for (var entry : shapedCells.entrySet()) {
+
+            var painted = cellBuilder.buildPaintedCell(
+                cellGrouping.resolveDrawnSystemKeyOf(entry.getKey()),
+                entry.getValue());
+
+            if (painted != null) {
+                clusters.getPaintedCells().putPaintedCell(entry.getKey(), painted);
+            }
+        }
+    }
+
+    // Each owner's cluster group: one entry per cluster (traced across all its cells so a
+    // multi-system cluster reads as one frontier), tessellated for the fill and flattened for the
+    // border - the same shape for both. Built off the same raw cells and owners the seams used, and
+    // profiled on its own since chaining, smoothing, and tessellating every owner's outline is
+    // comparable in cost to shaping the cells.
+    //
+    // Each owner is independent - its clusters trace only its own cells - so the incremental refresh
+    // can rebuild one entry without touching the rest. An owner that bakes nothing is left out.
+    private static void buildAllClusterGroups(
+            Profiler profiler,
+            OwnerMapClusters clusters,
+            CellGeometryCache geometryCache,
+            CellGrouping cellGrouping) {
+
+        try (var clusterGroupsScope = profiler.open(BUILD_CLUSTER_GROUPS_SECTION)) {
+
+            var groupBuilder = clusters.createClusterGroupBuilder(
+                cellGrouping,
+                geometryCache.getCellEdgesByCellKey());
+
+            for (var entry : cellGrouping.groupCellKeysByOwner().entrySet()) {
+
+                var memberCellKeys = entry.getValue();
+                var owner = clusters.getOccupancy().readOwnerOfMembers(cellGrouping, memberCellKeys);
+
+                clusters.putStyledClusterGroup(
+                    entry.getKey(),
+                    groupBuilder.buildClusterGroup(owner, memberCellKeys));
+            }
+        }
     }
 
     // The cell shaping as a row of its own: fusing same-owner cells and insetting each is comparable

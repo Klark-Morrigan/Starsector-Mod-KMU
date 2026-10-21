@@ -2,11 +2,13 @@ package kmu.maplayers.ownermap.render.clusters;
 
 import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.ownermap.owners.SystemOwner;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -125,15 +127,38 @@ public final class SystemOccupancy {
      * every system - the cell grouping, the owner-ID projection the shaper compares against, and
      * the label styling snapshot.
      *
-     * <p>Answers null for a system nobody owns, which is what an absent entry means. A caller with
-     * no system to name - a cell drawn as no star - asks nothing rather than probing with a null
-     * key.
+     * <p>Answers null for a system nobody owns, which is what an absent entry means. A cell drawn as
+     * no star names no system, and answers nobody too: it is answered here rather than probing the
+     * owner map with a null key, so a caller with such a cell asks like any other.
      *
-     * @param systemKey the system to read
-     * @return its owner, or null where nobody owns it
+     * @param systemKey the system to read, or null for a cell with no star of its own
+     * @return its owner, or null where nobody owns it or there is no system to own
      */
     public SystemOwner readOwnerOf(SystemKey systemKey) {
+
+        if (systemKey == null) {
+            return null;
+        }
+
         return ownerBySystemKey.get(systemKey);
+    }
+
+    /**
+     * Who owns the cells one cluster group is made of.
+     *
+     * <p>Asked of the first member alone, since the grouping keyed every member by the owner of the
+     * system it draws as, so each answers the same. Read through the system a cell draws as rather
+     * than the cell, which is how an absorbed cell with no star of its own still finds its owner.
+     *
+     * @param cellGrouping   how the drawn cells group under these owners
+     * @param memberCellKeys the group's cells, at least one
+     * @return the owner they were grouped under
+     */
+    public SystemOwner readOwnerOfMembers(
+            CellGrouping cellGrouping,
+            List<SystemKey> memberCellKeys) {
+
+        return readOwnerOf(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0)));
     }
 
     /**

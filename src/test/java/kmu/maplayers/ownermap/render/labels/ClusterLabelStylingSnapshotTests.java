@@ -4,6 +4,7 @@ import kmlib.colour.ColourPair;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.StarsectorFont;
 
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.ownermap.ContentInputs;
 import kmu.maplayers.ownermap.ContentInputsFixtures;
 import kmu.maplayers.ownermap.OwnerPaintedView;
@@ -71,6 +72,21 @@ final class ClusterLabelStylingSnapshotTests {
         }
 
         @Test
+        void carriesTheBuildsOwnPaints() {
+            // The very paints the fills were painted in, not a second set over the same parts: a
+            // name's colour is then read off the style decision its fill was, remembered once.
+            var clusters = buildClusters(
+                Map.of(),
+                buildViewReading(),
+                buildSpotlightPicks());
+
+            var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
+
+            assertThat(styling.paints())
+                .isSameAs(clusters.getBuildInputs().getPaints());
+        }
+
+        @Test
         void carriesTheBuildsStylingReadingAndSampledPicksWhole() {
             // Taken as the retained values rather than re-resolved, so the scheme a label is
             // coloured by, the reading it is named under, the filter it recedes by and the format
@@ -85,11 +101,11 @@ final class ClusterLabelStylingSnapshotTests {
 
             var styling = ClusterLabelStylingSnapshot.resolveFrom(clusters, LABEL_FACE);
 
-            assertThat(styling.mapStyling())
-                .isSameAs(clusters.getBuildInputs().styling());
-            assertThat(styling.reading())
+            assertThat(styling.paints().getStyling())
+                .isSameAs(clusters.getBuildInputs().getStyling());
+            assertThat(styling.paints().getReading())
                 .isSameAs(viewReading.reading());
-            assertThat(styling.contentInputs())
+            assertThat(styling.paints().getContentInputs())
                 .isSameAs(contentInputs);
         }
 
@@ -104,7 +120,7 @@ final class ClusterLabelStylingSnapshotTests {
                     ContentInputs.createEmpty()),
                 LABEL_FACE);
 
-            assertThat(styling.contentInputs().isFiltering())
+            assertThat(styling.paints().getContentInputs().isFiltering())
                 .isFalse();
         }
 
@@ -148,9 +164,9 @@ final class ClusterLabelStylingSnapshotTests {
 
             assertThat(styling.ownerBySystemKey())
                 .isSameAs(ownerBySystemKey);
-            assertThat(styling.mapStyling())
+            assertThat(styling.paints().getStyling())
                 .isSameAs(mapStyling);
-            assertThat(styling.reading())
+            assertThat(styling.paints().getReading())
                 .isSameAs(reading);
             assertThat(styling.labelFace())
                 .isEqualTo(StarsectorFont.VANILLA_INSIGNIA_42);
@@ -170,9 +186,9 @@ final class ClusterLabelStylingSnapshotTests {
                 spotlightPicks,
                 LABEL_FACE);
 
-            assertThat(styling.contentInputs().isFiltering())
+            assertThat(styling.paints().getContentInputs().isFiltering())
                 .isFalse();
-            assertThat(styling.contentInputs().nameFormat())
+            assertThat(styling.paints().getContentInputs().nameFormat())
                 .isEqualTo(spotlightPicks.nameFormat());
         }
     }
@@ -188,8 +204,7 @@ final class ClusterLabelStylingSnapshotTests {
                 buildStyling(),
                 viewReading,
                 contentInputs,
-                Set.of(),
-                Set.of()));
+                SystemFillStates.ALL_SOLID));
     }
 
     // A scheme no case reads into: the snapshot carries it whole, so only its identity matters.

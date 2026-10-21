@@ -17,8 +17,9 @@ import java.util.Set;
  * differ wherever the footprint holds a cell with no star of its own: such a cell joins a
  * cluster's outline but names no system to key or to mark coincident.
  *
- * <p>Pure partition, free of geometry: which state a system draws in is decided from plain sets
- * here, and turning that partition into triangles is {@link SplitFillBuilder}'s job.
+ * <p>Pure partition, free of geometry: which state a system draws in is read off the layer's
+ * {@link SystemFillStates} here, and turning that partition into triangles is
+ * {@link SplitFillBuilder}'s job.
  */
 public record FillSplit(
         FillMembers solid,
@@ -29,29 +30,24 @@ public record FillSplit(
      * Splits a footprint's member cells into the three states, resolving each cell to the
      * system it draws as and classifying that system.
      *
-     * <p>The cells and the two exception sets share one address, so a system's state is read
-     * under the very key its cell resolved to and two systems sharing a vanilla ID can draw in
-     * two different states.
+     * <p>The cells and the fill states share one address, so a system's state is read under the
+     * very key its cell resolved to and two systems sharing a vanilla ID can draw in two
+     * different states.
      *
-     * @param cellGrouping       resolves which system each member cell draws as
-     * @param memberCellKeys     the footprint's cells
-     * @param hatchedSystemKeys  the cluster's systems that draw hatched rather than solid
-     * @param unfilledSystemKeys the cluster's systems that draw no fill at all
+     * @param cellGrouping   resolves which system each member cell draws as
+     * @param memberCellKeys the footprint's cells
+     * @param fillStates     the state each system draws in
      * @return the three states, each holding its own cells and systems
      */
     public static FillSplit splitMembersByFillState(
             CellGrouping cellGrouping,
             List<SystemKey> memberCellKeys,
-            Set<SystemKey> hatchedSystemKeys,
-            Set<SystemKey> unfilledSystemKeys) {
+            SystemFillStates fillStates) {
 
         var split = createEmpty();
         for (var cellKey : memberCellKeys) {
             var systemKey = cellGrouping.resolveDrawnSystemKeyOf(cellKey);
-            var members = split.resolveMembersOf(classifyFillState(
-                systemKey,
-                hatchedSystemKeys,
-                unfilledSystemKeys));
+            var members = split.resolveMembersOf(fillStates.resolveFillStateOf(systemKey));
 
             members.cellKeys().add(cellKey);
             if (systemKey != null) {
@@ -59,31 +55,6 @@ public record FillSplit(
             }
         }
         return split;
-    }
-
-    /**
-     * The fill state one member's system draws in - the pure rule the split turns on.
-     *
-     * <p>Unfilled takes precedence over hatched, since a system drawn empty is empty whatever
-     * else the layer says about it. A cell with no star of its own has no per-system fill
-     * state, so it fills solid with the rest of the cluster rather than probing either set
-     * with a null key.
-     */
-    public static FillState classifyFillState(
-            SystemKey systemKey,
-            Set<SystemKey> hatchedSystemKeys,
-            Set<SystemKey> unfilledSystemKeys) {
-
-        if (systemKey == null) {
-            return FillState.SOLID;
-        }
-        if (unfilledSystemKeys.contains(systemKey)) {
-            return FillState.UNFILLED;
-        }
-        if (hatchedSystemKeys.contains(systemKey)) {
-            return FillState.HATCHED;
-        }
-        return FillState.SOLID;
     }
 
     /**

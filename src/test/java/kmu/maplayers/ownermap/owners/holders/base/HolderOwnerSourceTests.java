@@ -11,6 +11,8 @@ import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 import kmlib.testfixtures.statics.StaticSeams;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
+import kmu.maplayers.base.render.clusters.FillSplit.FillState;
+import kmu.maplayers.base.render.clusters.SystemFillStates;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -95,8 +97,11 @@ final class HolderOwnerSourceTests {
     private final HolderProviderFake holderProviderFake = HolderProviderFake.createAnswering(
         new HolderResolution(
             Map.of(HELD_SYSTEM, HEGEMONY_OWNER),
-            Set.of(CONTESTED_SYSTEM),
-            Set.of(UNFILLED_SYSTEM)));
+            SystemFillStates.createOf(Map.of(
+                CONTESTED_SYSTEM,
+                FillState.HATCHED,
+                UNFILLED_SYSTEM,
+                FillState.UNFILLED))));
 
     private final SystemHolderResolveSourceFake holderResolveSourceFake =
         new SystemHolderResolveSourceFake();
@@ -243,10 +248,10 @@ final class HolderOwnerSourceTests {
 
             assertThat(owners.ownerBySystemKey())
                 .containsExactly(Map.entry(HELD_SYSTEM, HEGEMONY_OWNER));
-            assertThat(owners.contestedSystemKeys())
-                .containsExactly(CONTESTED_SYSTEM);
-            assertThat(owners.unfilledSystemKeys())
-                .containsExactly(UNFILLED_SYSTEM);
+            assertThat(owners.fillStates().getNonSolidFillStateBySystemKey())
+                .containsEntry(CONTESTED_SYSTEM, FillState.HATCHED);
+            assertThat(owners.fillStates().getNonSolidFillStateBySystemKey())
+                .containsEntry(UNFILLED_SYSTEM, FillState.UNFILLED);
         }
 
         @Test

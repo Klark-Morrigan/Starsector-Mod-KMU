@@ -38,7 +38,8 @@ see the [mod README](../../../../../../../../README.md) for project context.
   One category set,
   one selection set,
   one reader that populates the theme,
-  and the resolvers that turn a selection plus an owner's recede into concrete shades.
+  and the resolvers that turn a selection plus an owner's recede into concrete shades,
+  reached through one `MapPaints` per build.
 
 ## The categories: how a layer divides its cells
 
@@ -206,15 +207,34 @@ and every rule here stays pure over the shades it is handed.
   A cell nobody holds resolves one over shades stated outright -
   the neutral, or the neutral lifted where a spotlight spared it -
   so a lone cell's fill and outline are painted by the very rule an owner's are.
+- `MapPaints` -
+  the resolvers' one entry point for a build,
+  standing up on three stated inputs:
+  the `MapStyling`,
+  the owner reading,
+  and the sampled `ContentInputs`.
+  `resolveOwnerPaintOf` composes the decision,
+  the mapping and the shades for an owner;
+  `resolveUnownedPaintOf` does the same for a cell nobody owns,
+  from whether it is settled and whether the spotlit owner lives there.
+  Every answer is remembered,
+  every input being fixed for the life of the value:
+  a few owners over many cells resolve a few times,
+  and the uninhabited backdrop resolves once.
 
 The decision and the mapping are deliberately two steps.
 `OwnerStyleResolver` stays theme-free so the label path and the fill path resolve the same answer;
 `OwnerStyling` is where a theme is finally required.
-The fill path asks for the whole paint through `OwnerMapBuildInputs.resolveOwnerPaintOf`,
+The fill path asks for the whole paint through `MapPaints`,
 which composes all of it off the one reading a build was baked under;
 the label path,
 which needs a name's colour rather than an element's paint,
 reads `OwnerStyleResolver` directly.
+
+A stage that paints takes the `MapPaints` rather than the build it belongs to,
+which is what lets a layer stand the stage up without the pipeline.
+The build holds one,
+so its full rebuild and every batch after it paint from one memo.
 
 ## What is not here
 

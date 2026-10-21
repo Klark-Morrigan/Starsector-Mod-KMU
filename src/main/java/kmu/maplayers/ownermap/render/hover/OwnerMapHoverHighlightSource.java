@@ -66,6 +66,6 @@ public record OwnerMapHoverHighlightSource(
         return MapPalettes.pickOwnerPaletteColour(
             paintSelection,
             clusters.getOccupancy().readOwnerOf(cellKey),
-            clusters.getBuildInputs().styling().readNeutralColour());
+            clusters.getBuildInputs().getStyling().readNeutralColour());
     }
 }
