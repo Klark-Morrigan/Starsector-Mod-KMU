@@ -116,15 +116,6 @@ public final class VoidPartition {
         return pieces;
     }
 
-    /**
-     * How many pieces the void is divided into.
-     *
-     * @return the count
-     */
-    public int countPieces() {
-        return pieces.size();
-    }
-
     // Whether a piece is cells rather than void.
     //
     // The frontier is one line with a cell on one side and void on the other, so both are

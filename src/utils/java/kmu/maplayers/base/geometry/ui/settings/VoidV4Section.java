@@ -1,8 +1,6 @@
 package kmu.maplayers.base.geometry.ui.settings;
 
 import kmu.desktop.ui.swing.CollapsibleSection;
-import kmu.desktop.ui.swing.ColourRows;
-import kmu.desktop.ui.swing.ControlRows;
 import kmu.desktop.ui.swing.ToggleTree;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
@@ -20,85 +18,178 @@ import javax.swing.JPanel;
  * again, which wants two switches at one level rather than one pick that can only ever show
  * one of them.
  */
-final class VoidV4Section extends PanelSection {
+final class VoidV4Section
+        extends PanelSection {
 
-    // v4's pieces of void, and the stretches of cell border facing them. The pieces' key is
-    // what a saved window already holds the switch under, so it is kept as it stands rather
-    // than renamed with the field it writes.
-    private static final String VOID_PIECES = "showBareVoid";
+    // v4's own, beside v3 rather than inside it. The two constructions answer the same question
+    // differently, so neither is a branch of the other - and a reader comparing them wants each
+    // to fold away whole, which a shared tree cannot offer.
+    private static final String SECTION_NAME = "voidV4";
 
-    private static final String LANDABLE_FRONTAGE = "showLandableFrontageV4";
+    private static final SwitchKnob MASTER = new SwitchKnob(
+        CollapsibleSection.SectionKeys.forSection(SECTION_NAME).switchKey(),
+        "Void pockets - v4",
+        false,
+        (settings, isOn) -> settings.showVoidV4 = isOn);
 
-    // The tiers of the stack, one branch each, in the order they go down: a tier's lines, then
-    // its fills, then its names, each a switch under the tier's own roll-up. A branch holds
-    // only what has landed, and a substep lands into its slot rather than onto the end of a
-    // list - so the tree has the shape of the stack from the first tier on, and a reader who
-    // learnt it at one tier finds the next in the same place.
-    private static final String LAKES_BRANCH = "lakesV4";
+    // v4's pieces of void. Remembered under the key saved windows already hold it by, which is
+    // why it does not read like the field it writes.
+    private static final SwitchKnob VOID_PIECES = new SwitchKnob(
+        "showBareVoid",
+        "Pieces",
+        true,
+        (settings, isOn) -> settings.showVoidPiecesV4 = isOn);
 
-    private static final String LAKE_COAST = "showLakeCoastV4";
+    // The lake tier, in the order its branch lists it: a tier's lines, then its fills, then its
+    // names, each a switch under the tier's own roll-up.
+    private static final SwitchKnob LAKE_COAST = new SwitchKnob(
+        "showLakeCoastV4",
+        "Coast",
+        false,
+        (settings, isOn) -> settings.showLakeCoastV4 = isOn);
 
-    private static final String LAKE_BRIDGES = "showLakeBridgesV4";
+    private static final SwitchKnob LAKE_BRIDGES = new SwitchKnob(
+        "showLakeBridgesV4",
+        "Bridges",
+        false,
+        (settings, isOn) -> settings.showLakeBridgesV4 = isOn);
 
     // A rule of the bridges rather than a layer, so it sits under them and in no roll-up: a
     // roll-up turning it on with the layers would claim to show something there is nothing
     // separate to see.
-    private static final String THIN_LAKE_BRIDGES = "shouldThinLakeBridgesV4";
+    private static final SwitchKnob THIN_LAKE_BRIDGES = new SwitchKnob(
+        "shouldThinLakeBridgesV4",
+        "Thin shared-anchor bridges",
+        true,
+        (settings, isOn) -> settings.shouldThinLakeBridgesV4 = isOn);
 
-    // The pieces those lines closed: the water inside the coast, the margin it gave up, and
-    // the tier's names, which ship with its first fill so the fill is judged with them.
-    private static final String LAKE_WATER = "showLakeWaterV4";
+    private static final SwitchKnob LAKE_WATER = new SwitchKnob(
+        "showLakeWaterV4",
+        "Water",
+        false,
+        (settings, isOn) -> settings.showLakeWaterV4 = isOn);
 
-    private static final String LAKE_MARGIN = "showLakeMarginV4";
+    private static final SwitchKnob LAKE_MARGIN = new SwitchKnob(
+        "showLakeMarginV4",
+        "Margin",
+        false,
+        (settings, isOn) -> settings.showLakeMarginV4 = isOn);
 
-    private static final String LAKE_NAMES = "showLakeNamesV4";
+    private static final SwitchKnob LAKE_NAMES = new SwitchKnob(
+        "showLakeNamesV4",
+        "Names",
+        false,
+        (settings, isOn) -> settings.showLakeNamesV4 = isOn);
 
     // Every layer of the lake tier, in the order its branch lists them: what both the branch's
     // roll-up and the root's cover. Named once, so a key added to the branch cannot be left out
     // of the root, where it would silently go unswitched.
-    private static final List<String> LAKE_LAYERS =
+    private static final List<SwitchKnob> LAKE_LAYERS =
         List.of(LAKE_COAST, LAKE_BRIDGES, LAKE_WATER, LAKE_MARGIN, LAKE_NAMES);
 
-    // Not a layer, so not in the roll-up above it: it changes how the pieces are drawn rather
-    // than whether they are, and a roll-up that turned it on with the layers would claim to have
-    // switched on something there is no separate thing to see.
-    private static final String VOID_INSET_RULE = "voidInsetRule";
+    private static final SwitchKnob LANDABLE_FRONTAGE = new SwitchKnob(
+        "showLandableFrontageV4",
+        "Landable frontage",
+        false,
+        (settings, isOn) -> settings.showLandableFrontageV4 = isOn);
 
-    // Held for the reason the pieces' switch key is: a saved window already has it.
-    private static final String VOID_PIECES_COLOUR = "bareVoidColour";
+    // NOWHERE to open on, the default the settings document: the true partition is what is
+    // being judged, and a window opening on the inset would show it already dressed.
+    private static final RadioKnob<EdgeInsetRule> VOID_INSET_RULE = new RadioKnob<>(
+        "voidInsetRule",
+        "Void insets",
+        EdgeInsetPicks.INSET_RULE_PICKS,
+        EdgeInsetRule.NOWHERE,
+        (settings, rule) -> settings.voidInsetRule = rule);
 
-    // v4's own, beside it rather than inside it. The two constructions answer the same question
-    // differently, so neither is a branch of the other - and a reader comparing them wants each
-    // to fold away whole, which a shared tree cannot offer.
-    private static final CollapsibleSection.SectionKeys VOID_V4_KEYS =
-        CollapsibleSection.SectionKeys.forSection("voidV4");
+    // Held under the key a saved window already has, for the reason the pieces' switch is.
+    private static final ColourKnob VOID_PIECES_COLOUR = new ColourKnob(
+        "bareVoidColour",
+        "Pieces",
+        ViewerSettings.VOID_PIECES_V4_DEFAULT,
+        (settings, colour) -> settings.voidPiecesV4Colour = colour);
+
+    private static final ColourKnob LAKE_COAST_COLOUR = new ColourKnob(
+        "lakeCoastV4Colour",
+        "Lake coast reaches",
+        ViewerSettings.LAKE_COAST_V4_DEFAULT,
+        (settings, colour) -> settings.lakeCoastV4Colour = colour);
+
+    private static final ColourKnob LAKE_BRIDGES_COLOUR = new ColourKnob(
+        "lakeBridgesV4Colour",
+        "Lake bridges",
+        ViewerSettings.LAKE_BRIDGES_V4_DEFAULT,
+        (settings, colour) -> settings.lakeBridgesV4Colour = colour);
+
+    private static final ColourKnob LAKE_WATER_COLOUR = new ColourKnob(
+        "lakeWaterV4Colour",
+        "Lake water",
+        ViewerSettings.LAKE_WATER_V4_DEFAULT,
+        (settings, colour) -> settings.lakeWaterV4Colour = colour);
+
+    private static final ColourKnob LAKE_MARGIN_COLOUR = new ColourKnob(
+        "lakeMarginV4Colour",
+        "Lake margin",
+        ViewerSettings.LAKE_MARGIN_V4_DEFAULT,
+        (settings, colour) -> settings.lakeMarginV4Colour = colour);
+
+    private static final ColourKnob LANDABLE_FRONTAGE_COLOUR = new ColourKnob(
+        "landableFrontageV4Colour",
+        "Landable frontage",
+        ViewerSettings.LANDABLE_FRONTAGE_DEFAULT,
+        (settings, colour) -> settings.landableFrontageV4Colour = colour);
 
     VoidV4Section(ViewerSettings settings, ViewerRefreshes refreshes) {
         super(settings, refreshes);
     }
 
+    /**
+     * @return every setting this section offers
+     */
+    static List<ViewerKnob> listKnobs() {
+
+        return List.of(
+            MASTER,
+            VOID_PIECES,
+            LAKE_COAST,
+            LAKE_BRIDGES,
+            THIN_LAKE_BRIDGES,
+            LAKE_WATER,
+            LAKE_MARGIN,
+            LAKE_NAMES,
+            LANDABLE_FRONTAGE,
+            VOID_INSET_RULE,
+            VOID_PIECES_COLOUR,
+            LAKE_COAST_COLOUR,
+            LAKE_BRIDGES_COLOUR,
+            LAKE_WATER_COLOUR,
+            LAKE_MARGIN_COLOUR,
+            LANDABLE_FRONTAGE_COLOUR);
+    }
+
     @Override
     JPanel buildSection() {
 
-        return CollapsibleSection.buildSection(
-            VOID_V4_KEYS,
-            "Void pockets - v4",
-            new CollapsibleSection.MasterSwitch(
-                false, on -> settings.showVoidV4 = on, refreshes::refreshVoidV4),
-            SettingRows.buildSectionBody(this::addRows));
+        return voidV4Rows.buildSwitchedSection(
+            SECTION_NAME, MASTER, SettingRows.buildSectionBody(this::addRows));
+    }
+
+    // What a roll-up covers, by the keys its switches are remembered under.
+    private static String[] listKeys(List<SwitchKnob> knobs) {
+        return knobs.stream().map(SwitchKnob::key).toArray(String[]::new);
     }
 
     // What the root's roll-up covers: every layer of the tree, in the tree's order. Not the
     // rules, which change how a layer is laid rather than whether it is shown.
     private static String[] listEveryLayerKey() {
 
-        var keys = new ArrayList<String>();
+        var layers = new ArrayList<SwitchKnob>();
 
-        keys.add(VOID_PIECES);
-        keys.addAll(LAKE_LAYERS);
-        keys.add(LANDABLE_FRONTAGE);
+        layers.add(VOID_PIECES);
+        layers.addAll(LAKE_LAYERS);
+        layers.add(LANDABLE_FRONTAGE);
 
-        return keys.toArray(String[]::new);
+        return listKeys(layers);
     }
 
     // v4's layers, in the same shape v3's are: a tree with a roll-up at its root, the pieces
@@ -114,107 +205,33 @@ final class VoidV4Section extends PanelSection {
     // using this section rather than a decision about the palette.
     private void addRows(JPanel controls) {
 
-        controls.add(ToggleTree.buildToggleTree(
-            refreshes::refreshVoidV4,
+        controls.add(voidV4Rows.buildToggleTree(
             ToggleTree.Row.ofRollUp(
                 TreeDepths.ROOT, "allVoidV4Layers", "Every v4 layer", listEveryLayerKey()),
-            ToggleTree.Row.ofSwitch(TreeDepths.BRANCH, new ToggleTree.Switch(
-                VOID_PIECES,
-                "Pieces",
-                true,
-                on -> settings.showVoidPiecesV4 = on)),
+            ToggleTree.Row.ofSwitch(TreeDepths.BRANCH, VOID_PIECES.bindSwitch(settings)),
             ToggleTree.Row.ofRollUp(
-                TreeDepths.BRANCH, LAKES_BRANCH, "Lakes", LAKE_LAYERS.toArray(String[]::new)),
-            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
-                LAKE_COAST,
-                "Coast",
-                false,
-                on -> settings.showLakeCoastV4 = on)),
-            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
-                LAKE_BRIDGES,
-                "Bridges",
-                false,
-                on -> settings.showLakeBridgesV4 = on)),
-            ToggleTree.Row.ofSwitch(TreeDepths.RULE, new ToggleTree.Switch(
-                THIN_LAKE_BRIDGES,
-                "Thin shared-anchor bridges",
-                true,
-                on -> settings.shouldThinLakeBridgesV4 = on)),
+                TreeDepths.BRANCH, "lakesV4", "Lakes", listKeys(LAKE_LAYERS)),
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, LAKE_COAST.bindSwitch(settings)),
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, LAKE_BRIDGES.bindSwitch(settings)),
+            ToggleTree.Row.ofSwitch(TreeDepths.RULE, THIN_LAKE_BRIDGES.bindSwitch(settings)),
 
-            // The fills after the lines, in the order of 1.6's substeps, and paired as v3's
-            // fill and names are: the two halves of one lake share a line, and the names sit
-            // under them.
+            // The fills after the lines, paired as v3's fill and names are: the two halves of
+            // one lake share a line, and the names sit under them.
             ToggleTree.Row.ofSwitchPair(
-                TreeDepths.LEAF,
-                new ToggleTree.Switch(
-                    LAKE_WATER, "Water", false, on -> settings.showLakeWaterV4 = on),
-                new ToggleTree.Switch(
-                    LAKE_MARGIN, "Margin", false, on -> settings.showLakeMarginV4 = on)),
-            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, new ToggleTree.Switch(
-                LAKE_NAMES, "Names", false, on -> settings.showLakeNamesV4 = on)),
-            ToggleTree.Row.ofSwitch(TreeDepths.BRANCH, new ToggleTree.Switch(
-                LANDABLE_FRONTAGE,
-                "Landable frontage",
-                false,
-                on -> settings.showLandableFrontageV4 = on))));
+                TreeDepths.LEAF, LAKE_WATER.bindSwitch(settings), LAKE_MARGIN.bindSwitch(settings)),
+            ToggleTree.Row.ofSwitch(TreeDepths.LEAF, LAKE_NAMES.bindSwitch(settings)),
+            ToggleTree.Row.ofSwitch(TreeDepths.BRANCH, LANDABLE_FRONTAGE.bindSwitch(settings))));
 
-        // Under the pieces it acts on, rather than with the colours: it is the same layer
-        // drawn another way, and a reader comparing true against inset reaches for it while
-        // reading that layer.
-        //
-        // The same three picks in the same words the cells' own radio offers, so a reader
-        // setting both constructions to one answer is picking the same thing twice rather than
-        // translating between two vocabularies.
-        controls.add(ControlRows.buildRadio(
-            VOID_INSET_RULE,
-            "Void insets",
-            List.of(
-                new ControlRows.Pick<>("By ownership", EdgeInsetRule.AT_EVERY_BORDER),
-                new ControlRows.Pick<>("None", EdgeInsetRule.NOWHERE),
-                new ControlRows.Pick<>("All", EdgeInsetRule.EVERYWHERE)),
-            rule -> settings.voidInsetRule = rule,
-            refreshes::refreshVoidV4));
+        // Under the pieces it acts on, rather than with the colours: it is the same layer drawn
+        // another way, and a reader comparing true against inset reaches for it while reading
+        // that layer.
+        controls.add(voidV4Rows.buildRadio(VOID_INSET_RULE));
 
-        controls.add(ColourRows.buildColour(
-            VOID_PIECES_COLOUR,
-            "Pieces",
-            ViewerSettings.VOID_PIECES_V4_DEFAULT,
-            colour -> settings.voidPiecesV4Colour = colour,
-            refreshes::repaintMap));
-
-        controls.add(ColourRows.buildColour(
-            "lakeCoastV4Colour",
-            "Lake coast reaches",
-            ViewerSettings.LAKE_COAST_V4_DEFAULT,
-            colour -> settings.lakeCoastV4Colour = colour,
-            refreshes::repaintMap));
-
-        controls.add(ColourRows.buildColour(
-            "lakeBridgesV4Colour",
-            "Lake bridges",
-            ViewerSettings.LAKE_BRIDGES_V4_DEFAULT,
-            colour -> settings.lakeBridgesV4Colour = colour,
-            refreshes::repaintMap));
-
-        controls.add(ColourRows.buildColour(
-            "lakeWaterV4Colour",
-            "Lake water",
-            ViewerSettings.LAKE_WATER_V4_DEFAULT,
-            colour -> settings.lakeWaterV4Colour = colour,
-            refreshes::repaintMap));
-
-        controls.add(ColourRows.buildColour(
-            "lakeMarginV4Colour",
-            "Lake margin",
-            ViewerSettings.LAKE_MARGIN_V4_DEFAULT,
-            colour -> settings.lakeMarginV4Colour = colour,
-            refreshes::repaintMap));
-
-        controls.add(ColourRows.buildColour(
-            "landableFrontageV4Colour",
-            "Landable frontage",
-            ViewerSettings.LANDABLE_FRONTAGE_DEFAULT,
-            colour -> settings.landableFrontageV4Colour = colour,
-            refreshes::repaintMap));
+        controls.add(repaintRows.buildColour(VOID_PIECES_COLOUR));
+        controls.add(repaintRows.buildColour(LAKE_COAST_COLOUR));
+        controls.add(repaintRows.buildColour(LAKE_BRIDGES_COLOUR));
+        controls.add(repaintRows.buildColour(LAKE_WATER_COLOUR));
+        controls.add(repaintRows.buildColour(LAKE_MARGIN_COLOUR));
+        controls.add(repaintRows.buildColour(LANDABLE_FRONTAGE_COLOUR));
     }
 }

@@ -8,6 +8,7 @@ import kmu.maplayers.base.geometry.v4.LakeTier;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
@@ -96,44 +97,64 @@ class LakeReachesIntegrationTests {
                 });
         }
 
+        // Why the channel is handed in rather than read off the trace. Where two cells touch,
+        // the coast hands over from one to the other in a step of no length, and under a channel
+        // of nothing that step names two cells and is long enough - so it would be laid as a wall
+        // across the point where two cells meet.
         @ParameterizedTest
-        @MethodSource(SECTORS)
-        void aChannelOfNothingTakesHandoversForReaches(String sector) {
-            // Why the channel is handed in rather than read off the trace. Where two cells touch,
-            // the coast hands over from one to the other in a step of no length, and under a
-            // channel of nothing that step names two cells and is long enough - so it would be
-            // laid as a wall across the point where two cells meet.
+        @CsvSource({
+            "366, 42, 52",
+            "491, 49, 61"})
+        void aChannelOfNothingTakesHandoversForReaches(
+                int systemCount,
+                int reachesUnderTheChannel,
+                int reachesUnderNoChannel) {
+
+            var sector = LakePartitions.findSectorOf(systemCount);
             var continents = LakePartitions.layContinents(sector);
 
+            assertThat(LakePartitions.readTracedLakes(sector).reaches())
+                .hasSize(reachesUnderTheChannel);
             assertThat(LakeReaches.collectLakeReaches(continents.traceCoasts(), NO_CHANNEL))
-                .hasSizeGreaterThan(LakePartitions.readTracedLakes(sector).reaches().size());
+                .hasSize(reachesUnderNoChannel);
         }
 
+        // Which side of a reach is the bay rests on each reach running with its lake's water on
+        // its left. Read the right way round, a lake keeps its water open and gives up only the
+        // bays, and every other piece is untouched - so the open pieces are as many as the
+        // pieces there were before the coast went in. Read the wrong way round, every lake's
+        // water is captured and its bays left open, and the count comes out as many bays as
+        // there are rather than one piece per lake.
         @ParameterizedTest
-        @MethodSource(SECTORS)
-        void theCoastLeavesEveryPieceOfTheVoidOneOpenPart(String sector) {
-            // Which side of a reach is the bay rests on each reach running with its lake's
-            // water on its left. Read the right way round, a lake keeps its water open and gives
-            // up only the bays, and every other piece is untouched - so the open pieces count
-            // the pieces there were before the coast went in. Read the wrong way round, every
-            // lake's water is captured and its bays left open, and the count comes out as many
-            // bays as there are rather than one piece per lake.
+        @CsvSource({
+            "366, 15",
+            "491, 18"})
+        void theCoastLeavesEveryPieceOfTheVoidOneOpenPart(int systemCount, int bareVoidPieces) {
+
+            var sector = LakePartitions.findSectorOf(systemCount);
             var coastWalls = LakePartitions.layCoastWalls(sector);
             var open = LakePartitions.readCoastPartition(sector).collectPieces().stream()
                 .filter(piece -> !LakeTier.isCaptured(piece, coastWalls))
                 .count();
 
+            assertThat(readPartition(sector, NOTHING_LAID).collectPieces())
+                .hasSize(bareVoidPieces);
             assertThat(open)
-                .isEqualTo(readPartition(sector, NOTHING_LAID).countPieces());
+                .isEqualTo(bareVoidPieces);
         }
 
+        // The floor under the two checks below: a coast that divided nothing would pass them
+        // both.
         @ParameterizedTest
-        @MethodSource(SECTORS)
-        void theReachesDivideTheLakes(String sector) {
-            // The floor under the two checks below: a coast that divided nothing would pass
-            // them both.
-            assertThat(LakePartitions.readCoastPartition(sector).countPieces())
-                .isGreaterThan(readPartition(sector, NOTHING_LAID).countPieces());
+        @CsvSource({
+            "366, 57",
+            "491, 67"})
+        void theReachesDivideTheLakes(int systemCount, int coastPieces) {
+
+            var sector = LakePartitions.findSectorOf(systemCount);
+
+            assertThat(LakePartitions.readCoastPartition(sector).collectPieces())
+                .hasSize(coastPieces);
         }
 
         @ParameterizedTest

@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry.ui;
 
+import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.v3.BridgedContinents;
 import kmu.maplayers.base.geometry.v3.SectorPipeline;
 import kmu.maplayers.base.geometry.v4.LabelledWall;
@@ -46,7 +47,6 @@ final class LakePartitions {
     private static final int SLIVERS_PER_LINE = 2;
 
     private static final Map<String, VoidPartition> COAST_PARTITIONS = new ConcurrentHashMap<>();
-
     private static final Map<String, VoidPartition> BRIDGED_PARTITIONS = new ConcurrentHashMap<>();
 
     private static final Map<String, List<LabelledWall>> COAST_WALLS = new ConcurrentHashMap<>();
@@ -55,6 +55,19 @@ final class LakePartitions {
         new ConcurrentHashMap<>();
 
     private LakePartitions() {
+    }
+
+    // The fixture holding the given number of systems, for a suite pinning counts per sector.
+    static String findSectorOf(int systemCount) {
+
+        var prefix = "sector-" + systemCount + "systems";
+
+        return SectorFixture
+            .listSectorNames()
+            .stream()
+            .filter(name -> name.startsWith(prefix))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("no fixture of " + systemCount + " systems"));
     }
 
     // One sector laid under the shipped rules, opened once for every suite of either version.
@@ -67,7 +80,8 @@ final class LakePartitions {
     static LakeTier.TracedLakes readTracedLakes(String sector) {
 
         return TRACED_LAKES.computeIfAbsent(sector, name -> LakeReaches.collectTracedLakes(
-            layContinents(name).traceCoasts(), SectorPartitions.KNOBS.borderInset()));
+            layContinents(name).traceCoasts(),
+            SectorPartitions.KNOBS.borderInset()));
     }
 
     // The most void a set of laid lines may take away: the slivers the walk does not keep,
@@ -83,7 +97,8 @@ final class LakePartitions {
     static VoidPartition readCoastPartition(String sector) {
 
         return COAST_PARTITIONS.computeIfAbsent(
-            sector, name -> SectorPartitions.readPartition(name, layCoastWalls(name)));
+            sector,
+            name -> SectorPartitions.readPartition(name, layCoastWalls(name)));
     }
 
     // The void with the lake coast laid, and the bridges over it.

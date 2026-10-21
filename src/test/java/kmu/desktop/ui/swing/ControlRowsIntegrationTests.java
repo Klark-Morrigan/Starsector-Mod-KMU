@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins {@link ControlRows#buildRadio} against a real {@link SavedValues} file: the row opens
  * on what was remembered and tells its owner so before anything draws, a pick is written down
  * under the option's own name rather than its label, the reset puts both the buttons and the
- * owner back to the first option, and a remembered name no longer offered falls back to it
+ * owner back to the row's own fallback, and a remembered name no longer offered falls back to it
  * rather than leaving the group with nothing selected.
  *
  * <p>Against the file rather than a stand-in, because the fault this guards is a row that
@@ -48,6 +48,10 @@ final class ControlRowsIntegrationTests {
     @TempDir
     private Path remembered;
 
+    private final List<Loudness> told = new ArrayList<>();
+
+    private final List<String> refreshes = new ArrayList<>();
+
     private SavedValues saved;
 
     @BeforeEach
@@ -60,14 +64,25 @@ final class ControlRowsIntegrationTests {
     class BuildRadio {
 
         @Test
-        void tellsTheOwnerTheFirstOptionWhenNothingIsRemembered() {
+        void tellsTheOwnerTheFallbackWhenNothingIsRemembered() {
 
-            var told = new ArrayList<Loudness>();
-
-            ControlRows.buildRadio(KEY, "Loudness", PICKS, told::add, () -> { });
+            buildRadio(Loudness.QUIET);
 
             assertThat(told)
                 .containsExactly(Loudness.QUIET);
+        }
+
+        // The fallback is the row's own, not whichever option happens to be listed first, so two
+        // rows sharing one list of options can open on different ones.
+        @Test
+        void opensOnItsOwnFallbackWhereThatIsNotTheFirstOption() {
+
+            var row = buildRadio(Loudness.DEAFENING);
+
+            assertThat(told)
+                .containsExactly(Loudness.DEAFENING);
+            assertThat(listSelectedLabelsIn(row))
+                .containsExactly("Deafening");
         }
 
         @Test
@@ -75,8 +90,7 @@ final class ControlRowsIntegrationTests {
 
             saved.put(KEY, "DEAFENING");
 
-            var told = new ArrayList<Loudness>();
-            var row = ControlRows.buildRadio(KEY, "Loudness", PICKS, told::add, () -> { });
+            var row = buildRadio(Loudness.QUIET);
 
             assertThat(told)
                 .containsExactly(Loudness.DEAFENING);
@@ -87,14 +101,7 @@ final class ControlRowsIntegrationTests {
         @Test
         void remembersAPickUnderTheOptionsOwnName() {
 
-            var told = new ArrayList<Loudness>();
-            var refreshes = new ArrayList<String>();
-            var row = ControlRows.buildRadio(
-                KEY,
-                "Loudness",
-                PICKS,
-                told::add,
-                () -> refreshes.add("refreshed"));
+            var row = buildRadio(Loudness.QUIET);
 
             ComponentTreeFixture.findAll(row, JRadioButton.class).get(1).doClick();
 
@@ -107,21 +114,20 @@ final class ControlRowsIntegrationTests {
         }
 
         @Test
-        void putsTheRowAndTheOwnerBackToTheFirstOption() {
+        void putsTheRowAndTheOwnerBackToTheFallback() {
 
-            saved.put(KEY, "LOUD");
+            saved.put(KEY, "QUIET");
 
-            var told = new ArrayList<Loudness>();
-            var row = ControlRows.buildRadio(KEY, "Loudness", PICKS, told::add, () -> { });
+            var row = buildRadio(Loudness.LOUD);
 
             ComponentTreeFixture.findOnly(row, JButton.class).doClick();
 
             assertThat(told)
-                .containsExactly(Loudness.LOUD, Loudness.QUIET);
+                .containsExactly(Loudness.QUIET, Loudness.LOUD);
             assertThat(saved.get(KEY, "nothing"))
-                .isEqualTo("QUIET");
+                .isEqualTo("LOUD");
             assertThat(listSelectedLabelsIn(row))
-                .containsExactly("Quiet");
+                .containsExactly("Loud");
         }
 
         @Test
@@ -129,14 +135,31 @@ final class ControlRowsIntegrationTests {
 
             saved.put(KEY, "INAUDIBLE");
 
-            var told = new ArrayList<Loudness>();
-            var row = ControlRows.buildRadio(KEY, "Loudness", PICKS, told::add, () -> { });
+            var row = buildRadio(Loudness.QUIET);
 
             assertThat(told)
                 .containsExactly(Loudness.QUIET);
             assertThat(listSelectedLabelsIn(row))
                 .containsExactly("Quiet");
         }
+
+        @Test
+        void refreshesNothingWhileBuilt() {
+
+            buildRadio(Loudness.QUIET);
+
+            assertThat(refreshes)
+                .isEmpty();
+        }
+    }
+
+    private Container buildRadio(Loudness fallback) {
+
+        return ControlRows.buildRadio(
+            "Loudness",
+            PICKS,
+            ControlRows.createRememberedPick(KEY, PICKS, fallback, told::add),
+            () -> refreshes.add("refreshed"));
     }
 
     private static List<String> listSelectedLabelsIn(Container row) {

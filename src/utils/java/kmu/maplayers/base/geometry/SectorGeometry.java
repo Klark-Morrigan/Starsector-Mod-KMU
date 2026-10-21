@@ -12,11 +12,10 @@ import java.util.TreeMap;
 /**
  * A whole sector's map geometry, built from a fixture at a given set of knobs.
  *
- * <p>One path from sites to drawable shapes, shared by everything that needs it: the
- * invariant tests assert on it, {@link SectorSvgWriter} draws it, and
- * {@link SectorGeometryViewer} rebuilds it per slider move. Sharing matters more than it
- * looks - three copies of "how the map is assembled" would drift, and then a picture would
- * stop being evidence about what the tests check.
+ * <p>One path from sites to drawable shapes, shared by everything that needs it: the SVG
+ * writer draws it and the viewer rebuilds it per slider move. Sharing matters more than it
+ * looks - two copies of "how the map is assembled" would drift, and a picture would then stop
+ * being evidence about the shapes anything else measures.
  *
  * <p>Everything is keyed by CELL rather than by system, and the owners travel with
  * the cells rather than being read back off the fixture. Today the two are the same thing:

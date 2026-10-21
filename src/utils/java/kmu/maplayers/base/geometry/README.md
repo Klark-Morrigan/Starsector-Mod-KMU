@@ -36,6 +36,10 @@ attached to a plan,
 diffed across two runs of a change,
 or handed to someone else.
 
+All three run with LunaLib on the `utils` runtime classpath.
+`SectorGeometryParameters` opens on the mod's own settings accessors,
+which answer their shipped fallbacks outside the game.
+
 ## The packages
 
 | Package | What is in it |
@@ -46,9 +50,9 @@ or handed to someone else.
 | [`v4`](v4/README.md) | the void as one planar division, every line laid into a single walk and the pieces read off it; `v4.ui` makes the pieces drawable |
 | `render` | the painting every surface shares: what the map is painted with (`MapLook`), how one fill looks (`FillLook`, `FillSheet`), and the Java2D moves (`MapPainting`) |
 | `settings` | what the viewer is set to draw with (`ViewerSettings`), and nothing else |
-| `ui` | the window (`SectorGeometryViewer`), the pointer readout, and `LakeReaches`, which hands v3's traced lakes to v4's lake tier |
+| `ui` | the window and what it draws in which order (`SectorGeometryViewer`), the view onto the sector and its pointer (`MapCanvas`, `CursorReadout`), and `LakeReaches`, which hands v3's traced lakes to v4's lake tier |
 | `ui.overlays` | the cells, the named void sections and the names on the map |
-| `ui.settings` | the knob panel: one section per construction, the row shapes bound to the redraws they cost (`SettingRows`), and the settings the viewer runs read without a window (`SavedViewerSettings`) |
+| `ui.settings` | the knob panel: one section per construction, one descriptor per setting (`SliderKnob`, `SwitchKnob`, `ColourKnob`, `ColourPairKnob`, `RadioKnob`), the row shapes bound to one refresh each (`SettingRows`), and the settings the viewer runs read through the same knobs without a window (`SavedViewerSettings`) |
 | `output` | the two writers, and `SectorSvgWriter`, which draws the geometry to an SVG file |
 | `output.v3` | the reports the void dump writes over v3's construction - coasts, walls, sections, refusals and a picked point's check - and the figures they share (`ReportFigures`) |
 
@@ -58,7 +62,8 @@ Two packages in the same source set hold what is not about geometry at all:
 
 - `kmu.desktop.ui` -
   what a window remembers between runs (`SavedValues`),
-  one file under keys that are identities rather than labels;
+  one file under keys that are identities rather than labels,
+  and the one way a control keeps a value in it (`RememberedValue`, `SavedValueFormat`);
   its `swing` subpackage is the generic toolkit the knob panel is built from:
   sliders,
   colour swatches,

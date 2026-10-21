@@ -85,37 +85,13 @@ public final class MapPainting {
     }
 
     /**
-     * The one way closed void is filled here: each ring as a translucent body under an opaque
-     * edge, at fill weight.
+     * Fills shapes that may have things cut out of them, each as a translucent body under an
+     * opaque edge, at fill weight.
      *
-     * <p>Shared by every construction that shuts void in, because they exist to be compared. A
-     * coast round the whole sector and a coast round each continent close off the same kind of
-     * thing, and two of these written separately is how the two come to be drawn at different
-     * weights - at which point the difference on screen is the drawing rather than the
-     * construction, and looking at them side by side stops answering anything.
-     *
-     * @param g2    what to draw with
-     * @param rings the closed outlines to fill
-     * @param look  how to paint each of them
-     */
-    public static void paintRingFills(
-            Graphics2D g2,
-            List<List<double[]>> rings,
-            FillLook look) {
-
-        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
-
-        for (var ring : rings) {
-            paintFilledShape(g2, buildPath(ring), look);
-        }
-    }
-
-    /**
-     * Fills shapes that may have things cut out of them.
-     *
-     * <p>The sibling of {@link #paintRingFills} for pieces of a division rather than for traced
-     * outlines. A piece read off a partition can run around another piece - the sea around its
-     * continents - and drawn from its outline alone it covers them.
+     * <p>Shared by every construction that shuts void in, because they exist to be compared:
+     * drawn at different weights, the difference on screen would be the drawing rather than the
+     * construction. A piece read off a partition can run around another piece - the sea around
+     * its continents - and drawn from its outline alone it covers them.
      *
      * @param g2      what to draw with
      * @param regions each shape as its outer ring and the rings cut out of it

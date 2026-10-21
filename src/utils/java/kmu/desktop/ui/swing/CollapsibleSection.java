@@ -1,12 +1,12 @@
 package kmu.desktop.ui.swing;
 
+import kmu.desktop.ui.RememberedValue;
 import kmu.desktop.ui.SavedValues;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Font;
-import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -65,47 +65,50 @@ public final class CollapsibleSection {
      * <p>Sections start unfolded until someone folds one, whatever the switch is set to: a
      * panel that opened with everything shut would hide what it is for.
      *
-     * @param keys    what its switch and its folded state are remembered under
-     * @param heading what the section is called, which is also the switch's label
-     * @param master  the switch over the whole run
-     * @param body    the controls the section holds, laid out by the caller
+     * @param sectionName what its folded state is remembered under, which is not its heading;
+     *                    the switch's own key is {@link SectionKeys#switchKey} of the same name
+     * @param heading     what the section is called, which is also the switch's label
+     * @param master      the switch over the whole run
+     * @param body        the controls the section holds, laid out by the caller
      * @return the section, heading and body together
      */
     public static JPanel buildSection(
-            SectionKeys keys,
+            String sectionName,
             String heading,
             MasterSwitch master,
             JPanel body) {
 
-        var fold = prepareFoldableBody(keys.foldKey(), body);
+        var fold = prepareFoldableBody(SectionKeys.forSection(sectionName).foldKey(), body);
+        var value = master.value();
 
         // Greyed the moment it is built, and again on every change, so a run of controls that
         // decides nothing right now never looks live.
-        var control = ControlRows.buildRememberedCheckBox(
-            keys.switchKey(),
-            heading,
-            master.fallback(),
+        var greyingValue = new RememberedValue<Boolean>(
+            value.key(),
+            value.fallback(),
+            value.format(),
             isOn -> {
                 applyEnabled(body, isOn);
-                master.apply().accept(isOn);
-            },
+                value.apply().accept(isOn);
+            });
+
+        var control = ControlRows.buildRememberedCheckBox(
+            heading,
+            greyingValue,
             master.onChange());
 
         return layOutSection(fold, control, body);
     }
 
     /**
-     * The switch over one section: what it starts as, what it sets, and what that costs.
+     * The switch over one section: what it remembers and sets, and what changing it costs.
      *
-     * <p>Together because a switch is not a switch without all three, and passed loose they
-     * are three arguments of which two are lambdas - an order a caller can transpose and the
-     * compiler cannot.
-     *
-     * @param fallback what it is before anyone has set it
-     * @param apply    records the new state
-     * @param onChange what to rebuild once it changes
+     * @param value    what it remembers and tells
+     * @param onChange what to redo once a click has changed it
      */
-    public record MasterSwitch(boolean fallback, Consumer<Boolean> apply, Runnable onChange) {
+    public record MasterSwitch(
+        RememberedValue<Boolean> value,
+        Runnable onChange) {
     }
 
     /**
@@ -114,7 +117,8 @@ public final class CollapsibleSection {
      * <p>For a run of controls with nothing to suppress. A switch over a run of colours and
      * ranges would have to mean something - drawn in what, at which size, while it is off? -
      * and there is no answer, so it would be a control that looks like it does something and
-     * does not. Folding on its own asks no such question: it is about the panel, not the map.
+     * does not. Folding on its own asks no such question: it is about the panel, not about what
+     * the panel sets.
      *
      * @param sectionName what its folded state is remembered under, which is not its heading
      * @param heading     what the section is called
@@ -134,7 +138,8 @@ public final class CollapsibleSection {
         // Derived from whatever font the label was given rather than named here, since a font
         // named in code is a font wrong on somebody's machine.
         label.setFont(label.getFont().deriveFont(
-            Font.BOLD, label.getFont().getSize() + HEADING_SIZE_INCREASE));
+            Font.BOLD,
+            label.getFont().getSize() + HEADING_SIZE_INCREASE));
 
         return layOutSection(fold, label, body);
     }
@@ -142,9 +147,9 @@ public final class CollapsibleSection {
     // Sets a body up to fold, and hands back the button that folds it.
     //
     // Shared because both kinds of section fold identically - the difference between them is
-    // what sits in the heading beside the button, not what the button does. Held apart, the
-    // two copies were free to disagree about which way round the marks read or which key the
-    // state went under.
+    // what sits in the heading beside the button, not what the button does. Held apart, two
+    // copies would be free to disagree about which way round the marks read or which key the
+    // state goes under.
     private static JButton prepareFoldableBody(String foldKey, JPanel body) {
 
         var isUnfolded = SavedValues.findSavedValues().getBoolean(foldKey, true);
@@ -156,8 +161,8 @@ public final class CollapsibleSection {
         fold.addActionListener(event -> {
 
             body.setVisible(!body.isVisible());
-            FoldControls.showFoldState(fold, body.isVisible());
 
+            FoldControls.showFoldState(fold, body.isVisible());
             SavedValues.findSavedValues().putBoolean(foldKey, body.isVisible());
         });
 
@@ -170,7 +175,9 @@ public final class CollapsibleSection {
      * @param switchKey what the master switch is remembered under
      * @param foldKey   what the folded state is remembered under
      */
-    public record SectionKeys(String switchKey, String foldKey) {
+    public record SectionKeys(
+        String switchKey,
+        String foldKey) {
 
         /**
          * The two keys one section needs, derived from one name for it.

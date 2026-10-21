@@ -16,7 +16,7 @@ import java.util.List;
  * <p>Depth-first and in the order components were added, so the order a suite asserts on is the
  * order a reader would see down the panel.
  */
-final class ComponentTreeFixture {
+public final class ComponentTreeFixture {
 
     private ComponentTreeFixture() {
     }
@@ -29,7 +29,7 @@ final class ComponentTreeFixture {
      * @param <T>  that kind
      * @return the ones found, in the order they were added
      */
-    static <T extends Component> List<T> findAll(Container root, Class<T> kind) {
+    public static <T extends Component> List<T> findAll(Container root, Class<T> kind) {
 
         var found = new ArrayList<T>();
 
@@ -48,7 +48,7 @@ final class ComponentTreeFixture {
      * @throws IllegalStateException where there is not exactly one, since a suite asking for
      *                               "the" reset has assumed something the build no longer does
      */
-    static <T extends Component> T findOnly(Container root, Class<T> kind) {
+    public static <T extends Component> T findOnly(Container root, Class<T> kind) {
 
         var found = findAll(root, kind);
 

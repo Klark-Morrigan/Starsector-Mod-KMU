@@ -21,10 +21,9 @@ import javax.swing.UIManager;
  * What every row in the panel is made of, and the shapes a row is laid out in.
  *
  * <p>Apart from {@link ControlRows} because the two answer different questions about the same
- * row. That one is about where a value is KEPT - read on build, written on change, put back on
- * demand - and this is about what a row LOOKS like. A panel gains controls far more often than
- * it gains row shapes, so the file a new knob is written into is not the file the padding and
- * the column widths live in, and neither one has to be read to work on the other.
+ * row. That one is about what a control does with its value, and this is about what a row LOOKS
+ * like. A panel gains controls far more often than it gains row shapes, so the file a new
+ * control is written into is not the file the padding and the column widths live in.
  *
  * <p>Shared rather than laid out where each control is declared, because that is what makes a
  * column of rows line up. A row that sets its own padding is a row that reads as an unrelated
@@ -57,7 +56,7 @@ public final class RowFurniture {
 
     private static final int MARK_BUTTON_HEIGHT = 18;
 
-    // ASCII only: the viewer runs wherever the JDK's default font does, and a glyph that
+    // ASCII only: a window runs wherever the JDK's default font does, and a glyph that
     // renders as a box on one machine makes the control unreadable rather than merely plain.
     private static final String RESET_LABEL = "R";
     private static final String RESET_TOOLTIP = "Reset to default";
@@ -69,8 +68,9 @@ public final class RowFurniture {
      * A rule across the panel, breaking one run of knobs off from the next.
      *
      * <p>The panel is one long column and every row in it looks like every other, so a reader
-     * looking for a knob has only its label to go on. A rule says where one subject ends, which
-     * turns the search into "the void half, near the top" rather than a scan of forty rows.
+     * looking for a control has only its label to go on. A rule says where one subject ends,
+     * which turns the search into "the second half, near the top" rather than a scan of every
+     * row.
      *
      * @return the rule, as a row
      */
@@ -142,9 +142,8 @@ public final class RowFurniture {
      *
      * <p>For a row that has half a column rather than a whole one. Beside the value box a name
      * is left about a quarter of the width, which wraps a long one to four lines; over it the
-     * name has the whole width and settles in two. Measured on the smoothing knobs, the two
-     * shapes come to 104px and 76px in half a column - and the other way round at full width,
-     * where a name fits beside the value and the extra line is wasted.
+     * name has the whole width and settles in two. At full width it is the other way round: a
+     * name fits beside the value and the extra line is wasted.
      *
      * <p>So the shape follows the width a row is given, and the only thing that knows which is
      * whatever decided to pair it.
@@ -165,14 +164,14 @@ public final class RowFurniture {
     /**
      * Two rows sharing one line.
      *
-     * <p>A column of full-width rows spends its height on knobs that do not need it, and the
-     * ones that belong together - a radius and the segments it is drawn with, a height and the
-     * angle it is judged by - say more side by side than stacked.
+     * <p>A column of full-width rows spends its height on controls that do not need it, and the
+     * ones that belong together - two halves of one measurement - say more side by side than
+     * stacked.
      *
      * <p>Takes finished rows rather than building them, so anything the panel can already lay
      * out can be paired without this knowing what it is. Each half keeps its own name, value and
      * reset: the pairing is layout and nothing else, and a shared reset would put two separate
-     * knobs back at once.
+     * controls back at once.
      *
      * @param left  the row on the left
      * @param right the row on the right
@@ -193,7 +192,7 @@ public final class RowFurniture {
      *
      * <p>Every remembered control carries one, in the same place and at the same size, so a
      * reader who has moved something and wants it back does not have to remember what it was.
-     * That is the whole reason the defaults are worth naming: a knob nobody can undo is a knob
+     * That is the whole reason the defaults are worth naming: a control nobody can undo is one
      * nobody experiments with.
      *
      * @param reset what to do when it is pressed, which is the control's own business
@@ -215,11 +214,11 @@ public final class RowFurniture {
      * fold beside every heading and branch. They mean entirely different things - one is a
      * setting put back, the other is rows going off screen - but they are the same object to
      * look at, and a reader picks them apart by the mark and by where they sit. Built in two
-     * places they were free to drift apart in size, in padding, and in whether their marks were
-     * legible at all, at which point the panel has two kinds of small button for no reason a
+     * places they would be free to drift apart in size, in padding, and in whether their marks
+     * are legible at all, at which point the panel has two kinds of small button for no reason a
      * reader could name.
      *
-     * <p>ASCII only, for the reason the reset's own label is: the viewer runs wherever the JDK's
+     * <p>ASCII only, for the reason the reset's own label is: a window runs wherever the JDK's
      * default font does, and a glyph that renders as a box makes the control unreadable rather
      * than merely plain.
      *

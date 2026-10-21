@@ -150,6 +150,38 @@ public final class CellGeometryCache {
         return Collections.unmodifiableMap(siteBySystemKey);
     }
 
+    // Turns one labelled cell into its adjacency edges: each edge as a world-space
+    // segment tagged with what lies across it - the neighbouring system, or the cell's
+    // own outer reach bound. The builder reports each edge's neighbour as a site index,
+    // resolved to a system key here through the parallel key list.
+    //
+    // Package-private, because the desktop geometry tooling cuts a fixture's cells through this
+    // same translation rather than a copy of it.
+    static List<CellEdge> buildCellEdges(
+            VoronoiCellBuilder.LabelledCell cell,
+            List<SystemKey> allSiteKeys) {
+
+        var vertices = cell.vertices();
+        var neighbourIndices = cell.edgeNeighbourSiteIndices();
+        var count = vertices.size();
+        var edges = new ArrayList<CellEdge>(count);
+
+        for (var i = 0; i < count; i++) {
+
+            var start = vertices.get(i);
+            var end = vertices.get((i + 1) % count);
+            var neighbourIndex = neighbourIndices[i];
+
+            var target = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
+                ? EdgeTarget.REACH_BOUND
+                : new EdgeTarget.AcrossSystem(allSiteKeys.get(neighbourIndex));
+
+            edges.add(new CellEdge(start[0], start[1], end[0], end[1], target));
+        }
+
+        return edges;
+    }
+
     // The update itself, reporting what it did onto the scope the entry point opened: the cells
     // it recomputed as a count, and which of its two outcomes this call was as the call's name.
     // Both are what the row's duration is read against, and both reach the log through the scope
@@ -310,31 +342,6 @@ public final class CellGeometryCache {
             }
         }
         return near;
-    }
-
-    // Turns one labelled cell into its adjacency edges: each edge as a world-space
-    // segment tagged with what lies across it - the neighbouring system, or the cell's
-    // own outer reach bound. The builder reports each edge's neighbour as a site index,
-    // resolved to a system key here through the parallel key list.
-    private static List<CellEdge> buildCellEdges(
-            VoronoiCellBuilder.LabelledCell cell,
-            List<SystemKey> allSiteKeys) {
-
-        var vertices = cell.vertices();
-        var neighbourIndices = cell.edgeNeighbourSiteIndices();
-        var count = vertices.size();
-        var edges = new ArrayList<CellEdge>(count);
-
-        for (var i = 0; i < count; i++) {
-            var start = vertices.get(i);
-            var end = vertices.get((i + 1) % count);
-            var neighbourIndex = neighbourIndices[i];
-            var target = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
-                ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(allSiteKeys.get(neighbourIndex));
-            edges.add(new CellEdge(start[0], start[1], end[0], end[1], target));
-        }
-        return edges;
     }
 
     /**

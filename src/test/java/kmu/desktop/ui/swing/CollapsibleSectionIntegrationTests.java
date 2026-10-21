@@ -1,5 +1,7 @@
 package kmu.desktop.ui.swing;
 
+import kmu.desktop.ui.RememberedValue;
+import kmu.desktop.ui.SavedValueFormat;
 import kmu.desktop.ui.SavedValues;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -118,15 +120,19 @@ final class CollapsibleSectionIntegrationTests {
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
         body.add(ToggleTree.buildToggleTree(
             () -> { },
-            ToggleTree.Row.ofSwitch(
-                0, new ToggleTree.Switch(BRANCH_KEY, "Branch", true, on -> { })),
-            ToggleTree.Row.ofSwitch(
-                1, new ToggleTree.Switch(LEAF_KEY, "Leaf", true, on -> { }))));
+            ToggleTree.Row.ofSwitch(0, new ToggleTree.Switch("Branch", rememberFlag(BRANCH_KEY, true))),
+            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch("Leaf", rememberFlag(LEAF_KEY, true)))));
 
         return CollapsibleSection.buildSection(
-            CollapsibleSection.SectionKeys.forSection(SECTION_NAME),
+            SECTION_NAME,
             "Pockets",
-            new CollapsibleSection.MasterSwitch(false, on -> { }, () -> { }),
+            new CollapsibleSection.MasterSwitch(
+                rememberFlag(CollapsibleSection.SectionKeys.forSection(SECTION_NAME).switchKey(), false),
+                () -> { }),
             body);
+    }
+
+    private static RememberedValue<Boolean> rememberFlag(String key, boolean fallback) {
+        return new RememberedValue<>(key, fallback, SavedValueFormat.FLAG, isOn -> { });
     }
 }

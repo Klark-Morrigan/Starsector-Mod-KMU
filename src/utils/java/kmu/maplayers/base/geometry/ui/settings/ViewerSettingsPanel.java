@@ -3,6 +3,9 @@ package kmu.maplayers.base.geometry.ui.settings;
 import kmu.desktop.ui.swing.RowFurniture;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
@@ -12,9 +15,9 @@ import javax.swing.JPanel;
  *
  * <p>One class per section, because a section is what a reader folds, switches and looks for -
  * so it is what a change to the panel is a change to. Held as one list of rows, moving a knob
- * meant reading past the forty that were not moving, and every section's ranges, keys and
- * wiring sat in one namespace where a constant belonging to the coasts looked exactly like one
- * belonging to the cells.
+ * would mean reading past every row that is not moving, and every section's ranges, keys and
+ * wiring would share one namespace where a constant belonging to the coasts looks exactly like
+ * one belonging to the cells.
  *
  * <p>Each section owns its own heading, its own remembered key and whether it switches, since
  * those are facts about the section rather than about where it sits. What is left here is the
@@ -29,13 +32,10 @@ public final class ViewerSettingsPanel {
     private static final int PANEL_PADDING = 8;
 
     private final GlobalGeometrySection globalGeometry;
-
     private final CellGeometrySection cellGeometry;
-
     private final CellAppearanceSection cellAppearance;
 
     private final VoidV3Section voidV3;
-
     private final VoidV4Section voidV4;
 
     /**
@@ -52,11 +52,34 @@ public final class ViewerSettingsPanel {
     }
 
     /**
+     * Every setting the panel offers, in the order its sections are laid out.
+     *
+     * <p>What the settings are read through without a window. Each section lists the knobs it
+     * declares, and the rows it builds are built from those same knobs, so a saved value read
+     * here and one a row opens on are read under one key and one fallback.
+     *
+     * @return the knobs
+     */
+    static List<ViewerKnob> listEveryKnob() {
+
+        var knobs = new ArrayList<ViewerKnob>();
+
+        knobs.addAll(GlobalGeometrySection.listKnobs());
+        knobs.addAll(CellGeometrySection.listKnobs());
+        knobs.addAll(CellAppearanceSection.listKnobs());
+        knobs.addAll(VoidV3Section.listKnobs());
+        knobs.addAll(VoidV4Section.listKnobs());
+
+        return List.copyOf(knobs);
+    }
+
+    /**
      * Every control the viewer offers, in one column.
      *
      * <p>Built once, when the window is. Nothing here is rebuilt as settings change - a control
      * writes its setting and asks for whatever redraw that costs, and the panel itself never has
-     * to know what changed.
+     * to know what changed. Building it asks for no redraw at all: each row tells the settings
+     * what it opens on, and the window builds the map once every row has.
      *
      * @return the column
      */

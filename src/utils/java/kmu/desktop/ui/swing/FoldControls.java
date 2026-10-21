@@ -54,7 +54,7 @@ public final class FoldControls {
      * Builds one, already showing the state it is in.
      *
      * <p>Not focusable, because it is chrome: tabbing through a panel should walk the settings,
-     * and a fold changes nothing about what the map is drawn with.
+     * and a fold changes no setting.
      *
      * @param isUnfolded whether what it folds is currently showing
      * @return the control
@@ -73,10 +73,10 @@ public final class FoldControls {
     /**
      * Whether a control is one of these.
      *
-     * <p>Asked by whatever greys a run of controls. A fold decides nothing about the map - it
-     * says whether the rows beneath it are on screen - so it stays live however the settings
-     * around it stand: a reader has to be able to open a branch and read what is in it without
-     * switching an overlay on to do it, which is the opposite of what the panel is for.
+     * <p>Asked by whatever greys a run of controls. A fold decides no setting - it says whether
+     * the rows beneath it are on screen - so it stays live however the settings around it
+     * stand: a reader has to be able to open a branch and read what is in it without switching
+     * the whole run on to do it.
      *
      * @param control the control, which may be anything and may be null
      * @return whether it folds something away

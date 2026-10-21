@@ -355,6 +355,12 @@ dependencies {
     // jar is not on its runtime.
     utilsCompileOnly xstreamJars
 
+    // Runtime only, for the reason the tests take it: the tooling opens on the shipped geometry
+    // defaults by calling the mod's own settings accessors, and those reach KMLib's reader, which
+    // dies on NoClassDefFoundError without the jar. Outside a game the reader answers each
+    // accessor's fallback.
+    utilsRuntimeOnly files(lunaLibJarFile)
+
     // The fixtures KMLib publishes as a variant of their own - the fakes of its ports and the market
     // and colony shapes its reads are posed against. A variant rather than part of the jar above,
     // because a fixture is a test artefact and the jar the game loads must not carry one.

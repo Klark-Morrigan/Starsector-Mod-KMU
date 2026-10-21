@@ -10,6 +10,7 @@ import kmu.maplayers.base.geometry.v4.LandableFrontage;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
@@ -121,16 +122,28 @@ class LakeBridgesIntegrationTests {
                 .isPositive();
         }
 
+        // The floor under the two checks below, which bridges that divided nothing would pass -
+        // and exact, since the search keeps no bridge that crosses another: each runs from one
+        // shore of a piece to another shore of the same piece, and cuts it in two. So the bridged
+        // pieces are the coast's pieces plus one per bridge.
         @ParameterizedTest
-        @MethodSource(SECTORS)
-        void eachBridgeDividesOnePieceInTwo(String sector) {
-            // The floor under the two checks below, which bridges that divided nothing would
-            // pass - and exact, since the search keeps no bridge that crosses another: each runs
-            // from one shore of a piece to another shore of the same piece, and cuts it in two.
-            var bridgeCount = LakePartitions.layContinents(sector).layLakeSpans().size();
+        @CsvSource({
+            "366, 26, 57, 83",
+            "491, 27, 67, 94"})
+        void eachBridgeDividesOnePieceInTwo(
+                int systemCount,
+                int bridges,
+                int coastPieces,
+                int bridgedPieces) {
 
-            assertThat(LakePartitions.readBridgedPartition(sector).countPieces())
-                .isEqualTo(LakePartitions.readCoastPartition(sector).countPieces() + bridgeCount);
+            var sector = LakePartitions.findSectorOf(systemCount);
+
+            assertThat(LakePartitions.layContinents(sector).layLakeSpans())
+                .hasSize(bridges);
+            assertThat(LakePartitions.readCoastPartition(sector).collectPieces())
+                .hasSize(coastPieces);
+            assertThat(LakePartitions.readBridgedPartition(sector).collectPieces())
+                .hasSize(bridgedPieces);
         }
 
         @ParameterizedTest
