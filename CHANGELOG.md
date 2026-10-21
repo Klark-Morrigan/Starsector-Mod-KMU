@@ -36,6 +36,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Added
 
+- **The Starscape reseat's two reads are profiled**, as `mapLayer.reseat.findTerrain` and `mapLayer.reseat.readPlacement`. The script asks both on every advance while a map is up, several per frame under the campaign speed-up.
 - **The hover box is profiled**, as `mapLayer.hoverBox.paint` for each frame it draws and `mapLayer.hoverBox.compose` for each time it reads the sector.
 - **`CellBoxMemo`**: the box a sector last composed, kept while nothing it was read under moves.
 - **`MapLayerCommonRefreshSignal.DRAW_LISTS`**: raised by the overlay cache once it has rebuilt what it draws, in full or for marked systems.

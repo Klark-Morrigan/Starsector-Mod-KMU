@@ -35,6 +35,7 @@
 
 #### 新增
 
+- **星景重新安置的两次读取会被性能分析**，分别记为 `mapLayer.reseat.findTerrain` 和 `mapLayer.reseat.readPlacement`。星图打开期间，脚本在每次推进时都会执行这两次读取，开启战役加速时每帧会执行多次。
 - **悬停框会被性能分析**：每帧绘制记为 `mapLayer.hoverBox.paint`，每次读取星域记为 `mapLayer.hoverBox.compose`。
 - **`CellBoxMemo`**：星域上次组合出的悬停框，在其读取所依据的一切都未变化时保留。
 - **`MapLayerCommonRefreshSignal.DRAW_LISTS`**：叠加层缓存在完整重建或为已标记星系重建其绘制内容后发出。
